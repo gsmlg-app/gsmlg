@@ -1,0 +1,348 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Czech (`cs`).
+class AppLocalizationsCs extends AppLocalizations {
+  AppLocalizationsCs([String locale = 'cs']) : super(locale);
+
+  @override
+  String get appName => 'Šablona aplikace Flutter';
+
+  @override
+  String get errorOccurred => 'Došlo k chybě';
+
+  @override
+  String get backToHome => 'Zpět na úvodní stránku';
+
+  @override
+  String get welcomeHome => 'Vítejte v mé aplikaci';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get cancel => 'Zrušit';
+
+  @override
+  String get loading => 'Načítání';
+
+  @override
+  String get success => 'Úspěch';
+
+  @override
+  String get error => 'Chyba';
+
+  @override
+  String get undo => 'Zpět';
+
+  @override
+  String get navHome => 'Domů';
+
+  @override
+  String get navService => 'Service';
+
+  @override
+  String get navToolbox => 'Toolbox';
+
+  @override
+  String get navShowcase => 'Ukázka';
+
+  @override
+  String get navSetting => 'Nastavení';
+
+  @override
+  String get settingsTitle => 'Nastavení YellowDog';
+
+  @override
+  String get smenuTheme => 'Téma';
+
+  @override
+  String get appearance => 'Vzhled';
+
+  @override
+  String get accentColor => 'Barva akcentu';
+
+  @override
+  String get language => 'Jazyk';
+
+  @override
+  String get retry => 'Opakovat';
+
+  @override
+  String get lightTheme => 'Světlý';
+
+  @override
+  String get darkTheme => 'Tmavý';
+
+  @override
+  String get systemTheme => 'Systém';
+
+  @override
+  String get nslookupTitle => 'Vyhledávání NS YellowDog';
+
+  @override
+  String get bmenuNSLookup => 'Vyhledávání NS';
+
+  @override
+  String get bmenuBenchmark => 'Benchmark';
+
+  @override
+  String get bmenuDns => 'Server';
+
+  @override
+  String get bmenuMDns => 'mDNS';
+
+  @override
+  String get bmenuSettings => 'Nastavení';
+
+  @override
+  String get textLabelRRName => 'Název';
+
+  @override
+  String get textHintRRName => 'Název záznamu zdroje DNS';
+
+  @override
+  String get textLabelRRType => 'Typ';
+
+  @override
+  String get textHintRRType => 'Typ záznamu zdroje DNS';
+
+  @override
+  String get textLabelRRClass => 'Třída';
+
+  @override
+  String get textHintRRClass => 'Třída DNS';
+
+  @override
+  String get textLabelRRData => 'Data';
+
+  @override
+  String get textLabelRRTimeToLive => 'TTL';
+
+  @override
+  String get textLabelProtocol => 'Protokol';
+
+  @override
+  String get textHintProtocol => 'Protokol dotazu DNS';
+
+  @override
+  String get textLabelServer => 'Server jmen';
+
+  @override
+  String get textHintServer =>
+      'Server DNS, např. 8.8.8.8#53 nebo 2001:4860:4860::8888#53';
+
+  @override
+  String get textLabelECS => 'ECS';
+
+  @override
+  String get textHintECS => 'Subsíť klienta EDNS';
+
+  @override
+  String get textLabelDNSSEC => 'DNSSEC';
+
+  @override
+  String get buttonLookup => 'Vyhledat';
+
+  @override
+  String get labelAnswer => 'Odpověď';
+
+  @override
+  String get buttonClearResult => 'Vymazat výsledek';
+
+  @override
+  String get benchmarkTitle => 'Benchmark YellowDog';
+
+  @override
+  String get textLabelSourceFile => 'Souborový zdroj';
+
+  @override
+  String get buttonManageSourceFile => 'Spravovat soubor';
+
+  @override
+  String get textLabelConcurrencyClients => 'Klienti simultánně';
+
+  @override
+  String get textHintConcurrencyClients => 'např. 10';
+
+  @override
+  String get textLabelNTimes => 'Nkrát';
+
+  @override
+  String get textHintNTimes => 'např. 10';
+
+  @override
+  String get buttonBenchmark => 'Spustit benchmark';
+
+  @override
+  String get labelBenchmarkResult => 'Výsledek benchmarku';
+
+  @override
+  String get labelError => 'Chyba';
+
+  @override
+  String get buttonAtRunning => 'Probíhá';
+
+  @override
+  String get nameServerTitle => 'Server jmen YellowDog';
+
+  @override
+  String get nameServerSecondaryTitle => 'Protokol v reálném čase';
+
+  @override
+  String get textLabelServerPort => 'Port serveru';
+
+  @override
+  String get textHintServerPort => 'např. 53';
+
+  @override
+  String get textLabelForwarderAddress => 'Adresa přeposílače';
+
+  @override
+  String get textHintForwarderAddress => 'např. 8.8.8.8';
+
+  @override
+  String get textLabelForwarderPort => 'Port přeposílače';
+
+  @override
+  String get textHintForwarderPort => 'např. 53';
+
+  @override
+  String get buttonStartServer => 'Spustit server';
+
+  @override
+  String get buttonStopServer => 'Zastavit server';
+
+  @override
+  String get smenuAppearance => 'Vzhled';
+
+  @override
+  String get smenuColorTheme => 'Barevné téma';
+
+  @override
+  String get smenuBenchmark => 'Benchmark';
+
+  @override
+  String get smenuSourceFile => 'Souborový zdroj';
+
+  @override
+  String get titleSelectAppearance => 'Vybrat vzhled';
+
+  @override
+  String get titleSelectColorTheme => 'Vybrat barevné téma';
+
+  @override
+  String get benchmarkSourceTitle => 'Zdroj benchmarku';
+
+  @override
+  String get smenuAddFile => 'Přidat soubor';
+
+  @override
+  String get labelLoading => 'Načítání';
+
+  @override
+  String get addBenchmarkSourceTitle => 'Přidat zdroj benchmarku';
+
+  @override
+  String get editBenchmarkSourceTitle => 'Upravit zdroj benchmarku';
+
+  @override
+  String get showBenchmarkSourceTitle => 'Zobrazit zdroj benchmarku';
+
+  @override
+  String get textLabelSourceFileName => 'Název';
+
+  @override
+  String get textHintSourceFileName => 'např. 10 nejlepších záznamů';
+
+  @override
+  String get textLabelSourceFileContent => 'Obsah';
+
+  @override
+  String get textHintSourceFileContent =>
+      'např.:\nwww.example.com A\nexample.com CNAME';
+
+  @override
+  String get buttonAddSourceFile => 'Přidat';
+
+  @override
+  String get buttonEditSourceFile => 'Upravit';
+
+  @override
+  String get buttonUpdateSourceFile => 'Aktualizovat';
+
+  @override
+  String get buttonDeleteSourceFile => 'Odstranit';
+
+  @override
+  String get mdnsTitle => 'Multicast DNS';
+
+  @override
+  String get mdnsTitleSecondary => 'Výsledek mDNS';
+
+  @override
+  String get mdnsTabTitleQuery => 'Dotaz';
+
+  @override
+  String get mdnsTabTitleListen => 'Poslouchat';
+
+  @override
+  String get mdnsQueryForm => 'Formulář dotazu';
+
+  @override
+  String get mdnsListenForm => 'Poslouchat zprávu mDNS';
+
+  @override
+  String get required => 'Povinné';
+
+  @override
+  String get invalidAddress => 'Neplatná adresa';
+
+  @override
+  String get invalidPort => 'Neplatný port';
+
+  @override
+  String get start => 'Spustit';
+
+  @override
+  String get stop => 'Zastavit';
+
+  @override
+  String get pause => 'Pozastavit';
+
+  @override
+  String get resume => 'Obnovit';
+
+  @override
+  String get clear => 'Vymazat';
+
+  @override
+  String get noData => 'Žádné údaje';
+
+  @override
+  String get smenuYellowDog => 'YellowDog';
+
+  @override
+  String get smenuSmenuYellowDog => 'O aplikaci YellowDog';
+
+  @override
+  String get titleAboutYellowDog => 'O aplikaci YellowDog';
+
+  @override
+  String get aboutYellowDog => 'Na památku YellowDog, 1988-1990';
+
+  @override
+  String get aboutYellowDog2 => 'Jsi silný, chytrý a věrný pes';
+
+  @override
+  String get deviceInfo => 'Device Info';
+
+  @override
+  String get wifiInfo => 'Wifi Info';
+
+  @override
+  String get account => 'Account';
+}

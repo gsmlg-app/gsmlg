@@ -1,4 +1,4 @@
-name: flutter_app_template
+name: gsmlg
 description: "A new Flutter project."
 publish_to: "none"
 
@@ -14,10 +14,16 @@ workspace:
   - app_lib/provider
   - app_lib/logging
   - app_bloc/theme
+  - app_bloc/auth
+  - app_bloc/whois
+  - app_bloc/whois_history
+  - app_bloc/bluetooth
+  - app_bloc/camera
   - app_widget/adaptive
   - app_widget/artwork
   - app_widget/feedback
   - app_widget/web_view
+  - app_widget/components
   - app_plugin/client_info/client_info
   - app_plugin/client_info/client_info_platform_interface
   - app_plugin/client_info/client_info_android
@@ -29,6 +35,7 @@ workspace:
   - third_party/flutter_form_bloc
   - third_party/flutter_adaptive_scaffold
   - third_party/settings_ui
+  - third_party/gsmlg_whois
 
 dependencies:
   flutter:
@@ -51,12 +58,23 @@ dependencies:
   lottie: ^3.3.1
   google_fonts: ^6.2.1
 
+  flutter_slidable: ^4.0.0
+  intl: any
+  flutter_blue_plus: ^1.35.3
+  camera: ^0.11.1
+  camera_macos: any
+
   # workspace packages
   app_database: any
   app_theme: any
   app_locale: any
   app_provider: any
   theme_bloc: any
+  auth_bloc: any
+  whois_bloc: any
+  whois_history_bloc: any
+  bluetooth_bloc: any
+  camera_bloc: any
   app_artwork: any
   app_client_info: any
   app_feedback: any
@@ -64,6 +82,8 @@ dependencies:
   settings_ui: any
   app_logging: any
   app_web_view: any
+  app_components: any
+  gsmlg_whois: any
 
 dev_dependencies:
   flutter_test:
@@ -82,6 +102,14 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  assets:
+    - assets/icon/
+
+  fonts:
+    - family: GSMLG
+      fonts:
+        - asset: assets/fonts/GSMLG.ttf
+
 # generate icon with `dart run flutter_launcher_icons:main``
 flutter_launcher_icons:
   image_path: "app_widget/artwork/assets/icon/app-icon.png"
@@ -95,7 +123,7 @@ flutter_launcher_icons:
     generate: true
 
 melos:
-  name: flutter_app_template
+  name: gsmlg
   command:
     version:
       # Only allow versioning to happen on main branch.

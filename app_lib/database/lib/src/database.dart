@@ -3,9 +3,15 @@ import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'tables/whois_history.dart';
+import 'type_converter.dart';
+
+export 'tables/whois_history.dart';
+export 'type_converter.dart';
+
 part 'database.g.dart';
 
-@DriftDatabase(tables: [])
+@DriftDatabase(tables: [WhoisHistoryTable])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
   // and a constructor telling drift where the database should be stored.

@@ -1,11 +1,15 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:app_theme/app_theme.dart';
+import 'package:auth_bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_app_template/destination.dart';
-import 'package:flutter_app_template/screens/settings/accent_color_settings_screen.dart';
-import 'package:flutter_app_template/screens/settings/app_settings_screen.dart';
-import 'package:flutter_app_template/screens/settings/appearance_settings_screen.dart';
+import 'package:gsmlg/destination.dart';
+import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
+import 'package:gsmlg/screens/settings/account_screen.dart';
+import 'package:gsmlg/screens/settings/app_settings_screen.dart';
+import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
+import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
+import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:settings_ui/settings_ui.dart';
@@ -34,8 +38,27 @@ class SettingsScreen extends StatelessWidget {
                 child: BlocBuilder<ThemeBloc, ThemeState>(
                   bloc: themeBloc,
                   builder: (context, state) {
+                    final authState = context.read<AuthBloc>().state;
+
                     return SettingsList(
                       sections: [
+                        SettingsSection(
+                          title: Text(context.l10n.account),
+                          tiles: <SettingsTile>[
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.account_box),
+                              title: Text(context.l10n.account),
+                              value: Text(
+                                (authState is AuthSuccess)
+                                    ? authState.user['username'] ?? 'Unknown'
+                                    : 'Not signed in',
+                              ),
+                              onPressed: (context) {
+                                context.goNamed(AccountScreen.name);
+                              },
+                            ),
+                          ],
+                        ),
                         SettingsSection(
                           title: Text('App Setting'),
                           tiles: <SettingsTile>[
@@ -65,6 +88,25 @@ class SettingsScreen extends StatelessWidget {
                               value: Text(state.theme.name),
                               onPressed: (context) {
                                 context.goNamed(AccentColorSettingsScreen.name);
+                              },
+                            ),
+                          ],
+                        ),
+                        SettingsSection(
+                          title: Text('Device'),
+                          tiles: <SettingsTile>[
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.devices_rounded),
+                              title: Text(context.l10n.deviceInfo),
+                              onPressed: (context) {
+                                context.goNamed(DeviceInfoScreen.name);
+                              },
+                            ),
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.wifi_sharp),
+                              title: Text(context.l10n.wifiInfo),
+                              onPressed: (context) {
+                                context.goNamed(WifiInfoScreen.name);
                               },
                             ),
                           ],

@@ -1,0 +1,19 @@
+name: camera_bloc
+description: Camera BLoC for managing camera state
+version: 1.0.0
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  bloc: ^9.0.0
+  flutter:
+    sdk: flutter
+  camera: ^0.11.1
+  camera_macos: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

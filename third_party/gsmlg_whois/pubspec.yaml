@@ -1,0 +1,13 @@
+name: gsmlg_whois
+description: Whois query package for GSMLG.
+version: 1.0.0
+homepage: "https://gsmlg.org"
+publish_to: "none"
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+resolution: workspace
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.21.0
