@@ -1,0 +1,936 @@
+openapi: 3.1.0
+info:
+  title: Cloudflare DNS API
+  version: "4.0.0"
+  description: |
+    Cloudflare DNS API client for managing zones and DNS records.
+    This specification covers zone listing and DNS record CRUD operations.
+servers:
+  - url: https://api.cloudflare.com/client/v4
+    description: Cloudflare API v4 endpoint
+tags:
+  - name: Zones
+    description: Operations for managing DNS zones
+  - name: DNSRecords
+    description: Operations for managing DNS records
+
+paths:
+  /zones:
+    get:
+      operationId: listZones
+      summary: List zones
+      description: Lists, searches, sorts, and filters your zones.
+      tags:
+        - Zones
+      parameters:
+        - name: name
+          in: query
+          description: A domain name. Optional filter operators can be provided to extend refine the search.
+          schema:
+            type: string
+        - name: account.id
+          in: query
+          description: An account identifier.
+          schema:
+            type: string
+        - name: account.name
+          in: query
+          description: An account name.
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: A zone status.
+          schema:
+            $ref: '#/components/schemas/ZoneStatus'
+        - name: page
+          in: query
+          description: Page number of paginated results.
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: per_page
+          in: query
+          description: Number of zones per page.
+          schema:
+            type: integer
+            default: 20
+            minimum: 5
+            maximum: 50
+        - name: order
+          in: query
+          description: Field to order zones by.
+          schema:
+            type: string
+            enum:
+              - name
+              - status
+              - account.id
+              - account.name
+        - name: direction
+          in: query
+          description: Direction to order zones.
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: match
+          in: query
+          description: Whether to match all search requirements or at least one (any).
+          schema:
+            type: string
+            enum:
+              - any
+              - all
+            default: all
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListZonesResponse'
+
+  /zones/{zone_id}:
+    get:
+      operationId: getZone
+      summary: Get zone details
+      description: Retrieves information about an existing zone.
+      tags:
+        - Zones
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Zone identifier.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetZoneResponse'
+
+  /zones/{zone_id}/dns_records:
+    get:
+      operationId: listDnsRecords
+      summary: List DNS records
+      description: Lists all DNS records for a zone.
+      tags:
+        - DNSRecords
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Zone identifier.
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: DNS record name (or @ for the zone apex).
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Record type.
+          schema:
+            $ref: '#/components/schemas/DnsRecordType'
+        - name: content
+          in: query
+          description: DNS record content.
+          schema:
+            type: string
+        - name: proxied
+          in: query
+          description: Whether the record is receiving the performance and security benefits of Cloudflare.
+          schema:
+            type: boolean
+        - name: comment
+          in: query
+          description: Comments or notes about the DNS record.
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: Custom tags for the DNS record.
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number of paginated results.
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: per_page
+          in: query
+          description: Number of DNS records per page.
+          schema:
+            type: integer
+            default: 100
+            minimum: 5
+            maximum: 5000
+        - name: order
+          in: query
+          description: Field to order records by.
+          schema:
+            type: string
+            enum:
+              - type
+              - name
+              - content
+              - ttl
+              - proxied
+        - name: direction
+          in: query
+          description: Direction to order records.
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+        - name: match
+          in: query
+          description: Whether to match all search requirements or at least one (any).
+          schema:
+            type: string
+            enum:
+              - any
+              - all
+            default: all
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDnsRecordsResponse'
+
+    post:
+      operationId: createDnsRecord
+      summary: Create DNS record
+      description: Creates a new DNS record for a zone.
+      tags:
+        - DNSRecords
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Zone identifier.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDnsRecordRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DnsRecordResponse'
+
+  /zones/{zone_id}/dns_records/{dns_record_id}:
+    get:
+      operationId: getDnsRecord
+      summary: Get DNS record
+      description: Retrieves details of a specific DNS record.
+      tags:
+        - DNSRecords
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Zone identifier.
+          schema:
+            type: string
+        - name: dns_record_id
+          in: path
+          required: true
+          description: DNS record identifier.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DnsRecordResponse'
+
+    put:
+      operationId: updateDnsRecord
+      summary: Update DNS record
+      description: Updates an existing DNS record.
+      tags:
+        - DNSRecords
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Zone identifier.
+          schema:
+            type: string
+        - name: dns_record_id
+          in: path
+          required: true
+          description: DNS record identifier.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDnsRecordRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DnsRecordResponse'
+
+    patch:
+      operationId: patchDnsRecord
+      summary: Patch DNS record
+      description: Partially updates an existing DNS record.
+      tags:
+        - DNSRecords
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Zone identifier.
+          schema:
+            type: string
+        - name: dns_record_id
+          in: path
+          required: true
+          description: DNS record identifier.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchDnsRecordRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DnsRecordResponse'
+
+    delete:
+      operationId: deleteDnsRecord
+      summary: Delete DNS record
+      description: Deletes an existing DNS record.
+      tags:
+        - DNSRecords
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Zone identifier.
+          schema:
+            type: string
+        - name: dns_record_id
+          in: path
+          required: true
+          description: DNS record identifier.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteDnsRecordResponse'
+
+  /zones/{zone_id}/dns_records/export:
+    get:
+      operationId: exportDnsRecords
+      summary: Export DNS records
+      description: Exports DNS records in BIND config format.
+      tags:
+        - DNSRecords
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Zone identifier.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /zones/{zone_id}/dns_records/import:
+    post:
+      operationId: importDnsRecords
+      summary: Import DNS records
+      description: Imports DNS records from a BIND config file.
+      tags:
+        - DNSRecords
+      parameters:
+        - name: zone_id
+          in: path
+          required: true
+          description: Zone identifier.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: BIND config file to import.
+                proxied:
+                  type: string
+                  description: Whether or not proxiable records should receive the performance and security benefits of Cloudflare.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportDnsRecordsResponse'
+
+components:
+  schemas:
+    ZoneStatus:
+      type: string
+      enum:
+        - initializing
+        - pending
+        - active
+        - moved
+
+    DnsRecordType:
+      type: string
+      enum:
+        - A
+        - AAAA
+        - CAA
+        - CERT
+        - CNAME
+        - DNSKEY
+        - DS
+        - HTTPS
+        - LOC
+        - MX
+        - NAPTR
+        - NS
+        - PTR
+        - SMIMEA
+        - SRV
+        - SSHFP
+        - SVCB
+        - TLSA
+        - TXT
+        - URI
+
+    ResultInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number.
+        per_page:
+          type: integer
+          description: Number of items per page.
+        count:
+          type: integer
+          description: Number of items in current page.
+        total_count:
+          type: integer
+          description: Total number of items.
+        total_pages:
+          type: integer
+          description: Total number of pages.
+
+    ApiError:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+
+    ApiMessage:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Account identifier.
+        name:
+          type: string
+          description: Account name.
+
+    Owner:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        email:
+          type: string
+
+    Plan:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        frequency:
+          type: string
+        is_subscribed:
+          type: boolean
+        can_subscribe:
+          type: boolean
+        legacy_id:
+          type: string
+        legacy_discount:
+          type: boolean
+        externally_managed:
+          type: boolean
+
+    Zone:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: Zone identifier.
+        name:
+          type: string
+          description: The domain name.
+        status:
+          $ref: '#/components/schemas/ZoneStatus'
+        paused:
+          type: boolean
+          description: Indicates if the zone is only using Cloudflare DNS services.
+        type:
+          type: string
+          description: A full zone implies that DNS is hosted with Cloudflare. A partial zone is typically a partner-hosted zone or a CNAME setup.
+          enum:
+            - full
+            - partial
+            - secondary
+        development_mode:
+          type: integer
+          description: The interval (in seconds) from when development mode expires.
+        name_servers:
+          type: array
+          items:
+            type: string
+          description: Cloudflare-assigned name servers.
+        original_name_servers:
+          type: array
+          items:
+            type: string
+          description: Original name servers before moving to Cloudflare.
+        original_registrar:
+          type: string
+          description: Registrar for the domain at the time of switching to Cloudflare.
+        original_dnshost:
+          type: string
+          description: DNS host at the time of switching to Cloudflare.
+        modified_on:
+          type: string
+          format: date-time
+          description: Last modification time.
+        created_on:
+          type: string
+          format: date-time
+          description: When the zone was created.
+        activated_on:
+          type: string
+          format: date-time
+          description: When the zone was activated.
+        meta:
+          type: object
+          additionalProperties: true
+        owner:
+          $ref: '#/components/schemas/Owner'
+        account:
+          $ref: '#/components/schemas/Account'
+        permissions:
+          type: array
+          items:
+            type: string
+        plan:
+          $ref: '#/components/schemas/Plan'
+
+    DnsRecordData:
+      type: object
+      description: Components of a CAA, CERT, DNSKEY, DS, LOC, NAPTR, SMIMEA, SRV, SSHFP, TLSA, or URI record.
+      additionalProperties: true
+
+    DnsRecordMeta:
+      type: object
+      properties:
+        auto_added:
+          type: boolean
+          description: Will exist if Cloudflare automatically added this DNS record.
+        source:
+          type: string
+          description: Where the record originated from.
+
+    DnsRecord:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - content
+      properties:
+        id:
+          type: string
+          description: DNS record identifier.
+        zone_id:
+          type: string
+          description: Zone identifier.
+        zone_name:
+          type: string
+          description: The domain of the record.
+        name:
+          type: string
+          description: DNS record name (or @ for the zone apex).
+        type:
+          $ref: '#/components/schemas/DnsRecordType'
+        content:
+          type: string
+          description: A valid DNS record value.
+        proxiable:
+          type: boolean
+          description: Whether the record can be proxied by Cloudflare or not.
+        proxied:
+          type: boolean
+          description: Whether the record is receiving the performance and security benefits of Cloudflare.
+        ttl:
+          type: integer
+          description: Time To Live (TTL) of the DNS record in seconds. Setting to 1 means automatic.
+        locked:
+          type: boolean
+          description: Whether this record can be modified/deleted.
+        meta:
+          $ref: '#/components/schemas/DnsRecordMeta'
+        comment:
+          type: string
+          description: Comments or notes about the DNS record.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Custom tags for the DNS record.
+        created_on:
+          type: string
+          format: date-time
+          description: When the record was created.
+        modified_on:
+          type: string
+          format: date-time
+          description: When the record was last modified.
+        data:
+          $ref: '#/components/schemas/DnsRecordData'
+        priority:
+          type: integer
+          description: Required for MX, SRV and URI records; unused by other record types.
+
+    CreateDnsRecordRequest:
+      type: object
+      required:
+        - name
+        - type
+        - content
+      properties:
+        name:
+          type: string
+          description: DNS record name (or @ for the zone apex).
+        type:
+          $ref: '#/components/schemas/DnsRecordType'
+        content:
+          type: string
+          description: A valid DNS record value.
+        ttl:
+          type: integer
+          description: Time To Live (TTL) of the DNS record in seconds. Setting to 1 means automatic.
+          default: 1
+        priority:
+          type: integer
+          description: Required for MX, SRV and URI records.
+        proxied:
+          type: boolean
+          description: Whether the record is receiving the performance and security benefits of Cloudflare.
+          default: false
+        comment:
+          type: string
+          description: Comments or notes about the DNS record.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Custom tags for the DNS record.
+        data:
+          $ref: '#/components/schemas/DnsRecordData'
+
+    UpdateDnsRecordRequest:
+      type: object
+      required:
+        - name
+        - type
+        - content
+      properties:
+        name:
+          type: string
+          description: DNS record name (or @ for the zone apex).
+        type:
+          $ref: '#/components/schemas/DnsRecordType'
+        content:
+          type: string
+          description: A valid DNS record value.
+        ttl:
+          type: integer
+          description: Time To Live (TTL) of the DNS record in seconds.
+        priority:
+          type: integer
+          description: Required for MX, SRV and URI records.
+        proxied:
+          type: boolean
+          description: Whether the record is receiving the performance and security benefits of Cloudflare.
+        comment:
+          type: string
+          description: Comments or notes about the DNS record.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Custom tags for the DNS record.
+        data:
+          $ref: '#/components/schemas/DnsRecordData'
+
+    PatchDnsRecordRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: DNS record name (or @ for the zone apex).
+        type:
+          $ref: '#/components/schemas/DnsRecordType'
+        content:
+          type: string
+          description: A valid DNS record value.
+        ttl:
+          type: integer
+          description: Time To Live (TTL) of the DNS record in seconds.
+        proxied:
+          type: boolean
+          description: Whether the record is receiving the performance and security benefits of Cloudflare.
+        comment:
+          type: string
+          description: Comments or notes about the DNS record.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Custom tags for the DNS record.
+
+    ListZonesResponse:
+      type: object
+      required:
+        - success
+        - errors
+        - messages
+        - result
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiError'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiMessage'
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/Zone'
+        result_info:
+          $ref: '#/components/schemas/ResultInfo'
+
+    GetZoneResponse:
+      type: object
+      required:
+        - success
+        - errors
+        - messages
+        - result
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiError'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiMessage'
+        result:
+          $ref: '#/components/schemas/Zone'
+
+    ListDnsRecordsResponse:
+      type: object
+      required:
+        - success
+        - errors
+        - messages
+        - result
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiError'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiMessage'
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/DnsRecord'
+        result_info:
+          $ref: '#/components/schemas/ResultInfo'
+
+    DnsRecordResponse:
+      type: object
+      required:
+        - success
+        - errors
+        - messages
+        - result
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiError'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiMessage'
+        result:
+          $ref: '#/components/schemas/DnsRecord'
+
+    DeleteDnsRecordResponse:
+      type: object
+      required:
+        - success
+        - errors
+        - messages
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiError'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiMessage'
+        result:
+          type: object
+          properties:
+            id:
+              type: string
+              description: Identifier of the deleted record.
+
+    ImportDnsRecordsResponse:
+      type: object
+      required:
+        - success
+        - errors
+        - messages
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiError'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiMessage'
+        result:
+          type: object
+          properties:
+            recs_added:
+              type: integer
+              description: Number of DNS records added.
+            recs_added_by_type:
+              type: object
+              additionalProperties:
+                type: integer
+              description: Number of DNS records added by type.
+            total_records_parsed:
+              type: integer
+              description: Total number of DNS records parsed.
+
+  securitySchemes:
+    api_token:
+      type: http
+      scheme: bearer
+      description: Cloudflare API Token
+    api_key:
+      type: apiKey
+      in: header
+      name: X-Auth-Key
+      description: Cloudflare Global API Key (requires X-Auth-Email header as well)
+
+security:
+  - api_token: []
+  - api_key: []

@@ -1,0 +1,466 @@
+openapi: 3.1.0
+info:
+  title: AWS Route 53 API
+  version: "1.0.0"
+  description: |
+    AWS Route 53 API client for managing hosted zones and DNS records.
+    This is a simplified API specification covering zone listing and record CRUD operations.
+servers:
+  - url: https://route53.amazonaws.com/2013-04-01
+    description: AWS Route 53 API endpoint
+tags:
+  - name: HostedZones
+    description: Operations for managing hosted zones
+  - name: ResourceRecordSets
+    description: Operations for managing DNS resource record sets
+
+paths:
+  /hostedzone:
+    get:
+      operationId: listHostedZones
+      summary: List all hosted zones
+      description: Retrieves a list of the public and private hosted zones that are associated with the current AWS account.
+      tags:
+        - HostedZones
+      parameters:
+        - name: marker
+          in: query
+          description: If the response includes more than maxitems hosted zones, the value of NextMarker is the hosted zone ID of the first hosted zone in the next group.
+          schema:
+            type: string
+        - name: maxitems
+          in: query
+          description: The maximum number of hosted zones to be included in the response body.
+          schema:
+            type: integer
+            default: 100
+        - name: delegationsetid
+          in: query
+          description: If you're using reusable delegation sets and you want to list all of the hosted zones that are associated with a reusable delegation set, specify the ID of that delegation set.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListHostedZonesResponse'
+
+  /hostedzone/{hostedZoneId}:
+    get:
+      operationId: getHostedZone
+      summary: Get hosted zone details
+      description: Gets information about a specified hosted zone including the four name servers assigned to the hosted zone.
+      tags:
+        - HostedZones
+      parameters:
+        - name: hostedZoneId
+          in: path
+          required: true
+          description: The ID of the hosted zone that you want to get information about.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetHostedZoneResponse'
+
+  /hostedzone/{hostedZoneId}/rrset:
+    get:
+      operationId: listResourceRecordSets
+      summary: List resource record sets
+      description: Lists the resource record sets in a specified hosted zone.
+      tags:
+        - ResourceRecordSets
+      parameters:
+        - name: hostedZoneId
+          in: path
+          required: true
+          description: The ID of the hosted zone that contains the resource record sets.
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: The first name in the lexicographic ordering of resource record sets to return.
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: The type of resource record set to begin the record listing from.
+          schema:
+            $ref: '#/components/schemas/RecordType'
+        - name: identifier
+          in: query
+          description: Resource record sets that have a routing policy other than simple.
+          schema:
+            type: string
+        - name: maxitems
+          in: query
+          description: The maximum number of records to return.
+          schema:
+            type: integer
+            default: 300
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListResourceRecordSetsResponse'
+
+  /hostedzone/{hostedZoneId}/rrset/:
+    post:
+      operationId: changeResourceRecordSets
+      summary: Create, update, or delete resource record sets
+      description: Creates, changes, or deletes a resource record set, which contains authoritative DNS information for a specified domain name or subdomain name.
+      tags:
+        - ResourceRecordSets
+      parameters:
+        - name: hostedZoneId
+          in: path
+          required: true
+          description: The ID of the hosted zone that contains the resource record sets.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeResourceRecordSetsRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeResourceRecordSetsResponse'
+
+  /change/{changeId}:
+    get:
+      operationId: getChange
+      summary: Get change status
+      description: Returns the current status of a change batch request.
+      tags:
+        - ResourceRecordSets
+      parameters:
+        - name: changeId
+          in: path
+          required: true
+          description: The ID of the change batch request.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetChangeResponse'
+
+components:
+  schemas:
+    RecordType:
+      type: string
+      enum:
+        - A
+        - AAAA
+        - CAA
+        - CNAME
+        - DS
+        - MX
+        - NAPTR
+        - NS
+        - PTR
+        - SOA
+        - SPF
+        - SRV
+        - TXT
+
+    ChangeAction:
+      type: string
+      enum:
+        - CREATE
+        - DELETE
+        - UPSERT
+
+    ChangeStatus:
+      type: string
+      enum:
+        - PENDING
+        - INSYNC
+
+    HostedZone:
+      type: object
+      required:
+        - id
+        - name
+        - callerReference
+      properties:
+        id:
+          type: string
+          description: The ID that Amazon Route 53 assigned to the hosted zone when you created it.
+        name:
+          type: string
+          description: The name of the domain.
+        callerReference:
+          type: string
+          description: A unique string that identifies the request to create the hosted zone.
+        config:
+          $ref: '#/components/schemas/HostedZoneConfig'
+        resourceRecordSetCount:
+          type: integer
+          description: The number of resource record sets in the hosted zone.
+        linkedService:
+          $ref: '#/components/schemas/LinkedService'
+
+    HostedZoneConfig:
+      type: object
+      properties:
+        comment:
+          type: string
+          description: Any comments that you want to include about the hosted zone.
+        privateZone:
+          type: boolean
+          description: A value that indicates whether this is a private hosted zone.
+
+    LinkedService:
+      type: object
+      properties:
+        servicePrincipal:
+          type: string
+        description:
+          type: string
+
+    DelegationSet:
+      type: object
+      properties:
+        id:
+          type: string
+        callerReference:
+          type: string
+        nameServers:
+          type: array
+          items:
+            type: string
+
+    ResourceRecord:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          description: The current or new DNS record value.
+
+    AliasTarget:
+      type: object
+      required:
+        - hostedZoneId
+        - dnsName
+        - evaluateTargetHealth
+      properties:
+        hostedZoneId:
+          type: string
+          description: The hosted zone ID for the AWS resource.
+        dnsName:
+          type: string
+          description: The DNS domain name for the AWS resource.
+        evaluateTargetHealth:
+          type: boolean
+          description: When EvaluateTargetHealth is true, an alias resource record set inherits the health of the referenced AWS resource.
+
+    GeoLocation:
+      type: object
+      properties:
+        continentCode:
+          type: string
+        countryCode:
+          type: string
+        subdivisionCode:
+          type: string
+
+    ResourceRecordSet:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: The name of the domain.
+        type:
+          $ref: '#/components/schemas/RecordType'
+        setIdentifier:
+          type: string
+          description: Resource record sets that have a routing policy other than simple.
+        weight:
+          type: integer
+          description: Weighted resource record sets only.
+        region:
+          type: string
+          description: Latency-based resource record sets only.
+        geoLocation:
+          $ref: '#/components/schemas/GeoLocation'
+        failover:
+          type: string
+          enum:
+            - PRIMARY
+            - SECONDARY
+        multiValueAnswer:
+          type: boolean
+        ttl:
+          type: integer
+          description: The TTL in seconds.
+        resourceRecords:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceRecord'
+        aliasTarget:
+          $ref: '#/components/schemas/AliasTarget'
+        healthCheckId:
+          type: string
+
+    Change:
+      type: object
+      required:
+        - action
+        - resourceRecordSet
+      properties:
+        action:
+          $ref: '#/components/schemas/ChangeAction'
+        resourceRecordSet:
+          $ref: '#/components/schemas/ResourceRecordSet'
+
+    ChangeBatch:
+      type: object
+      required:
+        - changes
+      properties:
+        comment:
+          type: string
+          description: Optional comment about the changes.
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Change'
+
+    ChangeInfo:
+      type: object
+      required:
+        - id
+        - status
+        - submittedAt
+      properties:
+        id:
+          type: string
+          description: The ID of the change.
+        status:
+          $ref: '#/components/schemas/ChangeStatus'
+        submittedAt:
+          type: string
+          format: date-time
+          description: The date and time the change was submitted.
+        comment:
+          type: string
+
+    ListHostedZonesResponse:
+      type: object
+      required:
+        - hostedZones
+        - isTruncated
+        - maxItems
+      properties:
+        hostedZones:
+          type: array
+          items:
+            $ref: '#/components/schemas/HostedZone'
+        marker:
+          type: string
+        isTruncated:
+          type: boolean
+        nextMarker:
+          type: string
+        maxItems:
+          type: integer
+
+    GetHostedZoneResponse:
+      type: object
+      required:
+        - hostedZone
+      properties:
+        hostedZone:
+          $ref: '#/components/schemas/HostedZone'
+        delegationSet:
+          $ref: '#/components/schemas/DelegationSet'
+        vpCs:
+          type: array
+          items:
+            $ref: '#/components/schemas/VPC'
+
+    VPC:
+      type: object
+      properties:
+        vpcRegion:
+          type: string
+        vpcId:
+          type: string
+
+    ListResourceRecordSetsResponse:
+      type: object
+      required:
+        - resourceRecordSets
+        - isTruncated
+        - maxItems
+      properties:
+        resourceRecordSets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceRecordSet'
+        isTruncated:
+          type: boolean
+        nextRecordName:
+          type: string
+        nextRecordType:
+          $ref: '#/components/schemas/RecordType'
+        nextRecordIdentifier:
+          type: string
+        maxItems:
+          type: integer
+
+    ChangeResourceRecordSetsRequest:
+      type: object
+      required:
+        - changeBatch
+      properties:
+        changeBatch:
+          $ref: '#/components/schemas/ChangeBatch'
+
+    ChangeResourceRecordSetsResponse:
+      type: object
+      required:
+        - changeInfo
+      properties:
+        changeInfo:
+          $ref: '#/components/schemas/ChangeInfo'
+
+    GetChangeResponse:
+      type: object
+      required:
+        - changeInfo
+      properties:
+        changeInfo:
+          $ref: '#/components/schemas/ChangeInfo'
+
+  securitySchemes:
+    aws_auth:
+      type: http
+      scheme: bearer
+      description: AWS Signature Version 4 authentication
+
+security:
+  - aws_auth: []

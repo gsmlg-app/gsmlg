@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gsmlg/screens/app/error_screen.dart';
 import 'package:gsmlg/screens/app/splash_screen.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
-import 'package:gsmlg/screens/service/service_screen.dart';
+import 'package:gsmlg/screens/service/service_routes.dart';
 import 'package:gsmlg/screens/settings/settings_routes.dart';
 import 'package:gsmlg/screens/sign/auth_screen.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_routes.dart';
@@ -46,17 +46,7 @@ class AppRouter {
         );
       },
     ),
-    GoRoute(
-      name: ServiceScreen.name,
-      path: ServiceScreen.path,
-      pageBuilder: (context, state) {
-        return NoTransitionPage<void>(
-          key: state.pageKey,
-          restorationId: state.pageKey.value,
-          child: const ServiceScreen(),
-        );
-      },
-    ),
+    serviceRoutes(),
     toolboxRoutes(),
     GoRoute(
       name: AuthScreen.name,

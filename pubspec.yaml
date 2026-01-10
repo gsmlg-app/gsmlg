@@ -19,11 +19,13 @@ workspace:
   - app_bloc/whois_history
   - app_bloc/bluetooth
   - app_bloc/camera
+  - app_bloc/domain
   - app_widget/adaptive
   - app_widget/artwork
   - app_widget/feedback
   - app_widget/web_view
   - app_widget/components
+  - app_widget/data_list
   - app_plugin/client_info/client_info
   - app_plugin/client_info/client_info_platform_interface
   - app_plugin/client_info/client_info_android
@@ -31,6 +33,8 @@ workspace:
   - app_plugin/client_info/client_info_linux
   - app_plugin/client_info/client_info_macos
   - app_plugin/client_info/client_info_windows
+  - app_api/route53
+  - app_api/cloudflare_dns
   - third_party/form_bloc
   - third_party/flutter_form_bloc
   - third_party/flutter_adaptive_scaffold
@@ -64,7 +68,11 @@ dependencies:
   camera: ^0.11.1
   camera_macos: any
 
+  dio: any
+
   # workspace packages
+  cloudflare_dns: any
+  route53: any
   app_database: any
   app_theme: any
   app_locale: any
@@ -75,6 +83,7 @@ dependencies:
   whois_history_bloc: any
   bluetooth_bloc: any
   camera_bloc: any
+  domain_bloc: any
   app_artwork: any
   app_client_info: any
   app_feedback: any
@@ -83,6 +92,7 @@ dependencies:
   app_logging: any
   app_web_view: any
   app_components: any
+  app_data_list: any
   gsmlg_whois: any
 
 dev_dependencies:

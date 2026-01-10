@@ -44,8 +44,15 @@ class ServiceScreen extends StatelessWidget {
               crossAxisCount: (screenSize.width / 300).ceil(),
               children: <Widget>[
                 AppGridTile(
-                  onTap: () => context.go('/service/semaphore'),
-                  child: const Text('Semaphore'),
+                  onTap: () => context.go('/service/domain'),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.dns, size: 48),
+                      SizedBox(height: 8),
+                      Text('Domain'),
+                    ],
+                  ),
                 ),
               ],
             ),

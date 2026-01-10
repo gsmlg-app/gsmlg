@@ -1,0 +1,19 @@
+// coverage:ignore-file
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, unused_import, invalid_annotation_target, unnecessary_import
+
+import 'package:json_annotation/json_annotation.dart';
+
+@JsonEnum()
+enum Direction {
+  @JsonValue('asc')
+  asc,
+  @JsonValue('desc')
+  desc;
+
+  @override
+  String toString() => switch (this) {
+        Direction.asc => 'asc',
+        Direction.desc => 'desc',
+      };
+}

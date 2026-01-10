@@ -1,0 +1,29 @@
+swagger_parser:
+  schema_path: ./openapi.yaml
+  output_directory: lib/src
+  name: "route53"
+  language: dart
+  json_serializer: json_serializable
+  default_content_type: "application/json"
+  extras_parameter_by_default: false
+  dio_options_parameter_by_default: false
+  root_client: true
+  root_client_name: "Route53"
+  export_file: true
+  put_in_folder: false
+  put_clients_in_folder: false
+  merge_clients: false
+  client_postfix: Client
+  path_method_name: false
+  enums_to_json: false
+  enums_parent_prefix: true
+  unknown_enum_value: false
+  mark_files_as_generated: true
+  original_http_response: false
+  replacement_rules:
+    - pattern: "[0-9]+"
+      replacement: ""
+  skipped_parameters: []
+  use_freezed3: true
+  fallback_union: ""
+  use_multipart_file: false

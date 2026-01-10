@@ -1,0 +1,21 @@
+name: domain_bloc
+version: 1.0.0
+description: BLoC for managing DNS zones and records with AWS Route 53 and Cloudflare
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  bloc: any
+  equatable: any
+  dio: any
+  drift: any
+  app_database: any
+  route53: any
+  cloudflare_dns: any
+
+dev_dependencies:
+  test: ^1.16.0
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
