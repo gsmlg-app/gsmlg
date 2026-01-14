@@ -40,6 +40,7 @@ workspace:
   - third_party/flutter_adaptive_scaffold
   - third_party/settings_ui
   - third_party/gsmlg_whois
+  - app_form/camera_settings
 
 dependencies:
   flutter:
@@ -94,6 +95,9 @@ dependencies:
   app_components: any
   app_data_list: any
   gsmlg_whois: any
+  form_bloc: any
+  flutter_form_bloc: any
+  camera_settings_form: any
 
 dev_dependencies:
   flutter_test:
