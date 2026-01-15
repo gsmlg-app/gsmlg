@@ -35,9 +35,10 @@ target 'Runner' do
   target 'RunnerTests' do
     inherit! :search_paths
   end
-  target 'NewsWidgetsExtension' do
-    inherit! :search_paths
-  end
+  # TODO: Add NewsWidgetsExtension target to Runner.xcodeproj first
+  # target 'NewsWidgetsExtension' do
+  #   inherit! :search_paths
+  # end
 end
 
 post_install do |installer|
