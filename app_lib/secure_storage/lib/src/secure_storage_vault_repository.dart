@@ -15,7 +15,28 @@ class SecureStorageVaultRepository implements VaultRepository {
   SecureStorageVaultRepository({
     FlutterSecureStorage? storage,
     this.namespace,
-  }) : _storage = storage ?? const FlutterSecureStorage();
+  }) : _storage = storage ?? _createDefaultStorage();
+
+  /// Creates default FlutterSecureStorage with platform-specific options.
+  static FlutterSecureStorage _createDefaultStorage() {
+    return const FlutterSecureStorage(
+      aOptions: AndroidOptions(
+        encryptedSharedPreferences: true,
+        sharedPreferencesName: 'gsmlg_secure_prefs',
+        preferencesKeyPrefix: 'gsmlg_',
+      ),
+      iOptions: IOSOptions(
+        accessibility: KeychainAccessibility.first_unlock_this_device,
+        accountName: 'gsmlg_vault',
+      ),
+      mOptions: MacOsOptions(
+        accessibility: KeychainAccessibility.first_unlock_this_device,
+        accountName: 'gsmlg_vault',
+      ),
+      lOptions: LinuxOptions(),
+      wOptions: WindowsOptions(),
+    );
+  }
 
   final FlutterSecureStorage _storage;
 
