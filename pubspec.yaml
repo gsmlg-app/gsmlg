@@ -92,6 +92,7 @@ dependencies:
   app_adaptive_widgets: any
   settings_ui: any
   app_logging: any
+  app_secure_storage: any
   app_web_view: any
   app_components: any
   app_data_list: any

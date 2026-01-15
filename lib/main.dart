@@ -4,6 +4,7 @@ import 'package:app_database/app_database.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:app_logging/app_logging.dart';
 import 'package:app_provider/app_provider.dart';
+import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:auth_bloc/auth_bloc.dart';
 import 'package:bluetooth_bloc/bluetooth_bloc.dart';
 import 'package:camera_bloc/camera_bloc.dart';
@@ -45,10 +46,15 @@ void main(List<String> args) async {
   final sharedPrefs = await SharedPreferences.getInstance();
   final database = AppDatabase();
 
+  // Initialize secure storage for API credentials
+  final vault = SecureStorageVaultRepository(namespace: 'gsmlg');
+  final credentialsService = CredentialsService(vault);
+
   runApp(
     MainProvider(
       sharedPrefs: sharedPrefs,
       database: database,
+      vault: vault,
       child: MultiBlocProvider(
         providers: [
           BlocProvider<ThemeBloc>(
@@ -70,10 +76,10 @@ void main(List<String> args) async {
             create: (context) => CameraBloc(),
           ),
           BlocProvider<ZoneBloc>(
-            create: (context) => ZoneBloc(database),
+            create: (context) => ZoneBloc(database, credentialsService),
           ),
           BlocProvider<RecordBloc>(
-            create: (context) => RecordBloc(),
+            create: (context) => RecordBloc(credentialsService),
           ),
         ],
         child: MaterialApp(

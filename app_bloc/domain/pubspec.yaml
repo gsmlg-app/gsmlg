@@ -12,6 +12,7 @@ dependencies:
   dio: any
   drift: any
   app_database: any
+  app_secure_storage: any
   route53: any
   cloudflare_dns: any
 
