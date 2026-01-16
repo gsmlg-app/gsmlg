@@ -1,11 +1,11 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 → 1.1.0
+- Version change: 1.1.0 → 1.2.0
 - Modified principles:
-  - "IV. Code Generation First" - Added native_plugin as preferred option
-  - "V. Testing Co-location" - Clarified test_bricks is template-development only
+  - Title changed: "Flutter App Template Constitution" → "GSMLG Project Constitution"
+  - "App Initialization Pattern" - Added vault parameter and CredentialsService
 - Added sections:
-  - Template Management subsection under Development Standards
+  - "VI. Secure Credential Storage" - New principle for secrets management
 - Removed sections: None
 - Templates requiring updates:
   - .specify/templates/plan-template.md ✅ (no changes needed - generic constitution check)
@@ -14,7 +14,7 @@ Sync Impact Report:
 - Follow-up TODOs: None
 -->
 
-# Flutter App Template Constitution
+# GSMLG Project Constitution
 
 ## Core Principles
 
@@ -22,10 +22,12 @@ Sync Impact Report:
 
 All functionality MUST be organized into purpose-driven packages within the monorepo structure:
 
-- **app_lib/**: Core utilities (database, theme, locale, logging, provider)
+- **app_lib/**: Core utilities (database, theme, locale, logging, provider, secure_storage)
 - **app_bloc/**: BLoC state management packages
 - **app_widget/**: Reusable UI components
 - **app_plugin/**: Native platform plugins (simple or federated architecture)
+- **app_api/**: Generated API clients (Route53, Cloudflare, etc.)
+- **app_form/**: Form BLoC packages with validation logic
 - **third_party/**: Modified third-party packages
 - **bricks/**: Mason templates for code generation
 
@@ -76,6 +78,21 @@ Tests MUST be co-located with their packages:
 - Use `melos run test:flutter` for Flutter packages
 - Brick tests in `test_bricks/` are for template development only (removed after project setup)
 
+### VI. Secure Credential Storage
+
+Secrets and API credentials MUST be stored in platform-native secure storage:
+
+- NEVER store credentials as plain text in the database
+- Use `app_secure_storage` package with `VaultRepository` abstraction
+- Create service classes (e.g., `CredentialsService`) for credential operations
+- Platform-specific storage mechanisms:
+  - iOS/macOS: Keychain Services with proper entitlements
+  - Android: EncryptedSharedPreferences
+  - Linux: libsecret
+  - Windows: Windows Credential Manager
+- Configure platform entitlements for Keychain access (iOS/macOS)
+- Use namespaced keys to avoid collisions (e.g., `zone_credentials_{id}`)
+
 ## Development Standards
 
 ### Code Style
@@ -99,14 +116,29 @@ class ExampleScreen extends StatelessWidget {
 
 ### App Initialization Pattern
 
-App startup MUST follow the MainProvider pattern:
+App startup MUST follow the MainProvider pattern with secure storage:
 
 ```dart
-MainProvider(
-  sharedPrefs: sharedPrefs,
-  database: database,
-  child: MaterialApp.router(...),
-)
+// Initialize secure storage
+final vault = SecureStorageVaultRepository(namespace: 'gsmlg');
+final credentialsService = CredentialsService(vault);
+
+runApp(
+  MainProvider(
+    sharedPrefs: sharedPrefs,
+    database: database,
+    vault: vault,
+    child: MultiBlocProvider(
+      providers: [
+        // BLoCs that need credentials use credentialsService
+        BlocProvider<ZoneBloc>(
+          create: (context) => ZoneBloc(database, credentialsService),
+        ),
+      ],
+      child: MaterialApp.router(...),
+    ),
+  ),
+);
 ```
 
 ### Template Management
@@ -127,10 +159,11 @@ Before merging any PR:
 3. `melos run test` MUST pass for affected packages
 4. New packages MUST include test coverage
 5. New screens/widgets MUST be generated via Mason templates (when applicable)
+6. Credentials MUST NOT be stored in database or committed to repository
 
 ## Governance
 
-This constitution establishes the foundational rules for the Flutter App Template project.
+This constitution establishes the foundational rules for the GSMLG project.
 All contributors and AI assistants MUST verify compliance with these principles.
 
 **Amendment Process**:
@@ -149,4 +182,4 @@ All contributors and AI assistants MUST verify compliance with these principles.
 - Violations require documented justification in Complexity Tracking
 - Use CLAUDE.md as runtime development guidance
 
-**Version**: 1.1.0 | **Ratified**: 2025-01-05 | **Last Amended**: 2025-01-06
+**Version**: 1.2.0 | **Ratified**: 2025-01-05 | **Last Amended**: 2026-01-16
