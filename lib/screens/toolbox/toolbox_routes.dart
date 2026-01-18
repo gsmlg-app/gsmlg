@@ -3,6 +3,7 @@ import 'package:gsmlg/screens/toolbox/bluetooth/bluetooth_device_screen.dart';
 import 'package:gsmlg/screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_macos_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_screen.dart';
+import 'package:gsmlg/screens/toolbox/ip_geo/ip_geo_screen.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_history_screen.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_history_show_screen.dart';
@@ -108,6 +109,18 @@ GoRoute toolboxRoutes() => GoRoute(
               key: state.pageKey,
               restorationId: state.pageKey.value,
               child: const CameraMacosScreen(),
+            );
+          },
+        ),
+        // IP Geolocation route
+        GoRoute(
+          name: IpGeoScreen.name,
+          path: IpGeoScreen.path,
+          pageBuilder: (context, state) {
+            return NoTransitionPage<void>(
+              key: state.pageKey,
+              restorationId: state.pageKey.value,
+              child: const IpGeoScreen(),
             );
           },
         ),

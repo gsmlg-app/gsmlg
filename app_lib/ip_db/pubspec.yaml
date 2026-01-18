@@ -1,0 +1,23 @@
+name: ip_db
+description: IP to City database library using DB-IP MMDB database
+version: 1.0.0
+publish: none
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  maxminddb: ^1.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  lints: ^6.0.0
+
+flutter:
+  uses-material-design: false
+  assets:
+    - assets/dbip-city-lite.mmdb

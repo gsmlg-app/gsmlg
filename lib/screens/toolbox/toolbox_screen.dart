@@ -11,6 +11,7 @@ import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_macos_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_screen.dart';
+import 'package:gsmlg/screens/toolbox/ip_geo/ip_geo_screen.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_screen.dart';
 
 class ToolboxScreen extends StatelessWidget {
@@ -65,6 +66,10 @@ class ToolboxScreen extends StatelessWidget {
                 AppGridTile(
                   onTap: () => context.goNamed(WhoisScreen.name),
                   child: const Text('Whois'),
+                ),
+                AppGridTile(
+                  onTap: () => context.goNamed(IpGeoScreen.name),
+                  child: const Text('IP Geolocation'),
                 ),
                 if (_isBluetoothPlatform)
                   AppGridTile(

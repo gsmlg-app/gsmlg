@@ -42,6 +42,7 @@ workspace:
   - third_party/settings_ui
   - third_party/gsmlg_whois
   - app_form/camera_settings
+  - app_lib/ip_db
 
 dependencies:
   flutter:
@@ -100,6 +101,7 @@ dependencies:
   form_bloc: any
   flutter_form_bloc: any
   camera_settings_form: any
+  ip_db: any
 
 dev_dependencies:
   flutter_test:

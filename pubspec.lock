@@ -417,6 +417,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.7"
+  extendedip:
+    dependency: transitive
+    description:
+      name: extendedip
+      sha256: c615d49c73900ee00a747316b8d3bd2d5bb81094c3714ee927f098115e6df7e6
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   fake_async:
     dependency: transitive
     description:
@@ -893,6 +901,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.11.1"
+  maxminddb:
+    dependency: transitive
+    description:
+      name: maxminddb
+      sha256: "49dc54a490e5c2e48e6096f6fa8f830707b83a384095d9eb57176a5d1b88c397"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.1"
   melos:
     dependency: "direct dev"
     description:
