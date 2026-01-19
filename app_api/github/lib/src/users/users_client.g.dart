@@ -18,12 +18,12 @@ class _UsersClient implements UsersClient {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<GitHubUserResponse> getAuthenticatedUser() async {
+  Future<User> getAuthenticatedUser() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<GitHubUserResponse>(
+    final _options = _setStreamType<User>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -34,9 +34,9 @@ class _UsersClient implements UsersClient {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late GitHubUserResponse _value;
+    late User _value;
     try {
-      _value = GitHubUserResponse.fromJson(_result.data!);
+      _value = User.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;
@@ -45,35 +45,8 @@ class _UsersClient implements UsersClient {
   }
 
   @override
-  Future<GitHubUserResponse> getUser({required String username}) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<GitHubUserResponse>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/users/${username}',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late GitHubUserResponse _value;
-    try {
-      _value = GitHubUserResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
-  Future<List<OrgResponse>> listUserOrgs({
-    int? perPage = 100,
+  Future<List<Organization>> listOrgsForAuthenticatedUser({
+    int? perPage = 30,
     int? page = 1,
   }) async {
     final _extra = <String, dynamic>{};
@@ -84,7 +57,7 @@ class _UsersClient implements UsersClient {
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<OrgResponse>>(
+    final _options = _setStreamType<List<Organization>>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -95,47 +68,10 @@ class _UsersClient implements UsersClient {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<OrgResponse> _value;
+    late List<Organization> _value;
     try {
       _value = _result.data!
-          .map((dynamic i) => OrgResponse.fromJson(i as Map<String, dynamic>))
-          .toList();
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
-  Future<List<OrgResponse>> listOrgsForUser({
-    required String username,
-    int? perPage = 100,
-    int? page = 1,
-  }) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{
-      r'per_page': perPage,
-      r'page': page,
-    };
-    queryParameters.removeWhere((k, v) => v == null);
-    final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<OrgResponse>>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/users/${username}/orgs',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<OrgResponse> _value;
-    try {
-      _value = _result.data!
-          .map((dynamic i) => OrgResponse.fromJson(i as Map<String, dynamic>))
+          .map((dynamic i) => Organization.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);

@@ -1,5 +1,6 @@
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:bloc/bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:github_api/github_api.dart';
@@ -23,8 +24,23 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
 
   final VaultRepository _vault;
   GitHubApi? _api;
+  Dio? _dio;
 
   static const String _patKey = 'github_pat';
+  static const String _baseUrl = 'https://api.github.com';
+
+  /// Creates a Dio instance configured for GitHub API.
+  Dio _createDio(String token) {
+    final dio = Dio(BaseOptions(
+      baseUrl: _baseUrl,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    ));
+    return dio;
+  }
 
   /// Get the current API instance (if connected).
   GitHubApi? get api => _api;
@@ -42,11 +58,14 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
         return;
       }
 
-      _api = GitHubApi(token: pat);
+      _dio = _createDio(pat);
+      _api = GitHubApi(_dio!, baseUrl: _baseUrl);
       final userResponse = await _api!.users.getAuthenticatedUser();
       final user = GitHubUser.fromApiResponse(userResponse);
       emit(GitHubConnected(user: user, pat: pat));
     } catch (e) {
+      _dio?.close();
+      _dio = null;
       _api = null;
       emit(GitHubError(message: e.toString()));
     }
@@ -60,7 +79,8 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
 
     try {
       // Validate PAT by fetching user info
-      _api = GitHubApi(token: event.pat);
+      _dio = _createDio(event.pat);
+      _api = GitHubApi(_dio!, baseUrl: _baseUrl);
       final userResponse = await _api!.users.getAuthenticatedUser();
       final user = GitHubUser.fromApiResponse(userResponse);
 
@@ -69,6 +89,8 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
 
       emit(GitHubConnected(user: user, pat: event.pat));
     } catch (e) {
+      _dio?.close();
+      _dio = null;
       _api = null;
       final message = e.toString();
       if (message.contains('401')) {
@@ -86,7 +108,8 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
     emit(const GitHubLoading());
 
     try {
-      _api?.close();
+      _dio?.close();
+      _dio = null;
       _api = null;
       await _vault.delete(key: _patKey);
       emit(const GitHubDisconnected());
@@ -106,7 +129,8 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
 
     try {
       if (_api == null) {
-        _api = GitHubApi(token: currentState.pat);
+        _dio = _createDio(currentState.pat);
+        _api = GitHubApi(_dio!, baseUrl: _baseUrl);
       }
       final userResponse = await _api!.users.getAuthenticatedUser();
       final user = GitHubUser.fromApiResponse(userResponse);
@@ -118,7 +142,7 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
 
   @override
   Future<void> close() {
-    _api?.close();
+    _dio?.close();
     return super.close();
   }
 }

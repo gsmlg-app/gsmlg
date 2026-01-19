@@ -21,7 +21,7 @@ class _ActionsClient implements ActionsClient {
   Future<ListWorkflowsResponse> listWorkflows({
     required String owner,
     required String repo,
-    int? perPage = 100,
+    int? perPage = 30,
     int? page = 1,
   }) async {
     final _extra = <String, dynamic>{};
@@ -54,55 +54,32 @@ class _ActionsClient implements ActionsClient {
   }
 
   @override
-  Future<WorkflowResponse> getWorkflow({
-    required String owner,
-    required String repo,
-    required String workflowId,
-  }) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<WorkflowResponse>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/repos/${owner}/${repo}/actions/workflows/${workflowId}',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late WorkflowResponse _value;
-    try {
-      _value = WorkflowResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
   Future<ListWorkflowRunsResponse> listWorkflowRuns({
     required String owner,
     required String repo,
+    int? perPage = 30,
+    int? page = 1,
+    bool? excludePullRequests = false,
     String? actor,
     String? branch,
     String? event,
-    String? status,
-    int? perPage = 30,
-    int? page = 1,
+    Status? status,
+    DateTime? created,
+    int? checkSuiteId,
+    String? headSha,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
+      r'per_page': perPage,
+      r'page': page,
+      r'exclude_pull_requests': excludePullRequests,
       r'actor': actor,
       r'branch': branch,
       r'event': event,
       r'status': status,
-      r'per_page': perPage,
-      r'page': page,
+      r'created': created?.toIso8601String(),
+      r'check_suite_id': checkSuiteId,
+      r'head_sha': headSha,
     };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
@@ -133,21 +110,29 @@ class _ActionsClient implements ActionsClient {
     required String owner,
     required String repo,
     required String workflowId,
+    int? perPage = 30,
+    int? page = 1,
+    bool? excludePullRequests = false,
     String? actor,
     String? branch,
     String? event,
-    String? status,
-    int? perPage = 30,
-    int? page = 1,
+    Status? status,
+    DateTime? created,
+    int? checkSuiteId,
+    String? headSha,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
+      r'per_page': perPage,
+      r'page': page,
+      r'exclude_pull_requests': excludePullRequests,
       r'actor': actor,
       r'branch': branch,
       r'event': event,
       r'status': status,
-      r'per_page': perPage,
-      r'page': page,
+      r'created': created?.toIso8601String(),
+      r'check_suite_id': checkSuiteId,
+      r'head_sha': headSha,
     };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
@@ -174,47 +159,17 @@ class _ActionsClient implements ActionsClient {
   }
 
   @override
-  Future<WorkflowRunResponse> getWorkflowRun({
-    required String owner,
-    required String repo,
-    required int runId,
-  }) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
-    final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<WorkflowRunResponse>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/repos/${owner}/${repo}/actions/runs/${runId}',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late WorkflowRunResponse _value;
-    try {
-      _value = WorkflowRunResponse.fromJson(_result.data!);
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
   Future<void> createWorkflowDispatch({
     required String owner,
     required String repo,
     required String workflowId,
-    required WorkflowDispatchRequest request,
+    required WorkflowDispatchRequest body,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = request;
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
     final _options = _setStreamType<void>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
@@ -229,30 +184,42 @@ class _ActionsClient implements ActionsClient {
   }
 
   @override
-  Future<void> rerunWorkflow({
+  Future<WorkflowRun> getWorkflowRun({
     required String owner,
     required String repo,
     required int runId,
+    bool? excludePullRequests = false,
   }) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{
+      r'exclude_pull_requests': excludePullRequests,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<void>(
-      Options(method: 'POST', headers: _headers, extra: _extra)
+    final _options = _setStreamType<WorkflowRun>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/repos/${owner}/${repo}/actions/runs/${runId}/rerun',
+            '/repos/${owner}/${repo}/actions/runs/${runId}',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    await _dio.fetch<void>(_options);
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late WorkflowRun _value;
+    try {
+      _value = WorkflowRun.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options);
+      rethrow;
+    }
+    return _value;
   }
 
   @override
-  Future<void> cancelWorkflowRun({
+  Future<dynamic> cancelWorkflowRun({
     required String owner,
     required String repo,
     required int runId,
@@ -261,7 +228,7 @@ class _ActionsClient implements ActionsClient {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<void>(
+    final _options = _setStreamType<dynamic>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -271,30 +238,65 @@ class _ActionsClient implements ActionsClient {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    await _dio.fetch<void>(_options);
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
   }
 
   @override
-  Future<void> deleteWorkflowRun({
+  Future<dynamic> rerunWorkflow({
     required String owner,
     required String repo,
     required int runId,
+    RerunWorkflowRequest? body,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<void>(
-      Options(method: 'DELETE', headers: _headers, extra: _extra)
+    final _data = <String, dynamic>{};
+    _data.addAll(body?.toJson() ?? <String, dynamic>{});
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/repos/${owner}/${repo}/actions/runs/${runId}',
+            '/repos/${owner}/${repo}/actions/runs/${runId}/rerun',
             queryParameters: queryParameters,
             data: _data,
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    await _dio.fetch<void>(_options);
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> rerunWorkflowFailedJobs({
+    required String owner,
+    required String repo,
+    required int runId,
+    RerunWorkflowRequest? body,
+  }) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    queryParameters.removeWhere((k, v) => v == null);
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body?.toJson() ?? <String, dynamic>{});
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/repos/${owner}/${repo}/actions/runs/${runId}/rerun-failed-jobs',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
   }
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {

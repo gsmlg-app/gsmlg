@@ -58,7 +58,7 @@ class GitHubRepo extends Equatable {
     );
   }
 
-  factory GitHubRepo.fromApiResponse(RepoResponse response) {
+  factory GitHubRepo.fromApiResponse(Repository response) {
     return GitHubRepo(
       id: response.id,
       name: response.name,
@@ -66,8 +66,8 @@ class GitHubRepo extends Equatable {
       owner: GitHubOwner.fromApiResponse(response.owner),
       description: response.description,
       htmlUrl: response.htmlUrl,
-      private: response.isPrivate,
-      fork: response.fork ?? false,
+      private: response.private,
+      fork: response.fork,
       stargazersCount: response.stargazersCount ?? 0,
       watchersCount: response.watchersCount ?? 0,
       forksCount: response.forksCount ?? 0,
@@ -107,7 +107,7 @@ class GitHubOwner extends Equatable {
     );
   }
 
-  factory GitHubOwner.fromApiResponse(RepoOwner response) {
+  factory GitHubOwner.fromApiResponse(SimpleUser response) {
     return GitHubOwner(
       id: response.id,
       login: response.login,
@@ -152,12 +152,12 @@ class GitHubWorkflow extends Equatable {
     );
   }
 
-  factory GitHubWorkflow.fromApiResponse(WorkflowResponse response) {
+  factory GitHubWorkflow.fromApiResponse(Workflow response) {
     return GitHubWorkflow(
       id: response.id,
       name: response.name,
       path: response.path,
-      state: response.state,
+      state: response.state.name,
       htmlUrl: response.htmlUrl,
       badgeUrl: response.badgeUrl,
     );
@@ -201,7 +201,7 @@ class GitHubWorkflowRun extends Equatable {
   bool get isCompleted => status == 'completed';
   bool get isSuccess => conclusion == 'success';
   bool get isFailure => conclusion == 'failure';
-  bool get isRunning => status == 'in_progress' || status == 'queued';
+  bool get isRunning => status == 'inProgress' || status == 'queued';
 
   factory GitHubWorkflowRun.fromJson(Map<String, dynamic> json) {
     return GitHubWorkflowRun(
@@ -224,13 +224,13 @@ class GitHubWorkflowRun extends Equatable {
     );
   }
 
-  factory GitHubWorkflowRun.fromApiResponse(WorkflowRunResponse response) {
+  factory GitHubWorkflowRun.fromApiResponse(WorkflowRun response) {
     return GitHubWorkflowRun(
       id: response.id,
       name: response.name ?? response.displayTitle,
       workflowId: response.workflowId,
-      status: response.status ?? 'unknown',
-      conclusion: response.conclusion,
+      status: response.status?.name ?? 'unknown',
+      conclusion: response.conclusion?.name,
       headBranch: response.headBranch,
       headSha: response.headSha,
       htmlUrl: response.htmlUrl,
@@ -269,7 +269,7 @@ class GitHubOrg extends Equatable {
     );
   }
 
-  factory GitHubOrg.fromApiResponse(OrgResponse response) {
+  factory GitHubOrg.fromApiResponse(Organization response) {
     return GitHubOrg(
       id: response.id,
       login: response.login,

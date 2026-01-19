@@ -33,7 +33,7 @@ class GitHubReposBloc extends Bloc<GitHubReposEvent, GitHubReposState> {
       final userRepos = userRepoResponses.map(GitHubRepo.fromApiResponse).toList();
 
       // Fetch organizations
-      final orgResponses = await _api.users.listUserOrgs();
+      final orgResponses = await _api.users.listOrgsForAuthenticatedUser();
       final orgs = orgResponses.map(GitHubOrg.fromApiResponse).toList();
 
       emit(GitHubReposLoaded(
@@ -54,7 +54,7 @@ class GitHubReposBloc extends Bloc<GitHubReposEvent, GitHubReposState> {
     if (currentState is! GitHubReposLoaded) return;
 
     try {
-      final orgResponses = await _api.users.listUserOrgs();
+      final orgResponses = await _api.users.listOrgsForAuthenticatedUser();
       final orgs = orgResponses.map(GitHubOrg.fromApiResponse).toList();
       emit(currentState.copyWith(orgs: orgs));
     } catch (e) {
@@ -87,16 +87,16 @@ class GitHubReposBloc extends Bloc<GitHubReposEvent, GitHubReposState> {
     add(const GitHubReposFetch());
   }
 
-  Future<List<RepoResponse>> _fetchAllUserRepos() async {
-    final repos = <RepoResponse>[];
+  Future<List<Repository>> _fetchAllUserRepos() async {
+    final repos = <Repository>[];
     int page = 1;
     const perPage = 100;
 
     while (true) {
-      final response = await _api.repos.listUserRepos(
+      final response = await _api.repos.listReposForAuthenticatedUser(
         perPage: perPage,
         page: page,
-        sort: 'updated',
+        sort: Sort.updated,
         affiliation: 'owner,collaborator',
       );
 
@@ -109,17 +109,17 @@ class GitHubReposBloc extends Bloc<GitHubReposEvent, GitHubReposState> {
     return repos;
   }
 
-  Future<List<RepoResponse>> _fetchAllOrgRepos(String orgLogin) async {
-    final repos = <RepoResponse>[];
+  Future<List<Repository>> _fetchAllOrgRepos(String orgLogin) async {
+    final repos = <Repository>[];
     int page = 1;
     const perPage = 100;
 
     while (true) {
-      final response = await _api.repos.listOrgRepos(
+      final response = await _api.orgs.listOrgRepos(
         org: orgLogin,
         perPage: perPage,
         page: page,
-        sort: 'updated',
+        sort: Sort.updated,
       );
 
       if (response.isEmpty) break;

@@ -99,7 +99,7 @@ class GitHubActionsBloc extends Bloc<GitHubActionsEvent, GitHubActionsState> {
         owner: _owner,
         repo: _repo,
         workflowId: event.workflowId.toString(),
-        request: WorkflowDispatchRequest(
+        body: WorkflowDispatchRequest(
           ref: event.ref,
           inputs: event.inputs,
         ),

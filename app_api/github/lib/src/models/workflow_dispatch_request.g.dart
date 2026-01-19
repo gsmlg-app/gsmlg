@@ -1,14 +1,14 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'dispatch_request.dart';
+part of 'workflow_dispatch_request.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-_WorkflowDispatchRequest _$WorkflowDispatchRequestFromJson(
+WorkflowDispatchRequest _$WorkflowDispatchRequestFromJson(
   Map<String, dynamic> json,
-) => _WorkflowDispatchRequest(
+) => WorkflowDispatchRequest(
   ref: json['ref'] as String,
   inputs: (json['inputs'] as Map<String, dynamic>?)?.map(
     (k, e) => MapEntry(k, e as String),
@@ -16,5 +16,5 @@ _WorkflowDispatchRequest _$WorkflowDispatchRequestFromJson(
 );
 
 Map<String, dynamic> _$WorkflowDispatchRequestToJson(
-  _WorkflowDispatchRequest instance,
+  WorkflowDispatchRequest instance,
 ) => <String, dynamic>{'ref': instance.ref, 'inputs': instance.inputs};

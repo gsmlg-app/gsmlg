@@ -52,7 +52,7 @@ class GitHubPinnedReposBloc
 
     try {
       // Fetch repo details from API if we have owner/repo
-      RepoResponse? repoDetails;
+      Repository? repoDetails;
       if (event.owner != null && event.repoName != null) {
         repoDetails = await _api.repos.getRepo(
           owner: event.owner!,
@@ -68,7 +68,7 @@ class GitHubPinnedReposBloc
         ownerLogin: repoDetails?.owner.login ?? event.owner ?? '',
         ownerAvatarUrl: Value(repoDetails?.owner.avatarUrl),
         description: Value(repoDetails?.description),
-        isPrivate: Value(repoDetails?.isPrivate ?? false),
+        isPrivate: Value(repoDetails?.private ?? false),
         defaultBranch: Value(repoDetails?.defaultBranch ?? 'main'),
         stargazersCount: Value(repoDetails?.stargazersCount ?? 0),
       );

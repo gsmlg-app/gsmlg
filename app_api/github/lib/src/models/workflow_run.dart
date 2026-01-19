@@ -1,57 +1,142 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+// coverage:ignore-file
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, unused_import, invalid_annotation_target, unnecessary_import
 
-part 'workflow_run.freezed.dart';
+import 'package:json_annotation/json_annotation.dart';
+
+import 'commit.dart';
+import 'minimal_repository.dart';
+import 'pull_request_minimal.dart';
+import 'referenced_workflow.dart';
+import 'simple_user.dart';
+import 'workflow_run_conclusion.dart';
+import 'workflow_run_status.dart';
+
 part 'workflow_run.g.dart';
 
-/// GitHub workflow run actor.
-@freezed
-class RunActor with _$RunActor {
-  const factory RunActor({
-    required int id,
-    required String login,
-    @JsonKey(name: 'avatar_url') String? avatarUrl,
-  }) = _RunActor;
+/// A GitHub Actions workflow run
+@JsonSerializable()
+class WorkflowRun {
+  const WorkflowRun({
+    required this.workflowId,
+    required this.event,
+    required this.headSha,
+    required this.id,
+    this.headBranch,
+    this.name,
+    this.nodeId,
+    this.path,
+    this.displayTitle,
+    this.runNumber,
+    this.runAttempt,
+    this.referencedWorkflows,
+    this.checkSuiteId,
+    this.status,
+    this.conclusion,
+    this.checkSuiteNodeId,
+    this.url,
+    this.htmlUrl,
+    this.pullRequests,
+    this.createdAt,
+    this.updatedAt,
+    this.actor,
+    this.headRepository,
+    this.runStartedAt,
+    this.jobsUrl,
+    this.logsUrl,
+    this.checkSuiteUrl,
+    this.artifactsUrl,
+    this.cancelUrl,
+    this.rerunUrl,
+    this.previousAttemptUrl,
+    this.workflowUrl,
+    this.headCommit,
+    this.repository,
+    this.triggeringActor,
+  });
+  
+  factory WorkflowRun.fromJson(Map<String, Object?> json) => _$WorkflowRunFromJson(json);
+  
+  /// The ID of the workflow run
+  final int id;
 
-  factory RunActor.fromJson(Map<String, dynamic> json) =>
-      _$RunActorFromJson(json);
-}
+  /// The name of the workflow run
+  final String? name;
+  @JsonKey(name: 'node_id')
+  final String? nodeId;
+  @JsonKey(name: 'check_suite_id')
+  final int? checkSuiteId;
+  @JsonKey(name: 'check_suite_node_id')
+  final String? checkSuiteNodeId;
 
-/// GitHub workflow run model.
-@freezed
-class WorkflowRunResponse with _$WorkflowRunResponse {
-  const factory WorkflowRunResponse({
-    required int id,
-    @JsonKey(name: 'node_id') String? nodeId,
-    String? name,
-    @JsonKey(name: 'head_branch') String? headBranch,
-    @JsonKey(name: 'head_sha') String? headSha,
-    String? path,
-    @JsonKey(name: 'display_title') String? displayTitle,
-    @JsonKey(name: 'run_number') required int runNumber,
-    String? event,
-    String? status,
-    String? conclusion,
-    @JsonKey(name: 'workflow_id') required int workflowId,
-    @JsonKey(name: 'html_url') String? htmlUrl,
-    @JsonKey(name: 'created_at') DateTime? createdAt,
-    @JsonKey(name: 'updated_at') DateTime? updatedAt,
-    @JsonKey(name: 'run_started_at') DateTime? runStartedAt,
-    RunActor? actor,
-    @JsonKey(name: 'triggering_actor') RunActor? triggeringActor,
-  }) = _WorkflowRunResponse;
+  /// The branch of the head commit
+  @JsonKey(name: 'head_branch')
+  final String? headBranch;
 
-  factory WorkflowRunResponse.fromJson(Map<String, dynamic> json) =>
-      _$WorkflowRunResponseFromJson(json);
-}
+  /// The SHA of the head commit
+  @JsonKey(name: 'head_sha')
+  final String headSha;
+  final String? path;
 
-/// List workflow runs response.
-@freezed
-class ListWorkflowRunsResponse with _$ListWorkflowRunsResponse {
-  const factory ListWorkflowRunsResponse({
-    @JsonKey(name: 'total_count') required int totalCount,
-    @JsonKey(name: 'workflow_runs') required List<WorkflowRunResponse> workflowRuns,
-  }) = _ListWorkflowRunsResponse;
+  /// Title of the workflow run
+  @JsonKey(name: 'display_title')
+  final String? displayTitle;
 
-  factory ListWorkflowRunsResponse.fromJson(Map<String, dynamic> json) =>
-      _$ListWorkflowRunsResponseFromJson(json);
+  /// The auto incrementing run number for the workflow run
+  @JsonKey(name: 'run_number')
+  final int? runNumber;
+  @JsonKey(name: 'run_attempt')
+  final int? runAttempt;
+  @JsonKey(name: 'referenced_workflows')
+  final List<ReferencedWorkflow>? referencedWorkflows;
+
+  /// The event that triggered the workflow run
+  final String event;
+
+  /// The status of the workflow run
+  final WorkflowRunStatus? status;
+
+  /// The conclusion of the workflow run
+  final WorkflowRunConclusion? conclusion;
+
+  /// The ID of the parent workflow
+  @JsonKey(name: 'workflow_id')
+  final int workflowId;
+  final String? url;
+  @JsonKey(name: 'html_url')
+  final String? htmlUrl;
+  @JsonKey(name: 'pull_requests')
+  final List<PullRequestMinimal>? pullRequests;
+  @JsonKey(name: 'created_at')
+  final DateTime? createdAt;
+  @JsonKey(name: 'updated_at')
+  final DateTime? updatedAt;
+  final SimpleUser? actor;
+  @JsonKey(name: 'triggering_actor')
+  final SimpleUser? triggeringActor;
+  @JsonKey(name: 'run_started_at')
+  final DateTime? runStartedAt;
+  @JsonKey(name: 'jobs_url')
+  final String? jobsUrl;
+  @JsonKey(name: 'logs_url')
+  final String? logsUrl;
+  @JsonKey(name: 'check_suite_url')
+  final String? checkSuiteUrl;
+  @JsonKey(name: 'artifacts_url')
+  final String? artifactsUrl;
+  @JsonKey(name: 'cancel_url')
+  final String? cancelUrl;
+  @JsonKey(name: 'rerun_url')
+  final String? rerunUrl;
+  @JsonKey(name: 'previous_attempt_url')
+  final String? previousAttemptUrl;
+  @JsonKey(name: 'workflow_url')
+  final String? workflowUrl;
+  @JsonKey(name: 'head_commit')
+  final Commit? headCommit;
+  final MinimalRepository? repository;
+  @JsonKey(name: 'head_repository')
+  final MinimalRepository? headRepository;
+
+  Map<String, Object?> toJson() => _$WorkflowRunToJson(this);
 }

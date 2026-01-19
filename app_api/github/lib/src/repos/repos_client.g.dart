@@ -18,29 +18,29 @@ class _ReposClient implements ReposClient {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<List<RepoResponse>> listUserRepos({
-    String? visibility,
-    String? affiliation,
-    String? type,
-    String? sort = 'updated',
-    String? direction = 'desc',
-    int? perPage = 100,
+  Future<List<Repository>> listReposForAuthenticatedUser({
+    Direction? direction,
+    Visibility? visibility = Visibility.all,
+    String? affiliation = 'owner,collaborator,organization_member',
+    Type? type = Type.all,
+    Sort? sort = Sort.fullName,
+    int? perPage = 30,
     int? page = 1,
   }) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
+      r'direction': direction,
       r'visibility': visibility,
       r'affiliation': affiliation,
       r'type': type,
       r'sort': sort,
-      r'direction': direction,
       r'per_page': perPage,
       r'page': page,
     };
     queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<RepoResponse>>(
+    final _options = _setStreamType<List<Repository>>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -51,10 +51,10 @@ class _ReposClient implements ReposClient {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<RepoResponse> _value;
+    late List<Repository> _value;
     try {
       _value = _result.data!
-          .map((dynamic i) => RepoResponse.fromJson(i as Map<String, dynamic>))
+          .map((dynamic i) => Repository.fromJson(i as Map<String, dynamic>))
           .toList();
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
@@ -64,93 +64,7 @@ class _ReposClient implements ReposClient {
   }
 
   @override
-  Future<List<RepoResponse>> listReposForUser({
-    required String username,
-    String? type,
-    String? sort = 'updated',
-    String? direction = 'desc',
-    int? perPage = 100,
-    int? page = 1,
-  }) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{
-      r'type': type,
-      r'sort': sort,
-      r'direction': direction,
-      r'per_page': perPage,
-      r'page': page,
-    };
-    queryParameters.removeWhere((k, v) => v == null);
-    final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<RepoResponse>>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/users/${username}/repos',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<RepoResponse> _value;
-    try {
-      _value = _result.data!
-          .map((dynamic i) => RepoResponse.fromJson(i as Map<String, dynamic>))
-          .toList();
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
-  Future<List<RepoResponse>> listOrgRepos({
-    required String org,
-    String? type,
-    String? sort = 'updated',
-    String? direction = 'desc',
-    int? perPage = 100,
-    int? page = 1,
-  }) async {
-    final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{
-      r'type': type,
-      r'sort': sort,
-      r'direction': direction,
-      r'per_page': perPage,
-      r'page': page,
-    };
-    queryParameters.removeWhere((k, v) => v == null);
-    final _headers = <String, dynamic>{};
-    const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<List<RepoResponse>>(
-      Options(method: 'GET', headers: _headers, extra: _extra)
-          .compose(
-            _dio.options,
-            '/orgs/${org}/repos',
-            queryParameters: queryParameters,
-            data: _data,
-          )
-          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
-    );
-    final _result = await _dio.fetch<List<dynamic>>(_options);
-    late List<RepoResponse> _value;
-    try {
-      _value = _result.data!
-          .map((dynamic i) => RepoResponse.fromJson(i as Map<String, dynamic>))
-          .toList();
-    } on Object catch (e, s) {
-      errorLogger?.logError(e, s, _options);
-      rethrow;
-    }
-    return _value;
-  }
-
-  @override
-  Future<RepoResponse> getRepo({
+  Future<Repository> getRepo({
     required String owner,
     required String repo,
   }) async {
@@ -158,7 +72,7 @@ class _ReposClient implements ReposClient {
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     const Map<String, dynamic>? _data = null;
-    final _options = _setStreamType<RepoResponse>(
+    final _options = _setStreamType<Repository>(
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -169,9 +83,9 @@ class _ReposClient implements ReposClient {
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
     final _result = await _dio.fetch<Map<String, dynamic>>(_options);
-    late RepoResponse _value;
+    late Repository _value;
     try {
-      _value = RepoResponse.fromJson(_result.data!);
+      _value = Repository.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options);
       rethrow;

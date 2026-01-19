@@ -17,6 +17,7 @@ dev_dependencies:
   build_runner: any
   json_serializable: "^6.9.3"
   freezed: ^3.0.6
+  swagger_parser: "^1.26.1"
   retrofit_generator: ^9.1.9
 
 global_options:

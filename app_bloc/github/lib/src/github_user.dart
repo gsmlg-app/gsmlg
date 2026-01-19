@@ -55,7 +55,7 @@ class GitHubUser extends Equatable {
     );
   }
 
-  factory GitHubUser.fromApiResponse(GitHubUserResponse response) {
+  factory GitHubUser.fromApiResponse(User response) {
     return GitHubUser(
       id: response.id,
       login: response.login,
@@ -65,7 +65,7 @@ class GitHubUser extends Equatable {
       bio: response.bio,
       company: response.company,
       location: response.location,
-      blog: null,
+      blog: response.blog,
       publicRepos: response.publicRepos,
       publicGists: response.publicGists,
       followers: response.followers,
