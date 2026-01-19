@@ -1,7 +1,9 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:github_bloc/github_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/constants.dart';
 import 'package:gsmlg/destination.dart';
@@ -53,6 +55,43 @@ class ServiceScreen extends StatelessWidget {
                       Text('Domain'),
                     ],
                   ),
+                ),
+                BlocBuilder<GitHubBloc, GitHubState>(
+                  builder: (context, state) {
+                    final isConnected = state is GitHubConnected;
+                    return AppGridTile(
+                      onTap: () => context.go('/service/github'),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Stack(
+                            children: [
+                              const Icon(Icons.code, size: 48),
+                              if (isConnected)
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Theme.of(context).colorScheme.surface,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text('GitHub'),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
