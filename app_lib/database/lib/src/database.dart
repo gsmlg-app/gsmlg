@@ -4,16 +4,18 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'tables/dns_zone.dart';
+import 'tables/github_repo.dart';
 import 'tables/whois_history.dart';
 import 'type_converter.dart';
 
 export 'tables/dns_zone.dart';
+export 'tables/github_repo.dart';
 export 'tables/whois_history.dart';
 export 'type_converter.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [WhoisHistoryTable, DnsZoneTable])
+@DriftDatabase(tables: [WhoisHistoryTable, DnsZoneTable, GitHubRepoTable])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
   // and a constructor telling drift where the database should be stored.
@@ -26,7 +28,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -37,6 +39,9 @@ class AppDatabase extends _$AppDatabase {
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
           await m.createTable(dnsZoneTable);
+        }
+        if (from < 3) {
+          await m.createTable(gitHubRepoTable);
         }
       },
     );

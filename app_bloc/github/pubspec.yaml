@@ -1,0 +1,23 @@
+name: github_bloc
+description: GitHub account management BLoC for PAT authentication and user info
+publish_to: none
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bloc: any
+  equatable: any
+  dio: any
+  drift: any
+  app_secure_storage: any
+  app_database: any
+  github_api: any
+
+dev_dependencies:
+  test: any
+  bloc_test: any
