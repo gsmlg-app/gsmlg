@@ -9,6 +9,7 @@ import 'package:auth_bloc/auth_bloc.dart';
 import 'package:bluetooth_bloc/bluetooth_bloc.dart';
 import 'package:camera_bloc/camera_bloc.dart';
 import 'package:domain_bloc/domain_bloc.dart';
+import 'package:github_bloc/github_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as path;
@@ -80,6 +81,9 @@ void main(List<String> args) async {
           ),
           BlocProvider<RecordBloc>(
             create: (context) => RecordBloc(credentialsService),
+          ),
+          BlocProvider<GitHubBloc>(
+            create: (context) => GitHubBloc(vault: vault)..add(const GitHubLoad()),
           ),
         ],
         child: MaterialApp(

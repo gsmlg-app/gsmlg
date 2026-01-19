@@ -21,6 +21,7 @@ workspace:
   - app_bloc/bluetooth
   - app_bloc/camera
   - app_bloc/domain
+  - app_bloc/github
   - app_widget/adaptive
   - app_widget/artwork
   - app_widget/feedback
@@ -36,6 +37,7 @@ workspace:
   - app_plugin/client_info/client_info_windows
   - app_api/route53
   - app_api/cloudflare_dns
+  - app_api/github
   - third_party/form_bloc
   - third_party/flutter_form_bloc
   - third_party/flutter_adaptive_scaffold
@@ -72,10 +74,12 @@ dependencies:
   camera_macos: any
 
   dio: any
+  url_launcher: ^6.3.1
 
   # workspace packages
   cloudflare_dns: any
   route53: any
+  github_api: any
   app_database: any
   app_theme: any
   app_locale: any
@@ -87,6 +91,7 @@ dependencies:
   bluetooth_bloc: any
   camera_bloc: any
   domain_bloc: any
+  github_bloc: any
   app_artwork: any
   app_client_info: any
   app_feedback: any
