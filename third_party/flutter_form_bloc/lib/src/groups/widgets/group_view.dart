@@ -368,7 +368,7 @@ class GroupView extends StatelessWidget {
     } else if (style is TableGroupStyle) {
       final children = _generateChildren(context).map((child) {
         return Expanded(child: child);
-      }).splitBetweenIndexed((index, _, __) {
+      }).splitBetweenIndexed((index, _, _) {
         return (index % style.crossAxisCount) == 0;
       });
       return _buildPadded(Column(

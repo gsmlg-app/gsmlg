@@ -133,7 +133,7 @@ class CheckboxGroupFieldBlocBuilder<Value> extends StatelessWidget {
       child: SimpleFieldBlocBuilder(
         singleFieldBloc: multiSelectFieldBloc,
         animateWhenCanShow: animateWhenCanShow,
-        builder: (_, __) {
+        builder: (_, _) {
           return BlocBuilder<MultiSelectFieldBloc<Value, dynamic>,
               MultiSelectFieldBlocState<Value, dynamic>>(
             bloc: multiSelectFieldBloc,

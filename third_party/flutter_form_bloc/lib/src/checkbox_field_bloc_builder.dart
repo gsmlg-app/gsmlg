@@ -130,7 +130,7 @@ class CheckboxFieldBlocBuilder extends StatelessWidget {
       child: CanShowFieldBlocBuilder(
         fieldBloc: booleanFieldBloc,
         animate: animateWhenCanShow,
-        builder: (_, __) {
+        builder: (_, _) {
           return BlocBuilder<BooleanFieldBloc, BooleanFieldBlocState>(
             bloc: booleanFieldBloc,
             builder: (context, state) {

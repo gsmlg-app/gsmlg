@@ -139,7 +139,7 @@ class SwitchFieldBlocBuilder extends StatelessWidget {
       child: SimpleFieldBlocBuilder(
         singleFieldBloc: booleanFieldBloc,
         animateWhenCanShow: animateWhenCanShow,
-        builder: (_, __) {
+        builder: (_, _) {
           return BlocBuilder<BooleanFieldBloc, BooleanFieldBlocState>(
             bloc: booleanFieldBloc,
             builder: (context, state) {

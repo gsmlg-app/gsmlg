@@ -125,7 +125,7 @@ class RadioButtonGroupFieldBlocBuilder<Value> extends StatelessWidget {
       child: CanShowFieldBlocBuilder(
         fieldBloc: selectFieldBloc,
         animate: animateWhenCanShow,
-        builder: (_, __) {
+        builder: (_, _) {
           return BlocBuilder<SelectFieldBloc<Value, dynamic>,
               SelectFieldBlocState<Value, dynamic>>(
             bloc: selectFieldBloc,

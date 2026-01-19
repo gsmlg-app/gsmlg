@@ -807,7 +807,7 @@ class _TextFieldBlocBuilderState extends State<TextFieldBlocBuilder> {
       singleFieldBloc: widget.textFieldBloc,
       animateWhenCanShow: widget.animateWhenCanShow,
       focusOnValidationFailed: widget.focusOnValidationFailed,
-      builder: (_, __) {
+      builder: (_, _) {
         return BlocBuilder<TextFieldBloc, TextFieldBlocState>(
           bloc: widget.textFieldBloc,
           builder: (context, state) {

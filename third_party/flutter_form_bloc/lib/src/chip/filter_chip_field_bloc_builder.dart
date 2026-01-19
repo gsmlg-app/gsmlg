@@ -189,7 +189,7 @@ class FilterChipFieldBlocBuilder<T> extends StatelessWidget {
     final current = SimpleFieldBlocBuilder(
       singleFieldBloc: multiSelectFieldBloc,
       animateWhenCanShow: animateWhenCanShow,
-      builder: (_, __) {
+      builder: (_, _) {
         return BlocBuilder<MultiSelectFieldBloc<T, dynamic>,
             MultiSelectFieldBlocState<T, dynamic>>(
           bloc: multiSelectFieldBloc,
