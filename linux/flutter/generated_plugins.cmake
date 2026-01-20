@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_client_info_linux
+  flutter_gemma
   flutter_secure_storage_linux
   sqlite3_flutter_libs
   url_launcher_linux

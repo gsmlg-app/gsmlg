@@ -1,26 +1,25 @@
-import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:gsmlg/destination.dart';
-import 'package:gsmlg/screens/chat/chat_history_screen.dart';
-import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
-import 'package:gsmlg/screens/chat/widgets/chat_input_bar.dart';
-import 'package:gsmlg/screens/chat/widgets/chat_message_list.dart';
-import 'package:gsmlg/screens/chat/widgets/model_status_banner.dart';
 
-class HomeScreen extends StatefulWidget {
-  static const name = 'Home';
-  static const path = '/home';
+import 'chat_history_screen.dart';
+import 'chat_settings_screen.dart';
+import 'widgets/chat_input_bar.dart';
+import 'widgets/chat_message_list.dart';
+import 'widgets/model_status_banner.dart';
 
-  const HomeScreen({super.key});
+class ChatScreen extends StatefulWidget {
+  static const name = 'Chat';
+  static const path = '/chat';
+
+  const ChatScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
@@ -47,61 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppAdaptiveScaffold(
-      selectedIndex: 0,
-      destinations: Destinations.navs(context),
-      onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
-      trailingNavRail: SlotLayout(
-        config: {
-          AppAdaptiveScaffold.appMediumBreakpoint: SlotLayout.from(
-            key: const Key('Body Medium'),
-            builder: (context) => AppAdaptiveActionList(
-              direction: Axis.vertical,
-              actions: [
-                AppAdaptiveAction(
-                  icon: Icons.history,
-                  title: 'History',
-                  onPressed: () => context.goNamed(ChatHistoryScreen.name),
-                ),
-                AppAdaptiveAction(
-                  icon: Icons.add,
-                  title: 'New Chat',
-                  onPressed: _startNewConversation,
-                ),
-                AppAdaptiveAction(
-                  icon: Icons.settings,
-                  title: 'Settings',
-                  onPressed: () => context.goNamed(ChatSettingsScreen.name),
-                ),
-              ],
-            ),
-          ),
-          AppAdaptiveScaffold.appLargeBreakpoint: SlotLayout.from(
-            key: const Key('Body Large'),
-            builder: (context) => AppAdaptiveActionList(
-              size: AppAdaptiveActionSize.large,
-              direction: Axis.vertical,
-              actions: [
-                AppAdaptiveAction(
-                  icon: Icons.history,
-                  title: 'History',
-                  onPressed: () => context.goNamed(ChatHistoryScreen.name),
-                ),
-                AppAdaptiveAction(
-                  icon: Icons.add,
-                  title: 'New Chat',
-                  onPressed: _startNewConversation,
-                ),
-                AppAdaptiveAction(
-                  icon: Icons.settings,
-                  title: 'Settings',
-                  onPressed: () => context.goNamed(ChatSettingsScreen.name),
-                ),
-              ],
-            ),
-          ),
-        },
-      ),
+    return Scaffold(
       appBar: AppBar(
         title: BlocBuilder<ChatBloc, ChatState>(
           builder: (context, state) {
@@ -126,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: (_) => Column(
+      body: Column(
         children: [
           // Model status banner
           BlocBuilder<GemmaModelBloc, GemmaModelState>(

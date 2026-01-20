@@ -1,0 +1,20 @@
+name: chat_bloc
+description: Chat BLoC package for on-device LLM chat
+version: 1.0.0
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  bloc: ^9.0.0
+  equatable: ^2.0.7
+  flutter:
+    sdk: flutter
+  uuid: ^4.3.3
+  app_chat: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

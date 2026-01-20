@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gsmlg/screens/app/error_screen.dart';
 import 'package:gsmlg/screens/app/splash_screen.dart';
+import 'package:gsmlg/screens/chat/chat_routes.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
 import 'package:gsmlg/screens/service/service_routes.dart';
 import 'package:gsmlg/screens/settings/settings_routes.dart';
@@ -48,6 +49,7 @@ class AppRouter {
     ),
     serviceRoutes(),
     toolboxRoutes(),
+    chatRoutes(),
     GoRoute(
       name: AuthScreen.name,
       path: AuthScreen.path,

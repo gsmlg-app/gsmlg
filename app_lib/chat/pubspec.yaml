@@ -1,0 +1,23 @@
+name: app_chat
+description: Core chat library with models and repositories for on-device LLM chat
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_gemma: ^0.12.2
+  equatable: ^2.0.7
+  uuid: ^4.3.3
+  drift: ^2.28.2
+  app_database: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

@@ -3,11 +3,17 @@ import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'tables/chat_conversation.dart';
+import 'tables/chat_message.dart';
+import 'tables/chat_settings.dart';
 import 'tables/dns_zone.dart';
 import 'tables/github_repo.dart';
 import 'tables/whois_history.dart';
 import 'type_converter.dart';
 
+export 'tables/chat_conversation.dart';
+export 'tables/chat_message.dart';
+export 'tables/chat_settings.dart';
 export 'tables/dns_zone.dart';
 export 'tables/github_repo.dart';
 export 'tables/whois_history.dart';
@@ -15,7 +21,14 @@ export 'type_converter.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [WhoisHistoryTable, DnsZoneTable, GitHubRepoTable])
+@DriftDatabase(tables: [
+  WhoisHistoryTable,
+  DnsZoneTable,
+  GitHubRepoTable,
+  ChatConversationTable,
+  ChatMessageTable,
+  ChatSettingsTable,
+])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
   // and a constructor telling drift where the database should be stored.
@@ -28,7 +41,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -42,6 +55,11 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 3) {
           await m.createTable(gitHubRepoTable);
+        }
+        if (from < 4) {
+          await m.createTable(chatConversationTable);
+          await m.createTable(chatMessageTable);
+          await m.createTable(chatSettingsTable);
         }
       },
     );

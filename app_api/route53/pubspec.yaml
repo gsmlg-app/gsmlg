@@ -10,7 +10,7 @@ dependencies:
   dio: ^5.7.0
   json_annotation: ^4.9.0
   freezed_annotation: ^3.0.0
-  retrofit: ">=4.4.2 <4.9.0"
+  retrofit: ^4.9.2
   aws_signature_v4: ^0.6.10
   aws_common: ^0.7.4
   xml: ^6.5.0
@@ -21,7 +21,7 @@ dev_dependencies:
   json_serializable: "^6.9.3"
   freezed: ^3.0.6
   swagger_parser: "^1.26.1"
-  retrofit_generator: ^9.1.9
+  retrofit_generator: ^10.2.1
 
 global_options:
   freezed:

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:app_logging/app_logging.dart';
@@ -8,6 +9,7 @@ import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:auth_bloc/auth_bloc.dart';
 import 'package:bluetooth_bloc/bluetooth_bloc.dart';
 import 'package:camera_bloc/camera_bloc.dart';
+import 'package:chat_bloc/chat_bloc.dart';
 import 'package:domain_bloc/domain_bloc.dart';
 import 'package:github_bloc/github_bloc.dart';
 import 'package:flutter/material.dart';
@@ -84,6 +86,29 @@ void main(List<String> args) async {
           ),
           BlocProvider<GitHubBloc>(
             create: (context) => GitHubBloc(vault: vault)..add(const GitHubLoad()),
+          ),
+          // Chat BLoCs - create repositories and inject into BLoCs
+          RepositoryProvider<GemmaRepository>(
+            create: (context) => GemmaRepository(),
+          ),
+          RepositoryProvider<ChatStorageRepository>(
+            create: (context) => ChatStorageRepository(database),
+          ),
+          BlocProvider<ChatSettingsBloc>(
+            create: (context) => ChatSettingsBloc(
+              repository: context.read<ChatStorageRepository>(),
+            ),
+          ),
+          BlocProvider<GemmaModelBloc>(
+            create: (context) => GemmaModelBloc(
+              repository: context.read<GemmaRepository>(),
+            ),
+          ),
+          BlocProvider<ChatBloc>(
+            create: (context) => ChatBloc(
+              gemmaRepository: context.read<GemmaRepository>(),
+              storageRepository: context.read<ChatStorageRepository>(),
+            ),
           ),
         ],
         child: MaterialApp(
