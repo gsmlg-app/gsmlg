@@ -4,6 +4,7 @@ import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
+import 'package:app_world_map/app_world_map.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 import 'package:ip_db/ip_db.dart';
 
@@ -189,6 +190,8 @@ class _IpGeoScreenState extends State<IpGeoScreen> {
             else if (_location != null)
               SliverList.list(
                 children: [
+                  if (_location!.hasCoordinates)
+                    _buildMapCard(context, _location!),
                   _buildLocationCard(context, _location!),
                 ],
               )
@@ -220,6 +223,33 @@ class _IpGeoScreenState extends State<IpGeoScreen> {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapCard(BuildContext context, IpLocation location) {
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Location on Map',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 300,
+              child: WorldMapWidget(
+                latitude: location.latitude!,
+                longitude: location.longitude!,
+                label: location.displayName,
+              ),
+            ),
           ],
         ),
       ),
@@ -278,16 +308,13 @@ class _IpGeoScreenState extends State<IpGeoScreen> {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.secondary,
+              ),
             ),
           ),
           Expanded(
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
           ),
         ],
       ),

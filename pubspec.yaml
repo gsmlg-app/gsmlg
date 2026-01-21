@@ -30,6 +30,7 @@ workspace:
   - app_widget/web_view
   - app_widget/components
   - app_widget/data_list
+  - app_widget/world_map
   - app_plugin/client_info/client_info
   - app_plugin/client_info/client_info_platform_interface
   - app_plugin/client_info/client_info_android
@@ -104,6 +105,7 @@ dependencies:
   app_web_view: any
   app_components: any
   app_data_list: any
+  app_world_map: any
   gsmlg_whois: any
   form_bloc: any
   flutter_form_bloc: any
@@ -111,6 +113,9 @@ dependencies:
   ip_db: any
   app_chat: any
   chat_bloc: any
+
+  # data visualization
+  data_visualization: ^1.0.0
 
 dev_dependencies:
   flutter_test:
@@ -131,6 +136,7 @@ flutter:
 
   assets:
     - assets/icon/
+    - assets/world.geo.json
 
   fonts:
     - family: GSMLG
