@@ -100,14 +100,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     ChatSendMessage event,
     Emitter<ChatState> emit,
   ) async {
-    if (state.conversation == null) {
-      emit(state.copyWith(
-        status: ChatStatus.error,
-        errorMessage: 'No conversation loaded',
-      ));
-      return;
-    }
-
     if (!_gemmaRepository.isReady) {
       emit(state.copyWith(
         status: ChatStatus.error,
@@ -116,16 +108,42 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       return;
     }
 
+    // Auto-create conversation if none exists
+    var conversation = state.conversation;
+    if (conversation == null) {
+      conversation = Conversation.create(
+        id: _uuid.v4(),
+        title: _generateTitle(event.content),
+        systemPrompt: event.systemPrompt,
+      );
+
+      final messages = <Message>[];
+      if (event.systemPrompt != null && event.systemPrompt!.isNotEmpty) {
+        messages.add(SystemMessage(
+          id: _uuid.v4(),
+          content: event.systemPrompt!,
+          conversationId: conversation.id,
+          timestamp: DateTime.now(),
+        ));
+      }
+
+      conversation = conversation.copyWith(messages: messages);
+      await _storageRepository.saveConversation(conversation);
+      for (final message in messages) {
+        await _storageRepository.saveMessage(message);
+      }
+    }
+
     // Create user message
     final userMessage = UserMessage(
       id: _uuid.v4(),
       content: event.content,
-      conversationId: state.conversation!.id,
+      conversationId: conversation.id,
       timestamp: DateTime.now(),
     );
 
     // Add user message to conversation
-    var updatedConversation = state.conversation!.addMessage(userMessage);
+    var updatedConversation = conversation.addMessage(userMessage);
 
     // Update title if this is the first user message
     if (updatedConversation.chatMessages.length == 1) {
@@ -141,7 +159,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final assistantMessage = AssistantMessage(
       id: _uuid.v4(),
       content: '',
-      conversationId: state.conversation!.id,
+      conversationId: conversation.id,
       timestamp: DateTime.now(),
       isStreaming: true,
     );
@@ -194,7 +212,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       emit(state.copyWith(
         status: ChatStatus.stopped,
         conversation: state.conversation!.copyWith(messages: messages),
-        streamingMessageId: null,
+        clearStreamingMessageId: true,
       ));
     }
   }
@@ -334,7 +352,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     emit(state.copyWith(
       status: ChatStatus.ready,
       conversation: state.conversation!.copyWith(messages: messages),
-      streamingMessageId: null,
+      clearStreamingMessageId: true,
     ));
   }
 
@@ -347,7 +365,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     emit(state.copyWith(
       status: ChatStatus.error,
       errorMessage: event.error,
-      streamingMessageId: null,
+      clearStreamingMessageId: true,
     ));
   }
 

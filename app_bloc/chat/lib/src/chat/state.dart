@@ -75,15 +75,21 @@ class ChatState extends Equatable {
     Conversation? conversation,
     List<Conversation>? conversationHistory,
     String? streamingMessageId,
+    bool clearStreamingMessageId = false,
     String? errorMessage,
+    bool clearErrorMessage = false,
     bool clearConversation = false,
   }) {
     return ChatState(
       status: status ?? this.status,
       conversation: clearConversation ? null : (conversation ?? this.conversation),
       conversationHistory: conversationHistory ?? this.conversationHistory,
-      streamingMessageId: streamingMessageId,
-      errorMessage: errorMessage,
+      streamingMessageId: clearStreamingMessageId
+          ? null
+          : (streamingMessageId ?? this.streamingMessageId),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
     );
   }
 }

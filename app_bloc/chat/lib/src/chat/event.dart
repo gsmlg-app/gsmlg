@@ -21,10 +21,14 @@ final class ChatNewConversation extends ChatEvent {
 }
 
 /// Send a message and generate a response.
+///
+/// If no conversation exists, one will be auto-created.
+/// [systemPrompt] is used only when auto-creating the conversation.
 final class ChatSendMessage extends ChatEvent {
-  const ChatSendMessage({required this.content});
+  const ChatSendMessage({required this.content, this.systemPrompt});
 
   final String content;
+  final String? systemPrompt;
 }
 
 /// Stop the current response generation.
