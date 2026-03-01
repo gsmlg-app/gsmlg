@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   uuid: ^4.3.3
+  shared_preferences: any
   app_chat: any
 
 dev_dependencies:

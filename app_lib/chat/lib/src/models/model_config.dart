@@ -1,4 +1,11 @@
+import 'dart:io' show Platform;
+
 import 'package:equatable/equatable.dart';
+import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
+
+/// Re-export flutter_gemma's ModelType so consumers (BLoC, UI) can pass
+/// the correct native model type without depending on flutter_gemma directly.
+typedef NativeModelType = gemma.ModelType;
 
 /// The type of Gemma model to use.
 enum GemmaModelType {
@@ -10,6 +17,271 @@ enum GemmaModelType {
 
   /// A custom model loaded from a file path.
   custom,
+}
+
+/// Category grouping for model display.
+enum ModelCategory {
+  gemma,
+  qwen,
+  deepSeek,
+  phi,
+  other,
+}
+
+/// Information about an available on-device model.
+class GemmaModelInfo {
+  const GemmaModelInfo({
+    required this.id,
+    required this.displayName,
+    required this.description,
+    required this.sizeLabel,
+    required this.url,
+    required this.modelType,
+    this.category = ModelCategory.gemma,
+    this.assetPath,
+    this.needsAuth = false,
+  });
+
+  /// Unique identifier, e.g. 'gemma3-1b-int4'.
+  final String id;
+
+  /// Human-readable name, e.g. 'Gemma 3 1B-IT INT4'.
+  final String displayName;
+
+  /// Short description of the model.
+  final String description;
+
+  /// Approximate download size, e.g. '529 MB'.
+  final String sizeLabel;
+
+  /// HuggingFace download URL.
+  final String url;
+
+  /// Flutter asset path if bundled with the app (null = download only).
+  final String? assetPath;
+
+  /// The model type for flutter_gemma.
+  final gemma.ModelType modelType;
+
+  /// Category for grouping in UI.
+  final ModelCategory category;
+
+  /// Whether HuggingFace auth token is required.
+  final bool needsAuth;
+
+  /// Whether this model is bundled as an app asset.
+  bool get isBundled => assetPath != null;
+
+  /// Whether this model uses the LiteRT-LM format (`.litertlm`), which is
+  /// required on desktop platforms (macOS, Linux, Windows).
+  bool get isLiteRtLm => url.endsWith('.litertlm');
+
+  /// Whether this model is compatible with the current platform.
+  ///
+  /// Desktop platforms require `.litertlm` format; mobile platforms support
+  /// both `.task` and `.litertlm`.
+  bool get isCurrentPlatformCompatible {
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+      return isLiteRtLm;
+    }
+    return true; // Mobile supports all formats
+  }
+
+  // ---------------------------------------------------------------------------
+  // Gemma models
+  // ---------------------------------------------------------------------------
+
+  static const _gemma3n2b = GemmaModelInfo(
+    id: 'gemma-3n-E2B-it-int4',
+    displayName: 'Gemma 3n E2B IT',
+    description: 'Multimodal + function calls, 2B params',
+    sizeLabel: '3.1 GB',
+    url:
+        'https://huggingface.co/google/gemma-3n-E2B-it-litert-preview/resolve/main/gemma-3n-E2B-it-int4.task',
+    modelType: gemma.ModelType.gemmaIt,
+    needsAuth: true,
+  );
+
+  static const _gemma3n4b = GemmaModelInfo(
+    id: 'gemma-3n-E4B-it-int4',
+    displayName: 'Gemma 3n E4B IT',
+    description: 'Multimodal + function calls, 4B params',
+    sizeLabel: '6.5 GB',
+    url:
+        'https://huggingface.co/google/gemma-3n-E4B-it-litert-preview/resolve/main/gemma-3n-E4B-it-int4.task',
+    modelType: gemma.ModelType.gemmaIt,
+    needsAuth: true,
+  );
+
+  static const _gemma3_1b = GemmaModelInfo(
+    id: 'gemma3-1b-it-int4',
+    displayName: 'Gemma 3 1B IT',
+    description: 'Best balance of quality and size',
+    sizeLabel: '529 MB',
+    url:
+        'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task',
+    modelType: gemma.ModelType.gemmaIt,
+    needsAuth: true,
+  );
+
+  static const _gemma3_270m = GemmaModelInfo(
+    id: 'gemma3-270m-it-q8',
+    displayName: 'Gemma 3 270M IT',
+    description: 'Ultra-compact text-only model',
+    sizeLabel: '270 MB',
+    url:
+        'https://huggingface.co/litert-community/gemma-3-270m-it/resolve/main/gemma3-270m-it-q8.task',
+    modelType: gemma.ModelType.gemmaIt,
+    needsAuth: true,
+  );
+
+  static const _functionGemma270m = GemmaModelInfo(
+    id: 'functiongemma-270M-it',
+    displayName: 'FunctionGemma 270M IT',
+    description: 'Tool/function calling specialist',
+    sizeLabel: '284 MB',
+    url:
+        'https://huggingface.co/sasha-denisov/function-gemma-270M-it/resolve/main/functiongemma-270M-it.task',
+    modelType: gemma.ModelType.functionGemma,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Qwen models
+  // ---------------------------------------------------------------------------
+
+  static const _qwen3_06b = GemmaModelInfo(
+    id: 'Qwen3-0.6B',
+    displayName: 'Qwen3 0.6B',
+    description: 'Function calls, LiteRT-LM format',
+    sizeLabel: '586 MB',
+    url:
+        'https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B.litertlm',
+    modelType: gemma.ModelType.qwen,
+    category: ModelCategory.qwen,
+  );
+
+  static const _qwen25_15b = GemmaModelInfo(
+    id: 'Qwen2.5-1.5B-Instruct',
+    displayName: 'Qwen 2.5 1.5B Instruct',
+    description: 'Function calls, high quality',
+    sizeLabel: '1.6 GB',
+    url:
+        'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv1280.task',
+    modelType: gemma.ModelType.qwen,
+    category: ModelCategory.qwen,
+  );
+
+  static const _qwen25_05b = GemmaModelInfo(
+    id: 'Qwen2.5-0.5B-Instruct',
+    displayName: 'Qwen 2.5 0.5B Instruct',
+    description: 'Compact, function calls',
+    sizeLabel: '500 MB',
+    url:
+        'https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task',
+    modelType: gemma.ModelType.qwen,
+    category: ModelCategory.qwen,
+  );
+
+  // ---------------------------------------------------------------------------
+  // DeepSeek
+  // ---------------------------------------------------------------------------
+
+  static const _deepseekR1 = GemmaModelInfo(
+    id: 'deepseek_q8_ekv1280',
+    displayName: 'DeepSeek R1 Distill Qwen 1.5B',
+    description: 'Chain-of-thought reasoning model',
+    sizeLabel: '1.7 GB',
+    url:
+        'https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B/resolve/main/deepseek_q8_ekv1280.task',
+    modelType: gemma.ModelType.deepSeek,
+    category: ModelCategory.deepSeek,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Phi
+  // ---------------------------------------------------------------------------
+
+  static const _phi4Mini = GemmaModelInfo(
+    id: 'Phi-4-mini-instruct',
+    displayName: 'Phi-4 Mini Instruct',
+    description: 'Microsoft, function calls, 3.8B params',
+    sizeLabel: '3.9 GB',
+    url:
+        'https://huggingface.co/litert-community/Phi-4-mini-instruct/resolve/main/Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.task',
+    modelType: gemma.ModelType.general,
+    category: ModelCategory.phi,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Other models
+  // ---------------------------------------------------------------------------
+
+  static const _fastVLM = GemmaModelInfo(
+    id: 'FastVLM-0.5B',
+    displayName: 'FastVLM 0.5B (Vision)',
+    description: 'Vision-language model, image understanding',
+    sizeLabel: '500 MB',
+    url:
+        'https://huggingface.co/litert-community/FastVLM-0.5B/resolve/main/FastVLM-0.5B.litertlm',
+    modelType: gemma.ModelType.general,
+    category: ModelCategory.other,
+  );
+
+  static const _smolLM = GemmaModelInfo(
+    id: 'SmolLM-135M-Instruct',
+    displayName: 'SmolLM 135M Instruct',
+    description: 'Ultra-small, fastest inference',
+    sizeLabel: '135 MB',
+    url:
+        'https://huggingface.co/litert-community/SmolLM-135M-Instruct/resolve/main/SmolLM-135M-Instruct_multi-prefill-seq_q8_ekv1280.task',
+    modelType: gemma.ModelType.general,
+    category: ModelCategory.other,
+  );
+
+  /// All available models.
+  static const availableModels = <GemmaModelInfo>[
+    // Gemma
+    _gemma3n2b,
+    _gemma3n4b,
+    _gemma3_1b,
+    _gemma3_270m,
+    _functionGemma270m,
+    // Qwen
+    _qwen3_06b,
+    _qwen25_15b,
+    _qwen25_05b,
+    // DeepSeek
+    _deepseekR1,
+    // Phi
+    _phi4Mini,
+    // Other
+    _fastVLM,
+    _smolLM,
+  ];
+
+  /// The default bundled model.
+  static const defaultModel = _gemma3_1b;
+
+  /// Models compatible with the current platform.
+  static List<GemmaModelInfo> get platformModels =>
+      availableModels.where((m) => m.isCurrentPlatformCompatible).toList();
+
+  /// The smallest model that does not require authentication and is
+  /// compatible with the current platform.
+  /// Used for auto-download when no models are installed.
+  static GemmaModelInfo? get smallestFreeModel {
+    final candidates = platformModels.where((m) => !m.needsAuth).toList();
+    if (candidates.isEmpty) return null;
+    return candidates.first;
+  }
+
+  /// Look up a model by its ID.
+  static GemmaModelInfo? findById(String id) {
+    for (final model in availableModels) {
+      if (model.id == id) return model;
+    }
+    return null;
+  }
 }
 
 /// The backend to use for inference.

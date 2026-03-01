@@ -2,6 +2,8 @@ import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:gsmlg/screens/settings/model_management_screen.dart';
 
 class ModelStatusBanner extends StatelessWidget {
   const ModelStatusBanner({
@@ -68,17 +70,21 @@ class ModelStatusBanner extends StatelessWidget {
         const Icon(Icons.download, size: 20),
         const SizedBox(width: 12),
         const Expanded(
-          child: Text('Model not installed. Download to start chatting.'),
+          child: Text('No model available. Download one to start chatting.'),
         ),
         TextButton(
-          onPressed: () => _showDownloadDialog(context),
-          child: const Text('Download'),
+          onPressed: () => context.goNamed(ModelManagementScreen.name),
+          child: const Text('Get Models'),
         ),
       ],
     );
   }
 
   Widget _buildDownloadingContent(BuildContext context) {
+    final downloadId = state.downloadingModelId;
+    final info = downloadId != null ? GemmaModelInfo.findById(downloadId) : null;
+    final modelName = info?.displayName ?? 'model';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -90,7 +96,7 @@ class ModelStatusBanner extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             const SizedBox(width: 12),
-            Text('Downloading model... ${state.downloadProgress.toStringAsFixed(1)}%'),
+            Text('Downloading $modelName... ${state.downloadProgress.toStringAsFixed(1)}%'),
           ],
         ),
         const SizedBox(height: 8),
@@ -102,36 +108,48 @@ class ModelStatusBanner extends StatelessWidget {
   }
 
   Widget _buildInstalledContent(BuildContext context) {
+    // Auto-load the model so the user doesn't have to press a button.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!context.mounted) return;
+      final settingsState = context.read<ChatSettingsBloc>().state;
+      context
+          .read<GemmaModelBloc>()
+          .add(GemmaModelLoad(config: settingsState.config));
+    });
+
+    final selectedId = state.selectedModelId;
+    final info = selectedId != null ? GemmaModelInfo.findById(selectedId) : null;
+    final modelName = info?.displayName ?? 'Model';
+
     return Row(
       children: [
-        const Icon(Icons.check_circle_outline, size: 20),
-        const SizedBox(width: 12),
-        const Expanded(
-          child: Text('Model installed. Load to start chatting.'),
+        const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
         ),
-        TextButton(
-          onPressed: () {
-            final settingsState = context.read<ChatSettingsBloc>().state;
-            context
-                .read<GemmaModelBloc>()
-                .add(GemmaModelLoad(config: settingsState.config));
-          },
-          child: const Text('Load'),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text('Loading $modelName...'),
         ),
       ],
     );
   }
 
   Widget _buildLoadingContent(BuildContext context) {
-    return const Row(
+    final selectedId = state.selectedModelId;
+    final info = selectedId != null ? GemmaModelInfo.findById(selectedId) : null;
+    final modelName = info?.displayName ?? 'model';
+
+    return Row(
       children: [
-        SizedBox(
+        const SizedBox(
           width: 16,
           height: 16,
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
-        SizedBox(width: 12),
-        Text('Loading model...'),
+        const SizedBox(width: 12),
+        Text('Loading $modelName...'),
       ],
     );
   }
@@ -149,6 +167,10 @@ class ModelStatusBanner extends StatelessWidget {
           ),
         ),
         TextButton(
+          onPressed: () => context.goNamed(ModelManagementScreen.name),
+          child: const Text('Manage'),
+        ),
+        TextButton(
           onPressed: () {
             context
                 .read<GemmaModelBloc>()
@@ -160,42 +182,4 @@ class ModelStatusBanner extends StatelessWidget {
     );
   }
 
-  void _showDownloadDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Download Model'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Select a model to download:'),
-            SizedBox(height: 16),
-            Text(
-              'Gemma 2B-IT is recommended for most devices. '
-              'It requires about 1.5GB of storage.',
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              context.read<GemmaModelBloc>().add(const GemmaModelInstall(
-                    modelType: GemmaModelType.gemma2bIt,
-                    url:
-                        'https://huggingface.co/google/gemma-3-2b-it/resolve/main/gemma-3-2b-it-gpu-int8.task',
-                  ));
-            },
-            child: const Text('Download Gemma 2B'),
-          ),
-        ],
-      ),
-    );
-  }
 }
