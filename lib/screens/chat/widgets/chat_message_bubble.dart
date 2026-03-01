@@ -64,6 +64,8 @@ class ChatMessageBubble extends StatelessWidget {
                           color: isUser
                               ? colorScheme.onPrimary
                               : colorScheme.onSurface,
+                          fontSize: 16,
+                          height: 1.4,
                         ),
                       ),
               ),
