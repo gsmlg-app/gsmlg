@@ -1,6 +1,8 @@
 import 'package:app_chat/app_chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatMessageBubble extends StatelessWidget {
   const ChatMessageBubble({
@@ -58,16 +60,7 @@ class ChatMessageBubble extends StatelessWidget {
                 ),
                 child: showTypingIndicator
                     ? _buildTypingIndicator(context)
-                    : Text(
-                        message.content,
-                        style: TextStyle(
-                          color: isUser
-                              ? colorScheme.onPrimary
-                              : colorScheme.onSurface,
-                          fontSize: 16,
-                          height: 1.4,
-                        ),
-                      ),
+                    : _buildMessageContent(context),
               ),
             ),
           ),
@@ -84,6 +77,84 @@ class ChatMessageBubble extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildMessageContent(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textColor =
+        isUser ? colorScheme.onPrimary : colorScheme.onSurface;
+
+    if (isUser) {
+      return Text(
+        message.content,
+        style: TextStyle(color: textColor, fontSize: 16, height: 1.4),
+      );
+    }
+
+    // Assistant messages rendered as markdown
+    return MarkdownBody(
+      data: message.content,
+      selectable: true,
+      onTapLink: (text, href, title) {
+        if (href != null) {
+          launchUrl(Uri.parse(href));
+        }
+      },
+      styleSheet: MarkdownStyleSheet(
+        p: TextStyle(color: textColor, fontSize: 16, height: 1.4),
+        h1: TextStyle(
+          color: textColor,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          height: 1.3,
+        ),
+        h2: TextStyle(
+          color: textColor,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          height: 1.3,
+        ),
+        h3: TextStyle(
+          color: textColor,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          height: 1.3,
+        ),
+        code: TextStyle(
+          color: textColor,
+          backgroundColor: colorScheme.surfaceContainerHigh,
+          fontFamily: 'monospace',
+          fontSize: 14,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        codeblockPadding: const EdgeInsets.all(12),
+        blockquoteDecoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: colorScheme.primary,
+              width: 3,
+            ),
+          ),
+        ),
+        blockquotePadding: const EdgeInsets.only(left: 12),
+        listBullet: TextStyle(color: textColor, fontSize: 16),
+        a: TextStyle(
+          color: colorScheme.primary,
+          decoration: TextDecoration.underline,
+        ),
+        strong: TextStyle(
+          color: textColor,
+          fontWeight: FontWeight.bold,
+        ),
+        em: TextStyle(
+          color: textColor,
+          fontStyle: FontStyle.italic,
+        ),
       ),
     );
   }
