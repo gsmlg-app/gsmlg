@@ -4,172 +4,156 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Flutter monorepo template with modular architecture, BLoC state management, and comprehensive tooling. Follows clean architecture principles with separation of concerns across specialized packages.
-
-## Architecture Structure
-
-```
-├── lib/                    # Main app entry point
-├── app_bloc/               # BLoC state management packages
-├── app_lib/                # Core utilities (database, theme, locale, logging, provider)
-├── app_widget/             # Reusable UI components (adaptive, artwork, feedback, web_view)
-├── app_plugin/             # Native platform plugins with federated architecture
-├── bricks/                 # Mason templates for code generation
-├── test_bricks/            # Brick tests (one folder per brick)
-└── third_party/            # Modified third-party packages
-```
-
-**Workspace packages** (defined in root `pubspec.yaml` workspace section):
-- `app_lib/`: database, theme, locale, provider, logging
-- `app_bloc/`: theme
-- `app_widget/`: adaptive, artwork, feedback, web_view
-- `app_plugin/`: client_info/ (nested federated plugin containing: client_info, client_info_platform_interface, client_info_android, client_info_ios, client_info_linux, client_info_macos, client_info_windows)
-- `third_party/`: form_bloc, flutter_form_bloc, flutter_adaptive_scaffold, settings_ui
-
-## Custom Skills (Claude Code)
-
-Project-specific skills are available in `.claude/skills/`:
-- `/project-bloc` - Create BLoC packages with events, states, and proper structure
-- `/project-screen` - Create screens with routing conventions and adaptive scaffold
-- `/project-widget` - Create reusable widgets with platform adaptive support
-- `/project-plugin` - Create native plugins (simple or federated)
-- `/project-locale` - Add localized text using l10n in app_lib/locale
-- `/template-mason-brick` - Create, update, or remove Mason bricks with tests
+Flutter monorepo with modular architecture, BLoC state management, and comprehensive tooling. Organized as a Dart workspace with ~50 packages.
 
 ## Development Commands
 
-### Setup
 ```bash
-dart pub global activate melos
-dart pub global activate mason_cli
-melos bootstrap
-mason get
+# Setup
+dart pub global activate melos && dart pub global activate mason_cli
+melos bootstrap && mason get
+
+# Full prepare (bootstrap + gen-l10n + build-runner)
+melos run prepare
+
+# Lint & format
+melos run analyze          # --fatal-warnings across all packages
+melos run format
+melos run format-check     # CI validation (exits non-zero on diff)
+
+# Tests
+melos run test             # All tests (dart + flutter)
+melos run test:dart        # Non-Flutter packages only
+melos run test:flutter     # Flutter packages only
+flutter test test/screens/splash_screen_test.dart   # Single file
+
+# Code generation (per package)
+dart run build_runner build --delete-conflicting-outputs
+
+# Run app
+flutter run -d macos       # or chrome, linux
 ```
 
-### Common Workflows
-```bash
-melos run prepare          # Bootstrap + gen-l10n + build-runner (full setup)
-melos run analyze          # Lint all packages (--fatal-warnings)
-melos run format           # Format all packages
-melos run format-check     # Check formatting (CI uses this, exits non-zero if changes needed)
-melos run fix              # Apply dart fix --apply
-melos run test             # Run all tests (flutter + dart)
-```
+### Mason Code Generation
 
-### Individual Package Operations
 ```bash
-# Test single file
-flutter test test/screens/splash_screen_test.dart
-
-# Package-specific commands
-cd app_lib/theme && flutter test
-cd app_lib/theme && dart run build_runner build --delete-conflicting-outputs
-```
-
-### Code Generation with Mason
-```bash
-# Screens and widgets
 mason make screen --name ScreenName --folder subfolder
 mason make widget --name WidgetName --type stateless --folder components
-
-# BLoC patterns
 mason make simple_bloc -o app_bloc/feature_name --name=feature_name
-mason make list_bloc -o app_bloc/feature_name --name=feature_name
-mason make form_bloc --name Login --field_names "email,password"
-
-# Other generators
-mason make repository -o app_lib/feature_name --name=feature_name
 mason make api_client -o app_api/app_api --package_name=app_api
-
-# Native plugins (prefer native_plugin for simplicity)
 mason make native_plugin --name plugin_name --description "Description" --package_prefix app -o app_plugin
-# Use native_federation_plugin only when publishing separate platform packages
-mason make native_federation_plugin --name plugin_name --description "Description" --package_prefix app -o app_plugin
 ```
 
 See [BRICKS.md](./docs/BRICKS.md) for complete brick documentation.
 
-### Template Scripts
-```bash
-# Rename template to your project name (run once after cloning)
-dart run bin/setup_project.dart my_project_name
+## Architecture
 
-# Update bricks from upstream template (only works after renaming)
-dart run bin/update_bricks.dart
-dart run bin/update_bricks.dart --force  # Force update all bricks
+### Directory Layout
+
+```
+lib/                        Main app (main.dart, app.dart, router.dart, screens/)
+app_bloc/                   BLoC packages (one per feature domain)
+app_lib/                    Core libraries (database, theme, locale, provider, logging, secure_storage, chat, ip_db)
+app_widget/                 UI components (adaptive, artwork, feedback, web_view, components, data_list, world_map)
+app_api/                    API clients (route53, cloudflare_dns, github, vultr_api)
+app_form/                   Form modules (camera_settings)
+app_plugin/                 Native plugins (federated client_info)
+third_party/                Modified third-party packages
+bricks/                     Mason templates
 ```
 
-## Key Entry Points
+### Package Dependencies
 
-- `lib/main.dart` - App initialization: MainProvider, AppLogger, AppDatabase, SharedPreferences
-- `lib/app.dart` - Root widget with ThemeBloc and MaterialApp.router
-- `lib/router.dart` - GoRouter configuration with NoTransitionPage
-- `lib/screens/` - Feature screens (app/, home/, settings/)
+Use `<package_name>: any` for workspace packages in pubspec.yaml. Never use path dependencies. New packages must be added to the root `pubspec.yaml` `workspace:` list and `dependencies:` section.
 
-## Package Dependencies
+### App Initialization Flow
 
-Use `<package_name>: any` for workspace packages in pubspec.yaml dependencies. Melos resolves internal dependencies through the workspace configuration. Never use path dependencies.
+`lib/main.dart` initializes logging, SharedPreferences, AppDatabase, and SecureStorageVaultRepository, then passes them to `MainProvider`.
 
-## Architecture Patterns
+`app_lib/provider/lib/src/main.dart` (`MainProvider`) is the **single source of truth** for all dependency injection. It registers:
+- **Repositories** via `MultiRepositoryProvider`: SharedPreferences, AppDatabase, VaultRepository, GemmaRepository, ChatStorageRepository
+- **BLoCs** via `MultiBlocProvider`: all app BLoCs in dependency order
 
-### App Initialization (lib/main.dart)
+When adding a new BLoC, register it in `MainProvider`, not in `main.dart`.
+
+`lib/app.dart` consumes `ThemeBloc` and creates `MaterialApp.router` with GoRouter.
+
+### Routing
+
+Routes are organized by feature domain. Each feature has a `*_routes.dart` file exporting a `GoRoute` function:
+- `lib/router.dart` composes routes: `serviceRoutes()`, `toolboxRoutes()`, `chatRoutes()`, `settingsRoutes()`
+- Top-level routes use absolute paths (`/home`), nested routes use relative paths (`domain`, `:zoneId`)
+- All pages use `NoTransitionPage`
+
+Screens define static routing constants:
 ```dart
-MainProvider(
-  sharedPrefs: sharedPrefs,
-  database: database,
-  child: MaterialApp(...),
-)
-```
-
-### Routing Pattern
-Screens define static `name` and `path` constants for GoRouter integration:
-```dart
-class HomeScreen extends StatelessWidget {
-  static const name = 'home';
-  static const path = '/home';
+class DomainScreen extends StatefulWidget {
+  static const name = 'Domain';
+  static const path = 'domain';       // relative for nested, '/domain' for top-level
 }
 ```
 
-### Logging
-Use `AppLogger` from `app_logging` package with configurable levels (debug, info, warning, error). Logs to file in application support directory.
+### Navigation
 
-### Theme
-`ThemeBloc` manages theme state. Available color schemes: fire, green, violet, wheat. Supports light/dark modes.
-
-## Testing
-
-Tests co-located with packages in `test/` directories. Main app has comprehensive screen tests in `test/screens/`.
-
-```bash
-melos run test:dart       # Non-Flutter packages only
-melos run test:flutter    # Flutter packages only
+`lib/destination.dart` (`Destinations` class) maps the 4 main navigation tabs: Home, Service, Toolbox, Settings. Screens use `AppAdaptiveScaffold` with:
+```dart
+selectedIndex: Destinations.indexOf(const Key(ServiceScreen.name), context),
+destinations: Destinations.navs(context),
+onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
 ```
 
-Brick tests are in `test_bricks/` (one folder per brick) and run via GitHub Actions workflow `brick-test.yml`.
+### Screen Organization
 
-## Development Environment
+```
+lib/screens/
+├── app/         Splash, error screens
+├── home/        Home screen
+├── service/     Infrastructure services
+│   ├── domain/    DNS zone management
+│   ├── github/    GitHub integration
+│   └── vultr/     Vultr cloud servers
+├── toolbox/     Utility tools
+│   ├── camera/    Camera
+│   ├── ip_geo/    IP geolocation
+│   ├── whois/     WHOIS lookup
+│   └── bluetooth/ Bluetooth scanner
+├── chat/        On-device LLM chat
+├── settings/    App settings
+└── sign/        Authentication
+```
 
-Uses Nix/Devenv for reproducible environment. Auto-loads via direnv (`.envrc`). Flutter SDK version managed through `devenv.nix`.
+### BLoC Pattern
+
+Each feature BLoC lives in its own package under `app_bloc/`:
+- `lib/src/bloc.dart` — Bloc class with event handlers
+- `lib/src/event.dart` — Sealed event classes (`part of 'bloc.dart'`)
+- `lib/src/state.dart` — Sealed state classes (`part of 'bloc.dart'`)
+- Events/states extend `Equatable`, use `@immutable` and `sealed class`
+
+### Secure Storage
+
+`app_secure_storage` provides `VaultRepository` (abstract) and `SecureStorageVaultRepository` (platform-native implementation). BLoCs that need API keys accept `VaultRepository` in their constructor (e.g., `GitHubBloc`, `VultrBloc`). Domain-specific credential helpers like `CredentialsService` wrap the vault.
+
+### Localization
+
+`app_lib/locale` provides `AppLocale` with delegates and supported locales. Access strings via `context.l10n.keyName`. Add new strings in ARB files and run `melos run gen-l10n`.
+
+## Custom Skills (Claude Code)
+
+Project-specific skills in `.claude/skills/`:
+- `/project-bloc`, `/project-screen`, `/project-widget`, `/project-plugin`, `/project-locale`
+- `/project-api`, `/project-form`, `/project-database`, `/project-secure-storage`, `/project-feedback`
+- `/template-mason-brick`
 
 ## Code Style
 
 - flutter_lints rules from analysis_options.yaml
-- BLoC pattern for state management
-- Repository pattern for data layer
+- BLoC pattern for state management, repository pattern for data layer
 - Prefer const constructors
-- Use AppLogger for error handling with logging
-
-## Running the App
-
-```bash
-flutter run                # Default device
-flutter run -d chrome      # Web
-flutter run -d macos       # macOS
-flutter run -d linux       # Linux
-```
+- Uses Nix/Devenv for reproducible environment (auto-loads via direnv)
 
 ## CI Workflows
 
-- `ci.yml` - Format check, analyze, test, and build (skips for docs/config changes)
-- `brick-test.yml` - Tests Mason bricks (only runs when brick files change)
-- `release.yml` - Manual workflow for creating releases with platform builds
+- `ci.yml` — Format check, analyze, test, build (skips for docs/config changes)
+- `brick-test.yml` — Tests Mason bricks (only on brick file changes)
+- `release.yml` — Manual workflow for platform release builds
