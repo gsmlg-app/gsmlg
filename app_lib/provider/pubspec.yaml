@@ -3,20 +3,31 @@ version: 1.0.0
 publish_to: "none"
 
 environment:
-  sdk: ">=3.6.0 <4.0.0"
+  sdk: ">=3.8.0 <4.0.0"
 resolution: workspace
 
 dependencies:
+  flutter:
+    sdk: flutter
   bloc: ^9.0.0
   flutter_bloc: ^9.0.0
   equatable: ^2.0.5
-  flutter:
-    sdk: flutter
   shared_preferences: ^2.0.17
 
+  accounts_bloc: any
   theme_bloc: any
+  auth_bloc: any
+  whois_bloc: any
+  whois_history_bloc: any
+  bluetooth_bloc: any
+  camera_bloc: any
+  domain_bloc: any
+  github_bloc: any
+  vultr_bloc: any
+  chat_bloc: any
   app_database: any
   app_secure_storage: any
+  app_chat: any
 
 dev_dependencies:
   flutter_test:
