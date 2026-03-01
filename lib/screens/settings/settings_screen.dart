@@ -1,7 +1,9 @@
+import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
+import 'package:app_chat/app_chat.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:app_theme/app_theme.dart';
-import 'package:auth_bloc/auth_bloc.dart';
+import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
@@ -10,6 +12,7 @@ import 'package:gsmlg/screens/settings/app_settings_screen.dart';
 import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
 import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
+import 'package:gsmlg/screens/settings/model_management_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:settings_ui/settings_ui.dart';
@@ -38,23 +41,57 @@ class SettingsScreen extends StatelessWidget {
                 child: BlocBuilder<ThemeBloc, ThemeState>(
                   bloc: themeBloc,
                   builder: (context, state) {
-                    final authState = context.read<AuthBloc>().state;
-
                     return SettingsList(
                       sections: [
                         SettingsSection(
                           title: Text(context.l10n.account),
                           tiles: <SettingsTile>[
                             SettingsTile.navigation(
-                              leading: const Icon(Icons.account_box),
-                              title: Text(context.l10n.account),
-                              value: Text(
-                                (authState is AuthSuccess)
-                                    ? authState.user['username'] ?? 'Unknown'
-                                    : 'Not signed in',
+                              leading: const Icon(Icons.manage_accounts),
+                              title: const Text('Service Accounts'),
+                              value: BlocBuilder<AccountsBloc, AccountsState>(
+                                builder: (context, accountsState) {
+                                  if (accountsState is AccountsLoaded) {
+                                    final count = accountsState.accounts.length;
+                                    return Text('$count account${count == 1 ? '' : 's'} configured');
+                                  }
+                                  return const Text('Manage API accounts');
+                                },
                               ),
                               onPressed: (context) {
                                 context.goNamed(AccountScreen.name);
+                              },
+                            ),
+                          ],
+                        ),
+                        SettingsSection(
+                          title: const Text('AI Models'),
+                          tiles: <SettingsTile>[
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.smart_toy),
+                              title: const Text('AI Models'),
+                              value: BlocBuilder<GemmaModelBloc,
+                                  GemmaModelState>(
+                                builder: (context, modelState) {
+                                  final selectedId =
+                                      modelState.selectedModelId;
+                                  if (selectedId != null) {
+                                    final info =
+                                        GemmaModelInfo.findById(selectedId);
+                                    if (info != null) {
+                                      return Text(info.displayName);
+                                    }
+                                    return Text(selectedId);
+                                  }
+                                  final count =
+                                      modelState.installedModels.length;
+                                  return Text(
+                                      '$count model${count == 1 ? '' : 's'} installed');
+                                },
+                              ),
+                              onPressed: (context) {
+                                context
+                                    .goNamed(ModelManagementScreen.name);
                               },
                             ),
                           ],

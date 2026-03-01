@@ -23,8 +23,9 @@ class ServiceScreen extends StatelessWidget {
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => SafeArea(
-        minimum:
-            const EdgeInsets.symmetric(horizontal: Constants.defaultGridGap),
+        minimum: const EdgeInsets.symmetric(
+          horizontal: Constants.defaultGridGap,
+        ),
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
@@ -56,6 +57,17 @@ class ServiceScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                AppGridTile(
+                  onTap: () => context.go('/service/vultr'),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud, size: 48),
+                      SizedBox(height: 8),
+                      Text('Vultr'),
+                    ],
+                  ),
+                ),
                 BlocBuilder<GitHubBloc, GitHubState>(
                   builder: (context, state) {
                     final isConnected = state is GitHubConnected;
@@ -78,7 +90,9 @@ class ServiceScreen extends StatelessWidget {
                                       color: Colors.green,
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: Theme.of(context).colorScheme.surface,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.surface,
                                         width: 2,
                                       ),
                                     ),

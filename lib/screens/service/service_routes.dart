@@ -5,6 +5,8 @@ import 'package:gsmlg/screens/service/domain/zone_detail_screen.dart';
 import 'package:gsmlg/screens/service/github/github_repo_screen.dart';
 import 'package:gsmlg/screens/service/github/github_screen.dart';
 import 'package:gsmlg/screens/service/service_screen.dart';
+import 'package:gsmlg/screens/service/vultr/vultr_detail_screen.dart';
+import 'package:gsmlg/screens/service/vultr/vultr_screen.dart';
 
 GoRoute serviceRoutes() {
   return GoRoute(
@@ -50,6 +52,31 @@ GoRoute serviceRoutes() {
                 key: state.pageKey,
                 restorationId: state.pageKey.value,
                 child: ZoneDetailScreen(zoneId: zoneId),
+              );
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        name: VultrScreen.name,
+        path: VultrScreen.path,
+        pageBuilder: (context, state) {
+          return NoTransitionPage<void>(
+            key: state.pageKey,
+            restorationId: state.pageKey.value,
+            child: const VultrScreen(),
+          );
+        },
+        routes: [
+          GoRoute(
+            name: VultrDetailScreen.name,
+            path: VultrDetailScreen.path,
+            pageBuilder: (context, state) {
+              final instanceId = state.pathParameters['instanceId'] ?? '';
+              return NoTransitionPage<void>(
+                key: state.pageKey,
+                restorationId: state.pageKey.value,
+                child: VultrDetailScreen(instanceId: instanceId),
               );
             },
           ),
