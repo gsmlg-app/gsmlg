@@ -2499,6 +2499,362 @@ class ChatSettingsTableCompanion
   }
 }
 
+class $ServiceAccountTableTable extends ServiceAccountTable
+    with TableInfo<$ServiceAccountTableTable, ServiceAccountTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ServiceAccountTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  @override
+  late final GeneratedColumnWithTypeConverter<ServiceProvider, String>
+      provider = GeneratedColumn<String>('provider', aliasedName, false,
+              type: DriftSqlType.string, requiredDuringInsert: true)
+          .withConverter<ServiceProvider>(
+              $ServiceAccountTableTable.$converterprovider);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, provider, name, description, createdAt, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'service_account_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<ServiceAccountTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ServiceAccountTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ServiceAccountTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      provider: $ServiceAccountTableTable.$converterprovider.fromSql(
+          attachedDatabase.typeMapping
+              .read(DriftSqlType.string, data['${effectivePrefix}provider'])!),
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $ServiceAccountTableTable createAlias(String alias) {
+    return $ServiceAccountTableTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<ServiceProvider, String, String>
+      $converterprovider =
+      const EnumNameConverter<ServiceProvider>(ServiceProvider.values);
+}
+
+class ServiceAccountTableData extends DataClass
+    implements Insertable<ServiceAccountTableData> {
+  /// Auto-incrementing primary key.
+  final int id;
+
+  /// Service provider type.
+  final ServiceProvider provider;
+
+  /// User-friendly name for this account.
+  final String name;
+
+  /// Optional description for this account.
+  final String description;
+
+  /// Timestamp when the record was created.
+  final DateTime createdAt;
+
+  /// Timestamp when the record was last updated.
+  final DateTime updatedAt;
+  const ServiceAccountTableData(
+      {required this.id,
+      required this.provider,
+      required this.name,
+      required this.description,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    {
+      map['provider'] = Variable<String>(
+          $ServiceAccountTableTable.$converterprovider.toSql(provider));
+    }
+    map['name'] = Variable<String>(name);
+    map['description'] = Variable<String>(description);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ServiceAccountTableCompanion toCompanion(bool nullToAbsent) {
+    return ServiceAccountTableCompanion(
+      id: Value(id),
+      provider: Value(provider),
+      name: Value(name),
+      description: Value(description),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ServiceAccountTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ServiceAccountTableData(
+      id: serializer.fromJson<int>(json['id']),
+      provider: $ServiceAccountTableTable.$converterprovider
+          .fromJson(serializer.fromJson<String>(json['provider'])),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String>(json['description']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'provider': serializer.toJson<String>(
+          $ServiceAccountTableTable.$converterprovider.toJson(provider)),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String>(description),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ServiceAccountTableData copyWith(
+          {int? id,
+          ServiceProvider? provider,
+          String? name,
+          String? description,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      ServiceAccountTableData(
+        id: id ?? this.id,
+        provider: provider ?? this.provider,
+        name: name ?? this.name,
+        description: description ?? this.description,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  ServiceAccountTableData copyWithCompanion(ServiceAccountTableCompanion data) {
+    return ServiceAccountTableData(
+      id: data.id.present ? data.id.value : this.id,
+      provider: data.provider.present ? data.provider.value : this.provider,
+      name: data.name.present ? data.name.value : this.name,
+      description:
+          data.description.present ? data.description.value : this.description,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ServiceAccountTableData(')
+          ..write('id: $id, ')
+          ..write('provider: $provider, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, provider, name, description, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ServiceAccountTableData &&
+          other.id == this.id &&
+          other.provider == this.provider &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ServiceAccountTableCompanion
+    extends UpdateCompanion<ServiceAccountTableData> {
+  final Value<int> id;
+  final Value<ServiceProvider> provider;
+  final Value<String> name;
+  final Value<String> description;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const ServiceAccountTableCompanion({
+    this.id = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  ServiceAccountTableCompanion.insert({
+    this.id = const Value.absent(),
+    required ServiceProvider provider,
+    required String name,
+    this.description = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  })  : provider = Value(provider),
+        name = Value(name);
+  static Insertable<ServiceAccountTableData> custom({
+    Expression<int>? id,
+    Expression<String>? provider,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (provider != null) 'provider': provider,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  ServiceAccountTableCompanion copyWith(
+      {Value<int>? id,
+      Value<ServiceProvider>? provider,
+      Value<String>? name,
+      Value<String>? description,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt}) {
+    return ServiceAccountTableCompanion(
+      id: id ?? this.id,
+      provider: provider ?? this.provider,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (provider.present) {
+      map['provider'] = Variable<String>(
+          $ServiceAccountTableTable.$converterprovider.toSql(provider.value));
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ServiceAccountTableCompanion(')
+          ..write('id: $id, ')
+          ..write('provider: $provider, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2513,6 +2869,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ChatMessageTableTable(this);
   late final $ChatSettingsTableTable chatSettingsTable =
       $ChatSettingsTableTable(this);
+  late final $ServiceAccountTableTable serviceAccountTable =
+      $ServiceAccountTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2523,7 +2881,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         gitHubRepoTable,
         chatConversationTable,
         chatMessageTable,
-        chatSettingsTable
+        chatSettingsTable,
+        serviceAccountTable
       ];
 }
 
@@ -3969,6 +4328,195 @@ typedef $$ChatSettingsTableTableProcessedTableManager = ProcessedTableManager<
     ),
     ChatSettingsTableData,
     PrefetchHooks Function()>;
+typedef $$ServiceAccountTableTableCreateCompanionBuilder
+    = ServiceAccountTableCompanion Function({
+  Value<int> id,
+  required ServiceProvider provider,
+  required String name,
+  Value<String> description,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+});
+typedef $$ServiceAccountTableTableUpdateCompanionBuilder
+    = ServiceAccountTableCompanion Function({
+  Value<int> id,
+  Value<ServiceProvider> provider,
+  Value<String> name,
+  Value<String> description,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+});
+
+class $$ServiceAccountTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ServiceAccountTableTable> {
+  $$ServiceAccountTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnWithTypeConverterFilters<ServiceProvider, ServiceProvider, String>
+      get provider => $composableBuilder(
+          column: $table.provider,
+          builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$ServiceAccountTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ServiceAccountTableTable> {
+  $$ServiceAccountTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get provider => $composableBuilder(
+      column: $table.provider, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ServiceAccountTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ServiceAccountTableTable> {
+  $$ServiceAccountTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<ServiceProvider, String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ServiceAccountTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ServiceAccountTableTable,
+    ServiceAccountTableData,
+    $$ServiceAccountTableTableFilterComposer,
+    $$ServiceAccountTableTableOrderingComposer,
+    $$ServiceAccountTableTableAnnotationComposer,
+    $$ServiceAccountTableTableCreateCompanionBuilder,
+    $$ServiceAccountTableTableUpdateCompanionBuilder,
+    (
+      ServiceAccountTableData,
+      BaseReferences<_$AppDatabase, $ServiceAccountTableTable,
+          ServiceAccountTableData>
+    ),
+    ServiceAccountTableData,
+    PrefetchHooks Function()> {
+  $$ServiceAccountTableTableTableManager(
+      _$AppDatabase db, $ServiceAccountTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ServiceAccountTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ServiceAccountTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ServiceAccountTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<ServiceProvider> provider = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> description = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              ServiceAccountTableCompanion(
+            id: id,
+            provider: provider,
+            name: name,
+            description: description,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required ServiceProvider provider,
+            required String name,
+            Value<String> description = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+          }) =>
+              ServiceAccountTableCompanion.insert(
+            id: id,
+            provider: provider,
+            name: name,
+            description: description,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ServiceAccountTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ServiceAccountTableTable,
+    ServiceAccountTableData,
+    $$ServiceAccountTableTableFilterComposer,
+    $$ServiceAccountTableTableOrderingComposer,
+    $$ServiceAccountTableTableAnnotationComposer,
+    $$ServiceAccountTableTableCreateCompanionBuilder,
+    $$ServiceAccountTableTableUpdateCompanionBuilder,
+    (
+      ServiceAccountTableData,
+      BaseReferences<_$AppDatabase, $ServiceAccountTableTable,
+          ServiceAccountTableData>
+    ),
+    ServiceAccountTableData,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3985,4 +4533,6 @@ class $AppDatabaseManager {
       $$ChatMessageTableTableTableManager(_db, _db.chatMessageTable);
   $$ChatSettingsTableTableTableManager get chatSettingsTable =>
       $$ChatSettingsTableTableTableManager(_db, _db.chatSettingsTable);
+  $$ServiceAccountTableTableTableManager get serviceAccountTable =>
+      $$ServiceAccountTableTableTableManager(_db, _db.serviceAccountTable);
 }

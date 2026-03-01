@@ -8,6 +8,7 @@ import 'tables/chat_message.dart';
 import 'tables/chat_settings.dart';
 import 'tables/dns_zone.dart';
 import 'tables/github_repo.dart';
+import 'tables/service_account.dart';
 import 'tables/whois_history.dart';
 import 'type_converter.dart';
 
@@ -16,6 +17,7 @@ export 'tables/chat_message.dart';
 export 'tables/chat_settings.dart';
 export 'tables/dns_zone.dart';
 export 'tables/github_repo.dart';
+export 'tables/service_account.dart';
 export 'tables/whois_history.dart';
 export 'type_converter.dart';
 
@@ -28,6 +30,7 @@ part 'database.g.dart';
   ChatConversationTable,
   ChatMessageTable,
   ChatSettingsTable,
+  ServiceAccountTable,
 ])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
@@ -41,7 +44,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration {
@@ -60,6 +63,15 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(chatConversationTable);
           await m.createTable(chatMessageTable);
           await m.createTable(chatSettingsTable);
+        }
+        if (from < 5) {
+          // v5 had an earlier version of this table; drop it for v6.
+          await m.createTable(serviceAccountTable);
+        }
+        if (from < 6) {
+          // Recreate service_account_table with name + description columns.
+          await m.deleteTable('service_account_table');
+          await m.createTable(serviceAccountTable);
         }
       },
     );
