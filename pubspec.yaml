@@ -23,6 +23,8 @@ workspace:
   - app_bloc/camera
   - app_bloc/domain
   - app_bloc/github
+  - app_bloc/vultr
+  - app_bloc/accounts
   - app_bloc/chat
   - app_widget/adaptive
   - app_widget/artwork
@@ -41,6 +43,7 @@ workspace:
   - app_api/route53
   - app_api/cloudflare_dns
   - app_api/github
+  - app_api/vultr_api
   - third_party/form_bloc
   - third_party/flutter_form_bloc
   - third_party/flutter_adaptive_scaffold
@@ -70,6 +73,7 @@ dependencies:
   lottie: ^3.3.1
   google_fonts: ^6.2.1
 
+  flutter_markdown: ^0.7.6
   flutter_slidable: ^4.0.0
   intl: any
   flutter_blue_plus: ^1.35.3
@@ -77,12 +81,14 @@ dependencies:
   camera_macos: any
 
   dio: any
+  flutter_gemma: any
   url_launcher: ^6.3.1
 
   # workspace packages
   cloudflare_dns: any
   route53: any
   github_api: any
+  vultr_api: any
   app_database: any
   app_theme: any
   app_locale: any
@@ -95,6 +101,8 @@ dependencies:
   camera_bloc: any
   domain_bloc: any
   github_bloc: any
+  vultr_bloc: any
+  accounts_bloc: any
   app_artwork: any
   app_client_info: any
   app_feedback: any
