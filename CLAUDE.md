@@ -53,7 +53,7 @@ See [BRICKS.md](./docs/BRICKS.md) for complete brick documentation.
 ```
 lib/                        Main app (main.dart, app.dart, router.dart, screens/)
 app_bloc/                   BLoC packages (one per feature domain)
-app_lib/                    Core libraries (database, theme, locale, provider, logging, secure_storage, chat, ip_db)
+app_lib/                    Core libraries (database, theme, locale, provider, logging, secure_storage, chat)
 app_widget/                 UI components (adaptive, artwork, feedback, web_view, components, data_list, world_map)
 app_api/                    API clients (route53, cloudflare_dns, github, vultr_api)
 app_form/                   Form modules (camera_settings)
@@ -72,7 +72,7 @@ Use `<package_name>: any` for workspace packages in pubspec.yaml. Never use path
 
 `app_lib/provider/lib/src/main.dart` (`MainProvider`) is the **single source of truth** for all dependency injection. It registers:
 - **Repositories** via `MultiRepositoryProvider`: SharedPreferences, AppDatabase, VaultRepository, GemmaRepository, ChatStorageRepository
-- **BLoCs** via `MultiBlocProvider`: all app BLoCs in dependency order
+- **BLoCs** via `MultiBlocProvider`: all app BLoCs in dependency order (ThemeBloc, AuthBloc, WhoisBloc, WhoisHistoryBloc, BluetoothBloc, CameraBloc, ZoneBloc, RecordBloc, GitHubBloc, VultrBloc, AccountsBloc, ChatSettingsBloc, GemmaModelBloc, ChatBloc)
 
 When adding a new BLoC, register it in `MainProvider`, not in `main.dart`.
 
@@ -129,6 +129,10 @@ Each feature BLoC lives in its own package under `app_bloc/`:
 - `lib/src/event.dart` — Sealed event classes (`part of 'bloc.dart'`)
 - `lib/src/state.dart` — Sealed state classes (`part of 'bloc.dart'`)
 - Events/states extend `Equatable`, use `@immutable` and `sealed class`
+
+### On-Device LLM (Chat)
+
+`app_lib/chat` provides `GemmaRepository` (model management via flutter_gemma) and `ChatStorageRepository` (conversation persistence via AppDatabase). The chat feature BLoCs (`ChatSettingsBloc`, `GemmaModelBloc`, `ChatBloc`) live in `app_bloc/chat`. Desktop platforms (macOS/Linux/Windows) require `.litertlm` model format and a bundled Java gRPC server (`litertlm-server.jar`).
 
 ### Secure Storage
 

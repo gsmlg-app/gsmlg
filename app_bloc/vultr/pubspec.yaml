@@ -1,0 +1,20 @@
+name: vultr_bloc
+description: Vultr cloud server management BLoC
+publish_to: none
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bloc: any
+  equatable: any
+  app_secure_storage: any
+  vultr_api: any
+
+dev_dependencies:
+  test: any
+  bloc_test: any

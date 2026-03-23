@@ -1,0 +1,18 @@
+# openapi.model.CreateLoadBalancerForwardingRulesRequest
+
+## Load the model package
+```dart
+import 'package:openapi/api.dart';
+```
+
+## Properties
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**frontendProtocol** | **String** | The protocol on the Load Balancer to forward to the backend.  * HTTP * HTTPS * TCP | 
+**frontendPort** | **int** | The port number on the Load Balancer to forward to the backend. | 
+**backendProtocol** | **String** | The protocol destination on the backend server.  * HTTP * HTTPS * TCP | 
+**backendPort** | **int** | The port number destination on the backend server. | 
+
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+
+

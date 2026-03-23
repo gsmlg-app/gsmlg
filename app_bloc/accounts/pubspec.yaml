@@ -1,0 +1,21 @@
+name: accounts_bloc
+description: Service accounts management BLoC for multi-provider API credentials
+publish_to: none
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bloc: any
+  equatable: any
+  drift: any
+  app_secure_storage: any
+  app_database: any
+
+dev_dependencies:
+  test: any
+  bloc_test: any
