@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Flutter monorepo with modular architecture, BLoC state management, and comprehensive tooling. Organized as a Dart workspace with ~50 packages.
+Flutter monorepo with modular architecture, BLoC state management, and comprehensive tooling. Organized as a Dart workspace with ~50 packages. Requires Dart SDK `>=3.8.0 <4.0.0`.
 
 ## Development Commands
 
@@ -29,6 +29,14 @@ flutter test test/screens/splash_screen_test.dart   # Single file
 
 # Code generation (per package)
 dart run build_runner build --delete-conflicting-outputs
+
+# Fix & validate
+melos run fix              # dart fix --apply across all packages
+melos run fix-dry-run      # Preview fixes without applying
+melos run validate-dependencies
+
+# Brick testing
+melos run brick-test       # Tests Mason templates
 
 # Run app
 flutter run -d macos       # or chrome, linux
@@ -147,17 +155,20 @@ Each feature BLoC lives in its own package under `app_bloc/`:
 Project-specific skills in `.claude/skills/`:
 - `/project-bloc`, `/project-screen`, `/project-widget`, `/project-plugin`, `/project-locale`
 - `/project-api`, `/project-form`, `/project-database`, `/project-secure-storage`, `/project-feedback`
-- `/template-mason-brick`
+- `/data-visualization`, `/template-mason-brick`
 
 ## Code Style
 
 - flutter_lints rules from analysis_options.yaml
+- Generated files (`*.g.dart`, `*.freezed.dart`) excluded from analysis
 - BLoC pattern for state management, repository pattern for data layer
 - Prefer const constructors
+- Error handling: try/catch with `app_logging` package for structured logging
 - Uses Nix/Devenv for reproducible environment (auto-loads via direnv)
 
 ## CI Workflows
 
 - `ci.yml` — Format check, analyze, test, build (skips for docs/config changes)
 - `brick-test.yml` — Tests Mason bricks (only on brick file changes)
-- `release.yml` — Manual workflow for platform release builds
+- `release.yml` — Manual workflow for platform release builds (android, ios, linux, macos)
+- `deploy.yml` — Manual workflow for Play Store/App Store deployment via Fastlane
