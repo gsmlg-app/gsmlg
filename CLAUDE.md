@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Flutter monorepo with modular architecture, BLoC state management, and comprehensive tooling. Organized as a Dart workspace with ~50 packages. Requires Dart SDK `>=3.8.0 <4.0.0`.
+**GSMLG** is a cross-platform developer toolbox app combining on-device AI chat (Google Gemma), cloud service management (Vultr, GitHub, CloudFlare DNS), and network utilities (WHOIS, IP geolocation, Bluetooth scanner). Built as a Flutter monorepo with ~50 packages, BLoC state management, and Dart workspace. Requires Dart SDK `>=3.8.0 <4.0.0`.
 
 ## Development Commands
 
