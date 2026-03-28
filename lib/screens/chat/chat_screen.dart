@@ -1,7 +1,10 @@
+import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:gsmlg/destination.dart';
+import 'package:gsmlg/screens/home/home_screen.dart';
 
 import 'chat_history_screen.dart';
 import 'chat_settings_screen.dart';
@@ -46,8 +49,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return AppAdaptiveScaffold(
+      selectedIndex: Destinations.indexOf(
+        const Key(HomeScreen.name),
+        context,
+      ),
+      destinations: Destinations.navs(context),
+      onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
+      body: (_) => Scaffold(
+        appBar: AppBar(
         title: BlocBuilder<ChatBloc, ChatState>(
           builder: (context, state) {
             return Text(state.conversation?.title ?? 'Chat');
@@ -127,6 +137,7 @@ class _ChatScreenState extends State<ChatScreen> {
             },
           ),
         ],
+      ),
       ),
     );
   }

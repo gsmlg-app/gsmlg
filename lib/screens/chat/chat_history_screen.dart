@@ -1,7 +1,11 @@
+import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:gsmlg/destination.dart';
+import 'package:gsmlg/screens/home/home_screen.dart';
 import 'package:intl/intl.dart';
 
 class ChatHistoryScreen extends StatefulWidget {
@@ -23,48 +27,56 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chat History'),
-        actions: [
-          BlocBuilder<ChatBloc, ChatState>(
-            builder: (context, state) {
-              if (state.conversationHistory.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return IconButton(
-                icon: const Icon(Icons.delete_sweep),
-                tooltip: 'Delete All',
-                onPressed: () => _confirmDeleteAll(context),
-              );
-            },
-          ),
-        ],
+    return AppAdaptiveScaffold(
+      selectedIndex: Destinations.indexOf(
+        const Key(HomeScreen.name),
+        context,
       ),
-      body: BlocBuilder<ChatBloc, ChatState>(
-        builder: (context, state) {
-          if (state.conversationHistory.isEmpty) {
-            return _buildEmptyView(context);
-          }
+      destinations: Destinations.navs(context),
+      onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
+      body: (_) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Chat History'),
+          actions: [
+            BlocBuilder<ChatBloc, ChatState>(
+              builder: (context, state) {
+                if (state.conversationHistory.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return IconButton(
+                  icon: const Icon(Icons.delete_sweep),
+                  tooltip: 'Delete All',
+                  onPressed: () => _confirmDeleteAll(context),
+                );
+              },
+            ),
+          ],
+        ),
+        body: BlocBuilder<ChatBloc, ChatState>(
+          builder: (context, state) {
+            if (state.conversationHistory.isEmpty) {
+              return _buildEmptyView(context);
+            }
 
-          return ListView.builder(
-            itemCount: state.conversationHistory.length,
-            itemBuilder: (context, index) {
-              final conversation = state.conversationHistory[index];
-              return _ConversationTile(
-                conversation: conversation,
-                isSelected: state.conversation?.id == conversation.id,
-                onTap: () {
-                  context
-                      .read<ChatBloc>()
-                      .add(ChatLoadConversation(id: conversation.id));
-                  Navigator.pop(context);
-                },
-                onDelete: () => _confirmDelete(context, conversation),
-              );
-            },
-          );
-        },
+            return ListView.builder(
+              itemCount: state.conversationHistory.length,
+              itemBuilder: (context, index) {
+                final conversation = state.conversationHistory[index];
+                return _ConversationTile(
+                  conversation: conversation,
+                  isSelected: state.conversation?.id == conversation.id,
+                  onTap: () {
+                    context
+                        .read<ChatBloc>()
+                        .add(ChatLoadConversation(id: conversation.id));
+                    context.pop();
+                  },
+                  onDelete: () => _confirmDelete(context, conversation),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

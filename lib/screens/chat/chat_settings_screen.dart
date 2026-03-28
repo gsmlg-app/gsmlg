@@ -1,7 +1,10 @@
+import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gsmlg/destination.dart';
+import 'package:gsmlg/screens/home/home_screen.dart';
 import 'package:settings_ui/settings_ui.dart';
 
 class ChatSettingsScreen extends StatefulWidget {
@@ -17,13 +20,20 @@ class ChatSettingsScreen extends StatefulWidget {
 class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chat Settings'),
+    return AppAdaptiveScaffold(
+      selectedIndex: Destinations.indexOf(
+        const Key(HomeScreen.name),
+        context,
       ),
-      body: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-        builder: (context, state) {
-          return SettingsList(
+      destinations: Destinations.navs(context),
+      onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
+      body: (_) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Chat Settings'),
+        ),
+        body: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+          builder: (context, state) {
+            return SettingsList(
             sections: [
               SettingsSection(
                 title: const Text('Model'),
@@ -117,6 +127,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
             ],
           );
         },
+      ),
       ),
     );
   }
