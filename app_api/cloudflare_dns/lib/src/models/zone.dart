@@ -34,7 +34,7 @@ class Zone {
     this.permissions,
     this.plan,
   });
-  
+
   factory Zone.fromJson(Map<String, Object?> json) => _$ZoneFromJson(json);
 
   /// Zone identifier.

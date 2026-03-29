@@ -19,20 +19,22 @@ class ListUserApiKeys200Response {
   List<Apikey> apiKeys;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ListUserApiKeys200Response &&
-    _deepEquality.equals(other.apiKeys, apiKeys);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListUserApiKeys200Response &&
+          _deepEquality.equals(other.apiKeys, apiKeys);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (apiKeys.hashCode);
+      // ignore: unnecessary_parenthesis
+      (apiKeys.hashCode);
 
   @override
   String toString() => 'ListUserApiKeys200Response[apiKeys=$apiKeys]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'api_keys'] = this.apiKeys;
+    json[r'api_keys'] = this.apiKeys;
     return json;
   }
 
@@ -48,8 +50,10 @@ class ListUserApiKeys200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "ListUserApiKeys200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "ListUserApiKeys200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "ListUserApiKeys200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "ListUserApiKeys200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -61,7 +65,10 @@ class ListUserApiKeys200Response {
     return null;
   }
 
-  static List<ListUserApiKeys200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<ListUserApiKeys200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <ListUserApiKeys200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -89,20 +96,24 @@ class ListUserApiKeys200Response {
   }
 
   // maps a json object with a list of ListUserApiKeys200Response-objects as value to a dart map
-  static Map<String, List<ListUserApiKeys200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<ListUserApiKeys200Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<ListUserApiKeys200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = ListUserApiKeys200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = ListUserApiKeys200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

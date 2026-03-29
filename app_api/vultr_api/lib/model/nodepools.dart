@@ -141,44 +141,47 @@ class Nodepools {
   String? userData;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Nodepools &&
-    other.id == id &&
-    other.dateCreated == dateCreated &&
-    other.label == label &&
-    other.tag == tag &&
-    other.plan == plan &&
-    other.status == status &&
-    other.nodeQuantity == nodeQuantity &&
-    _deepEquality.equals(other.nodes, nodes) &&
-    other.dateUpdated == dateUpdated &&
-    other.autoScaler == autoScaler &&
-    other.minNodes == minNodes &&
-    other.maxNodes == maxNodes &&
-    other.labels == labels &&
-    _deepEquality.equals(other.taints, taints) &&
-    other.userData == userData;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Nodepools &&
+          other.id == id &&
+          other.dateCreated == dateCreated &&
+          other.label == label &&
+          other.tag == tag &&
+          other.plan == plan &&
+          other.status == status &&
+          other.nodeQuantity == nodeQuantity &&
+          _deepEquality.equals(other.nodes, nodes) &&
+          other.dateUpdated == dateUpdated &&
+          other.autoScaler == autoScaler &&
+          other.minNodes == minNodes &&
+          other.maxNodes == maxNodes &&
+          other.labels == labels &&
+          _deepEquality.equals(other.taints, taints) &&
+          other.userData == userData;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (tag == null ? 0 : tag!.hashCode) +
-    (plan == null ? 0 : plan!.hashCode) +
-    (status == null ? 0 : status!.hashCode) +
-    (nodeQuantity == null ? 0 : nodeQuantity!.hashCode) +
-    (nodes.hashCode) +
-    (dateUpdated == null ? 0 : dateUpdated!.hashCode) +
-    (autoScaler == null ? 0 : autoScaler!.hashCode) +
-    (minNodes == null ? 0 : minNodes!.hashCode) +
-    (maxNodes == null ? 0 : maxNodes!.hashCode) +
-    (labels == null ? 0 : labels!.hashCode) +
-    (taints.hashCode) +
-    (userData == null ? 0 : userData!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (tag == null ? 0 : tag!.hashCode) +
+      (plan == null ? 0 : plan!.hashCode) +
+      (status == null ? 0 : status!.hashCode) +
+      (nodeQuantity == null ? 0 : nodeQuantity!.hashCode) +
+      (nodes.hashCode) +
+      (dateUpdated == null ? 0 : dateUpdated!.hashCode) +
+      (autoScaler == null ? 0 : autoScaler!.hashCode) +
+      (minNodes == null ? 0 : minNodes!.hashCode) +
+      (maxNodes == null ? 0 : maxNodes!.hashCode) +
+      (labels == null ? 0 : labels!.hashCode) +
+      (taints.hashCode) +
+      (userData == null ? 0 : userData!.hashCode);
 
   @override
-  String toString() => 'Nodepools[id=$id, dateCreated=$dateCreated, label=$label, tag=$tag, plan=$plan, status=$status, nodeQuantity=$nodeQuantity, nodes=$nodes, dateUpdated=$dateUpdated, autoScaler=$autoScaler, minNodes=$minNodes, maxNodes=$maxNodes, labels=$labels, taints=$taints, userData=$userData]';
+  String toString() =>
+      'Nodepools[id=$id, dateCreated=$dateCreated, label=$label, tag=$tag, plan=$plan, status=$status, nodeQuantity=$nodeQuantity, nodes=$nodes, dateUpdated=$dateUpdated, autoScaler=$autoScaler, minNodes=$minNodes, maxNodes=$maxNodes, labels=$labels, taints=$taints, userData=$userData]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -217,7 +220,7 @@ class Nodepools {
     } else {
       json[r'node_quantity'] = null;
     }
-      json[r'nodes'] = this.nodes;
+    json[r'nodes'] = this.nodes;
     if (this.dateUpdated != null) {
       json[r'date_updated'] = this.dateUpdated;
     } else {
@@ -243,7 +246,7 @@ class Nodepools {
     } else {
       json[r'labels'] = null;
     }
-      json[r'taints'] = this.taints;
+    json[r'taints'] = this.taints;
     if (this.userData != null) {
       json[r'user_data'] = this.userData;
     } else {
@@ -264,8 +267,10 @@ class Nodepools {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Nodepools[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Nodepools[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Nodepools[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Nodepools[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -291,7 +296,10 @@ class Nodepools {
     return null;
   }
 
-  static List<Nodepools> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Nodepools> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Nodepools>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -319,20 +327,24 @@ class Nodepools {
   }
 
   // maps a json object with a list of Nodepools-objects as value to a dart map
-  static Map<String, List<Nodepools>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Nodepools>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Nodepools>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Nodepools.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Nodepools.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

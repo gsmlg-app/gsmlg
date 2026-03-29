@@ -8,14 +8,11 @@ part 'referenced_workflow.g.dart';
 
 @JsonSerializable()
 class ReferencedWorkflow {
-  const ReferencedWorkflow({
-    required this.path,
-    required this.sha,
-    this.ref,
-  });
-  
-  factory ReferencedWorkflow.fromJson(Map<String, Object?> json) => _$ReferencedWorkflowFromJson(json);
-  
+  const ReferencedWorkflow({required this.path, required this.sha, this.ref});
+
+  factory ReferencedWorkflow.fromJson(Map<String, Object?> json) =>
+      _$ReferencedWorkflowFromJson(json);
+
   final String path;
   final String sha;
   final String? ref;

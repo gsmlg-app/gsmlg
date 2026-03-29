@@ -18,9 +18,10 @@ class PullRequestMinimal {
     this.head,
     this.baseValue,
   });
-  
-  factory PullRequestMinimal.fromJson(Map<String, Object?> json) => _$PullRequestMinimalFromJson(json);
-  
+
+  factory PullRequestMinimal.fromJson(Map<String, Object?> json) =>
+      _$PullRequestMinimalFromJson(json);
+
   final int? id;
   final int? number;
   final String? url;

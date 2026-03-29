@@ -20,20 +20,21 @@ class CreateVFSRequestStorageSize {
   int gb;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateVFSRequestStorageSize &&
-    other.gb == gb;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateVFSRequestStorageSize && other.gb == gb;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (gb.hashCode);
+      // ignore: unnecessary_parenthesis
+      (gb.hashCode);
 
   @override
   String toString() => 'CreateVFSRequestStorageSize[gb=$gb]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'gb'] = this.gb;
+    json[r'gb'] = this.gb;
     return json;
   }
 
@@ -49,8 +50,10 @@ class CreateVFSRequestStorageSize {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateVFSRequestStorageSize[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateVFSRequestStorageSize[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateVFSRequestStorageSize[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateVFSRequestStorageSize[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +65,10 @@ class CreateVFSRequestStorageSize {
     return null;
   }
 
-  static List<CreateVFSRequestStorageSize> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateVFSRequestStorageSize> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateVFSRequestStorageSize>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -90,13 +96,19 @@ class CreateVFSRequestStorageSize {
   }
 
   // maps a json object with a list of CreateVFSRequestStorageSize-objects as value to a dart map
-  static Map<String, List<CreateVFSRequestStorageSize>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateVFSRequestStorageSize>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateVFSRequestStorageSize>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateVFSRequestStorageSize.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateVFSRequestStorageSize.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -107,4 +119,3 @@ class CreateVFSRequestStorageSize {
     'gb',
   };
 }
-

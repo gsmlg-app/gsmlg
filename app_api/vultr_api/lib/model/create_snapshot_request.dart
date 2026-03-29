@@ -30,22 +30,24 @@ class CreateSnapshotRequest {
   String? description;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateSnapshotRequest &&
-    other.instanceId == instanceId &&
-    other.description == description;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateSnapshotRequest &&
+          other.instanceId == instanceId &&
+          other.description == description;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (instanceId.hashCode) +
-    (description == null ? 0 : description!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (instanceId.hashCode) + (description == null ? 0 : description!.hashCode);
 
   @override
-  String toString() => 'CreateSnapshotRequest[instanceId=$instanceId, description=$description]';
+  String toString() =>
+      'CreateSnapshotRequest[instanceId=$instanceId, description=$description]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'instance_id'] = this.instanceId;
+    json[r'instance_id'] = this.instanceId;
     if (this.description != null) {
       json[r'description'] = this.description;
     } else {
@@ -66,8 +68,10 @@ class CreateSnapshotRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateSnapshotRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateSnapshotRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateSnapshotRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateSnapshotRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -80,7 +84,10 @@ class CreateSnapshotRequest {
     return null;
   }
 
-  static List<CreateSnapshotRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateSnapshotRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateSnapshotRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -108,13 +115,19 @@ class CreateSnapshotRequest {
   }
 
   // maps a json object with a list of CreateSnapshotRequest-objects as value to a dart map
-  static Map<String, List<CreateSnapshotRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateSnapshotRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateSnapshotRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateSnapshotRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateSnapshotRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -125,4 +138,3 @@ class CreateSnapshotRequest {
     'instance_id',
   };
 }
-

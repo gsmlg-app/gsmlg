@@ -26,13 +26,14 @@ class UpdateInferenceRequest {
   String? label;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateInferenceRequest &&
-    other.label == label;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateInferenceRequest && other.label == label;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label == null ? 0 : label!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label == null ? 0 : label!.hashCode);
 
   @override
   String toString() => 'UpdateInferenceRequest[label=$label]';
@@ -59,8 +60,10 @@ class UpdateInferenceRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateInferenceRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateInferenceRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateInferenceRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateInferenceRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -72,7 +75,10 @@ class UpdateInferenceRequest {
     return null;
   }
 
-  static List<UpdateInferenceRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateInferenceRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateInferenceRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -100,20 +106,24 @@ class UpdateInferenceRequest {
   }
 
   // maps a json object with a list of UpdateInferenceRequest-objects as value to a dart map
-  static Map<String, List<UpdateInferenceRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateInferenceRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateInferenceRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateInferenceRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateInferenceRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

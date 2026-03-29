@@ -86,28 +86,31 @@ class UpdateLoadBalancerRequestHealthCheck {
   String? healthyThreshold;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateLoadBalancerRequestHealthCheck &&
-    other.protocol == protocol &&
-    other.port == port &&
-    other.path == path &&
-    other.checkInterval == checkInterval &&
-    other.responseTimeout == responseTimeout &&
-    other.unhealthyThreshold == unhealthyThreshold &&
-    other.healthyThreshold == healthyThreshold;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateLoadBalancerRequestHealthCheck &&
+          other.protocol == protocol &&
+          other.port == port &&
+          other.path == path &&
+          other.checkInterval == checkInterval &&
+          other.responseTimeout == responseTimeout &&
+          other.unhealthyThreshold == unhealthyThreshold &&
+          other.healthyThreshold == healthyThreshold;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (protocol == null ? 0 : protocol!.hashCode) +
-    (port == null ? 0 : port!.hashCode) +
-    (path == null ? 0 : path!.hashCode) +
-    (checkInterval == null ? 0 : checkInterval!.hashCode) +
-    (responseTimeout == null ? 0 : responseTimeout!.hashCode) +
-    (unhealthyThreshold == null ? 0 : unhealthyThreshold!.hashCode) +
-    (healthyThreshold == null ? 0 : healthyThreshold!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (protocol == null ? 0 : protocol!.hashCode) +
+      (port == null ? 0 : port!.hashCode) +
+      (path == null ? 0 : path!.hashCode) +
+      (checkInterval == null ? 0 : checkInterval!.hashCode) +
+      (responseTimeout == null ? 0 : responseTimeout!.hashCode) +
+      (unhealthyThreshold == null ? 0 : unhealthyThreshold!.hashCode) +
+      (healthyThreshold == null ? 0 : healthyThreshold!.hashCode);
 
   @override
-  String toString() => 'UpdateLoadBalancerRequestHealthCheck[protocol=$protocol, port=$port, path=$path, checkInterval=$checkInterval, responseTimeout=$responseTimeout, unhealthyThreshold=$unhealthyThreshold, healthyThreshold=$healthyThreshold]';
+  String toString() =>
+      'UpdateLoadBalancerRequestHealthCheck[protocol=$protocol, port=$port, path=$path, checkInterval=$checkInterval, responseTimeout=$responseTimeout, unhealthyThreshold=$unhealthyThreshold, healthyThreshold=$healthyThreshold]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -161,8 +164,10 @@ class UpdateLoadBalancerRequestHealthCheck {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateLoadBalancerRequestHealthCheck[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateLoadBalancerRequestHealthCheck[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateLoadBalancerRequestHealthCheck[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateLoadBalancerRequestHealthCheck[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -173,14 +178,18 @@ class UpdateLoadBalancerRequestHealthCheck {
         path: mapValueOfType<String>(json, r'path'),
         checkInterval: mapValueOfType<String>(json, r'check_interval'),
         responseTimeout: mapValueOfType<String>(json, r'response_timeout'),
-        unhealthyThreshold: mapValueOfType<String>(json, r'unhealthy_threshold'),
+        unhealthyThreshold:
+            mapValueOfType<String>(json, r'unhealthy_threshold'),
         healthyThreshold: mapValueOfType<String>(json, r'healthy_threshold'),
       );
     }
     return null;
   }
 
-  static List<UpdateLoadBalancerRequestHealthCheck> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateLoadBalancerRequestHealthCheck> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateLoadBalancerRequestHealthCheck>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -193,12 +202,14 @@ class UpdateLoadBalancerRequestHealthCheck {
     return result.toList(growable: growable);
   }
 
-  static Map<String, UpdateLoadBalancerRequestHealthCheck> mapFromJson(dynamic json) {
+  static Map<String, UpdateLoadBalancerRequestHealthCheck> mapFromJson(
+      dynamic json) {
     final map = <String, UpdateLoadBalancerRequestHealthCheck>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = UpdateLoadBalancerRequestHealthCheck.fromJson(entry.value);
+        final value =
+            UpdateLoadBalancerRequestHealthCheck.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -208,20 +219,25 @@ class UpdateLoadBalancerRequestHealthCheck {
   }
 
   // maps a json object with a list of UpdateLoadBalancerRequestHealthCheck-objects as value to a dart map
-  static Map<String, List<UpdateLoadBalancerRequestHealthCheck>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateLoadBalancerRequestHealthCheck>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateLoadBalancerRequestHealthCheck>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateLoadBalancerRequestHealthCheck.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateLoadBalancerRequestHealthCheck.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

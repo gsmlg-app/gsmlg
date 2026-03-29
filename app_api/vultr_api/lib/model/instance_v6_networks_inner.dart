@@ -46,20 +46,23 @@ class InstanceV6NetworksInner {
   int? networkSize;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is InstanceV6NetworksInner &&
-    other.network == network &&
-    other.mainIp == mainIp &&
-    other.networkSize == networkSize;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is InstanceV6NetworksInner &&
+          other.network == network &&
+          other.mainIp == mainIp &&
+          other.networkSize == networkSize;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (network == null ? 0 : network!.hashCode) +
-    (mainIp == null ? 0 : mainIp!.hashCode) +
-    (networkSize == null ? 0 : networkSize!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (network == null ? 0 : network!.hashCode) +
+      (mainIp == null ? 0 : mainIp!.hashCode) +
+      (networkSize == null ? 0 : networkSize!.hashCode);
 
   @override
-  String toString() => 'InstanceV6NetworksInner[network=$network, mainIp=$mainIp, networkSize=$networkSize]';
+  String toString() =>
+      'InstanceV6NetworksInner[network=$network, mainIp=$mainIp, networkSize=$networkSize]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -93,8 +96,10 @@ class InstanceV6NetworksInner {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "InstanceV6NetworksInner[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "InstanceV6NetworksInner[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "InstanceV6NetworksInner[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "InstanceV6NetworksInner[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -108,7 +113,10 @@ class InstanceV6NetworksInner {
     return null;
   }
 
-  static List<InstanceV6NetworksInner> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<InstanceV6NetworksInner> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <InstanceV6NetworksInner>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -136,20 +144,24 @@ class InstanceV6NetworksInner {
   }
 
   // maps a json object with a list of InstanceV6NetworksInner-objects as value to a dart map
-  static Map<String, List<InstanceV6NetworksInner>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<InstanceV6NetworksInner>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<InstanceV6NetworksInner>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = InstanceV6NetworksInner.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = InstanceV6NetworksInner.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

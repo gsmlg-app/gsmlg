@@ -25,13 +25,14 @@ class CreateInference201Response {
   InferenceSubscription? subscription;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateInference201Response &&
-    other.subscription == subscription;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateInference201Response && other.subscription == subscription;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (subscription == null ? 0 : subscription!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (subscription == null ? 0 : subscription!.hashCode);
 
   @override
   String toString() => 'CreateInference201Response[subscription=$subscription]';
@@ -58,8 +59,10 @@ class CreateInference201Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateInference201Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateInference201Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateInference201Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateInference201Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -71,7 +74,10 @@ class CreateInference201Response {
     return null;
   }
 
-  static List<CreateInference201Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateInference201Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateInference201Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,20 +105,24 @@ class CreateInference201Response {
   }
 
   // maps a json object with a list of CreateInference201Response-objects as value to a dart map
-  static Map<String, List<CreateInference201Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateInference201Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateInference201Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateInference201Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateInference201Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

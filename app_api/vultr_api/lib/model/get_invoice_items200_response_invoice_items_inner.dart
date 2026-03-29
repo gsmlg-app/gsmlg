@@ -96,30 +96,33 @@ class GetInvoiceItems200ResponseInvoiceItemsInner {
   num? total;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetInvoiceItems200ResponseInvoiceItemsInner &&
-    other.description == description &&
-    other.product == product &&
-    other.startDate == startDate &&
-    other.endDate == endDate &&
-    other.units == units &&
-    other.unitType == unitType &&
-    other.unitPrice == unitPrice &&
-    other.total == total;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetInvoiceItems200ResponseInvoiceItemsInner &&
+          other.description == description &&
+          other.product == product &&
+          other.startDate == startDate &&
+          other.endDate == endDate &&
+          other.units == units &&
+          other.unitType == unitType &&
+          other.unitPrice == unitPrice &&
+          other.total == total;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (description == null ? 0 : description!.hashCode) +
-    (product == null ? 0 : product!.hashCode) +
-    (startDate == null ? 0 : startDate!.hashCode) +
-    (endDate == null ? 0 : endDate!.hashCode) +
-    (units == null ? 0 : units!.hashCode) +
-    (unitType == null ? 0 : unitType!.hashCode) +
-    (unitPrice == null ? 0 : unitPrice!.hashCode) +
-    (total == null ? 0 : total!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (description == null ? 0 : description!.hashCode) +
+      (product == null ? 0 : product!.hashCode) +
+      (startDate == null ? 0 : startDate!.hashCode) +
+      (endDate == null ? 0 : endDate!.hashCode) +
+      (units == null ? 0 : units!.hashCode) +
+      (unitType == null ? 0 : unitType!.hashCode) +
+      (unitPrice == null ? 0 : unitPrice!.hashCode) +
+      (total == null ? 0 : total!.hashCode);
 
   @override
-  String toString() => 'GetInvoiceItems200ResponseInvoiceItemsInner[description=$description, product=$product, startDate=$startDate, endDate=$endDate, units=$units, unitType=$unitType, unitPrice=$unitPrice, total=$total]';
+  String toString() =>
+      'GetInvoiceItems200ResponseInvoiceItemsInner[description=$description, product=$product, startDate=$startDate, endDate=$endDate, units=$units, unitType=$unitType, unitPrice=$unitPrice, total=$total]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -178,8 +181,10 @@ class GetInvoiceItems200ResponseInvoiceItemsInner {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetInvoiceItems200ResponseInvoiceItemsInner[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetInvoiceItems200ResponseInvoiceItemsInner[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetInvoiceItems200ResponseInvoiceItemsInner[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetInvoiceItems200ResponseInvoiceItemsInner[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -198,7 +203,10 @@ class GetInvoiceItems200ResponseInvoiceItemsInner {
     return null;
   }
 
-  static List<GetInvoiceItems200ResponseInvoiceItemsInner> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetInvoiceItems200ResponseInvoiceItemsInner> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetInvoiceItems200ResponseInvoiceItemsInner>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -211,12 +219,14 @@ class GetInvoiceItems200ResponseInvoiceItemsInner {
     return result.toList(growable: growable);
   }
 
-  static Map<String, GetInvoiceItems200ResponseInvoiceItemsInner> mapFromJson(dynamic json) {
+  static Map<String, GetInvoiceItems200ResponseInvoiceItemsInner> mapFromJson(
+      dynamic json) {
     final map = <String, GetInvoiceItems200ResponseInvoiceItemsInner>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = GetInvoiceItems200ResponseInvoiceItemsInner.fromJson(entry.value);
+        final value =
+            GetInvoiceItems200ResponseInvoiceItemsInner.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -226,20 +236,26 @@ class GetInvoiceItems200ResponseInvoiceItemsInner {
   }
 
   // maps a json object with a list of GetInvoiceItems200ResponseInvoiceItemsInner-objects as value to a dart map
-  static Map<String, List<GetInvoiceItems200ResponseInvoiceItemsInner>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetInvoiceItems200ResponseInvoiceItemsInner>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetInvoiceItems200ResponseInvoiceItemsInner>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetInvoiceItems200ResponseInvoiceItemsInner.listFromJson(entry.value, growable: growable,);
+        map[entry.key] =
+            GetInvoiceItems200ResponseInvoiceItemsInner.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

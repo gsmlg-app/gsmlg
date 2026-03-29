@@ -56,22 +56,25 @@ class GetKubernetesResources200ResponseResourcesBlockStorageInner {
   String? status;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetKubernetesResources200ResponseResourcesBlockStorageInner &&
-    other.id == id &&
-    other.label == label &&
-    other.dateCreated == dateCreated &&
-    other.status == status;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetKubernetesResources200ResponseResourcesBlockStorageInner &&
+          other.id == id &&
+          other.label == label &&
+          other.dateCreated == dateCreated &&
+          other.status == status;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (status == null ? 0 : status!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (status == null ? 0 : status!.hashCode);
 
   @override
-  String toString() => 'GetKubernetesResources200ResponseResourcesBlockStorageInner[id=$id, label=$label, dateCreated=$dateCreated, status=$status]';
+  String toString() =>
+      'GetKubernetesResources200ResponseResourcesBlockStorageInner[id=$id, label=$label, dateCreated=$dateCreated, status=$status]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -101,7 +104,8 @@ class GetKubernetesResources200ResponseResourcesBlockStorageInner {
   /// Returns a new [GetKubernetesResources200ResponseResourcesBlockStorageInner] instance and imports its values from
   /// [value] if it's a [Map], null otherwise.
   // ignore: prefer_constructors_over_static_methods
-  static GetKubernetesResources200ResponseResourcesBlockStorageInner? fromJson(dynamic value) {
+  static GetKubernetesResources200ResponseResourcesBlockStorageInner? fromJson(
+      dynamic value) {
     if (value is Map) {
       final json = value.cast<String, dynamic>();
 
@@ -110,8 +114,10 @@ class GetKubernetesResources200ResponseResourcesBlockStorageInner {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetKubernetesResources200ResponseResourcesBlockStorageInner[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetKubernetesResources200ResponseResourcesBlockStorageInner[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetKubernetesResources200ResponseResourcesBlockStorageInner[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetKubernetesResources200ResponseResourcesBlockStorageInner[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -126,11 +132,18 @@ class GetKubernetesResources200ResponseResourcesBlockStorageInner {
     return null;
   }
 
-  static List<GetKubernetesResources200ResponseResourcesBlockStorageInner> listFromJson(dynamic json, {bool growable = false,}) {
-    final result = <GetKubernetesResources200ResponseResourcesBlockStorageInner>[];
+  static List<GetKubernetesResources200ResponseResourcesBlockStorageInner>
+      listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
+    final result =
+        <GetKubernetesResources200ResponseResourcesBlockStorageInner>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
-        final value = GetKubernetesResources200ResponseResourcesBlockStorageInner.fromJson(row);
+        final value =
+            GetKubernetesResources200ResponseResourcesBlockStorageInner
+                .fromJson(row);
         if (value != null) {
           result.add(value);
         }
@@ -139,12 +152,17 @@ class GetKubernetesResources200ResponseResourcesBlockStorageInner {
     return result.toList(growable: growable);
   }
 
-  static Map<String, GetKubernetesResources200ResponseResourcesBlockStorageInner> mapFromJson(dynamic json) {
-    final map = <String, GetKubernetesResources200ResponseResourcesBlockStorageInner>{};
+  static Map<String,
+          GetKubernetesResources200ResponseResourcesBlockStorageInner>
+      mapFromJson(dynamic json) {
+    final map =
+        <String, GetKubernetesResources200ResponseResourcesBlockStorageInner>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = GetKubernetesResources200ResponseResourcesBlockStorageInner.fromJson(entry.value);
+        final value =
+            GetKubernetesResources200ResponseResourcesBlockStorageInner
+                .fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -154,20 +172,29 @@ class GetKubernetesResources200ResponseResourcesBlockStorageInner {
   }
 
   // maps a json object with a list of GetKubernetesResources200ResponseResourcesBlockStorageInner-objects as value to a dart map
-  static Map<String, List<GetKubernetesResources200ResponseResourcesBlockStorageInner>> mapListFromJson(dynamic json, {bool growable = false,}) {
-    final map = <String, List<GetKubernetesResources200ResponseResourcesBlockStorageInner>>{};
+  static Map<String,
+          List<GetKubernetesResources200ResponseResourcesBlockStorageInner>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
+    final map = <String,
+        List<GetKubernetesResources200ResponseResourcesBlockStorageInner>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetKubernetesResources200ResponseResourcesBlockStorageInner.listFromJson(entry.value, growable: growable,);
+        map[entry.key] =
+            GetKubernetesResources200ResponseResourcesBlockStorageInner
+                .listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

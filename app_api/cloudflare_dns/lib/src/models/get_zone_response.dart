@@ -18,9 +18,10 @@ class GetZoneResponse {
     required this.messages,
     required this.result,
   });
-  
-  factory GetZoneResponse.fromJson(Map<String, Object?> json) => _$GetZoneResponseFromJson(json);
-  
+
+  factory GetZoneResponse.fromJson(Map<String, Object?> json) =>
+      _$GetZoneResponseFromJson(json);
+
   final bool success;
   final List<ApiError> errors;
   final List<ApiMessage> messages;

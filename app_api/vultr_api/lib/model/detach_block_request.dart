@@ -26,13 +26,14 @@ class DetachBlockRequest {
   bool? live;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is DetachBlockRequest &&
-    other.live == live;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DetachBlockRequest && other.live == live;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (live == null ? 0 : live!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (live == null ? 0 : live!.hashCode);
 
   @override
   String toString() => 'DetachBlockRequest[live=$live]';
@@ -59,8 +60,10 @@ class DetachBlockRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "DetachBlockRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "DetachBlockRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "DetachBlockRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "DetachBlockRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -72,7 +75,10 @@ class DetachBlockRequest {
     return null;
   }
 
-  static List<DetachBlockRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<DetachBlockRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <DetachBlockRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -100,20 +106,24 @@ class DetachBlockRequest {
   }
 
   // maps a json object with a list of DetachBlockRequest-objects as value to a dart map
-  static Map<String, List<DetachBlockRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<DetachBlockRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<DetachBlockRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = DetachBlockRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = DetachBlockRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

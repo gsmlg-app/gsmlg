@@ -69,8 +69,5 @@ void main() {
     test('to test the property `s3SecretKey`', () async {
       // TODO
     });
-
-
   });
-
 }

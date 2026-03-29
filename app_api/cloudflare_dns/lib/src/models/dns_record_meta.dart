@@ -12,9 +12,10 @@ class DnsRecordMeta {
     this.autoAdded,
     this.source,
   });
-  
-  factory DnsRecordMeta.fromJson(Map<String, Object?> json) => _$DnsRecordMetaFromJson(json);
-  
+
+  factory DnsRecordMeta.fromJson(Map<String, Object?> json) =>
+      _$DnsRecordMetaFromJson(json);
+
   /// Will exist if Cloudflare automatically added this DNS record.
   @JsonKey(name: 'auto_added')
   final bool? autoAdded;

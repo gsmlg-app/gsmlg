@@ -45,20 +45,23 @@ class StorageGatewayNetworkPrimary {
   StorageGatewayNetworkPrimaryVpc? vpc;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is StorageGatewayNetworkPrimary &&
-    other.ipv4PublicEnabled == ipv4PublicEnabled &&
-    other.ipv6PublicEnabled == ipv6PublicEnabled &&
-    other.vpc == vpc;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StorageGatewayNetworkPrimary &&
+          other.ipv4PublicEnabled == ipv4PublicEnabled &&
+          other.ipv6PublicEnabled == ipv6PublicEnabled &&
+          other.vpc == vpc;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (ipv4PublicEnabled == null ? 0 : ipv4PublicEnabled!.hashCode) +
-    (ipv6PublicEnabled == null ? 0 : ipv6PublicEnabled!.hashCode) +
-    (vpc == null ? 0 : vpc!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (ipv4PublicEnabled == null ? 0 : ipv4PublicEnabled!.hashCode) +
+      (ipv6PublicEnabled == null ? 0 : ipv6PublicEnabled!.hashCode) +
+      (vpc == null ? 0 : vpc!.hashCode);
 
   @override
-  String toString() => 'StorageGatewayNetworkPrimary[ipv4PublicEnabled=$ipv4PublicEnabled, ipv6PublicEnabled=$ipv6PublicEnabled, vpc=$vpc]';
+  String toString() =>
+      'StorageGatewayNetworkPrimary[ipv4PublicEnabled=$ipv4PublicEnabled, ipv6PublicEnabled=$ipv6PublicEnabled, vpc=$vpc]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -92,8 +95,10 @@ class StorageGatewayNetworkPrimary {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "StorageGatewayNetworkPrimary[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "StorageGatewayNetworkPrimary[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "StorageGatewayNetworkPrimary[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "StorageGatewayNetworkPrimary[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -107,7 +112,10 @@ class StorageGatewayNetworkPrimary {
     return null;
   }
 
-  static List<StorageGatewayNetworkPrimary> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<StorageGatewayNetworkPrimary> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <StorageGatewayNetworkPrimary>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -135,20 +143,24 @@ class StorageGatewayNetworkPrimary {
   }
 
   // maps a json object with a list of StorageGatewayNetworkPrimary-objects as value to a dart map
-  static Map<String, List<StorageGatewayNetworkPrimary>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<StorageGatewayNetworkPrimary>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<StorageGatewayNetworkPrimary>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = StorageGatewayNetworkPrimary.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = StorageGatewayNetworkPrimary.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

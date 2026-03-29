@@ -87,8 +87,10 @@ void showErrorToast({
                 ),
                 SelectableText(
                   message,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onError),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Theme.of(context).colorScheme.onError),
                 ),
               ],
             ),

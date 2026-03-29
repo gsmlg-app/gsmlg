@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for PrivateNetworksApi
 void main() {
   // final instance = PrivateNetworksApi();
@@ -19,7 +18,7 @@ void main() {
   group('tests for PrivateNetworksApi', () {
     // Create a Private Network
     //
-    // Create a new Private Network in a `region`.  **Deprecated**: Use [Create a VPC](#operation/create-vpc) instead.      Private networks should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix) 
+    // Create a new Private Network in a `region`.  **Deprecated**: Use [Create a VPC](#operation/create-vpc) instead.      Private networks should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
     //
     //Future<GetNetwork200Response> createNetwork({ CreateNetworkRequest createNetworkRequest }) async
     test('test createNetwork', () async {
@@ -37,7 +36,7 @@ void main() {
 
     // Get a private network
     //
-    // Get information about a Private Network.<br><br>**Deprecated**: Use [Get a VPC](#operation/get-vpc) instead. 
+    // Get information about a Private Network.<br><br>**Deprecated**: Use [Get a VPC](#operation/get-vpc) instead.
     //
     //Future<GetNetwork200Response> getNetwork(String networkId) async
     test('test getNetwork', () async {
@@ -61,6 +60,5 @@ void main() {
     test('test updateNetwork', () async {
       // TODO
     });
-
   });
 }

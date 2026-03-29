@@ -18,9 +18,10 @@ class ImportDnsRecordsResponse {
     required this.messages,
     this.result,
   });
-  
-  factory ImportDnsRecordsResponse.fromJson(Map<String, Object?> json) => _$ImportDnsRecordsResponseFromJson(json);
-  
+
+  factory ImportDnsRecordsResponse.fromJson(Map<String, Object?> json) =>
+      _$ImportDnsRecordsResponseFromJson(json);
+
   final bool success;
   final List<ApiError> errors;
   final List<ApiMessage> messages;

@@ -49,9 +49,9 @@ class User {
     this.collaborators,
     this.bio,
   });
-  
+
   factory User.fromJson(Map<String, Object?> json) => _$UserFromJson(json);
-  
+
   /// Unique identifier of the user
   final int id;
 

@@ -56,22 +56,25 @@ class Ssh {
   String? sshKey;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Ssh &&
-    other.id == id &&
-    other.dateCreated == dateCreated &&
-    other.name == name &&
-    other.sshKey == sshKey;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Ssh &&
+          other.id == id &&
+          other.dateCreated == dateCreated &&
+          other.name == name &&
+          other.sshKey == sshKey;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (sshKey == null ? 0 : sshKey!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (sshKey == null ? 0 : sshKey!.hashCode);
 
   @override
-  String toString() => 'Ssh[id=$id, dateCreated=$dateCreated, name=$name, sshKey=$sshKey]';
+  String toString() =>
+      'Ssh[id=$id, dateCreated=$dateCreated, name=$name, sshKey=$sshKey]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -110,8 +113,10 @@ class Ssh {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Ssh[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Ssh[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Ssh[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Ssh[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -126,7 +131,10 @@ class Ssh {
     return null;
   }
 
-  static List<Ssh> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Ssh> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Ssh>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -154,20 +162,24 @@ class Ssh {
   }
 
   // maps a json object with a list of Ssh-objects as value to a dart map
-  static Map<String, List<Ssh>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Ssh>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Ssh>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Ssh.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Ssh.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -28,18 +28,20 @@ class GetLoadBalancerReverseDns200Response {
   List<String> ipv6;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetLoadBalancerReverseDns200Response &&
-    other.ipv4 == ipv4 &&
-    _deepEquality.equals(other.ipv6, ipv6);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetLoadBalancerReverseDns200Response &&
+          other.ipv4 == ipv4 &&
+          _deepEquality.equals(other.ipv6, ipv6);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (ipv4 == null ? 0 : ipv4!.hashCode) +
-    (ipv6.hashCode);
+      // ignore: unnecessary_parenthesis
+      (ipv4 == null ? 0 : ipv4!.hashCode) + (ipv6.hashCode);
 
   @override
-  String toString() => 'GetLoadBalancerReverseDns200Response[ipv4=$ipv4, ipv6=$ipv6]';
+  String toString() =>
+      'GetLoadBalancerReverseDns200Response[ipv4=$ipv4, ipv6=$ipv6]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -48,7 +50,7 @@ class GetLoadBalancerReverseDns200Response {
     } else {
       json[r'ipv4'] = null;
     }
-      json[r'ipv6'] = this.ipv6;
+    json[r'ipv6'] = this.ipv6;
     return json;
   }
 
@@ -64,8 +66,10 @@ class GetLoadBalancerReverseDns200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetLoadBalancerReverseDns200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetLoadBalancerReverseDns200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetLoadBalancerReverseDns200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetLoadBalancerReverseDns200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -80,7 +84,10 @@ class GetLoadBalancerReverseDns200Response {
     return null;
   }
 
-  static List<GetLoadBalancerReverseDns200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetLoadBalancerReverseDns200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetLoadBalancerReverseDns200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -93,12 +100,14 @@ class GetLoadBalancerReverseDns200Response {
     return result.toList(growable: growable);
   }
 
-  static Map<String, GetLoadBalancerReverseDns200Response> mapFromJson(dynamic json) {
+  static Map<String, GetLoadBalancerReverseDns200Response> mapFromJson(
+      dynamic json) {
     final map = <String, GetLoadBalancerReverseDns200Response>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = GetLoadBalancerReverseDns200Response.fromJson(entry.value);
+        final value =
+            GetLoadBalancerReverseDns200Response.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -108,20 +117,25 @@ class GetLoadBalancerReverseDns200Response {
   }
 
   // maps a json object with a list of GetLoadBalancerReverseDns200Response-objects as value to a dart map
-  static Map<String, List<GetLoadBalancerReverseDns200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetLoadBalancerReverseDns200Response>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetLoadBalancerReverseDns200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetLoadBalancerReverseDns200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetLoadBalancerReverseDns200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

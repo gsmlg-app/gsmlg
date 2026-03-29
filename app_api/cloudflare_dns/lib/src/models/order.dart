@@ -10,9 +10,11 @@ enum Order {
   name,
   @JsonValue('status')
   status,
+
   /// Incorrect name has been replaced. Original name: `account.id`.
   @JsonValue('account.id')
   undefined0,
+
   /// Incorrect name has been replaced. Original name: `account.name`.
   @JsonValue('account.name')
   undefined1;

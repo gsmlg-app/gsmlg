@@ -32,8 +32,5 @@ void main() {
     test('to test the property `totalSize`', () async {
       // TODO
     });
-
-
   });
-
 }

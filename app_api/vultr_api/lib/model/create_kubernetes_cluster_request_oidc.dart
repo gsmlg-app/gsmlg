@@ -44,27 +44,30 @@ class CreateKubernetesClusterRequestOidc {
   String? groupsClaim;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateKubernetesClusterRequestOidc &&
-    other.issuerUrl == issuerUrl &&
-    other.clientId == clientId &&
-    other.usernameClaim == usernameClaim &&
-    other.groupsClaim == groupsClaim;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateKubernetesClusterRequestOidc &&
+          other.issuerUrl == issuerUrl &&
+          other.clientId == clientId &&
+          other.usernameClaim == usernameClaim &&
+          other.groupsClaim == groupsClaim;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (issuerUrl.hashCode) +
-    (clientId.hashCode) +
-    (usernameClaim == null ? 0 : usernameClaim!.hashCode) +
-    (groupsClaim == null ? 0 : groupsClaim!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (issuerUrl.hashCode) +
+      (clientId.hashCode) +
+      (usernameClaim == null ? 0 : usernameClaim!.hashCode) +
+      (groupsClaim == null ? 0 : groupsClaim!.hashCode);
 
   @override
-  String toString() => 'CreateKubernetesClusterRequestOidc[issuerUrl=$issuerUrl, clientId=$clientId, usernameClaim=$usernameClaim, groupsClaim=$groupsClaim]';
+  String toString() =>
+      'CreateKubernetesClusterRequestOidc[issuerUrl=$issuerUrl, clientId=$clientId, usernameClaim=$usernameClaim, groupsClaim=$groupsClaim]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'issuer_url'] = this.issuerUrl;
-      json[r'client_id'] = this.clientId;
+    json[r'issuer_url'] = this.issuerUrl;
+    json[r'client_id'] = this.clientId;
     if (this.usernameClaim != null) {
       json[r'username_claim'] = this.usernameClaim;
     } else {
@@ -90,8 +93,10 @@ class CreateKubernetesClusterRequestOidc {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateKubernetesClusterRequestOidc[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateKubernetesClusterRequestOidc[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateKubernetesClusterRequestOidc[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateKubernetesClusterRequestOidc[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -106,7 +111,10 @@ class CreateKubernetesClusterRequestOidc {
     return null;
   }
 
-  static List<CreateKubernetesClusterRequestOidc> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateKubernetesClusterRequestOidc> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateKubernetesClusterRequestOidc>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -119,7 +127,8 @@ class CreateKubernetesClusterRequestOidc {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateKubernetesClusterRequestOidc> mapFromJson(dynamic json) {
+  static Map<String, CreateKubernetesClusterRequestOidc> mapFromJson(
+      dynamic json) {
     final map = <String, CreateKubernetesClusterRequestOidc>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -134,13 +143,19 @@ class CreateKubernetesClusterRequestOidc {
   }
 
   // maps a json object with a list of CreateKubernetesClusterRequestOidc-objects as value to a dart map
-  static Map<String, List<CreateKubernetesClusterRequestOidc>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateKubernetesClusterRequestOidc>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateKubernetesClusterRequestOidc>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateKubernetesClusterRequestOidc.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateKubernetesClusterRequestOidc.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -152,4 +167,3 @@ class CreateKubernetesClusterRequestOidc {
     'client_id',
   };
 }
-

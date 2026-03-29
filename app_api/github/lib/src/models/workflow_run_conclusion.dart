@@ -24,5 +24,5 @@ enum WorkflowRunConclusion {
   @JsonValue('stale')
   stale,
   @JsonValue('startup_failure')
-  startupFailure;
+  startupFailure,
 }

@@ -25,13 +25,14 @@ class GetBareMetalUserdata200Response {
   GetBareMetalUserdata200ResponseUserData? userData;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetBareMetalUserdata200Response &&
-    other.userData == userData;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetBareMetalUserdata200Response && other.userData == userData;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (userData == null ? 0 : userData!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (userData == null ? 0 : userData!.hashCode);
 
   @override
   String toString() => 'GetBareMetalUserdata200Response[userData=$userData]';
@@ -58,20 +59,26 @@ class GetBareMetalUserdata200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetBareMetalUserdata200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetBareMetalUserdata200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetBareMetalUserdata200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetBareMetalUserdata200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return GetBareMetalUserdata200Response(
-        userData: GetBareMetalUserdata200ResponseUserData.fromJson(json[r'user_data']),
+        userData: GetBareMetalUserdata200ResponseUserData.fromJson(
+            json[r'user_data']),
       );
     }
     return null;
   }
 
-  static List<GetBareMetalUserdata200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetBareMetalUserdata200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetBareMetalUserdata200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -84,7 +91,8 @@ class GetBareMetalUserdata200Response {
     return result.toList(growable: growable);
   }
 
-  static Map<String, GetBareMetalUserdata200Response> mapFromJson(dynamic json) {
+  static Map<String, GetBareMetalUserdata200Response> mapFromJson(
+      dynamic json) {
     final map = <String, GetBareMetalUserdata200Response>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -99,20 +107,24 @@ class GetBareMetalUserdata200Response {
   }
 
   // maps a json object with a list of GetBareMetalUserdata200Response-objects as value to a dart map
-  static Map<String, List<GetBareMetalUserdata200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetBareMetalUserdata200Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetBareMetalUserdata200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetBareMetalUserdata200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetBareMetalUserdata200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

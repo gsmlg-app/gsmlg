@@ -9,5 +9,5 @@ enum Direction {
   @JsonValue('asc')
   asc,
   @JsonValue('desc')
-  desc;
+  desc,
 }

@@ -15,9 +15,10 @@ class ResultInfo {
     this.totalCount,
     this.totalPages,
   });
-  
-  factory ResultInfo.fromJson(Map<String, Object?> json) => _$ResultInfoFromJson(json);
-  
+
+  factory ResultInfo.fromJson(Map<String, Object?> json) =>
+      _$ResultInfoFromJson(json);
+
   /// Current page number.
   final int? page;
 

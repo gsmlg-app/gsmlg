@@ -18,7 +18,8 @@ void main() {
   group('test KafkaConnectAdvancedOptions', () {
     // Defines what client configurations can be overridden by the connector. Default is None.
     // String connectorClientConfigOverridePolicy
-    test('to test the property `connectorClientConfigOverridePolicy`', () async {
+    test('to test the property `connectorClientConfigOverridePolicy`',
+        () async {
       // TODO
     });
 
@@ -110,8 +111,5 @@ void main() {
     test('to test the property `sessionTimeoutMs`', () async {
       // TODO
     });
-
-
   });
-
 }

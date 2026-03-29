@@ -12,9 +12,10 @@ class LinkedService {
     this.servicePrincipal,
     this.description,
   });
-  
-  factory LinkedService.fromJson(Map<String, Object?> json) => _$LinkedServiceFromJson(json);
-  
+
+  factory LinkedService.fromJson(Map<String, Object?> json) =>
+      _$LinkedServiceFromJson(json);
+
   final String? servicePrincipal;
   final String? description;
 

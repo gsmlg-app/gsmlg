@@ -22,9 +22,10 @@ class MinimalRepository {
     this.fork,
     this.url,
   });
-  
-  factory MinimalRepository.fromJson(Map<String, Object?> json) => _$MinimalRepositoryFromJson(json);
-  
+
+  factory MinimalRepository.fromJson(Map<String, Object?> json) =>
+      _$MinimalRepositoryFromJson(json);
+
   final int? id;
   @JsonKey(name: 'node_id')
   final String? nodeId;

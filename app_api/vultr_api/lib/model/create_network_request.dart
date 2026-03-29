@@ -50,26 +50,29 @@ class CreateNetworkRequest {
   int? v4SubnetMask;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateNetworkRequest &&
-    other.region == region &&
-    other.description == description &&
-    other.v4Subnet == v4Subnet &&
-    other.v4SubnetMask == v4SubnetMask;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateNetworkRequest &&
+          other.region == region &&
+          other.description == description &&
+          other.v4Subnet == v4Subnet &&
+          other.v4SubnetMask == v4SubnetMask;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (region.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (v4Subnet == null ? 0 : v4Subnet!.hashCode) +
-    (v4SubnetMask == null ? 0 : v4SubnetMask!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (region.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (v4Subnet == null ? 0 : v4Subnet!.hashCode) +
+      (v4SubnetMask == null ? 0 : v4SubnetMask!.hashCode);
 
   @override
-  String toString() => 'CreateNetworkRequest[region=$region, description=$description, v4Subnet=$v4Subnet, v4SubnetMask=$v4SubnetMask]';
+  String toString() =>
+      'CreateNetworkRequest[region=$region, description=$description, v4Subnet=$v4Subnet, v4SubnetMask=$v4SubnetMask]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'region'] = this.region;
+    json[r'region'] = this.region;
     if (this.description != null) {
       json[r'description'] = this.description;
     } else {
@@ -100,8 +103,10 @@ class CreateNetworkRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateNetworkRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateNetworkRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateNetworkRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateNetworkRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -116,7 +121,10 @@ class CreateNetworkRequest {
     return null;
   }
 
-  static List<CreateNetworkRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateNetworkRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateNetworkRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -144,13 +152,19 @@ class CreateNetworkRequest {
   }
 
   // maps a json object with a list of CreateNetworkRequest-objects as value to a dart map
-  static Map<String, List<CreateNetworkRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateNetworkRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateNetworkRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateNetworkRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateNetworkRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -161,4 +175,3 @@ class CreateNetworkRequest {
     'region',
   };
 }
-

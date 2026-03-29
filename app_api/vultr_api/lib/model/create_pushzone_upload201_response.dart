@@ -25,16 +25,19 @@ class CreatePushzoneUpload201Response {
   Uploadendpoint? uploadEndpoint;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreatePushzoneUpload201Response &&
-    other.uploadEndpoint == uploadEndpoint;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreatePushzoneUpload201Response &&
+          other.uploadEndpoint == uploadEndpoint;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (uploadEndpoint == null ? 0 : uploadEndpoint!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (uploadEndpoint == null ? 0 : uploadEndpoint!.hashCode);
 
   @override
-  String toString() => 'CreatePushzoneUpload201Response[uploadEndpoint=$uploadEndpoint]';
+  String toString() =>
+      'CreatePushzoneUpload201Response[uploadEndpoint=$uploadEndpoint]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -58,8 +61,10 @@ class CreatePushzoneUpload201Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreatePushzoneUpload201Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreatePushzoneUpload201Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreatePushzoneUpload201Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreatePushzoneUpload201Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -71,7 +76,10 @@ class CreatePushzoneUpload201Response {
     return null;
   }
 
-  static List<CreatePushzoneUpload201Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreatePushzoneUpload201Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreatePushzoneUpload201Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -84,7 +92,8 @@ class CreatePushzoneUpload201Response {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreatePushzoneUpload201Response> mapFromJson(dynamic json) {
+  static Map<String, CreatePushzoneUpload201Response> mapFromJson(
+      dynamic json) {
     final map = <String, CreatePushzoneUpload201Response>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -99,20 +108,24 @@ class CreatePushzoneUpload201Response {
   }
 
   // maps a json object with a list of CreatePushzoneUpload201Response-objects as value to a dart map
-  static Map<String, List<CreatePushzoneUpload201Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreatePushzoneUpload201Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreatePushzoneUpload201Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreatePushzoneUpload201Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreatePushzoneUpload201Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

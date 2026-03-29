@@ -34,32 +34,35 @@ class CreateStorageGatewayRequest {
   List<StorageGatewayNetwork> networkConfig;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateStorageGatewayRequest &&
-    other.label == label &&
-    other.type == type &&
-    other.region == region &&
-    _deepEquality.equals(other.exportConfig, exportConfig) &&
-    _deepEquality.equals(other.networkConfig, networkConfig);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateStorageGatewayRequest &&
+          other.label == label &&
+          other.type == type &&
+          other.region == region &&
+          _deepEquality.equals(other.exportConfig, exportConfig) &&
+          _deepEquality.equals(other.networkConfig, networkConfig);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label.hashCode) +
-    (type.hashCode) +
-    (region.hashCode) +
-    (exportConfig.hashCode) +
-    (networkConfig.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label.hashCode) +
+      (type.hashCode) +
+      (region.hashCode) +
+      (exportConfig.hashCode) +
+      (networkConfig.hashCode);
 
   @override
-  String toString() => 'CreateStorageGatewayRequest[label=$label, type=$type, region=$region, exportConfig=$exportConfig, networkConfig=$networkConfig]';
+  String toString() =>
+      'CreateStorageGatewayRequest[label=$label, type=$type, region=$region, exportConfig=$exportConfig, networkConfig=$networkConfig]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'label'] = this.label;
-      json[r'type'] = this.type;
-      json[r'region'] = this.region;
-      json[r'export_config'] = this.exportConfig;
-      json[r'network_config'] = this.networkConfig;
+    json[r'label'] = this.label;
+    json[r'type'] = this.type;
+    json[r'region'] = this.region;
+    json[r'export_config'] = this.exportConfig;
+    json[r'network_config'] = this.networkConfig;
     return json;
   }
 
@@ -75,8 +78,10 @@ class CreateStorageGatewayRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateStorageGatewayRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateStorageGatewayRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateStorageGatewayRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateStorageGatewayRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -86,13 +91,17 @@ class CreateStorageGatewayRequest {
         type: CreateStorageGatewayRequestTypeEnum.fromJson(json[r'type'])!,
         region: mapValueOfType<String>(json, r'region')!,
         exportConfig: StorageGatewayExport.listFromJson(json[r'export_config']),
-        networkConfig: StorageGatewayNetwork.listFromJson(json[r'network_config']),
+        networkConfig:
+            StorageGatewayNetwork.listFromJson(json[r'network_config']),
       );
     }
     return null;
   }
 
-  static List<CreateStorageGatewayRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateStorageGatewayRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateStorageGatewayRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -120,13 +129,19 @@ class CreateStorageGatewayRequest {
   }
 
   // maps a json object with a list of CreateStorageGatewayRequest-objects as value to a dart map
-  static Map<String, List<CreateStorageGatewayRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateStorageGatewayRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateStorageGatewayRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateStorageGatewayRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateStorageGatewayRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -162,9 +177,13 @@ class CreateStorageGatewayRequestTypeEnum {
     nfs4,
   ];
 
-  static CreateStorageGatewayRequestTypeEnum? fromJson(dynamic value) => CreateStorageGatewayRequestTypeEnumTypeTransformer().decode(value);
+  static CreateStorageGatewayRequestTypeEnum? fromJson(dynamic value) =>
+      CreateStorageGatewayRequestTypeEnumTypeTransformer().decode(value);
 
-  static List<CreateStorageGatewayRequestTypeEnum> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateStorageGatewayRequestTypeEnum> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateStorageGatewayRequestTypeEnum>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -181,7 +200,8 @@ class CreateStorageGatewayRequestTypeEnum {
 /// Transformation class that can [encode] an instance of [CreateStorageGatewayRequestTypeEnum] to String,
 /// and [decode] dynamic data back to [CreateStorageGatewayRequestTypeEnum].
 class CreateStorageGatewayRequestTypeEnumTypeTransformer {
-  factory CreateStorageGatewayRequestTypeEnumTypeTransformer() => _instance ??= const CreateStorageGatewayRequestTypeEnumTypeTransformer._();
+  factory CreateStorageGatewayRequestTypeEnumTypeTransformer() => _instance ??=
+      const CreateStorageGatewayRequestTypeEnumTypeTransformer._();
 
   const CreateStorageGatewayRequestTypeEnumTypeTransformer._();
 
@@ -195,10 +215,12 @@ class CreateStorageGatewayRequestTypeEnumTypeTransformer {
   ///
   /// The [allowNull] is very handy when an API changes and a new enum value is added or removed,
   /// and users are still using an old app with the old code.
-  CreateStorageGatewayRequestTypeEnum? decode(dynamic data, {bool allowNull = true}) {
+  CreateStorageGatewayRequestTypeEnum? decode(dynamic data,
+      {bool allowNull = true}) {
     if (data != null) {
       switch (data) {
-        case r'nfs4': return CreateStorageGatewayRequestTypeEnum.nfs4;
+        case r'nfs4':
+          return CreateStorageGatewayRequestTypeEnum.nfs4;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');
@@ -211,5 +233,3 @@ class CreateStorageGatewayRequestTypeEnumTypeTransformer {
   /// Singleton [CreateStorageGatewayRequestTypeEnumTypeTransformer] instance.
   static CreateStorageGatewayRequestTypeEnumTypeTransformer? _instance;
 }
-
-

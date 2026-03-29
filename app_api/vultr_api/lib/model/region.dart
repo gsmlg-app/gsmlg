@@ -60,24 +60,27 @@ class Region {
   String? city;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Region &&
-    other.id == id &&
-    other.country == country &&
-    _deepEquality.equals(other.options, options) &&
-    other.continent == continent &&
-    other.city == city;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Region &&
+          other.id == id &&
+          other.country == country &&
+          _deepEquality.equals(other.options, options) &&
+          other.continent == continent &&
+          other.city == city;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (country == null ? 0 : country!.hashCode) +
-    (options.hashCode) +
-    (continent == null ? 0 : continent!.hashCode) +
-    (city == null ? 0 : city!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (country == null ? 0 : country!.hashCode) +
+      (options.hashCode) +
+      (continent == null ? 0 : continent!.hashCode) +
+      (city == null ? 0 : city!.hashCode);
 
   @override
-  String toString() => 'Region[id=$id, country=$country, options=$options, continent=$continent, city=$city]';
+  String toString() =>
+      'Region[id=$id, country=$country, options=$options, continent=$continent, city=$city]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -91,7 +94,7 @@ class Region {
     } else {
       json[r'country'] = null;
     }
-      json[r'options'] = this.options;
+    json[r'options'] = this.options;
     if (this.continent != null) {
       json[r'continent'] = this.continent;
     } else {
@@ -117,8 +120,10 @@ class Region {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Region[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Region[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Region[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Region[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -127,7 +132,9 @@ class Region {
         id: mapValueOfType<String>(json, r'id'),
         country: mapValueOfType<String>(json, r'country'),
         options: json[r'options'] is Iterable
-            ? (json[r'options'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'options'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         continent: mapValueOfType<String>(json, r'continent'),
         city: mapValueOfType<String>(json, r'city'),
@@ -136,7 +143,10 @@ class Region {
     return null;
   }
 
-  static List<Region> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Region> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Region>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -164,20 +174,24 @@ class Region {
   }
 
   // maps a json object with a list of Region-objects as value to a dart map
-  static Map<String, List<Region>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Region>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Region>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Region.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Region.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

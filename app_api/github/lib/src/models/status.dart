@@ -33,5 +33,5 @@ enum Status {
   @JsonValue('waiting')
   waiting,
   @JsonValue('pending')
-  pending;
+  pending,
 }

@@ -23,9 +23,10 @@ class Organization {
     this.avatarUrl,
     this.description,
   });
-  
-  factory Organization.fromJson(Map<String, Object?> json) => _$OrganizationFromJson(json);
-  
+
+  factory Organization.fromJson(Map<String, Object?> json) =>
+      _$OrganizationFromJson(json);
+
   final int id;
   final String login;
   @JsonKey(name: 'node_id')

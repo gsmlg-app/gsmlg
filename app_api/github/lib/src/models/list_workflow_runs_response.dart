@@ -14,9 +14,10 @@ class ListWorkflowRunsResponse {
     required this.totalCount,
     required this.workflowRuns,
   });
-  
-  factory ListWorkflowRunsResponse.fromJson(Map<String, Object?> json) => _$ListWorkflowRunsResponseFromJson(json);
-  
+
+  factory ListWorkflowRunsResponse.fromJson(Map<String, Object?> json) =>
+      _$ListWorkflowRunsResponseFromJson(json);
+
   @JsonKey(name: 'total_count')
   final int totalCount;
   @JsonKey(name: 'workflow_runs')

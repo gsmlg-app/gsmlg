@@ -36,15 +36,16 @@ class VpcAttachmentLinkedSubscription {
   String? id;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is VpcAttachmentLinkedSubscription &&
-    other.type == type &&
-    other.id == id;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VpcAttachmentLinkedSubscription &&
+          other.type == type &&
+          other.id == id;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (type == null ? 0 : type!.hashCode) +
-    (id == null ? 0 : id!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (type == null ? 0 : type!.hashCode) + (id == null ? 0 : id!.hashCode);
 
   @override
   String toString() => 'VpcAttachmentLinkedSubscription[type=$type, id=$id]';
@@ -76,8 +77,10 @@ class VpcAttachmentLinkedSubscription {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "VpcAttachmentLinkedSubscription[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "VpcAttachmentLinkedSubscription[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "VpcAttachmentLinkedSubscription[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "VpcAttachmentLinkedSubscription[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -90,7 +93,10 @@ class VpcAttachmentLinkedSubscription {
     return null;
   }
 
-  static List<VpcAttachmentLinkedSubscription> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<VpcAttachmentLinkedSubscription> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <VpcAttachmentLinkedSubscription>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -103,7 +109,8 @@ class VpcAttachmentLinkedSubscription {
     return result.toList(growable: growable);
   }
 
-  static Map<String, VpcAttachmentLinkedSubscription> mapFromJson(dynamic json) {
+  static Map<String, VpcAttachmentLinkedSubscription> mapFromJson(
+      dynamic json) {
     final map = <String, VpcAttachmentLinkedSubscription>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -118,20 +125,24 @@ class VpcAttachmentLinkedSubscription {
   }
 
   // maps a json object with a list of VpcAttachmentLinkedSubscription-objects as value to a dart map
-  static Map<String, List<VpcAttachmentLinkedSubscription>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<VpcAttachmentLinkedSubscription>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<VpcAttachmentLinkedSubscription>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = VpcAttachmentLinkedSubscription.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = VpcAttachmentLinkedSubscription.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -22,23 +22,25 @@ class GetBareMetalsUpgrades200ResponseUpgrades {
   List<Object> os;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetBareMetalsUpgrades200ResponseUpgrades &&
-    _deepEquality.equals(other.applications, applications) &&
-    _deepEquality.equals(other.os, os);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetBareMetalsUpgrades200ResponseUpgrades &&
+          _deepEquality.equals(other.applications, applications) &&
+          _deepEquality.equals(other.os, os);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (applications.hashCode) +
-    (os.hashCode);
+      // ignore: unnecessary_parenthesis
+      (applications.hashCode) + (os.hashCode);
 
   @override
-  String toString() => 'GetBareMetalsUpgrades200ResponseUpgrades[applications=$applications, os=$os]';
+  String toString() =>
+      'GetBareMetalsUpgrades200ResponseUpgrades[applications=$applications, os=$os]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'applications'] = this.applications;
-      json[r'os'] = this.os;
+    json[r'applications'] = this.applications;
+    json[r'os'] = this.os;
     return json;
   }
 
@@ -54,15 +56,19 @@ class GetBareMetalsUpgrades200ResponseUpgrades {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetBareMetalsUpgrades200ResponseUpgrades[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetBareMetalsUpgrades200ResponseUpgrades[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetBareMetalsUpgrades200ResponseUpgrades[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetBareMetalsUpgrades200ResponseUpgrades[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return GetBareMetalsUpgrades200ResponseUpgrades(
         applications: json[r'applications'] is Iterable
-            ? (json[r'applications'] as Iterable).cast<Object>().toList(growable: false)
+            ? (json[r'applications'] as Iterable)
+                .cast<Object>()
+                .toList(growable: false)
             : const [],
         os: json[r'os'] is Iterable
             ? (json[r'os'] as Iterable).cast<Object>().toList(growable: false)
@@ -72,7 +78,10 @@ class GetBareMetalsUpgrades200ResponseUpgrades {
     return null;
   }
 
-  static List<GetBareMetalsUpgrades200ResponseUpgrades> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetBareMetalsUpgrades200ResponseUpgrades> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetBareMetalsUpgrades200ResponseUpgrades>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -85,12 +94,14 @@ class GetBareMetalsUpgrades200ResponseUpgrades {
     return result.toList(growable: growable);
   }
 
-  static Map<String, GetBareMetalsUpgrades200ResponseUpgrades> mapFromJson(dynamic json) {
+  static Map<String, GetBareMetalsUpgrades200ResponseUpgrades> mapFromJson(
+      dynamic json) {
     final map = <String, GetBareMetalsUpgrades200ResponseUpgrades>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = GetBareMetalsUpgrades200ResponseUpgrades.fromJson(entry.value);
+        final value =
+            GetBareMetalsUpgrades200ResponseUpgrades.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -100,20 +111,25 @@ class GetBareMetalsUpgrades200ResponseUpgrades {
   }
 
   // maps a json object with a list of GetBareMetalsUpgrades200ResponseUpgrades-objects as value to a dart map
-  static Map<String, List<GetBareMetalsUpgrades200ResponseUpgrades>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetBareMetalsUpgrades200ResponseUpgrades>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetBareMetalsUpgrades200ResponseUpgrades>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetBareMetalsUpgrades200ResponseUpgrades.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetBareMetalsUpgrades200ResponseUpgrades.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

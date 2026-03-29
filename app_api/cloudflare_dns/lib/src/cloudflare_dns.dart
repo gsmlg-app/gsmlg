@@ -42,5 +42,6 @@ class CloudflareDns {
 
   ZonesClient get zones => _zones ??= ZonesClient(_dio, baseUrl: _baseUrl);
 
-  DnsRecordsClient get dnsRecords => _dnsRecords ??= DnsRecordsClient(_dio, baseUrl: _baseUrl);
+  DnsRecordsClient get dnsRecords =>
+      _dnsRecords ??= DnsRecordsClient(_dio, baseUrl: _baseUrl);
 }

@@ -10,15 +10,15 @@
 
 part of openapi.api;
 
-
 class PrivateNetworksApi {
-  PrivateNetworksApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  PrivateNetworksApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
   /// Create a Private Network
   ///
-  /// Create a new Private Network in a `region`.  **Deprecated**: Use [Create a VPC](#operation/create-vpc) instead.      Private networks should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix) 
+  /// Create a new Private Network in a `region`.  **Deprecated**: Use [Create a VPC](#operation/create-vpc) instead.      Private networks should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -26,7 +26,9 @@ class PrivateNetworksApi {
   ///
   /// * [CreateNetworkRequest] createNetworkRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createNetworkWithHttpInfo({ CreateNetworkRequest? createNetworkRequest, }) async {
+  Future<Response> createNetworkWithHttpInfo({
+    CreateNetworkRequest? createNetworkRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/private-networks';
 
@@ -38,7 +40,6 @@ class PrivateNetworksApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -53,23 +54,30 @@ class PrivateNetworksApi {
 
   /// Create a Private Network
   ///
-  /// Create a new Private Network in a `region`.  **Deprecated**: Use [Create a VPC](#operation/create-vpc) instead.      Private networks should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix) 
+  /// Create a new Private Network in a `region`.  **Deprecated**: Use [Create a VPC](#operation/create-vpc) instead.      Private networks should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
   ///
   /// Parameters:
   ///
   /// * [CreateNetworkRequest] createNetworkRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<GetNetwork200Response?> createNetwork({ CreateNetworkRequest? createNetworkRequest, }) async {
-    final response = await createNetworkWithHttpInfo( createNetworkRequest: createNetworkRequest, );
+  Future<GetNetwork200Response?> createNetwork({
+    CreateNetworkRequest? createNetworkRequest,
+  }) async {
+    final response = await createNetworkWithHttpInfo(
+      createNetworkRequest: createNetworkRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetNetwork200Response',) as GetNetwork200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetNetwork200Response',
+      ) as GetNetwork200Response;
     }
     return null;
   }
@@ -84,10 +92,12 @@ class PrivateNetworksApi {
   ///
   /// * [String] networkId (required):
   ///   The [Network id](#operation/list-networks).
-  Future<Response> deleteNetworkWithHttpInfo(String networkId,) async {
+  Future<Response> deleteNetworkWithHttpInfo(
+    String networkId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/private-networks/{network-id}'
-      .replaceAll('{network-id}', networkId);
+    final path =
+        r'/private-networks/{network-id}'.replaceAll('{network-id}', networkId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -97,7 +107,6 @@ class PrivateNetworksApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -118,8 +127,12 @@ class PrivateNetworksApi {
   ///
   /// * [String] networkId (required):
   ///   The [Network id](#operation/list-networks).
-  Future<void> deleteNetwork(String networkId,) async {
-    final response = await deleteNetworkWithHttpInfo(networkId,);
+  Future<void> deleteNetwork(
+    String networkId,
+  ) async {
+    final response = await deleteNetworkWithHttpInfo(
+      networkId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -127,7 +140,7 @@ class PrivateNetworksApi {
 
   /// Get a private network
   ///
-  /// Get information about a Private Network.<br><br>**Deprecated**: Use [Get a VPC](#operation/get-vpc) instead. 
+  /// Get information about a Private Network.<br><br>**Deprecated**: Use [Get a VPC](#operation/get-vpc) instead.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -135,10 +148,12 @@ class PrivateNetworksApi {
   ///
   /// * [String] networkId (required):
   ///   The [Network id](#operation/list-networks).
-  Future<Response> getNetworkWithHttpInfo(String networkId,) async {
+  Future<Response> getNetworkWithHttpInfo(
+    String networkId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/private-networks/{network-id}'
-      .replaceAll('{network-id}', networkId);
+    final path =
+        r'/private-networks/{network-id}'.replaceAll('{network-id}', networkId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -148,7 +163,6 @@ class PrivateNetworksApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -163,23 +177,30 @@ class PrivateNetworksApi {
 
   /// Get a private network
   ///
-  /// Get information about a Private Network.<br><br>**Deprecated**: Use [Get a VPC](#operation/get-vpc) instead. 
+  /// Get information about a Private Network.<br><br>**Deprecated**: Use [Get a VPC](#operation/get-vpc) instead.
   ///
   /// Parameters:
   ///
   /// * [String] networkId (required):
   ///   The [Network id](#operation/list-networks).
-  Future<GetNetwork200Response?> getNetwork(String networkId,) async {
-    final response = await getNetworkWithHttpInfo(networkId,);
+  Future<GetNetwork200Response?> getNetwork(
+    String networkId,
+  ) async {
+    final response = await getNetworkWithHttpInfo(
+      networkId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetNetwork200Response',) as GetNetwork200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetNetwork200Response',
+      ) as GetNetwork200Response;
     }
     return null;
   }
@@ -197,7 +218,10 @@ class PrivateNetworksApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listNetworksWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listNetworksWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/private-networks';
 
@@ -217,7 +241,6 @@ class PrivateNetworksApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -240,17 +263,26 @@ class PrivateNetworksApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListNetworks200Response?> listNetworks({ int? perPage, String? cursor, }) async {
-    final response = await listNetworksWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListNetworks200Response?> listNetworks({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listNetworksWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListNetworks200Response',) as ListNetworks200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListNetworks200Response',
+      ) as ListNetworks200Response;
     }
     return null;
   }
@@ -268,10 +300,13 @@ class PrivateNetworksApi {
   ///
   /// * [UpdateNetworkRequest] updateNetworkRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateNetworkWithHttpInfo(String networkId, { UpdateNetworkRequest? updateNetworkRequest, }) async {
+  Future<Response> updateNetworkWithHttpInfo(
+    String networkId, {
+    UpdateNetworkRequest? updateNetworkRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/private-networks/{network-id}'
-      .replaceAll('{network-id}', networkId);
+    final path =
+        r'/private-networks/{network-id}'.replaceAll('{network-id}', networkId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateNetworkRequest;
@@ -281,7 +316,6 @@ class PrivateNetworksApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -305,8 +339,14 @@ class PrivateNetworksApi {
   ///
   /// * [UpdateNetworkRequest] updateNetworkRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateNetwork(String networkId, { UpdateNetworkRequest? updateNetworkRequest, }) async {
-    final response = await updateNetworkWithHttpInfo(networkId,  updateNetworkRequest: updateNetworkRequest, );
+  Future<void> updateNetwork(
+    String networkId, {
+    UpdateNetworkRequest? updateNetworkRequest,
+  }) async {
+    final response = await updateNetworkWithHttpInfo(
+      networkId,
+      updateNetworkRequest: updateNetworkRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

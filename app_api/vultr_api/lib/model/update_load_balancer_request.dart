@@ -168,50 +168,53 @@ class UpdateLoadBalancerRequest {
   List<String> globalRegions;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateLoadBalancerRequest &&
-    other.ssl == ssl &&
-    other.stickySession == stickySession &&
-    _deepEquality.equals(other.forwardingRules, forwardingRules) &&
-    other.healthCheck == healthCheck &&
-    other.proxyProtocol == proxyProtocol &&
-    other.timeout == timeout &&
-    other.sslRedirect == sslRedirect &&
-    other.http2 == http2 &&
-    other.http3 == http3 &&
-    other.nodes == nodes &&
-    other.balancingAlgorithm == balancingAlgorithm &&
-    _deepEquality.equals(other.instances, instances) &&
-    other.label == label &&
-    other.privateNetwork == privateNetwork &&
-    other.vpc == vpc &&
-    _deepEquality.equals(other.firewallRules, firewallRules) &&
-    other.autoSsl == autoSsl &&
-    _deepEquality.equals(other.globalRegions, globalRegions);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateLoadBalancerRequest &&
+          other.ssl == ssl &&
+          other.stickySession == stickySession &&
+          _deepEquality.equals(other.forwardingRules, forwardingRules) &&
+          other.healthCheck == healthCheck &&
+          other.proxyProtocol == proxyProtocol &&
+          other.timeout == timeout &&
+          other.sslRedirect == sslRedirect &&
+          other.http2 == http2 &&
+          other.http3 == http3 &&
+          other.nodes == nodes &&
+          other.balancingAlgorithm == balancingAlgorithm &&
+          _deepEquality.equals(other.instances, instances) &&
+          other.label == label &&
+          other.privateNetwork == privateNetwork &&
+          other.vpc == vpc &&
+          _deepEquality.equals(other.firewallRules, firewallRules) &&
+          other.autoSsl == autoSsl &&
+          _deepEquality.equals(other.globalRegions, globalRegions);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (ssl == null ? 0 : ssl!.hashCode) +
-    (stickySession == null ? 0 : stickySession!.hashCode) +
-    (forwardingRules.hashCode) +
-    (healthCheck == null ? 0 : healthCheck!.hashCode) +
-    (proxyProtocol == null ? 0 : proxyProtocol!.hashCode) +
-    (timeout == null ? 0 : timeout!.hashCode) +
-    (sslRedirect == null ? 0 : sslRedirect!.hashCode) +
-    (http2 == null ? 0 : http2!.hashCode) +
-    (http3 == null ? 0 : http3!.hashCode) +
-    (nodes == null ? 0 : nodes!.hashCode) +
-    (balancingAlgorithm == null ? 0 : balancingAlgorithm!.hashCode) +
-    (instances.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (privateNetwork == null ? 0 : privateNetwork!.hashCode) +
-    (vpc == null ? 0 : vpc!.hashCode) +
-    (firewallRules.hashCode) +
-    (autoSsl == null ? 0 : autoSsl!.hashCode) +
-    (globalRegions.hashCode);
+      // ignore: unnecessary_parenthesis
+      (ssl == null ? 0 : ssl!.hashCode) +
+      (stickySession == null ? 0 : stickySession!.hashCode) +
+      (forwardingRules.hashCode) +
+      (healthCheck == null ? 0 : healthCheck!.hashCode) +
+      (proxyProtocol == null ? 0 : proxyProtocol!.hashCode) +
+      (timeout == null ? 0 : timeout!.hashCode) +
+      (sslRedirect == null ? 0 : sslRedirect!.hashCode) +
+      (http2 == null ? 0 : http2!.hashCode) +
+      (http3 == null ? 0 : http3!.hashCode) +
+      (nodes == null ? 0 : nodes!.hashCode) +
+      (balancingAlgorithm == null ? 0 : balancingAlgorithm!.hashCode) +
+      (instances.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (privateNetwork == null ? 0 : privateNetwork!.hashCode) +
+      (vpc == null ? 0 : vpc!.hashCode) +
+      (firewallRules.hashCode) +
+      (autoSsl == null ? 0 : autoSsl!.hashCode) +
+      (globalRegions.hashCode);
 
   @override
-  String toString() => 'UpdateLoadBalancerRequest[ssl=$ssl, stickySession=$stickySession, forwardingRules=$forwardingRules, healthCheck=$healthCheck, proxyProtocol=$proxyProtocol, timeout=$timeout, sslRedirect=$sslRedirect, http2=$http2, http3=$http3, nodes=$nodes, balancingAlgorithm=$balancingAlgorithm, instances=$instances, label=$label, privateNetwork=$privateNetwork, vpc=$vpc, firewallRules=$firewallRules, autoSsl=$autoSsl, globalRegions=$globalRegions]';
+  String toString() =>
+      'UpdateLoadBalancerRequest[ssl=$ssl, stickySession=$stickySession, forwardingRules=$forwardingRules, healthCheck=$healthCheck, proxyProtocol=$proxyProtocol, timeout=$timeout, sslRedirect=$sslRedirect, http2=$http2, http3=$http3, nodes=$nodes, balancingAlgorithm=$balancingAlgorithm, instances=$instances, label=$label, privateNetwork=$privateNetwork, vpc=$vpc, firewallRules=$firewallRules, autoSsl=$autoSsl, globalRegions=$globalRegions]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -225,7 +228,7 @@ class UpdateLoadBalancerRequest {
     } else {
       json[r'sticky_session'] = null;
     }
-      json[r'forwarding_rules'] = this.forwardingRules;
+    json[r'forwarding_rules'] = this.forwardingRules;
     if (this.healthCheck != null) {
       json[r'health_check'] = this.healthCheck;
     } else {
@@ -266,7 +269,7 @@ class UpdateLoadBalancerRequest {
     } else {
       json[r'balancing_algorithm'] = null;
     }
-      json[r'instances'] = this.instances;
+    json[r'instances'] = this.instances;
     if (this.label != null) {
       json[r'label'] = this.label;
     } else {
@@ -282,13 +285,13 @@ class UpdateLoadBalancerRequest {
     } else {
       json[r'vpc'] = null;
     }
-      json[r'firewall_rules'] = this.firewallRules;
+    json[r'firewall_rules'] = this.firewallRules;
     if (this.autoSsl != null) {
       json[r'auto_ssl'] = this.autoSsl;
     } else {
       json[r'auto_ssl'] = null;
     }
-      json[r'global_regions'] = this.globalRegions;
+    json[r'global_regions'] = this.globalRegions;
     return json;
   }
 
@@ -304,41 +307,56 @@ class UpdateLoadBalancerRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateLoadBalancerRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateLoadBalancerRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateLoadBalancerRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateLoadBalancerRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return UpdateLoadBalancerRequest(
         ssl: CreateLoadBalancerRequestSsl.fromJson(json[r'ssl']),
-        stickySession: CreateLoadBalancerRequestStickySession.fromJson(json[r'sticky_session']),
-        forwardingRules: CreateLoadBalancerRequestForwardingRulesInner.listFromJson(json[r'forwarding_rules']),
-        healthCheck: UpdateLoadBalancerRequestHealthCheck.fromJson(json[r'health_check']),
+        stickySession: CreateLoadBalancerRequestStickySession.fromJson(
+            json[r'sticky_session']),
+        forwardingRules:
+            CreateLoadBalancerRequestForwardingRulesInner.listFromJson(
+                json[r'forwarding_rules']),
+        healthCheck: UpdateLoadBalancerRequestHealthCheck.fromJson(
+            json[r'health_check']),
         proxyProtocol: mapValueOfType<bool>(json, r'proxy_protocol'),
         timeout: mapValueOfType<int>(json, r'timeout'),
         sslRedirect: mapValueOfType<bool>(json, r'ssl_redirect'),
         http2: mapValueOfType<bool>(json, r'http2'),
         http3: mapValueOfType<bool>(json, r'http3'),
         nodes: mapValueOfType<int>(json, r'nodes'),
-        balancingAlgorithm: mapValueOfType<String>(json, r'balancing_algorithm'),
+        balancingAlgorithm:
+            mapValueOfType<String>(json, r'balancing_algorithm'),
         instances: json[r'instances'] is Iterable
-            ? (json[r'instances'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'instances'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         label: mapValueOfType<String>(json, r'label'),
         privateNetwork: mapValueOfType<String>(json, r'private_network'),
         vpc: mapValueOfType<String>(json, r'vpc'),
-        firewallRules: CreateLoadBalancerRequestFirewallRulesInner.listFromJson(json[r'firewall_rules']),
+        firewallRules: CreateLoadBalancerRequestFirewallRulesInner.listFromJson(
+            json[r'firewall_rules']),
         autoSsl: CreateLoadBalancerRequestAutoSsl.fromJson(json[r'auto_ssl']),
         globalRegions: json[r'global_regions'] is Iterable
-            ? (json[r'global_regions'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'global_regions'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
       );
     }
     return null;
   }
 
-  static List<UpdateLoadBalancerRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateLoadBalancerRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateLoadBalancerRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -366,20 +384,24 @@ class UpdateLoadBalancerRequest {
   }
 
   // maps a json object with a list of UpdateLoadBalancerRequest-objects as value to a dart map
-  static Map<String, List<UpdateLoadBalancerRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateLoadBalancerRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateLoadBalancerRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateLoadBalancerRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateLoadBalancerRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

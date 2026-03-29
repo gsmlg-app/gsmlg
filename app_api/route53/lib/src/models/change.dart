@@ -15,9 +15,9 @@ class Change {
     required this.action,
     required this.resourceRecordSet,
   });
-  
+
   factory Change.fromJson(Map<String, Object?> json) => _$ChangeFromJson(json);
-  
+
   final ChangeAction action;
   final ResourceRecordSet resourceRecordSet;
 

@@ -49,10 +49,7 @@ final class AccountsUpdate extends AccountsEvent {
 
 /// Update an existing service account API key
 final class AccountsUpdateApiKey extends AccountsEvent {
-  const AccountsUpdateApiKey({
-    required this.id,
-    required this.apiKey,
-  });
+  const AccountsUpdateApiKey({required this.id, required this.apiKey});
 
   final int id;
   final String apiKey;

@@ -19,9 +19,10 @@ class PatchDnsRecordRequest {
     this.comment,
     this.tags,
   });
-  
-  factory PatchDnsRecordRequest.fromJson(Map<String, Object?> json) => _$PatchDnsRecordRequestFromJson(json);
-  
+
+  factory PatchDnsRecordRequest.fromJson(Map<String, Object?> json) =>
+      _$PatchDnsRecordRequestFromJson(json);
+
   /// DNS record name (or @ for the zone apex).
   final String? name;
   final DnsRecordType? type;

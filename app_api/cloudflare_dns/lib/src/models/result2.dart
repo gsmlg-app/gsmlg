@@ -13,9 +13,10 @@ class Result2 {
     this.recsAddedByType,
     this.totalRecordsParsed,
   });
-  
-  factory Result2.fromJson(Map<String, Object?> json) => _$Result2FromJson(json);
-  
+
+  factory Result2.fromJson(Map<String, Object?> json) =>
+      _$Result2FromJson(json);
+
   /// Number of DNS records added.
   @JsonKey(name: 'recs_added')
   final int? recsAdded;

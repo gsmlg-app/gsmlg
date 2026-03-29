@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class KubernetesApi {
-  KubernetesApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  KubernetesApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,7 +26,9 @@ class KubernetesApi {
   ///
   /// * [CreateKubernetesClusterRequest] createKubernetesClusterRequest:
   ///   Request Body
-  Future<Response> createKubernetesClusterWithHttpInfo({ CreateKubernetesClusterRequest? createKubernetesClusterRequest, }) async {
+  Future<Response> createKubernetesClusterWithHttpInfo({
+    CreateKubernetesClusterRequest? createKubernetesClusterRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/kubernetes/clusters';
 
@@ -38,7 +40,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +60,24 @@ class KubernetesApi {
   ///
   /// * [CreateKubernetesClusterRequest] createKubernetesClusterRequest:
   ///   Request Body
-  Future<CreateKubernetesCluster201Response?> createKubernetesCluster({ CreateKubernetesClusterRequest? createKubernetesClusterRequest, }) async {
-    final response = await createKubernetesClusterWithHttpInfo( createKubernetesClusterRequest: createKubernetesClusterRequest, );
+  Future<CreateKubernetesCluster201Response?> createKubernetesCluster({
+    CreateKubernetesClusterRequest? createKubernetesClusterRequest,
+  }) async {
+    final response = await createKubernetesClusterWithHttpInfo(
+      createKubernetesClusterRequest: createKubernetesClusterRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateKubernetesCluster201Response',) as CreateKubernetesCluster201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateKubernetesCluster201Response',
+      ) as CreateKubernetesCluster201Response;
     }
     return null;
   }
@@ -89,11 +97,16 @@ class KubernetesApi {
   ///   The [NodePool ID](#operation/get-nodepools).
   ///
   /// * [NodepoolLabelReq] nodepoolLabelReq:
-  Future<Response> createNodepoolLabelWithHttpInfo(String vkeId, String nodepoolId, { NodepoolLabelReq? nodepoolLabelReq, }) async {
+  Future<Response> createNodepoolLabelWithHttpInfo(
+    String vkeId,
+    String nodepoolId, {
+    NodepoolLabelReq? nodepoolLabelReq,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/labels'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/labels'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId);
 
     // ignore: prefer_final_locals
     Object? postBody = nodepoolLabelReq;
@@ -104,7 +117,6 @@ class KubernetesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -129,17 +141,28 @@ class KubernetesApi {
   ///   The [NodePool ID](#operation/get-nodepools).
   ///
   /// * [NodepoolLabelReq] nodepoolLabelReq:
-  Future<CreateNodepoolLabel201Response?> createNodepoolLabel(String vkeId, String nodepoolId, { NodepoolLabelReq? nodepoolLabelReq, }) async {
-    final response = await createNodepoolLabelWithHttpInfo(vkeId, nodepoolId,  nodepoolLabelReq: nodepoolLabelReq, );
+  Future<CreateNodepoolLabel201Response?> createNodepoolLabel(
+    String vkeId,
+    String nodepoolId, {
+    NodepoolLabelReq? nodepoolLabelReq,
+  }) async {
+    final response = await createNodepoolLabelWithHttpInfo(
+      vkeId,
+      nodepoolId,
+      nodepoolLabelReq: nodepoolLabelReq,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateNodepoolLabel201Response',) as CreateNodepoolLabel201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateNodepoolLabel201Response',
+      ) as CreateNodepoolLabel201Response;
     }
     return null;
   }
@@ -159,11 +182,16 @@ class KubernetesApi {
   ///   The [NodePool ID](#operation/get-nodepools).
   ///
   /// * [NodepoolTaintReq] nodepoolTaintReq:
-  Future<Response> createNodepoolTaintWithHttpInfo(String vkeId, String nodepoolId, { NodepoolTaintReq? nodepoolTaintReq, }) async {
+  Future<Response> createNodepoolTaintWithHttpInfo(
+    String vkeId,
+    String nodepoolId, {
+    NodepoolTaintReq? nodepoolTaintReq,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/taints'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/taints'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId);
 
     // ignore: prefer_final_locals
     Object? postBody = nodepoolTaintReq;
@@ -174,7 +202,6 @@ class KubernetesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -199,17 +226,28 @@ class KubernetesApi {
   ///   The [NodePool ID](#operation/get-nodepools).
   ///
   /// * [NodepoolTaintReq] nodepoolTaintReq:
-  Future<CreateNodepoolTaint201Response?> createNodepoolTaint(String vkeId, String nodepoolId, { NodepoolTaintReq? nodepoolTaintReq, }) async {
-    final response = await createNodepoolTaintWithHttpInfo(vkeId, nodepoolId,  nodepoolTaintReq: nodepoolTaintReq, );
+  Future<CreateNodepoolTaint201Response?> createNodepoolTaint(
+    String vkeId,
+    String nodepoolId, {
+    NodepoolTaintReq? nodepoolTaintReq,
+  }) async {
+    final response = await createNodepoolTaintWithHttpInfo(
+      vkeId,
+      nodepoolId,
+      nodepoolTaintReq: nodepoolTaintReq,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateNodepoolTaint201Response',) as CreateNodepoolTaint201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateNodepoolTaint201Response',
+      ) as CreateNodepoolTaint201Response;
     }
     return null;
   }
@@ -227,10 +265,13 @@ class KubernetesApi {
   ///
   /// * [CreateNodepoolsRequest] createNodepoolsRequest:
   ///   Request Body
-  Future<Response> createNodepoolsWithHttpInfo(String vkeId, { CreateNodepoolsRequest? createNodepoolsRequest, }) async {
+  Future<Response> createNodepoolsWithHttpInfo(
+    String vkeId, {
+    CreateNodepoolsRequest? createNodepoolsRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/kubernetes/clusters/{vke-id}/node-pools'
-      .replaceAll('{vke-id}', vkeId);
+        .replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody = createNodepoolsRequest;
@@ -240,7 +281,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -264,17 +304,26 @@ class KubernetesApi {
   ///
   /// * [CreateNodepoolsRequest] createNodepoolsRequest:
   ///   Request Body
-  Future<CreateNodepools201Response?> createNodepools(String vkeId, { CreateNodepoolsRequest? createNodepoolsRequest, }) async {
-    final response = await createNodepoolsWithHttpInfo(vkeId,  createNodepoolsRequest: createNodepoolsRequest, );
+  Future<CreateNodepools201Response?> createNodepools(
+    String vkeId, {
+    CreateNodepoolsRequest? createNodepoolsRequest,
+  }) async {
+    final response = await createNodepoolsWithHttpInfo(
+      vkeId,
+      createNodepoolsRequest: createNodepoolsRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateNodepools201Response',) as CreateNodepools201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateNodepools201Response',
+      ) as CreateNodepools201Response;
     }
     return null;
   }
@@ -289,10 +338,11 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<Response> deleteKubernetesClusterWithHttpInfo(String vkeId,) async {
+  Future<Response> deleteKubernetesClusterWithHttpInfo(
+    String vkeId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}'
-      .replaceAll('{vke-id}', vkeId);
+    final path = r'/kubernetes/clusters/{vke-id}'.replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -302,7 +352,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -323,8 +372,12 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<void> deleteKubernetesCluster(String vkeId,) async {
-    final response = await deleteKubernetesClusterWithHttpInfo(vkeId,);
+  Future<void> deleteKubernetesCluster(
+    String vkeId,
+  ) async {
+    final response = await deleteKubernetesClusterWithHttpInfo(
+      vkeId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -332,17 +385,20 @@ class KubernetesApi {
 
   /// Delete VKE Cluster and All Related Resources
   ///
-  /// Delete Kubernetes Cluster and all related resources. 
+  /// Delete Kubernetes Cluster and all related resources.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
   /// Parameters:
   ///
   /// * [String] vkeId (required):
-  Future<Response> deleteKubernetesClusterVkeIdDeleteWithLinkedResourcesWithHttpInfo(String vkeId,) async {
+  Future<Response>
+      deleteKubernetesClusterVkeIdDeleteWithLinkedResourcesWithHttpInfo(
+    String vkeId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/kubernetes/clusters/{vke-id}/delete-with-linked-resources'
-      .replaceAll('{vke-id}', vkeId);
+        .replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -352,7 +408,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -367,13 +422,18 @@ class KubernetesApi {
 
   /// Delete VKE Cluster and All Related Resources
   ///
-  /// Delete Kubernetes Cluster and all related resources. 
+  /// Delete Kubernetes Cluster and all related resources.
   ///
   /// Parameters:
   ///
   /// * [String] vkeId (required):
-  Future<void> deleteKubernetesClusterVkeIdDeleteWithLinkedResources(String vkeId,) async {
-    final response = await deleteKubernetesClusterVkeIdDeleteWithLinkedResourcesWithHttpInfo(vkeId,);
+  Future<void> deleteKubernetesClusterVkeIdDeleteWithLinkedResources(
+    String vkeId,
+  ) async {
+    final response =
+        await deleteKubernetesClusterVkeIdDeleteWithLinkedResourcesWithHttpInfo(
+      vkeId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -392,11 +452,14 @@ class KubernetesApi {
   ///
   /// * [String] nodepoolId (required):
   ///   The [NodePool ID](#operation/get-nodepools).
-  Future<Response> deleteNodepoolWithHttpInfo(String vkeId, String nodepoolId,) async {
+  Future<Response> deleteNodepoolWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId);
+        .replaceAll('{vke-id}', vkeId)
+        .replaceAll('{nodepool-id}', nodepoolId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -406,7 +469,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -430,8 +492,14 @@ class KubernetesApi {
   ///
   /// * [String] nodepoolId (required):
   ///   The [NodePool ID](#operation/get-nodepools).
-  Future<void> deleteNodepool(String vkeId, String nodepoolId,) async {
-    final response = await deleteNodepoolWithHttpInfo(vkeId, nodepoolId,);
+  Future<void> deleteNodepool(
+    String vkeId,
+    String nodepoolId,
+  ) async {
+    final response = await deleteNodepoolWithHttpInfo(
+      vkeId,
+      nodepoolId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -453,12 +521,17 @@ class KubernetesApi {
   ///
   /// * [String] nodeId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> deleteNodepoolInstanceWithHttpInfo(String vkeId, String nodepoolId, String nodeId,) async {
+  Future<Response> deleteNodepoolInstanceWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+    String nodeId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/nodes/{node-id}'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId)
-      .replaceAll('{node-id}', nodeId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/nodes/{node-id}'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId)
+            .replaceAll('{node-id}', nodeId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -468,7 +541,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -495,8 +567,16 @@ class KubernetesApi {
   ///
   /// * [String] nodeId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<void> deleteNodepoolInstance(String vkeId, String nodepoolId, String nodeId,) async {
-    final response = await deleteNodepoolInstanceWithHttpInfo(vkeId, nodepoolId, nodeId,);
+  Future<void> deleteNodepoolInstance(
+    String vkeId,
+    String nodepoolId,
+    String nodeId,
+  ) async {
+    final response = await deleteNodepoolInstanceWithHttpInfo(
+      vkeId,
+      nodepoolId,
+      nodeId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -518,12 +598,17 @@ class KubernetesApi {
   ///
   /// * [String] labelId (required):
   ///   The [NodePool Label ID](#operation/list-labels).
-  Future<Response> deleteNodepoolLabelWithHttpInfo(String vkeId, String nodepoolId, String labelId,) async {
+  Future<Response> deleteNodepoolLabelWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+    String labelId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/labels/{label-id}'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId)
-      .replaceAll('{label-id}', labelId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/labels/{label-id}'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId)
+            .replaceAll('{label-id}', labelId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -533,7 +618,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -560,8 +644,16 @@ class KubernetesApi {
   ///
   /// * [String] labelId (required):
   ///   The [NodePool Label ID](#operation/list-labels).
-  Future<void> deleteNodepoolLabel(String vkeId, String nodepoolId, String labelId,) async {
-    final response = await deleteNodepoolLabelWithHttpInfo(vkeId, nodepoolId, labelId,);
+  Future<void> deleteNodepoolLabel(
+    String vkeId,
+    String nodepoolId,
+    String labelId,
+  ) async {
+    final response = await deleteNodepoolLabelWithHttpInfo(
+      vkeId,
+      nodepoolId,
+      labelId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -583,12 +675,17 @@ class KubernetesApi {
   ///
   /// * [String] taintId (required):
   ///   The [NodePool Taint ID](#operation/list-taints).
-  Future<Response> deleteNodepoolTaintWithHttpInfo(String vkeId, String nodepoolId, String taintId,) async {
+  Future<Response> deleteNodepoolTaintWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+    String taintId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/taints/{taint-id}'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId)
-      .replaceAll('{taint-id}', taintId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/taints/{taint-id}'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId)
+            .replaceAll('{taint-id}', taintId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -598,7 +695,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -625,8 +721,16 @@ class KubernetesApi {
   ///
   /// * [String] taintId (required):
   ///   The [NodePool Taint ID](#operation/list-taints).
-  Future<void> deleteNodepoolTaint(String vkeId, String nodepoolId, String taintId,) async {
-    final response = await deleteNodepoolTaintWithHttpInfo(vkeId, nodepoolId, taintId,);
+  Future<void> deleteNodepoolTaint(
+    String vkeId,
+    String nodepoolId,
+    String taintId,
+  ) async {
+    final response = await deleteNodepoolTaintWithHttpInfo(
+      vkeId,
+      nodepoolId,
+      taintId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -642,10 +746,12 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<Response> getKubernetesAvailableUpgradesWithHttpInfo(String vkeId,) async {
+  Future<Response> getKubernetesAvailableUpgradesWithHttpInfo(
+    String vkeId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/kubernetes/clusters/{vke-id}/available-upgrades'
-      .replaceAll('{vke-id}', vkeId);
+        .replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -655,7 +761,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -676,17 +781,25 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<GetKubernetesAvailableUpgrades200Response?> getKubernetesAvailableUpgrades(String vkeId,) async {
-    final response = await getKubernetesAvailableUpgradesWithHttpInfo(vkeId,);
+  Future<GetKubernetesAvailableUpgrades200Response?>
+      getKubernetesAvailableUpgrades(
+    String vkeId,
+  ) async {
+    final response = await getKubernetesAvailableUpgradesWithHttpInfo(
+      vkeId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetKubernetesAvailableUpgrades200Response',) as GetKubernetesAvailableUpgrades200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetKubernetesAvailableUpgrades200Response',
+      ) as GetKubernetesAvailableUpgrades200Response;
     }
     return null;
   }
@@ -701,10 +814,11 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<Response> getKubernetesClustersWithHttpInfo(String vkeId,) async {
+  Future<Response> getKubernetesClustersWithHttpInfo(
+    String vkeId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}'
-      .replaceAll('{vke-id}', vkeId);
+    final path = r'/kubernetes/clusters/{vke-id}'.replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -714,7 +828,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -735,17 +848,24 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<CreateKubernetesCluster201Response?> getKubernetesClusters(String vkeId,) async {
-    final response = await getKubernetesClustersWithHttpInfo(vkeId,);
+  Future<CreateKubernetesCluster201Response?> getKubernetesClusters(
+    String vkeId,
+  ) async {
+    final response = await getKubernetesClustersWithHttpInfo(
+      vkeId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateKubernetesCluster201Response',) as CreateKubernetesCluster201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateKubernetesCluster201Response',
+      ) as CreateKubernetesCluster201Response;
     }
     return null;
   }
@@ -760,10 +880,12 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<Response> getKubernetesClustersConfigWithHttpInfo(String vkeId,) async {
+  Future<Response> getKubernetesClustersConfigWithHttpInfo(
+    String vkeId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/config'
-      .replaceAll('{vke-id}', vkeId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/config'.replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -773,7 +895,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -794,17 +915,24 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<GetKubernetesClustersConfig200Response?> getKubernetesClustersConfig(String vkeId,) async {
-    final response = await getKubernetesClustersConfigWithHttpInfo(vkeId,);
+  Future<GetKubernetesClustersConfig200Response?> getKubernetesClustersConfig(
+    String vkeId,
+  ) async {
+    final response = await getKubernetesClustersConfigWithHttpInfo(
+      vkeId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetKubernetesClustersConfig200Response',) as GetKubernetesClustersConfig200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetKubernetesClustersConfig200Response',
+      ) as GetKubernetesClustersConfig200Response;
     }
     return null;
   }
@@ -819,10 +947,12 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<Response> getKubernetesResourcesWithHttpInfo(String vkeId,) async {
+  Future<Response> getKubernetesResourcesWithHttpInfo(
+    String vkeId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/kubernetes/clusters/{vke-id}/resources'
-      .replaceAll('{vke-id}', vkeId);
+        .replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -832,7 +962,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -853,17 +982,24 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<GetKubernetesResources200Response?> getKubernetesResources(String vkeId,) async {
-    final response = await getKubernetesResourcesWithHttpInfo(vkeId,);
+  Future<GetKubernetesResources200Response?> getKubernetesResources(
+    String vkeId,
+  ) async {
+    final response = await getKubernetesResourcesWithHttpInfo(
+      vkeId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetKubernetesResources200Response',) as GetKubernetesResources200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetKubernetesResources200Response',
+      ) as GetKubernetesResources200Response;
     }
     return null;
   }
@@ -885,7 +1021,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -909,9 +1044,12 @@ class KubernetesApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetKubernetesVersions200Response',) as GetKubernetesVersions200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetKubernetesVersions200Response',
+      ) as GetKubernetesVersions200Response;
     }
     return null;
   }
@@ -929,11 +1067,14 @@ class KubernetesApi {
   ///
   /// * [String] nodepoolId (required):
   ///   The [NodePool ID](#operation/get-nodepools).
-  Future<Response> getNodepoolWithHttpInfo(String vkeId, String nodepoolId,) async {
+  Future<Response> getNodepoolWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId);
+        .replaceAll('{vke-id}', vkeId)
+        .replaceAll('{nodepool-id}', nodepoolId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -943,7 +1084,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -967,17 +1107,26 @@ class KubernetesApi {
   ///
   /// * [String] nodepoolId (required):
   ///   The [NodePool ID](#operation/get-nodepools).
-  Future<CreateNodepools201Response?> getNodepool(String vkeId, String nodepoolId,) async {
-    final response = await getNodepoolWithHttpInfo(vkeId, nodepoolId,);
+  Future<CreateNodepools201Response?> getNodepool(
+    String vkeId,
+    String nodepoolId,
+  ) async {
+    final response = await getNodepoolWithHttpInfo(
+      vkeId,
+      nodepoolId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateNodepools201Response',) as CreateNodepools201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateNodepools201Response',
+      ) as CreateNodepools201Response;
     }
     return null;
   }
@@ -992,10 +1141,12 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<Response> getNodepoolsWithHttpInfo(String vkeId,) async {
+  Future<Response> getNodepoolsWithHttpInfo(
+    String vkeId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/kubernetes/clusters/{vke-id}/node-pools'
-      .replaceAll('{vke-id}', vkeId);
+        .replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1005,7 +1156,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1026,17 +1176,24 @@ class KubernetesApi {
   ///
   /// * [String] vkeId (required):
   ///   The [VKE ID](#operation/list-kubernetes-clusters).
-  Future<GetNodepools200Response?> getNodepools(String vkeId,) async {
-    final response = await getNodepoolsWithHttpInfo(vkeId,);
+  Future<GetNodepools200Response?> getNodepools(
+    String vkeId,
+  ) async {
+    final response = await getNodepoolsWithHttpInfo(
+      vkeId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetNodepools200Response',) as GetNodepools200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetNodepools200Response',
+      ) as GetNodepools200Response;
     }
     return null;
   }
@@ -1058,7 +1215,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1082,9 +1238,12 @@ class KubernetesApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListKubernetesClusters200Response',) as ListKubernetesClusters200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListKubernetesClusters200Response',
+      ) as ListKubernetesClusters200Response;
     }
     return null;
   }
@@ -1102,11 +1261,15 @@ class KubernetesApi {
   ///
   /// * [String] nodepoolId (required):
   ///   The [NodePool ID](#operation/get-nodepools).
-  Future<Response> listNodepoolLabelsWithHttpInfo(String vkeId, String nodepoolId,) async {
+  Future<Response> listNodepoolLabelsWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/labels'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/labels'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1116,7 +1279,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1140,17 +1302,26 @@ class KubernetesApi {
   ///
   /// * [String] nodepoolId (required):
   ///   The [NodePool ID](#operation/get-nodepools).
-  Future<ListNodepoolLabels200Response?> listNodepoolLabels(String vkeId, String nodepoolId,) async {
-    final response = await listNodepoolLabelsWithHttpInfo(vkeId, nodepoolId,);
+  Future<ListNodepoolLabels200Response?> listNodepoolLabels(
+    String vkeId,
+    String nodepoolId,
+  ) async {
+    final response = await listNodepoolLabelsWithHttpInfo(
+      vkeId,
+      nodepoolId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListNodepoolLabels200Response',) as ListNodepoolLabels200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListNodepoolLabels200Response',
+      ) as ListNodepoolLabels200Response;
     }
     return null;
   }
@@ -1168,11 +1339,15 @@ class KubernetesApi {
   ///
   /// * [String] nodepoolId (required):
   ///   The [NodePool ID](#operation/get-nodepools).
-  Future<Response> listNodepoolTaintsWithHttpInfo(String vkeId, String nodepoolId,) async {
+  Future<Response> listNodepoolTaintsWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/taints'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/taints'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1182,7 +1357,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1206,17 +1380,26 @@ class KubernetesApi {
   ///
   /// * [String] nodepoolId (required):
   ///   The [NodePool ID](#operation/get-nodepools).
-  Future<ListNodepoolTaints200Response?> listNodepoolTaints(String vkeId, String nodepoolId,) async {
-    final response = await listNodepoolTaintsWithHttpInfo(vkeId, nodepoolId,);
+  Future<ListNodepoolTaints200Response?> listNodepoolTaints(
+    String vkeId,
+    String nodepoolId,
+  ) async {
+    final response = await listNodepoolTaintsWithHttpInfo(
+      vkeId,
+      nodepoolId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListNodepoolTaints200Response',) as ListNodepoolTaints200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListNodepoolTaints200Response',
+      ) as ListNodepoolTaints200Response;
     }
     return null;
   }
@@ -1237,12 +1420,17 @@ class KubernetesApi {
   ///
   /// * [String] labelId (required):
   ///   The [NodePool Label ID](#operation/list-labels).
-  Future<Response> readNodepoolLabelWithHttpInfo(String vkeId, String nodepoolId, String labelId,) async {
+  Future<Response> readNodepoolLabelWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+    String labelId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/labels/{label-id}'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId)
-      .replaceAll('{label-id}', labelId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/labels/{label-id}'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId)
+            .replaceAll('{label-id}', labelId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1252,7 +1440,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1279,17 +1466,28 @@ class KubernetesApi {
   ///
   /// * [String] labelId (required):
   ///   The [NodePool Label ID](#operation/list-labels).
-  Future<CreateNodepoolLabel201Response?> readNodepoolLabel(String vkeId, String nodepoolId, String labelId,) async {
-    final response = await readNodepoolLabelWithHttpInfo(vkeId, nodepoolId, labelId,);
+  Future<CreateNodepoolLabel201Response?> readNodepoolLabel(
+    String vkeId,
+    String nodepoolId,
+    String labelId,
+  ) async {
+    final response = await readNodepoolLabelWithHttpInfo(
+      vkeId,
+      nodepoolId,
+      labelId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateNodepoolLabel201Response',) as CreateNodepoolLabel201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateNodepoolLabel201Response',
+      ) as CreateNodepoolLabel201Response;
     }
     return null;
   }
@@ -1310,12 +1508,17 @@ class KubernetesApi {
   ///
   /// * [String] taintId (required):
   ///   The [NodePool Taint ID](#operation/list-taints).
-  Future<Response> readNodepoolTaintWithHttpInfo(String vkeId, String nodepoolId, String taintId,) async {
+  Future<Response> readNodepoolTaintWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+    String taintId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/taints/{taint-id}'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId)
-      .replaceAll('{taint-id}', taintId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/taints/{taint-id}'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId)
+            .replaceAll('{taint-id}', taintId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1325,7 +1528,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1352,17 +1554,28 @@ class KubernetesApi {
   ///
   /// * [String] taintId (required):
   ///   The [NodePool Taint ID](#operation/list-taints).
-  Future<CreateNodepoolTaint201Response?> readNodepoolTaint(String vkeId, String nodepoolId, String taintId,) async {
-    final response = await readNodepoolTaintWithHttpInfo(vkeId, nodepoolId, taintId,);
+  Future<CreateNodepoolTaint201Response?> readNodepoolTaint(
+    String vkeId,
+    String nodepoolId,
+    String taintId,
+  ) async {
+    final response = await readNodepoolTaintWithHttpInfo(
+      vkeId,
+      nodepoolId,
+      taintId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateNodepoolTaint201Response',) as CreateNodepoolTaint201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateNodepoolTaint201Response',
+      ) as CreateNodepoolTaint201Response;
     }
     return null;
   }
@@ -1383,12 +1596,17 @@ class KubernetesApi {
   ///
   /// * [String] nodeId (required):
   ///   Node ID
-  Future<Response> recycleNodepoolInstanceWithHttpInfo(String vkeId, String nodepoolId, String nodeId,) async {
+  Future<Response> recycleNodepoolInstanceWithHttpInfo(
+    String vkeId,
+    String nodepoolId,
+    String nodeId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/nodes/{node-id}/recycle'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId)
-      .replaceAll('{node-id}', nodeId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}/nodes/{node-id}/recycle'
+            .replaceAll('{vke-id}', vkeId)
+            .replaceAll('{nodepool-id}', nodepoolId)
+            .replaceAll('{node-id}', nodeId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1398,7 +1616,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1425,8 +1642,16 @@ class KubernetesApi {
   ///
   /// * [String] nodeId (required):
   ///   Node ID
-  Future<void> recycleNodepoolInstance(String vkeId, String nodepoolId, String nodeId,) async {
-    final response = await recycleNodepoolInstanceWithHttpInfo(vkeId, nodepoolId, nodeId,);
+  Future<void> recycleNodepoolInstance(
+    String vkeId,
+    String nodepoolId,
+    String nodeId,
+  ) async {
+    final response = await recycleNodepoolInstanceWithHttpInfo(
+      vkeId,
+      nodepoolId,
+      nodeId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1445,10 +1670,13 @@ class KubernetesApi {
   ///
   /// * [StartKubernetesClusterUpgradeRequest] startKubernetesClusterUpgradeRequest:
   ///   Request Body
-  Future<Response> startKubernetesClusterUpgradeWithHttpInfo(String vkeId, { StartKubernetesClusterUpgradeRequest? startKubernetesClusterUpgradeRequest, }) async {
+  Future<Response> startKubernetesClusterUpgradeWithHttpInfo(
+    String vkeId, {
+    StartKubernetesClusterUpgradeRequest? startKubernetesClusterUpgradeRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}/upgrades'
-      .replaceAll('{vke-id}', vkeId);
+    final path =
+        r'/kubernetes/clusters/{vke-id}/upgrades'.replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody = startKubernetesClusterUpgradeRequest;
@@ -1459,7 +1687,6 @@ class KubernetesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -1482,8 +1709,15 @@ class KubernetesApi {
   ///
   /// * [StartKubernetesClusterUpgradeRequest] startKubernetesClusterUpgradeRequest:
   ///   Request Body
-  Future<void> startKubernetesClusterUpgrade(String vkeId, { StartKubernetesClusterUpgradeRequest? startKubernetesClusterUpgradeRequest, }) async {
-    final response = await startKubernetesClusterUpgradeWithHttpInfo(vkeId,  startKubernetesClusterUpgradeRequest: startKubernetesClusterUpgradeRequest, );
+  Future<void> startKubernetesClusterUpgrade(
+    String vkeId, {
+    StartKubernetesClusterUpgradeRequest? startKubernetesClusterUpgradeRequest,
+  }) async {
+    final response = await startKubernetesClusterUpgradeWithHttpInfo(
+      vkeId,
+      startKubernetesClusterUpgradeRequest:
+          startKubernetesClusterUpgradeRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1502,10 +1736,12 @@ class KubernetesApi {
   ///
   /// * [UpdateKubernetesClusterRequest] updateKubernetesClusterRequest:
   ///   Request Body
-  Future<Response> updateKubernetesClusterWithHttpInfo(String vkeId, { UpdateKubernetesClusterRequest? updateKubernetesClusterRequest, }) async {
+  Future<Response> updateKubernetesClusterWithHttpInfo(
+    String vkeId, {
+    UpdateKubernetesClusterRequest? updateKubernetesClusterRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/kubernetes/clusters/{vke-id}'
-      .replaceAll('{vke-id}', vkeId);
+    final path = r'/kubernetes/clusters/{vke-id}'.replaceAll('{vke-id}', vkeId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateKubernetesClusterRequest;
@@ -1515,7 +1751,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1539,8 +1774,14 @@ class KubernetesApi {
   ///
   /// * [UpdateKubernetesClusterRequest] updateKubernetesClusterRequest:
   ///   Request Body
-  Future<void> updateKubernetesCluster(String vkeId, { UpdateKubernetesClusterRequest? updateKubernetesClusterRequest, }) async {
-    final response = await updateKubernetesClusterWithHttpInfo(vkeId,  updateKubernetesClusterRequest: updateKubernetesClusterRequest, );
+  Future<void> updateKubernetesCluster(
+    String vkeId, {
+    UpdateKubernetesClusterRequest? updateKubernetesClusterRequest,
+  }) async {
+    final response = await updateKubernetesClusterWithHttpInfo(
+      vkeId,
+      updateKubernetesClusterRequest: updateKubernetesClusterRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1562,11 +1803,15 @@ class KubernetesApi {
   ///
   /// * [UpdateNodepoolRequest] updateNodepoolRequest:
   ///   Request Body
-  Future<Response> updateNodepoolWithHttpInfo(String vkeId, String nodepoolId, { UpdateNodepoolRequest? updateNodepoolRequest, }) async {
+  Future<Response> updateNodepoolWithHttpInfo(
+    String vkeId,
+    String nodepoolId, {
+    UpdateNodepoolRequest? updateNodepoolRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/kubernetes/clusters/{vke-id}/node-pools/{nodepool-id}'
-      .replaceAll('{vke-id}', vkeId)
-      .replaceAll('{nodepool-id}', nodepoolId);
+        .replaceAll('{vke-id}', vkeId)
+        .replaceAll('{nodepool-id}', nodepoolId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateNodepoolRequest;
@@ -1576,7 +1821,6 @@ class KubernetesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json', 'application/xml'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1603,17 +1847,28 @@ class KubernetesApi {
   ///
   /// * [UpdateNodepoolRequest] updateNodepoolRequest:
   ///   Request Body
-  Future<CreateNodepools201Response?> updateNodepool(String vkeId, String nodepoolId, { UpdateNodepoolRequest? updateNodepoolRequest, }) async {
-    final response = await updateNodepoolWithHttpInfo(vkeId, nodepoolId,  updateNodepoolRequest: updateNodepoolRequest, );
+  Future<CreateNodepools201Response?> updateNodepool(
+    String vkeId,
+    String nodepoolId, {
+    UpdateNodepoolRequest? updateNodepoolRequest,
+  }) async {
+    final response = await updateNodepoolWithHttpInfo(
+      vkeId,
+      nodepoolId,
+      updateNodepoolRequest: updateNodepoolRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateNodepools201Response',) as CreateNodepools201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateNodepools201Response',
+      ) as CreateNodepools201Response;
     }
     return null;
   }

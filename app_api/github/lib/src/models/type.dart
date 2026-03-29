@@ -15,5 +15,5 @@ enum Type {
   @JsonValue('private')
   private,
   @JsonValue('member')
-  member;
+  member,
 }

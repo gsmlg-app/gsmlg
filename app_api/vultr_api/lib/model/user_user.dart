@@ -110,34 +110,37 @@ class UserUser {
   String? apiKey;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UserUser &&
-    other.id == id &&
-    other.name == name &&
-    other.firstName == firstName &&
-    other.lastName == lastName &&
-    other.apiEnabled == apiEnabled &&
-    other.email == email &&
-    other.password == password &&
-    _deepEquality.equals(other.acls, acls) &&
-    other.serviceUser == serviceUser &&
-    other.apiKey == apiKey;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UserUser &&
+          other.id == id &&
+          other.name == name &&
+          other.firstName == firstName &&
+          other.lastName == lastName &&
+          other.apiEnabled == apiEnabled &&
+          other.email == email &&
+          other.password == password &&
+          _deepEquality.equals(other.acls, acls) &&
+          other.serviceUser == serviceUser &&
+          other.apiKey == apiKey;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (firstName == null ? 0 : firstName!.hashCode) +
-    (lastName == null ? 0 : lastName!.hashCode) +
-    (apiEnabled == null ? 0 : apiEnabled!.hashCode) +
-    (email == null ? 0 : email!.hashCode) +
-    (password == null ? 0 : password!.hashCode) +
-    (acls.hashCode) +
-    (serviceUser == null ? 0 : serviceUser!.hashCode) +
-    (apiKey == null ? 0 : apiKey!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (firstName == null ? 0 : firstName!.hashCode) +
+      (lastName == null ? 0 : lastName!.hashCode) +
+      (apiEnabled == null ? 0 : apiEnabled!.hashCode) +
+      (email == null ? 0 : email!.hashCode) +
+      (password == null ? 0 : password!.hashCode) +
+      (acls.hashCode) +
+      (serviceUser == null ? 0 : serviceUser!.hashCode) +
+      (apiKey == null ? 0 : apiKey!.hashCode);
 
   @override
-  String toString() => 'UserUser[id=$id, name=$name, firstName=$firstName, lastName=$lastName, apiEnabled=$apiEnabled, email=$email, password=$password, acls=$acls, serviceUser=$serviceUser, apiKey=$apiKey]';
+  String toString() =>
+      'UserUser[id=$id, name=$name, firstName=$firstName, lastName=$lastName, apiEnabled=$apiEnabled, email=$email, password=$password, acls=$acls, serviceUser=$serviceUser, apiKey=$apiKey]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -176,7 +179,7 @@ class UserUser {
     } else {
       json[r'password'] = null;
     }
-      json[r'acls'] = this.acls;
+    json[r'acls'] = this.acls;
     if (this.serviceUser != null) {
       json[r'service_user'] = this.serviceUser;
     } else {
@@ -202,8 +205,10 @@ class UserUser {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UserUser[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UserUser[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UserUser[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UserUser[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -226,7 +231,10 @@ class UserUser {
     return null;
   }
 
-  static List<UserUser> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UserUser> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UserUser>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -254,20 +262,24 @@ class UserUser {
   }
 
   // maps a json object with a list of UserUser-objects as value to a dart map
-  static Map<String, List<UserUser>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UserUser>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UserUser>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UserUser.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UserUser.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

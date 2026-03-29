@@ -22,9 +22,10 @@ class UpdateDnsRecordRequest {
     this.tags,
     this.data,
   });
-  
-  factory UpdateDnsRecordRequest.fromJson(Map<String, Object?> json) => _$UpdateDnsRecordRequestFromJson(json);
-  
+
+  factory UpdateDnsRecordRequest.fromJson(Map<String, Object?> json) =>
+      _$UpdateDnsRecordRequestFromJson(json);
+
   /// DNS record name (or @ for the zone apex).
   final String name;
   final DnsRecordType type;

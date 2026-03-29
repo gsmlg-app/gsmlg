@@ -20,10 +20,7 @@ final class GitHubLoading extends GitHubState {
 
 /// Successfully connected with user info
 final class GitHubConnected extends GitHubState {
-  const GitHubConnected({
-    required this.user,
-    required this.pat,
-  });
+  const GitHubConnected({required this.user, required this.pat});
 
   final GitHubUser user;
   final String pat;

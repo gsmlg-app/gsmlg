@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for S3Api
 void main() {
   // final instance = S3Api();
@@ -97,6 +96,5 @@ void main() {
     test('test updateObjectStorage', () async {
       // TODO
     });
-
   });
 }

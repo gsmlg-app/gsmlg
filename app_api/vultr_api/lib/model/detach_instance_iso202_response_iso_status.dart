@@ -26,13 +26,14 @@ class DetachInstanceIso202ResponseIsoStatus {
   String? state;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is DetachInstanceIso202ResponseIsoStatus &&
-    other.state == state;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DetachInstanceIso202ResponseIsoStatus && other.state == state;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (state == null ? 0 : state!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (state == null ? 0 : state!.hashCode);
 
   @override
   String toString() => 'DetachInstanceIso202ResponseIsoStatus[state=$state]';
@@ -59,8 +60,10 @@ class DetachInstanceIso202ResponseIsoStatus {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "DetachInstanceIso202ResponseIsoStatus[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "DetachInstanceIso202ResponseIsoStatus[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "DetachInstanceIso202ResponseIsoStatus[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "DetachInstanceIso202ResponseIsoStatus[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -72,7 +75,10 @@ class DetachInstanceIso202ResponseIsoStatus {
     return null;
   }
 
-  static List<DetachInstanceIso202ResponseIsoStatus> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<DetachInstanceIso202ResponseIsoStatus> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <DetachInstanceIso202ResponseIsoStatus>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -85,12 +91,14 @@ class DetachInstanceIso202ResponseIsoStatus {
     return result.toList(growable: growable);
   }
 
-  static Map<String, DetachInstanceIso202ResponseIsoStatus> mapFromJson(dynamic json) {
+  static Map<String, DetachInstanceIso202ResponseIsoStatus> mapFromJson(
+      dynamic json) {
     final map = <String, DetachInstanceIso202ResponseIsoStatus>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = DetachInstanceIso202ResponseIsoStatus.fromJson(entry.value);
+        final value =
+            DetachInstanceIso202ResponseIsoStatus.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -100,20 +108,25 @@ class DetachInstanceIso202ResponseIsoStatus {
   }
 
   // maps a json object with a list of DetachInstanceIso202ResponseIsoStatus-objects as value to a dart map
-  static Map<String, List<DetachInstanceIso202ResponseIsoStatus>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<DetachInstanceIso202ResponseIsoStatus>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<DetachInstanceIso202ResponseIsoStatus>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = DetachInstanceIso202ResponseIsoStatus.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = DetachInstanceIso202ResponseIsoStatus.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

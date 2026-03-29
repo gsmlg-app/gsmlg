@@ -194,52 +194,55 @@ class Pullzone {
   List<String> regions;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Pullzone &&
-    other.id == id &&
-    other.dateCreated == dateCreated &&
-    other.status == status &&
-    other.label == label &&
-    other.originScheme == originScheme &&
-    other.originDomain == originDomain &&
-    other.cdnUrl == cdnUrl &&
-    other.vanityDomain == vanityDomain &&
-    other.cacheSize == cacheSize &&
-    other.requests == requests &&
-    other.inBytes == inBytes &&
-    other.outBytes == outBytes &&
-    other.packetsPerSec == packetsPerSec &&
-    other.lastPurge == lastPurge &&
-    other.cors == cors &&
-    other.gzip == gzip &&
-    other.blockAi == blockAi &&
-    other.blockBadBots == blockBadBots &&
-    _deepEquality.equals(other.regions, regions);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Pullzone &&
+          other.id == id &&
+          other.dateCreated == dateCreated &&
+          other.status == status &&
+          other.label == label &&
+          other.originScheme == originScheme &&
+          other.originDomain == originDomain &&
+          other.cdnUrl == cdnUrl &&
+          other.vanityDomain == vanityDomain &&
+          other.cacheSize == cacheSize &&
+          other.requests == requests &&
+          other.inBytes == inBytes &&
+          other.outBytes == outBytes &&
+          other.packetsPerSec == packetsPerSec &&
+          other.lastPurge == lastPurge &&
+          other.cors == cors &&
+          other.gzip == gzip &&
+          other.blockAi == blockAi &&
+          other.blockBadBots == blockBadBots &&
+          _deepEquality.equals(other.regions, regions);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (status == null ? 0 : status!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (originScheme == null ? 0 : originScheme!.hashCode) +
-    (originDomain == null ? 0 : originDomain!.hashCode) +
-    (cdnUrl == null ? 0 : cdnUrl!.hashCode) +
-    (vanityDomain == null ? 0 : vanityDomain!.hashCode) +
-    (cacheSize == null ? 0 : cacheSize!.hashCode) +
-    (requests == null ? 0 : requests!.hashCode) +
-    (inBytes == null ? 0 : inBytes!.hashCode) +
-    (outBytes == null ? 0 : outBytes!.hashCode) +
-    (packetsPerSec == null ? 0 : packetsPerSec!.hashCode) +
-    (lastPurge == null ? 0 : lastPurge!.hashCode) +
-    (cors == null ? 0 : cors!.hashCode) +
-    (gzip == null ? 0 : gzip!.hashCode) +
-    (blockAi == null ? 0 : blockAi!.hashCode) +
-    (blockBadBots == null ? 0 : blockBadBots!.hashCode) +
-    (regions.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (status == null ? 0 : status!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (originScheme == null ? 0 : originScheme!.hashCode) +
+      (originDomain == null ? 0 : originDomain!.hashCode) +
+      (cdnUrl == null ? 0 : cdnUrl!.hashCode) +
+      (vanityDomain == null ? 0 : vanityDomain!.hashCode) +
+      (cacheSize == null ? 0 : cacheSize!.hashCode) +
+      (requests == null ? 0 : requests!.hashCode) +
+      (inBytes == null ? 0 : inBytes!.hashCode) +
+      (outBytes == null ? 0 : outBytes!.hashCode) +
+      (packetsPerSec == null ? 0 : packetsPerSec!.hashCode) +
+      (lastPurge == null ? 0 : lastPurge!.hashCode) +
+      (cors == null ? 0 : cors!.hashCode) +
+      (gzip == null ? 0 : gzip!.hashCode) +
+      (blockAi == null ? 0 : blockAi!.hashCode) +
+      (blockBadBots == null ? 0 : blockBadBots!.hashCode) +
+      (regions.hashCode);
 
   @override
-  String toString() => 'Pullzone[id=$id, dateCreated=$dateCreated, status=$status, label=$label, originScheme=$originScheme, originDomain=$originDomain, cdnUrl=$cdnUrl, vanityDomain=$vanityDomain, cacheSize=$cacheSize, requests=$requests, inBytes=$inBytes, outBytes=$outBytes, packetsPerSec=$packetsPerSec, lastPurge=$lastPurge, cors=$cors, gzip=$gzip, blockAi=$blockAi, blockBadBots=$blockBadBots, regions=$regions]';
+  String toString() =>
+      'Pullzone[id=$id, dateCreated=$dateCreated, status=$status, label=$label, originScheme=$originScheme, originDomain=$originDomain, cdnUrl=$cdnUrl, vanityDomain=$vanityDomain, cacheSize=$cacheSize, requests=$requests, inBytes=$inBytes, outBytes=$outBytes, packetsPerSec=$packetsPerSec, lastPurge=$lastPurge, cors=$cors, gzip=$gzip, blockAi=$blockAi, blockBadBots=$blockBadBots, regions=$regions]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -333,7 +336,7 @@ class Pullzone {
     } else {
       json[r'block_bad_bots'] = null;
     }
-      json[r'regions'] = this.regions;
+    json[r'regions'] = this.regions;
     return json;
   }
 
@@ -349,8 +352,10 @@ class Pullzone {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Pullzone[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Pullzone[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Pullzone[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Pullzone[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -375,14 +380,19 @@ class Pullzone {
         blockAi: mapValueOfType<bool>(json, r'block_ai'),
         blockBadBots: mapValueOfType<bool>(json, r'block_bad_bots'),
         regions: json[r'regions'] is Iterable
-            ? (json[r'regions'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'regions'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
       );
     }
     return null;
   }
 
-  static List<Pullzone> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Pullzone> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Pullzone>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -410,21 +420,26 @@ class Pullzone {
   }
 
   // maps a json object with a list of Pullzone-objects as value to a dart map
-  static Map<String, List<Pullzone>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Pullzone>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Pullzone>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Pullzone.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Pullzone.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
 
 /// The URI scheme of the origin domain.
@@ -449,9 +464,13 @@ class PullzoneOriginSchemeEnum {
     https,
   ];
 
-  static PullzoneOriginSchemeEnum? fromJson(dynamic value) => PullzoneOriginSchemeEnumTypeTransformer().decode(value);
+  static PullzoneOriginSchemeEnum? fromJson(dynamic value) =>
+      PullzoneOriginSchemeEnumTypeTransformer().decode(value);
 
-  static List<PullzoneOriginSchemeEnum> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<PullzoneOriginSchemeEnum> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <PullzoneOriginSchemeEnum>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -468,7 +487,8 @@ class PullzoneOriginSchemeEnum {
 /// Transformation class that can [encode] an instance of [PullzoneOriginSchemeEnum] to String,
 /// and [decode] dynamic data back to [PullzoneOriginSchemeEnum].
 class PullzoneOriginSchemeEnumTypeTransformer {
-  factory PullzoneOriginSchemeEnumTypeTransformer() => _instance ??= const PullzoneOriginSchemeEnumTypeTransformer._();
+  factory PullzoneOriginSchemeEnumTypeTransformer() =>
+      _instance ??= const PullzoneOriginSchemeEnumTypeTransformer._();
 
   const PullzoneOriginSchemeEnumTypeTransformer._();
 
@@ -485,8 +505,10 @@ class PullzoneOriginSchemeEnumTypeTransformer {
   PullzoneOriginSchemeEnum? decode(dynamic data, {bool allowNull = true}) {
     if (data != null) {
       switch (data) {
-        case r'http': return PullzoneOriginSchemeEnum.http;
-        case r'https': return PullzoneOriginSchemeEnum.https;
+        case r'http':
+          return PullzoneOriginSchemeEnum.http;
+        case r'https':
+          return PullzoneOriginSchemeEnum.https;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');
@@ -499,5 +521,3 @@ class PullzoneOriginSchemeEnumTypeTransformer {
   /// Singleton [PullzoneOriginSchemeEnumTypeTransformer] instance.
   static PullzoneOriginSchemeEnumTypeTransformer? _instance;
 }
-
-

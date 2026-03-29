@@ -36,18 +36,21 @@ class GetInstanceIsoStatus200ResponseIsoStatus {
   String? state;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetInstanceIsoStatus200ResponseIsoStatus &&
-    other.isoId == isoId &&
-    other.state == state;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetInstanceIsoStatus200ResponseIsoStatus &&
+          other.isoId == isoId &&
+          other.state == state;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (isoId == null ? 0 : isoId!.hashCode) +
-    (state == null ? 0 : state!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (isoId == null ? 0 : isoId!.hashCode) +
+      (state == null ? 0 : state!.hashCode);
 
   @override
-  String toString() => 'GetInstanceIsoStatus200ResponseIsoStatus[isoId=$isoId, state=$state]';
+  String toString() =>
+      'GetInstanceIsoStatus200ResponseIsoStatus[isoId=$isoId, state=$state]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -76,8 +79,10 @@ class GetInstanceIsoStatus200ResponseIsoStatus {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetInstanceIsoStatus200ResponseIsoStatus[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetInstanceIsoStatus200ResponseIsoStatus[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetInstanceIsoStatus200ResponseIsoStatus[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetInstanceIsoStatus200ResponseIsoStatus[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -90,7 +95,10 @@ class GetInstanceIsoStatus200ResponseIsoStatus {
     return null;
   }
 
-  static List<GetInstanceIsoStatus200ResponseIsoStatus> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetInstanceIsoStatus200ResponseIsoStatus> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetInstanceIsoStatus200ResponseIsoStatus>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -103,12 +111,14 @@ class GetInstanceIsoStatus200ResponseIsoStatus {
     return result.toList(growable: growable);
   }
 
-  static Map<String, GetInstanceIsoStatus200ResponseIsoStatus> mapFromJson(dynamic json) {
+  static Map<String, GetInstanceIsoStatus200ResponseIsoStatus> mapFromJson(
+      dynamic json) {
     final map = <String, GetInstanceIsoStatus200ResponseIsoStatus>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = GetInstanceIsoStatus200ResponseIsoStatus.fromJson(entry.value);
+        final value =
+            GetInstanceIsoStatus200ResponseIsoStatus.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -118,20 +128,25 @@ class GetInstanceIsoStatus200ResponseIsoStatus {
   }
 
   // maps a json object with a list of GetInstanceIsoStatus200ResponseIsoStatus-objects as value to a dart map
-  static Map<String, List<GetInstanceIsoStatus200ResponseIsoStatus>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetInstanceIsoStatus200ResponseIsoStatus>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetInstanceIsoStatus200ResponseIsoStatus>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetInstanceIsoStatus200ResponseIsoStatus.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetInstanceIsoStatus200ResponseIsoStatus.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

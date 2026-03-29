@@ -86,28 +86,31 @@ class GetInstanceJob200ResponseJob {
   String? updatedAt;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetInstanceJob200ResponseJob &&
-    other.id == id &&
-    other.vpsId == vpsId &&
-    other.type == type &&
-    other.state == state &&
-    other.info == info &&
-    other.addedAt == addedAt &&
-    other.updatedAt == updatedAt;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetInstanceJob200ResponseJob &&
+          other.id == id &&
+          other.vpsId == vpsId &&
+          other.type == type &&
+          other.state == state &&
+          other.info == info &&
+          other.addedAt == addedAt &&
+          other.updatedAt == updatedAt;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (vpsId == null ? 0 : vpsId!.hashCode) +
-    (type == null ? 0 : type!.hashCode) +
-    (state == null ? 0 : state!.hashCode) +
-    (info == null ? 0 : info!.hashCode) +
-    (addedAt == null ? 0 : addedAt!.hashCode) +
-    (updatedAt == null ? 0 : updatedAt!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (vpsId == null ? 0 : vpsId!.hashCode) +
+      (type == null ? 0 : type!.hashCode) +
+      (state == null ? 0 : state!.hashCode) +
+      (info == null ? 0 : info!.hashCode) +
+      (addedAt == null ? 0 : addedAt!.hashCode) +
+      (updatedAt == null ? 0 : updatedAt!.hashCode);
 
   @override
-  String toString() => 'GetInstanceJob200ResponseJob[id=$id, vpsId=$vpsId, type=$type, state=$state, info=$info, addedAt=$addedAt, updatedAt=$updatedAt]';
+  String toString() =>
+      'GetInstanceJob200ResponseJob[id=$id, vpsId=$vpsId, type=$type, state=$state, info=$info, addedAt=$addedAt, updatedAt=$updatedAt]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -161,8 +164,10 @@ class GetInstanceJob200ResponseJob {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetInstanceJob200ResponseJob[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetInstanceJob200ResponseJob[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetInstanceJob200ResponseJob[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetInstanceJob200ResponseJob[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -180,7 +185,10 @@ class GetInstanceJob200ResponseJob {
     return null;
   }
 
-  static List<GetInstanceJob200ResponseJob> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetInstanceJob200ResponseJob> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetInstanceJob200ResponseJob>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -208,20 +216,24 @@ class GetInstanceJob200ResponseJob {
   }
 
   // maps a json object with a list of GetInstanceJob200ResponseJob-objects as value to a dart map
-  static Map<String, List<GetInstanceJob200ResponseJob>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetInstanceJob200ResponseJob>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetInstanceJob200ResponseJob>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetInstanceJob200ResponseJob.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetInstanceJob200ResponseJob.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

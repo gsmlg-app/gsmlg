@@ -26,16 +26,19 @@ class CreateLoadBalancerRequestStickySession {
   String? cookieName;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateLoadBalancerRequestStickySession &&
-    other.cookieName == cookieName;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateLoadBalancerRequestStickySession &&
+          other.cookieName == cookieName;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (cookieName == null ? 0 : cookieName!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (cookieName == null ? 0 : cookieName!.hashCode);
 
   @override
-  String toString() => 'CreateLoadBalancerRequestStickySession[cookieName=$cookieName]';
+  String toString() =>
+      'CreateLoadBalancerRequestStickySession[cookieName=$cookieName]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -59,8 +62,10 @@ class CreateLoadBalancerRequestStickySession {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateLoadBalancerRequestStickySession[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateLoadBalancerRequestStickySession[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateLoadBalancerRequestStickySession[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateLoadBalancerRequestStickySession[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -72,7 +77,10 @@ class CreateLoadBalancerRequestStickySession {
     return null;
   }
 
-  static List<CreateLoadBalancerRequestStickySession> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateLoadBalancerRequestStickySession> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateLoadBalancerRequestStickySession>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -85,12 +93,14 @@ class CreateLoadBalancerRequestStickySession {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateLoadBalancerRequestStickySession> mapFromJson(dynamic json) {
+  static Map<String, CreateLoadBalancerRequestStickySession> mapFromJson(
+      dynamic json) {
     final map = <String, CreateLoadBalancerRequestStickySession>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = CreateLoadBalancerRequestStickySession.fromJson(entry.value);
+        final value =
+            CreateLoadBalancerRequestStickySession.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -100,20 +110,25 @@ class CreateLoadBalancerRequestStickySession {
   }
 
   // maps a json object with a list of CreateLoadBalancerRequestStickySession-objects as value to a dart map
-  static Map<String, List<CreateLoadBalancerRequestStickySession>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateLoadBalancerRequestStickySession>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateLoadBalancerRequestStickySession>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateLoadBalancerRequestStickySession.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateLoadBalancerRequestStickySession.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

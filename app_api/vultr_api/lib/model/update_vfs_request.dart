@@ -35,18 +35,21 @@ class UpdateVFSRequest {
   UpdateVFSRequestStorageSize? storageSize;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateVFSRequest &&
-    other.label == label &&
-    other.storageSize == storageSize;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateVFSRequest &&
+          other.label == label &&
+          other.storageSize == storageSize;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label == null ? 0 : label!.hashCode) +
-    (storageSize == null ? 0 : storageSize!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label == null ? 0 : label!.hashCode) +
+      (storageSize == null ? 0 : storageSize!.hashCode);
 
   @override
-  String toString() => 'UpdateVFSRequest[label=$label, storageSize=$storageSize]';
+  String toString() =>
+      'UpdateVFSRequest[label=$label, storageSize=$storageSize]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -75,21 +78,27 @@ class UpdateVFSRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateVFSRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateVFSRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateVFSRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateVFSRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return UpdateVFSRequest(
         label: mapValueOfType<String>(json, r'label'),
-        storageSize: UpdateVFSRequestStorageSize.fromJson(json[r'storage_size']),
+        storageSize:
+            UpdateVFSRequestStorageSize.fromJson(json[r'storage_size']),
       );
     }
     return null;
   }
 
-  static List<UpdateVFSRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateVFSRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateVFSRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -117,20 +126,24 @@ class UpdateVFSRequest {
   }
 
   // maps a json object with a list of UpdateVFSRequest-objects as value to a dart map
-  static Map<String, List<UpdateVFSRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateVFSRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateVFSRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateVFSRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateVFSRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

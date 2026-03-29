@@ -47,7 +47,8 @@ void main() {
       act: (bloc) => bloc.add(const WhoisHistorySync()),
       expect: () => [
         const WhoisHistoryLoading(),
-        isA<WhoisHistoryLoaded>().having((s) => s.data.length, 'data length', 1),
+        isA<WhoisHistoryLoaded>()
+            .having((s) => s.data.length, 'data length', 1),
       ],
     );
 

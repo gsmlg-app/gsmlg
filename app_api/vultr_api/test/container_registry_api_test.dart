@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for ContainerRegistryApi
 void main() {
   // final instance = ContainerRegistryApi();
@@ -25,6 +24,5 @@ void main() {
     test('test listRegistries', () async {
       // TODO
     });
-
   });
 }

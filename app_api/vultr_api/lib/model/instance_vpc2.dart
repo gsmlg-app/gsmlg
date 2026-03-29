@@ -40,24 +40,27 @@ class InstanceVpc2 {
   String? ipAddress;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is InstanceVpc2 &&
-    other.id == id &&
-    other.macAddress == macAddress &&
-    other.ipAddress == ipAddress;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is InstanceVpc2 &&
+          other.id == id &&
+          other.macAddress == macAddress &&
+          other.ipAddress == ipAddress;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id.hashCode) +
-    (macAddress == null ? 0 : macAddress!.hashCode) +
-    (ipAddress == null ? 0 : ipAddress!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id.hashCode) +
+      (macAddress == null ? 0 : macAddress!.hashCode) +
+      (ipAddress == null ? 0 : ipAddress!.hashCode);
 
   @override
-  String toString() => 'InstanceVpc2[id=$id, macAddress=$macAddress, ipAddress=$ipAddress]';
+  String toString() =>
+      'InstanceVpc2[id=$id, macAddress=$macAddress, ipAddress=$ipAddress]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'id'] = this.id;
+    json[r'id'] = this.id;
     if (this.macAddress != null) {
       json[r'mac_address'] = this.macAddress;
     } else {
@@ -83,8 +86,10 @@ class InstanceVpc2 {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "InstanceVpc2[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "InstanceVpc2[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "InstanceVpc2[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "InstanceVpc2[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -98,7 +103,10 @@ class InstanceVpc2 {
     return null;
   }
 
-  static List<InstanceVpc2> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<InstanceVpc2> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <InstanceVpc2>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -126,13 +134,19 @@ class InstanceVpc2 {
   }
 
   // maps a json object with a list of InstanceVpc2-objects as value to a dart map
-  static Map<String, List<InstanceVpc2>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<InstanceVpc2>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<InstanceVpc2>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = InstanceVpc2.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = InstanceVpc2.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -143,4 +157,3 @@ class InstanceVpc2 {
     'id',
   };
 }
-

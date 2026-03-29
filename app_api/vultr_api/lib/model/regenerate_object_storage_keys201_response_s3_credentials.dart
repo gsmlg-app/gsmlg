@@ -46,20 +46,23 @@ class RegenerateObjectStorageKeys201ResponseS3Credentials {
   String? s3SecretKey;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is RegenerateObjectStorageKeys201ResponseS3Credentials &&
-    other.s3Hostname == s3Hostname &&
-    other.s3AccessKey == s3AccessKey &&
-    other.s3SecretKey == s3SecretKey;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RegenerateObjectStorageKeys201ResponseS3Credentials &&
+          other.s3Hostname == s3Hostname &&
+          other.s3AccessKey == s3AccessKey &&
+          other.s3SecretKey == s3SecretKey;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (s3Hostname == null ? 0 : s3Hostname!.hashCode) +
-    (s3AccessKey == null ? 0 : s3AccessKey!.hashCode) +
-    (s3SecretKey == null ? 0 : s3SecretKey!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (s3Hostname == null ? 0 : s3Hostname!.hashCode) +
+      (s3AccessKey == null ? 0 : s3AccessKey!.hashCode) +
+      (s3SecretKey == null ? 0 : s3SecretKey!.hashCode);
 
   @override
-  String toString() => 'RegenerateObjectStorageKeys201ResponseS3Credentials[s3Hostname=$s3Hostname, s3AccessKey=$s3AccessKey, s3SecretKey=$s3SecretKey]';
+  String toString() =>
+      'RegenerateObjectStorageKeys201ResponseS3Credentials[s3Hostname=$s3Hostname, s3AccessKey=$s3AccessKey, s3SecretKey=$s3SecretKey]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -84,7 +87,8 @@ class RegenerateObjectStorageKeys201ResponseS3Credentials {
   /// Returns a new [RegenerateObjectStorageKeys201ResponseS3Credentials] instance and imports its values from
   /// [value] if it's a [Map], null otherwise.
   // ignore: prefer_constructors_over_static_methods
-  static RegenerateObjectStorageKeys201ResponseS3Credentials? fromJson(dynamic value) {
+  static RegenerateObjectStorageKeys201ResponseS3Credentials? fromJson(
+      dynamic value) {
     if (value is Map) {
       final json = value.cast<String, dynamic>();
 
@@ -93,8 +97,10 @@ class RegenerateObjectStorageKeys201ResponseS3Credentials {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "RegenerateObjectStorageKeys201ResponseS3Credentials[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "RegenerateObjectStorageKeys201ResponseS3Credentials[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "RegenerateObjectStorageKeys201ResponseS3Credentials[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "RegenerateObjectStorageKeys201ResponseS3Credentials[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -108,11 +114,15 @@ class RegenerateObjectStorageKeys201ResponseS3Credentials {
     return null;
   }
 
-  static List<RegenerateObjectStorageKeys201ResponseS3Credentials> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<RegenerateObjectStorageKeys201ResponseS3Credentials> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <RegenerateObjectStorageKeys201ResponseS3Credentials>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
-        final value = RegenerateObjectStorageKeys201ResponseS3Credentials.fromJson(row);
+        final value =
+            RegenerateObjectStorageKeys201ResponseS3Credentials.fromJson(row);
         if (value != null) {
           result.add(value);
         }
@@ -121,12 +131,15 @@ class RegenerateObjectStorageKeys201ResponseS3Credentials {
     return result.toList(growable: growable);
   }
 
-  static Map<String, RegenerateObjectStorageKeys201ResponseS3Credentials> mapFromJson(dynamic json) {
+  static Map<String, RegenerateObjectStorageKeys201ResponseS3Credentials>
+      mapFromJson(dynamic json) {
     final map = <String, RegenerateObjectStorageKeys201ResponseS3Credentials>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = RegenerateObjectStorageKeys201ResponseS3Credentials.fromJson(entry.value);
+        final value =
+            RegenerateObjectStorageKeys201ResponseS3Credentials.fromJson(
+                entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -136,20 +149,27 @@ class RegenerateObjectStorageKeys201ResponseS3Credentials {
   }
 
   // maps a json object with a list of RegenerateObjectStorageKeys201ResponseS3Credentials-objects as value to a dart map
-  static Map<String, List<RegenerateObjectStorageKeys201ResponseS3Credentials>> mapListFromJson(dynamic json, {bool growable = false,}) {
-    final map = <String, List<RegenerateObjectStorageKeys201ResponseS3Credentials>>{};
+  static Map<String, List<RegenerateObjectStorageKeys201ResponseS3Credentials>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
+    final map =
+        <String, List<RegenerateObjectStorageKeys201ResponseS3Credentials>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = RegenerateObjectStorageKeys201ResponseS3Credentials.listFromJson(entry.value, growable: growable,);
+        map[entry.key] =
+            RegenerateObjectStorageKeys201ResponseS3Credentials.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -22,9 +22,10 @@ class SimpleUser {
     this.name,
     this.email,
   });
-  
-  factory SimpleUser.fromJson(Map<String, Object?> json) => _$SimpleUserFromJson(json);
-  
+
+  factory SimpleUser.fromJson(Map<String, Object?> json) =>
+      _$SimpleUserFromJson(json);
+
   final int id;
   final String login;
   @JsonKey(name: 'node_id')

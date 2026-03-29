@@ -20,9 +20,10 @@ class ListDnsRecordsResponse {
     required this.result,
     this.resultInfo,
   });
-  
-  factory ListDnsRecordsResponse.fromJson(Map<String, Object?> json) => _$ListDnsRecordsResponseFromJson(json);
-  
+
+  factory ListDnsRecordsResponse.fromJson(Map<String, Object?> json) =>
+      _$ListDnsRecordsResponseFromJson(json);
+
   final bool success;
   final List<ApiError> errors;
   final List<ApiMessage> messages;

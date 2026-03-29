@@ -30,22 +30,24 @@ class CreateLoadBalancerRequestGlobalRegionsInner {
   String? vpcId;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateLoadBalancerRequestGlobalRegionsInner &&
-    other.regionId == regionId &&
-    other.vpcId == vpcId;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateLoadBalancerRequestGlobalRegionsInner &&
+          other.regionId == regionId &&
+          other.vpcId == vpcId;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (regionId.hashCode) +
-    (vpcId == null ? 0 : vpcId!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (regionId.hashCode) + (vpcId == null ? 0 : vpcId!.hashCode);
 
   @override
-  String toString() => 'CreateLoadBalancerRequestGlobalRegionsInner[regionId=$regionId, vpcId=$vpcId]';
+  String toString() =>
+      'CreateLoadBalancerRequestGlobalRegionsInner[regionId=$regionId, vpcId=$vpcId]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'region_id'] = this.regionId;
+    json[r'region_id'] = this.regionId;
     if (this.vpcId != null) {
       json[r'vpc_id'] = this.vpcId;
     } else {
@@ -66,8 +68,10 @@ class CreateLoadBalancerRequestGlobalRegionsInner {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateLoadBalancerRequestGlobalRegionsInner[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateLoadBalancerRequestGlobalRegionsInner[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateLoadBalancerRequestGlobalRegionsInner[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateLoadBalancerRequestGlobalRegionsInner[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -80,7 +84,10 @@ class CreateLoadBalancerRequestGlobalRegionsInner {
     return null;
   }
 
-  static List<CreateLoadBalancerRequestGlobalRegionsInner> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateLoadBalancerRequestGlobalRegionsInner> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateLoadBalancerRequestGlobalRegionsInner>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -93,12 +100,14 @@ class CreateLoadBalancerRequestGlobalRegionsInner {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateLoadBalancerRequestGlobalRegionsInner> mapFromJson(dynamic json) {
+  static Map<String, CreateLoadBalancerRequestGlobalRegionsInner> mapFromJson(
+      dynamic json) {
     final map = <String, CreateLoadBalancerRequestGlobalRegionsInner>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = CreateLoadBalancerRequestGlobalRegionsInner.fromJson(entry.value);
+        final value =
+            CreateLoadBalancerRequestGlobalRegionsInner.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -108,13 +117,21 @@ class CreateLoadBalancerRequestGlobalRegionsInner {
   }
 
   // maps a json object with a list of CreateLoadBalancerRequestGlobalRegionsInner-objects as value to a dart map
-  static Map<String, List<CreateLoadBalancerRequestGlobalRegionsInner>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateLoadBalancerRequestGlobalRegionsInner>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateLoadBalancerRequestGlobalRegionsInner>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateLoadBalancerRequestGlobalRegionsInner.listFromJson(entry.value, growable: growable,);
+        map[entry.key] =
+            CreateLoadBalancerRequestGlobalRegionsInner.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -125,4 +142,3 @@ class CreateLoadBalancerRequestGlobalRegionsInner {
     'region_id',
   };
 }
-

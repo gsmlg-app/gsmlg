@@ -13,5 +13,5 @@ enum Sort {
   @JsonValue('pushed')
   pushed,
   @JsonValue('full_name')
-  fullName;
+  fullName,
 }

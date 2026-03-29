@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for LoadBalancerApi
 void main() {
   // final instance = LoadBalancerApi();
@@ -169,6 +168,5 @@ void main() {
     test('test updateLoadBalancer', () async {
       // TODO
     });
-
   });
 }

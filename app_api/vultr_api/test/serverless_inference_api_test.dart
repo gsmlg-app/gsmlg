@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for ServerlessInferenceApi
 void main() {
   // final instance = ServerlessInferenceApi();
@@ -70,6 +69,5 @@ void main() {
     test('test updateInference', () async {
       // TODO
     });
-
   });
 }

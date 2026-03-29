@@ -20,20 +20,21 @@ class AttachReservedIpRequest {
   String instanceId;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AttachReservedIpRequest &&
-    other.instanceId == instanceId;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AttachReservedIpRequest && other.instanceId == instanceId;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (instanceId.hashCode);
+      // ignore: unnecessary_parenthesis
+      (instanceId.hashCode);
 
   @override
   String toString() => 'AttachReservedIpRequest[instanceId=$instanceId]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'instance_id'] = this.instanceId;
+    json[r'instance_id'] = this.instanceId;
     return json;
   }
 
@@ -49,8 +50,10 @@ class AttachReservedIpRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "AttachReservedIpRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "AttachReservedIpRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "AttachReservedIpRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "AttachReservedIpRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +65,10 @@ class AttachReservedIpRequest {
     return null;
   }
 
-  static List<AttachReservedIpRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<AttachReservedIpRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <AttachReservedIpRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -90,13 +96,19 @@ class AttachReservedIpRequest {
   }
 
   // maps a json object with a list of AttachReservedIpRequest-objects as value to a dart map
-  static Map<String, List<AttachReservedIpRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<AttachReservedIpRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<AttachReservedIpRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = AttachReservedIpRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = AttachReservedIpRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -107,4 +119,3 @@ class AttachReservedIpRequest {
     'instance_id',
   };
 }
-

@@ -50,26 +50,29 @@ class CreateInstanceBackupScheduleRequest {
   int? dom;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateInstanceBackupScheduleRequest &&
-    other.type == type &&
-    other.hour == hour &&
-    other.dow == dow &&
-    other.dom == dom;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateInstanceBackupScheduleRequest &&
+          other.type == type &&
+          other.hour == hour &&
+          other.dow == dow &&
+          other.dom == dom;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (type.hashCode) +
-    (hour == null ? 0 : hour!.hashCode) +
-    (dow == null ? 0 : dow!.hashCode) +
-    (dom == null ? 0 : dom!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (type.hashCode) +
+      (hour == null ? 0 : hour!.hashCode) +
+      (dow == null ? 0 : dow!.hashCode) +
+      (dom == null ? 0 : dom!.hashCode);
 
   @override
-  String toString() => 'CreateInstanceBackupScheduleRequest[type=$type, hour=$hour, dow=$dow, dom=$dom]';
+  String toString() =>
+      'CreateInstanceBackupScheduleRequest[type=$type, hour=$hour, dow=$dow, dom=$dom]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'type'] = this.type;
+    json[r'type'] = this.type;
     if (this.hour != null) {
       json[r'hour'] = this.hour;
     } else {
@@ -100,8 +103,10 @@ class CreateInstanceBackupScheduleRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateInstanceBackupScheduleRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateInstanceBackupScheduleRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateInstanceBackupScheduleRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateInstanceBackupScheduleRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -116,7 +121,10 @@ class CreateInstanceBackupScheduleRequest {
     return null;
   }
 
-  static List<CreateInstanceBackupScheduleRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateInstanceBackupScheduleRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateInstanceBackupScheduleRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -129,7 +137,8 @@ class CreateInstanceBackupScheduleRequest {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateInstanceBackupScheduleRequest> mapFromJson(dynamic json) {
+  static Map<String, CreateInstanceBackupScheduleRequest> mapFromJson(
+      dynamic json) {
     final map = <String, CreateInstanceBackupScheduleRequest>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -144,13 +153,19 @@ class CreateInstanceBackupScheduleRequest {
   }
 
   // maps a json object with a list of CreateInstanceBackupScheduleRequest-objects as value to a dart map
-  static Map<String, List<CreateInstanceBackupScheduleRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateInstanceBackupScheduleRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateInstanceBackupScheduleRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateInstanceBackupScheduleRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateInstanceBackupScheduleRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -161,4 +176,3 @@ class CreateInstanceBackupScheduleRequest {
     'type',
   };
 }
-

@@ -12,9 +12,10 @@ class HostedZoneConfig {
     this.comment,
     this.privateZone,
   });
-  
-  factory HostedZoneConfig.fromJson(Map<String, Object?> json) => _$HostedZoneConfigFromJson(json);
-  
+
+  factory HostedZoneConfig.fromJson(Map<String, Object?> json) =>
+      _$HostedZoneConfigFromJson(json);
+
   /// Any comments that you want to include about the hosted zone.
   final String? comment;
 

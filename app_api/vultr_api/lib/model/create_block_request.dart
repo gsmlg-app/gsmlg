@@ -44,27 +44,30 @@ class CreateBlockRequest {
   String? blockType;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateBlockRequest &&
-    other.region == region &&
-    other.sizeGb == sizeGb &&
-    other.label == label &&
-    other.blockType == blockType;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateBlockRequest &&
+          other.region == region &&
+          other.sizeGb == sizeGb &&
+          other.label == label &&
+          other.blockType == blockType;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (region.hashCode) +
-    (sizeGb.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (blockType == null ? 0 : blockType!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (region.hashCode) +
+      (sizeGb.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (blockType == null ? 0 : blockType!.hashCode);
 
   @override
-  String toString() => 'CreateBlockRequest[region=$region, sizeGb=$sizeGb, label=$label, blockType=$blockType]';
+  String toString() =>
+      'CreateBlockRequest[region=$region, sizeGb=$sizeGb, label=$label, blockType=$blockType]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'region'] = this.region;
-      json[r'size_gb'] = this.sizeGb;
+    json[r'region'] = this.region;
+    json[r'size_gb'] = this.sizeGb;
     if (this.label != null) {
       json[r'label'] = this.label;
     } else {
@@ -90,8 +93,10 @@ class CreateBlockRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateBlockRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateBlockRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateBlockRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateBlockRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -106,7 +111,10 @@ class CreateBlockRequest {
     return null;
   }
 
-  static List<CreateBlockRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateBlockRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateBlockRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -134,13 +142,19 @@ class CreateBlockRequest {
   }
 
   // maps a json object with a list of CreateBlockRequest-objects as value to a dart map
-  static Map<String, List<CreateBlockRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateBlockRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateBlockRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateBlockRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateBlockRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -152,4 +166,3 @@ class CreateBlockRequest {
     'size_gb',
   };
 }
-

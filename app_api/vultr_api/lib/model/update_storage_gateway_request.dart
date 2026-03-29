@@ -20,20 +20,21 @@ class UpdateStorageGatewayRequest {
   String label;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateStorageGatewayRequest &&
-    other.label == label;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateStorageGatewayRequest && other.label == label;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label.hashCode);
 
   @override
   String toString() => 'UpdateStorageGatewayRequest[label=$label]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'label'] = this.label;
+    json[r'label'] = this.label;
     return json;
   }
 
@@ -49,8 +50,10 @@ class UpdateStorageGatewayRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateStorageGatewayRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateStorageGatewayRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateStorageGatewayRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateStorageGatewayRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +65,10 @@ class UpdateStorageGatewayRequest {
     return null;
   }
 
-  static List<UpdateStorageGatewayRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateStorageGatewayRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateStorageGatewayRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -90,13 +96,19 @@ class UpdateStorageGatewayRequest {
   }
 
   // maps a json object with a list of UpdateStorageGatewayRequest-objects as value to a dart map
-  static Map<String, List<UpdateStorageGatewayRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateStorageGatewayRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateStorageGatewayRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateStorageGatewayRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateStorageGatewayRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -107,4 +119,3 @@ class UpdateStorageGatewayRequest {
     'label',
   };
 }
-

@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for KubernetesApi
 void main() {
   // final instance = KubernetesApi();
@@ -64,10 +63,11 @@ void main() {
 
     // Delete VKE Cluster and All Related Resources
     //
-    // Delete Kubernetes Cluster and all related resources. 
+    // Delete Kubernetes Cluster and all related resources.
     //
     //Future deleteKubernetesClusterVkeIdDeleteWithLinkedResources(String vkeId) async
-    test('test deleteKubernetesClusterVkeIdDeleteWithLinkedResources', () async {
+    test('test deleteKubernetesClusterVkeIdDeleteWithLinkedResources',
+        () async {
       // TODO
     });
 
@@ -250,6 +250,5 @@ void main() {
     test('test updateNodepool', () async {
       // TODO
     });
-
   });
 }

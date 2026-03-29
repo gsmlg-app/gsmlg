@@ -16,5 +16,5 @@ enum WorkflowState {
   @JsonValue('disabled_inactivity')
   disabledInactivity,
   @JsonValue('disabled_manually')
-  disabledManually;
+  disabledManually,
 }

@@ -92,40 +92,43 @@ class CreateNodepoolsRequest {
   String? userData;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateNodepoolsRequest &&
-    other.nodeQuantity == nodeQuantity &&
-    other.label == label &&
-    other.plan == plan &&
-    other.tag == tag &&
-    other.autoScaler == autoScaler &&
-    other.minNodes == minNodes &&
-    other.maxNodes == maxNodes &&
-    other.labels == labels &&
-    _deepEquality.equals(other.taints, taints) &&
-    other.userData == userData;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateNodepoolsRequest &&
+          other.nodeQuantity == nodeQuantity &&
+          other.label == label &&
+          other.plan == plan &&
+          other.tag == tag &&
+          other.autoScaler == autoScaler &&
+          other.minNodes == minNodes &&
+          other.maxNodes == maxNodes &&
+          other.labels == labels &&
+          _deepEquality.equals(other.taints, taints) &&
+          other.userData == userData;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (nodeQuantity.hashCode) +
-    (label.hashCode) +
-    (plan.hashCode) +
-    (tag == null ? 0 : tag!.hashCode) +
-    (autoScaler == null ? 0 : autoScaler!.hashCode) +
-    (minNodes == null ? 0 : minNodes!.hashCode) +
-    (maxNodes == null ? 0 : maxNodes!.hashCode) +
-    (labels == null ? 0 : labels!.hashCode) +
-    (taints.hashCode) +
-    (userData == null ? 0 : userData!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (nodeQuantity.hashCode) +
+      (label.hashCode) +
+      (plan.hashCode) +
+      (tag == null ? 0 : tag!.hashCode) +
+      (autoScaler == null ? 0 : autoScaler!.hashCode) +
+      (minNodes == null ? 0 : minNodes!.hashCode) +
+      (maxNodes == null ? 0 : maxNodes!.hashCode) +
+      (labels == null ? 0 : labels!.hashCode) +
+      (taints.hashCode) +
+      (userData == null ? 0 : userData!.hashCode);
 
   @override
-  String toString() => 'CreateNodepoolsRequest[nodeQuantity=$nodeQuantity, label=$label, plan=$plan, tag=$tag, autoScaler=$autoScaler, minNodes=$minNodes, maxNodes=$maxNodes, labels=$labels, taints=$taints, userData=$userData]';
+  String toString() =>
+      'CreateNodepoolsRequest[nodeQuantity=$nodeQuantity, label=$label, plan=$plan, tag=$tag, autoScaler=$autoScaler, minNodes=$minNodes, maxNodes=$maxNodes, labels=$labels, taints=$taints, userData=$userData]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'node_quantity'] = this.nodeQuantity;
-      json[r'label'] = this.label;
-      json[r'plan'] = this.plan;
+    json[r'node_quantity'] = this.nodeQuantity;
+    json[r'label'] = this.label;
+    json[r'plan'] = this.plan;
     if (this.tag != null) {
       json[r'tag'] = this.tag;
     } else {
@@ -151,7 +154,7 @@ class CreateNodepoolsRequest {
     } else {
       json[r'labels'] = null;
     }
-      json[r'taints'] = this.taints;
+    json[r'taints'] = this.taints;
     if (this.userData != null) {
       json[r'user_data'] = this.userData;
     } else {
@@ -172,8 +175,10 @@ class CreateNodepoolsRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateNodepoolsRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateNodepoolsRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateNodepoolsRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateNodepoolsRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -194,7 +199,10 @@ class CreateNodepoolsRequest {
     return null;
   }
 
-  static List<CreateNodepoolsRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateNodepoolsRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateNodepoolsRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -222,13 +230,19 @@ class CreateNodepoolsRequest {
   }
 
   // maps a json object with a list of CreateNodepoolsRequest-objects as value to a dart map
-  static Map<String, List<CreateNodepoolsRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateNodepoolsRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateNodepoolsRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateNodepoolsRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateNodepoolsRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -241,4 +255,3 @@ class CreateNodepoolsRequest {
     'plan',
   };
 }
-

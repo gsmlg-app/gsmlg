@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for ReservedIpApi
 void main() {
   // final instance = ReservedIpApi();
@@ -88,6 +87,5 @@ void main() {
     test('test patchReservedIpsReservedIp', () async {
       // TODO
     });
-
   });
 }

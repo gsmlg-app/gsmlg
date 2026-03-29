@@ -10,7 +10,6 @@
 
 part of openapi.api;
 
-
 class BlockApi {
   BlockApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
 
@@ -29,10 +28,12 @@ class BlockApi {
   ///
   /// * [AttachBlockRequest] attachBlockRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> attachBlockWithHttpInfo(String blockId, { AttachBlockRequest? attachBlockRequest, }) async {
+  Future<Response> attachBlockWithHttpInfo(
+    String blockId, {
+    AttachBlockRequest? attachBlockRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/blocks/{block-id}/attach'
-      .replaceAll('{block-id}', blockId);
+    final path = r'/blocks/{block-id}/attach'.replaceAll('{block-id}', blockId);
 
     // ignore: prefer_final_locals
     Object? postBody = attachBlockRequest;
@@ -42,7 +43,6 @@ class BlockApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -66,8 +66,14 @@ class BlockApi {
   ///
   /// * [AttachBlockRequest] attachBlockRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> attachBlock(String blockId, { AttachBlockRequest? attachBlockRequest, }) async {
-    final response = await attachBlockWithHttpInfo(blockId,  attachBlockRequest: attachBlockRequest, );
+  Future<void> attachBlock(
+    String blockId, {
+    AttachBlockRequest? attachBlockRequest,
+  }) async {
+    final response = await attachBlockWithHttpInfo(
+      blockId,
+      attachBlockRequest: attachBlockRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -83,7 +89,9 @@ class BlockApi {
   ///
   /// * [CreateBlockRequest] createBlockRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createBlockWithHttpInfo({ CreateBlockRequest? createBlockRequest, }) async {
+  Future<Response> createBlockWithHttpInfo({
+    CreateBlockRequest? createBlockRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/blocks';
 
@@ -95,7 +103,6 @@ class BlockApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -116,17 +123,24 @@ class BlockApi {
   ///
   /// * [CreateBlockRequest] createBlockRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateBlock202Response?> createBlock({ CreateBlockRequest? createBlockRequest, }) async {
-    final response = await createBlockWithHttpInfo( createBlockRequest: createBlockRequest, );
+  Future<CreateBlock202Response?> createBlock({
+    CreateBlockRequest? createBlockRequest,
+  }) async {
+    final response = await createBlockWithHttpInfo(
+      createBlockRequest: createBlockRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateBlock202Response',) as CreateBlock202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateBlock202Response',
+      ) as CreateBlock202Response;
     }
     return null;
   }
@@ -141,10 +155,11 @@ class BlockApi {
   ///
   /// * [String] blockId (required):
   ///   The [Block Storage id](#operation/list-blocks).
-  Future<Response> deleteBlockWithHttpInfo(String blockId,) async {
+  Future<Response> deleteBlockWithHttpInfo(
+    String blockId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/blocks/{block-id}'
-      .replaceAll('{block-id}', blockId);
+    final path = r'/blocks/{block-id}'.replaceAll('{block-id}', blockId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -154,7 +169,6 @@ class BlockApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -175,8 +189,12 @@ class BlockApi {
   ///
   /// * [String] blockId (required):
   ///   The [Block Storage id](#operation/list-blocks).
-  Future<void> deleteBlock(String blockId,) async {
-    final response = await deleteBlockWithHttpInfo(blockId,);
+  Future<void> deleteBlock(
+    String blockId,
+  ) async {
+    final response = await deleteBlockWithHttpInfo(
+      blockId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -195,10 +213,12 @@ class BlockApi {
   ///
   /// * [DetachBlockRequest] detachBlockRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> detachBlockWithHttpInfo(String blockId, { DetachBlockRequest? detachBlockRequest, }) async {
+  Future<Response> detachBlockWithHttpInfo(
+    String blockId, {
+    DetachBlockRequest? detachBlockRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/blocks/{block-id}/detach'
-      .replaceAll('{block-id}', blockId);
+    final path = r'/blocks/{block-id}/detach'.replaceAll('{block-id}', blockId);
 
     // ignore: prefer_final_locals
     Object? postBody = detachBlockRequest;
@@ -208,7 +228,6 @@ class BlockApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -232,8 +251,14 @@ class BlockApi {
   ///
   /// * [DetachBlockRequest] detachBlockRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> detachBlock(String blockId, { DetachBlockRequest? detachBlockRequest, }) async {
-    final response = await detachBlockWithHttpInfo(blockId,  detachBlockRequest: detachBlockRequest, );
+  Future<void> detachBlock(
+    String blockId, {
+    DetachBlockRequest? detachBlockRequest,
+  }) async {
+    final response = await detachBlockWithHttpInfo(
+      blockId,
+      detachBlockRequest: detachBlockRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -249,10 +274,11 @@ class BlockApi {
   ///
   /// * [String] blockId (required):
   ///   The [Block Storage id](#operation/list-blocks).
-  Future<Response> getBlockWithHttpInfo(String blockId,) async {
+  Future<Response> getBlockWithHttpInfo(
+    String blockId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/blocks/{block-id}'
-      .replaceAll('{block-id}', blockId);
+    final path = r'/blocks/{block-id}'.replaceAll('{block-id}', blockId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -262,7 +288,6 @@ class BlockApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -283,17 +308,24 @@ class BlockApi {
   ///
   /// * [String] blockId (required):
   ///   The [Block Storage id](#operation/list-blocks).
-  Future<CreateBlock202Response?> getBlock(String blockId,) async {
-    final response = await getBlockWithHttpInfo(blockId,);
+  Future<CreateBlock202Response?> getBlock(
+    String blockId,
+  ) async {
+    final response = await getBlockWithHttpInfo(
+      blockId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateBlock202Response',) as CreateBlock202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateBlock202Response',
+      ) as CreateBlock202Response;
     }
     return null;
   }
@@ -311,7 +343,10 @@ class BlockApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listBlocksWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listBlocksWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/blocks';
 
@@ -331,7 +366,6 @@ class BlockApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -354,24 +388,33 @@ class BlockApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListBlocks200Response?> listBlocks({ int? perPage, String? cursor, }) async {
-    final response = await listBlocksWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListBlocks200Response?> listBlocks({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listBlocksWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListBlocks200Response',) as ListBlocks200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListBlocks200Response',
+      ) as ListBlocks200Response;
     }
     return null;
   }
 
   /// Update Block Storage
   ///
-  /// Update information for Block Storage. 
+  /// Update information for Block Storage.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -382,10 +425,12 @@ class BlockApi {
   ///
   /// * [UpdateBlockRequest] updateBlockRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateBlockWithHttpInfo(String blockId, { UpdateBlockRequest? updateBlockRequest, }) async {
+  Future<Response> updateBlockWithHttpInfo(
+    String blockId, {
+    UpdateBlockRequest? updateBlockRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/blocks/{block-id}'
-      .replaceAll('{block-id}', blockId);
+    final path = r'/blocks/{block-id}'.replaceAll('{block-id}', blockId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateBlockRequest;
@@ -395,7 +440,6 @@ class BlockApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -410,7 +454,7 @@ class BlockApi {
 
   /// Update Block Storage
   ///
-  /// Update information for Block Storage. 
+  /// Update information for Block Storage.
   ///
   /// Parameters:
   ///
@@ -419,8 +463,14 @@ class BlockApi {
   ///
   /// * [UpdateBlockRequest] updateBlockRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateBlock(String blockId, { UpdateBlockRequest? updateBlockRequest, }) async {
-    final response = await updateBlockWithHttpInfo(blockId,  updateBlockRequest: updateBlockRequest, );
+  Future<void> updateBlock(
+    String blockId, {
+    UpdateBlockRequest? updateBlockRequest,
+  }) async {
+    final response = await updateBlockWithHttpInfo(
+      blockId,
+      updateBlockRequest: updateBlockRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

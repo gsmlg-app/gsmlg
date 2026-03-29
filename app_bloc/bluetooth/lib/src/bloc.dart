@@ -22,7 +22,8 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothBlocState> {
       }
       final isSupported = await FlutterBluePlus.isSupported;
       // Use asBroadcastStream to allow multiple listeners (e.g., when widget rebuilds)
-      final adapterStateStream = FlutterBluePlus.adapterState.asBroadcastStream();
+      final adapterStateStream =
+          FlutterBluePlus.adapterState.asBroadcastStream();
       final scanResults = FlutterBluePlus.scanResults.asBroadcastStream();
       emit(BluetoothLoaded(
         isSupported: isSupported,

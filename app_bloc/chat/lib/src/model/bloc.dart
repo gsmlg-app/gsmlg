@@ -60,7 +60,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     GemmaModelInitialize event,
     Emitter<GemmaModelState> emit,
   ) async {
-    debugPrint('[GemmaModelBloc] _onInitialize(modelType=${event.modelType}), current status=${state.status}');
+    debugPrint(
+        '[GemmaModelBloc] _onInitialize(modelType=${event.modelType}), current status=${state.status}');
 
     // Skip if already ready — avoid resetting state on re-navigation.
     if (state.status == GemmaModelStatus.ready) {
@@ -88,7 +89,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     // If any model is already installed, try to activate and auto-load.
     // Loops through candidates so a single stale model doesn't block others.
     if (installed.isNotEmpty) {
-      debugPrint('[GemmaModelBloc] ${installed.length} model(s) already installed');
+      debugPrint(
+          '[GemmaModelBloc] ${installed.length} model(s) already installed');
 
       // Build candidate list: persisted selection first, then remaining.
       final candidates = <String>[];
@@ -110,10 +112,12 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
 
         final modelInfo = _findModelInfoByInstalledId(modelId);
         if (modelInfo != null) {
-          debugPrint('[GemmaModelBloc] Activating: ${modelInfo.displayName} (id: $modelId)');
+          debugPrint(
+              '[GemmaModelBloc] Activating: ${modelInfo.displayName} (id: $modelId)');
           await _repository.activateModel(modelInfo);
         } else {
-          debugPrint('[GemmaModelBloc] No matching model info for: $modelId, skipping');
+          debugPrint(
+              '[GemmaModelBloc] No matching model info for: $modelId, skipping');
           continue;
         }
 
@@ -124,7 +128,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
             modelType: event.modelType,
           ));
           await _repository.loadModel(ModelConfig.defaultConfig);
-          debugPrint('[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
+          debugPrint(
+              '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
           if (_repository.status == GemmaModelStatus.ready) {
             debugPrint('[GemmaModelBloc] Model $modelId loaded successfully');
@@ -134,7 +139,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
           }
 
           // Load failed — keep model installed, report error, try next candidate.
-          debugPrint('[GemmaModelBloc] Model $modelId failed to load (status=${_repository.status})');
+          debugPrint(
+              '[GemmaModelBloc] Model $modelId failed to load (status=${_repository.status})');
           continue;
         }
       }
@@ -155,7 +161,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       // the smallest free model.
       final bundled = GemmaModelInfo.defaultModel;
       if (bundled.assetPath != null) {
-        debugPrint('[GemmaModelBloc] Trying bundled asset: ${bundled.assetPath}');
+        debugPrint(
+            '[GemmaModelBloc] Trying bundled asset: ${bundled.assetPath}');
         emit(state.copyWith(
           status: GemmaModelStatus.downloading,
           modelType: event.modelType,
@@ -165,14 +172,17 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
           modelType: bundled.modelType,
           assetPath: bundled.assetPath!,
         );
-        debugPrint('[GemmaModelBloc] Asset install returned, refreshing installed list...');
+        debugPrint(
+            '[GemmaModelBloc] Asset install returned, refreshing installed list...');
         final updatedInstalled = await _repository.listInstalledModels();
-        debugPrint('[GemmaModelBloc] Updated installed models: $updatedInstalled');
+        debugPrint(
+            '[GemmaModelBloc] Updated installed models: $updatedInstalled');
         emit(state.copyWith(installedModels: updatedInstalled));
         if (updatedInstalled.isNotEmpty) {
           await _autoSelectAndLoad(updatedInstalled, null, emit);
           _suppressStatusStream = false;
-          debugPrint('[GemmaModelBloc] _onInitialize done (bundled), final status: ${state.status}');
+          debugPrint(
+              '[GemmaModelBloc] _onInitialize done (bundled), final status: ${state.status}');
           return;
         }
       }
@@ -181,7 +191,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       // so the user has something to chat with immediately.
       final fallback = GemmaModelInfo.smallestFreeModel;
       if (fallback != null) {
-        debugPrint('[GemmaModelBloc] Auto-downloading smallest free model: ${fallback.displayName}');
+        debugPrint(
+            '[GemmaModelBloc] Auto-downloading smallest free model: ${fallback.displayName}');
         emit(state.copyWith(
           status: GemmaModelStatus.downloading,
           downloadProgress: 0,
@@ -203,7 +214,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         }
 
         final updatedInstalled = await _repository.listInstalledModels();
-        debugPrint('[GemmaModelBloc] Post-auto-download installed: $updatedInstalled');
+        debugPrint(
+            '[GemmaModelBloc] Post-auto-download installed: $updatedInstalled');
         emit(state.copyWith(
           installedModels: updatedInstalled,
           clearDownloadingModel: true,
@@ -212,7 +224,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         if (updatedInstalled.isNotEmpty) {
           await _autoSelectAndLoad(updatedInstalled, fallback.id, emit);
           _suppressStatusStream = false;
-          debugPrint('[GemmaModelBloc] _onInitialize done (auto-download), final status: ${state.status}');
+          debugPrint(
+              '[GemmaModelBloc] _onInitialize done (auto-download), final status: ${state.status}');
           return;
         }
       }
@@ -221,14 +234,16 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       emit(state.copyWith(status: GemmaModelStatus.notInstalled));
     }
     _suppressStatusStream = false;
-    debugPrint('[GemmaModelBloc] _onInitialize done, final status: ${state.status}');
+    debugPrint(
+        '[GemmaModelBloc] _onInitialize done, final status: ${state.status}');
   }
 
   Future<void> _onCheckInstallation(
     GemmaModelCheckInstallation event,
     Emitter<GemmaModelState> emit,
   ) async {
-    debugPrint('[GemmaModelBloc] _onCheckInstallation(modelType=${event.modelType})');
+    debugPrint(
+        '[GemmaModelBloc] _onCheckInstallation(modelType=${event.modelType})');
     emit(state.copyWith(status: GemmaModelStatus.checking));
     await _repository.checkModelInstalled(event.modelType);
   }
@@ -237,7 +252,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     GemmaModelInstall event,
     Emitter<GemmaModelState> emit,
   ) async {
-    debugPrint('[GemmaModelBloc] _onInstall(nativeModelType=${event.nativeModelType}, url=${event.url}, modelId=${event.modelId}, hasToken=${event.token != null})');
+    debugPrint(
+        '[GemmaModelBloc] _onInstall(nativeModelType=${event.nativeModelType}, url=${event.url}, modelId=${event.modelId}, hasToken=${event.token != null})');
     emit(state.copyWith(
       status: GemmaModelStatus.downloading,
       downloadProgress: 0,
@@ -263,10 +279,12 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       );
     }
 
-    debugPrint('[GemmaModelBloc] Install call returned, refreshing installed list...');
+    debugPrint(
+        '[GemmaModelBloc] Install call returned, refreshing installed list...');
     final installed = await _repository.listInstalledModels();
     debugPrint('[GemmaModelBloc] Post-install installed models: $installed');
-    emit(state.copyWith(installedModels: installed, clearDownloadingModel: true));
+    emit(state.copyWith(
+        installedModels: installed, clearDownloadingModel: true));
 
     // Auto-select + activate + load the newly installed model.
     if (installed.isNotEmpty) {
@@ -278,7 +296,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     GemmaModelInstallFromAsset event,
     Emitter<GemmaModelState> emit,
   ) async {
-    debugPrint('[GemmaModelBloc] _onInstallFromAsset(modelId=${event.modelId}, assetPath=${event.assetPath})');
+    debugPrint(
+        '[GemmaModelBloc] _onInstallFromAsset(modelId=${event.modelId}, assetPath=${event.assetPath})');
     emit(state.copyWith(
       status: GemmaModelStatus.downloading,
       downloadProgress: 0,
@@ -286,16 +305,19 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     ));
 
     final modelInfo = GemmaModelInfo.findById(event.modelId);
-    debugPrint('[GemmaModelBloc] Resolved model info: ${modelInfo?.displayName ?? 'not found, using default'}');
+    debugPrint(
+        '[GemmaModelBloc] Resolved model info: ${modelInfo?.displayName ?? 'not found, using default'}');
     await _repository.installModelFromAsset(
       modelType: modelInfo?.modelType ?? GemmaModelInfo.defaultModel.modelType,
       assetPath: event.assetPath,
     );
 
-    debugPrint('[GemmaModelBloc] Asset install returned, refreshing installed list...');
+    debugPrint(
+        '[GemmaModelBloc] Asset install returned, refreshing installed list...');
     final installed = await _repository.listInstalledModels();
     debugPrint('[GemmaModelBloc] Post-asset-install models: $installed');
-    emit(state.copyWith(installedModels: installed, clearDownloadingModel: true));
+    emit(state.copyWith(
+        installedModels: installed, clearDownloadingModel: true));
 
     // Auto-select + activate + load the newly installed model.
     if (installed.isNotEmpty) {
@@ -342,7 +364,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       // Activate
       final modelInfo = _findModelInfoByInstalledId(modelId);
       if (modelInfo != null) {
-        debugPrint('[GemmaModelBloc] Activating model: ${modelInfo.displayName}');
+        debugPrint(
+            '[GemmaModelBloc] Activating model: ${modelInfo.displayName}');
         await _repository.activateModel(modelInfo);
       }
 
@@ -351,7 +374,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         debugPrint('[GemmaModelBloc] Auto-loading model into memory...');
         emit(state.copyWith(status: GemmaModelStatus.loading));
         await _repository.loadModel(ModelConfig.defaultConfig);
-        debugPrint('[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
+        debugPrint(
+            '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
         if (_repository.status == GemmaModelStatus.ready) {
           // Success — emit ready so UI updates immediately.
@@ -362,12 +386,14 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         }
 
         // Load failed — keep model installed, report error, try next candidate.
-        debugPrint('[GemmaModelBloc] Model $modelId failed to load (status=${_repository.status})');
+        debugPrint(
+            '[GemmaModelBloc] Model $modelId failed to load (status=${_repository.status})');
         continue;
       }
 
       // If activation didn't reach `installed` status, try next candidate.
-      debugPrint('[GemmaModelBloc] Model $modelId activation status: ${_repository.status}, trying next...');
+      debugPrint(
+          '[GemmaModelBloc] Model $modelId activation status: ${_repository.status}, trying next...');
     }
 
     // All candidates failed — keep models installed, report error.
@@ -412,12 +438,14 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     debugPrint('[GemmaModelBloc] _onLoad(config=${event.config})');
     emit(state.copyWith(status: GemmaModelStatus.loading));
     await _repository.loadModel(event.config);
-    debugPrint('[GemmaModelBloc] _onLoad done, repo status: ${_repository.status}');
+    debugPrint(
+        '[GemmaModelBloc] _onLoad done, repo status: ${_repository.status}');
 
     // If the model file was missing on disk, refresh the installed list
     // so the UI reflects reality.
     if (_repository.status == GemmaModelStatus.notInstalled) {
-      debugPrint('[GemmaModelBloc] Model file missing, refreshing installed list');
+      debugPrint(
+          '[GemmaModelBloc] Model file missing, refreshing installed list');
       final installed = await _repository.listInstalledModels();
       emit(state.copyWith(
         status: GemmaModelStatus.notInstalled,
@@ -466,7 +494,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     // Activate the selected model
     final modelInfo = _findModelInfoByInstalledId(event.modelId);
     if (modelInfo != null) {
-      debugPrint('[GemmaModelBloc] Activating selected model: ${modelInfo.displayName}');
+      debugPrint(
+          '[GemmaModelBloc] Activating selected model: ${modelInfo.displayName}');
       await _repository.activateModel(modelInfo);
     }
 
@@ -475,13 +504,15 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       debugPrint('[GemmaModelBloc] Auto-loading selected model...');
       emit(state.copyWith(status: GemmaModelStatus.loading));
       await _repository.loadModel(ModelConfig.defaultConfig);
-      debugPrint('[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
+      debugPrint(
+          '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
       if (_repository.status == GemmaModelStatus.ready) {
         emit(state.copyWith(status: GemmaModelStatus.ready));
       } else {
         // Load failed — keep model installed but report error.
-        debugPrint('[GemmaModelBloc] Selected model failed to load: ${_repository.lastError}');
+        debugPrint(
+            '[GemmaModelBloc] Selected model failed to load: ${_repository.lastError}');
         emit(state.copyWith(
           status: GemmaModelStatus.error,
           errorMessage: _repository.lastError ?? 'Model failed to load.',
@@ -521,10 +552,12 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     Emitter<GemmaModelState> emit,
   ) {
     if (_suppressStatusStream) {
-      debugPrint('[GemmaModelBloc] _onStatusChanged(${event.status}) SUPPRESSED');
+      debugPrint(
+          '[GemmaModelBloc] _onStatusChanged(${event.status}) SUPPRESSED');
       return;
     }
-    debugPrint('[GemmaModelBloc] _onStatusChanged(${event.status}), lastError=${_repository.lastError}');
+    debugPrint(
+        '[GemmaModelBloc] _onStatusChanged(${event.status}), lastError=${_repository.lastError}');
     emit(state.copyWith(
       status: event.status,
       errorMessage: _repository.lastError,

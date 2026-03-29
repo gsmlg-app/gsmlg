@@ -80,28 +80,31 @@ class Account {
   num? lastPaymentAmount;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Account &&
-    other.name == name &&
-    other.email == email &&
-    _deepEquality.equals(other.acls, acls) &&
-    other.balance == balance &&
-    other.pendingCharges == pendingCharges &&
-    other.lastPaymentDate == lastPaymentDate &&
-    other.lastPaymentAmount == lastPaymentAmount;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Account &&
+          other.name == name &&
+          other.email == email &&
+          _deepEquality.equals(other.acls, acls) &&
+          other.balance == balance &&
+          other.pendingCharges == pendingCharges &&
+          other.lastPaymentDate == lastPaymentDate &&
+          other.lastPaymentAmount == lastPaymentAmount;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (name == null ? 0 : name!.hashCode) +
-    (email == null ? 0 : email!.hashCode) +
-    (acls.hashCode) +
-    (balance == null ? 0 : balance!.hashCode) +
-    (pendingCharges == null ? 0 : pendingCharges!.hashCode) +
-    (lastPaymentDate == null ? 0 : lastPaymentDate!.hashCode) +
-    (lastPaymentAmount == null ? 0 : lastPaymentAmount!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (name == null ? 0 : name!.hashCode) +
+      (email == null ? 0 : email!.hashCode) +
+      (acls.hashCode) +
+      (balance == null ? 0 : balance!.hashCode) +
+      (pendingCharges == null ? 0 : pendingCharges!.hashCode) +
+      (lastPaymentDate == null ? 0 : lastPaymentDate!.hashCode) +
+      (lastPaymentAmount == null ? 0 : lastPaymentAmount!.hashCode);
 
   @override
-  String toString() => 'Account[name=$name, email=$email, acls=$acls, balance=$balance, pendingCharges=$pendingCharges, lastPaymentDate=$lastPaymentDate, lastPaymentAmount=$lastPaymentAmount]';
+  String toString() =>
+      'Account[name=$name, email=$email, acls=$acls, balance=$balance, pendingCharges=$pendingCharges, lastPaymentDate=$lastPaymentDate, lastPaymentAmount=$lastPaymentAmount]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -115,7 +118,7 @@ class Account {
     } else {
       json[r'email'] = null;
     }
-      json[r'acls'] = this.acls;
+    json[r'acls'] = this.acls;
     if (this.balance != null) {
       json[r'balance'] = this.balance;
     } else {
@@ -151,8 +154,10 @@ class Account {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Account[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Account[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Account[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Account[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -172,7 +177,10 @@ class Account {
     return null;
   }
 
-  static List<Account> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Account> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Account>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -200,20 +208,24 @@ class Account {
   }
 
   // maps a json object with a list of Account-objects as value to a dart map
-  static Map<String, List<Account>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Account>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Account>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Account.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Account.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

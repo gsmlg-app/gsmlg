@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class StartupApi {
-  StartupApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  StartupApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,7 +26,9 @@ class StartupApi {
   ///
   /// * [CreateStartupScriptRequest] createStartupScriptRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createStartupScriptWithHttpInfo({ CreateStartupScriptRequest? createStartupScriptRequest, }) async {
+  Future<Response> createStartupScriptWithHttpInfo({
+    CreateStartupScriptRequest? createStartupScriptRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/startup-scripts';
 
@@ -38,7 +40,6 @@ class StartupApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +60,24 @@ class StartupApi {
   ///
   /// * [CreateStartupScriptRequest] createStartupScriptRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<GetStartupScript200Response?> createStartupScript({ CreateStartupScriptRequest? createStartupScriptRequest, }) async {
-    final response = await createStartupScriptWithHttpInfo( createStartupScriptRequest: createStartupScriptRequest, );
+  Future<GetStartupScript200Response?> createStartupScript({
+    CreateStartupScriptRequest? createStartupScriptRequest,
+  }) async {
+    final response = await createStartupScriptWithHttpInfo(
+      createStartupScriptRequest: createStartupScriptRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetStartupScript200Response',) as GetStartupScript200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetStartupScript200Response',
+      ) as GetStartupScript200Response;
     }
     return null;
   }
@@ -84,10 +92,12 @@ class StartupApi {
   ///
   /// * [String] startupId (required):
   ///   The [Startup Script id](#operation/list-startup-scripts).
-  Future<Response> deleteStartupScriptWithHttpInfo(String startupId,) async {
+  Future<Response> deleteStartupScriptWithHttpInfo(
+    String startupId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/startup-scripts/{startup-id}'
-      .replaceAll('{startup-id}', startupId);
+    final path =
+        r'/startup-scripts/{startup-id}'.replaceAll('{startup-id}', startupId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -97,7 +107,6 @@ class StartupApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -118,8 +127,12 @@ class StartupApi {
   ///
   /// * [String] startupId (required):
   ///   The [Startup Script id](#operation/list-startup-scripts).
-  Future<void> deleteStartupScript(String startupId,) async {
-    final response = await deleteStartupScriptWithHttpInfo(startupId,);
+  Future<void> deleteStartupScript(
+    String startupId,
+  ) async {
+    final response = await deleteStartupScriptWithHttpInfo(
+      startupId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -135,10 +148,12 @@ class StartupApi {
   ///
   /// * [String] startupId (required):
   ///   The [Startup Script id](#operation/list-startup-scripts).
-  Future<Response> getStartupScriptWithHttpInfo(String startupId,) async {
+  Future<Response> getStartupScriptWithHttpInfo(
+    String startupId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/startup-scripts/{startup-id}'
-      .replaceAll('{startup-id}', startupId);
+    final path =
+        r'/startup-scripts/{startup-id}'.replaceAll('{startup-id}', startupId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -148,7 +163,6 @@ class StartupApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -169,17 +183,24 @@ class StartupApi {
   ///
   /// * [String] startupId (required):
   ///   The [Startup Script id](#operation/list-startup-scripts).
-  Future<GetStartupScript200Response?> getStartupScript(String startupId,) async {
-    final response = await getStartupScriptWithHttpInfo(startupId,);
+  Future<GetStartupScript200Response?> getStartupScript(
+    String startupId,
+  ) async {
+    final response = await getStartupScriptWithHttpInfo(
+      startupId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetStartupScript200Response',) as GetStartupScript200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetStartupScript200Response',
+      ) as GetStartupScript200Response;
     }
     return null;
   }
@@ -197,7 +218,10 @@ class StartupApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listStartupScriptsWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listStartupScriptsWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/startup-scripts';
 
@@ -217,7 +241,6 @@ class StartupApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -240,17 +263,26 @@ class StartupApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListStartupScripts200Response?> listStartupScripts({ int? perPage, String? cursor, }) async {
-    final response = await listStartupScriptsWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListStartupScripts200Response?> listStartupScripts({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listStartupScriptsWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListStartupScripts200Response',) as ListStartupScripts200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListStartupScripts200Response',
+      ) as ListStartupScripts200Response;
     }
     return null;
   }
@@ -268,10 +300,13 @@ class StartupApi {
   ///
   /// * [UpdateStartupScriptRequest] updateStartupScriptRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateStartupScriptWithHttpInfo(String startupId, { UpdateStartupScriptRequest? updateStartupScriptRequest, }) async {
+  Future<Response> updateStartupScriptWithHttpInfo(
+    String startupId, {
+    UpdateStartupScriptRequest? updateStartupScriptRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/startup-scripts/{startup-id}'
-      .replaceAll('{startup-id}', startupId);
+    final path =
+        r'/startup-scripts/{startup-id}'.replaceAll('{startup-id}', startupId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateStartupScriptRequest;
@@ -281,7 +316,6 @@ class StartupApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -305,8 +339,14 @@ class StartupApi {
   ///
   /// * [UpdateStartupScriptRequest] updateStartupScriptRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateStartupScript(String startupId, { UpdateStartupScriptRequest? updateStartupScriptRequest, }) async {
-    final response = await updateStartupScriptWithHttpInfo(startupId,  updateStartupScriptRequest: updateStartupScriptRequest, );
+  Future<void> updateStartupScript(
+    String startupId, {
+    UpdateStartupScriptRequest? updateStartupScriptRequest,
+  }) async {
+    final response = await updateStartupScriptWithHttpInfo(
+      startupId,
+      updateStartupScriptRequest: updateStartupScriptRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

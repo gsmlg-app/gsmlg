@@ -20,20 +20,23 @@ class PendingCharges200Response {
   List<Billing> pendingCharges;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is PendingCharges200Response &&
-    _deepEquality.equals(other.pendingCharges, pendingCharges);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PendingCharges200Response &&
+          _deepEquality.equals(other.pendingCharges, pendingCharges);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (pendingCharges.hashCode);
+      // ignore: unnecessary_parenthesis
+      (pendingCharges.hashCode);
 
   @override
-  String toString() => 'PendingCharges200Response[pendingCharges=$pendingCharges]';
+  String toString() =>
+      'PendingCharges200Response[pendingCharges=$pendingCharges]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'pending_charges'] = this.pendingCharges;
+    json[r'pending_charges'] = this.pendingCharges;
     return json;
   }
 
@@ -49,8 +52,10 @@ class PendingCharges200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "PendingCharges200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "PendingCharges200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "PendingCharges200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "PendingCharges200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +67,10 @@ class PendingCharges200Response {
     return null;
   }
 
-  static List<PendingCharges200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<PendingCharges200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <PendingCharges200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -90,20 +98,24 @@ class PendingCharges200Response {
   }
 
   // maps a json object with a list of PendingCharges200Response-objects as value to a dart map
-  static Map<String, List<PendingCharges200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<PendingCharges200Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<PendingCharges200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = PendingCharges200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = PendingCharges200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

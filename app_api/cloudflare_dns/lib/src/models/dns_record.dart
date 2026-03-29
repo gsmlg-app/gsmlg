@@ -31,9 +31,10 @@ class DnsRecord {
     this.data,
     this.priority,
   });
-  
-  factory DnsRecord.fromJson(Map<String, Object?> json) => _$DnsRecordFromJson(json);
-  
+
+  factory DnsRecord.fromJson(Map<String, Object?> json) =>
+      _$DnsRecordFromJson(json);
+
   /// DNS record identifier.
   final String id;
 

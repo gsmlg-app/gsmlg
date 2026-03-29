@@ -29,22 +29,24 @@ class UpdateKubernetesClusterRequest {
   CreateKubernetesClusterRequestOidc? oidc;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateKubernetesClusterRequest &&
-    other.label == label &&
-    other.oidc == oidc;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateKubernetesClusterRequest &&
+          other.label == label &&
+          other.oidc == oidc;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label.hashCode) +
-    (oidc == null ? 0 : oidc!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label.hashCode) + (oidc == null ? 0 : oidc!.hashCode);
 
   @override
-  String toString() => 'UpdateKubernetesClusterRequest[label=$label, oidc=$oidc]';
+  String toString() =>
+      'UpdateKubernetesClusterRequest[label=$label, oidc=$oidc]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'label'] = this.label;
+    json[r'label'] = this.label;
     if (this.oidc != null) {
       json[r'oidc'] = this.oidc;
     } else {
@@ -65,8 +67,10 @@ class UpdateKubernetesClusterRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateKubernetesClusterRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateKubernetesClusterRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateKubernetesClusterRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateKubernetesClusterRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -79,7 +83,10 @@ class UpdateKubernetesClusterRequest {
     return null;
   }
 
-  static List<UpdateKubernetesClusterRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateKubernetesClusterRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateKubernetesClusterRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -107,13 +114,19 @@ class UpdateKubernetesClusterRequest {
   }
 
   // maps a json object with a list of UpdateKubernetesClusterRequest-objects as value to a dart map
-  static Map<String, List<UpdateKubernetesClusterRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateKubernetesClusterRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateKubernetesClusterRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateKubernetesClusterRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateKubernetesClusterRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -124,4 +137,3 @@ class UpdateKubernetesClusterRequest {
     'label',
   };
 }
-

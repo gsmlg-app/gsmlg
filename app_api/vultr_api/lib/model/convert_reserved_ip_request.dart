@@ -30,22 +30,24 @@ class ConvertReservedIpRequest {
   String? label;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ConvertReservedIpRequest &&
-    other.ipAddress == ipAddress &&
-    other.label == label;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConvertReservedIpRequest &&
+          other.ipAddress == ipAddress &&
+          other.label == label;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (ipAddress.hashCode) +
-    (label == null ? 0 : label!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (ipAddress.hashCode) + (label == null ? 0 : label!.hashCode);
 
   @override
-  String toString() => 'ConvertReservedIpRequest[ipAddress=$ipAddress, label=$label]';
+  String toString() =>
+      'ConvertReservedIpRequest[ipAddress=$ipAddress, label=$label]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'ip_address'] = this.ipAddress;
+    json[r'ip_address'] = this.ipAddress;
     if (this.label != null) {
       json[r'label'] = this.label;
     } else {
@@ -66,8 +68,10 @@ class ConvertReservedIpRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "ConvertReservedIpRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "ConvertReservedIpRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "ConvertReservedIpRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "ConvertReservedIpRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -80,7 +84,10 @@ class ConvertReservedIpRequest {
     return null;
   }
 
-  static List<ConvertReservedIpRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<ConvertReservedIpRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <ConvertReservedIpRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -108,13 +115,19 @@ class ConvertReservedIpRequest {
   }
 
   // maps a json object with a list of ConvertReservedIpRequest-objects as value to a dart map
-  static Map<String, List<ConvertReservedIpRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<ConvertReservedIpRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<ConvertReservedIpRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = ConvertReservedIpRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = ConvertReservedIpRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -125,4 +138,3 @@ class ConvertReservedIpRequest {
     'ip_address',
   };
 }
-

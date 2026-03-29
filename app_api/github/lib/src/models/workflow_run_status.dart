@@ -18,5 +18,5 @@ enum WorkflowRunStatus {
   @JsonValue('waiting')
   waiting,
   @JsonValue('pending')
-  pending;
+  pending,
 }

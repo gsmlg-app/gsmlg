@@ -11,7 +11,10 @@
 part of openapi.api;
 
 class ApiClient {
-  ApiClient({this.basePath = 'https://api.vultr.com/v2', this.authentication,});
+  ApiClient({
+    this.basePath = 'https://api.vultr.com/v2',
+    this.authentication,
+  });
 
   final String basePath;
   final Authentication? authentication;
@@ -32,7 +35,7 @@ class ApiClient {
   Map<String, String> get defaultHeaderMap => _defaultHeaderMap;
 
   void addDefaultHeader(String key, String value) {
-     _defaultHeaderMap[key] = value;
+    _defaultHeaderMap[key] = value;
   }
 
   // We don't use a Map<String, String> for queryParams.
@@ -54,25 +57,26 @@ class ApiClient {
     }
 
     final urlEncodedQueryParams = queryParams.map((param) => '$param');
-    final queryString = urlEncodedQueryParams.isNotEmpty ? '?${urlEncodedQueryParams.join('&')}' : '';
+    final queryString = urlEncodedQueryParams.isNotEmpty
+        ? '?${urlEncodedQueryParams.join('&')}'
+        : '';
     final uri = Uri.parse('$basePath$path$queryString');
 
     try {
       // Special case for uploading a single file which isn't a 'multipart/form-data'.
-      if (
-        body is MultipartFile && (contentType == null ||
-        !contentType.toLowerCase().startsWith('multipart/form-data'))
-      ) {
+      if (body is MultipartFile &&
+          (contentType == null ||
+              !contentType.toLowerCase().startsWith('multipart/form-data'))) {
         final request = StreamedRequest(method, uri);
         request.headers.addAll(headerParams);
         request.contentLength = body.length;
         body.finalize().listen(
-          request.sink.add,
-          onDone: request.sink.close,
-          // ignore: avoid_types_on_closure_parameters
-          onError: (Object error, StackTrace trace) => request.sink.close(),
-          cancelOnError: true,
-        );
+              request.sink.add,
+              onDone: request.sink.close,
+              // ignore: avoid_types_on_closure_parameters
+              onError: (Object error, StackTrace trace) => request.sink.close(),
+              cancelOnError: true,
+            );
         final response = await _client.send(request);
         return Response.fromStream(response);
       }
@@ -88,17 +92,45 @@ class ApiClient {
       }
 
       final msgBody = contentType == 'application/x-www-form-urlencoded'
-        ? formParams
-        : await serializeAsync(body);
+          ? formParams
+          : await serializeAsync(body);
       final nullableHeaderParams = headerParams.isEmpty ? null : headerParams;
 
-      switch(method) {
-        case 'POST': return await _client.post(uri, headers: nullableHeaderParams, body: msgBody,);
-        case 'PUT': return await _client.put(uri, headers: nullableHeaderParams, body: msgBody,);
-        case 'DELETE': return await _client.delete(uri, headers: nullableHeaderParams, body: msgBody,);
-        case 'PATCH': return await _client.patch(uri, headers: nullableHeaderParams, body: msgBody,);
-        case 'HEAD': return await _client.head(uri, headers: nullableHeaderParams,);
-        case 'GET': return await _client.get(uri, headers: nullableHeaderParams,);
+      switch (method) {
+        case 'POST':
+          return await _client.post(
+            uri,
+            headers: nullableHeaderParams,
+            body: msgBody,
+          );
+        case 'PUT':
+          return await _client.put(
+            uri,
+            headers: nullableHeaderParams,
+            body: msgBody,
+          );
+        case 'DELETE':
+          return await _client.delete(
+            uri,
+            headers: nullableHeaderParams,
+            body: msgBody,
+          );
+        case 'PATCH':
+          return await _client.patch(
+            uri,
+            headers: nullableHeaderParams,
+            body: msgBody,
+          );
+        case 'HEAD':
+          return await _client.head(
+            uri,
+            headers: nullableHeaderParams,
+          );
+        case 'GET':
+          return await _client.get(
+            uri,
+            headers: nullableHeaderParams,
+          );
       }
     } on SocketException catch (error, trace) {
       throw ApiException.withInner(
@@ -143,29 +175,44 @@ class ApiClient {
     );
   }
 
-  Future<dynamic> deserializeAsync(String value, String targetType, {bool growable = false,}) async =>
-    // ignore: deprecated_member_use_from_same_package
-    deserialize(value, targetType, growable: growable);
+  Future<dynamic> deserializeAsync(
+    String value,
+    String targetType, {
+    bool growable = false,
+  }) async =>
+      // ignore: deprecated_member_use_from_same_package
+      deserialize(value, targetType, growable: growable);
 
-  @Deprecated('Scheduled for removal in OpenAPI Generator 6.x. Use deserializeAsync() instead.')
-  dynamic deserialize(String value, String targetType, {bool growable = false,}) {
+  @Deprecated(
+      'Scheduled for removal in OpenAPI Generator 6.x. Use deserializeAsync() instead.')
+  dynamic deserialize(
+    String value,
+    String targetType, {
+    bool growable = false,
+  }) {
     // Remove all spaces. Necessary for regular expressions as well.
-    targetType = targetType.replaceAll(' ', ''); // ignore: parameter_assignments
+    targetType =
+        targetType.replaceAll(' ', ''); // ignore: parameter_assignments
 
     // If the expected target type is String, nothing to do...
     return targetType == 'String'
-      ? value
-      : fromJson(json.decode(value), targetType, growable: growable);
+        ? value
+        : fromJson(json.decode(value), targetType, growable: growable);
   }
 
   // ignore: deprecated_member_use_from_same_package
   Future<String> serializeAsync(Object? value) async => serialize(value);
 
-  @Deprecated('Scheduled for removal in OpenAPI Generator 6.x. Use serializeAsync() instead.')
+  @Deprecated(
+      'Scheduled for removal in OpenAPI Generator 6.x. Use serializeAsync() instead.')
   String serialize(Object? value) => value == null ? '' : json.encode(value);
 
   /// Returns a native instance of an OpenAPI class matching the [specified type][targetType].
-  static dynamic fromJson(dynamic value, String targetType, {bool growable = false,}) {
+  static dynamic fromJson(
+    dynamic value,
+    String targetType, {
+    bool growable = false,
+  }) {
     try {
       switch (targetType) {
         case 'String':
@@ -487,9 +534,11 @@ class ApiClient {
         case 'GetKubernetesResources200ResponseResources':
           return GetKubernetesResources200ResponseResources.fromJson(value);
         case 'GetKubernetesResources200ResponseResourcesBlockStorageInner':
-          return GetKubernetesResources200ResponseResourcesBlockStorageInner.fromJson(value);
+          return GetKubernetesResources200ResponseResourcesBlockStorageInner
+              .fromJson(value);
         case 'GetKubernetesResources200ResponseResourcesLoadBalancerInner':
-          return GetKubernetesResources200ResponseResourcesLoadBalancerInner.fromJson(value);
+          return GetKubernetesResources200ResponseResourcesLoadBalancerInner
+              .fromJson(value);
         case 'GetKubernetesVersions200Response':
           return GetKubernetesVersions200Response.fromJson(value);
         case 'GetLoadBalancerForwardingRule200Response':
@@ -579,7 +628,8 @@ class ApiClient {
         case 'ListInstanceIpv6Reverse200Response':
           return ListInstanceIpv6Reverse200Response.fromJson(value);
         case 'ListInstanceIpv6Reverse200ResponseReverseIpv6sInner':
-          return ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.fromJson(value);
+          return ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.fromJson(
+              value);
         case 'ListInstancePrivateNetworks200Response':
           return ListInstancePrivateNetworks200Response.fromJson(value);
         case 'ListInstanceVpc2200Response':
@@ -721,7 +771,8 @@ class ApiClient {
         case 'PlansMetal':
           return PlansMetal.fromJson(value);
         case 'PostBaremetalInstanceIdIpv4ReverseDefaultRequest':
-          return PostBaremetalInstanceIdIpv4ReverseDefaultRequest.fromJson(value);
+          return PostBaremetalInstanceIdIpv4ReverseDefaultRequest.fromJson(
+              value);
         case 'PostFirewallsFirewallGroupIdRules201Response':
           return PostFirewallsFirewallGroupIdRules201Response.fromJson(value);
         case 'PostFirewallsFirewallGroupIdRulesRequest':
@@ -743,7 +794,8 @@ class ApiClient {
         case 'RegenerateObjectStorageKeys201Response':
           return RegenerateObjectStorageKeys201Response.fromJson(value);
         case 'RegenerateObjectStorageKeys201ResponseS3Credentials':
-          return RegenerateObjectStorageKeys201ResponseS3Credentials.fromJson(value);
+          return RegenerateObjectStorageKeys201ResponseS3Credentials.fromJson(
+              value);
         case 'Region':
           return Region.fromJson(value);
         case 'ReinstallBaremetalRequest':
@@ -880,27 +932,50 @@ class ApiClient {
           return VpcInternet.fromJson(value);
         default:
           dynamic match;
-          if (value is List && (match = _regList.firstMatch(targetType)?.group(1)) != null) {
+          if (value is List &&
+              (match = _regList.firstMatch(targetType)?.group(1)) != null) {
             return value
-              .map<dynamic>((dynamic v) => fromJson(v, match, growable: growable,))
-              .toList(growable: growable);
+                .map<dynamic>((dynamic v) => fromJson(
+                      v,
+                      match,
+                      growable: growable,
+                    ))
+                .toList(growable: growable);
           }
-          if (value is Set && (match = _regSet.firstMatch(targetType)?.group(1)) != null) {
+          if (value is Set &&
+              (match = _regSet.firstMatch(targetType)?.group(1)) != null) {
             return value
-              .map<dynamic>((dynamic v) => fromJson(v, match, growable: growable,))
-              .toSet();
+                .map<dynamic>((dynamic v) => fromJson(
+                      v,
+                      match,
+                      growable: growable,
+                    ))
+                .toSet();
           }
-          if (value is Map && (match = _regMap.firstMatch(targetType)?.group(1)) != null) {
+          if (value is Map &&
+              (match = _regMap.firstMatch(targetType)?.group(1)) != null) {
             return Map<String, dynamic>.fromIterables(
               value.keys.cast<String>(),
-              value.values.map<dynamic>((dynamic v) => fromJson(v, match, growable: growable,)),
+              value.values.map<dynamic>((dynamic v) => fromJson(
+                    v,
+                    match,
+                    growable: growable,
+                  )),
             );
           }
       }
     } on Exception catch (error, trace) {
-      throw ApiException.withInner(HttpStatus.internalServerError, 'Exception during deserialization.', error, trace,);
+      throw ApiException.withInner(
+        HttpStatus.internalServerError,
+        'Exception during deserialization.',
+        error,
+        trace,
+      );
     }
-    throw ApiException(HttpStatus.internalServerError, 'Could not find a suitable class for deserialization',);
+    throw ApiException(
+      HttpStatus.internalServerError,
+      'Could not find a suitable class for deserialization',
+    );
   }
 }
 
@@ -928,9 +1003,7 @@ Future<dynamic> decodeAsync(DeserializationMessage message) async {
   final targetType = message.targetType.replaceAll(' ', '');
 
   // If the expected target type is String, nothing to do...
-  return targetType == 'String'
-    ? message.json
-    : json.decode(message.json);
+  return targetType == 'String' ? message.json : json.decode(message.json);
 }
 
 /// Primarily intended for use in an isolate.
@@ -940,13 +1013,14 @@ Future<dynamic> deserializeAsync(DeserializationMessage message) async {
 
   // If the expected target type is String, nothing to do...
   return targetType == 'String'
-    ? message.json
-    : ApiClient.fromJson(
-        json.decode(message.json),
-        targetType,
-        growable: message.growable,
-      );
+      ? message.json
+      : ApiClient.fromJson(
+          json.decode(message.json),
+          targetType,
+          growable: message.growable,
+        );
 }
 
 /// Primarily intended for use in an isolate.
-Future<String> serializeAsync(Object? value) async => value == null ? '' : json.encode(value);
+Future<String> serializeAsync(Object? value) async =>
+    value == null ? '' : json.encode(value);

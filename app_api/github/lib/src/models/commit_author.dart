@@ -8,13 +8,11 @@ part 'commit_author.g.dart';
 
 @JsonSerializable()
 class CommitAuthor {
-  const CommitAuthor({
-    this.name,
-    this.email,
-  });
-  
-  factory CommitAuthor.fromJson(Map<String, Object?> json) => _$CommitAuthorFromJson(json);
-  
+  const CommitAuthor({this.name, this.email});
+
+  factory CommitAuthor.fromJson(Map<String, Object?> json) =>
+      _$CommitAuthorFromJson(json);
+
   final String? name;
   final String? email;
 

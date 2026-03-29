@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class SubaccountApi {
-  SubaccountApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  SubaccountApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,7 +26,9 @@ class SubaccountApi {
   ///
   /// * [CreateSubaccountRequest] createSubaccountRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createSubaccountWithHttpInfo({ CreateSubaccountRequest? createSubaccountRequest, }) async {
+  Future<Response> createSubaccountWithHttpInfo({
+    CreateSubaccountRequest? createSubaccountRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/subaccounts';
 
@@ -38,7 +40,6 @@ class SubaccountApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +60,24 @@ class SubaccountApi {
   ///
   /// * [CreateSubaccountRequest] createSubaccountRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateSubaccount201Response?> createSubaccount({ CreateSubaccountRequest? createSubaccountRequest, }) async {
-    final response = await createSubaccountWithHttpInfo( createSubaccountRequest: createSubaccountRequest, );
+  Future<CreateSubaccount201Response?> createSubaccount({
+    CreateSubaccountRequest? createSubaccountRequest,
+  }) async {
+    final response = await createSubaccountWithHttpInfo(
+      createSubaccountRequest: createSubaccountRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateSubaccount201Response',) as CreateSubaccount201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateSubaccount201Response',
+      ) as CreateSubaccount201Response;
     }
     return null;
   }
@@ -87,7 +95,10 @@ class SubaccountApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listSubaccountsWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listSubaccountsWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/subaccounts';
 
@@ -106,7 +117,6 @@ class SubaccountApi {
     }
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -130,17 +140,26 @@ class SubaccountApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListSubaccounts200Response?> listSubaccounts({ int? perPage, String? cursor, }) async {
-    final response = await listSubaccountsWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListSubaccounts200Response?> listSubaccounts({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listSubaccountsWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListSubaccounts200Response',) as ListSubaccounts200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListSubaccounts200Response',
+      ) as ListSubaccounts200Response;
     }
     return null;
   }

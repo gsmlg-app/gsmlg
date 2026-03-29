@@ -11,5 +11,5 @@ enum RepositoryVisibility {
   @JsonValue('private')
   private,
   @JsonValue('internal')
-  internal;
+  internal,
 }

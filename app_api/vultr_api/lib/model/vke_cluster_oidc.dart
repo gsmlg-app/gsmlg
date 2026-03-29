@@ -56,22 +56,25 @@ class VkeClusterOidc {
   String? groupsClaim;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is VkeClusterOidc &&
-    other.issuerUrl == issuerUrl &&
-    other.clientId == clientId &&
-    other.usernameClaim == usernameClaim &&
-    other.groupsClaim == groupsClaim;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VkeClusterOidc &&
+          other.issuerUrl == issuerUrl &&
+          other.clientId == clientId &&
+          other.usernameClaim == usernameClaim &&
+          other.groupsClaim == groupsClaim;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (issuerUrl == null ? 0 : issuerUrl!.hashCode) +
-    (clientId == null ? 0 : clientId!.hashCode) +
-    (usernameClaim == null ? 0 : usernameClaim!.hashCode) +
-    (groupsClaim == null ? 0 : groupsClaim!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (issuerUrl == null ? 0 : issuerUrl!.hashCode) +
+      (clientId == null ? 0 : clientId!.hashCode) +
+      (usernameClaim == null ? 0 : usernameClaim!.hashCode) +
+      (groupsClaim == null ? 0 : groupsClaim!.hashCode);
 
   @override
-  String toString() => 'VkeClusterOidc[issuerUrl=$issuerUrl, clientId=$clientId, usernameClaim=$usernameClaim, groupsClaim=$groupsClaim]';
+  String toString() =>
+      'VkeClusterOidc[issuerUrl=$issuerUrl, clientId=$clientId, usernameClaim=$usernameClaim, groupsClaim=$groupsClaim]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -110,8 +113,10 @@ class VkeClusterOidc {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "VkeClusterOidc[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "VkeClusterOidc[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "VkeClusterOidc[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "VkeClusterOidc[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -126,7 +131,10 @@ class VkeClusterOidc {
     return null;
   }
 
-  static List<VkeClusterOidc> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<VkeClusterOidc> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <VkeClusterOidc>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -154,20 +162,24 @@ class VkeClusterOidc {
   }
 
   // maps a json object with a list of VkeClusterOidc-objects as value to a dart map
-  static Map<String, List<VkeClusterOidc>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<VkeClusterOidc>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<VkeClusterOidc>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = VkeClusterOidc.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = VkeClusterOidc.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

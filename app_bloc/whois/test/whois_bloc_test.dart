@@ -56,7 +56,10 @@ void main() {
         const state = WhoisLoaded('example.com', ['result1', 'result2']);
         expect(state.domain, 'example.com');
         expect(state.data, ['result1', 'result2']);
-        expect(state.props, ['example.com', ['result1', 'result2']]);
+        expect(state.props, [
+          'example.com',
+          ['result1', 'result2']
+        ]);
       });
 
       test('WhoisFailure contains error message', () {

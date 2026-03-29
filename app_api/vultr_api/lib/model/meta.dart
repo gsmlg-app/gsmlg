@@ -35,15 +35,15 @@ class Meta {
   MetaLinks? links;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Meta &&
-    other.total == total &&
-    other.links == links;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Meta && other.total == total && other.links == links;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (total == null ? 0 : total!.hashCode) +
-    (links == null ? 0 : links!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (total == null ? 0 : total!.hashCode) +
+      (links == null ? 0 : links!.hashCode);
 
   @override
   String toString() => 'Meta[total=$total, links=$links]';
@@ -75,8 +75,10 @@ class Meta {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Meta[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Meta[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Meta[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Meta[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -89,7 +91,10 @@ class Meta {
     return null;
   }
 
-  static List<Meta> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Meta> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Meta>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -117,20 +122,24 @@ class Meta {
   }
 
   // maps a json object with a list of Meta-objects as value to a dart map
-  static Map<String, List<Meta>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Meta>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Meta>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Meta.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Meta.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

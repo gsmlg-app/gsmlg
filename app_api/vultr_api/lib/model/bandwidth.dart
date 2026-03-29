@@ -36,18 +36,21 @@ class Bandwidth {
   int? outgoingBytes;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Bandwidth &&
-    other.incomingBytes == incomingBytes &&
-    other.outgoingBytes == outgoingBytes;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Bandwidth &&
+          other.incomingBytes == incomingBytes &&
+          other.outgoingBytes == outgoingBytes;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (incomingBytes == null ? 0 : incomingBytes!.hashCode) +
-    (outgoingBytes == null ? 0 : outgoingBytes!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (incomingBytes == null ? 0 : incomingBytes!.hashCode) +
+      (outgoingBytes == null ? 0 : outgoingBytes!.hashCode);
 
   @override
-  String toString() => 'Bandwidth[incomingBytes=$incomingBytes, outgoingBytes=$outgoingBytes]';
+  String toString() =>
+      'Bandwidth[incomingBytes=$incomingBytes, outgoingBytes=$outgoingBytes]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -76,8 +79,10 @@ class Bandwidth {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Bandwidth[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Bandwidth[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Bandwidth[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Bandwidth[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -90,7 +95,10 @@ class Bandwidth {
     return null;
   }
 
-  static List<Bandwidth> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Bandwidth> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Bandwidth>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -118,20 +126,24 @@ class Bandwidth {
   }
 
   // maps a json object with a list of Bandwidth-objects as value to a dart map
-  static Map<String, List<Bandwidth>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Bandwidth>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Bandwidth>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Bandwidth.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Bandwidth.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

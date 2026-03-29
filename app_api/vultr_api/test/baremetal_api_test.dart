@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for BaremetalApi
 void main() {
   // final instance = BaremetalApi();
@@ -46,7 +45,7 @@ void main() {
 
     // Create Baremetal Reverse IPv4
     //
-    // Create a reverse IPv4 entry for a Bare Metal Instance. The `ip` and `reverse` attributes are required. 
+    // Create a reverse IPv4 entry for a Bare Metal Instance. The `ip` and `reverse` attributes are required.
     //
     //Future createBaremetalReverseIpv4(String baremetalId, { CreateBaremetalReverseIpv4Request createBaremetalReverseIpv4Request }) async
     test('test createBaremetalReverseIpv4', () async {
@@ -268,6 +267,5 @@ void main() {
     test('test updateBaremetal', () async {
       // TODO
     });
-
   });
 }

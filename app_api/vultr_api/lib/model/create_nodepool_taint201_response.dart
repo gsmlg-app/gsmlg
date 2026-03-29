@@ -25,13 +25,14 @@ class CreateNodepoolTaint201Response {
   NodepoolTaint? taint;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateNodepoolTaint201Response &&
-    other.taint == taint;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateNodepoolTaint201Response && other.taint == taint;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (taint == null ? 0 : taint!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (taint == null ? 0 : taint!.hashCode);
 
   @override
   String toString() => 'CreateNodepoolTaint201Response[taint=$taint]';
@@ -58,8 +59,10 @@ class CreateNodepoolTaint201Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateNodepoolTaint201Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateNodepoolTaint201Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateNodepoolTaint201Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateNodepoolTaint201Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -71,7 +74,10 @@ class CreateNodepoolTaint201Response {
     return null;
   }
 
-  static List<CreateNodepoolTaint201Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateNodepoolTaint201Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateNodepoolTaint201Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,20 +105,24 @@ class CreateNodepoolTaint201Response {
   }
 
   // maps a json object with a list of CreateNodepoolTaint201Response-objects as value to a dart map
-  static Map<String, List<CreateNodepoolTaint201Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateNodepoolTaint201Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateNodepoolTaint201Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateNodepoolTaint201Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateNodepoolTaint201Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -25,16 +25,19 @@ class CreateLoadBalancer202Response {
   Loadbalancer? loadBalancer;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateLoadBalancer202Response &&
-    other.loadBalancer == loadBalancer;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateLoadBalancer202Response &&
+          other.loadBalancer == loadBalancer;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (loadBalancer == null ? 0 : loadBalancer!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (loadBalancer == null ? 0 : loadBalancer!.hashCode);
 
   @override
-  String toString() => 'CreateLoadBalancer202Response[loadBalancer=$loadBalancer]';
+  String toString() =>
+      'CreateLoadBalancer202Response[loadBalancer=$loadBalancer]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -58,8 +61,10 @@ class CreateLoadBalancer202Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateLoadBalancer202Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateLoadBalancer202Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateLoadBalancer202Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateLoadBalancer202Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -71,7 +76,10 @@ class CreateLoadBalancer202Response {
     return null;
   }
 
-  static List<CreateLoadBalancer202Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateLoadBalancer202Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateLoadBalancer202Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,20 +107,24 @@ class CreateLoadBalancer202Response {
   }
 
   // maps a json object with a list of CreateLoadBalancer202Response-objects as value to a dart map
-  static Map<String, List<CreateLoadBalancer202Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateLoadBalancer202Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateLoadBalancer202Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateLoadBalancer202Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateLoadBalancer202Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

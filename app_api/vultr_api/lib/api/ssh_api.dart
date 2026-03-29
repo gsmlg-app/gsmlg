@@ -10,7 +10,6 @@
 
 part of openapi.api;
 
-
 class SshApi {
   SshApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
 
@@ -26,7 +25,9 @@ class SshApi {
   ///
   /// * [CreateSshKeyRequest] createSshKeyRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createSshKeyWithHttpInfo({ CreateSshKeyRequest? createSshKeyRequest, }) async {
+  Future<Response> createSshKeyWithHttpInfo({
+    CreateSshKeyRequest? createSshKeyRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/ssh-keys';
 
@@ -38,7 +39,6 @@ class SshApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +59,24 @@ class SshApi {
   ///
   /// * [CreateSshKeyRequest] createSshKeyRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<GetSshKey200Response?> createSshKey({ CreateSshKeyRequest? createSshKeyRequest, }) async {
-    final response = await createSshKeyWithHttpInfo( createSshKeyRequest: createSshKeyRequest, );
+  Future<GetSshKey200Response?> createSshKey({
+    CreateSshKeyRequest? createSshKeyRequest,
+  }) async {
+    final response = await createSshKeyWithHttpInfo(
+      createSshKeyRequest: createSshKeyRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetSshKey200Response',) as GetSshKey200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetSshKey200Response',
+      ) as GetSshKey200Response;
     }
     return null;
   }
@@ -84,10 +91,11 @@ class SshApi {
   ///
   /// * [String] sshKeyId (required):
   ///   The [SSH Key id](#operation/list-ssh-keys).
-  Future<Response> deleteSshKeyWithHttpInfo(String sshKeyId,) async {
+  Future<Response> deleteSshKeyWithHttpInfo(
+    String sshKeyId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/ssh-keys/{ssh-key-id}'
-      .replaceAll('{ssh-key-id}', sshKeyId);
+    final path = r'/ssh-keys/{ssh-key-id}'.replaceAll('{ssh-key-id}', sshKeyId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -97,7 +105,6 @@ class SshApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -118,8 +125,12 @@ class SshApi {
   ///
   /// * [String] sshKeyId (required):
   ///   The [SSH Key id](#operation/list-ssh-keys).
-  Future<void> deleteSshKey(String sshKeyId,) async {
-    final response = await deleteSshKeyWithHttpInfo(sshKeyId,);
+  Future<void> deleteSshKey(
+    String sshKeyId,
+  ) async {
+    final response = await deleteSshKeyWithHttpInfo(
+      sshKeyId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -135,10 +146,11 @@ class SshApi {
   ///
   /// * [String] sshKeyId (required):
   ///   The [SSH Key id](#operation/list-ssh-keys).
-  Future<Response> getSshKeyWithHttpInfo(String sshKeyId,) async {
+  Future<Response> getSshKeyWithHttpInfo(
+    String sshKeyId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/ssh-keys/{ssh-key-id}'
-      .replaceAll('{ssh-key-id}', sshKeyId);
+    final path = r'/ssh-keys/{ssh-key-id}'.replaceAll('{ssh-key-id}', sshKeyId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -148,7 +160,6 @@ class SshApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -169,17 +180,24 @@ class SshApi {
   ///
   /// * [String] sshKeyId (required):
   ///   The [SSH Key id](#operation/list-ssh-keys).
-  Future<GetSshKey200Response?> getSshKey(String sshKeyId,) async {
-    final response = await getSshKeyWithHttpInfo(sshKeyId,);
+  Future<GetSshKey200Response?> getSshKey(
+    String sshKeyId,
+  ) async {
+    final response = await getSshKeyWithHttpInfo(
+      sshKeyId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetSshKey200Response',) as GetSshKey200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetSshKey200Response',
+      ) as GetSshKey200Response;
     }
     return null;
   }
@@ -193,11 +211,14 @@ class SshApi {
   /// Parameters:
   ///
   /// * [int] perPage:
-  ///   Number of items requested per page. Default is 100 and Max is 500. 
+  ///   Number of items requested per page. Default is 100 and Max is 500.
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listSshKeysWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listSshKeysWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/ssh-keys';
 
@@ -217,7 +238,6 @@ class SshApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -236,21 +256,30 @@ class SshApi {
   /// Parameters:
   ///
   /// * [int] perPage:
-  ///   Number of items requested per page. Default is 100 and Max is 500. 
+  ///   Number of items requested per page. Default is 100 and Max is 500.
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListSshKeys200Response?> listSshKeys({ int? perPage, String? cursor, }) async {
-    final response = await listSshKeysWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListSshKeys200Response?> listSshKeys({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listSshKeysWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListSshKeys200Response',) as ListSshKeys200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListSshKeys200Response',
+      ) as ListSshKeys200Response;
     }
     return null;
   }
@@ -268,10 +297,12 @@ class SshApi {
   ///
   /// * [UpdateSshKeyRequest] updateSshKeyRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateSshKeyWithHttpInfo(String sshKeyId, { UpdateSshKeyRequest? updateSshKeyRequest, }) async {
+  Future<Response> updateSshKeyWithHttpInfo(
+    String sshKeyId, {
+    UpdateSshKeyRequest? updateSshKeyRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/ssh-keys/{ssh-key-id}'
-      .replaceAll('{ssh-key-id}', sshKeyId);
+    final path = r'/ssh-keys/{ssh-key-id}'.replaceAll('{ssh-key-id}', sshKeyId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateSshKeyRequest;
@@ -281,7 +312,6 @@ class SshApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -305,8 +335,14 @@ class SshApi {
   ///
   /// * [UpdateSshKeyRequest] updateSshKeyRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateSshKey(String sshKeyId, { UpdateSshKeyRequest? updateSshKeyRequest, }) async {
-    final response = await updateSshKeyWithHttpInfo(sshKeyId,  updateSshKeyRequest: updateSshKeyRequest, );
+  Future<void> updateSshKey(
+    String sshKeyId, {
+    UpdateSshKeyRequest? updateSshKeyRequest,
+  }) async {
+    final response = await updateSshKeyWithHttpInfo(
+      sshKeyId,
+      updateSshKeyRequest: updateSshKeyRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

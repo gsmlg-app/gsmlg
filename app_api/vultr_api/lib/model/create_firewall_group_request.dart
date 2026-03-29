@@ -26,13 +26,14 @@ class CreateFirewallGroupRequest {
   String? description;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateFirewallGroupRequest &&
-    other.description == description;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateFirewallGroupRequest && other.description == description;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (description == null ? 0 : description!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (description == null ? 0 : description!.hashCode);
 
   @override
   String toString() => 'CreateFirewallGroupRequest[description=$description]';
@@ -59,8 +60,10 @@ class CreateFirewallGroupRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateFirewallGroupRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateFirewallGroupRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateFirewallGroupRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateFirewallGroupRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -72,7 +75,10 @@ class CreateFirewallGroupRequest {
     return null;
   }
 
-  static List<CreateFirewallGroupRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateFirewallGroupRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateFirewallGroupRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -100,20 +106,24 @@ class CreateFirewallGroupRequest {
   }
 
   // maps a json object with a list of CreateFirewallGroupRequest-objects as value to a dart map
-  static Map<String, List<CreateFirewallGroupRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateFirewallGroupRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateFirewallGroupRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateFirewallGroupRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateFirewallGroupRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

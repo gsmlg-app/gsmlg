@@ -288,83 +288,87 @@ class CreateInstanceRequest {
   Object? appVariables;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateInstanceRequest &&
-    other.region == region &&
-    other.plan == plan &&
-    other.osId == osId &&
-    other.ipxeChainUrl == ipxeChainUrl &&
-    other.isoId == isoId &&
-    other.scriptId == scriptId &&
-    other.snapshotId == snapshotId &&
-    other.enableIpv6 == enableIpv6 &&
-    other.disablePublicIpv4 == disablePublicIpv4 &&
-    _deepEquality.equals(other.attachPrivateNetwork, attachPrivateNetwork) &&
-    _deepEquality.equals(other.attachVpc, attachVpc) &&
-    _deepEquality.equals(other.attachVpc2, attachVpc2) &&
-    other.label == label &&
-    _deepEquality.equals(other.sshkeyId, sshkeyId) &&
-    other.backups == backups &&
-    _deepEquality.equals(other.blockDevices, blockDevices) &&
-    other.appId == appId &&
-    other.imageId == imageId &&
-    other.userData == userData &&
-    other.ddosProtection == ddosProtection &&
-    other.activationEmail == activationEmail &&
-    other.hostname == hostname &&
-    other.tag == tag &&
-    other.firewallGroupId == firewallGroupId &&
-    other.reservedIpv4 == reservedIpv4 &&
-    other.enablePrivateNetwork == enablePrivateNetwork &&
-    other.enableVpc == enableVpc &&
-    other.enableVpc2 == enableVpc2 &&
-    other.vpcOnly == vpcOnly &&
-    _deepEquality.equals(other.tags, tags) &&
-    other.userScheme == userScheme &&
-    other.appVariables == appVariables;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateInstanceRequest &&
+          other.region == region &&
+          other.plan == plan &&
+          other.osId == osId &&
+          other.ipxeChainUrl == ipxeChainUrl &&
+          other.isoId == isoId &&
+          other.scriptId == scriptId &&
+          other.snapshotId == snapshotId &&
+          other.enableIpv6 == enableIpv6 &&
+          other.disablePublicIpv4 == disablePublicIpv4 &&
+          _deepEquality.equals(
+              other.attachPrivateNetwork, attachPrivateNetwork) &&
+          _deepEquality.equals(other.attachVpc, attachVpc) &&
+          _deepEquality.equals(other.attachVpc2, attachVpc2) &&
+          other.label == label &&
+          _deepEquality.equals(other.sshkeyId, sshkeyId) &&
+          other.backups == backups &&
+          _deepEquality.equals(other.blockDevices, blockDevices) &&
+          other.appId == appId &&
+          other.imageId == imageId &&
+          other.userData == userData &&
+          other.ddosProtection == ddosProtection &&
+          other.activationEmail == activationEmail &&
+          other.hostname == hostname &&
+          other.tag == tag &&
+          other.firewallGroupId == firewallGroupId &&
+          other.reservedIpv4 == reservedIpv4 &&
+          other.enablePrivateNetwork == enablePrivateNetwork &&
+          other.enableVpc == enableVpc &&
+          other.enableVpc2 == enableVpc2 &&
+          other.vpcOnly == vpcOnly &&
+          _deepEquality.equals(other.tags, tags) &&
+          other.userScheme == userScheme &&
+          other.appVariables == appVariables;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (region.hashCode) +
-    (plan.hashCode) +
-    (osId == null ? 0 : osId!.hashCode) +
-    (ipxeChainUrl == null ? 0 : ipxeChainUrl!.hashCode) +
-    (isoId == null ? 0 : isoId!.hashCode) +
-    (scriptId == null ? 0 : scriptId!.hashCode) +
-    (snapshotId == null ? 0 : snapshotId!.hashCode) +
-    (enableIpv6 == null ? 0 : enableIpv6!.hashCode) +
-    (disablePublicIpv4 == null ? 0 : disablePublicIpv4!.hashCode) +
-    (attachPrivateNetwork.hashCode) +
-    (attachVpc.hashCode) +
-    (attachVpc2.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (sshkeyId.hashCode) +
-    (backups == null ? 0 : backups!.hashCode) +
-    (blockDevices.hashCode) +
-    (appId == null ? 0 : appId!.hashCode) +
-    (imageId == null ? 0 : imageId!.hashCode) +
-    (userData == null ? 0 : userData!.hashCode) +
-    (ddosProtection == null ? 0 : ddosProtection!.hashCode) +
-    (activationEmail == null ? 0 : activationEmail!.hashCode) +
-    (hostname == null ? 0 : hostname!.hashCode) +
-    (tag == null ? 0 : tag!.hashCode) +
-    (firewallGroupId == null ? 0 : firewallGroupId!.hashCode) +
-    (reservedIpv4 == null ? 0 : reservedIpv4!.hashCode) +
-    (enablePrivateNetwork == null ? 0 : enablePrivateNetwork!.hashCode) +
-    (enableVpc == null ? 0 : enableVpc!.hashCode) +
-    (enableVpc2 == null ? 0 : enableVpc2!.hashCode) +
-    (vpcOnly == null ? 0 : vpcOnly!.hashCode) +
-    (tags.hashCode) +
-    (userScheme == null ? 0 : userScheme!.hashCode) +
-    (appVariables == null ? 0 : appVariables!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (region.hashCode) +
+      (plan.hashCode) +
+      (osId == null ? 0 : osId!.hashCode) +
+      (ipxeChainUrl == null ? 0 : ipxeChainUrl!.hashCode) +
+      (isoId == null ? 0 : isoId!.hashCode) +
+      (scriptId == null ? 0 : scriptId!.hashCode) +
+      (snapshotId == null ? 0 : snapshotId!.hashCode) +
+      (enableIpv6 == null ? 0 : enableIpv6!.hashCode) +
+      (disablePublicIpv4 == null ? 0 : disablePublicIpv4!.hashCode) +
+      (attachPrivateNetwork.hashCode) +
+      (attachVpc.hashCode) +
+      (attachVpc2.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (sshkeyId.hashCode) +
+      (backups == null ? 0 : backups!.hashCode) +
+      (blockDevices.hashCode) +
+      (appId == null ? 0 : appId!.hashCode) +
+      (imageId == null ? 0 : imageId!.hashCode) +
+      (userData == null ? 0 : userData!.hashCode) +
+      (ddosProtection == null ? 0 : ddosProtection!.hashCode) +
+      (activationEmail == null ? 0 : activationEmail!.hashCode) +
+      (hostname == null ? 0 : hostname!.hashCode) +
+      (tag == null ? 0 : tag!.hashCode) +
+      (firewallGroupId == null ? 0 : firewallGroupId!.hashCode) +
+      (reservedIpv4 == null ? 0 : reservedIpv4!.hashCode) +
+      (enablePrivateNetwork == null ? 0 : enablePrivateNetwork!.hashCode) +
+      (enableVpc == null ? 0 : enableVpc!.hashCode) +
+      (enableVpc2 == null ? 0 : enableVpc2!.hashCode) +
+      (vpcOnly == null ? 0 : vpcOnly!.hashCode) +
+      (tags.hashCode) +
+      (userScheme == null ? 0 : userScheme!.hashCode) +
+      (appVariables == null ? 0 : appVariables!.hashCode);
 
   @override
-  String toString() => 'CreateInstanceRequest[region=$region, plan=$plan, osId=$osId, ipxeChainUrl=$ipxeChainUrl, isoId=$isoId, scriptId=$scriptId, snapshotId=$snapshotId, enableIpv6=$enableIpv6, disablePublicIpv4=$disablePublicIpv4, attachPrivateNetwork=$attachPrivateNetwork, attachVpc=$attachVpc, attachVpc2=$attachVpc2, label=$label, sshkeyId=$sshkeyId, backups=$backups, blockDevices=$blockDevices, appId=$appId, imageId=$imageId, userData=$userData, ddosProtection=$ddosProtection, activationEmail=$activationEmail, hostname=$hostname, tag=$tag, firewallGroupId=$firewallGroupId, reservedIpv4=$reservedIpv4, enablePrivateNetwork=$enablePrivateNetwork, enableVpc=$enableVpc, enableVpc2=$enableVpc2, vpcOnly=$vpcOnly, tags=$tags, userScheme=$userScheme, appVariables=$appVariables]';
+  String toString() =>
+      'CreateInstanceRequest[region=$region, plan=$plan, osId=$osId, ipxeChainUrl=$ipxeChainUrl, isoId=$isoId, scriptId=$scriptId, snapshotId=$snapshotId, enableIpv6=$enableIpv6, disablePublicIpv4=$disablePublicIpv4, attachPrivateNetwork=$attachPrivateNetwork, attachVpc=$attachVpc, attachVpc2=$attachVpc2, label=$label, sshkeyId=$sshkeyId, backups=$backups, blockDevices=$blockDevices, appId=$appId, imageId=$imageId, userData=$userData, ddosProtection=$ddosProtection, activationEmail=$activationEmail, hostname=$hostname, tag=$tag, firewallGroupId=$firewallGroupId, reservedIpv4=$reservedIpv4, enablePrivateNetwork=$enablePrivateNetwork, enableVpc=$enableVpc, enableVpc2=$enableVpc2, vpcOnly=$vpcOnly, tags=$tags, userScheme=$userScheme, appVariables=$appVariables]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'region'] = this.region;
-      json[r'plan'] = this.plan;
+    json[r'region'] = this.region;
+    json[r'plan'] = this.plan;
     if (this.osId != null) {
       json[r'os_id'] = this.osId;
     } else {
@@ -400,21 +404,21 @@ class CreateInstanceRequest {
     } else {
       json[r'disable_public_ipv4'] = null;
     }
-      json[r'attach_private_network'] = this.attachPrivateNetwork;
-      json[r'attach_vpc'] = this.attachVpc;
-      json[r'attach_vpc2'] = this.attachVpc2;
+    json[r'attach_private_network'] = this.attachPrivateNetwork;
+    json[r'attach_vpc'] = this.attachVpc;
+    json[r'attach_vpc2'] = this.attachVpc2;
     if (this.label != null) {
       json[r'label'] = this.label;
     } else {
       json[r'label'] = null;
     }
-      json[r'sshkey_id'] = this.sshkeyId;
+    json[r'sshkey_id'] = this.sshkeyId;
     if (this.backups != null) {
       json[r'backups'] = this.backups;
     } else {
       json[r'backups'] = null;
     }
-      json[r'block_devices'] = this.blockDevices;
+    json[r'block_devices'] = this.blockDevices;
     if (this.appId != null) {
       json[r'app_id'] = this.appId;
     } else {
@@ -480,7 +484,7 @@ class CreateInstanceRequest {
     } else {
       json[r'vpc_only'] = null;
     }
-      json[r'tags'] = this.tags;
+    json[r'tags'] = this.tags;
     if (this.userScheme != null) {
       json[r'user_scheme'] = this.userScheme;
     } else {
@@ -506,8 +510,10 @@ class CreateInstanceRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateInstanceRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateInstanceRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateInstanceRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateInstanceRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -523,21 +529,31 @@ class CreateInstanceRequest {
         enableIpv6: mapValueOfType<bool>(json, r'enable_ipv6'),
         disablePublicIpv4: mapValueOfType<bool>(json, r'disable_public_ipv4'),
         attachPrivateNetwork: json[r'attach_private_network'] is Iterable
-            ? (json[r'attach_private_network'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'attach_private_network'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         attachVpc: json[r'attach_vpc'] is Iterable
-            ? (json[r'attach_vpc'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'attach_vpc'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         attachVpc2: json[r'attach_vpc2'] is Iterable
-            ? (json[r'attach_vpc2'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'attach_vpc2'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         label: mapValueOfType<String>(json, r'label'),
         sshkeyId: json[r'sshkey_id'] is Iterable
-            ? (json[r'sshkey_id'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'sshkey_id'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         backups: mapValueOfType<String>(json, r'backups'),
         blockDevices: json[r'block_devices'] is Iterable
-            ? (json[r'block_devices'] as Iterable).cast<Object>().toList(growable: false)
+            ? (json[r'block_devices'] as Iterable)
+                .cast<Object>()
+                .toList(growable: false)
             : const [],
         appId: mapValueOfType<int>(json, r'app_id'),
         imageId: mapValueOfType<String>(json, r'image_id'),
@@ -548,7 +564,8 @@ class CreateInstanceRequest {
         tag: mapValueOfType<String>(json, r'tag'),
         firewallGroupId: mapValueOfType<String>(json, r'firewall_group_id'),
         reservedIpv4: mapValueOfType<String>(json, r'reserved_ipv4'),
-        enablePrivateNetwork: mapValueOfType<bool>(json, r'enable_private_network'),
+        enablePrivateNetwork:
+            mapValueOfType<bool>(json, r'enable_private_network'),
         enableVpc: mapValueOfType<bool>(json, r'enable_vpc'),
         enableVpc2: mapValueOfType<bool>(json, r'enable_vpc2'),
         vpcOnly: mapValueOfType<bool>(json, r'vpc_only'),
@@ -562,7 +579,10 @@ class CreateInstanceRequest {
     return null;
   }
 
-  static List<CreateInstanceRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateInstanceRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateInstanceRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -590,13 +610,19 @@ class CreateInstanceRequest {
   }
 
   // maps a json object with a list of CreateInstanceRequest-objects as value to a dart map
-  static Map<String, List<CreateInstanceRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateInstanceRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateInstanceRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateInstanceRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateInstanceRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -608,4 +634,3 @@ class CreateInstanceRequest {
     'plan',
   };
 }
-

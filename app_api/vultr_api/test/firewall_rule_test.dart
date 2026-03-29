@@ -40,7 +40,7 @@ void main() {
       // TODO
     });
 
-    // The protocol for this rule.  * ICMP * TCP * UDP * GRE 
+    // The protocol for this rule.  * ICMP * TCP * UDP * GRE
     // String protocol
     test('to test the property `protocol`', () async {
       // TODO
@@ -75,8 +75,5 @@ void main() {
     test('to test the property `notes`', () async {
       // TODO
     });
-
-
   });
-
 }

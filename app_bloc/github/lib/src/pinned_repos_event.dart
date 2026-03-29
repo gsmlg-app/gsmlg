@@ -15,11 +15,7 @@ final class GitHubPinnedReposLoad extends GitHubPinnedReposEvent {
 
 /// Add a repo to pinned list.
 final class GitHubPinnedReposAdd extends GitHubPinnedReposEvent {
-  const GitHubPinnedReposAdd({
-    this.repoId,
-    this.owner,
-    this.repoName,
-  });
+  const GitHubPinnedReposAdd({this.repoId, this.owner, this.repoName});
 
   /// Repository ID (if known).
   final int? repoId;

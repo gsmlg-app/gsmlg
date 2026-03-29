@@ -66,24 +66,27 @@ class ForwardingRule {
   int? backendPort;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ForwardingRule &&
-    other.id == id &&
-    other.frontendProtocol == frontendProtocol &&
-    other.frontendPort == frontendPort &&
-    other.backendProtocol == backendProtocol &&
-    other.backendPort == backendPort;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ForwardingRule &&
+          other.id == id &&
+          other.frontendProtocol == frontendProtocol &&
+          other.frontendPort == frontendPort &&
+          other.backendProtocol == backendProtocol &&
+          other.backendPort == backendPort;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (frontendProtocol == null ? 0 : frontendProtocol!.hashCode) +
-    (frontendPort == null ? 0 : frontendPort!.hashCode) +
-    (backendProtocol == null ? 0 : backendProtocol!.hashCode) +
-    (backendPort == null ? 0 : backendPort!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (frontendProtocol == null ? 0 : frontendProtocol!.hashCode) +
+      (frontendPort == null ? 0 : frontendPort!.hashCode) +
+      (backendProtocol == null ? 0 : backendProtocol!.hashCode) +
+      (backendPort == null ? 0 : backendPort!.hashCode);
 
   @override
-  String toString() => 'ForwardingRule[id=$id, frontendProtocol=$frontendProtocol, frontendPort=$frontendPort, backendProtocol=$backendProtocol, backendPort=$backendPort]';
+  String toString() =>
+      'ForwardingRule[id=$id, frontendProtocol=$frontendProtocol, frontendPort=$frontendPort, backendProtocol=$backendProtocol, backendPort=$backendPort]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -127,8 +130,10 @@ class ForwardingRule {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "ForwardingRule[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "ForwardingRule[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "ForwardingRule[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "ForwardingRule[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -144,7 +149,10 @@ class ForwardingRule {
     return null;
   }
 
-  static List<ForwardingRule> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<ForwardingRule> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <ForwardingRule>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -172,20 +180,24 @@ class ForwardingRule {
   }
 
   // maps a json object with a list of ForwardingRule-objects as value to a dart map
-  static Map<String, List<ForwardingRule>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<ForwardingRule>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<ForwardingRule>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = ForwardingRule.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = ForwardingRule.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -70,30 +70,33 @@ class Network {
   int? v4SubnetMask;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Network &&
-    other.id == id &&
-    other.region == region &&
-    other.dateCreated == dateCreated &&
-    other.description == description &&
-    other.v4Subnet == v4Subnet &&
-    other.v4SubnetMask == v4SubnetMask;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Network &&
+          other.id == id &&
+          other.region == region &&
+          other.dateCreated == dateCreated &&
+          other.description == description &&
+          other.v4Subnet == v4Subnet &&
+          other.v4SubnetMask == v4SubnetMask;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id.hashCode) +
-    (region == null ? 0 : region!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (v4Subnet == null ? 0 : v4Subnet!.hashCode) +
-    (v4SubnetMask == null ? 0 : v4SubnetMask!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id.hashCode) +
+      (region == null ? 0 : region!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (v4Subnet == null ? 0 : v4Subnet!.hashCode) +
+      (v4SubnetMask == null ? 0 : v4SubnetMask!.hashCode);
 
   @override
-  String toString() => 'Network[id=$id, region=$region, dateCreated=$dateCreated, description=$description, v4Subnet=$v4Subnet, v4SubnetMask=$v4SubnetMask]';
+  String toString() =>
+      'Network[id=$id, region=$region, dateCreated=$dateCreated, description=$description, v4Subnet=$v4Subnet, v4SubnetMask=$v4SubnetMask]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'id'] = this.id;
+    json[r'id'] = this.id;
     if (this.region != null) {
       json[r'region'] = this.region;
     } else {
@@ -134,8 +137,10 @@ class Network {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Network[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Network[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Network[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Network[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -152,7 +157,10 @@ class Network {
     return null;
   }
 
-  static List<Network> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Network> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Network>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -180,13 +188,19 @@ class Network {
   }
 
   // maps a json object with a list of Network-objects as value to a dart map
-  static Map<String, List<Network>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Network>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Network>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Network.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Network.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -197,4 +211,3 @@ class Network {
     'id',
   };
 }
-

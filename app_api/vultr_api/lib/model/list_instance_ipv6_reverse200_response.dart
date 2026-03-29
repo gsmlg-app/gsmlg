@@ -19,20 +19,23 @@ class ListInstanceIpv6Reverse200Response {
   List<ListInstanceIpv6Reverse200ResponseReverseIpv6sInner> reverseIpv6s;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ListInstanceIpv6Reverse200Response &&
-    _deepEquality.equals(other.reverseIpv6s, reverseIpv6s);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListInstanceIpv6Reverse200Response &&
+          _deepEquality.equals(other.reverseIpv6s, reverseIpv6s);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (reverseIpv6s.hashCode);
+      // ignore: unnecessary_parenthesis
+      (reverseIpv6s.hashCode);
 
   @override
-  String toString() => 'ListInstanceIpv6Reverse200Response[reverseIpv6s=$reverseIpv6s]';
+  String toString() =>
+      'ListInstanceIpv6Reverse200Response[reverseIpv6s=$reverseIpv6s]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'reverse_ipv6s'] = this.reverseIpv6s;
+    json[r'reverse_ipv6s'] = this.reverseIpv6s;
     return json;
   }
 
@@ -48,20 +51,27 @@ class ListInstanceIpv6Reverse200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "ListInstanceIpv6Reverse200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "ListInstanceIpv6Reverse200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "ListInstanceIpv6Reverse200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "ListInstanceIpv6Reverse200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return ListInstanceIpv6Reverse200Response(
-        reverseIpv6s: ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.listFromJson(json[r'reverse_ipv6s']),
+        reverseIpv6s:
+            ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.listFromJson(
+                json[r'reverse_ipv6s']),
       );
     }
     return null;
   }
 
-  static List<ListInstanceIpv6Reverse200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<ListInstanceIpv6Reverse200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <ListInstanceIpv6Reverse200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -74,7 +84,8 @@ class ListInstanceIpv6Reverse200Response {
     return result.toList(growable: growable);
   }
 
-  static Map<String, ListInstanceIpv6Reverse200Response> mapFromJson(dynamic json) {
+  static Map<String, ListInstanceIpv6Reverse200Response> mapFromJson(
+      dynamic json) {
     final map = <String, ListInstanceIpv6Reverse200Response>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -89,20 +100,24 @@ class ListInstanceIpv6Reverse200Response {
   }
 
   // maps a json object with a list of ListInstanceIpv6Reverse200Response-objects as value to a dart map
-  static Map<String, List<ListInstanceIpv6Reverse200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<ListInstanceIpv6Reverse200Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<ListInstanceIpv6Reverse200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = ListInstanceIpv6Reverse200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = ListInstanceIpv6Reverse200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

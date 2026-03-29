@@ -18,9 +18,10 @@ class DeleteDnsRecordResponse {
     required this.messages,
     this.result,
   });
-  
-  factory DeleteDnsRecordResponse.fromJson(Map<String, Object?> json) => _$DeleteDnsRecordResponseFromJson(json);
-  
+
+  factory DeleteDnsRecordResponse.fromJson(Map<String, Object?> json) =>
+      _$DeleteDnsRecordResponseFromJson(json);
+
   final bool success;
   final List<ApiError> errors;
   final List<ApiMessage> messages;

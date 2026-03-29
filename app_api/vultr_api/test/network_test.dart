@@ -51,8 +51,5 @@ void main() {
     test('to test the property `v4SubnetMask`', () async {
       // TODO
     });
-
-
   });
-
 }

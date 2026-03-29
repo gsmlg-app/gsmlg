@@ -138,42 +138,45 @@ class UpdateBaremetalRequest {
   String? ipxeChainUrl;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateBaremetalRequest &&
-    other.userData == userData &&
-    other.label == label &&
-    other.tag == tag &&
-    other.osId == osId &&
-    other.appId == appId &&
-    other.imageId == imageId &&
-    other.enableIpv6 == enableIpv6 &&
-    _deepEquality.equals(other.attachVpc2, attachVpc2) &&
-    _deepEquality.equals(other.detachVpc2, detachVpc2) &&
-    other.enableVpc2 == enableVpc2 &&
-    _deepEquality.equals(other.tags, tags) &&
-    other.userScheme == userScheme &&
-    other.mdiskMode == mdiskMode &&
-    other.ipxeChainUrl == ipxeChainUrl;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateBaremetalRequest &&
+          other.userData == userData &&
+          other.label == label &&
+          other.tag == tag &&
+          other.osId == osId &&
+          other.appId == appId &&
+          other.imageId == imageId &&
+          other.enableIpv6 == enableIpv6 &&
+          _deepEquality.equals(other.attachVpc2, attachVpc2) &&
+          _deepEquality.equals(other.detachVpc2, detachVpc2) &&
+          other.enableVpc2 == enableVpc2 &&
+          _deepEquality.equals(other.tags, tags) &&
+          other.userScheme == userScheme &&
+          other.mdiskMode == mdiskMode &&
+          other.ipxeChainUrl == ipxeChainUrl;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (userData == null ? 0 : userData!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (tag == null ? 0 : tag!.hashCode) +
-    (osId == null ? 0 : osId!.hashCode) +
-    (appId == null ? 0 : appId!.hashCode) +
-    (imageId == null ? 0 : imageId!.hashCode) +
-    (enableIpv6 == null ? 0 : enableIpv6!.hashCode) +
-    (attachVpc2.hashCode) +
-    (detachVpc2.hashCode) +
-    (enableVpc2 == null ? 0 : enableVpc2!.hashCode) +
-    (tags.hashCode) +
-    (userScheme == null ? 0 : userScheme!.hashCode) +
-    (mdiskMode == null ? 0 : mdiskMode!.hashCode) +
-    (ipxeChainUrl == null ? 0 : ipxeChainUrl!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (userData == null ? 0 : userData!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (tag == null ? 0 : tag!.hashCode) +
+      (osId == null ? 0 : osId!.hashCode) +
+      (appId == null ? 0 : appId!.hashCode) +
+      (imageId == null ? 0 : imageId!.hashCode) +
+      (enableIpv6 == null ? 0 : enableIpv6!.hashCode) +
+      (attachVpc2.hashCode) +
+      (detachVpc2.hashCode) +
+      (enableVpc2 == null ? 0 : enableVpc2!.hashCode) +
+      (tags.hashCode) +
+      (userScheme == null ? 0 : userScheme!.hashCode) +
+      (mdiskMode == null ? 0 : mdiskMode!.hashCode) +
+      (ipxeChainUrl == null ? 0 : ipxeChainUrl!.hashCode);
 
   @override
-  String toString() => 'UpdateBaremetalRequest[userData=$userData, label=$label, tag=$tag, osId=$osId, appId=$appId, imageId=$imageId, enableIpv6=$enableIpv6, attachVpc2=$attachVpc2, detachVpc2=$detachVpc2, enableVpc2=$enableVpc2, tags=$tags, userScheme=$userScheme, mdiskMode=$mdiskMode, ipxeChainUrl=$ipxeChainUrl]';
+  String toString() =>
+      'UpdateBaremetalRequest[userData=$userData, label=$label, tag=$tag, osId=$osId, appId=$appId, imageId=$imageId, enableIpv6=$enableIpv6, attachVpc2=$attachVpc2, detachVpc2=$detachVpc2, enableVpc2=$enableVpc2, tags=$tags, userScheme=$userScheme, mdiskMode=$mdiskMode, ipxeChainUrl=$ipxeChainUrl]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -212,14 +215,14 @@ class UpdateBaremetalRequest {
     } else {
       json[r'enable_ipv6'] = null;
     }
-      json[r'attach_vpc2'] = this.attachVpc2;
-      json[r'detach_vpc2'] = this.detachVpc2;
+    json[r'attach_vpc2'] = this.attachVpc2;
+    json[r'detach_vpc2'] = this.detachVpc2;
     if (this.enableVpc2 != null) {
       json[r'enable_vpc2'] = this.enableVpc2;
     } else {
       json[r'enable_vpc2'] = null;
     }
-      json[r'tags'] = this.tags;
+    json[r'tags'] = this.tags;
     if (this.userScheme != null) {
       json[r'user_scheme'] = this.userScheme;
     } else {
@@ -250,8 +253,10 @@ class UpdateBaremetalRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateBaremetalRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateBaremetalRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateBaremetalRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateBaremetalRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -265,10 +270,14 @@ class UpdateBaremetalRequest {
         imageId: mapValueOfType<String>(json, r'image_id'),
         enableIpv6: mapValueOfType<bool>(json, r'enable_ipv6'),
         attachVpc2: json[r'attach_vpc2'] is Iterable
-            ? (json[r'attach_vpc2'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'attach_vpc2'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         detachVpc2: json[r'detach_vpc2'] is Iterable
-            ? (json[r'detach_vpc2'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'detach_vpc2'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         enableVpc2: mapValueOfType<bool>(json, r'enable_vpc2'),
         tags: json[r'tags'] is Iterable
@@ -282,7 +291,10 @@ class UpdateBaremetalRequest {
     return null;
   }
 
-  static List<UpdateBaremetalRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateBaremetalRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateBaremetalRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -310,20 +322,24 @@ class UpdateBaremetalRequest {
   }
 
   // maps a json object with a list of UpdateBaremetalRequest-objects as value to a dart map
-  static Map<String, List<UpdateBaremetalRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateBaremetalRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateBaremetalRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateBaremetalRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateBaremetalRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

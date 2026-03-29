@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class FirewallApi {
-  FirewallApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  FirewallApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,7 +26,9 @@ class FirewallApi {
   ///
   /// * [CreateFirewallGroupRequest] createFirewallGroupRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createFirewallGroupWithHttpInfo({ CreateFirewallGroupRequest? createFirewallGroupRequest, }) async {
+  Future<Response> createFirewallGroupWithHttpInfo({
+    CreateFirewallGroupRequest? createFirewallGroupRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/firewalls';
 
@@ -38,7 +40,6 @@ class FirewallApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +60,24 @@ class FirewallApi {
   ///
   /// * [CreateFirewallGroupRequest] createFirewallGroupRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateFirewallGroup201Response?> createFirewallGroup({ CreateFirewallGroupRequest? createFirewallGroupRequest, }) async {
-    final response = await createFirewallGroupWithHttpInfo( createFirewallGroupRequest: createFirewallGroupRequest, );
+  Future<CreateFirewallGroup201Response?> createFirewallGroup({
+    CreateFirewallGroupRequest? createFirewallGroupRequest,
+  }) async {
+    final response = await createFirewallGroupWithHttpInfo(
+      createFirewallGroupRequest: createFirewallGroupRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateFirewallGroup201Response',) as CreateFirewallGroup201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateFirewallGroup201Response',
+      ) as CreateFirewallGroup201Response;
     }
     return null;
   }
@@ -84,10 +92,12 @@ class FirewallApi {
   ///
   /// * [String] firewallGroupId (required):
   ///   The [Firewall Group id](#operation/list-firewall-groups).
-  Future<Response> deleteFirewallGroupWithHttpInfo(String firewallGroupId,) async {
+  Future<Response> deleteFirewallGroupWithHttpInfo(
+    String firewallGroupId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/firewalls/{firewall-group-id}'
-      .replaceAll('{firewall-group-id}', firewallGroupId);
+        .replaceAll('{firewall-group-id}', firewallGroupId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -97,7 +107,6 @@ class FirewallApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -118,8 +127,12 @@ class FirewallApi {
   ///
   /// * [String] firewallGroupId (required):
   ///   The [Firewall Group id](#operation/list-firewall-groups).
-  Future<void> deleteFirewallGroup(String firewallGroupId,) async {
-    final response = await deleteFirewallGroupWithHttpInfo(firewallGroupId,);
+  Future<void> deleteFirewallGroup(
+    String firewallGroupId,
+  ) async {
+    final response = await deleteFirewallGroupWithHttpInfo(
+      firewallGroupId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -138,11 +151,14 @@ class FirewallApi {
   ///
   /// * [String] firewallRuleId (required):
   ///   The [Firewall Rule id](#operation/list-firewall-group-rules).
-  Future<Response> deleteFirewallGroupRuleWithHttpInfo(String firewallGroupId, String firewallRuleId,) async {
+  Future<Response> deleteFirewallGroupRuleWithHttpInfo(
+    String firewallGroupId,
+    String firewallRuleId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/firewalls/{firewall-group-id}/rules/{firewall-rule-id}'
-      .replaceAll('{firewall-group-id}', firewallGroupId)
-      .replaceAll('{firewall-rule-id}', firewallRuleId);
+        .replaceAll('{firewall-group-id}', firewallGroupId)
+        .replaceAll('{firewall-rule-id}', firewallRuleId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -152,7 +168,6 @@ class FirewallApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -176,8 +191,14 @@ class FirewallApi {
   ///
   /// * [String] firewallRuleId (required):
   ///   The [Firewall Rule id](#operation/list-firewall-group-rules).
-  Future<void> deleteFirewallGroupRule(String firewallGroupId, String firewallRuleId,) async {
-    final response = await deleteFirewallGroupRuleWithHttpInfo(firewallGroupId, firewallRuleId,);
+  Future<void> deleteFirewallGroupRule(
+    String firewallGroupId,
+    String firewallRuleId,
+  ) async {
+    final response = await deleteFirewallGroupRuleWithHttpInfo(
+      firewallGroupId,
+      firewallRuleId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -193,10 +214,12 @@ class FirewallApi {
   ///
   /// * [String] firewallGroupId (required):
   ///   The [Firewall Group id](#operation/list-firewall-groups).
-  Future<Response> getFirewallGroupWithHttpInfo(String firewallGroupId,) async {
+  Future<Response> getFirewallGroupWithHttpInfo(
+    String firewallGroupId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/firewalls/{firewall-group-id}'
-      .replaceAll('{firewall-group-id}', firewallGroupId);
+        .replaceAll('{firewall-group-id}', firewallGroupId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -206,7 +229,6 @@ class FirewallApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -227,17 +249,24 @@ class FirewallApi {
   ///
   /// * [String] firewallGroupId (required):
   ///   The [Firewall Group id](#operation/list-firewall-groups).
-  Future<CreateFirewallGroup201Response?> getFirewallGroup(String firewallGroupId,) async {
-    final response = await getFirewallGroupWithHttpInfo(firewallGroupId,);
+  Future<CreateFirewallGroup201Response?> getFirewallGroup(
+    String firewallGroupId,
+  ) async {
+    final response = await getFirewallGroupWithHttpInfo(
+      firewallGroupId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateFirewallGroup201Response',) as CreateFirewallGroup201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateFirewallGroup201Response',
+      ) as CreateFirewallGroup201Response;
     }
     return null;
   }
@@ -255,11 +284,14 @@ class FirewallApi {
   ///
   /// * [String] firewallRuleId (required):
   ///   The [Firewall Rule id](#operation/list-firewall-group-rules).
-  Future<Response> getFirewallGroupRuleWithHttpInfo(String firewallGroupId, String firewallRuleId,) async {
+  Future<Response> getFirewallGroupRuleWithHttpInfo(
+    String firewallGroupId,
+    String firewallRuleId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/firewalls/{firewall-group-id}/rules/{firewall-rule-id}'
-      .replaceAll('{firewall-group-id}', firewallGroupId)
-      .replaceAll('{firewall-rule-id}', firewallRuleId);
+        .replaceAll('{firewall-group-id}', firewallGroupId)
+        .replaceAll('{firewall-rule-id}', firewallRuleId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -269,7 +301,6 @@ class FirewallApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -293,17 +324,26 @@ class FirewallApi {
   ///
   /// * [String] firewallRuleId (required):
   ///   The [Firewall Rule id](#operation/list-firewall-group-rules).
-  Future<PostFirewallsFirewallGroupIdRules201Response?> getFirewallGroupRule(String firewallGroupId, String firewallRuleId,) async {
-    final response = await getFirewallGroupRuleWithHttpInfo(firewallGroupId, firewallRuleId,);
+  Future<PostFirewallsFirewallGroupIdRules201Response?> getFirewallGroupRule(
+    String firewallGroupId,
+    String firewallRuleId,
+  ) async {
+    final response = await getFirewallGroupRuleWithHttpInfo(
+      firewallGroupId,
+      firewallRuleId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'PostFirewallsFirewallGroupIdRules201Response',) as PostFirewallsFirewallGroupIdRules201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'PostFirewallsFirewallGroupIdRules201Response',
+      ) as PostFirewallsFirewallGroupIdRules201Response;
     }
     return null;
   }
@@ -324,10 +364,14 @@ class FirewallApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listFirewallGroupRulesWithHttpInfo(String firewallGroupId, { int? perPage, String? cursor, }) async {
+  Future<Response> listFirewallGroupRulesWithHttpInfo(
+    String firewallGroupId, {
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/firewalls/{firewall-group-id}/rules'
-      .replaceAll('{firewall-group-id}', firewallGroupId);
+        .replaceAll('{firewall-group-id}', firewallGroupId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -345,7 +389,6 @@ class FirewallApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -371,17 +414,28 @@ class FirewallApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListFirewallGroupRules200Response?> listFirewallGroupRules(String firewallGroupId, { int? perPage, String? cursor, }) async {
-    final response = await listFirewallGroupRulesWithHttpInfo(firewallGroupId,  perPage: perPage, cursor: cursor, );
+  Future<ListFirewallGroupRules200Response?> listFirewallGroupRules(
+    String firewallGroupId, {
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listFirewallGroupRulesWithHttpInfo(
+      firewallGroupId,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListFirewallGroupRules200Response',) as ListFirewallGroupRules200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListFirewallGroupRules200Response',
+      ) as ListFirewallGroupRules200Response;
     }
     return null;
   }
@@ -399,7 +453,10 @@ class FirewallApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listFirewallGroupsWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listFirewallGroupsWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/firewalls';
 
@@ -419,7 +476,6 @@ class FirewallApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -442,17 +498,26 @@ class FirewallApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListFirewallGroups200Response?> listFirewallGroups({ int? perPage, String? cursor, }) async {
-    final response = await listFirewallGroupsWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListFirewallGroups200Response?> listFirewallGroups({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listFirewallGroupsWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListFirewallGroups200Response',) as ListFirewallGroups200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListFirewallGroups200Response',
+      ) as ListFirewallGroups200Response;
     }
     return null;
   }
@@ -470,10 +535,14 @@ class FirewallApi {
   ///
   /// * [PostFirewallsFirewallGroupIdRulesRequest] postFirewallsFirewallGroupIdRulesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> postFirewallsFirewallGroupIdRulesWithHttpInfo(String firewallGroupId, { PostFirewallsFirewallGroupIdRulesRequest? postFirewallsFirewallGroupIdRulesRequest, }) async {
+  Future<Response> postFirewallsFirewallGroupIdRulesWithHttpInfo(
+    String firewallGroupId, {
+    PostFirewallsFirewallGroupIdRulesRequest?
+        postFirewallsFirewallGroupIdRulesRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/firewalls/{firewall-group-id}/rules'
-      .replaceAll('{firewall-group-id}', firewallGroupId);
+        .replaceAll('{firewall-group-id}', firewallGroupId);
 
     // ignore: prefer_final_locals
     Object? postBody = postFirewallsFirewallGroupIdRulesRequest;
@@ -483,7 +552,6 @@ class FirewallApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -507,17 +575,29 @@ class FirewallApi {
   ///
   /// * [PostFirewallsFirewallGroupIdRulesRequest] postFirewallsFirewallGroupIdRulesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<PostFirewallsFirewallGroupIdRules201Response?> postFirewallsFirewallGroupIdRules(String firewallGroupId, { PostFirewallsFirewallGroupIdRulesRequest? postFirewallsFirewallGroupIdRulesRequest, }) async {
-    final response = await postFirewallsFirewallGroupIdRulesWithHttpInfo(firewallGroupId,  postFirewallsFirewallGroupIdRulesRequest: postFirewallsFirewallGroupIdRulesRequest, );
+  Future<PostFirewallsFirewallGroupIdRules201Response?>
+      postFirewallsFirewallGroupIdRules(
+    String firewallGroupId, {
+    PostFirewallsFirewallGroupIdRulesRequest?
+        postFirewallsFirewallGroupIdRulesRequest,
+  }) async {
+    final response = await postFirewallsFirewallGroupIdRulesWithHttpInfo(
+      firewallGroupId,
+      postFirewallsFirewallGroupIdRulesRequest:
+          postFirewallsFirewallGroupIdRulesRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'PostFirewallsFirewallGroupIdRules201Response',) as PostFirewallsFirewallGroupIdRules201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'PostFirewallsFirewallGroupIdRules201Response',
+      ) as PostFirewallsFirewallGroupIdRules201Response;
     }
     return null;
   }
@@ -535,10 +615,13 @@ class FirewallApi {
   ///
   /// * [UpdateFirewallGroupRequest] updateFirewallGroupRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateFirewallGroupWithHttpInfo(String firewallGroupId, { UpdateFirewallGroupRequest? updateFirewallGroupRequest, }) async {
+  Future<Response> updateFirewallGroupWithHttpInfo(
+    String firewallGroupId, {
+    UpdateFirewallGroupRequest? updateFirewallGroupRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/firewalls/{firewall-group-id}'
-      .replaceAll('{firewall-group-id}', firewallGroupId);
+        .replaceAll('{firewall-group-id}', firewallGroupId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateFirewallGroupRequest;
@@ -548,7 +631,6 @@ class FirewallApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -572,8 +654,14 @@ class FirewallApi {
   ///
   /// * [UpdateFirewallGroupRequest] updateFirewallGroupRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateFirewallGroup(String firewallGroupId, { UpdateFirewallGroupRequest? updateFirewallGroupRequest, }) async {
-    final response = await updateFirewallGroupWithHttpInfo(firewallGroupId,  updateFirewallGroupRequest: updateFirewallGroupRequest, );
+  Future<void> updateFirewallGroup(
+    String firewallGroupId, {
+    UpdateFirewallGroupRequest? updateFirewallGroupRequest,
+  }) async {
+    final response = await updateFirewallGroupWithHttpInfo(
+      firewallGroupId,
+      updateFirewallGroupRequest: updateFirewallGroupRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

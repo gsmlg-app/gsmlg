@@ -115,34 +115,37 @@ class ObjectStorages {
   ObjectStoragesTier? tier;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ObjectStorages &&
-    other.id == id &&
-    other.dateCreated == dateCreated &&
-    other.clusterId == clusterId &&
-    other.region == region &&
-    other.label == label &&
-    other.status == status &&
-    other.s3Hostname == s3Hostname &&
-    other.s3AccessKey == s3AccessKey &&
-    other.s3SecretKey == s3SecretKey &&
-    other.tier == tier;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ObjectStorages &&
+          other.id == id &&
+          other.dateCreated == dateCreated &&
+          other.clusterId == clusterId &&
+          other.region == region &&
+          other.label == label &&
+          other.status == status &&
+          other.s3Hostname == s3Hostname &&
+          other.s3AccessKey == s3AccessKey &&
+          other.s3SecretKey == s3SecretKey &&
+          other.tier == tier;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (clusterId == null ? 0 : clusterId!.hashCode) +
-    (region == null ? 0 : region!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (status == null ? 0 : status!.hashCode) +
-    (s3Hostname == null ? 0 : s3Hostname!.hashCode) +
-    (s3AccessKey == null ? 0 : s3AccessKey!.hashCode) +
-    (s3SecretKey == null ? 0 : s3SecretKey!.hashCode) +
-    (tier == null ? 0 : tier!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (clusterId == null ? 0 : clusterId!.hashCode) +
+      (region == null ? 0 : region!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (status == null ? 0 : status!.hashCode) +
+      (s3Hostname == null ? 0 : s3Hostname!.hashCode) +
+      (s3AccessKey == null ? 0 : s3AccessKey!.hashCode) +
+      (s3SecretKey == null ? 0 : s3SecretKey!.hashCode) +
+      (tier == null ? 0 : tier!.hashCode);
 
   @override
-  String toString() => 'ObjectStorages[id=$id, dateCreated=$dateCreated, clusterId=$clusterId, region=$region, label=$label, status=$status, s3Hostname=$s3Hostname, s3AccessKey=$s3AccessKey, s3SecretKey=$s3SecretKey, tier=$tier]';
+  String toString() =>
+      'ObjectStorages[id=$id, dateCreated=$dateCreated, clusterId=$clusterId, region=$region, label=$label, status=$status, s3Hostname=$s3Hostname, s3AccessKey=$s3AccessKey, s3SecretKey=$s3SecretKey, tier=$tier]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -211,8 +214,10 @@ class ObjectStorages {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "ObjectStorages[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "ObjectStorages[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "ObjectStorages[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "ObjectStorages[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -233,7 +238,10 @@ class ObjectStorages {
     return null;
   }
 
-  static List<ObjectStorages> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<ObjectStorages> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <ObjectStorages>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -261,20 +269,24 @@ class ObjectStorages {
   }
 
   // maps a json object with a list of ObjectStorages-objects as value to a dart map
-  static Map<String, List<ObjectStorages>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<ObjectStorages>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<ObjectStorages>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = ObjectStorages.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = ObjectStorages.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

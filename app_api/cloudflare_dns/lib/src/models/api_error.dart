@@ -12,9 +12,10 @@ class ApiError {
     this.code,
     this.message,
   });
-  
-  factory ApiError.fromJson(Map<String, Object?> json) => _$ApiErrorFromJson(json);
-  
+
+  factory ApiError.fromJson(Map<String, Object?> json) =>
+      _$ApiErrorFromJson(json);
+
   final int? code;
   final String? message;
 

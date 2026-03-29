@@ -16,13 +16,13 @@ void main() {
   // final instance = LogMeta();
 
   group('test LogMeta', () {
-    // In the event that there are more logs found for a specified time period than can be returned, this field will contain a URL that can be used to request the next block of logs for the time period.  The new request is inclusive of the timestamp for the last logs from the previous request. This is done to avoid skipping over any logs that may have the same timestamp as the last log in the previous request, but which may not have been included in that response.  **Be aware that because of this there will be boundary duplicates between this new request and the previous one.** 
+    // In the event that there are more logs found for a specified time period than can be returned, this field will contain a URL that can be used to request the next block of logs for the time period.  The new request is inclusive of the timestamp for the last logs from the previous request. This is done to avoid skipping over any logs that may have the same timestamp as the last log in the previous request, but which may not have been included in that response.  **Be aware that because of this there will be boundary duplicates between this new request and the previous one.**
     // String nextPageUrl
     test('to test the property `nextPageUrl`', () async {
       // TODO
     });
 
-    // In the event that there are more logs found for a specified time period that can be returned, this field will be set with a UTC timestamp of where the logs were left off. 
+    // In the event that there are more logs found for a specified time period that can be returned, this field will be set with a UTC timestamp of where the logs were left off.
     // String continueTime
     test('to test the property `continueTime`', () async {
       // TODO
@@ -45,8 +45,5 @@ void main() {
     test('to test the property `totalCount`', () async {
       // TODO
     });
-
-
   });
-
 }

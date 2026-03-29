@@ -76,26 +76,29 @@ class DnsRecord {
   int? ttl;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is DnsRecord &&
-    other.id == id &&
-    other.type == type &&
-    other.name == name &&
-    other.data == data &&
-    other.priority == priority &&
-    other.ttl == ttl;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DnsRecord &&
+          other.id == id &&
+          other.type == type &&
+          other.name == name &&
+          other.data == data &&
+          other.priority == priority &&
+          other.ttl == ttl;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (type == null ? 0 : type!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (data == null ? 0 : data!.hashCode) +
-    (priority == null ? 0 : priority!.hashCode) +
-    (ttl == null ? 0 : ttl!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (type == null ? 0 : type!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (data == null ? 0 : data!.hashCode) +
+      (priority == null ? 0 : priority!.hashCode) +
+      (ttl == null ? 0 : ttl!.hashCode);
 
   @override
-  String toString() => 'DnsRecord[id=$id, type=$type, name=$name, data=$data, priority=$priority, ttl=$ttl]';
+  String toString() =>
+      'DnsRecord[id=$id, type=$type, name=$name, data=$data, priority=$priority, ttl=$ttl]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -144,8 +147,10 @@ class DnsRecord {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "DnsRecord[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "DnsRecord[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "DnsRecord[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "DnsRecord[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -162,7 +167,10 @@ class DnsRecord {
     return null;
   }
 
-  static List<DnsRecord> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<DnsRecord> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <DnsRecord>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -190,20 +198,24 @@ class DnsRecord {
   }
 
   // maps a json object with a list of DnsRecord-objects as value to a dart map
-  static Map<String, List<DnsRecord>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<DnsRecord>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<DnsRecord>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = DnsRecord.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = DnsRecord.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

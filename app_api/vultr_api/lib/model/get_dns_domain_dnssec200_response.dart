@@ -19,20 +19,22 @@ class GetDnsDomainDnssec200Response {
   List<String> dnsSec;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetDnsDomainDnssec200Response &&
-    _deepEquality.equals(other.dnsSec, dnsSec);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetDnsDomainDnssec200Response &&
+          _deepEquality.equals(other.dnsSec, dnsSec);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (dnsSec.hashCode);
+      // ignore: unnecessary_parenthesis
+      (dnsSec.hashCode);
 
   @override
   String toString() => 'GetDnsDomainDnssec200Response[dnsSec=$dnsSec]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'dns_sec'] = this.dnsSec;
+    json[r'dns_sec'] = this.dnsSec;
     return json;
   }
 
@@ -48,22 +50,29 @@ class GetDnsDomainDnssec200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetDnsDomainDnssec200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetDnsDomainDnssec200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetDnsDomainDnssec200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetDnsDomainDnssec200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return GetDnsDomainDnssec200Response(
         dnsSec: json[r'dns_sec'] is Iterable
-            ? (json[r'dns_sec'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'dns_sec'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
       );
     }
     return null;
   }
 
-  static List<GetDnsDomainDnssec200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetDnsDomainDnssec200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetDnsDomainDnssec200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -91,20 +100,24 @@ class GetDnsDomainDnssec200Response {
   }
 
   // maps a json object with a list of GetDnsDomainDnssec200Response-objects as value to a dart map
-  static Map<String, List<GetDnsDomainDnssec200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetDnsDomainDnssec200Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetDnsDomainDnssec200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetDnsDomainDnssec200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetDnsDomainDnssec200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

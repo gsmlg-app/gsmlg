@@ -74,26 +74,29 @@ class VfsRegion {
   VfsRegionMinSizeGb? minSizeGb;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is VfsRegion &&
-    other.id == id &&
-    other.country == country &&
-    other.continent == continent &&
-    other.description == description &&
-    other.pricePerGb == pricePerGb &&
-    other.minSizeGb == minSizeGb;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VfsRegion &&
+          other.id == id &&
+          other.country == country &&
+          other.continent == continent &&
+          other.description == description &&
+          other.pricePerGb == pricePerGb &&
+          other.minSizeGb == minSizeGb;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (country == null ? 0 : country!.hashCode) +
-    (continent == null ? 0 : continent!.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (pricePerGb == null ? 0 : pricePerGb!.hashCode) +
-    (minSizeGb == null ? 0 : minSizeGb!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (country == null ? 0 : country!.hashCode) +
+      (continent == null ? 0 : continent!.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (pricePerGb == null ? 0 : pricePerGb!.hashCode) +
+      (minSizeGb == null ? 0 : minSizeGb!.hashCode);
 
   @override
-  String toString() => 'VfsRegion[id=$id, country=$country, continent=$continent, description=$description, pricePerGb=$pricePerGb, minSizeGb=$minSizeGb]';
+  String toString() =>
+      'VfsRegion[id=$id, country=$country, continent=$continent, description=$description, pricePerGb=$pricePerGb, minSizeGb=$minSizeGb]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -142,8 +145,10 @@ class VfsRegion {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "VfsRegion[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "VfsRegion[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "VfsRegion[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "VfsRegion[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -160,7 +165,10 @@ class VfsRegion {
     return null;
   }
 
-  static List<VfsRegion> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<VfsRegion> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <VfsRegion>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -188,20 +196,24 @@ class VfsRegion {
   }
 
   // maps a json object with a list of VfsRegion-objects as value to a dart map
-  static Map<String, List<VfsRegion>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<VfsRegion>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<VfsRegion>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = VfsRegion.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = VfsRegion.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

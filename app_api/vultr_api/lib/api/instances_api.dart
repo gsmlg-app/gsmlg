@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class InstancesApi {
-  InstancesApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  InstancesApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -28,10 +28,13 @@ class InstancesApi {
   ///
   /// * [AttachInstanceIsoRequest] attachInstanceIsoRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> attachInstanceIsoWithHttpInfo(String instanceId, { AttachInstanceIsoRequest? attachInstanceIsoRequest, }) async {
+  Future<Response> attachInstanceIsoWithHttpInfo(
+    String instanceId, {
+    AttachInstanceIsoRequest? attachInstanceIsoRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/iso/attach'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = attachInstanceIsoRequest;
@@ -41,7 +44,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -64,17 +66,26 @@ class InstancesApi {
   ///
   /// * [AttachInstanceIsoRequest] attachInstanceIsoRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<AttachInstanceIso202Response?> attachInstanceIso(String instanceId, { AttachInstanceIsoRequest? attachInstanceIsoRequest, }) async {
-    final response = await attachInstanceIsoWithHttpInfo(instanceId,  attachInstanceIsoRequest: attachInstanceIsoRequest, );
+  Future<AttachInstanceIso202Response?> attachInstanceIso(
+    String instanceId, {
+    AttachInstanceIsoRequest? attachInstanceIsoRequest,
+  }) async {
+    final response = await attachInstanceIsoWithHttpInfo(
+      instanceId,
+      attachInstanceIsoRequest: attachInstanceIsoRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'AttachInstanceIso202Response',) as AttachInstanceIso202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'AttachInstanceIso202Response',
+      ) as AttachInstanceIso202Response;
     }
     return null;
   }
@@ -92,10 +103,13 @@ class InstancesApi {
   ///
   /// * [AttachInstanceNetworkRequest] attachInstanceNetworkRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> attachInstanceNetworkWithHttpInfo(String instanceId, { AttachInstanceNetworkRequest? attachInstanceNetworkRequest, }) async {
+  Future<Response> attachInstanceNetworkWithHttpInfo(
+    String instanceId, {
+    AttachInstanceNetworkRequest? attachInstanceNetworkRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/private-networks/attach'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = attachInstanceNetworkRequest;
@@ -105,7 +119,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -129,8 +142,14 @@ class InstancesApi {
   ///
   /// * [AttachInstanceNetworkRequest] attachInstanceNetworkRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> attachInstanceNetwork(String instanceId, { AttachInstanceNetworkRequest? attachInstanceNetworkRequest, }) async {
-    final response = await attachInstanceNetworkWithHttpInfo(instanceId,  attachInstanceNetworkRequest: attachInstanceNetworkRequest, );
+  Future<void> attachInstanceNetwork(
+    String instanceId, {
+    AttachInstanceNetworkRequest? attachInstanceNetworkRequest,
+  }) async {
+    final response = await attachInstanceNetworkWithHttpInfo(
+      instanceId,
+      attachInstanceNetworkRequest: attachInstanceNetworkRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -149,10 +168,13 @@ class InstancesApi {
   ///
   /// * [AttachInstanceVpcRequest] attachInstanceVpcRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> attachInstanceVpcWithHttpInfo(String instanceId, { AttachInstanceVpcRequest? attachInstanceVpcRequest, }) async {
+  Future<Response> attachInstanceVpcWithHttpInfo(
+    String instanceId, {
+    AttachInstanceVpcRequest? attachInstanceVpcRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/vpcs/attach'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = attachInstanceVpcRequest;
@@ -163,7 +185,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -186,8 +207,14 @@ class InstancesApi {
   ///
   /// * [AttachInstanceVpcRequest] attachInstanceVpcRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> attachInstanceVpc(String instanceId, { AttachInstanceVpcRequest? attachInstanceVpcRequest, }) async {
-    final response = await attachInstanceVpcWithHttpInfo(instanceId,  attachInstanceVpcRequest: attachInstanceVpcRequest, );
+  Future<void> attachInstanceVpc(
+    String instanceId, {
+    AttachInstanceVpcRequest? attachInstanceVpcRequest,
+  }) async {
+    final response = await attachInstanceVpcWithHttpInfo(
+      instanceId,
+      attachInstanceVpcRequest: attachInstanceVpcRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -206,10 +233,13 @@ class InstancesApi {
   ///
   /// * [AttachInstanceVpc2Request] attachInstanceVpc2Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> attachInstanceVpc2WithHttpInfo(String instanceId, { AttachInstanceVpc2Request? attachInstanceVpc2Request, }) async {
+  Future<Response> attachInstanceVpc2WithHttpInfo(
+    String instanceId, {
+    AttachInstanceVpc2Request? attachInstanceVpc2Request,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/vpc2/attach'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = attachInstanceVpc2Request;
@@ -219,7 +249,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -243,8 +272,14 @@ class InstancesApi {
   ///
   /// * [AttachInstanceVpc2Request] attachInstanceVpc2Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> attachInstanceVpc2(String instanceId, { AttachInstanceVpc2Request? attachInstanceVpc2Request, }) async {
-    final response = await attachInstanceVpc2WithHttpInfo(instanceId,  attachInstanceVpc2Request: attachInstanceVpc2Request, );
+  Future<void> attachInstanceVpc2(
+    String instanceId, {
+    AttachInstanceVpc2Request? attachInstanceVpc2Request,
+  }) async {
+    final response = await attachInstanceVpc2WithHttpInfo(
+      instanceId,
+      attachInstanceVpc2Request: attachInstanceVpc2Request,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -260,7 +295,9 @@ class InstancesApi {
   ///
   /// * [CreateInstanceRequest] createInstanceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createInstanceWithHttpInfo({ CreateInstanceRequest? createInstanceRequest, }) async {
+  Future<Response> createInstanceWithHttpInfo({
+    CreateInstanceRequest? createInstanceRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances';
 
@@ -273,7 +310,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -293,17 +329,24 @@ class InstancesApi {
   ///
   /// * [CreateInstanceRequest] createInstanceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateInstance202Response?> createInstance({ CreateInstanceRequest? createInstanceRequest, }) async {
-    final response = await createInstanceWithHttpInfo( createInstanceRequest: createInstanceRequest, );
+  Future<CreateInstance202Response?> createInstance({
+    CreateInstanceRequest? createInstanceRequest,
+  }) async {
+    final response = await createInstanceWithHttpInfo(
+      createInstanceRequest: createInstanceRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateInstance202Response',) as CreateInstance202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateInstance202Response',
+      ) as CreateInstance202Response;
     }
     return null;
   }
@@ -321,10 +364,13 @@ class InstancesApi {
   ///
   /// * [CreateInstanceBackupScheduleRequest] createInstanceBackupScheduleRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createInstanceBackupScheduleWithHttpInfo(String instanceId, { CreateInstanceBackupScheduleRequest? createInstanceBackupScheduleRequest, }) async {
+  Future<Response> createInstanceBackupScheduleWithHttpInfo(
+    String instanceId, {
+    CreateInstanceBackupScheduleRequest? createInstanceBackupScheduleRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/backup-schedule'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = createInstanceBackupScheduleRequest;
@@ -335,7 +381,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -358,8 +403,14 @@ class InstancesApi {
   ///
   /// * [CreateInstanceBackupScheduleRequest] createInstanceBackupScheduleRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> createInstanceBackupSchedule(String instanceId, { CreateInstanceBackupScheduleRequest? createInstanceBackupScheduleRequest, }) async {
-    final response = await createInstanceBackupScheduleWithHttpInfo(instanceId,  createInstanceBackupScheduleRequest: createInstanceBackupScheduleRequest, );
+  Future<void> createInstanceBackupSchedule(
+    String instanceId, {
+    CreateInstanceBackupScheduleRequest? createInstanceBackupScheduleRequest,
+  }) async {
+    final response = await createInstanceBackupScheduleWithHttpInfo(
+      instanceId,
+      createInstanceBackupScheduleRequest: createInstanceBackupScheduleRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -378,10 +429,13 @@ class InstancesApi {
   ///
   /// * [CreateInstanceIpv4Request] createInstanceIpv4Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createInstanceIpv4WithHttpInfo(String instanceId, { CreateInstanceIpv4Request? createInstanceIpv4Request, }) async {
+  Future<Response> createInstanceIpv4WithHttpInfo(
+    String instanceId, {
+    CreateInstanceIpv4Request? createInstanceIpv4Request,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/ipv4'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = createInstanceIpv4Request;
@@ -392,7 +446,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -415,24 +468,33 @@ class InstancesApi {
   ///
   /// * [CreateInstanceIpv4Request] createInstanceIpv4Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Object?> createInstanceIpv4(String instanceId, { CreateInstanceIpv4Request? createInstanceIpv4Request, }) async {
-    final response = await createInstanceIpv4WithHttpInfo(instanceId,  createInstanceIpv4Request: createInstanceIpv4Request, );
+  Future<Object?> createInstanceIpv4(
+    String instanceId, {
+    CreateInstanceIpv4Request? createInstanceIpv4Request,
+  }) async {
+    final response = await createInstanceIpv4WithHttpInfo(
+      instanceId,
+      createInstanceIpv4Request: createInstanceIpv4Request,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'Object',) as Object;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'Object',
+      ) as Object;
     }
     return null;
   }
 
   /// Create Instance Reverse IPv4
   ///
-  /// Create a reverse IPv4 entry for an Instance. The `ip` and `reverse` attributes are required. 
+  /// Create a reverse IPv4 entry for an Instance. The `ip` and `reverse` attributes are required.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -443,10 +505,13 @@ class InstancesApi {
   ///
   /// * [CreateBaremetalReverseIpv4Request] createBaremetalReverseIpv4Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createInstanceReverseIpv4WithHttpInfo(String instanceId, { CreateBaremetalReverseIpv4Request? createBaremetalReverseIpv4Request, }) async {
+  Future<Response> createInstanceReverseIpv4WithHttpInfo(
+    String instanceId, {
+    CreateBaremetalReverseIpv4Request? createBaremetalReverseIpv4Request,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/ipv4/reverse'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = createBaremetalReverseIpv4Request;
@@ -457,7 +522,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -471,7 +535,7 @@ class InstancesApi {
 
   /// Create Instance Reverse IPv4
   ///
-  /// Create a reverse IPv4 entry for an Instance. The `ip` and `reverse` attributes are required. 
+  /// Create a reverse IPv4 entry for an Instance. The `ip` and `reverse` attributes are required.
   ///
   /// Parameters:
   ///
@@ -480,8 +544,14 @@ class InstancesApi {
   ///
   /// * [CreateBaremetalReverseIpv4Request] createBaremetalReverseIpv4Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> createInstanceReverseIpv4(String instanceId, { CreateBaremetalReverseIpv4Request? createBaremetalReverseIpv4Request, }) async {
-    final response = await createInstanceReverseIpv4WithHttpInfo(instanceId,  createBaremetalReverseIpv4Request: createBaremetalReverseIpv4Request, );
+  Future<void> createInstanceReverseIpv4(
+    String instanceId, {
+    CreateBaremetalReverseIpv4Request? createBaremetalReverseIpv4Request,
+  }) async {
+    final response = await createInstanceReverseIpv4WithHttpInfo(
+      instanceId,
+      createBaremetalReverseIpv4Request: createBaremetalReverseIpv4Request,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -500,10 +570,13 @@ class InstancesApi {
   ///
   /// * [CreateBaremetalReverseIpv6Request] createBaremetalReverseIpv6Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createInstanceReverseIpv6WithHttpInfo(String instanceId, { CreateBaremetalReverseIpv6Request? createBaremetalReverseIpv6Request, }) async {
+  Future<Response> createInstanceReverseIpv6WithHttpInfo(
+    String instanceId, {
+    CreateBaremetalReverseIpv6Request? createBaremetalReverseIpv6Request,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/ipv6/reverse'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = createBaremetalReverseIpv6Request;
@@ -514,7 +587,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -537,8 +609,14 @@ class InstancesApi {
   ///
   /// * [CreateBaremetalReverseIpv6Request] createBaremetalReverseIpv6Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> createInstanceReverseIpv6(String instanceId, { CreateBaremetalReverseIpv6Request? createBaremetalReverseIpv6Request, }) async {
-    final response = await createInstanceReverseIpv6WithHttpInfo(instanceId,  createBaremetalReverseIpv6Request: createBaremetalReverseIpv6Request, );
+  Future<void> createInstanceReverseIpv6(
+    String instanceId, {
+    CreateBaremetalReverseIpv6Request? createBaremetalReverseIpv6Request,
+  }) async {
+    final response = await createInstanceReverseIpv6WithHttpInfo(
+      instanceId,
+      createBaremetalReverseIpv6Request: createBaremetalReverseIpv6Request,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -554,10 +632,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> deleteInstanceWithHttpInfo(String instanceId,) async {
+  Future<Response> deleteInstanceWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/instances/{instance-id}'
-      .replaceAll('{instance-id}', instanceId);
+    final path =
+        r'/instances/{instance-id}'.replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -567,7 +647,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -588,8 +667,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<void> deleteInstance(String instanceId,) async {
-    final response = await deleteInstanceWithHttpInfo(instanceId,);
+  Future<void> deleteInstance(
+    String instanceId,
+  ) async {
+    final response = await deleteInstanceWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -608,11 +691,14 @@ class InstancesApi {
   ///
   /// * [String] ipv4 (required):
   ///   The IPv4 address.
-  Future<Response> deleteInstanceIpv4WithHttpInfo(String instanceId, String ipv4,) async {
+  Future<Response> deleteInstanceIpv4WithHttpInfo(
+    String instanceId,
+    String ipv4,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/ipv4/{ipv4}'
-      .replaceAll('{instance-id}', instanceId)
-      .replaceAll('{ipv4}', ipv4);
+        .replaceAll('{instance-id}', instanceId)
+        .replaceAll('{ipv4}', ipv4);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -622,7 +708,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -646,8 +731,14 @@ class InstancesApi {
   ///
   /// * [String] ipv4 (required):
   ///   The IPv4 address.
-  Future<void> deleteInstanceIpv4(String instanceId, String ipv4,) async {
-    final response = await deleteInstanceIpv4WithHttpInfo(instanceId, ipv4,);
+  Future<void> deleteInstanceIpv4(
+    String instanceId,
+    String ipv4,
+  ) async {
+    final response = await deleteInstanceIpv4WithHttpInfo(
+      instanceId,
+      ipv4,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -666,11 +757,14 @@ class InstancesApi {
   ///
   /// * [String] ipv6 (required):
   ///   The IPv6 address.
-  Future<Response> deleteInstanceReverseIpv6WithHttpInfo(String instanceId, String ipv6,) async {
+  Future<Response> deleteInstanceReverseIpv6WithHttpInfo(
+    String instanceId,
+    String ipv6,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/ipv6/reverse/{ipv6}'
-      .replaceAll('{instance-id}', instanceId)
-      .replaceAll('{ipv6}', ipv6);
+        .replaceAll('{instance-id}', instanceId)
+        .replaceAll('{ipv6}', ipv6);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -680,7 +774,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -704,8 +797,14 @@ class InstancesApi {
   ///
   /// * [String] ipv6 (required):
   ///   The IPv6 address.
-  Future<void> deleteInstanceReverseIpv6(String instanceId, String ipv6,) async {
-    final response = await deleteInstanceReverseIpv6WithHttpInfo(instanceId, ipv6,);
+  Future<void> deleteInstanceReverseIpv6(
+    String instanceId,
+    String ipv6,
+  ) async {
+    final response = await deleteInstanceReverseIpv6WithHttpInfo(
+      instanceId,
+      ipv6,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -721,10 +820,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> detachInstanceIsoWithHttpInfo(String instanceId,) async {
+  Future<Response> detachInstanceIsoWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/iso/detach'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -734,7 +835,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -755,17 +855,24 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<DetachInstanceIso202Response?> detachInstanceIso(String instanceId,) async {
-    final response = await detachInstanceIsoWithHttpInfo(instanceId,);
+  Future<DetachInstanceIso202Response?> detachInstanceIso(
+    String instanceId,
+  ) async {
+    final response = await detachInstanceIsoWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'DetachInstanceIso202Response',) as DetachInstanceIso202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'DetachInstanceIso202Response',
+      ) as DetachInstanceIso202Response;
     }
     return null;
   }
@@ -783,10 +890,13 @@ class InstancesApi {
   ///
   /// * [DetachInstanceNetworkRequest] detachInstanceNetworkRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> detachInstanceNetworkWithHttpInfo(String instanceId, { DetachInstanceNetworkRequest? detachInstanceNetworkRequest, }) async {
+  Future<Response> detachInstanceNetworkWithHttpInfo(
+    String instanceId, {
+    DetachInstanceNetworkRequest? detachInstanceNetworkRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/private-networks/detach'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = detachInstanceNetworkRequest;
@@ -797,7 +907,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -820,8 +929,14 @@ class InstancesApi {
   ///
   /// * [DetachInstanceNetworkRequest] detachInstanceNetworkRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> detachInstanceNetwork(String instanceId, { DetachInstanceNetworkRequest? detachInstanceNetworkRequest, }) async {
-    final response = await detachInstanceNetworkWithHttpInfo(instanceId,  detachInstanceNetworkRequest: detachInstanceNetworkRequest, );
+  Future<void> detachInstanceNetwork(
+    String instanceId, {
+    DetachInstanceNetworkRequest? detachInstanceNetworkRequest,
+  }) async {
+    final response = await detachInstanceNetworkWithHttpInfo(
+      instanceId,
+      detachInstanceNetworkRequest: detachInstanceNetworkRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -840,10 +955,13 @@ class InstancesApi {
   ///
   /// * [DetachInstanceVpcRequest] detachInstanceVpcRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> detachInstanceVpcWithHttpInfo(String instanceId, { DetachInstanceVpcRequest? detachInstanceVpcRequest, }) async {
+  Future<Response> detachInstanceVpcWithHttpInfo(
+    String instanceId, {
+    DetachInstanceVpcRequest? detachInstanceVpcRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/vpcs/detach'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = detachInstanceVpcRequest;
@@ -854,7 +972,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -877,8 +994,14 @@ class InstancesApi {
   ///
   /// * [DetachInstanceVpcRequest] detachInstanceVpcRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> detachInstanceVpc(String instanceId, { DetachInstanceVpcRequest? detachInstanceVpcRequest, }) async {
-    final response = await detachInstanceVpcWithHttpInfo(instanceId,  detachInstanceVpcRequest: detachInstanceVpcRequest, );
+  Future<void> detachInstanceVpc(
+    String instanceId, {
+    DetachInstanceVpcRequest? detachInstanceVpcRequest,
+  }) async {
+    final response = await detachInstanceVpcWithHttpInfo(
+      instanceId,
+      detachInstanceVpcRequest: detachInstanceVpcRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -897,10 +1020,13 @@ class InstancesApi {
   ///
   /// * [DetachInstanceVpc2Request] detachInstanceVpc2Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> detachInstanceVpc2WithHttpInfo(String instanceId, { DetachInstanceVpc2Request? detachInstanceVpc2Request, }) async {
+  Future<Response> detachInstanceVpc2WithHttpInfo(
+    String instanceId, {
+    DetachInstanceVpc2Request? detachInstanceVpc2Request,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/vpc2/detach'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = detachInstanceVpc2Request;
@@ -910,7 +1036,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -934,8 +1059,14 @@ class InstancesApi {
   ///
   /// * [DetachInstanceVpc2Request] detachInstanceVpc2Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> detachInstanceVpc2(String instanceId, { DetachInstanceVpc2Request? detachInstanceVpc2Request, }) async {
-    final response = await detachInstanceVpc2WithHttpInfo(instanceId,  detachInstanceVpc2Request: detachInstanceVpc2Request, );
+  Future<void> detachInstanceVpc2(
+    String instanceId, {
+    DetachInstanceVpc2Request? detachInstanceVpc2Request,
+  }) async {
+    final response = await detachInstanceVpc2WithHttpInfo(
+      instanceId,
+      detachInstanceVpc2Request: detachInstanceVpc2Request,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -951,10 +1082,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> getInstanceWithHttpInfo(String instanceId,) async {
+  Future<Response> getInstanceWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/instances/{instance-id}'
-      .replaceAll('{instance-id}', instanceId);
+    final path =
+        r'/instances/{instance-id}'.replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -964,7 +1097,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -985,17 +1117,24 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<GetInstance200Response?> getInstance(String instanceId,) async {
-    final response = await getInstanceWithHttpInfo(instanceId,);
+  Future<GetInstance200Response?> getInstance(
+    String instanceId,
+  ) async {
+    final response = await getInstanceWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInstance200Response',) as GetInstance200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInstance200Response',
+      ) as GetInstance200Response;
     }
     return null;
   }
@@ -1010,10 +1149,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> getInstanceBackupScheduleWithHttpInfo(String instanceId,) async {
+  Future<Response> getInstanceBackupScheduleWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/backup-schedule'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1023,7 +1164,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1044,17 +1184,24 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<GetInstanceBackupSchedule200Response?> getInstanceBackupSchedule(String instanceId,) async {
-    final response = await getInstanceBackupScheduleWithHttpInfo(instanceId,);
+  Future<GetInstanceBackupSchedule200Response?> getInstanceBackupSchedule(
+    String instanceId,
+  ) async {
+    final response = await getInstanceBackupScheduleWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInstanceBackupSchedule200Response',) as GetInstanceBackupSchedule200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInstanceBackupSchedule200Response',
+      ) as GetInstanceBackupSchedule200Response;
     }
     return null;
   }
@@ -1072,10 +1219,13 @@ class InstancesApi {
   ///
   /// * [int] dateRange:
   ///   The range of days to include, represented as the number of days relative to the current date. Default 30, Minimum 1 and Max 180.
-  Future<Response> getInstanceBandwidthWithHttpInfo(String instanceId, { int? dateRange, }) async {
+  Future<Response> getInstanceBandwidthWithHttpInfo(
+    String instanceId, {
+    int? dateRange,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/bandwidth'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1090,7 +1240,6 @@ class InstancesApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -1113,17 +1262,26 @@ class InstancesApi {
   ///
   /// * [int] dateRange:
   ///   The range of days to include, represented as the number of days relative to the current date. Default 30, Minimum 1 and Max 180.
-  Future<GetBandwidthBaremetal200Response?> getInstanceBandwidth(String instanceId, { int? dateRange, }) async {
-    final response = await getInstanceBandwidthWithHttpInfo(instanceId,  dateRange: dateRange, );
+  Future<GetBandwidthBaremetal200Response?> getInstanceBandwidth(
+    String instanceId, {
+    int? dateRange,
+  }) async {
+    final response = await getInstanceBandwidthWithHttpInfo(
+      instanceId,
+      dateRange: dateRange,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetBandwidthBaremetal200Response',) as GetBandwidthBaremetal200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetBandwidthBaremetal200Response',
+      ) as GetBandwidthBaremetal200Response;
     }
     return null;
   }
@@ -1143,14 +1301,19 @@ class InstancesApi {
   ///   If `true`, includes information about the public network adapter (such as MAC address) with the `main_ip` entry.
   ///
   /// * [int] perPage:
-  ///   Number of items requested per page. Default is 100 and Max is 500. 
+  ///   Number of items requested per page. Default is 100 and Max is 500.
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> getInstanceIpv4WithHttpInfo(String instanceId, { bool? publicNetwork, int? perPage, String? cursor, }) async {
+  Future<Response> getInstanceIpv4WithHttpInfo(
+    String instanceId, {
+    bool? publicNetwork,
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/ipv4'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1171,7 +1334,6 @@ class InstancesApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -1196,21 +1358,34 @@ class InstancesApi {
   ///   If `true`, includes information about the public network adapter (such as MAC address) with the `main_ip` entry.
   ///
   /// * [int] perPage:
-  ///   Number of items requested per page. Default is 100 and Max is 500. 
+  ///   Number of items requested per page. Default is 100 and Max is 500.
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<GetIpv4Baremetal200Response?> getInstanceIpv4(String instanceId, { bool? publicNetwork, int? perPage, String? cursor, }) async {
-    final response = await getInstanceIpv4WithHttpInfo(instanceId,  publicNetwork: publicNetwork, perPage: perPage, cursor: cursor, );
+  Future<GetIpv4Baremetal200Response?> getInstanceIpv4(
+    String instanceId, {
+    bool? publicNetwork,
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await getInstanceIpv4WithHttpInfo(
+      instanceId,
+      publicNetwork: publicNetwork,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetIpv4Baremetal200Response',) as GetIpv4Baremetal200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetIpv4Baremetal200Response',
+      ) as GetIpv4Baremetal200Response;
     }
     return null;
   }
@@ -1225,10 +1400,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> getInstanceIpv6WithHttpInfo(String instanceId,) async {
+  Future<Response> getInstanceIpv6WithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/ipv6'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1238,7 +1415,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1259,17 +1435,24 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<GetIpv6Baremetal200Response?> getInstanceIpv6(String instanceId,) async {
-    final response = await getInstanceIpv6WithHttpInfo(instanceId,);
+  Future<GetIpv6Baremetal200Response?> getInstanceIpv6(
+    String instanceId,
+  ) async {
+    final response = await getInstanceIpv6WithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetIpv6Baremetal200Response',) as GetIpv6Baremetal200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetIpv6Baremetal200Response',
+      ) as GetIpv6Baremetal200Response;
     }
     return null;
   }
@@ -1284,10 +1467,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> getInstanceIsoStatusWithHttpInfo(String instanceId,) async {
+  Future<Response> getInstanceIsoStatusWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/instances/{instance-id}/iso'
-      .replaceAll('{instance-id}', instanceId);
+    final path =
+        r'/instances/{instance-id}/iso'.replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1297,7 +1482,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1318,17 +1502,24 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<GetInstanceIsoStatus200Response?> getInstanceIsoStatus(String instanceId,) async {
-    final response = await getInstanceIsoStatusWithHttpInfo(instanceId,);
+  Future<GetInstanceIsoStatus200Response?> getInstanceIsoStatus(
+    String instanceId,
+  ) async {
+    final response = await getInstanceIsoStatusWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInstanceIsoStatus200Response',) as GetInstanceIsoStatus200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInstanceIsoStatus200Response',
+      ) as GetInstanceIsoStatus200Response;
     }
     return null;
   }
@@ -1343,10 +1534,11 @@ class InstancesApi {
   ///
   /// * [String] jobId (required):
   ///   The [Job ID](#operation/update-instance).
-  Future<Response> getInstanceJobWithHttpInfo(String jobId,) async {
+  Future<Response> getInstanceJobWithHttpInfo(
+    String jobId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/instances/jobs/{job-id}'
-      .replaceAll('{job-id}', jobId);
+    final path = r'/instances/jobs/{job-id}'.replaceAll('{job-id}', jobId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1356,7 +1548,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1377,17 +1568,24 @@ class InstancesApi {
   ///
   /// * [String] jobId (required):
   ///   The [Job ID](#operation/update-instance).
-  Future<GetInstanceJob200Response?> getInstanceJob(String jobId,) async {
-    final response = await getInstanceJobWithHttpInfo(jobId,);
+  Future<GetInstanceJob200Response?> getInstanceJob(
+    String jobId,
+  ) async {
+    final response = await getInstanceJobWithHttpInfo(
+      jobId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInstanceJob200Response',) as GetInstanceJob200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInstanceJob200Response',
+      ) as GetInstanceJob200Response;
     }
     return null;
   }
@@ -1402,10 +1600,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> getInstanceNeighborsWithHttpInfo(String instanceId,) async {
+  Future<Response> getInstanceNeighborsWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/neighbors'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1415,7 +1615,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1436,17 +1635,24 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<GetInstanceNeighbors200Response?> getInstanceNeighbors(String instanceId,) async {
-    final response = await getInstanceNeighborsWithHttpInfo(instanceId,);
+  Future<GetInstanceNeighbors200Response?> getInstanceNeighbors(
+    String instanceId,
+  ) async {
+    final response = await getInstanceNeighborsWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInstanceNeighbors200Response',) as GetInstanceNeighbors200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInstanceNeighbors200Response',
+      ) as GetInstanceNeighbors200Response;
     }
     return null;
   }
@@ -1464,10 +1670,13 @@ class InstancesApi {
   ///
   /// * [String] type:
   ///   Filter upgrade by type:  - all (applications, os, plans) - applications - os - plans
-  Future<Response> getInstanceUpgradesWithHttpInfo(String instanceId, { String? type, }) async {
+  Future<Response> getInstanceUpgradesWithHttpInfo(
+    String instanceId, {
+    String? type,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/upgrades'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1482,7 +1691,6 @@ class InstancesApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -1505,17 +1713,26 @@ class InstancesApi {
   ///
   /// * [String] type:
   ///   Filter upgrade by type:  - all (applications, os, plans) - applications - os - plans
-  Future<GetInstanceUpgrades200Response?> getInstanceUpgrades(String instanceId, { String? type, }) async {
-    final response = await getInstanceUpgradesWithHttpInfo(instanceId,  type: type, );
+  Future<GetInstanceUpgrades200Response?> getInstanceUpgrades(
+    String instanceId, {
+    String? type,
+  }) async {
+    final response = await getInstanceUpgradesWithHttpInfo(
+      instanceId,
+      type: type,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInstanceUpgrades200Response',) as GetInstanceUpgrades200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInstanceUpgrades200Response',
+      ) as GetInstanceUpgrades200Response;
     }
     return null;
   }
@@ -1530,10 +1747,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> getInstanceUserdataWithHttpInfo(String instanceId,) async {
+  Future<Response> getInstanceUserdataWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/user-data'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1543,7 +1762,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1564,17 +1782,24 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<GetInstanceUserdata200Response?> getInstanceUserdata(String instanceId,) async {
-    final response = await getInstanceUserdataWithHttpInfo(instanceId,);
+  Future<GetInstanceUserdata200Response?> getInstanceUserdata(
+    String instanceId,
+  ) async {
+    final response = await getInstanceUserdataWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInstanceUserdata200Response',) as GetInstanceUserdata200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInstanceUserdata200Response',
+      ) as GetInstanceUserdata200Response;
     }
     return null;
   }
@@ -1589,10 +1814,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> haltInstanceWithHttpInfo(String instanceId,) async {
+  Future<Response> haltInstanceWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/halt'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1602,7 +1829,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1623,8 +1849,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<void> haltInstance(String instanceId,) async {
-    final response = await haltInstanceWithHttpInfo(instanceId,);
+  Future<void> haltInstance(
+    String instanceId,
+  ) async {
+    final response = await haltInstanceWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1640,7 +1870,9 @@ class InstancesApi {
   ///
   /// * [HaltInstancesRequest] haltInstancesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> haltInstancesWithHttpInfo({ HaltInstancesRequest? haltInstancesRequest, }) async {
+  Future<Response> haltInstancesWithHttpInfo({
+    HaltInstancesRequest? haltInstancesRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/halt';
 
@@ -1653,7 +1885,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -1673,8 +1904,12 @@ class InstancesApi {
   ///
   /// * [HaltInstancesRequest] haltInstancesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> haltInstances({ HaltInstancesRequest? haltInstancesRequest, }) async {
-    final response = await haltInstancesWithHttpInfo( haltInstancesRequest: haltInstancesRequest, );
+  Future<void> haltInstances({
+    HaltInstancesRequest? haltInstancesRequest,
+  }) async {
+    final response = await haltInstancesWithHttpInfo(
+      haltInstancesRequest: haltInstancesRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -1690,10 +1925,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> listInstanceIpv6ReverseWithHttpInfo(String instanceId,) async {
+  Future<Response> listInstanceIpv6ReverseWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/ipv6/reverse'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1703,7 +1940,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1724,17 +1960,24 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<ListInstanceIpv6Reverse200Response?> listInstanceIpv6Reverse(String instanceId,) async {
-    final response = await listInstanceIpv6ReverseWithHttpInfo(instanceId,);
+  Future<ListInstanceIpv6Reverse200Response?> listInstanceIpv6Reverse(
+    String instanceId,
+  ) async {
+    final response = await listInstanceIpv6ReverseWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListInstanceIpv6Reverse200Response',) as ListInstanceIpv6Reverse200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListInstanceIpv6Reverse200Response',
+      ) as ListInstanceIpv6Reverse200Response;
     }
     return null;
   }
@@ -1755,10 +1998,14 @@ class InstancesApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listInstancePrivateNetworksWithHttpInfo(String instanceId, { int? perPage, String? cursor, }) async {
+  Future<Response> listInstancePrivateNetworksWithHttpInfo(
+    String instanceId, {
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/private-networks'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1775,7 +2022,6 @@ class InstancesApi {
     }
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1802,17 +2048,28 @@ class InstancesApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListInstancePrivateNetworks200Response?> listInstancePrivateNetworks(String instanceId, { int? perPage, String? cursor, }) async {
-    final response = await listInstancePrivateNetworksWithHttpInfo(instanceId,  perPage: perPage, cursor: cursor, );
+  Future<ListInstancePrivateNetworks200Response?> listInstancePrivateNetworks(
+    String instanceId, {
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listInstancePrivateNetworksWithHttpInfo(
+      instanceId,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListInstancePrivateNetworks200Response',) as ListInstancePrivateNetworks200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListInstancePrivateNetworks200Response',
+      ) as ListInstancePrivateNetworks200Response;
     }
     return null;
   }
@@ -1833,10 +2090,14 @@ class InstancesApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listInstanceVpc2WithHttpInfo(String instanceId, { int? perPage, String? cursor, }) async {
+  Future<Response> listInstanceVpc2WithHttpInfo(
+    String instanceId, {
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/vpc2'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1853,7 +2114,6 @@ class InstancesApi {
     }
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1880,17 +2140,28 @@ class InstancesApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListInstanceVpc2200Response?> listInstanceVpc2(String instanceId, { int? perPage, String? cursor, }) async {
-    final response = await listInstanceVpc2WithHttpInfo(instanceId,  perPage: perPage, cursor: cursor, );
+  Future<ListInstanceVpc2200Response?> listInstanceVpc2(
+    String instanceId, {
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listInstanceVpc2WithHttpInfo(
+      instanceId,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListInstanceVpc2200Response',) as ListInstanceVpc2200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListInstanceVpc2200Response',
+      ) as ListInstanceVpc2200Response;
     }
     return null;
   }
@@ -1911,10 +2182,14 @@ class InstancesApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listInstanceVpcsWithHttpInfo(String instanceId, { int? perPage, String? cursor, }) async {
+  Future<Response> listInstanceVpcsWithHttpInfo(
+    String instanceId, {
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/vpcs'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -1931,7 +2206,6 @@ class InstancesApi {
     }
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1958,17 +2232,28 @@ class InstancesApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListInstanceVpcs200Response?> listInstanceVpcs(String instanceId, { int? perPage, String? cursor, }) async {
-    final response = await listInstanceVpcsWithHttpInfo(instanceId,  perPage: perPage, cursor: cursor, );
+  Future<ListInstanceVpcs200Response?> listInstanceVpcs(
+    String instanceId, {
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listInstanceVpcsWithHttpInfo(
+      instanceId,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListInstanceVpcs200Response',) as ListInstanceVpcs200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListInstanceVpcs200Response',
+      ) as ListInstanceVpcs200Response;
     }
     return null;
   }
@@ -2007,7 +2292,17 @@ class InstancesApi {
   ///
   /// * [bool] showPendingCharges:
   ///   Set to `true` to show pending charges.
-  Future<Response> listInstancesWithHttpInfo({ int? perPage, String? cursor, String? tag, String? label, String? mainIp, String? region, String? firewallGroupId, String? hostname, bool? showPendingCharges, }) async {
+  Future<Response> listInstancesWithHttpInfo({
+    int? perPage,
+    String? cursor,
+    String? tag,
+    String? label,
+    String? mainIp,
+    String? region,
+    String? firewallGroupId,
+    String? hostname,
+    bool? showPendingCharges,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances';
 
@@ -2037,17 +2332,18 @@ class InstancesApi {
       queryParams.addAll(_queryParams('', 'region', region));
     }
     if (firewallGroupId != null) {
-      queryParams.addAll(_queryParams('', 'firewall_group_id', firewallGroupId));
+      queryParams
+          .addAll(_queryParams('', 'firewall_group_id', firewallGroupId));
     }
     if (hostname != null) {
       queryParams.addAll(_queryParams('', 'hostname', hostname));
     }
     if (showPendingCharges != null) {
-      queryParams.addAll(_queryParams('', 'show_pending_charges', showPendingCharges));
+      queryParams
+          .addAll(_queryParams('', 'show_pending_charges', showPendingCharges));
     }
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -2092,17 +2388,40 @@ class InstancesApi {
   ///
   /// * [bool] showPendingCharges:
   ///   Set to `true` to show pending charges.
-  Future<ListInstances200Response?> listInstances({ int? perPage, String? cursor, String? tag, String? label, String? mainIp, String? region, String? firewallGroupId, String? hostname, bool? showPendingCharges, }) async {
-    final response = await listInstancesWithHttpInfo( perPage: perPage, cursor: cursor, tag: tag, label: label, mainIp: mainIp, region: region, firewallGroupId: firewallGroupId, hostname: hostname, showPendingCharges: showPendingCharges, );
+  Future<ListInstances200Response?> listInstances({
+    int? perPage,
+    String? cursor,
+    String? tag,
+    String? label,
+    String? mainIp,
+    String? region,
+    String? firewallGroupId,
+    String? hostname,
+    bool? showPendingCharges,
+  }) async {
+    final response = await listInstancesWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+      tag: tag,
+      label: label,
+      mainIp: mainIp,
+      region: region,
+      firewallGroupId: firewallGroupId,
+      hostname: hostname,
+      showPendingCharges: showPendingCharges,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListInstances200Response',) as ListInstances200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListInstances200Response',
+      ) as ListInstances200Response;
     }
     return null;
   }
@@ -2120,10 +2439,14 @@ class InstancesApi {
   ///
   /// * [PostBaremetalInstanceIdIpv4ReverseDefaultRequest] postBaremetalInstanceIdIpv4ReverseDefaultRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> postInstancesInstanceIdIpv4ReverseDefaultWithHttpInfo(String instanceId, { PostBaremetalInstanceIdIpv4ReverseDefaultRequest? postBaremetalInstanceIdIpv4ReverseDefaultRequest, }) async {
+  Future<Response> postInstancesInstanceIdIpv4ReverseDefaultWithHttpInfo(
+    String instanceId, {
+    PostBaremetalInstanceIdIpv4ReverseDefaultRequest?
+        postBaremetalInstanceIdIpv4ReverseDefaultRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/ipv4/reverse/default'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = postBaremetalInstanceIdIpv4ReverseDefaultRequest;
@@ -2133,7 +2456,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -2157,8 +2479,17 @@ class InstancesApi {
   ///
   /// * [PostBaremetalInstanceIdIpv4ReverseDefaultRequest] postBaremetalInstanceIdIpv4ReverseDefaultRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> postInstancesInstanceIdIpv4ReverseDefault(String instanceId, { PostBaremetalInstanceIdIpv4ReverseDefaultRequest? postBaremetalInstanceIdIpv4ReverseDefaultRequest, }) async {
-    final response = await postInstancesInstanceIdIpv4ReverseDefaultWithHttpInfo(instanceId,  postBaremetalInstanceIdIpv4ReverseDefaultRequest: postBaremetalInstanceIdIpv4ReverseDefaultRequest, );
+  Future<void> postInstancesInstanceIdIpv4ReverseDefault(
+    String instanceId, {
+    PostBaremetalInstanceIdIpv4ReverseDefaultRequest?
+        postBaremetalInstanceIdIpv4ReverseDefaultRequest,
+  }) async {
+    final response =
+        await postInstancesInstanceIdIpv4ReverseDefaultWithHttpInfo(
+      instanceId,
+      postBaremetalInstanceIdIpv4ReverseDefaultRequest:
+          postBaremetalInstanceIdIpv4ReverseDefaultRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -2174,10 +2505,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> rebootInstanceWithHttpInfo(String instanceId,) async {
+  Future<Response> rebootInstanceWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/reboot'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -2187,7 +2520,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -2208,8 +2540,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<void> rebootInstance(String instanceId,) async {
-    final response = await rebootInstanceWithHttpInfo(instanceId,);
+  Future<void> rebootInstance(
+    String instanceId,
+  ) async {
+    final response = await rebootInstanceWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -2225,7 +2561,9 @@ class InstancesApi {
   ///
   /// * [RebootInstancesRequest] rebootInstancesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> rebootInstancesWithHttpInfo({ RebootInstancesRequest? rebootInstancesRequest, }) async {
+  Future<Response> rebootInstancesWithHttpInfo({
+    RebootInstancesRequest? rebootInstancesRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/reboot';
 
@@ -2238,7 +2576,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -2258,8 +2595,12 @@ class InstancesApi {
   ///
   /// * [RebootInstancesRequest] rebootInstancesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> rebootInstances({ RebootInstancesRequest? rebootInstancesRequest, }) async {
-    final response = await rebootInstancesWithHttpInfo( rebootInstancesRequest: rebootInstancesRequest, );
+  Future<void> rebootInstances({
+    RebootInstancesRequest? rebootInstancesRequest,
+  }) async {
+    final response = await rebootInstancesWithHttpInfo(
+      rebootInstancesRequest: rebootInstancesRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -2278,10 +2619,13 @@ class InstancesApi {
   ///
   /// * [ReinstallInstanceRequest] reinstallInstanceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> reinstallInstanceWithHttpInfo(String instanceId, { ReinstallInstanceRequest? reinstallInstanceRequest, }) async {
+  Future<Response> reinstallInstanceWithHttpInfo(
+    String instanceId, {
+    ReinstallInstanceRequest? reinstallInstanceRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/reinstall'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = reinstallInstanceRequest;
@@ -2292,7 +2636,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -2315,17 +2658,26 @@ class InstancesApi {
   ///
   /// * [ReinstallInstanceRequest] reinstallInstanceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateInstance202Response?> reinstallInstance(String instanceId, { ReinstallInstanceRequest? reinstallInstanceRequest, }) async {
-    final response = await reinstallInstanceWithHttpInfo(instanceId,  reinstallInstanceRequest: reinstallInstanceRequest, );
+  Future<CreateInstance202Response?> reinstallInstance(
+    String instanceId, {
+    ReinstallInstanceRequest? reinstallInstanceRequest,
+  }) async {
+    final response = await reinstallInstanceWithHttpInfo(
+      instanceId,
+      reinstallInstanceRequest: reinstallInstanceRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateInstance202Response',) as CreateInstance202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateInstance202Response',
+      ) as CreateInstance202Response;
     }
     return null;
   }
@@ -2343,10 +2695,13 @@ class InstancesApi {
   ///
   /// * [RestoreInstanceRequest] restoreInstanceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> restoreInstanceWithHttpInfo(String instanceId, { RestoreInstanceRequest? restoreInstanceRequest, }) async {
+  Future<Response> restoreInstanceWithHttpInfo(
+    String instanceId, {
+    RestoreInstanceRequest? restoreInstanceRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/restore'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = restoreInstanceRequest;
@@ -2357,7 +2712,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -2380,17 +2734,26 @@ class InstancesApi {
   ///
   /// * [RestoreInstanceRequest] restoreInstanceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<RestoreInstance202Response?> restoreInstance(String instanceId, { RestoreInstanceRequest? restoreInstanceRequest, }) async {
-    final response = await restoreInstanceWithHttpInfo(instanceId,  restoreInstanceRequest: restoreInstanceRequest, );
+  Future<RestoreInstance202Response?> restoreInstance(
+    String instanceId, {
+    RestoreInstanceRequest? restoreInstanceRequest,
+  }) async {
+    final response = await restoreInstanceWithHttpInfo(
+      instanceId,
+      restoreInstanceRequest: restoreInstanceRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'RestoreInstance202Response',) as RestoreInstance202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'RestoreInstance202Response',
+      ) as RestoreInstance202Response;
     }
     return null;
   }
@@ -2405,10 +2768,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<Response> startInstanceWithHttpInfo(String instanceId,) async {
+  Future<Response> startInstanceWithHttpInfo(
+    String instanceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/{instance-id}/start'
-      .replaceAll('{instance-id}', instanceId);
+        .replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -2418,7 +2783,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -2439,8 +2803,12 @@ class InstancesApi {
   ///
   /// * [String] instanceId (required):
   ///   The [Instance ID](#operation/list-instances).
-  Future<void> startInstance(String instanceId,) async {
-    final response = await startInstanceWithHttpInfo(instanceId,);
+  Future<void> startInstance(
+    String instanceId,
+  ) async {
+    final response = await startInstanceWithHttpInfo(
+      instanceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -2456,7 +2824,9 @@ class InstancesApi {
   ///
   /// * [StartInstancesRequest] startInstancesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> startInstancesWithHttpInfo({ StartInstancesRequest? startInstancesRequest, }) async {
+  Future<Response> startInstancesWithHttpInfo({
+    StartInstancesRequest? startInstancesRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/instances/start';
 
@@ -2469,7 +2839,6 @@ class InstancesApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -2489,8 +2858,12 @@ class InstancesApi {
   ///
   /// * [StartInstancesRequest] startInstancesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> startInstances({ StartInstancesRequest? startInstancesRequest, }) async {
-    final response = await startInstancesWithHttpInfo( startInstancesRequest: startInstancesRequest, );
+  Future<void> startInstances({
+    StartInstancesRequest? startInstancesRequest,
+  }) async {
+    final response = await startInstancesWithHttpInfo(
+      startInstancesRequest: startInstancesRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -2509,10 +2882,13 @@ class InstancesApi {
   ///
   /// * [UpdateInstanceRequest] updateInstanceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateInstanceWithHttpInfo(String instanceId, { UpdateInstanceRequest? updateInstanceRequest, }) async {
+  Future<Response> updateInstanceWithHttpInfo(
+    String instanceId, {
+    UpdateInstanceRequest? updateInstanceRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/instances/{instance-id}'
-      .replaceAll('{instance-id}', instanceId);
+    final path =
+        r'/instances/{instance-id}'.replaceAll('{instance-id}', instanceId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateInstanceRequest;
@@ -2522,7 +2898,6 @@ class InstancesApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -2546,17 +2921,26 @@ class InstancesApi {
   ///
   /// * [UpdateInstanceRequest] updateInstanceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateInstance202Response?> updateInstance(String instanceId, { UpdateInstanceRequest? updateInstanceRequest, }) async {
-    final response = await updateInstanceWithHttpInfo(instanceId,  updateInstanceRequest: updateInstanceRequest, );
+  Future<CreateInstance202Response?> updateInstance(
+    String instanceId, {
+    UpdateInstanceRequest? updateInstanceRequest,
+  }) async {
+    final response = await updateInstanceWithHttpInfo(
+      instanceId,
+      updateInstanceRequest: updateInstanceRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateInstance202Response',) as CreateInstance202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateInstance202Response',
+      ) as CreateInstance202Response;
     }
     return null;
   }

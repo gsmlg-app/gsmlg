@@ -12,9 +12,9 @@ class Vpc {
     this.vpcRegion,
     this.vpcId,
   });
-  
+
   factory Vpc.fromJson(Map<String, Object?> json) => _$VpcFromJson(json);
-  
+
   final String? vpcRegion;
   final String? vpcId;
 

@@ -136,38 +136,45 @@ class AccountBandwidthPreviousMonth {
   num? overageCost;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AccountBandwidthPreviousMonth &&
-    other.timestampStart == timestampStart &&
-    other.timestampEnd == timestampEnd &&
-    other.gbIn == gbIn &&
-    other.gbOut == gbOut &&
-    other.totalInstanceHours == totalInstanceHours &&
-    other.totalInstanceCount == totalInstanceCount &&
-    other.instanceBandwidthCredits == instanceBandwidthCredits &&
-    other.freeBandwidthCredits == freeBandwidthCredits &&
-    other.purchasedBandwidthCredits == purchasedBandwidthCredits &&
-    other.overage == overage &&
-    other.overageUnitCost == overageUnitCost &&
-    other.overageCost == overageCost;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AccountBandwidthPreviousMonth &&
+          other.timestampStart == timestampStart &&
+          other.timestampEnd == timestampEnd &&
+          other.gbIn == gbIn &&
+          other.gbOut == gbOut &&
+          other.totalInstanceHours == totalInstanceHours &&
+          other.totalInstanceCount == totalInstanceCount &&
+          other.instanceBandwidthCredits == instanceBandwidthCredits &&
+          other.freeBandwidthCredits == freeBandwidthCredits &&
+          other.purchasedBandwidthCredits == purchasedBandwidthCredits &&
+          other.overage == overage &&
+          other.overageUnitCost == overageUnitCost &&
+          other.overageCost == overageCost;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (timestampStart == null ? 0 : timestampStart!.hashCode) +
-    (timestampEnd == null ? 0 : timestampEnd!.hashCode) +
-    (gbIn == null ? 0 : gbIn!.hashCode) +
-    (gbOut == null ? 0 : gbOut!.hashCode) +
-    (totalInstanceHours == null ? 0 : totalInstanceHours!.hashCode) +
-    (totalInstanceCount == null ? 0 : totalInstanceCount!.hashCode) +
-    (instanceBandwidthCredits == null ? 0 : instanceBandwidthCredits!.hashCode) +
-    (freeBandwidthCredits == null ? 0 : freeBandwidthCredits!.hashCode) +
-    (purchasedBandwidthCredits == null ? 0 : purchasedBandwidthCredits!.hashCode) +
-    (overage == null ? 0 : overage!.hashCode) +
-    (overageUnitCost == null ? 0 : overageUnitCost!.hashCode) +
-    (overageCost == null ? 0 : overageCost!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (timestampStart == null ? 0 : timestampStart!.hashCode) +
+      (timestampEnd == null ? 0 : timestampEnd!.hashCode) +
+      (gbIn == null ? 0 : gbIn!.hashCode) +
+      (gbOut == null ? 0 : gbOut!.hashCode) +
+      (totalInstanceHours == null ? 0 : totalInstanceHours!.hashCode) +
+      (totalInstanceCount == null ? 0 : totalInstanceCount!.hashCode) +
+      (instanceBandwidthCredits == null
+          ? 0
+          : instanceBandwidthCredits!.hashCode) +
+      (freeBandwidthCredits == null ? 0 : freeBandwidthCredits!.hashCode) +
+      (purchasedBandwidthCredits == null
+          ? 0
+          : purchasedBandwidthCredits!.hashCode) +
+      (overage == null ? 0 : overage!.hashCode) +
+      (overageUnitCost == null ? 0 : overageUnitCost!.hashCode) +
+      (overageCost == null ? 0 : overageCost!.hashCode);
 
   @override
-  String toString() => 'AccountBandwidthPreviousMonth[timestampStart=$timestampStart, timestampEnd=$timestampEnd, gbIn=$gbIn, gbOut=$gbOut, totalInstanceHours=$totalInstanceHours, totalInstanceCount=$totalInstanceCount, instanceBandwidthCredits=$instanceBandwidthCredits, freeBandwidthCredits=$freeBandwidthCredits, purchasedBandwidthCredits=$purchasedBandwidthCredits, overage=$overage, overageUnitCost=$overageUnitCost, overageCost=$overageCost]';
+  String toString() =>
+      'AccountBandwidthPreviousMonth[timestampStart=$timestampStart, timestampEnd=$timestampEnd, gbIn=$gbIn, gbOut=$gbOut, totalInstanceHours=$totalInstanceHours, totalInstanceCount=$totalInstanceCount, instanceBandwidthCredits=$instanceBandwidthCredits, freeBandwidthCredits=$freeBandwidthCredits, purchasedBandwidthCredits=$purchasedBandwidthCredits, overage=$overage, overageUnitCost=$overageUnitCost, overageCost=$overageCost]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -246,8 +253,10 @@ class AccountBandwidthPreviousMonth {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "AccountBandwidthPreviousMonth[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "AccountBandwidthPreviousMonth[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "AccountBandwidthPreviousMonth[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "AccountBandwidthPreviousMonth[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -259,9 +268,11 @@ class AccountBandwidthPreviousMonth {
         gbOut: num.parse('${json[r'gb_out']}'),
         totalInstanceHours: num.parse('${json[r'total_instance_hours']}'),
         totalInstanceCount: num.parse('${json[r'total_instance_count']}'),
-        instanceBandwidthCredits: num.parse('${json[r'instance_bandwidth_credits']}'),
+        instanceBandwidthCredits:
+            num.parse('${json[r'instance_bandwidth_credits']}'),
         freeBandwidthCredits: num.parse('${json[r'free_bandwidth_credits']}'),
-        purchasedBandwidthCredits: num.parse('${json[r'purchased_bandwidth_credits']}'),
+        purchasedBandwidthCredits:
+            num.parse('${json[r'purchased_bandwidth_credits']}'),
         overage: num.parse('${json[r'overage']}'),
         overageUnitCost: num.parse('${json[r'overage_unit_cost']}'),
         overageCost: num.parse('${json[r'overage_cost']}'),
@@ -270,7 +281,10 @@ class AccountBandwidthPreviousMonth {
     return null;
   }
 
-  static List<AccountBandwidthPreviousMonth> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<AccountBandwidthPreviousMonth> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <AccountBandwidthPreviousMonth>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -298,20 +312,24 @@ class AccountBandwidthPreviousMonth {
   }
 
   // maps a json object with a list of AccountBandwidthPreviousMonth-objects as value to a dart map
-  static Map<String, List<AccountBandwidthPreviousMonth>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<AccountBandwidthPreviousMonth>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<AccountBandwidthPreviousMonth>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = AccountBandwidthPreviousMonth.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = AccountBandwidthPreviousMonth.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

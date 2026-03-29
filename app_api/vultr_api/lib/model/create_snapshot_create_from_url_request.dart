@@ -40,24 +40,27 @@ class CreateSnapshotCreateFromUrlRequest {
   bool? uefi;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateSnapshotCreateFromUrlRequest &&
-    other.url == url &&
-    other.description == description &&
-    other.uefi == uefi;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateSnapshotCreateFromUrlRequest &&
+          other.url == url &&
+          other.description == description &&
+          other.uefi == uefi;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (url.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (uefi == null ? 0 : uefi!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (url.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (uefi == null ? 0 : uefi!.hashCode);
 
   @override
-  String toString() => 'CreateSnapshotCreateFromUrlRequest[url=$url, description=$description, uefi=$uefi]';
+  String toString() =>
+      'CreateSnapshotCreateFromUrlRequest[url=$url, description=$description, uefi=$uefi]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'url'] = this.url;
+    json[r'url'] = this.url;
     if (this.description != null) {
       json[r'description'] = this.description;
     } else {
@@ -83,8 +86,10 @@ class CreateSnapshotCreateFromUrlRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateSnapshotCreateFromUrlRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateSnapshotCreateFromUrlRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateSnapshotCreateFromUrlRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateSnapshotCreateFromUrlRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -98,7 +103,10 @@ class CreateSnapshotCreateFromUrlRequest {
     return null;
   }
 
-  static List<CreateSnapshotCreateFromUrlRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateSnapshotCreateFromUrlRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateSnapshotCreateFromUrlRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -111,7 +119,8 @@ class CreateSnapshotCreateFromUrlRequest {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateSnapshotCreateFromUrlRequest> mapFromJson(dynamic json) {
+  static Map<String, CreateSnapshotCreateFromUrlRequest> mapFromJson(
+      dynamic json) {
     final map = <String, CreateSnapshotCreateFromUrlRequest>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -126,13 +135,19 @@ class CreateSnapshotCreateFromUrlRequest {
   }
 
   // maps a json object with a list of CreateSnapshotCreateFromUrlRequest-objects as value to a dart map
-  static Map<String, List<CreateSnapshotCreateFromUrlRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateSnapshotCreateFromUrlRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateSnapshotCreateFromUrlRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateSnapshotCreateFromUrlRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateSnapshotCreateFromUrlRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -143,4 +158,3 @@ class CreateSnapshotCreateFromUrlRequest {
     'url',
   };
 }
-

@@ -46,20 +46,23 @@ class CreateLoadBalancerRequestFirewallRulesInner {
   String? ipType;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateLoadBalancerRequestFirewallRulesInner &&
-    other.port == port &&
-    other.source_ == source_ &&
-    other.ipType == ipType;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateLoadBalancerRequestFirewallRulesInner &&
+          other.port == port &&
+          other.source_ == source_ &&
+          other.ipType == ipType;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (port == null ? 0 : port!.hashCode) +
-    (source_ == null ? 0 : source_!.hashCode) +
-    (ipType == null ? 0 : ipType!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (port == null ? 0 : port!.hashCode) +
+      (source_ == null ? 0 : source_!.hashCode) +
+      (ipType == null ? 0 : ipType!.hashCode);
 
   @override
-  String toString() => 'CreateLoadBalancerRequestFirewallRulesInner[port=$port, source_=$source_, ipType=$ipType]';
+  String toString() =>
+      'CreateLoadBalancerRequestFirewallRulesInner[port=$port, source_=$source_, ipType=$ipType]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -93,8 +96,10 @@ class CreateLoadBalancerRequestFirewallRulesInner {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateLoadBalancerRequestFirewallRulesInner[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateLoadBalancerRequestFirewallRulesInner[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateLoadBalancerRequestFirewallRulesInner[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateLoadBalancerRequestFirewallRulesInner[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -108,7 +113,10 @@ class CreateLoadBalancerRequestFirewallRulesInner {
     return null;
   }
 
-  static List<CreateLoadBalancerRequestFirewallRulesInner> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateLoadBalancerRequestFirewallRulesInner> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateLoadBalancerRequestFirewallRulesInner>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -121,12 +129,14 @@ class CreateLoadBalancerRequestFirewallRulesInner {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateLoadBalancerRequestFirewallRulesInner> mapFromJson(dynamic json) {
+  static Map<String, CreateLoadBalancerRequestFirewallRulesInner> mapFromJson(
+      dynamic json) {
     final map = <String, CreateLoadBalancerRequestFirewallRulesInner>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = CreateLoadBalancerRequestFirewallRulesInner.fromJson(entry.value);
+        final value =
+            CreateLoadBalancerRequestFirewallRulesInner.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -136,20 +146,26 @@ class CreateLoadBalancerRequestFirewallRulesInner {
   }
 
   // maps a json object with a list of CreateLoadBalancerRequestFirewallRulesInner-objects as value to a dart map
-  static Map<String, List<CreateLoadBalancerRequestFirewallRulesInner>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateLoadBalancerRequestFirewallRulesInner>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateLoadBalancerRequestFirewallRulesInner>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateLoadBalancerRequestFirewallRulesInner.listFromJson(entry.value, growable: growable,);
+        map[entry.key] =
+            CreateLoadBalancerRequestFirewallRulesInner.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

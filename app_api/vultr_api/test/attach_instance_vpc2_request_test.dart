@@ -22,13 +22,10 @@ void main() {
       // TODO
     });
 
-    // The IP address to use for this instance on the attached VPC 2.0 network.  
+    // The IP address to use for this instance on the attached VPC 2.0 network.
     // String ipAddress
     test('to test the property `ipAddress`', () async {
       // TODO
     });
-
-
   });
-
 }

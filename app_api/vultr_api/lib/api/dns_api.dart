@@ -10,7 +10,6 @@
 
 part of openapi.api;
 
-
 class DnsApi {
   DnsApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
 
@@ -26,7 +25,9 @@ class DnsApi {
   ///
   /// * [CreateDnsDomainRequest] createDnsDomainRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createDnsDomainWithHttpInfo({ CreateDnsDomainRequest? createDnsDomainRequest, }) async {
+  Future<Response> createDnsDomainWithHttpInfo({
+    CreateDnsDomainRequest? createDnsDomainRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/domains';
 
@@ -38,7 +39,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +59,24 @@ class DnsApi {
   ///
   /// * [CreateDnsDomainRequest] createDnsDomainRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateDnsDomain200Response?> createDnsDomain({ CreateDnsDomainRequest? createDnsDomainRequest, }) async {
-    final response = await createDnsDomainWithHttpInfo( createDnsDomainRequest: createDnsDomainRequest, );
+  Future<CreateDnsDomain200Response?> createDnsDomain({
+    CreateDnsDomainRequest? createDnsDomainRequest,
+  }) async {
+    final response = await createDnsDomainWithHttpInfo(
+      createDnsDomainRequest: createDnsDomainRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateDnsDomain200Response',) as CreateDnsDomain200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateDnsDomain200Response',
+      ) as CreateDnsDomain200Response;
     }
     return null;
   }
@@ -87,10 +94,13 @@ class DnsApi {
   ///
   /// * [CreateDnsDomainRecordRequest] createDnsDomainRecordRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createDnsDomainRecordWithHttpInfo(String dnsDomain, { CreateDnsDomainRecordRequest? createDnsDomainRecordRequest, }) async {
+  Future<Response> createDnsDomainRecordWithHttpInfo(
+    String dnsDomain, {
+    CreateDnsDomainRecordRequest? createDnsDomainRecordRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/domains/{dns-domain}/records'
-      .replaceAll('{dns-domain}', dnsDomain);
+    final path =
+        r'/domains/{dns-domain}/records'.replaceAll('{dns-domain}', dnsDomain);
 
     // ignore: prefer_final_locals
     Object? postBody = createDnsDomainRecordRequest;
@@ -100,7 +110,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -124,17 +133,26 @@ class DnsApi {
   ///
   /// * [CreateDnsDomainRecordRequest] createDnsDomainRecordRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateDnsDomainRecord201Response?> createDnsDomainRecord(String dnsDomain, { CreateDnsDomainRecordRequest? createDnsDomainRecordRequest, }) async {
-    final response = await createDnsDomainRecordWithHttpInfo(dnsDomain,  createDnsDomainRecordRequest: createDnsDomainRecordRequest, );
+  Future<CreateDnsDomainRecord201Response?> createDnsDomainRecord(
+    String dnsDomain, {
+    CreateDnsDomainRecordRequest? createDnsDomainRecordRequest,
+  }) async {
+    final response = await createDnsDomainRecordWithHttpInfo(
+      dnsDomain,
+      createDnsDomainRecordRequest: createDnsDomainRecordRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateDnsDomainRecord201Response',) as CreateDnsDomainRecord201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateDnsDomainRecord201Response',
+      ) as CreateDnsDomainRecord201Response;
     }
     return null;
   }
@@ -149,10 +167,11 @@ class DnsApi {
   ///
   /// * [String] dnsDomain (required):
   ///   The [DNS Domain](#operation/list-dns-domains).
-  Future<Response> deleteDnsDomainWithHttpInfo(String dnsDomain,) async {
+  Future<Response> deleteDnsDomainWithHttpInfo(
+    String dnsDomain,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/domains/{dns-domain}'
-      .replaceAll('{dns-domain}', dnsDomain);
+    final path = r'/domains/{dns-domain}'.replaceAll('{dns-domain}', dnsDomain);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -162,7 +181,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -183,8 +201,12 @@ class DnsApi {
   ///
   /// * [String] dnsDomain (required):
   ///   The [DNS Domain](#operation/list-dns-domains).
-  Future<void> deleteDnsDomain(String dnsDomain,) async {
-    final response = await deleteDnsDomainWithHttpInfo(dnsDomain,);
+  Future<void> deleteDnsDomain(
+    String dnsDomain,
+  ) async {
+    final response = await deleteDnsDomainWithHttpInfo(
+      dnsDomain,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -203,11 +225,14 @@ class DnsApi {
   ///
   /// * [String] recordId (required):
   ///   The [DNS Record id](#operation/list-dns-domain-records).
-  Future<Response> deleteDnsDomainRecordWithHttpInfo(String dnsDomain, String recordId,) async {
+  Future<Response> deleteDnsDomainRecordWithHttpInfo(
+    String dnsDomain,
+    String recordId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/domains/{dns-domain}/records/{record-id}'
-      .replaceAll('{dns-domain}', dnsDomain)
-      .replaceAll('{record-id}', recordId);
+        .replaceAll('{dns-domain}', dnsDomain)
+        .replaceAll('{record-id}', recordId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -217,7 +242,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -241,8 +265,14 @@ class DnsApi {
   ///
   /// * [String] recordId (required):
   ///   The [DNS Record id](#operation/list-dns-domain-records).
-  Future<void> deleteDnsDomainRecord(String dnsDomain, String recordId,) async {
-    final response = await deleteDnsDomainRecordWithHttpInfo(dnsDomain, recordId,);
+  Future<void> deleteDnsDomainRecord(
+    String dnsDomain,
+    String recordId,
+  ) async {
+    final response = await deleteDnsDomainRecordWithHttpInfo(
+      dnsDomain,
+      recordId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -258,10 +288,11 @@ class DnsApi {
   ///
   /// * [String] dnsDomain (required):
   ///   The [DNS Domain](#operation/list-dns-domains).
-  Future<Response> getDnsDomainWithHttpInfo(String dnsDomain,) async {
+  Future<Response> getDnsDomainWithHttpInfo(
+    String dnsDomain,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/domains/{dns-domain}'
-      .replaceAll('{dns-domain}', dnsDomain);
+    final path = r'/domains/{dns-domain}'.replaceAll('{dns-domain}', dnsDomain);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -271,7 +302,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -292,17 +322,24 @@ class DnsApi {
   ///
   /// * [String] dnsDomain (required):
   ///   The [DNS Domain](#operation/list-dns-domains).
-  Future<CreateDnsDomain200Response?> getDnsDomain(String dnsDomain,) async {
-    final response = await getDnsDomainWithHttpInfo(dnsDomain,);
+  Future<CreateDnsDomain200Response?> getDnsDomain(
+    String dnsDomain,
+  ) async {
+    final response = await getDnsDomainWithHttpInfo(
+      dnsDomain,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateDnsDomain200Response',) as CreateDnsDomain200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateDnsDomain200Response',
+      ) as CreateDnsDomain200Response;
     }
     return null;
   }
@@ -317,10 +354,12 @@ class DnsApi {
   ///
   /// * [String] dnsDomain (required):
   ///   The [DNS Domain](#operation/list-dns-domains).
-  Future<Response> getDnsDomainDnssecWithHttpInfo(String dnsDomain,) async {
+  Future<Response> getDnsDomainDnssecWithHttpInfo(
+    String dnsDomain,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/domains/{dns-domain}/dnssec'
-      .replaceAll('{dns-domain}', dnsDomain);
+    final path =
+        r'/domains/{dns-domain}/dnssec'.replaceAll('{dns-domain}', dnsDomain);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -330,7 +369,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -351,17 +389,24 @@ class DnsApi {
   ///
   /// * [String] dnsDomain (required):
   ///   The [DNS Domain](#operation/list-dns-domains).
-  Future<GetDnsDomainDnssec200Response?> getDnsDomainDnssec(String dnsDomain,) async {
-    final response = await getDnsDomainDnssecWithHttpInfo(dnsDomain,);
+  Future<GetDnsDomainDnssec200Response?> getDnsDomainDnssec(
+    String dnsDomain,
+  ) async {
+    final response = await getDnsDomainDnssecWithHttpInfo(
+      dnsDomain,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetDnsDomainDnssec200Response',) as GetDnsDomainDnssec200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetDnsDomainDnssec200Response',
+      ) as GetDnsDomainDnssec200Response;
     }
     return null;
   }
@@ -379,11 +424,14 @@ class DnsApi {
   ///
   /// * [String] recordId (required):
   ///   The [DNS Record id](#operation/list-dns-domain-records).
-  Future<Response> getDnsDomainRecordWithHttpInfo(String dnsDomain, String recordId,) async {
+  Future<Response> getDnsDomainRecordWithHttpInfo(
+    String dnsDomain,
+    String recordId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/domains/{dns-domain}/records/{record-id}'
-      .replaceAll('{dns-domain}', dnsDomain)
-      .replaceAll('{record-id}', recordId);
+        .replaceAll('{dns-domain}', dnsDomain)
+        .replaceAll('{record-id}', recordId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -393,7 +441,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -417,17 +464,26 @@ class DnsApi {
   ///
   /// * [String] recordId (required):
   ///   The [DNS Record id](#operation/list-dns-domain-records).
-  Future<CreateDnsDomainRecord201Response?> getDnsDomainRecord(String dnsDomain, String recordId,) async {
-    final response = await getDnsDomainRecordWithHttpInfo(dnsDomain, recordId,);
+  Future<CreateDnsDomainRecord201Response?> getDnsDomainRecord(
+    String dnsDomain,
+    String recordId,
+  ) async {
+    final response = await getDnsDomainRecordWithHttpInfo(
+      dnsDomain,
+      recordId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateDnsDomainRecord201Response',) as CreateDnsDomainRecord201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateDnsDomainRecord201Response',
+      ) as CreateDnsDomainRecord201Response;
     }
     return null;
   }
@@ -442,10 +498,12 @@ class DnsApi {
   ///
   /// * [String] dnsDomain (required):
   ///   The [DNS Domain](#operation/list-dns-domains).
-  Future<Response> getDnsDomainSoaWithHttpInfo(String dnsDomain,) async {
+  Future<Response> getDnsDomainSoaWithHttpInfo(
+    String dnsDomain,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/domains/{dns-domain}/soa'
-      .replaceAll('{dns-domain}', dnsDomain);
+    final path =
+        r'/domains/{dns-domain}/soa'.replaceAll('{dns-domain}', dnsDomain);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -455,7 +513,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -476,17 +533,24 @@ class DnsApi {
   ///
   /// * [String] dnsDomain (required):
   ///   The [DNS Domain](#operation/list-dns-domains).
-  Future<GetDnsDomainSoa200Response?> getDnsDomainSoa(String dnsDomain,) async {
-    final response = await getDnsDomainSoaWithHttpInfo(dnsDomain,);
+  Future<GetDnsDomainSoa200Response?> getDnsDomainSoa(
+    String dnsDomain,
+  ) async {
+    final response = await getDnsDomainSoaWithHttpInfo(
+      dnsDomain,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetDnsDomainSoa200Response',) as GetDnsDomainSoa200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetDnsDomainSoa200Response',
+      ) as GetDnsDomainSoa200Response;
     }
     return null;
   }
@@ -507,10 +571,14 @@ class DnsApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listDnsDomainRecordsWithHttpInfo(String dnsDomain, { int? perPage, String? cursor, }) async {
+  Future<Response> listDnsDomainRecordsWithHttpInfo(
+    String dnsDomain, {
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/domains/{dns-domain}/records'
-      .replaceAll('{dns-domain}', dnsDomain);
+    final path =
+        r'/domains/{dns-domain}/records'.replaceAll('{dns-domain}', dnsDomain);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -528,7 +596,6 @@ class DnsApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -554,17 +621,28 @@ class DnsApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListDnsDomainRecords200Response?> listDnsDomainRecords(String dnsDomain, { int? perPage, String? cursor, }) async {
-    final response = await listDnsDomainRecordsWithHttpInfo(dnsDomain,  perPage: perPage, cursor: cursor, );
+  Future<ListDnsDomainRecords200Response?> listDnsDomainRecords(
+    String dnsDomain, {
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listDnsDomainRecordsWithHttpInfo(
+      dnsDomain,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListDnsDomainRecords200Response',) as ListDnsDomainRecords200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListDnsDomainRecords200Response',
+      ) as ListDnsDomainRecords200Response;
     }
     return null;
   }
@@ -578,11 +656,14 @@ class DnsApi {
   /// Parameters:
   ///
   /// * [int] perPage:
-  ///   Number of items requested per page. Default is 100 and Max is 500. 
+  ///   Number of items requested per page. Default is 100 and Max is 500.
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listDnsDomainsWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listDnsDomainsWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/domains';
 
@@ -602,7 +683,6 @@ class DnsApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -621,28 +701,37 @@ class DnsApi {
   /// Parameters:
   ///
   /// * [int] perPage:
-  ///   Number of items requested per page. Default is 100 and Max is 500. 
+  ///   Number of items requested per page. Default is 100 and Max is 500.
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListDnsDomains200Response?> listDnsDomains({ int? perPage, String? cursor, }) async {
-    final response = await listDnsDomainsWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListDnsDomains200Response?> listDnsDomains({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listDnsDomainsWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListDnsDomains200Response',) as ListDnsDomains200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListDnsDomains200Response',
+      ) as ListDnsDomains200Response;
     }
     return null;
   }
 
   /// Update a DNS Domain
   ///
-  /// Update the DNS Domain. 
+  /// Update the DNS Domain.
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -653,10 +742,12 @@ class DnsApi {
   ///
   /// * [UpdateDnsDomainRequest] updateDnsDomainRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateDnsDomainWithHttpInfo(String dnsDomain, { UpdateDnsDomainRequest? updateDnsDomainRequest, }) async {
+  Future<Response> updateDnsDomainWithHttpInfo(
+    String dnsDomain, {
+    UpdateDnsDomainRequest? updateDnsDomainRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/domains/{dns-domain}'
-      .replaceAll('{dns-domain}', dnsDomain);
+    final path = r'/domains/{dns-domain}'.replaceAll('{dns-domain}', dnsDomain);
 
     // ignore: prefer_final_locals
     Object? postBody = updateDnsDomainRequest;
@@ -666,7 +757,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -681,7 +771,7 @@ class DnsApi {
 
   /// Update a DNS Domain
   ///
-  /// Update the DNS Domain. 
+  /// Update the DNS Domain.
   ///
   /// Parameters:
   ///
@@ -690,8 +780,14 @@ class DnsApi {
   ///
   /// * [UpdateDnsDomainRequest] updateDnsDomainRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateDnsDomain(String dnsDomain, { UpdateDnsDomainRequest? updateDnsDomainRequest, }) async {
-    final response = await updateDnsDomainWithHttpInfo(dnsDomain,  updateDnsDomainRequest: updateDnsDomainRequest, );
+  Future<void> updateDnsDomain(
+    String dnsDomain, {
+    UpdateDnsDomainRequest? updateDnsDomainRequest,
+  }) async {
+    final response = await updateDnsDomainWithHttpInfo(
+      dnsDomain,
+      updateDnsDomainRequest: updateDnsDomainRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -713,11 +809,15 @@ class DnsApi {
   ///
   /// * [UpdateDnsDomainRecordRequest] updateDnsDomainRecordRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateDnsDomainRecordWithHttpInfo(String dnsDomain, String recordId, { UpdateDnsDomainRecordRequest? updateDnsDomainRecordRequest, }) async {
+  Future<Response> updateDnsDomainRecordWithHttpInfo(
+    String dnsDomain,
+    String recordId, {
+    UpdateDnsDomainRecordRequest? updateDnsDomainRecordRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/domains/{dns-domain}/records/{record-id}'
-      .replaceAll('{dns-domain}', dnsDomain)
-      .replaceAll('{record-id}', recordId);
+        .replaceAll('{dns-domain}', dnsDomain)
+        .replaceAll('{record-id}', recordId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateDnsDomainRecordRequest;
@@ -728,7 +828,6 @@ class DnsApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'PATCH',
@@ -754,8 +853,16 @@ class DnsApi {
   ///
   /// * [UpdateDnsDomainRecordRequest] updateDnsDomainRecordRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateDnsDomainRecord(String dnsDomain, String recordId, { UpdateDnsDomainRecordRequest? updateDnsDomainRecordRequest, }) async {
-    final response = await updateDnsDomainRecordWithHttpInfo(dnsDomain, recordId,  updateDnsDomainRecordRequest: updateDnsDomainRecordRequest, );
+  Future<void> updateDnsDomainRecord(
+    String dnsDomain,
+    String recordId, {
+    UpdateDnsDomainRecordRequest? updateDnsDomainRecordRequest,
+  }) async {
+    final response = await updateDnsDomainRecordWithHttpInfo(
+      dnsDomain,
+      recordId,
+      updateDnsDomainRecordRequest: updateDnsDomainRecordRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -774,10 +881,13 @@ class DnsApi {
   ///
   /// * [UpdateDnsDomainSoaRequest] updateDnsDomainSoaRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateDnsDomainSoaWithHttpInfo(String dnsDomain, { UpdateDnsDomainSoaRequest? updateDnsDomainSoaRequest, }) async {
+  Future<Response> updateDnsDomainSoaWithHttpInfo(
+    String dnsDomain, {
+    UpdateDnsDomainSoaRequest? updateDnsDomainSoaRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/domains/{dns-domain}/soa'
-      .replaceAll('{dns-domain}', dnsDomain);
+    final path =
+        r'/domains/{dns-domain}/soa'.replaceAll('{dns-domain}', dnsDomain);
 
     // ignore: prefer_final_locals
     Object? postBody = updateDnsDomainSoaRequest;
@@ -787,7 +897,6 @@ class DnsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -811,8 +920,14 @@ class DnsApi {
   ///
   /// * [UpdateDnsDomainSoaRequest] updateDnsDomainSoaRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateDnsDomainSoa(String dnsDomain, { UpdateDnsDomainSoaRequest? updateDnsDomainSoaRequest, }) async {
-    final response = await updateDnsDomainSoaWithHttpInfo(dnsDomain,  updateDnsDomainSoaRequest: updateDnsDomainSoaRequest, );
+  Future<void> updateDnsDomainSoa(
+    String dnsDomain, {
+    UpdateDnsDomainSoaRequest? updateDnsDomainSoaRequest,
+  }) async {
+    final response = await updateDnsDomainSoaWithHttpInfo(
+      dnsDomain,
+      updateDnsDomainSoaRequest: updateDnsDomainSoaRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

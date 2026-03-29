@@ -13,9 +13,10 @@ class AliasTarget {
     required this.dnsName,
     required this.evaluateTargetHealth,
   });
-  
-  factory AliasTarget.fromJson(Map<String, Object?> json) => _$AliasTargetFromJson(json);
-  
+
+  factory AliasTarget.fromJson(Map<String, Object?> json) =>
+      _$AliasTargetFromJson(json);
+
   /// The hosted zone ID for the AWS resource.
   final String hostedZoneId;
 

@@ -25,13 +25,14 @@ class GetSnapshot200Response {
   Snapshot? snapshot;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetSnapshot200Response &&
-    other.snapshot == snapshot;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetSnapshot200Response && other.snapshot == snapshot;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (snapshot == null ? 0 : snapshot!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (snapshot == null ? 0 : snapshot!.hashCode);
 
   @override
   String toString() => 'GetSnapshot200Response[snapshot=$snapshot]';
@@ -58,8 +59,10 @@ class GetSnapshot200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetSnapshot200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetSnapshot200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetSnapshot200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetSnapshot200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -71,7 +74,10 @@ class GetSnapshot200Response {
     return null;
   }
 
-  static List<GetSnapshot200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetSnapshot200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetSnapshot200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,20 +105,24 @@ class GetSnapshot200Response {
   }
 
   // maps a json object with a list of GetSnapshot200Response-objects as value to a dart map
-  static Map<String, List<GetSnapshot200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetSnapshot200Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetSnapshot200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetSnapshot200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetSnapshot200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

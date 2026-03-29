@@ -66,24 +66,27 @@ class Invoice {
   num? balance;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Invoice &&
-    other.id == id &&
-    other.date == date &&
-    other.description == description &&
-    other.amount == amount &&
-    other.balance == balance;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Invoice &&
+          other.id == id &&
+          other.date == date &&
+          other.description == description &&
+          other.amount == amount &&
+          other.balance == balance;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (date == null ? 0 : date!.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (amount == null ? 0 : amount!.hashCode) +
-    (balance == null ? 0 : balance!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (date == null ? 0 : date!.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (amount == null ? 0 : amount!.hashCode) +
+      (balance == null ? 0 : balance!.hashCode);
 
   @override
-  String toString() => 'Invoice[id=$id, date=$date, description=$description, amount=$amount, balance=$balance]';
+  String toString() =>
+      'Invoice[id=$id, date=$date, description=$description, amount=$amount, balance=$balance]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -127,8 +130,10 @@ class Invoice {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Invoice[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Invoice[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Invoice[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Invoice[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -144,7 +149,10 @@ class Invoice {
     return null;
   }
 
-  static List<Invoice> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Invoice> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Invoice>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -172,20 +180,24 @@ class Invoice {
   }
 
   // maps a json object with a list of Invoice-objects as value to a dart map
-  static Map<String, List<Invoice>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Invoice>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Invoice>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Invoice.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Invoice.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

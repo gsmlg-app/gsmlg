@@ -13,9 +13,10 @@ class DelegationSet {
     this.callerReference,
     this.nameServers,
   });
-  
-  factory DelegationSet.fromJson(Map<String, Object?> json) => _$DelegationSetFromJson(json);
-  
+
+  factory DelegationSet.fromJson(Map<String, Object?> json) =>
+      _$DelegationSetFromJson(json);
+
   final String? id;
   final String? callerReference;
   final List<String>? nameServers;

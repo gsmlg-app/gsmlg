@@ -79,32 +79,35 @@ class Vpc {
   VpcInternet? internet;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Vpc &&
-    other.id == id &&
-    other.region == region &&
-    other.dateCreated == dateCreated &&
-    other.description == description &&
-    other.v4Subnet == v4Subnet &&
-    other.v4SubnetMask == v4SubnetMask &&
-    other.internet == internet;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Vpc &&
+          other.id == id &&
+          other.region == region &&
+          other.dateCreated == dateCreated &&
+          other.description == description &&
+          other.v4Subnet == v4Subnet &&
+          other.v4SubnetMask == v4SubnetMask &&
+          other.internet == internet;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id.hashCode) +
-    (region == null ? 0 : region!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (v4Subnet == null ? 0 : v4Subnet!.hashCode) +
-    (v4SubnetMask == null ? 0 : v4SubnetMask!.hashCode) +
-    (internet == null ? 0 : internet!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id.hashCode) +
+      (region == null ? 0 : region!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (v4Subnet == null ? 0 : v4Subnet!.hashCode) +
+      (v4SubnetMask == null ? 0 : v4SubnetMask!.hashCode) +
+      (internet == null ? 0 : internet!.hashCode);
 
   @override
-  String toString() => 'Vpc[id=$id, region=$region, dateCreated=$dateCreated, description=$description, v4Subnet=$v4Subnet, v4SubnetMask=$v4SubnetMask, internet=$internet]';
+  String toString() =>
+      'Vpc[id=$id, region=$region, dateCreated=$dateCreated, description=$description, v4Subnet=$v4Subnet, v4SubnetMask=$v4SubnetMask, internet=$internet]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'id'] = this.id;
+    json[r'id'] = this.id;
     if (this.region != null) {
       json[r'region'] = this.region;
     } else {
@@ -150,8 +153,10 @@ class Vpc {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Vpc[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Vpc[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Vpc[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Vpc[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -169,7 +174,10 @@ class Vpc {
     return null;
   }
 
-  static List<Vpc> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Vpc> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Vpc>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -197,13 +205,19 @@ class Vpc {
   }
 
   // maps a json object with a list of Vpc-objects as value to a dart map
-  static Map<String, List<Vpc>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Vpc>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Vpc>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Vpc.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Vpc.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -214,4 +228,3 @@ class Vpc {
     'id',
   };
 }
-

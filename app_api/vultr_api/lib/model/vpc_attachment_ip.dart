@@ -26,13 +26,13 @@ class VpcAttachmentIp {
   String? v4;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is VpcAttachmentIp &&
-    other.v4 == v4;
+  bool operator ==(Object other) =>
+      identical(this, other) || other is VpcAttachmentIp && other.v4 == v4;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (v4 == null ? 0 : v4!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (v4 == null ? 0 : v4!.hashCode);
 
   @override
   String toString() => 'VpcAttachmentIp[v4=$v4]';
@@ -59,8 +59,10 @@ class VpcAttachmentIp {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "VpcAttachmentIp[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "VpcAttachmentIp[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "VpcAttachmentIp[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "VpcAttachmentIp[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -72,7 +74,10 @@ class VpcAttachmentIp {
     return null;
   }
 
-  static List<VpcAttachmentIp> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<VpcAttachmentIp> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <VpcAttachmentIp>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -100,20 +105,24 @@ class VpcAttachmentIp {
   }
 
   // maps a json object with a list of VpcAttachmentIp-objects as value to a dart map
-  static Map<String, List<VpcAttachmentIp>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<VpcAttachmentIp>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<VpcAttachmentIp>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = VpcAttachmentIp.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = VpcAttachmentIp.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

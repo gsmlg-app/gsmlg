@@ -25,7 +25,7 @@ class PostFirewallsFirewallGroupIdRulesRequest {
   /// The type of IP rule.  * v4 * v6
   String ipType;
 
-  /// The protocol for this rule.  * ICMP * TCP * UDP * GRE * ESP * AH 
+  /// The protocol for this rule.  * ICMP * TCP * UDP * GRE * ESP * AH
   String protocol;
 
   /// IP address representing a subnet. The IP address format must match with the \"ip_type\" parameter value.
@@ -43,7 +43,7 @@ class PostFirewallsFirewallGroupIdRulesRequest {
   ///
   String? port;
 
-  /// If the source string is given a value of \"cloudflare\" subnet and subnet_size will both be ignored. Possible values:  |   | Value | Description | | - | ------ | ------------- | |   | \"\" | Use the value from `subnet` and `subnet_size`. | |   | cloudflare | Allow all of Cloudflare's IP space through the firewall | |   | [Load Balancer id](#operation/list-load-balancers) | Provide a load balancer ID to use its IPs | 
+  /// If the source string is given a value of \"cloudflare\" subnet and subnet_size will both be ignored. Possible values:  |   | Value | Description | | - | ------ | ------------- | |   | \"\" | Use the value from `subnet` and `subnet_size`. | |   | cloudflare | Allow all of Cloudflare's IP space through the firewall | |   | [Load Balancer id](#operation/list-load-balancers) | Provide a load balancer ID to use its IPs |
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -62,35 +62,38 @@ class PostFirewallsFirewallGroupIdRulesRequest {
   String? notes;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is PostFirewallsFirewallGroupIdRulesRequest &&
-    other.ipType == ipType &&
-    other.protocol == protocol &&
-    other.subnet == subnet &&
-    other.subnetSize == subnetSize &&
-    other.port == port &&
-    other.source_ == source_ &&
-    other.notes == notes;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PostFirewallsFirewallGroupIdRulesRequest &&
+          other.ipType == ipType &&
+          other.protocol == protocol &&
+          other.subnet == subnet &&
+          other.subnetSize == subnetSize &&
+          other.port == port &&
+          other.source_ == source_ &&
+          other.notes == notes;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (ipType.hashCode) +
-    (protocol.hashCode) +
-    (subnet.hashCode) +
-    (subnetSize.hashCode) +
-    (port == null ? 0 : port!.hashCode) +
-    (source_ == null ? 0 : source_!.hashCode) +
-    (notes == null ? 0 : notes!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (ipType.hashCode) +
+      (protocol.hashCode) +
+      (subnet.hashCode) +
+      (subnetSize.hashCode) +
+      (port == null ? 0 : port!.hashCode) +
+      (source_ == null ? 0 : source_!.hashCode) +
+      (notes == null ? 0 : notes!.hashCode);
 
   @override
-  String toString() => 'PostFirewallsFirewallGroupIdRulesRequest[ipType=$ipType, protocol=$protocol, subnet=$subnet, subnetSize=$subnetSize, port=$port, source_=$source_, notes=$notes]';
+  String toString() =>
+      'PostFirewallsFirewallGroupIdRulesRequest[ipType=$ipType, protocol=$protocol, subnet=$subnet, subnetSize=$subnetSize, port=$port, source_=$source_, notes=$notes]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'ip_type'] = this.ipType;
-      json[r'protocol'] = this.protocol;
-      json[r'subnet'] = this.subnet;
-      json[r'subnet_size'] = this.subnetSize;
+    json[r'ip_type'] = this.ipType;
+    json[r'protocol'] = this.protocol;
+    json[r'subnet'] = this.subnet;
+    json[r'subnet_size'] = this.subnetSize;
     if (this.port != null) {
       json[r'port'] = this.port;
     } else {
@@ -121,8 +124,10 @@ class PostFirewallsFirewallGroupIdRulesRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "PostFirewallsFirewallGroupIdRulesRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "PostFirewallsFirewallGroupIdRulesRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "PostFirewallsFirewallGroupIdRulesRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "PostFirewallsFirewallGroupIdRulesRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -140,7 +145,10 @@ class PostFirewallsFirewallGroupIdRulesRequest {
     return null;
   }
 
-  static List<PostFirewallsFirewallGroupIdRulesRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<PostFirewallsFirewallGroupIdRulesRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <PostFirewallsFirewallGroupIdRulesRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -153,12 +161,14 @@ class PostFirewallsFirewallGroupIdRulesRequest {
     return result.toList(growable: growable);
   }
 
-  static Map<String, PostFirewallsFirewallGroupIdRulesRequest> mapFromJson(dynamic json) {
+  static Map<String, PostFirewallsFirewallGroupIdRulesRequest> mapFromJson(
+      dynamic json) {
     final map = <String, PostFirewallsFirewallGroupIdRulesRequest>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = PostFirewallsFirewallGroupIdRulesRequest.fromJson(entry.value);
+        final value =
+            PostFirewallsFirewallGroupIdRulesRequest.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -168,13 +178,20 @@ class PostFirewallsFirewallGroupIdRulesRequest {
   }
 
   // maps a json object with a list of PostFirewallsFirewallGroupIdRulesRequest-objects as value to a dart map
-  static Map<String, List<PostFirewallsFirewallGroupIdRulesRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<PostFirewallsFirewallGroupIdRulesRequest>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<PostFirewallsFirewallGroupIdRulesRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = PostFirewallsFirewallGroupIdRulesRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = PostFirewallsFirewallGroupIdRulesRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -188,4 +205,3 @@ class PostFirewallsFirewallGroupIdRulesRequest {
     'subnet_size',
   };
 }
-

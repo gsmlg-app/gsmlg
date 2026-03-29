@@ -29,15 +29,16 @@ class Uploadendpoint {
   List<NodepoolInstances> inputs;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Uploadendpoint &&
-    other.URL == URL &&
-    _deepEquality.equals(other.inputs, inputs);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Uploadendpoint &&
+          other.URL == URL &&
+          _deepEquality.equals(other.inputs, inputs);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (URL == null ? 0 : URL!.hashCode) +
-    (inputs.hashCode);
+      // ignore: unnecessary_parenthesis
+      (URL == null ? 0 : URL!.hashCode) + (inputs.hashCode);
 
   @override
   String toString() => 'Uploadendpoint[URL=$URL, inputs=$inputs]';
@@ -49,7 +50,7 @@ class Uploadendpoint {
     } else {
       json[r'URL'] = null;
     }
-      json[r'inputs'] = this.inputs;
+    json[r'inputs'] = this.inputs;
     return json;
   }
 
@@ -65,8 +66,10 @@ class Uploadendpoint {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Uploadendpoint[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Uploadendpoint[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Uploadendpoint[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Uploadendpoint[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -79,7 +82,10 @@ class Uploadendpoint {
     return null;
   }
 
-  static List<Uploadendpoint> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Uploadendpoint> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Uploadendpoint>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -107,20 +113,24 @@ class Uploadendpoint {
   }
 
   // maps a json object with a list of Uploadendpoint-objects as value to a dart map
-  static Map<String, List<Uploadendpoint>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Uploadendpoint>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Uploadendpoint>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Uploadendpoint.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Uploadendpoint.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

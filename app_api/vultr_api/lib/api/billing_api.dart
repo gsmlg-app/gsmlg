@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class BillingApi {
-  BillingApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  BillingApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,10 +26,12 @@ class BillingApi {
   ///
   /// * [String] invoiceId (required):
   ///   ID of invoice
-  Future<Response> getInvoiceWithHttpInfo(String invoiceId,) async {
+  Future<Response> getInvoiceWithHttpInfo(
+    String invoiceId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/billing/invoices/{invoice-id}'
-      .replaceAll('{invoice-id}', invoiceId);
+    final path =
+        r'/billing/invoices/{invoice-id}'.replaceAll('{invoice-id}', invoiceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -39,7 +41,6 @@ class BillingApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -60,17 +61,24 @@ class BillingApi {
   ///
   /// * [String] invoiceId (required):
   ///   ID of invoice
-  Future<GetInvoice200Response?> getInvoice(String invoiceId,) async {
-    final response = await getInvoiceWithHttpInfo(invoiceId,);
+  Future<GetInvoice200Response?> getInvoice(
+    String invoiceId,
+  ) async {
+    final response = await getInvoiceWithHttpInfo(
+      invoiceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInvoice200Response',) as GetInvoice200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInvoice200Response',
+      ) as GetInvoice200Response;
     }
     return null;
   }
@@ -85,10 +93,12 @@ class BillingApi {
   ///
   /// * [String] invoiceId (required):
   ///   ID of invoice
-  Future<Response> getInvoiceItemsWithHttpInfo(String invoiceId,) async {
+  Future<Response> getInvoiceItemsWithHttpInfo(
+    String invoiceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/billing/invoices/{invoice-id}/items'
-      .replaceAll('{invoice-id}', invoiceId);
+        .replaceAll('{invoice-id}', invoiceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -98,7 +108,6 @@ class BillingApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -119,17 +128,24 @@ class BillingApi {
   ///
   /// * [String] invoiceId (required):
   ///   ID of invoice
-  Future<GetInvoiceItems200Response?> getInvoiceItems(String invoiceId,) async {
-    final response = await getInvoiceItemsWithHttpInfo(invoiceId,);
+  Future<GetInvoiceItems200Response?> getInvoiceItems(
+    String invoiceId,
+  ) async {
+    final response = await getInvoiceItemsWithHttpInfo(
+      invoiceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInvoiceItems200Response',) as GetInvoiceItems200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInvoiceItems200Response',
+      ) as GetInvoiceItems200Response;
     }
     return null;
   }
@@ -151,7 +167,6 @@ class BillingApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -175,9 +190,12 @@ class BillingApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListBillingHistory200Response',) as ListBillingHistory200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListBillingHistory200Response',
+      ) as ListBillingHistory200Response;
     }
     return null;
   }
@@ -199,7 +217,6 @@ class BillingApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -223,9 +240,12 @@ class BillingApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListInvoices200Response',) as ListInvoices200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListInvoices200Response',
+      ) as ListInvoices200Response;
     }
     return null;
   }
@@ -247,7 +267,6 @@ class BillingApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -271,9 +290,12 @@ class BillingApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'PendingCharges200Response',) as PendingCharges200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'PendingCharges200Response',
+      ) as PendingCharges200Response;
     }
     return null;
   }
@@ -295,7 +317,6 @@ class BillingApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -319,9 +340,12 @@ class BillingApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'MultipartFile',) as MultipartFile;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'MultipartFile',
+      ) as MultipartFile;
     }
     return null;
   }

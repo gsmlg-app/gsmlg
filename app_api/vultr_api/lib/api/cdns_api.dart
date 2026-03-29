@@ -10,7 +10,6 @@
 
 part of openapi.api;
 
-
 class CDNsApi {
   CDNsApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
 
@@ -26,7 +25,9 @@ class CDNsApi {
   ///
   /// * [CreatePullzoneRequest] createPullzoneRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createPullzoneWithHttpInfo({ CreatePullzoneRequest? createPullzoneRequest, }) async {
+  Future<Response> createPullzoneWithHttpInfo({
+    CreatePullzoneRequest? createPullzoneRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/pull-zones';
 
@@ -38,7 +39,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +59,24 @@ class CDNsApi {
   ///
   /// * [CreatePullzoneRequest] createPullzoneRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreatePullzone201Response?> createPullzone({ CreatePullzoneRequest? createPullzoneRequest, }) async {
-    final response = await createPullzoneWithHttpInfo( createPullzoneRequest: createPullzoneRequest, );
+  Future<CreatePullzone201Response?> createPullzone({
+    CreatePullzoneRequest? createPullzoneRequest,
+  }) async {
+    final response = await createPullzoneWithHttpInfo(
+      createPullzoneRequest: createPullzoneRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreatePullzone201Response',) as CreatePullzone201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreatePullzone201Response',
+      ) as CreatePullzone201Response;
     }
     return null;
   }
@@ -84,7 +91,9 @@ class CDNsApi {
   ///
   /// * [CreatePushzoneRequest] createPushzoneRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createPushzoneWithHttpInfo({ CreatePushzoneRequest? createPushzoneRequest, }) async {
+  Future<Response> createPushzoneWithHttpInfo({
+    CreatePushzoneRequest? createPushzoneRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/push-zones';
 
@@ -97,7 +106,6 @@ class CDNsApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'POST',
@@ -117,17 +125,24 @@ class CDNsApi {
   ///
   /// * [CreatePushzoneRequest] createPushzoneRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreatePushzone201Response?> createPushzone({ CreatePushzoneRequest? createPushzoneRequest, }) async {
-    final response = await createPushzoneWithHttpInfo( createPushzoneRequest: createPushzoneRequest, );
+  Future<CreatePushzone201Response?> createPushzone({
+    CreatePushzoneRequest? createPushzoneRequest,
+  }) async {
+    final response = await createPushzoneWithHttpInfo(
+      createPushzoneRequest: createPushzoneRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreatePushzone201Response',) as CreatePushzone201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreatePushzone201Response',
+      ) as CreatePushzone201Response;
     }
     return null;
   }
@@ -145,10 +160,13 @@ class CDNsApi {
   ///
   /// * [CreatePushzoneUploadRequest] createPushzoneUploadRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createPushzoneUploadWithHttpInfo(String pushzoneId, { CreatePushzoneUploadRequest? createPushzoneUploadRequest, }) async {
+  Future<Response> createPushzoneUploadWithHttpInfo(
+    String pushzoneId, {
+    CreatePushzoneUploadRequest? createPushzoneUploadRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/push-zones/{pushzone-id}/files'
-      .replaceAll('{pushzone-id}', pushzoneId);
+        .replaceAll('{pushzone-id}', pushzoneId);
 
     // ignore: prefer_final_locals
     Object? postBody = createPushzoneUploadRequest;
@@ -158,7 +176,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -182,17 +199,26 @@ class CDNsApi {
   ///
   /// * [CreatePushzoneUploadRequest] createPushzoneUploadRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreatePushzoneUpload201Response?> createPushzoneUpload(String pushzoneId, { CreatePushzoneUploadRequest? createPushzoneUploadRequest, }) async {
-    final response = await createPushzoneUploadWithHttpInfo(pushzoneId,  createPushzoneUploadRequest: createPushzoneUploadRequest, );
+  Future<CreatePushzoneUpload201Response?> createPushzoneUpload(
+    String pushzoneId, {
+    CreatePushzoneUploadRequest? createPushzoneUploadRequest,
+  }) async {
+    final response = await createPushzoneUploadWithHttpInfo(
+      pushzoneId,
+      createPushzoneUploadRequest: createPushzoneUploadRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreatePushzoneUpload201Response',) as CreatePushzoneUpload201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreatePushzoneUpload201Response',
+      ) as CreatePushzoneUpload201Response;
     }
     return null;
   }
@@ -207,10 +233,12 @@ class CDNsApi {
   ///
   /// * [String] pullzoneId (required):
   ///   The [Pull Zone ID](#operation/list-pullzones).
-  Future<Response> deletePullzoneWithHttpInfo(String pullzoneId,) async {
+  Future<Response> deletePullzoneWithHttpInfo(
+    String pullzoneId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/pull-zones/{pullzone-id}'
-      .replaceAll('{pullzone-id}', pullzoneId);
+        .replaceAll('{pullzone-id}', pullzoneId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -220,7 +248,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -241,8 +268,12 @@ class CDNsApi {
   ///
   /// * [String] pullzoneId (required):
   ///   The [Pull Zone ID](#operation/list-pullzones).
-  Future<void> deletePullzone(String pullzoneId,) async {
-    final response = await deletePullzoneWithHttpInfo(pullzoneId,);
+  Future<void> deletePullzone(
+    String pullzoneId,
+  ) async {
+    final response = await deletePullzoneWithHttpInfo(
+      pullzoneId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -258,10 +289,12 @@ class CDNsApi {
   ///
   /// * [String] pushzoneId (required):
   ///   The [Push Zone ID](#operation/list-pushzones).
-  Future<Response> deletePushzoneWithHttpInfo(String pushzoneId,) async {
+  Future<Response> deletePushzoneWithHttpInfo(
+    String pushzoneId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/push-zones/{pushzone-id}'
-      .replaceAll('{pushzone-id}', pushzoneId);
+        .replaceAll('{pushzone-id}', pushzoneId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -271,7 +304,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -292,8 +324,12 @@ class CDNsApi {
   ///
   /// * [String] pushzoneId (required):
   ///   The [Push Zone ID](#operation/list-pushzones).
-  Future<void> deletePushzone(String pushzoneId,) async {
-    final response = await deletePushzoneWithHttpInfo(pushzoneId,);
+  Future<void> deletePushzone(
+    String pushzoneId,
+  ) async {
+    final response = await deletePushzoneWithHttpInfo(
+      pushzoneId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -312,11 +348,14 @@ class CDNsApi {
   ///
   /// * [String] fileName (required):
   ///   The [File Name](#operation/list-pushzone-files).
-  Future<Response> deletePushzoneFileWithHttpInfo(String pushzoneId, String fileName,) async {
+  Future<Response> deletePushzoneFileWithHttpInfo(
+    String pushzoneId,
+    String fileName,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/push-zones/{pushzone-id}/files/{file-name}'
-      .replaceAll('{pushzone-id}', pushzoneId)
-      .replaceAll('{file-name}', fileName);
+        .replaceAll('{pushzone-id}', pushzoneId)
+        .replaceAll('{file-name}', fileName);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -326,7 +365,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -350,8 +388,14 @@ class CDNsApi {
   ///
   /// * [String] fileName (required):
   ///   The [File Name](#operation/list-pushzone-files).
-  Future<void> deletePushzoneFile(String pushzoneId, String fileName,) async {
-    final response = await deletePushzoneFileWithHttpInfo(pushzoneId, fileName,);
+  Future<void> deletePushzoneFile(
+    String pushzoneId,
+    String fileName,
+  ) async {
+    final response = await deletePushzoneFileWithHttpInfo(
+      pushzoneId,
+      fileName,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -367,10 +411,12 @@ class CDNsApi {
   ///
   /// * [String] pullzoneId (required):
   ///   The [Pull Zone ID](#operation/list-pullzones).
-  Future<Response> getPullzoneWithHttpInfo(String pullzoneId,) async {
+  Future<Response> getPullzoneWithHttpInfo(
+    String pullzoneId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/pull-zones/{pullzone-id}'
-      .replaceAll('{pullzone-id}', pullzoneId);
+        .replaceAll('{pullzone-id}', pullzoneId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -380,7 +426,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -401,17 +446,24 @@ class CDNsApi {
   ///
   /// * [String] pullzoneId (required):
   ///   The [Pull Zone ID](#operation/list-pullzones).
-  Future<CreatePullzone201Response?> getPullzone(String pullzoneId,) async {
-    final response = await getPullzoneWithHttpInfo(pullzoneId,);
+  Future<CreatePullzone201Response?> getPullzone(
+    String pullzoneId,
+  ) async {
+    final response = await getPullzoneWithHttpInfo(
+      pullzoneId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreatePullzone201Response',) as CreatePullzone201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreatePullzone201Response',
+      ) as CreatePullzone201Response;
     }
     return null;
   }
@@ -426,10 +478,12 @@ class CDNsApi {
   ///
   /// * [String] pushzoneId (required):
   ///   The [Push Zone ID](#operation/list-pushzones).
-  Future<Response> getPushzoneWithHttpInfo(String pushzoneId,) async {
+  Future<Response> getPushzoneWithHttpInfo(
+    String pushzoneId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/push-zones/{pushzone-id}'
-      .replaceAll('{pushzone-id}', pushzoneId);
+        .replaceAll('{pushzone-id}', pushzoneId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -439,7 +493,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -460,17 +513,24 @@ class CDNsApi {
   ///
   /// * [String] pushzoneId (required):
   ///   The [Push Zone ID](#operation/list-pushzones).
-  Future<CreatePushzone201Response?> getPushzone(String pushzoneId,) async {
-    final response = await getPushzoneWithHttpInfo(pushzoneId,);
+  Future<CreatePushzone201Response?> getPushzone(
+    String pushzoneId,
+  ) async {
+    final response = await getPushzoneWithHttpInfo(
+      pushzoneId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreatePushzone201Response',) as CreatePushzone201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreatePushzone201Response',
+      ) as CreatePushzone201Response;
     }
     return null;
   }
@@ -485,10 +545,12 @@ class CDNsApi {
   ///
   /// * [String] pushzoneId (required):
   ///   The [Push Zone ID](#operation/list-pushzones).
-  Future<Response> getPushzoneFilesWithHttpInfo(String pushzoneId,) async {
+  Future<Response> getPushzoneFilesWithHttpInfo(
+    String pushzoneId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/push-zones/{pushzone-id}/files'
-      .replaceAll('{pushzone-id}', pushzoneId);
+        .replaceAll('{pushzone-id}', pushzoneId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -498,7 +560,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -519,17 +580,24 @@ class CDNsApi {
   ///
   /// * [String] pushzoneId (required):
   ///   The [Push Zone ID](#operation/list-pushzones).
-  Future<GetPushzoneFiles200Response?> getPushzoneFiles(String pushzoneId,) async {
-    final response = await getPushzoneFilesWithHttpInfo(pushzoneId,);
+  Future<GetPushzoneFiles200Response?> getPushzoneFiles(
+    String pushzoneId,
+  ) async {
+    final response = await getPushzoneFilesWithHttpInfo(
+      pushzoneId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetPushzoneFiles200Response',) as GetPushzoneFiles200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetPushzoneFiles200Response',
+      ) as GetPushzoneFiles200Response;
     }
     return null;
   }
@@ -547,11 +615,14 @@ class CDNsApi {
   ///
   /// * [String] fileName (required):
   ///   The [File Name](#operation/list-pushzone-files).
-  Future<Response> getPushzone_1WithHttpInfo(String pushzoneId, String fileName,) async {
+  Future<Response> getPushzone_1WithHttpInfo(
+    String pushzoneId,
+    String fileName,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/push-zones/{pushzone-id}/files/{file-name}'
-      .replaceAll('{pushzone-id}', pushzoneId)
-      .replaceAll('{file-name}', fileName);
+        .replaceAll('{pushzone-id}', pushzoneId)
+        .replaceAll('{file-name}', fileName);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -561,7 +632,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -585,17 +655,26 @@ class CDNsApi {
   ///
   /// * [String] fileName (required):
   ///   The [File Name](#operation/list-pushzone-files).
-  Future<GetPushzone200Response?> getPushzone_1(String pushzoneId, String fileName,) async {
-    final response = await getPushzone_1WithHttpInfo(pushzoneId, fileName,);
+  Future<GetPushzone200Response?> getPushzone_1(
+    String pushzoneId,
+    String fileName,
+  ) async {
+    final response = await getPushzone_1WithHttpInfo(
+      pushzoneId,
+      fileName,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetPushzone200Response',) as GetPushzone200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetPushzone200Response',
+      ) as GetPushzone200Response;
     }
     return null;
   }
@@ -617,7 +696,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -641,9 +719,12 @@ class CDNsApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListPullzones200Response',) as ListPullzones200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListPullzones200Response',
+      ) as ListPullzones200Response;
     }
     return null;
   }
@@ -665,7 +746,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -689,9 +769,12 @@ class CDNsApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListPushzones200Response',) as ListPushzones200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListPushzones200Response',
+      ) as ListPushzones200Response;
     }
     return null;
   }
@@ -706,10 +789,12 @@ class CDNsApi {
   ///
   /// * [String] pullzoneId (required):
   ///   The [Pull Zone ID](#operation/list-pullzones).
-  Future<Response> purgePullzoneWithHttpInfo(String pullzoneId,) async {
+  Future<Response> purgePullzoneWithHttpInfo(
+    String pullzoneId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/pull-zones/{pullzone-id}/purge'
-      .replaceAll('{pullzone-id}', pullzoneId);
+        .replaceAll('{pullzone-id}', pullzoneId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -719,7 +804,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -740,20 +824,25 @@ class CDNsApi {
   ///
   /// * [String] pullzoneId (required):
   ///   The [Pull Zone ID](#operation/list-pullzones).
-  Future<List<String>?> purgePullzone(String pullzoneId,) async {
-    final response = await purgePullzoneWithHttpInfo(pullzoneId,);
+  Future<List<String>?> purgePullzone(
+    String pullzoneId,
+  ) async {
+    final response = await purgePullzoneWithHttpInfo(
+      pullzoneId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
       final responseBody = await _decodeBodyBytes(response);
-      return (await apiClient.deserializeAsync(responseBody, 'List<String>') as List)
-        .cast<String>()
-        .toList(growable: false);
-
+      return (await apiClient.deserializeAsync(responseBody, 'List<String>')
+              as List)
+          .cast<String>()
+          .toList(growable: false);
     }
     return null;
   }
@@ -770,10 +859,13 @@ class CDNsApi {
   ///   The [Pull Zone ID](#operation/list-pullzones).
   ///
   /// * [UpdatePullzoneRequest] updatePullzoneRequest:
-  Future<Response> updatePullzoneWithHttpInfo(String pullzoneId, { UpdatePullzoneRequest? updatePullzoneRequest, }) async {
+  Future<Response> updatePullzoneWithHttpInfo(
+    String pullzoneId, {
+    UpdatePullzoneRequest? updatePullzoneRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/pull-zones/{pullzone-id}'
-      .replaceAll('{pullzone-id}', pullzoneId);
+        .replaceAll('{pullzone-id}', pullzoneId);
 
     // ignore: prefer_final_locals
     Object? postBody = updatePullzoneRequest;
@@ -784,7 +876,6 @@ class CDNsApi {
 
     const contentTypes = <String>['application/json'];
 
-
     return apiClient.invokeAPI(
       path,
       'PUT',
@@ -806,17 +897,26 @@ class CDNsApi {
   ///   The [Pull Zone ID](#operation/list-pullzones).
   ///
   /// * [UpdatePullzoneRequest] updatePullzoneRequest:
-  Future<CreatePullzone201Response?> updatePullzone(String pullzoneId, { UpdatePullzoneRequest? updatePullzoneRequest, }) async {
-    final response = await updatePullzoneWithHttpInfo(pullzoneId,  updatePullzoneRequest: updatePullzoneRequest, );
+  Future<CreatePullzone201Response?> updatePullzone(
+    String pullzoneId, {
+    UpdatePullzoneRequest? updatePullzoneRequest,
+  }) async {
+    final response = await updatePullzoneWithHttpInfo(
+      pullzoneId,
+      updatePullzoneRequest: updatePullzoneRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreatePullzone201Response',) as CreatePullzone201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreatePullzone201Response',
+      ) as CreatePullzone201Response;
     }
     return null;
   }
@@ -833,10 +933,13 @@ class CDNsApi {
   ///   The [Push Zone ID](#operation/list-pushzones).
   ///
   /// * [UpdatePushzoneRequest] updatePushzoneRequest:
-  Future<Response> updatePushzoneWithHttpInfo(String pushzoneId, { UpdatePushzoneRequest? updatePushzoneRequest, }) async {
+  Future<Response> updatePushzoneWithHttpInfo(
+    String pushzoneId, {
+    UpdatePushzoneRequest? updatePushzoneRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/cdns/push-zones/{pushzone-id}'
-      .replaceAll('{pushzone-id}', pushzoneId);
+        .replaceAll('{pushzone-id}', pushzoneId);
 
     // ignore: prefer_final_locals
     Object? postBody = updatePushzoneRequest;
@@ -846,7 +949,6 @@ class CDNsApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -869,17 +971,26 @@ class CDNsApi {
   ///   The [Push Zone ID](#operation/list-pushzones).
   ///
   /// * [UpdatePushzoneRequest] updatePushzoneRequest:
-  Future<CreatePushzone201Response?> updatePushzone(String pushzoneId, { UpdatePushzoneRequest? updatePushzoneRequest, }) async {
-    final response = await updatePushzoneWithHttpInfo(pushzoneId,  updatePushzoneRequest: updatePushzoneRequest, );
+  Future<CreatePushzone201Response?> updatePushzone(
+    String pushzoneId, {
+    UpdatePushzoneRequest? updatePushzoneRequest,
+  }) async {
+    final response = await updatePushzoneWithHttpInfo(
+      pushzoneId,
+      updatePushzoneRequest: updatePushzoneRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreatePushzone201Response',) as CreatePushzone201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreatePushzone201Response',
+      ) as CreatePushzone201Response;
     }
     return null;
   }

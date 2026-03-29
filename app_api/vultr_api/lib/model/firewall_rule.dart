@@ -61,7 +61,7 @@ class FirewallRule {
   ///
   String? action;
 
-  /// The protocol for this rule.  * ICMP * TCP * UDP * GRE 
+  /// The protocol for this rule.  * ICMP * TCP * UDP * GRE
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -116,34 +116,37 @@ class FirewallRule {
   String? notes;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is FirewallRule &&
-    other.id == id &&
-    other.type == type &&
-    other.ipType == ipType &&
-    other.action == action &&
-    other.protocol == protocol &&
-    other.port == port &&
-    other.subnet == subnet &&
-    other.subnetSize == subnetSize &&
-    other.source_ == source_ &&
-    other.notes == notes;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FirewallRule &&
+          other.id == id &&
+          other.type == type &&
+          other.ipType == ipType &&
+          other.action == action &&
+          other.protocol == protocol &&
+          other.port == port &&
+          other.subnet == subnet &&
+          other.subnetSize == subnetSize &&
+          other.source_ == source_ &&
+          other.notes == notes;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (type == null ? 0 : type!.hashCode) +
-    (ipType == null ? 0 : ipType!.hashCode) +
-    (action == null ? 0 : action!.hashCode) +
-    (protocol == null ? 0 : protocol!.hashCode) +
-    (port == null ? 0 : port!.hashCode) +
-    (subnet == null ? 0 : subnet!.hashCode) +
-    (subnetSize == null ? 0 : subnetSize!.hashCode) +
-    (source_ == null ? 0 : source_!.hashCode) +
-    (notes == null ? 0 : notes!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (type == null ? 0 : type!.hashCode) +
+      (ipType == null ? 0 : ipType!.hashCode) +
+      (action == null ? 0 : action!.hashCode) +
+      (protocol == null ? 0 : protocol!.hashCode) +
+      (port == null ? 0 : port!.hashCode) +
+      (subnet == null ? 0 : subnet!.hashCode) +
+      (subnetSize == null ? 0 : subnetSize!.hashCode) +
+      (source_ == null ? 0 : source_!.hashCode) +
+      (notes == null ? 0 : notes!.hashCode);
 
   @override
-  String toString() => 'FirewallRule[id=$id, type=$type, ipType=$ipType, action=$action, protocol=$protocol, port=$port, subnet=$subnet, subnetSize=$subnetSize, source_=$source_, notes=$notes]';
+  String toString() =>
+      'FirewallRule[id=$id, type=$type, ipType=$ipType, action=$action, protocol=$protocol, port=$port, subnet=$subnet, subnetSize=$subnetSize, source_=$source_, notes=$notes]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -212,8 +215,10 @@ class FirewallRule {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "FirewallRule[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "FirewallRule[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "FirewallRule[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "FirewallRule[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -234,7 +239,10 @@ class FirewallRule {
     return null;
   }
 
-  static List<FirewallRule> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<FirewallRule> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <FirewallRule>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -262,20 +270,24 @@ class FirewallRule {
   }
 
   // maps a json object with a list of FirewallRule-objects as value to a dart map
-  static Map<String, List<FirewallRule>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<FirewallRule>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<FirewallRule>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = FirewallRule.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = FirewallRule.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

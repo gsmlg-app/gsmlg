@@ -42,4 +42,3 @@ export 'models/workflow_run_status.dart';
 export 'models/workflow_run_conclusion.dart';
 // Root client
 export 'git_hub_api.dart';
-

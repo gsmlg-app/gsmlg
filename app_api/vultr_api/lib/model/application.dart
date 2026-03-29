@@ -86,28 +86,31 @@ class Application {
   String? imageId;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Application &&
-    other.id == id &&
-    other.name == name &&
-    other.shortName == shortName &&
-    other.deployName == deployName &&
-    other.type == type &&
-    other.vendor == vendor &&
-    other.imageId == imageId;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Application &&
+          other.id == id &&
+          other.name == name &&
+          other.shortName == shortName &&
+          other.deployName == deployName &&
+          other.type == type &&
+          other.vendor == vendor &&
+          other.imageId == imageId;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (shortName == null ? 0 : shortName!.hashCode) +
-    (deployName == null ? 0 : deployName!.hashCode) +
-    (type == null ? 0 : type!.hashCode) +
-    (vendor == null ? 0 : vendor!.hashCode) +
-    (imageId == null ? 0 : imageId!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (shortName == null ? 0 : shortName!.hashCode) +
+      (deployName == null ? 0 : deployName!.hashCode) +
+      (type == null ? 0 : type!.hashCode) +
+      (vendor == null ? 0 : vendor!.hashCode) +
+      (imageId == null ? 0 : imageId!.hashCode);
 
   @override
-  String toString() => 'Application[id=$id, name=$name, shortName=$shortName, deployName=$deployName, type=$type, vendor=$vendor, imageId=$imageId]';
+  String toString() =>
+      'Application[id=$id, name=$name, shortName=$shortName, deployName=$deployName, type=$type, vendor=$vendor, imageId=$imageId]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -161,8 +164,10 @@ class Application {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Application[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Application[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Application[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Application[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -180,7 +185,10 @@ class Application {
     return null;
   }
 
-  static List<Application> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Application> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Application>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -208,20 +216,24 @@ class Application {
   }
 
   // maps a json object with a list of Application-objects as value to a dart map
-  static Map<String, List<Application>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Application>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Application>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Application.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Application.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

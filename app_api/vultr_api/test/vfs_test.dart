@@ -72,8 +72,5 @@ void main() {
     test('to test the property `billing`', () async {
       // TODO
     });
-
-
   });
-
 }

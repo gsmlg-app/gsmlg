@@ -31,11 +31,7 @@ void main() {
     });
 
     test('displayName returns login when name is null', () {
-      final json = {
-        'id': 12345,
-        'login': 'testuser',
-        'name': null,
-      };
+      final json = {'id': 12345, 'login': 'testuser', 'name': null};
 
       final user = GitHubUser.fromJson(json);
 

@@ -20,20 +20,22 @@ class AttachVpc2NodesRequest {
   List<String> nodes;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AttachVpc2NodesRequest &&
-    _deepEquality.equals(other.nodes, nodes);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AttachVpc2NodesRequest &&
+          _deepEquality.equals(other.nodes, nodes);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (nodes.hashCode);
+      // ignore: unnecessary_parenthesis
+      (nodes.hashCode);
 
   @override
   String toString() => 'AttachVpc2NodesRequest[nodes=$nodes]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'nodes'] = this.nodes;
+    json[r'nodes'] = this.nodes;
     return json;
   }
 
@@ -49,22 +51,29 @@ class AttachVpc2NodesRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "AttachVpc2NodesRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "AttachVpc2NodesRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "AttachVpc2NodesRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "AttachVpc2NodesRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return AttachVpc2NodesRequest(
         nodes: json[r'nodes'] is Iterable
-            ? (json[r'nodes'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'nodes'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
       );
     }
     return null;
   }
 
-  static List<AttachVpc2NodesRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<AttachVpc2NodesRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <AttachVpc2NodesRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -92,13 +101,19 @@ class AttachVpc2NodesRequest {
   }
 
   // maps a json object with a list of AttachVpc2NodesRequest-objects as value to a dart map
-  static Map<String, List<AttachVpc2NodesRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<AttachVpc2NodesRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<AttachVpc2NodesRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = AttachVpc2NodesRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = AttachVpc2NodesRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -109,4 +124,3 @@ class AttachVpc2NodesRequest {
     'nodes',
   };
 }
-

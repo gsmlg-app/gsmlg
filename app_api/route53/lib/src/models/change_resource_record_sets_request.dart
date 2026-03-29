@@ -13,10 +13,12 @@ class ChangeResourceRecordSetsRequest {
   const ChangeResourceRecordSetsRequest({
     required this.changeBatch,
   });
-  
-  factory ChangeResourceRecordSetsRequest.fromJson(Map<String, Object?> json) => _$ChangeResourceRecordSetsRequestFromJson(json);
-  
+
+  factory ChangeResourceRecordSetsRequest.fromJson(Map<String, Object?> json) =>
+      _$ChangeResourceRecordSetsRequestFromJson(json);
+
   final ChangeBatch changeBatch;
 
-  Map<String, Object?> toJson() => _$ChangeResourceRecordSetsRequestToJson(this);
+  Map<String, Object?> toJson() =>
+      _$ChangeResourceRecordSetsRequestToJson(this);
 }

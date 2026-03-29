@@ -20,20 +20,21 @@ class UpdateVpc2Request {
   String description;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateVpc2Request &&
-    other.description == description;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateVpc2Request && other.description == description;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (description.hashCode);
+      // ignore: unnecessary_parenthesis
+      (description.hashCode);
 
   @override
   String toString() => 'UpdateVpc2Request[description=$description]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'description'] = this.description;
+    json[r'description'] = this.description;
     return json;
   }
 
@@ -49,8 +50,10 @@ class UpdateVpc2Request {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateVpc2Request[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateVpc2Request[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateVpc2Request[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateVpc2Request[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +65,10 @@ class UpdateVpc2Request {
     return null;
   }
 
-  static List<UpdateVpc2Request> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateVpc2Request> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateVpc2Request>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -90,13 +96,19 @@ class UpdateVpc2Request {
   }
 
   // maps a json object with a list of UpdateVpc2Request-objects as value to a dart map
-  static Map<String, List<UpdateVpc2Request>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateVpc2Request>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateVpc2Request>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateVpc2Request.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateVpc2Request.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -107,4 +119,3 @@ class UpdateVpc2Request {
     'description',
   };
 }
-

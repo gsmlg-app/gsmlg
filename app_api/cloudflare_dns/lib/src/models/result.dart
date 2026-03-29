@@ -11,9 +11,9 @@ class Result {
   const Result({
     this.id,
   });
-  
+
   factory Result.fromJson(Map<String, Object?> json) => _$ResultFromJson(json);
-  
+
   /// Identifier of the deleted record.
   final String? id;
 

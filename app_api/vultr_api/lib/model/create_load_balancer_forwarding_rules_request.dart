@@ -32,29 +32,32 @@ class CreateLoadBalancerForwardingRulesRequest {
   int backendPort;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateLoadBalancerForwardingRulesRequest &&
-    other.frontendProtocol == frontendProtocol &&
-    other.frontendPort == frontendPort &&
-    other.backendProtocol == backendProtocol &&
-    other.backendPort == backendPort;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateLoadBalancerForwardingRulesRequest &&
+          other.frontendProtocol == frontendProtocol &&
+          other.frontendPort == frontendPort &&
+          other.backendProtocol == backendProtocol &&
+          other.backendPort == backendPort;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (frontendProtocol.hashCode) +
-    (frontendPort.hashCode) +
-    (backendProtocol.hashCode) +
-    (backendPort.hashCode);
+      // ignore: unnecessary_parenthesis
+      (frontendProtocol.hashCode) +
+      (frontendPort.hashCode) +
+      (backendProtocol.hashCode) +
+      (backendPort.hashCode);
 
   @override
-  String toString() => 'CreateLoadBalancerForwardingRulesRequest[frontendProtocol=$frontendProtocol, frontendPort=$frontendPort, backendProtocol=$backendProtocol, backendPort=$backendPort]';
+  String toString() =>
+      'CreateLoadBalancerForwardingRulesRequest[frontendProtocol=$frontendProtocol, frontendPort=$frontendPort, backendProtocol=$backendProtocol, backendPort=$backendPort]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'frontend_protocol'] = this.frontendProtocol;
-      json[r'frontend_port'] = this.frontendPort;
-      json[r'backend_protocol'] = this.backendProtocol;
-      json[r'backend_port'] = this.backendPort;
+    json[r'frontend_protocol'] = this.frontendProtocol;
+    json[r'frontend_port'] = this.frontendPort;
+    json[r'backend_protocol'] = this.backendProtocol;
+    json[r'backend_port'] = this.backendPort;
     return json;
   }
 
@@ -70,8 +73,10 @@ class CreateLoadBalancerForwardingRulesRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateLoadBalancerForwardingRulesRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateLoadBalancerForwardingRulesRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateLoadBalancerForwardingRulesRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateLoadBalancerForwardingRulesRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -86,7 +91,10 @@ class CreateLoadBalancerForwardingRulesRequest {
     return null;
   }
 
-  static List<CreateLoadBalancerForwardingRulesRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateLoadBalancerForwardingRulesRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateLoadBalancerForwardingRulesRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,12 +107,14 @@ class CreateLoadBalancerForwardingRulesRequest {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateLoadBalancerForwardingRulesRequest> mapFromJson(dynamic json) {
+  static Map<String, CreateLoadBalancerForwardingRulesRequest> mapFromJson(
+      dynamic json) {
     final map = <String, CreateLoadBalancerForwardingRulesRequest>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = CreateLoadBalancerForwardingRulesRequest.fromJson(entry.value);
+        final value =
+            CreateLoadBalancerForwardingRulesRequest.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -114,13 +124,20 @@ class CreateLoadBalancerForwardingRulesRequest {
   }
 
   // maps a json object with a list of CreateLoadBalancerForwardingRulesRequest-objects as value to a dart map
-  static Map<String, List<CreateLoadBalancerForwardingRulesRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateLoadBalancerForwardingRulesRequest>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateLoadBalancerForwardingRulesRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateLoadBalancerForwardingRulesRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateLoadBalancerForwardingRulesRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -134,4 +151,3 @@ class CreateLoadBalancerForwardingRulesRequest {
     'backend_port',
   };
 }
-

@@ -76,26 +76,29 @@ class BackupSchedule {
   int? dom;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is BackupSchedule &&
-    other.enabled == enabled &&
-    other.type == type &&
-    other.nextScheduledTimeUtc == nextScheduledTimeUtc &&
-    other.hour == hour &&
-    other.dow == dow &&
-    other.dom == dom;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BackupSchedule &&
+          other.enabled == enabled &&
+          other.type == type &&
+          other.nextScheduledTimeUtc == nextScheduledTimeUtc &&
+          other.hour == hour &&
+          other.dow == dow &&
+          other.dom == dom;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (enabled == null ? 0 : enabled!.hashCode) +
-    (type == null ? 0 : type!.hashCode) +
-    (nextScheduledTimeUtc == null ? 0 : nextScheduledTimeUtc!.hashCode) +
-    (hour == null ? 0 : hour!.hashCode) +
-    (dow == null ? 0 : dow!.hashCode) +
-    (dom == null ? 0 : dom!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (enabled == null ? 0 : enabled!.hashCode) +
+      (type == null ? 0 : type!.hashCode) +
+      (nextScheduledTimeUtc == null ? 0 : nextScheduledTimeUtc!.hashCode) +
+      (hour == null ? 0 : hour!.hashCode) +
+      (dow == null ? 0 : dow!.hashCode) +
+      (dom == null ? 0 : dom!.hashCode);
 
   @override
-  String toString() => 'BackupSchedule[enabled=$enabled, type=$type, nextScheduledTimeUtc=$nextScheduledTimeUtc, hour=$hour, dow=$dow, dom=$dom]';
+  String toString() =>
+      'BackupSchedule[enabled=$enabled, type=$type, nextScheduledTimeUtc=$nextScheduledTimeUtc, hour=$hour, dow=$dow, dom=$dom]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -144,8 +147,10 @@ class BackupSchedule {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "BackupSchedule[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "BackupSchedule[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "BackupSchedule[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "BackupSchedule[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -153,7 +158,8 @@ class BackupSchedule {
       return BackupSchedule(
         enabled: mapValueOfType<bool>(json, r'enabled'),
         type: mapValueOfType<String>(json, r'type'),
-        nextScheduledTimeUtc: mapValueOfType<String>(json, r'next_scheduled_time_utc'),
+        nextScheduledTimeUtc:
+            mapValueOfType<String>(json, r'next_scheduled_time_utc'),
         hour: mapValueOfType<int>(json, r'hour'),
         dow: mapValueOfType<int>(json, r'dow'),
         dom: mapValueOfType<int>(json, r'dom'),
@@ -162,7 +168,10 @@ class BackupSchedule {
     return null;
   }
 
-  static List<BackupSchedule> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<BackupSchedule> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <BackupSchedule>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -190,20 +199,24 @@ class BackupSchedule {
   }
 
   // maps a json object with a list of BackupSchedule-objects as value to a dart map
-  static Map<String, List<BackupSchedule>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<BackupSchedule>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<BackupSchedule>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = BackupSchedule.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = BackupSchedule.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -85,9 +85,8 @@ class GemmaModelState extends Equatable {
       errorMessage: errorMessage,
       installedModels: installedModels ?? this.installedModels,
       proxyUrl: clearProxy ? null : (proxyUrl ?? this.proxyUrl),
-      selectedModelId: clearSelectedModel
-          ? null
-          : (selectedModelId ?? this.selectedModelId),
+      selectedModelId:
+          clearSelectedModel ? null : (selectedModelId ?? this.selectedModelId),
       downloadingModelId: clearDownloadingModel
           ? null
           : (downloadingModelId ?? this.downloadingModelId),
