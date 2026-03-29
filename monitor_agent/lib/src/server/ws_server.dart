@@ -42,12 +42,14 @@ class WsServer {
               jsonDecode(data as String) as Map<String, dynamic>,
             );
             if (msg.type == MonitorMessageType.ping) {
-              channel.sink.add(jsonEncode(
-                const MonitorMessage(
-                  type: MonitorMessageType.pong,
-                  payload: {},
-                ).toJson(),
-              ));
+              channel.sink.add(
+                jsonEncode(
+                  const MonitorMessage(
+                    type: MonitorMessageType.pong,
+                    payload: {},
+                  ).toJson(),
+                ),
+              );
             }
           } catch (_) {
             // Ignore malformed messages
@@ -75,11 +77,7 @@ class WsServer {
     }
 
     if (useTls) {
-      _server = await HttpServer.bindSecure(
-        bind,
-        port,
-        securityContext!,
-      );
+      _server = await HttpServer.bindSecure(bind, port, securityContext!);
       shelf_io.serveRequests(_server!, handler);
       print('Monitor agent listening on wss://$bind:$port');
     } else {
@@ -90,15 +88,14 @@ class WsServer {
 
   shelf.Middleware get _fingerprintMiddleware =>
       (shelf.Handler innerHandler) => (shelf.Request request) {
-            if (request.url.path == 'cert-fingerprint' &&
-                request.method == 'GET') {
-              return shelf.Response.ok(
-                fingerprint ?? '',
-                headers: {'content-type': 'text/plain'},
-              );
-            }
-            return innerHandler(request);
-          };
+        if (request.url.path == 'cert-fingerprint' && request.method == 'GET') {
+          return shelf.Response.ok(
+            fingerprint ?? '',
+            headers: {'content-type': 'text/plain'},
+          );
+        }
+        return innerHandler(request);
+      };
 
   void broadcast(MonitorMessage message) {
     final data = jsonEncode(message.toJson());

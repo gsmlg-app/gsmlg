@@ -11,5 +11,6 @@ MetricsCollector<List<GpuMetrics>> createGpuCollector() {
   if (Platform.isMacOS) return MacosGpuCollector();
   if (Platform.isWindows) return WindowsGpuCollector();
   throw UnsupportedError(
-      'GPU collector not available for ${Platform.operatingSystem}');
+    'GPU collector not available for ${Platform.operatingSystem}',
+  );
 }

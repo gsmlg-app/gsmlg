@@ -35,7 +35,8 @@ class LinuxDiskCollector extends MetricsCollector<List<DiskMetrics>> {
         }
         // Skip partitions: sda1, vdb2, etc. Keep sda, nvme0n1
         if (RegExp(r'^(sd|vd)[a-z]\d').hasMatch(device)) continue;
-        if (RegExp(r'p\d+$').hasMatch(device) && device.startsWith('nvme')) continue;
+        if (RegExp(r'p\d+$').hasMatch(device) && device.startsWith('nvme'))
+          continue;
 
         deviceNames.add(device);
         // Fields: sectors read (index 5), sectors written (index 9)
@@ -48,7 +49,10 @@ class LinuxDiskCollector extends MetricsCollector<List<DiskMetrics>> {
       final writeRates = _writeTracker.computeRates(writeCurrent);
 
       // Parse df for capacity
-      final dfResult = await runProcess('df', ['-B1', '--output=source,used,size']);
+      final dfResult = await runProcess('df', [
+        '-B1',
+        '--output=source,used,size',
+      ]);
       final dfLines = (dfResult.stdout as String).split('\n').skip(1);
 
       final capacityMap = <String, ({int used, int total})>{};
@@ -70,13 +74,15 @@ class LinuxDiskCollector extends MetricsCollector<List<DiskMetrics>> {
       final metrics = <DiskMetrics>[];
       for (final device in deviceNames) {
         final cap = capacityMap[device];
-        metrics.add(DiskMetrics(
-          device: device,
-          readBytesPerSec: readRates?[device] ?? 0,
-          writeBytesPerSec: writeRates?[device] ?? 0,
-          usedBytes: cap?.used ?? 0,
-          totalBytes: cap?.total ?? 0,
-        ));
+        metrics.add(
+          DiskMetrics(
+            device: device,
+            readBytesPerSec: readRates?[device] ?? 0,
+            writeBytesPerSec: writeRates?[device] ?? 0,
+            usedBytes: cap?.used ?? 0,
+            totalBytes: cap?.total ?? 0,
+          ),
+        );
       }
 
       return metrics.isEmpty ? null : metrics;

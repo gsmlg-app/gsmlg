@@ -20,7 +20,11 @@ class WindowsCpuCollector extends MetricsCollector<CpuMetrics> {
       if (result.exitCode != 0) return null;
 
       final stdout = result.stdout as String;
-      final lines = stdout.trim().split('\n').where((l) => l.trim().isNotEmpty).toList();
+      final lines = stdout
+          .trim()
+          .split('\n')
+          .where((l) => l.trim().isNotEmpty)
+          .toList();
       if (lines.length < 2) return null;
 
       // CSV format: Node,LoadPercentage

@@ -5,7 +5,6 @@ import 'package:monitor_agent/src/collectors/collector.dart';
 import 'package:monitor_agent/src/utils/process_runner.dart';
 
 class MacosDiskCollector extends MetricsCollector<List<DiskMetrics>> {
-
   @override
   bool get isSupported => Platform.isMacOS;
 
@@ -13,8 +12,7 @@ class MacosDiskCollector extends MetricsCollector<List<DiskMetrics>> {
   Future<List<DiskMetrics>?> collect() async {
     try {
       // Use iostat for IO stats
-      final ioResult =
-          await runProcess('iostat', ['-d', '-c', '2', '-w', '1']);
+      final ioResult = await runProcess('iostat', ['-d', '-c', '2', '-w', '1']);
       final ioOutput = ioResult.stdout as String;
 
       // iostat -d -c 2 outputs two samples. We want the second set.
@@ -65,13 +63,15 @@ class MacosDiskCollector extends MetricsCollector<List<DiskMetrics>> {
         final totalKb = int.tryParse(parts[1]) ?? 0;
         final usedKb = int.tryParse(parts[2]) ?? 0;
 
-        metrics.add(DiskMetrics(
-          device: device,
-          readBytesPerSec: 0, // Updated via delta tracking if we add diskutil
-          writeBytesPerSec: 0,
-          usedBytes: usedKb * 1024,
-          totalBytes: totalKb * 1024,
-        ));
+        metrics.add(
+          DiskMetrics(
+            device: device,
+            readBytesPerSec: 0, // Updated via delta tracking if we add diskutil
+            writeBytesPerSec: 0,
+            usedBytes: usedKb * 1024,
+            totalBytes: totalKb * 1024,
+          ),
+        );
       }
 
       return metrics.isEmpty ? null : metrics;

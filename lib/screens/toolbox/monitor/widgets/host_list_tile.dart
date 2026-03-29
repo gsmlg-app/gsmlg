@@ -42,8 +42,7 @@ class HostListTile extends StatelessWidget {
           Text('${host.ip}:${host.port}'),
           if (host.trustStatus == TrustStatus.pending) ...[
             const SizedBox(width: 8),
-            Icon(Icons.lock_outline,
-                size: 14, color: Colors.orange.shade700),
+            Icon(Icons.lock_outline, size: 14, color: Colors.orange.shade700),
           ],
           if (host.trustStatus == TrustStatus.trusted) ...[
             const SizedBox(width: 8),
@@ -71,10 +70,7 @@ class HostListTile extends StatelessWidget {
               if (value == 'remove') onRemove();
             },
             itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'remove',
-                child: Text('Remove'),
-              ),
+              const PopupMenuItem(value: 'remove', child: Text('Remove')),
             ],
           ),
         ],
@@ -84,18 +80,18 @@ class HostListTile extends StatelessWidget {
   }
 
   IconData get _statusIcon => switch (host.status) {
-        ConnectionStatus.connected => Icons.check_circle,
-        ConnectionStatus.connecting => Icons.sync,
-        ConnectionStatus.disconnected => Icons.cloud_off,
-        ConnectionStatus.error => Icons.error,
-      };
+    ConnectionStatus.connected => Icons.check_circle,
+    ConnectionStatus.connecting => Icons.sync,
+    ConnectionStatus.disconnected => Icons.cloud_off,
+    ConnectionStatus.error => Icons.error,
+  };
 
   Color get _statusColor => switch (host.status) {
-        ConnectionStatus.connected => Colors.green,
-        ConnectionStatus.connecting => Colors.orange,
-        ConnectionStatus.disconnected => Colors.grey,
-        ConnectionStatus.error => Colors.red,
-      };
+    ConnectionStatus.connected => Colors.green,
+    ConnectionStatus.connecting => Colors.orange,
+    ConnectionStatus.disconnected => Colors.grey,
+    ConnectionStatus.error => Colors.red,
+  };
 
   Color _cpuColor(double percent) {
     if (percent < 60) return Colors.green;

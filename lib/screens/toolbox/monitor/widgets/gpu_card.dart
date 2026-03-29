@@ -34,8 +34,10 @@ class GpuCard extends StatelessWidget {
                 ),
                 if (gpu.temperatureCelsius != null)
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: tempColor?.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -54,18 +56,16 @@ class GpuCard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                RadialGauge(
-                  percent: gpu.usagePercent,
-                  label: 'GPU',
-                  size: 80,
-                ),
+                RadialGauge(percent: gpu.usagePercent, label: 'GPU', size: 80),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('VRAM',
-                          style: Theme.of(context).textTheme.labelSmall),
+                      Text(
+                        'VRAM',
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
                       const SizedBox(height: 4),
                       LinearProgressIndicator(
                         value: gpu.memoryUsagePercent / 100,

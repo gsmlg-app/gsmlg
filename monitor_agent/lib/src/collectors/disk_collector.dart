@@ -11,5 +11,6 @@ MetricsCollector<List<DiskMetrics>> createDiskCollector() {
   if (Platform.isMacOS) return MacosDiskCollector();
   if (Platform.isWindows) return WindowsDiskCollector();
   throw UnsupportedError(
-      'Disk collector not available for ${Platform.operatingSystem}');
+    'Disk collector not available for ${Platform.operatingSystem}',
+  );
 }

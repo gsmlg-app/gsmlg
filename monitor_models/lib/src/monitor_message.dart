@@ -16,21 +16,21 @@ enum MonitorMessageType {
   setInterval;
 
   static MonitorMessageType fromString(String value) => switch (value) {
-        Protocol.hostInfo => MonitorMessageType.hostInfo,
-        Protocol.metrics => MonitorMessageType.metrics,
-        Protocol.ping => MonitorMessageType.ping,
-        Protocol.pong => MonitorMessageType.pong,
-        Protocol.setInterval => MonitorMessageType.setInterval,
-        _ => throw ArgumentError('Unknown message type: $value'),
-      };
+    Protocol.hostInfo => MonitorMessageType.hostInfo,
+    Protocol.metrics => MonitorMessageType.metrics,
+    Protocol.ping => MonitorMessageType.ping,
+    Protocol.pong => MonitorMessageType.pong,
+    Protocol.setInterval => MonitorMessageType.setInterval,
+    _ => throw ArgumentError('Unknown message type: $value'),
+  };
 
   String toJsonString() => switch (this) {
-        MonitorMessageType.hostInfo => Protocol.hostInfo,
-        MonitorMessageType.metrics => Protocol.metrics,
-        MonitorMessageType.ping => Protocol.ping,
-        MonitorMessageType.pong => Protocol.pong,
-        MonitorMessageType.setInterval => Protocol.setInterval,
-      };
+    MonitorMessageType.hostInfo => Protocol.hostInfo,
+    MonitorMessageType.metrics => Protocol.metrics,
+    MonitorMessageType.ping => Protocol.ping,
+    MonitorMessageType.pong => Protocol.pong,
+    MonitorMessageType.setInterval => Protocol.setInterval,
+  };
 }
 
 @immutable
@@ -50,35 +50,36 @@ final class SystemMetrics extends Equatable {
   final List<DiskMetrics> disks;
 
   factory SystemMetrics.fromJson(Map<String, dynamic> json) => SystemMetrics(
-        cpu: json[Protocol.cpu] != null
-            ? CpuMetrics.fromJson(json[Protocol.cpu] as Map<String, dynamic>)
-            : null,
-        memory: json[Protocol.memory] != null
-            ? MemoryMetrics.fromJson(
-                json[Protocol.memory] as Map<String, dynamic>)
-            : null,
-        gpus: (json[Protocol.gpu] as List<dynamic>?)
-                ?.map((e) => GpuMetrics.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            const [],
-        networks: (json[Protocol.network] as List<dynamic>?)
-                ?.map(
-                    (e) => NetworkMetrics.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            const [],
-        disks: (json[Protocol.disk] as List<dynamic>?)
-                ?.map((e) => DiskMetrics.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            const [],
-      );
+    cpu: json[Protocol.cpu] != null
+        ? CpuMetrics.fromJson(json[Protocol.cpu] as Map<String, dynamic>)
+        : null,
+    memory: json[Protocol.memory] != null
+        ? MemoryMetrics.fromJson(json[Protocol.memory] as Map<String, dynamic>)
+        : null,
+    gpus:
+        (json[Protocol.gpu] as List<dynamic>?)
+            ?.map((e) => GpuMetrics.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [],
+    networks:
+        (json[Protocol.network] as List<dynamic>?)
+            ?.map((e) => NetworkMetrics.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [],
+    disks:
+        (json[Protocol.disk] as List<dynamic>?)
+            ?.map((e) => DiskMetrics.fromJson(e as Map<String, dynamic>))
+            .toList() ??
+        const [],
+  );
 
   Map<String, dynamic> toJson() => {
-        if (cpu != null) Protocol.cpu: cpu!.toJson(),
-        if (memory != null) Protocol.memory: memory!.toJson(),
-        Protocol.gpu: gpus.map((g) => g.toJson()).toList(),
-        Protocol.network: networks.map((n) => n.toJson()).toList(),
-        Protocol.disk: disks.map((d) => d.toJson()).toList(),
-      };
+    if (cpu != null) Protocol.cpu: cpu!.toJson(),
+    if (memory != null) Protocol.memory: memory!.toJson(),
+    Protocol.gpu: gpus.map((g) => g.toJson()).toList(),
+    Protocol.network: networks.map((n) => n.toJson()).toList(),
+    Protocol.disk: disks.map((d) => d.toJson()).toList(),
+  };
 
   @override
   List<Object?> get props => [cpu, memory, gpus, networks, disks];
@@ -86,23 +87,20 @@ final class SystemMetrics extends Equatable {
 
 @immutable
 final class MonitorMessage extends Equatable {
-  const MonitorMessage({
-    required this.type,
-    required this.payload,
-  });
+  const MonitorMessage({required this.type, required this.payload});
 
   final MonitorMessageType type;
   final Map<String, dynamic> payload;
 
   factory MonitorMessage.fromJson(Map<String, dynamic> json) => MonitorMessage(
-        type: MonitorMessageType.fromString(json[Protocol.type] as String),
-        payload: json[Protocol.payload] as Map<String, dynamic>? ?? const {},
-      );
+    type: MonitorMessageType.fromString(json[Protocol.type] as String),
+    payload: json[Protocol.payload] as Map<String, dynamic>? ?? const {},
+  );
 
   Map<String, dynamic> toJson() => {
-        Protocol.type: type.toJsonString(),
-        Protocol.payload: payload,
-      };
+    Protocol.type: type.toJsonString(),
+    Protocol.payload: payload,
+  };
 
   HostInfo get hostInfo => HostInfo.fromJson(payload);
   SystemMetrics get systemMetrics => SystemMetrics.fromJson(payload);

@@ -8,19 +8,9 @@ import 'package:multicast_dns/multicast_dns.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-enum ConnectionStatus {
-  disconnected,
-  connecting,
-  connected,
-  error,
-}
+enum ConnectionStatus { disconnected, connecting, connected, error }
 
-enum TrustStatus {
-  unknown,
-  pending,
-  trusted,
-  mismatch,
-}
+enum TrustStatus { unknown, pending, trusted, mismatch }
 
 class DiscoveredHost {
   const DiscoveredHost({
@@ -155,16 +145,16 @@ class MonitorRepository {
           final httpClient = HttpClient()
             ..badCertificateCallback =
                 (X509Certificate cert, String host, int port) {
-              // Compute fingerprint of the server's cert
-              receivedFingerprint = _computeCertFingerprint(cert);
+                  // Compute fingerprint of the server's cert
+                  receivedFingerprint = _computeCertFingerprint(cert);
 
-              if (pinnedFingerprint == null) {
-                // First connection -- accept and let the UI handle trust
-                return true;
-              }
-              // Verify against pinned fingerprint
-              return receivedFingerprint == pinnedFingerprint;
-            };
+                  if (pinnedFingerprint == null) {
+                    // First connection -- accept and let the UI handle trust
+                    return true;
+                  }
+                  // Verify against pinned fingerprint
+                  return receivedFingerprint == pinnedFingerprint;
+                };
 
           final ws = await WebSocket.connect(
             uri.toString(),
@@ -218,8 +208,10 @@ class MonitorRepository {
       // Wait before retrying with exponential backoff
       await Future.delayed(delay);
       delay = Duration(
-        milliseconds:
-            (delay.inMilliseconds * 2).clamp(0, maxDelay.inMilliseconds),
+        milliseconds: (delay.inMilliseconds * 2).clamp(
+          0,
+          maxDelay.inMilliseconds,
+        ),
       );
     }
 
@@ -257,20 +249,26 @@ class MonitorRepository {
   void sendSetInterval(String hostId, int seconds) {
     final channel = _channels[hostId];
     if (channel != null) {
-      channel.sink.add(jsonEncode({
-        'type': 'set_interval',
-        'payload': {'seconds': seconds},
-      }));
+      channel.sink.add(
+        jsonEncode({
+          'type': 'set_interval',
+          'payload': {'seconds': seconds},
+        }),
+      );
     }
   }
 
   void sendPing(String hostId) {
     final channel = _channels[hostId];
     if (channel != null) {
-      channel.sink.add(jsonEncode(
-        const MonitorMessage(type: MonitorMessageType.ping, payload: {})
-            .toJson(),
-      ));
+      channel.sink.add(
+        jsonEncode(
+          const MonitorMessage(
+            type: MonitorMessageType.ping,
+            payload: {},
+          ).toJson(),
+        ),
+      );
     }
   }
 }

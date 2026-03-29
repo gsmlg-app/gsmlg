@@ -11,5 +11,6 @@ MetricsCollector<MemoryMetrics> createMemoryCollector() {
   if (Platform.isMacOS) return MacosMemoryCollector();
   if (Platform.isWindows) return WindowsMemoryCollector();
   throw UnsupportedError(
-      'Memory collector not available for ${Platform.operatingSystem}');
+    'Memory collector not available for ${Platform.operatingSystem}',
+  );
 }

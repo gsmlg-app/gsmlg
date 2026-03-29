@@ -12,17 +12,14 @@ class ConnectionIndicator extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: _color,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: _color),
     );
   }
 
   Color get _color => switch (status) {
-        ConnectionStatus.connected => Colors.green,
-        ConnectionStatus.connecting => Colors.orange,
-        ConnectionStatus.disconnected => Colors.grey,
-        ConnectionStatus.error => Colors.red,
-      };
+    ConnectionStatus.connected => Colors.green,
+    ConnectionStatus.connecting => Colors.orange,
+    ConnectionStatus.disconnected => Colors.grey,
+    ConnectionStatus.error => Colors.red,
+  };
 }

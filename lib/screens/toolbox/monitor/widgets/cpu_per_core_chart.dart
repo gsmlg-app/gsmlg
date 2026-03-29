@@ -100,6 +100,5 @@ class _CoreBarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _CoreBarPainter old) =>
-      old.perCore != perCore;
+  bool shouldRepaint(covariant _CoreBarPainter old) => old.perCore != perCore;
 }

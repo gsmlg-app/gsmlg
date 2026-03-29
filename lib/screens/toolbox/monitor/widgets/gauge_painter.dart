@@ -68,20 +68,17 @@ class RadialGauge extends StatelessWidget {
               Text(
                 '${clampedPercent.toStringAsFixed(1)}%',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
+              Text(label, style: Theme.of(context).textTheme.labelSmall),
               if (sublabel != null)
                 Text(
                   sublabel!,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
             ],
           ),

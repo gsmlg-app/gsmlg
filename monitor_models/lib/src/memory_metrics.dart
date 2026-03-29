@@ -23,19 +23,24 @@ final class MemoryMetrics extends Equatable {
       swapTotalBytes > 0 ? (swapUsedBytes / swapTotalBytes) * 100 : 0;
 
   factory MemoryMetrics.fromJson(Map<String, dynamic> json) => MemoryMetrics(
-        usedBytes: json[Protocol.usedBytes] as int,
-        totalBytes: json[Protocol.totalBytes] as int,
-        swapUsedBytes: (json[Protocol.swapUsedBytes] as int?) ?? 0,
-        swapTotalBytes: (json[Protocol.swapTotalBytes] as int?) ?? 0,
-      );
+    usedBytes: json[Protocol.usedBytes] as int,
+    totalBytes: json[Protocol.totalBytes] as int,
+    swapUsedBytes: (json[Protocol.swapUsedBytes] as int?) ?? 0,
+    swapTotalBytes: (json[Protocol.swapTotalBytes] as int?) ?? 0,
+  );
 
   Map<String, dynamic> toJson() => {
-        Protocol.usedBytes: usedBytes,
-        Protocol.totalBytes: totalBytes,
-        Protocol.swapUsedBytes: swapUsedBytes,
-        Protocol.swapTotalBytes: swapTotalBytes,
-      };
+    Protocol.usedBytes: usedBytes,
+    Protocol.totalBytes: totalBytes,
+    Protocol.swapUsedBytes: swapUsedBytes,
+    Protocol.swapTotalBytes: swapTotalBytes,
+  };
 
   @override
-  List<Object?> get props => [usedBytes, totalBytes, swapUsedBytes, swapTotalBytes];
+  List<Object?> get props => [
+    usedBytes,
+    totalBytes,
+    swapUsedBytes,
+    swapTotalBytes,
+  ];
 }

@@ -13,10 +13,8 @@ class WhoisHistoryTable extends Table {
   TextColumn get query => text().nullable()();
 
   /// The WHOIS lookup result as a list of strings (JSON encoded in DB).
-  TextColumn get result =>
-      text().map(const StringListConverter()).nullable()();
+  TextColumn get result => text().map(const StringListConverter()).nullable()();
 
   /// Timestamp when the record was created.
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }

@@ -49,8 +49,10 @@ class MetricsDashboard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(hostInfo.hostname,
-                            style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          hostInfo.hostname,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         Text(
                           '${hostInfo.os} ${hostInfo.osVersion} • ${hostInfo.cpuCores} cores • v${hostInfo.agentVersion}',
                           style: Theme.of(context).textTheme.bodySmall,
@@ -84,8 +86,10 @@ class MetricsDashboard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('CPU History',
-                      style: Theme.of(context).textTheme.labelMedium),
+                  Text(
+                    'CPU History',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
                   const SizedBox(height: 4),
                   SparklineChart(
                     values: cpuHistory,
@@ -106,8 +110,10 @@ class MetricsDashboard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Per Core',
-                      style: Theme.of(context).textTheme.labelMedium),
+                  Text(
+                    'Per Core',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
                   const SizedBox(height: 4),
                   CpuPerCoreChart(perCore: metrics.cpu!.perCore),
                 ],
@@ -123,8 +129,10 @@ class MetricsDashboard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Memory History',
-                      style: Theme.of(context).textTheme.labelMedium),
+                  Text(
+                    'Memory History',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
                   const SizedBox(height: 4),
                   SparklineChart(
                     values: memoryHistory,

@@ -21,7 +21,8 @@ class CertManager {
   late final String keyPath;
 
   static String get _configDir {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '.';
     return '$home/.gsmlg-monitor';
@@ -71,10 +72,12 @@ class CertManager {
     secureRandom.seed(pc.KeyParameter(Uint8List.fromList(seeds)));
 
     final keyGen = pc.RSAKeyGenerator()
-      ..init(pc.ParametersWithRandom(
-        pc.RSAKeyGeneratorParameters(BigInt.from(65537), 2048, 64),
-        secureRandom,
-      ));
+      ..init(
+        pc.ParametersWithRandom(
+          pc.RSAKeyGeneratorParameters(BigInt.from(65537), 2048, 64),
+          secureRandom,
+        ),
+      );
 
     final pair = keyGen.generateKeyPair();
     final publicKey = pair.publicKey;
@@ -150,14 +153,8 @@ class CertManager {
     );
 
     // Sign with SHA-256/RSA
-    final signer = pc.RSASigner(
-      pc.SHA256Digest(),
-      '0609608648016503040201',
-    );
-    signer.init(
-      true,
-      pc.PrivateKeyParameter<pc.RSAPrivateKey>(privateKey),
-    );
+    final signer = pc.RSASigner(pc.SHA256Digest(), '0609608648016503040201');
+    signer.init(true, pc.PrivateKeyParameter<pc.RSAPrivateKey>(privateKey));
     final signature = signer.generateSignature(tbs);
 
     // Build Certificate = SEQUENCE { tbs, signatureAlgorithm, signatureValue }
@@ -213,10 +210,12 @@ class CertManager {
         _asn1Oid([1, 2, 840, 113549, 1, 1, 1]), // rsaEncryption
         _asn1Null(),
       ]),
-      _asn1BitString(_asn1Sequence([
-        _asn1Integer(publicKey.modulus!),
-        _asn1Integer(publicKey.publicExponent!),
-      ])),
+      _asn1BitString(
+        _asn1Sequence([
+          _asn1Integer(publicKey.modulus!),
+          _asn1Integer(publicKey.publicExponent!),
+        ]),
+      ),
     ]);
 
     // Extensions [3] EXPLICIT SEQUENCE
@@ -269,12 +268,8 @@ class CertManager {
       _asn1Integer(key.privateExponent!),
       _asn1Integer(key.p!),
       _asn1Integer(key.q!),
-      _asn1Integer(
-        key.privateExponent! % (key.p! - BigInt.one),
-      ), // d mod (p-1)
-      _asn1Integer(
-        key.privateExponent! % (key.q! - BigInt.one),
-      ), // d mod (q-1)
+      _asn1Integer(key.privateExponent! % (key.p! - BigInt.one)), // d mod (p-1)
+      _asn1Integer(key.privateExponent! % (key.q! - BigInt.one)), // d mod (q-1)
       _asn1Integer(key.q!.modInverse(key.p!)), // q^-1 mod p
     ]);
   }
@@ -304,8 +299,7 @@ class CertManager {
   Uint8List _asn1Sequence(List<Uint8List> items) =>
       _asn1Tag(0x30, _concat(items));
 
-  Uint8List _asn1Set(List<Uint8List> items) =>
-      _asn1Tag(0x31, _concat(items));
+  Uint8List _asn1Set(List<Uint8List> items) => _asn1Tag(0x31, _concat(items));
 
   Uint8List _asn1Integer(BigInt value) {
     var bytes = _bigIntToBytes(value);
@@ -327,7 +321,8 @@ class CertManager {
       _asn1Tag(0x0C, Uint8List.fromList(utf8.encode(s)));
 
   Uint8List _asn1UtcTime(DateTime dt) {
-    final s = '${(dt.year % 100).toString().padLeft(2, '0')}'
+    final s =
+        '${(dt.year % 100).toString().padLeft(2, '0')}'
         '${dt.month.toString().padLeft(2, '0')}'
         '${dt.day.toString().padLeft(2, '0')}'
         '${dt.hour.toString().padLeft(2, '0')}'

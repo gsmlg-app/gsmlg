@@ -63,7 +63,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
             final changed = prevHost.trustStatus != entry.value.trustStatus;
             if (changed &&
                 (entry.value.trustStatus == TrustStatus.pending ||
-                 entry.value.trustStatus == TrustStatus.mismatch)) {
+                    entry.value.trustStatus == TrustStatus.mismatch)) {
               return true;
             }
           }
@@ -96,13 +96,11 @@ class _MonitorScreenState extends State<MonitorScreen> {
           if (isWide) {
             return Row(
               children: [
-                SizedBox(
-                  width: 280,
-                  child: _buildHostList(context, hosts),
-                ),
+                SizedBox(width: 280, child: _buildHostList(context, hosts)),
                 const VerticalDivider(width: 1),
                 Expanded(
-                  child: _selectedHostId != null &&
+                  child:
+                      _selectedHostId != null &&
                           hosts.containsKey(_selectedHostId)
                       ? _buildMetricsDetail(context, hosts[_selectedHostId]!)
                       : _buildEmptyDetail(context),
@@ -206,9 +204,9 @@ class _MonitorScreenState extends State<MonitorScreen> {
                       }
                     },
                     onRemove: () {
-                      context
-                          .read<MonitorBloc>()
-                          .add(MonitorRemoveHost(hostId: host.id));
+                      context.read<MonitorBloc>().add(
+                        MonitorRemoveHost(hostId: host.id),
+                      );
                       if (_selectedHostId == host.id) {
                         setState(() => _selectedHostId = null);
                       }
@@ -294,15 +292,18 @@ class _MonitorScreenState extends State<MonitorScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline,
-                size: 48, color: Theme.of(context).colorScheme.error),
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
+            ),
             const SizedBox(height: 16),
             const Text('Unable to connect'),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: () => context
-                  .read<MonitorBloc>()
-                  .add(MonitorConnectHost(hostId: host.id)),
+              onPressed: () => context.read<MonitorBloc>().add(
+                MonitorConnectHost(hostId: host.id),
+              ),
               child: const Text('Retry'),
             ),
           ],
@@ -320,9 +321,9 @@ class _MonitorScreenState extends State<MonitorScreen> {
             const Text('Disconnected'),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: () => context
-                  .read<MonitorBloc>()
-                  .add(MonitorConnectHost(hostId: host.id)),
+              onPressed: () => context.read<MonitorBloc>().add(
+                MonitorConnectHost(hostId: host.id),
+              ),
               child: const Text('Connect'),
             ),
           ],
@@ -334,12 +335,8 @@ class _MonitorScreenState extends State<MonitorScreen> {
       host: host,
       cpuHistory: host.cpuHistory.items,
       memoryHistory: host.memoryHistory.items,
-      rxHistory: {
-        for (final e in host.rxHistory.entries) e.key: e.value.items,
-      },
-      txHistory: {
-        for (final e in host.txHistory.entries) e.key: e.value.items,
-      },
+      rxHistory: {for (final e in host.rxHistory.entries) e.key: e.value.items},
+      txHistory: {for (final e in host.txHistory.entries) e.key: e.value.items},
       readHistory: {
         for (final e in host.readHistory.entries) e.key: e.value.items,
       },
@@ -393,10 +390,12 @@ class _MonitorScreenState extends State<MonitorScreen> {
       builder: (_) => const AddHostDialog(),
     ).then((result) {
       if (result != null) {
-        bloc.add(MonitorAddManualHost(
-          ip: result['ip'] as String,
-          port: result['port'] as int,
-        ));
+        bloc.add(
+          MonitorAddManualHost(
+            ip: result['ip'] as String,
+            port: result['port'] as int,
+          ),
+        );
       }
     });
   }

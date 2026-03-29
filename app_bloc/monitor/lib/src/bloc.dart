@@ -15,9 +15,9 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
   MonitorBloc({
     required MonitorRepository repository,
     required TrustStore trustStore,
-  })  : _repository = repository,
-        _trustStore = trustStore,
-        super(const MonitorInitial()) {
+  }) : _repository = repository,
+       _trustStore = trustStore,
+       super(const MonitorInitial()) {
     on<MonitorConnectHost>(_onConnectHost);
     on<MonitorDisconnectHost>(_onDisconnectHost);
     on<MonitorAddManualHost>(_onAddManualHost);
@@ -75,43 +75,52 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     await _hostSubscriptions[event.hostId]?.cancel();
 
     // Look up pinned fingerprint for this host
-    final pinnedFingerprint =
-        await _trustStore.getPinnedFingerprint(event.hostId);
+    final pinnedFingerprint = await _trustStore.getPinnedFingerprint(
+      event.hostId,
+    );
 
     _hostSubscriptions[event.hostId] = _repository
         .connect(
-      event.hostId,
-      host.ip,
-      host.port,
-      pinnedFingerprint: pinnedFingerprint,
-    )
+          event.hostId,
+          host.ip,
+          host.port,
+          pinnedFingerprint: pinnedFingerprint,
+        )
         .listen((connectionEvent) {
-      switch (connectionEvent) {
-        case MonitorMessageReceived(:final message):
-          if (message.type == MonitorMessageType.hostInfo) {
-            add(_MonitorHostInfoReceived(
-              hostId: event.hostId,
-              hostInfo: message.hostInfo,
-            ));
-          } else if (message.type == MonitorMessageType.metrics) {
-            add(_MonitorMetricsReceived(
-              hostId: event.hostId,
-              metrics: message.systemMetrics,
-            ));
+          switch (connectionEvent) {
+            case MonitorMessageReceived(:final message):
+              if (message.type == MonitorMessageType.hostInfo) {
+                add(
+                  _MonitorHostInfoReceived(
+                    hostId: event.hostId,
+                    hostInfo: message.hostInfo,
+                  ),
+                );
+              } else if (message.type == MonitorMessageType.metrics) {
+                add(
+                  _MonitorMetricsReceived(
+                    hostId: event.hostId,
+                    metrics: message.systemMetrics,
+                  ),
+                );
+              }
+            case MonitorConnectionStatusChanged(:final status, :final error):
+              add(
+                _MonitorConnectionStatusChanged(
+                  hostId: event.hostId,
+                  status: status,
+                  error: error,
+                ),
+              );
+            case MonitorCertificateReceived(:final fingerprint):
+              add(
+                _MonitorCertificateReceived(
+                  hostId: event.hostId,
+                  fingerprint: fingerprint,
+                ),
+              );
           }
-        case MonitorConnectionStatusChanged(:final status, :final error):
-          add(_MonitorConnectionStatusChanged(
-            hostId: event.hostId,
-            status: status,
-            error: error,
-          ));
-        case MonitorCertificateReceived(:final fingerprint):
-          add(_MonitorCertificateReceived(
-            hostId: event.hostId,
-            fingerprint: fingerprint,
-          ));
-      }
-    });
+        });
   }
 
   Future<void> _onDisconnectHost(
@@ -218,9 +227,7 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     await _trustStore.pinFingerprint(event.hostId, host.certFingerprint!);
 
     final hosts = Map<String, MonitorHost>.from(currentState.hosts);
-    hosts[event.hostId] = host.copyWith(
-      trustStatus: TrustStatus.trusted,
-    );
+    hosts[event.hostId] = host.copyWith(trustStatus: TrustStatus.trusted);
     emit(MonitorLoaded(hosts: hosts));
   }
 
@@ -288,19 +295,23 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     }
     for (final net in m.networks) {
       rxHistory[net.interface_] =
-          (rxHistory[net.interface_] ?? RingBuffer<double>())
-              .add(net.rxBytesPerSec.toDouble());
+          (rxHistory[net.interface_] ?? RingBuffer<double>()).add(
+            net.rxBytesPerSec.toDouble(),
+          );
       txHistory[net.interface_] =
-          (txHistory[net.interface_] ?? RingBuffer<double>())
-              .add(net.txBytesPerSec.toDouble());
+          (txHistory[net.interface_] ?? RingBuffer<double>()).add(
+            net.txBytesPerSec.toDouble(),
+          );
     }
     for (final disk in m.disks) {
       readHistory[disk.device] =
-          (readHistory[disk.device] ?? RingBuffer<double>())
-              .add(disk.readBytesPerSec.toDouble());
+          (readHistory[disk.device] ?? RingBuffer<double>()).add(
+            disk.readBytesPerSec.toDouble(),
+          );
       writeHistory[disk.device] =
-          (writeHistory[disk.device] ?? RingBuffer<double>())
-              .add(disk.writeBytesPerSec.toDouble());
+          (writeHistory[disk.device] ?? RingBuffer<double>()).add(
+            disk.writeBytesPerSec.toDouble(),
+          );
     }
 
     hosts[event.hostId] = host.copyWith(
@@ -325,8 +336,10 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     final hosts = Map<String, MonitorHost>.from(currentState.hosts);
     final host = hosts[event.hostId];
     if (host != null) {
-      final warning =
-          _isVersionOlder(event.hostInfo.agentVersion, Protocol.minAgentVersion);
+      final warning = _isVersionOlder(
+        event.hostInfo.agentVersion,
+        Protocol.minAgentVersion,
+      );
       hosts[event.hostId] = host.copyWith(
         hostInfo: event.hostInfo,
         versionWarning: warning,
@@ -335,10 +348,7 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     }
   }
 
-  void _onSetInterval(
-    MonitorSetInterval event,
-    Emitter<MonitorState> emit,
-  ) {
+  void _onSetInterval(MonitorSetInterval event, Emitter<MonitorState> emit) {
     _repository.sendSetInterval(event.hostId, event.seconds);
 
     final currentState = state;

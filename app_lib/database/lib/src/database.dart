@@ -113,8 +113,7 @@ class AppDatabase extends _$AppDatabase {
   /// Delete a monitor host (and its pinned cert via cascade).
   Future<void> deleteMonitorHost(String id) async {
     // Remove trusted cert first (foreign key).
-    await (delete(monitorTrustedCertTable)
-          ..where((t) => t.hostId.equals(id)))
+    await (delete(monitorTrustedCertTable)..where((t) => t.hostId.equals(id)))
         .go();
     await (delete(monitorHostTable)..where((t) => t.id.equals(id))).go();
   }

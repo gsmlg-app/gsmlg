@@ -15,16 +15,16 @@ final class NetworkMetrics extends Equatable {
   final int rxBytesPerSec;
 
   factory NetworkMetrics.fromJson(Map<String, dynamic> json) => NetworkMetrics(
-        interface_: json[Protocol.interface_] as String,
-        txBytesPerSec: json[Protocol.txBytesPerSec] as int,
-        rxBytesPerSec: json[Protocol.rxBytesPerSec] as int,
-      );
+    interface_: json[Protocol.interface_] as String,
+    txBytesPerSec: json[Protocol.txBytesPerSec] as int,
+    rxBytesPerSec: json[Protocol.rxBytesPerSec] as int,
+  );
 
   Map<String, dynamic> toJson() => {
-        Protocol.interface_: interface_,
-        Protocol.txBytesPerSec: txBytesPerSec,
-        Protocol.rxBytesPerSec: rxBytesPerSec,
-      };
+    Protocol.interface_: interface_,
+    Protocol.txBytesPerSec: txBytesPerSec,
+    Protocol.rxBytesPerSec: rxBytesPerSec,
+  };
 
   @override
   List<Object?> get props => [interface_, txBytesPerSec, rxBytesPerSec];

@@ -99,10 +99,9 @@ class MonitorAgent {
       agentVersion: '1.0.0',
     );
 
-    _server.broadcast(MonitorMessage(
-      type: MonitorMessageType.hostInfo,
-      payload: info.toJson(),
-    ));
+    _server.broadcast(
+      MonitorMessage(type: MonitorMessageType.hostInfo, payload: info.toJson()),
+    );
   }
 
   Future<void> _collectAndBroadcast() async {
@@ -122,10 +121,12 @@ class MonitorAgent {
       disks: (results[4] as List<DiskMetrics>?) ?? const [],
     );
 
-    _server.broadcast(MonitorMessage(
-      type: MonitorMessageType.metrics,
-      payload: metrics.toJson(),
-    ));
+    _server.broadcast(
+      MonitorMessage(
+        type: MonitorMessageType.metrics,
+        payload: metrics.toJson(),
+      ),
+    );
   }
 
   Future<void> stop() async {

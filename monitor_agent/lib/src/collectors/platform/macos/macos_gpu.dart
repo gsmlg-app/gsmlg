@@ -45,34 +45,39 @@ class MacosGpuCollector extends MetricsCollector<List<GpuMetrics>> {
       }
 
       // "Device Utilization %" = <number>
-      final utilMatch =
-          RegExp(r'"Device Utilization %"\s*=\s*(\d+)').firstMatch(block);
+      final utilMatch = RegExp(
+        r'"Device Utilization %"\s*=\s*(\d+)',
+      ).firstMatch(block);
       if (utilMatch != null) {
         usage = double.parse(utilMatch.group(1)!);
       }
 
       // "VRAM,totalMB" = <number>
-      final vramTotalMatch =
-          RegExp(r'"VRAM,totalMB"\s*=\s*(\d+)').firstMatch(block);
+      final vramTotalMatch = RegExp(
+        r'"VRAM,totalMB"\s*=\s*(\d+)',
+      ).firstMatch(block);
       if (vramTotalMatch != null) {
         vramTotal = int.parse(vramTotalMatch.group(1)!) * 1024 * 1024;
       }
 
       // "VRAM,freeBytes" or similar
-      final vramFreeMatch =
-          RegExp(r'"vramFreeBytes"\s*=\s*(\d+)').firstMatch(block);
+      final vramFreeMatch = RegExp(
+        r'"vramFreeBytes"\s*=\s*(\d+)',
+      ).firstMatch(block);
       if (vramFreeMatch != null && vramTotal > 0) {
         vramUsed = vramTotal - int.parse(vramFreeMatch.group(1)!);
       }
 
       if (name != null && name != 'IOAccelerator') {
-        gpus.add(GpuMetrics(
-          index: index++,
-          name: name,
-          usagePercent: usage,
-          memoryUsedBytes: vramUsed.clamp(0, vramTotal),
-          memoryTotalBytes: vramTotal,
-        ));
+        gpus.add(
+          GpuMetrics(
+            index: index++,
+            name: name,
+            usagePercent: usage,
+            memoryUsedBytes: vramUsed.clamp(0, vramTotal),
+            memoryTotalBytes: vramTotal,
+          ),
+        );
       }
     }
 
@@ -80,10 +85,11 @@ class MacosGpuCollector extends MetricsCollector<List<GpuMetrics>> {
   }
 
   Future<List<GpuMetrics>?> _collectFromSystemProfiler() async {
-    final result = await runProcess(
-      'system_profiler',
-      ['SPDisplaysDataType', '-detailLevel', 'mini'],
-    );
+    final result = await runProcess('system_profiler', [
+      'SPDisplaysDataType',
+      '-detailLevel',
+      'mini',
+    ]);
     if (result.exitCode != 0) return null;
 
     final stdout = result.stdout as String;
@@ -96,13 +102,15 @@ class MacosGpuCollector extends MetricsCollector<List<GpuMetrics>> {
       if (match != null) {
         final name = match.group(1)!.trim();
         // VRAM line may follow
-        gpus.add(GpuMetrics(
-          index: index++,
-          name: name,
-          usagePercent: 0, // Not available from system_profiler
-          memoryUsedBytes: 0,
-          memoryTotalBytes: 0,
-        ));
+        gpus.add(
+          GpuMetrics(
+            index: index++,
+            name: name,
+            usagePercent: 0, // Not available from system_profiler
+            memoryUsedBytes: 0,
+            memoryTotalBytes: 0,
+          ),
+        );
       }
     }
 

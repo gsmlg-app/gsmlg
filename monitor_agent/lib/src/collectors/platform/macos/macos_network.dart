@@ -52,11 +52,13 @@ class MacosNetworkCollector extends MetricsCollector<List<NetworkMetrics>> {
 
       final metrics = <NetworkMetrics>[];
       for (final iface in rxRates.keys) {
-        metrics.add(NetworkMetrics(
-          interface_: iface,
-          rxBytesPerSec: rxRates[iface] ?? 0,
-          txBytesPerSec: txRates[iface] ?? 0,
-        ));
+        metrics.add(
+          NetworkMetrics(
+            interface_: iface,
+            rxBytesPerSec: rxRates[iface] ?? 0,
+            txBytesPerSec: txRates[iface] ?? 0,
+          ),
+        );
       }
 
       return metrics.isEmpty ? null : metrics;

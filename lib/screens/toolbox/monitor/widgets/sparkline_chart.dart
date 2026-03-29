@@ -73,9 +73,9 @@ class SparklineChart extends StatelessWidget {
                   left: 4,
                   child: Text(
                     label!,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: color,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.labelSmall?.copyWith(color: color),
                   ),
                 ),
             ],

@@ -11,5 +11,6 @@ MetricsCollector<List<NetworkMetrics>> createNetworkCollector() {
   if (Platform.isMacOS) return MacosNetworkCollector();
   if (Platform.isWindows) return WindowsNetworkCollector();
   throw UnsupportedError(
-      'Network collector not available for ${Platform.operatingSystem}');
+    'Network collector not available for ${Platform.operatingSystem}',
+  );
 }

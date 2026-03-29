@@ -66,9 +66,9 @@ class CertMismatchDialog extends StatelessWidget {
           child: Text(
             fp,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontFamily: 'monospace',
-                  fontSize: 10,
-                ),
+              fontFamily: 'monospace',
+              fontSize: 10,
+            ),
           ),
         ),
       ],

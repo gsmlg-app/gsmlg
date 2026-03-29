@@ -30,14 +30,16 @@ class WindowsGpuCollector extends MetricsCollector<List<GpuMetrics>> {
         final parts = line.split(',').map((s) => s.trim()).toList();
         if (parts.length < 6) continue;
 
-        gpus.add(GpuMetrics(
-          index: int.parse(parts[0]),
-          name: parts[1],
-          usagePercent: double.parse(parts[2]),
-          memoryUsedBytes: int.parse(parts[3]) * 1024 * 1024,
-          memoryTotalBytes: int.parse(parts[4]) * 1024 * 1024,
-          temperatureCelsius: double.tryParse(parts[5]),
-        ));
+        gpus.add(
+          GpuMetrics(
+            index: int.parse(parts[0]),
+            name: parts[1],
+            usagePercent: double.parse(parts[2]),
+            memoryUsedBytes: int.parse(parts[3]) * 1024 * 1024,
+            memoryTotalBytes: int.parse(parts[4]) * 1024 * 1024,
+            temperatureCelsius: double.tryParse(parts[5]),
+          ),
+        );
       }
 
       return gpus.isEmpty ? null : gpus;
@@ -61,19 +63,24 @@ class WindowsGpuCollector extends MetricsCollector<List<GpuMetrics>> {
 
       final gpus = <GpuMetrics>[];
       for (var i = 1; i < lines.length; i++) {
-        final parts = lines[i].split(',').map((s) => s.replaceAll('"', '').trim()).toList();
+        final parts = lines[i]
+            .split(',')
+            .map((s) => s.replaceAll('"', '').trim())
+            .toList();
         if (parts.isEmpty) continue;
 
         final name = parts[0];
         final vram = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
 
-        gpus.add(GpuMetrics(
-          index: i - 1,
-          name: name,
-          usagePercent: 0,
-          memoryUsedBytes: 0,
-          memoryTotalBytes: vram,
-        ));
+        gpus.add(
+          GpuMetrics(
+            index: i - 1,
+            name: name,
+            usagePercent: 0,
+            memoryUsedBytes: 0,
+            memoryTotalBytes: vram,
+          ),
+        );
       }
 
       return gpus.isEmpty ? null : gpus;

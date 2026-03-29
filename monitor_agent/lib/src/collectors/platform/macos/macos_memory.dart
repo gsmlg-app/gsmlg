@@ -24,7 +24,9 @@ class MacosMemoryCollector extends MetricsCollector<MemoryMetrics> {
       final lines = vmOutput.split('\n');
 
       // First line has page size: "Mach Virtual Memory Statistics: (page size of 16384 bytes)"
-      final pageSizeMatch = RegExp(r'page size of (\d+)').firstMatch(lines.first);
+      final pageSizeMatch = RegExp(
+        r'page size of (\d+)',
+      ).firstMatch(lines.first);
       final pageSize = int.parse(pageSizeMatch?.group(1) ?? '16384');
 
       int getPages(String key) {
@@ -56,7 +58,8 @@ class MacosMemoryCollector extends MetricsCollector<MemoryMetrics> {
         final totalMatch = RegExp(r'total\s*=\s*([\d.]+)M').firstMatch(swapStr);
         final usedMatch = RegExp(r'used\s*=\s*([\d.]+)M').firstMatch(swapStr);
         if (totalMatch != null) {
-          swapTotal = (double.parse(totalMatch.group(1)!) * 1024 * 1024).round();
+          swapTotal = (double.parse(totalMatch.group(1)!) * 1024 * 1024)
+              .round();
         }
         if (usedMatch != null) {
           swapUsed = (double.parse(usedMatch.group(1)!) * 1024 * 1024).round();

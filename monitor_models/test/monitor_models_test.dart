@@ -75,10 +75,7 @@ void main() {
     });
 
     test('usage percent calculation', () {
-      const mem = MemoryMetrics(
-        usedBytes: 8589934592,
-        totalBytes: 17179869184,
-      );
+      const mem = MemoryMetrics(usedBytes: 8589934592, totalBytes: 17179869184);
       expect(mem.usagePercent, closeTo(50.0, 0.01));
     });
   });
@@ -150,10 +147,7 @@ void main() {
     test('serialization round-trip', () {
       const metrics = SystemMetrics(
         cpu: CpuMetrics(usagePercent: 45.5, perCore: [30.0, 60.0]),
-        memory: MemoryMetrics(
-          usedBytes: 8589934592,
-          totalBytes: 17179869184,
-        ),
+        memory: MemoryMetrics(usedBytes: 8589934592, totalBytes: 17179869184),
         gpus: [
           GpuMetrics(
             index: 0,
@@ -223,15 +217,15 @@ void main() {
 
       final json = msg.toJson();
       final jsonStr = jsonEncode(json);
-      final decoded =
-          MonitorMessage.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>);
+      final decoded = MonitorMessage.fromJson(
+        jsonDecode(jsonStr) as Map<String, dynamic>,
+      );
       expect(decoded.type, MonitorMessageType.metrics);
       expect(decoded.systemMetrics.cpu?.usagePercent, 50.0);
     });
 
     test('ping/pong messages', () {
-      const ping =
-          MonitorMessage(type: MonitorMessageType.ping, payload: {});
+      const ping = MonitorMessage(type: MonitorMessageType.ping, payload: {});
       final json = ping.toJson();
       final decoded = MonitorMessage.fromJson(json);
       expect(decoded.type, MonitorMessageType.ping);

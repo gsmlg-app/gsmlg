@@ -24,32 +24,31 @@ final class GpuMetrics extends Equatable {
       memoryTotalBytes > 0 ? (memoryUsedBytes / memoryTotalBytes) * 100 : 0;
 
   factory GpuMetrics.fromJson(Map<String, dynamic> json) => GpuMetrics(
-        index: json[Protocol.gpuIndex] as int,
-        name: json[Protocol.gpuName] as String,
-        usagePercent: (json[Protocol.usagePercent] as num).toDouble(),
-        memoryUsedBytes: json[Protocol.memoryUsedBytes] as int,
-        memoryTotalBytes: json[Protocol.memoryTotalBytes] as int,
-        temperatureCelsius:
-            (json[Protocol.temperatureCelsius] as num?)?.toDouble(),
-      );
+    index: json[Protocol.gpuIndex] as int,
+    name: json[Protocol.gpuName] as String,
+    usagePercent: (json[Protocol.usagePercent] as num).toDouble(),
+    memoryUsedBytes: json[Protocol.memoryUsedBytes] as int,
+    memoryTotalBytes: json[Protocol.memoryTotalBytes] as int,
+    temperatureCelsius: (json[Protocol.temperatureCelsius] as num?)?.toDouble(),
+  );
 
   Map<String, dynamic> toJson() => {
-        Protocol.gpuIndex: index,
-        Protocol.gpuName: name,
-        Protocol.usagePercent: usagePercent,
-        Protocol.memoryUsedBytes: memoryUsedBytes,
-        Protocol.memoryTotalBytes: memoryTotalBytes,
-        if (temperatureCelsius != null)
-          Protocol.temperatureCelsius: temperatureCelsius,
-      };
+    Protocol.gpuIndex: index,
+    Protocol.gpuName: name,
+    Protocol.usagePercent: usagePercent,
+    Protocol.memoryUsedBytes: memoryUsedBytes,
+    Protocol.memoryTotalBytes: memoryTotalBytes,
+    if (temperatureCelsius != null)
+      Protocol.temperatureCelsius: temperatureCelsius,
+  };
 
   @override
   List<Object?> get props => [
-        index,
-        name,
-        usagePercent,
-        memoryUsedBytes,
-        memoryTotalBytes,
-        temperatureCelsius,
-      ];
+    index,
+    name,
+    usagePercent,
+    memoryUsedBytes,
+    memoryTotalBytes,
+    temperatureCelsius,
+  ];
 }

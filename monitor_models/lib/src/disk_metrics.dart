@@ -22,22 +22,27 @@ final class DiskMetrics extends Equatable {
       totalBytes > 0 ? (usedBytes / totalBytes) * 100 : 0;
 
   factory DiskMetrics.fromJson(Map<String, dynamic> json) => DiskMetrics(
-        device: json[Protocol.device] as String,
-        readBytesPerSec: json[Protocol.readBytesPerSec] as int,
-        writeBytesPerSec: json[Protocol.writeBytesPerSec] as int,
-        usedBytes: json[Protocol.usedBytes] as int,
-        totalBytes: json[Protocol.totalBytes] as int,
-      );
+    device: json[Protocol.device] as String,
+    readBytesPerSec: json[Protocol.readBytesPerSec] as int,
+    writeBytesPerSec: json[Protocol.writeBytesPerSec] as int,
+    usedBytes: json[Protocol.usedBytes] as int,
+    totalBytes: json[Protocol.totalBytes] as int,
+  );
 
   Map<String, dynamic> toJson() => {
-        Protocol.device: device,
-        Protocol.readBytesPerSec: readBytesPerSec,
-        Protocol.writeBytesPerSec: writeBytesPerSec,
-        Protocol.usedBytes: usedBytes,
-        Protocol.totalBytes: totalBytes,
-      };
+    Protocol.device: device,
+    Protocol.readBytesPerSec: readBytesPerSec,
+    Protocol.writeBytesPerSec: writeBytesPerSec,
+    Protocol.usedBytes: usedBytes,
+    Protocol.totalBytes: totalBytes,
+  };
 
   @override
-  List<Object?> get props =>
-      [device, readBytesPerSec, writeBytesPerSec, usedBytes, totalBytes];
+  List<Object?> get props => [
+    device,
+    readBytesPerSec,
+    writeBytesPerSec,
+    usedBytes,
+    totalBytes,
+  ];
 }

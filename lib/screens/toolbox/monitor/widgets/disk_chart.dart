@@ -29,8 +29,7 @@ class DiskChart extends StatelessWidget {
             Text('Disk', style: Theme.of(context).textTheme.titleSmall),
             const Divider(),
             for (final disk in disks) ...[
-              Text(disk.device,
-                  style: Theme.of(context).textTheme.labelMedium),
+              Text(disk.device, style: Theme.of(context).textTheme.labelMedium),
               const SizedBox(height: 4),
               if (disk.totalBytes > 0) ...[
                 Row(
@@ -59,11 +58,15 @@ class DiskChart extends StatelessWidget {
               ],
               Row(
                 children: [
-                  Text('R: ${formatBytes(disk.readBytesPerSec)}/s',
-                      style: Theme.of(context).textTheme.labelSmall),
+                  Text(
+                    'R: ${formatBytes(disk.readBytesPerSec)}/s',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                   const Spacer(),
-                  Text('W: ${formatBytes(disk.writeBytesPerSec)}/s',
-                      style: Theme.of(context).textTheme.labelSmall),
+                  Text(
+                    'W: ${formatBytes(disk.writeBytesPerSec)}/s',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                 ],
               ),
               if (readHistory[disk.device] != null)

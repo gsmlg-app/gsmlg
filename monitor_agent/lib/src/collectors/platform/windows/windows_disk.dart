@@ -22,7 +22,11 @@ class WindowsDiskCollector extends MetricsCollector<List<DiskMetrics>> {
       if (result.exitCode != 0) return null;
 
       final stdout = result.stdout as String;
-      final lines = stdout.trim().split('\n').where((l) => l.trim().isNotEmpty).toList();
+      final lines = stdout
+          .trim()
+          .split('\n')
+          .where((l) => l.trim().isNotEmpty)
+          .toList();
       if (lines.length < 2) return null;
 
       final metrics = <DiskMetrics>[];
@@ -36,13 +40,15 @@ class WindowsDiskCollector extends MetricsCollector<List<DiskMetrics>> {
 
         if (totalSize == 0) continue;
 
-        metrics.add(DiskMetrics(
-          device: device,
-          readBytesPerSec: 0, // wmic doesn't provide IO rates
-          writeBytesPerSec: 0,
-          usedBytes: totalSize - freeSpace,
-          totalBytes: totalSize,
-        ));
+        metrics.add(
+          DiskMetrics(
+            device: device,
+            readBytesPerSec: 0, // wmic doesn't provide IO rates
+            writeBytesPerSec: 0,
+            usedBytes: totalSize - freeSpace,
+            totalBytes: totalSize,
+          ),
+        );
       }
 
       return metrics.isEmpty ? null : metrics;

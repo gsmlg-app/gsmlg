@@ -32,7 +32,10 @@ class LinuxNetworkCollector extends MetricsCollector<List<NetworkMetrics>> {
         // Skip loopback
         if (iface == 'lo') continue;
 
-        final parts = trimmed.substring(colonIdx + 1).trim().split(RegExp(r'\s+'));
+        final parts = trimmed
+            .substring(colonIdx + 1)
+            .trim()
+            .split(RegExp(r'\s+'));
         if (parts.length < 10) continue;
 
         rxCurrent[iface] = int.parse(parts[0]); // rx bytes
@@ -46,11 +49,13 @@ class LinuxNetworkCollector extends MetricsCollector<List<NetworkMetrics>> {
 
       final metrics = <NetworkMetrics>[];
       for (final iface in rxRates.keys) {
-        metrics.add(NetworkMetrics(
-          interface_: iface,
-          rxBytesPerSec: rxRates[iface] ?? 0,
-          txBytesPerSec: txRates[iface] ?? 0,
-        ));
+        metrics.add(
+          NetworkMetrics(
+            interface_: iface,
+            rxBytesPerSec: rxRates[iface] ?? 0,
+            txBytesPerSec: txRates[iface] ?? 0,
+          ),
+        );
       }
 
       return metrics.isEmpty ? null : metrics;

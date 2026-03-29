@@ -6,12 +6,23 @@ import 'package:monitor_agent/monitor_agent.dart';
 Future<void> main(List<String> args) async {
   final parser = ArgParser()
     ..addOption('port', defaultsTo: '9723', help: 'WebSocket server port')
-    ..addOption('interval',
-        defaultsTo: '3', help: 'Metrics push interval (seconds)')
+    ..addOption(
+      'interval',
+      defaultsTo: '3',
+      help: 'Metrics push interval (seconds)',
+    )
     ..addOption('bind', defaultsTo: '0.0.0.0', help: 'Bind address')
     ..addFlag('no-mdns', defaultsTo: false, help: 'Disable mDNS registration')
-    ..addFlag('no-tls', defaultsTo: false, help: 'Disable TLS (plain WebSocket)')
-    ..addFlag('regen-cert', defaultsTo: false, help: 'Regenerate TLS certificate')
+    ..addFlag(
+      'no-tls',
+      defaultsTo: false,
+      help: 'Disable TLS (plain WebSocket)',
+    )
+    ..addFlag(
+      'regen-cert',
+      defaultsTo: false,
+      help: 'Regenerate TLS certificate',
+    )
     ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage');
 
   final results = parser.parse(args);

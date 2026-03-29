@@ -30,7 +30,10 @@ class WindowsNetworkCollector extends MetricsCollector<List<NetworkMetrics>> {
       final txCurrent = <String, int>{};
 
       for (var i = 1; i < lines.length; i++) {
-        final parts = lines[i].split(',').map((s) => s.replaceAll('"', '').trim()).toList();
+        final parts = lines[i]
+            .split(',')
+            .map((s) => s.replaceAll('"', '').trim())
+            .toList();
         if (parts.length < 3) continue;
 
         final name = parts[0];
@@ -48,11 +51,13 @@ class WindowsNetworkCollector extends MetricsCollector<List<NetworkMetrics>> {
 
       final metrics = <NetworkMetrics>[];
       for (final name in rxRates.keys) {
-        metrics.add(NetworkMetrics(
-          interface_: name,
-          rxBytesPerSec: rxRates[name] ?? 0,
-          txBytesPerSec: txRates[name] ?? 0,
-        ));
+        metrics.add(
+          NetworkMetrics(
+            interface_: name,
+            rxBytesPerSec: rxRates[name] ?? 0,
+            txBytesPerSec: txRates[name] ?? 0,
+          ),
+        );
       }
 
       return metrics.isEmpty ? null : metrics;

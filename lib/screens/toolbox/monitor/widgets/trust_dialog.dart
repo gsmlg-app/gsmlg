@@ -34,9 +34,9 @@ class TrustDialog extends StatelessWidget {
                 Expanded(
                   child: SelectableText(
                     fingerprint,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontFamily: 'monospace',
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
                   ),
                 ),
                 IconButton(
@@ -55,8 +55,8 @@ class TrustDialog extends StatelessWidget {
           Text(
             "Verify this matches the agent's terminal output.",
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),

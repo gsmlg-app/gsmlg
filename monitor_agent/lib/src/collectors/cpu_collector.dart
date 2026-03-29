@@ -11,5 +11,6 @@ MetricsCollector<CpuMetrics> createCpuCollector() {
   if (Platform.isMacOS) return MacosCpuCollector();
   if (Platform.isWindows) return WindowsCpuCollector();
   throw UnsupportedError(
-      'CPU collector not available for ${Platform.operatingSystem}');
+    'CPU collector not available for ${Platform.operatingSystem}',
+  );
 }

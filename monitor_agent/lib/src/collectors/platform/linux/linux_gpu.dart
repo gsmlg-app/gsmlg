@@ -26,14 +26,16 @@ class LinuxGpuCollector extends MetricsCollector<List<GpuMetrics>> {
         final parts = line.split(',').map((s) => s.trim()).toList();
         if (parts.length < 6) continue;
 
-        gpus.add(GpuMetrics(
-          index: int.parse(parts[0]),
-          name: parts[1],
-          usagePercent: double.parse(parts[2]),
-          memoryUsedBytes: int.parse(parts[3]) * 1024 * 1024, // MiB to bytes
-          memoryTotalBytes: int.parse(parts[4]) * 1024 * 1024,
-          temperatureCelsius: double.tryParse(parts[5]),
-        ));
+        gpus.add(
+          GpuMetrics(
+            index: int.parse(parts[0]),
+            name: parts[1],
+            usagePercent: double.parse(parts[2]),
+            memoryUsedBytes: int.parse(parts[3]) * 1024 * 1024, // MiB to bytes
+            memoryTotalBytes: int.parse(parts[4]) * 1024 * 1024,
+            temperatureCelsius: double.tryParse(parts[5]),
+          ),
+        );
       }
 
       return gpus.isEmpty ? null : gpus;

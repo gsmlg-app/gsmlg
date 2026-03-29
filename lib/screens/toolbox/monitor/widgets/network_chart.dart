@@ -28,16 +28,22 @@ class NetworkChart extends StatelessWidget {
             Text('Network', style: Theme.of(context).textTheme.titleSmall),
             const Divider(),
             for (final net in networks) ...[
-              Text(net.interface_,
-                  style: Theme.of(context).textTheme.labelMedium),
+              Text(
+                net.interface_,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Text('RX: ${formatBytes(net.rxBytesPerSec)}/s',
-                      style: Theme.of(context).textTheme.labelSmall),
+                  Text(
+                    'RX: ${formatBytes(net.rxBytesPerSec)}/s',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                   const Spacer(),
-                  Text('TX: ${formatBytes(net.txBytesPerSec)}/s',
-                      style: Theme.of(context).textTheme.labelSmall),
+                  Text(
+                    'TX: ${formatBytes(net.txBytesPerSec)}/s',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                 ],
               ),
               if (rxHistory[net.interface_] != null)
