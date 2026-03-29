@@ -34,13 +34,10 @@ void main() {
       // TODO
     });
 
-    // The Operating System family. 
+    // The Operating System family.
     // String family
     test('to test the property `family`', () async {
       // TODO
     });
-
-
   });
-
 }

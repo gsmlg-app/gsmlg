@@ -40,13 +40,10 @@ void main() {
       // TODO
     });
 
-    // The port number destination on the backend server. 
+    // The port number destination on the backend server.
     // int backendPort
     test('to test the property `backendPort`', () async {
       // TODO
     });
-
-
   });
-
 }

@@ -35,36 +35,39 @@ class CreateVFSRequest {
   List<String> tags;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateVFSRequest &&
-    other.region == region &&
-    other.label == label &&
-    other.storageSize == storageSize &&
-    other.diskType == diskType &&
-    _deepEquality.equals(other.tags, tags);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateVFSRequest &&
+          other.region == region &&
+          other.label == label &&
+          other.storageSize == storageSize &&
+          other.diskType == diskType &&
+          _deepEquality.equals(other.tags, tags);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (region.hashCode) +
-    (label.hashCode) +
-    (storageSize.hashCode) +
-    (diskType == null ? 0 : diskType!.hashCode) +
-    (tags.hashCode);
+      // ignore: unnecessary_parenthesis
+      (region.hashCode) +
+      (label.hashCode) +
+      (storageSize.hashCode) +
+      (diskType == null ? 0 : diskType!.hashCode) +
+      (tags.hashCode);
 
   @override
-  String toString() => 'CreateVFSRequest[region=$region, label=$label, storageSize=$storageSize, diskType=$diskType, tags=$tags]';
+  String toString() =>
+      'CreateVFSRequest[region=$region, label=$label, storageSize=$storageSize, diskType=$diskType, tags=$tags]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'region'] = this.region;
-      json[r'label'] = this.label;
-      json[r'storage_size'] = this.storageSize;
+    json[r'region'] = this.region;
+    json[r'label'] = this.label;
+    json[r'storage_size'] = this.storageSize;
     if (this.diskType != null) {
       json[r'disk_type'] = this.diskType;
     } else {
       json[r'disk_type'] = null;
     }
-      json[r'tags'] = this.tags;
+    json[r'tags'] = this.tags;
     return json;
   }
 
@@ -80,8 +83,10 @@ class CreateVFSRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateVFSRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateVFSRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateVFSRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateVFSRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -89,7 +94,8 @@ class CreateVFSRequest {
       return CreateVFSRequest(
         region: mapValueOfType<String>(json, r'region')!,
         label: mapValueOfType<String>(json, r'label')!,
-        storageSize: CreateVFSRequestStorageSize.fromJson(json[r'storage_size'])!,
+        storageSize:
+            CreateVFSRequestStorageSize.fromJson(json[r'storage_size'])!,
         diskType: CreateVFSRequestDiskTypeEnum.fromJson(json[r'disk_type']),
         tags: json[r'tags'] is Iterable
             ? (json[r'tags'] as Iterable).cast<String>().toList(growable: false)
@@ -99,7 +105,10 @@ class CreateVFSRequest {
     return null;
   }
 
-  static List<CreateVFSRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateVFSRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateVFSRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -127,13 +136,19 @@ class CreateVFSRequest {
   }
 
   // maps a json object with a list of CreateVFSRequest-objects as value to a dart map
-  static Map<String, List<CreateVFSRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateVFSRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateVFSRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateVFSRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateVFSRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -167,9 +182,13 @@ class CreateVFSRequestDiskTypeEnum {
     nvme,
   ];
 
-  static CreateVFSRequestDiskTypeEnum? fromJson(dynamic value) => CreateVFSRequestDiskTypeEnumTypeTransformer().decode(value);
+  static CreateVFSRequestDiskTypeEnum? fromJson(dynamic value) =>
+      CreateVFSRequestDiskTypeEnumTypeTransformer().decode(value);
 
-  static List<CreateVFSRequestDiskTypeEnum> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateVFSRequestDiskTypeEnum> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateVFSRequestDiskTypeEnum>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -186,7 +205,8 @@ class CreateVFSRequestDiskTypeEnum {
 /// Transformation class that can [encode] an instance of [CreateVFSRequestDiskTypeEnum] to String,
 /// and [decode] dynamic data back to [CreateVFSRequestDiskTypeEnum].
 class CreateVFSRequestDiskTypeEnumTypeTransformer {
-  factory CreateVFSRequestDiskTypeEnumTypeTransformer() => _instance ??= const CreateVFSRequestDiskTypeEnumTypeTransformer._();
+  factory CreateVFSRequestDiskTypeEnumTypeTransformer() =>
+      _instance ??= const CreateVFSRequestDiskTypeEnumTypeTransformer._();
 
   const CreateVFSRequestDiskTypeEnumTypeTransformer._();
 
@@ -203,7 +223,8 @@ class CreateVFSRequestDiskTypeEnumTypeTransformer {
   CreateVFSRequestDiskTypeEnum? decode(dynamic data, {bool allowNull = true}) {
     if (data != null) {
       switch (data) {
-        case r'nvme': return CreateVFSRequestDiskTypeEnum.nvme;
+        case r'nvme':
+          return CreateVFSRequestDiskTypeEnum.nvme;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');
@@ -216,5 +237,3 @@ class CreateVFSRequestDiskTypeEnumTypeTransformer {
   /// Singleton [CreateVFSRequestDiskTypeEnumTypeTransformer] instance.
   static CreateVFSRequestDiskTypeEnumTypeTransformer? _instance;
 }
-
-

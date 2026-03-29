@@ -30,8 +30,7 @@ class BluetoothResultCard extends StatelessWidget {
             children: [
               Tooltip(
                 richMessage: const TextSpan(
-                  text:
-                      'Bluetooth RSSI (Received Signal Strength Indicator)\n',
+                  text: 'Bluetooth RSSI (Received Signal Strength Indicator)\n',
                   children: [
                     TextSpan(
                       text:
@@ -60,15 +59,13 @@ class BluetoothResultCard extends StatelessWidget {
                           ),
                           TextSpan(
                             text: result.rssi.toString(),
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurface
-                                      .withValues(alpha: 0.618),
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.618),
+                                    ),
                           ),
                         ],
                       ),

@@ -8,16 +8,11 @@ part 'license.g.dart';
 
 @JsonSerializable()
 class License {
-  const License({
-    this.key,
-    this.name,
-    this.spdxId,
-    this.url,
-    this.nodeId,
-  });
-  
-  factory License.fromJson(Map<String, Object?> json) => _$LicenseFromJson(json);
-  
+  const License({this.key, this.name, this.spdxId, this.url, this.nodeId});
+
+  factory License.fromJson(Map<String, Object?> json) =>
+      _$LicenseFromJson(json);
+
   final String? key;
   final String? name;
   @JsonKey(name: 'spdx_id')

@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for BlockApi
 void main() {
   // final instance = BlockApi();
@@ -73,12 +72,11 @@ void main() {
 
     // Update Block Storage
     //
-    // Update information for Block Storage. 
+    // Update information for Block Storage.
     //
     //Future updateBlock(String blockId, { UpdateBlockRequest updateBlockRequest }) async
     test('test updateBlock', () async {
       // TODO
     });
-
   });
 }

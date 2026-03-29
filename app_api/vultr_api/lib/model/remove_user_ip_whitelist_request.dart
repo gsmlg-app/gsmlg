@@ -24,23 +24,25 @@ class RemoveUserIpWhitelistRequest {
   int subnetSize;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is RemoveUserIpWhitelistRequest &&
-    other.subnet == subnet &&
-    other.subnetSize == subnetSize;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RemoveUserIpWhitelistRequest &&
+          other.subnet == subnet &&
+          other.subnetSize == subnetSize;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (subnet.hashCode) +
-    (subnetSize.hashCode);
+      // ignore: unnecessary_parenthesis
+      (subnet.hashCode) + (subnetSize.hashCode);
 
   @override
-  String toString() => 'RemoveUserIpWhitelistRequest[subnet=$subnet, subnetSize=$subnetSize]';
+  String toString() =>
+      'RemoveUserIpWhitelistRequest[subnet=$subnet, subnetSize=$subnetSize]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'subnet'] = this.subnet;
-      json[r'subnet_size'] = this.subnetSize;
+    json[r'subnet'] = this.subnet;
+    json[r'subnet_size'] = this.subnetSize;
     return json;
   }
 
@@ -56,8 +58,10 @@ class RemoveUserIpWhitelistRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "RemoveUserIpWhitelistRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "RemoveUserIpWhitelistRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "RemoveUserIpWhitelistRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "RemoveUserIpWhitelistRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -70,7 +74,10 @@ class RemoveUserIpWhitelistRequest {
     return null;
   }
 
-  static List<RemoveUserIpWhitelistRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<RemoveUserIpWhitelistRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <RemoveUserIpWhitelistRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -98,13 +105,19 @@ class RemoveUserIpWhitelistRequest {
   }
 
   // maps a json object with a list of RemoveUserIpWhitelistRequest-objects as value to a dart map
-  static Map<String, List<RemoveUserIpWhitelistRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<RemoveUserIpWhitelistRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<RemoveUserIpWhitelistRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = RemoveUserIpWhitelistRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = RemoveUserIpWhitelistRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -116,4 +129,3 @@ class RemoveUserIpWhitelistRequest {
     'subnet_size',
   };
 }
-

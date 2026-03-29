@@ -82,14 +82,14 @@ class ChatState extends Equatable {
   }) {
     return ChatState(
       status: status ?? this.status,
-      conversation: clearConversation ? null : (conversation ?? this.conversation),
+      conversation:
+          clearConversation ? null : (conversation ?? this.conversation),
       conversationHistory: conversationHistory ?? this.conversationHistory,
       streamingMessageId: clearStreamingMessageId
           ? null
           : (streamingMessageId ?? this.streamingMessageId),
-      errorMessage: clearErrorMessage
-          ? null
-          : (errorMessage ?? this.errorMessage),
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }

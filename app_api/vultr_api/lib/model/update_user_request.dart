@@ -80,28 +80,31 @@ class UpdateUserRequest {
   List<String> acls;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateUserRequest &&
-    other.email == email &&
-    other.name == name &&
-    other.firstName == firstName &&
-    other.lastName == lastName &&
-    other.password == password &&
-    other.apiEnabled == apiEnabled &&
-    _deepEquality.equals(other.acls, acls);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateUserRequest &&
+          other.email == email &&
+          other.name == name &&
+          other.firstName == firstName &&
+          other.lastName == lastName &&
+          other.password == password &&
+          other.apiEnabled == apiEnabled &&
+          _deepEquality.equals(other.acls, acls);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (email == null ? 0 : email!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (firstName == null ? 0 : firstName!.hashCode) +
-    (lastName == null ? 0 : lastName!.hashCode) +
-    (password == null ? 0 : password!.hashCode) +
-    (apiEnabled == null ? 0 : apiEnabled!.hashCode) +
-    (acls.hashCode);
+      // ignore: unnecessary_parenthesis
+      (email == null ? 0 : email!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (firstName == null ? 0 : firstName!.hashCode) +
+      (lastName == null ? 0 : lastName!.hashCode) +
+      (password == null ? 0 : password!.hashCode) +
+      (apiEnabled == null ? 0 : apiEnabled!.hashCode) +
+      (acls.hashCode);
 
   @override
-  String toString() => 'UpdateUserRequest[email=$email, name=$name, firstName=$firstName, lastName=$lastName, password=$password, apiEnabled=$apiEnabled, acls=$acls]';
+  String toString() =>
+      'UpdateUserRequest[email=$email, name=$name, firstName=$firstName, lastName=$lastName, password=$password, apiEnabled=$apiEnabled, acls=$acls]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -135,7 +138,7 @@ class UpdateUserRequest {
     } else {
       json[r'api_enabled'] = null;
     }
-      json[r'acls'] = this.acls;
+    json[r'acls'] = this.acls;
     return json;
   }
 
@@ -151,8 +154,10 @@ class UpdateUserRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateUserRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateUserRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateUserRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateUserRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -172,7 +177,10 @@ class UpdateUserRequest {
     return null;
   }
 
-  static List<UpdateUserRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateUserRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateUserRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -200,20 +208,24 @@ class UpdateUserRequest {
   }
 
   // maps a json object with a list of UpdateUserRequest-objects as value to a dart map
-  static Map<String, List<UpdateUserRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateUserRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateUserRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateUserRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateUserRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

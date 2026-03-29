@@ -25,16 +25,19 @@ class GetInstanceBackupSchedule200Response {
   BackupSchedule? backupSchedule;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetInstanceBackupSchedule200Response &&
-    other.backupSchedule == backupSchedule;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetInstanceBackupSchedule200Response &&
+          other.backupSchedule == backupSchedule;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (backupSchedule == null ? 0 : backupSchedule!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (backupSchedule == null ? 0 : backupSchedule!.hashCode);
 
   @override
-  String toString() => 'GetInstanceBackupSchedule200Response[backupSchedule=$backupSchedule]';
+  String toString() =>
+      'GetInstanceBackupSchedule200Response[backupSchedule=$backupSchedule]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -58,8 +61,10 @@ class GetInstanceBackupSchedule200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetInstanceBackupSchedule200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetInstanceBackupSchedule200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetInstanceBackupSchedule200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetInstanceBackupSchedule200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -71,7 +76,10 @@ class GetInstanceBackupSchedule200Response {
     return null;
   }
 
-  static List<GetInstanceBackupSchedule200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetInstanceBackupSchedule200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetInstanceBackupSchedule200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -84,12 +92,14 @@ class GetInstanceBackupSchedule200Response {
     return result.toList(growable: growable);
   }
 
-  static Map<String, GetInstanceBackupSchedule200Response> mapFromJson(dynamic json) {
+  static Map<String, GetInstanceBackupSchedule200Response> mapFromJson(
+      dynamic json) {
     final map = <String, GetInstanceBackupSchedule200Response>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = GetInstanceBackupSchedule200Response.fromJson(entry.value);
+        final value =
+            GetInstanceBackupSchedule200Response.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -99,20 +109,25 @@ class GetInstanceBackupSchedule200Response {
   }
 
   // maps a json object with a list of GetInstanceBackupSchedule200Response-objects as value to a dart map
-  static Map<String, List<GetInstanceBackupSchedule200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetInstanceBackupSchedule200Response>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetInstanceBackupSchedule200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetInstanceBackupSchedule200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetInstanceBackupSchedule200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

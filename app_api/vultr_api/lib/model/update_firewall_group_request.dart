@@ -20,20 +20,21 @@ class UpdateFirewallGroupRequest {
   String description;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateFirewallGroupRequest &&
-    other.description == description;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateFirewallGroupRequest && other.description == description;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (description.hashCode);
+      // ignore: unnecessary_parenthesis
+      (description.hashCode);
 
   @override
   String toString() => 'UpdateFirewallGroupRequest[description=$description]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'description'] = this.description;
+    json[r'description'] = this.description;
     return json;
   }
 
@@ -49,8 +50,10 @@ class UpdateFirewallGroupRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateFirewallGroupRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateFirewallGroupRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateFirewallGroupRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateFirewallGroupRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +65,10 @@ class UpdateFirewallGroupRequest {
     return null;
   }
 
-  static List<UpdateFirewallGroupRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateFirewallGroupRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateFirewallGroupRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -90,13 +96,19 @@ class UpdateFirewallGroupRequest {
   }
 
   // maps a json object with a list of UpdateFirewallGroupRequest-objects as value to a dart map
-  static Map<String, List<UpdateFirewallGroupRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateFirewallGroupRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateFirewallGroupRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateFirewallGroupRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateFirewallGroupRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -107,4 +119,3 @@ class UpdateFirewallGroupRequest {
     'description',
   };
 }
-

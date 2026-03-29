@@ -178,9 +178,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   void _startStreaming(List<Message> messages) {
     _streamSubscription?.cancel();
-    _streamSubscription = _gemmaRepository
-        .generateResponse(messages)
-        .listen(
+    _streamSubscription = _gemmaRepository.generateResponse(messages).listen(
           (token) => add(_ChatStreamToken(token)),
           onDone: () => add(const _ChatStreamComplete()),
           onError: (error) => add(_ChatStreamError(error.toString())),
@@ -254,13 +252,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (messages.isEmpty) return;
 
     // Find and remove the last assistant message
-    final lastAssistantIndex = messages.lastIndexWhere((m) => m is AssistantMessage);
+    final lastAssistantIndex =
+        messages.lastIndexWhere((m) => m is AssistantMessage);
     if (lastAssistantIndex == -1) return;
 
     final lastAssistant = messages[lastAssistantIndex];
     await _storageRepository.deleteMessage(lastAssistant.id);
 
-    final updatedMessages = List<Message>.from(messages)..removeAt(lastAssistantIndex);
+    final updatedMessages = List<Message>.from(messages)
+      ..removeAt(lastAssistantIndex);
 
     // Create new streaming assistant message
     final newAssistantMessage = AssistantMessage(

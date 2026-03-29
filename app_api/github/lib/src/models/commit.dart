@@ -18,9 +18,9 @@ class Commit {
     this.author,
     this.committer,
   });
-  
+
   factory Commit.fromJson(Map<String, Object?> json) => _$CommitFromJson(json);
-  
+
   final String? id;
   @JsonKey(name: 'tree_id')
   final String? treeId;

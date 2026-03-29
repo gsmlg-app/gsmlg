@@ -16,9 +16,10 @@ class ChangeInfo {
     required this.submittedAt,
     this.comment,
   });
-  
-  factory ChangeInfo.fromJson(Map<String, Object?> json) => _$ChangeInfoFromJson(json);
-  
+
+  factory ChangeInfo.fromJson(Map<String, Object?> json) =>
+      _$ChangeInfoFromJson(json);
+
   /// The ID of the change.
   final String id;
   final ChangeStatus status;

@@ -79,19 +79,19 @@ class GitHubUser extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        login,
-        name,
-        email,
-        avatarUrl,
-        bio,
-        company,
-        location,
-        blog,
-        publicRepos,
-        publicGists,
-        followers,
-        following,
-        createdAt,
-      ];
+    id,
+    login,
+    name,
+    email,
+    avatarUrl,
+    bio,
+    company,
+    location,
+    blog,
+    publicRepos,
+    publicGists,
+    followers,
+    following,
+    createdAt,
+  ];
 }

@@ -11,5 +11,5 @@ enum Visibility {
   @JsonValue('public')
   public,
   @JsonValue('private')
-  private;
+  private,
 }

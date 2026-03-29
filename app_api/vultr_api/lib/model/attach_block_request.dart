@@ -30,22 +30,23 @@ class AttachBlockRequest {
   bool? live;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AttachBlockRequest &&
-    other.instanceId == instanceId &&
-    other.live == live;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AttachBlockRequest &&
+          other.instanceId == instanceId &&
+          other.live == live;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (instanceId.hashCode) +
-    (live == null ? 0 : live!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (instanceId.hashCode) + (live == null ? 0 : live!.hashCode);
 
   @override
   String toString() => 'AttachBlockRequest[instanceId=$instanceId, live=$live]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'instance_id'] = this.instanceId;
+    json[r'instance_id'] = this.instanceId;
     if (this.live != null) {
       json[r'live'] = this.live;
     } else {
@@ -66,8 +67,10 @@ class AttachBlockRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "AttachBlockRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "AttachBlockRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "AttachBlockRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "AttachBlockRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -80,7 +83,10 @@ class AttachBlockRequest {
     return null;
   }
 
-  static List<AttachBlockRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<AttachBlockRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <AttachBlockRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -108,13 +114,19 @@ class AttachBlockRequest {
   }
 
   // maps a json object with a list of AttachBlockRequest-objects as value to a dart map
-  static Map<String, List<AttachBlockRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<AttachBlockRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<AttachBlockRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = AttachBlockRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = AttachBlockRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -125,4 +137,3 @@ class AttachBlockRequest {
     'instance_id',
   };
 }
-

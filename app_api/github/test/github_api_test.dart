@@ -5,13 +5,15 @@ import 'package:test/test.dart';
 void main() {
   group('GitHubApi', () {
     test('can be instantiated', () {
-      final dio = Dio(BaseOptions(
-        baseUrl: 'https://api.github.com',
-        headers: {
-          'Authorization': 'Bearer test_token',
-          'Accept': 'application/vnd.github+json',
-        },
-      ));
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: 'https://api.github.com',
+          headers: {
+            'Authorization': 'Bearer test_token',
+            'Accept': 'application/vnd.github+json',
+          },
+        ),
+      );
       final api = GitHubApi(dio);
       expect(api, isNotNull);
       expect(api.users, isNotNull);

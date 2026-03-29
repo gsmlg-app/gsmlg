@@ -50,7 +50,6 @@ class DownloadProgress {
   String toString() => 'DownloadProgress(${percentage.toStringAsFixed(1)}%)';
 }
 
-
 /// Repository for interacting with the Gemma model.
 ///
 /// Wraps the flutter_gemma package to provide a simplified API
@@ -106,8 +105,9 @@ class GemmaRepository {
       final isInstalled = await gemma.FlutterGemma.isModelInstalled(modelId);
       debugPrint('[GemmaRepo] isModelInstalled($modelId) => $isInstalled');
 
-      _setStatus(
-          isInstalled ? GemmaModelStatus.installed : GemmaModelStatus.notInstalled);
+      _setStatus(isInstalled
+          ? GemmaModelStatus.installed
+          : GemmaModelStatus.notInstalled);
       return isInstalled;
     } catch (e, st) {
       debugPrint('[GemmaRepo] checkModelInstalled FAILED: $e');
@@ -124,7 +124,8 @@ class GemmaRepository {
   /// the model file already exists the download is skipped, but the model is
   /// still set as active.
   Future<void> activateModel(GemmaModelInfo info) async {
-    debugPrint('[GemmaRepo] activateModel(${info.id}, modelType=${info.modelType})');
+    debugPrint(
+        '[GemmaRepo] activateModel(${info.id}, modelType=${info.modelType})');
     try {
       final builder = gemma.FlutterGemma.installModel(
         modelType: info.modelType,
@@ -153,14 +154,16 @@ class GemmaRepository {
     required String url,
     String? token,
   }) async {
-    debugPrint('[GemmaRepo] installModel(nativeModelType=$nativeModelType, url=$url, hasToken=${token != null})');
+    debugPrint(
+        '[GemmaRepo] installModel(nativeModelType=$nativeModelType, url=$url, hasToken=${token != null})');
     _setStatus(GemmaModelStatus.downloading);
     _progressController.add(const DownloadProgress(percentage: 0));
 
     try {
       final filePath = await _downloadFile(url: url, token: token);
 
-      debugPrint('[GemmaRepo] Installing model from downloaded file: $filePath');
+      debugPrint(
+          '[GemmaRepo] Installing model from downloaded file: $filePath');
       await gemma.FlutterGemma.installModel(
         modelType: nativeModelType,
       ).fromFile(filePath).install();
@@ -188,7 +191,8 @@ class GemmaRepository {
     required String proxyUrl,
     String? token,
   }) async {
-    debugPrint('[GemmaRepo] installModelWithProxy(nativeModelType=$nativeModelType, url=$url, proxy=$proxyUrl, hasToken=${token != null})');
+    debugPrint(
+        '[GemmaRepo] installModelWithProxy(nativeModelType=$nativeModelType, url=$url, proxy=$proxyUrl, hasToken=${token != null})');
     _setStatus(GemmaModelStatus.downloading);
     _progressController.add(const DownloadProgress(percentage: 0));
 
@@ -199,7 +203,8 @@ class GemmaRepository {
         token: token,
       );
 
-      debugPrint('[GemmaRepo] Installing model from downloaded file: $filePath');
+      debugPrint(
+          '[GemmaRepo] Installing model from downloaded file: $filePath');
       await gemma.FlutterGemma.installModel(
         modelType: nativeModelType,
       ).fromFile(filePath).install();
@@ -237,7 +242,8 @@ class GemmaRepository {
     var existingBytes = 0;
     if (file.existsSync()) {
       existingBytes = file.lengthSync();
-      debugPrint('[GemmaRepo] Found partial download: $existingBytes bytes at $filePath');
+      debugPrint(
+          '[GemmaRepo] Found partial download: $existingBytes bytes at $filePath');
     }
 
     final client = HttpClient();
@@ -254,7 +260,8 @@ class GemmaRepository {
         client.findProxy = (uri) => proxyDirective;
       }
 
-      debugPrint('[GemmaRepo] Sending GET request to $url (resume from $existingBytes bytes)...');
+      debugPrint(
+          '[GemmaRepo] Sending GET request to $url (resume from $existingBytes bytes)...');
       final request = await client.getUrl(Uri.parse(url));
       if (token != null) {
         request.headers.set('Authorization', 'Bearer $token');
@@ -277,18 +284,21 @@ class GemmaRepository {
         totalBytes = existingBytes + response.contentLength;
         received = existingBytes;
         sink = file.openWrite(mode: FileMode.append);
-        debugPrint('[GemmaRepo] Resuming download: $existingBytes / $totalBytes bytes');
+        debugPrint(
+            '[GemmaRepo] Resuming download: $existingBytes / $totalBytes bytes');
       } else if (response.statusCode == 200) {
         // Full content — server ignored Range or doesn't support it.
         totalBytes = response.contentLength;
         received = 0;
         sink = file.openWrite(); // overwrite
-        debugPrint('[GemmaRepo] Starting fresh download (totalBytes=$totalBytes)');
+        debugPrint(
+            '[GemmaRepo] Starting fresh download (totalBytes=$totalBytes)');
       } else if (response.statusCode == 416) {
         // Range Not Satisfiable — the file may already be complete.
         // Drain response and return the existing file.
         await response.drain<void>();
-        debugPrint('[GemmaRepo] 416 Range Not Satisfiable — file may be complete ($existingBytes bytes)');
+        debugPrint(
+            '[GemmaRepo] 416 Range Not Satisfiable — file may be complete ($existingBytes bytes)');
         return filePath;
       } else {
         final errorBody = await response.transform(utf8.decoder).join();
@@ -311,7 +321,8 @@ class GemmaRepository {
           final percent = (received / totalBytes * 100).clamp(0.0, 100.0);
           final percentInt = percent.toInt();
           if (percentInt != lastLogPercent && percentInt % 10 == 0) {
-            debugPrint('[GemmaRepo] Download progress: $percentInt% ($received / $totalBytes bytes)');
+            debugPrint(
+                '[GemmaRepo] Download progress: $percentInt% ($received / $totalBytes bytes)');
             lastLogPercent = percentInt;
           }
           _progressController.add(DownloadProgress(percentage: percent));
@@ -333,7 +344,8 @@ class GemmaRepository {
       File(filePath).deleteSync();
       debugPrint('[GemmaRepo] Cleaned up download file: $filePath');
     } catch (e) {
-      debugPrint('[GemmaRepo] Failed to clean up download file: $filePath ($e)');
+      debugPrint(
+          '[GemmaRepo] Failed to clean up download file: $filePath ($e)');
     }
   }
 
@@ -345,7 +357,8 @@ class GemmaRepository {
     required gemma.ModelType modelType,
     required String assetPath,
   }) async {
-    debugPrint('[GemmaRepo] installModelFromAsset(modelType=$modelType, assetPath=$assetPath)');
+    debugPrint(
+        '[GemmaRepo] installModelFromAsset(modelType=$modelType, assetPath=$assetPath)');
     _setStatus(GemmaModelStatus.downloading);
 
     try {
@@ -353,20 +366,25 @@ class GemmaRepository {
         // Desktop platforms: large_file_handler has no implementation, so
         // resolve the asset from the app bundle and use fromFile().
         final resolvedPath = _resolveBundledAssetPath(assetPath);
-        debugPrint('[GemmaRepo] Desktop platform, resolved asset path: $resolvedPath');
+        debugPrint(
+            '[GemmaRepo] Desktop platform, resolved asset path: $resolvedPath');
         if (resolvedPath != null && File(resolvedPath).existsSync()) {
-          debugPrint('[GemmaRepo] Asset file found (${File(resolvedPath).lengthSync()} bytes), installing via fromFile...');
+          debugPrint(
+              '[GemmaRepo] Asset file found (${File(resolvedPath).lengthSync()} bytes), installing via fromFile...');
           await gemma.FlutterGemma.installModel(
             modelType: modelType,
           ).fromFile(resolvedPath).install();
-          debugPrint('[GemmaRepo] fromFile().install() completed successfully (desktop asset fallback)');
+          debugPrint(
+              '[GemmaRepo] fromFile().install() completed successfully (desktop asset fallback)');
         } else {
           debugPrint('[GemmaRepo] Asset file NOT found at: $resolvedPath');
-          throw Exception('Bundled asset not found at resolved path: $resolvedPath');
+          throw Exception(
+              'Bundled asset not found at resolved path: $resolvedPath');
         }
       } else {
         // Mobile platforms: use native fromAsset() via large_file_handler.
-        debugPrint('[GemmaRepo] Mobile platform, using fromAsset($assetPath)...');
+        debugPrint(
+            '[GemmaRepo] Mobile platform, using fromAsset($assetPath)...');
         await gemma.FlutterGemma.installModel(
           modelType: modelType,
         ).fromAsset(assetPath).install();
@@ -394,8 +412,8 @@ class GemmaRepository {
     if (Platform.isMacOS) {
       final executable = Platform.resolvedExecutable;
       final bundlePath = p.dirname(p.dirname(executable));
-      return p.join(bundlePath, 'Frameworks', 'App.framework',
-          'Resources', 'flutter_assets', assetPath);
+      return p.join(bundlePath, 'Frameworks', 'App.framework', 'Resources',
+          'flutter_assets', assetPath);
     }
     if (Platform.isLinux || Platform.isWindows) {
       final exeDir = p.dirname(Platform.resolvedExecutable);
@@ -409,7 +427,8 @@ class GemmaRepository {
     required gemma.ModelType nativeModelType,
     required String filePath,
   }) async {
-    debugPrint('[GemmaRepo] installModelFromFile(nativeModelType=$nativeModelType, filePath=$filePath)');
+    debugPrint(
+        '[GemmaRepo] installModelFromFile(nativeModelType=$nativeModelType, filePath=$filePath)');
     _setStatus(GemmaModelStatus.downloading);
 
     try {
@@ -433,7 +452,8 @@ class GemmaRepository {
     debugPrint('[GemmaRepo] listInstalledModels()');
     try {
       final models = await gemma.FlutterGemma.listInstalledModels();
-      debugPrint('[GemmaRepo] listInstalledModels => $models (${models.length} models)');
+      debugPrint(
+          '[GemmaRepo] listInstalledModels => $models (${models.length} models)');
       return models;
     } catch (e, st) {
       debugPrint('[GemmaRepo] listInstalledModels FAILED: $e');
@@ -468,7 +488,8 @@ class GemmaRepository {
       // clean up the stale entry and report as not installed.
       if (msg.contains('no longer installed') ||
           msg.contains('validation failed')) {
-        debugPrint('[GemmaRepo] Model file missing on disk, cleaning stale registry entry');
+        debugPrint(
+            '[GemmaRepo] Model file missing on disk, cleaning stale registry entry');
         _setStatus(GemmaModelStatus.notInstalled);
       } else {
         _setError('Failed to load model: $e');
@@ -678,14 +699,6 @@ class GemmaRepository {
     _status = GemmaModelStatus.error;
     _lastError = message;
     _statusController.add(GemmaModelStatus.error);
-  }
-
-  gemma.ModelType _toGemmaModelType(GemmaModelType type) {
-    return switch (type) {
-      GemmaModelType.gemma2bIt => gemma.ModelType.gemmaIt,
-      GemmaModelType.gemma7bIt => gemma.ModelType.gemmaIt,
-      GemmaModelType.custom => gemma.ModelType.general,
-    };
   }
 
   gemma.PreferredBackend _toGemmaBackend(GemmaBackend backend) {

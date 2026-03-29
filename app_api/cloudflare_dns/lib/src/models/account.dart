@@ -12,9 +12,10 @@ class Account {
     this.id,
     this.name,
   });
-  
-  factory Account.fromJson(Map<String, Object?> json) => _$AccountFromJson(json);
-  
+
+  factory Account.fromJson(Map<String, Object?> json) =>
+      _$AccountFromJson(json);
+
   /// Account identifier.
   final String? id;
 

@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class StorageGatewaysApi {
-  StorageGatewaysApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  StorageGatewaysApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,10 +26,13 @@ class StorageGatewaysApi {
   ///   The [Storage Gateway id](#operation/list-storage-gateways).
   ///
   /// * [List<StorageGatewayExport>] storageGatewayExport:
-  Future<Response> addStorageGatewayExportWithHttpInfo(String storageGatewayId, { List<StorageGatewayExport>? storageGatewayExport, }) async {
+  Future<Response> addStorageGatewayExportWithHttpInfo(
+    String storageGatewayId, {
+    List<StorageGatewayExport>? storageGatewayExport,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/storage-gateways/{storage-gateway-id}/exports'
-      .replaceAll('{storage-gateway-id}', storageGatewayId);
+        .replaceAll('{storage-gateway-id}', storageGatewayId);
 
     // ignore: prefer_final_locals
     Object? postBody = storageGatewayExport;
@@ -39,7 +42,6 @@ class StorageGatewaysApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -60,17 +62,26 @@ class StorageGatewaysApi {
   ///   The [Storage Gateway id](#operation/list-storage-gateways).
   ///
   /// * [List<StorageGatewayExport>] storageGatewayExport:
-  Future<AddStorageGatewayExport200Response?> addStorageGatewayExport(String storageGatewayId, { List<StorageGatewayExport>? storageGatewayExport, }) async {
-    final response = await addStorageGatewayExportWithHttpInfo(storageGatewayId,  storageGatewayExport: storageGatewayExport, );
+  Future<AddStorageGatewayExport200Response?> addStorageGatewayExport(
+    String storageGatewayId, {
+    List<StorageGatewayExport>? storageGatewayExport,
+  }) async {
+    final response = await addStorageGatewayExportWithHttpInfo(
+      storageGatewayId,
+      storageGatewayExport: storageGatewayExport,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'AddStorageGatewayExport200Response',) as AddStorageGatewayExport200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'AddStorageGatewayExport200Response',
+      ) as AddStorageGatewayExport200Response;
     }
     return null;
   }
@@ -82,7 +93,9 @@ class StorageGatewaysApi {
   /// Parameters:
   ///
   /// * [CreateStorageGatewayRequest] createStorageGatewayRequest:
-  Future<Response> createStorageGatewayWithHttpInfo({ CreateStorageGatewayRequest? createStorageGatewayRequest, }) async {
+  Future<Response> createStorageGatewayWithHttpInfo({
+    CreateStorageGatewayRequest? createStorageGatewayRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/storage-gateways';
 
@@ -94,7 +107,6 @@ class StorageGatewaysApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -112,17 +124,24 @@ class StorageGatewaysApi {
   /// Parameters:
   ///
   /// * [CreateStorageGatewayRequest] createStorageGatewayRequest:
-  Future<CreateStorageGateway202Response?> createStorageGateway({ CreateStorageGatewayRequest? createStorageGatewayRequest, }) async {
-    final response = await createStorageGatewayWithHttpInfo( createStorageGatewayRequest: createStorageGatewayRequest, );
+  Future<CreateStorageGateway202Response?> createStorageGateway({
+    CreateStorageGatewayRequest? createStorageGatewayRequest,
+  }) async {
+    final response = await createStorageGatewayWithHttpInfo(
+      createStorageGatewayRequest: createStorageGatewayRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateStorageGateway202Response',) as CreateStorageGateway202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateStorageGateway202Response',
+      ) as CreateStorageGateway202Response;
     }
     return null;
   }
@@ -137,10 +156,12 @@ class StorageGatewaysApi {
   ///
   /// * [String] storageGatewayId (required):
   ///   The [Storage Gateway id](#operation/list-storage-gateways).
-  Future<Response> deleteStorageGatewayWithHttpInfo(String storageGatewayId,) async {
+  Future<Response> deleteStorageGatewayWithHttpInfo(
+    String storageGatewayId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/storage-gateways/{storage-gateway-id}'
-      .replaceAll('{storage-gateway-id}', storageGatewayId);
+        .replaceAll('{storage-gateway-id}', storageGatewayId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -150,7 +171,6 @@ class StorageGatewaysApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -171,8 +191,12 @@ class StorageGatewaysApi {
   ///
   /// * [String] storageGatewayId (required):
   ///   The [Storage Gateway id](#operation/list-storage-gateways).
-  Future<void> deleteStorageGateway(String storageGatewayId,) async {
-    final response = await deleteStorageGatewayWithHttpInfo(storageGatewayId,);
+  Future<void> deleteStorageGateway(
+    String storageGatewayId,
+  ) async {
+    final response = await deleteStorageGatewayWithHttpInfo(
+      storageGatewayId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -191,11 +215,14 @@ class StorageGatewaysApi {
   ///
   /// * [] UNKNOWN_PARAMETER_NAME2 (required):
   ///   The [Storage Gateway export id](#operation/list-storage-gateways).
-  Future<Response> deleteStorageGatewayExportWithHttpInfo( UNKNOWN_PARAMETER_NAME,  UNKNOWN_PARAMETER_NAME2,) async {
+  Future<Response> deleteStorageGatewayExportWithHttpInfo(
+    UNKNOWN_PARAMETER_NAME,
+    UNKNOWN_PARAMETER_NAME2,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/storage-gateways/{storage-gateway-id}/exports/{export-id}'
-      .replaceAll('{storage-gateway-id}', UNKNOWN_PARAMETER_NAME.toString())
-      .replaceAll('{export-id}', UNKNOWN_PARAMETER_NAME2.toString());
+        .replaceAll('{storage-gateway-id}', UNKNOWN_PARAMETER_NAME.toString())
+        .replaceAll('{export-id}', UNKNOWN_PARAMETER_NAME2.toString());
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -205,7 +232,6 @@ class StorageGatewaysApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -229,8 +255,14 @@ class StorageGatewaysApi {
   ///
   /// * [] UNKNOWN_PARAMETER_NAME2 (required):
   ///   The [Storage Gateway export id](#operation/list-storage-gateways).
-  Future<void> deleteStorageGatewayExport( UNKNOWN_PARAMETER_NAME,  UNKNOWN_PARAMETER_NAME2,) async {
-    final response = await deleteStorageGatewayExportWithHttpInfo(UNKNOWN_PARAMETER_NAME, UNKNOWN_PARAMETER_NAME2,);
+  Future<void> deleteStorageGatewayExport(
+    UNKNOWN_PARAMETER_NAME,
+    UNKNOWN_PARAMETER_NAME2,
+  ) async {
+    final response = await deleteStorageGatewayExportWithHttpInfo(
+      UNKNOWN_PARAMETER_NAME,
+      UNKNOWN_PARAMETER_NAME2,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -246,10 +278,12 @@ class StorageGatewaysApi {
   ///
   /// * [String] storageGatewayId (required):
   ///   The [Storage Gateway id](#operation/list-storage-gateways).
-  Future<Response> getStorageGatewayWithHttpInfo(String storageGatewayId,) async {
+  Future<Response> getStorageGatewayWithHttpInfo(
+    String storageGatewayId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/storage-gateways/{storage-gateway-id}'
-      .replaceAll('{storage-gateway-id}', storageGatewayId);
+        .replaceAll('{storage-gateway-id}', storageGatewayId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -259,7 +293,6 @@ class StorageGatewaysApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -280,17 +313,24 @@ class StorageGatewaysApi {
   ///
   /// * [String] storageGatewayId (required):
   ///   The [Storage Gateway id](#operation/list-storage-gateways).
-  Future<CreateStorageGateway202Response?> getStorageGateway(String storageGatewayId,) async {
-    final response = await getStorageGatewayWithHttpInfo(storageGatewayId,);
+  Future<CreateStorageGateway202Response?> getStorageGateway(
+    String storageGatewayId,
+  ) async {
+    final response = await getStorageGatewayWithHttpInfo(
+      storageGatewayId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateStorageGateway202Response',) as CreateStorageGateway202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateStorageGateway202Response',
+      ) as CreateStorageGateway202Response;
     }
     return null;
   }
@@ -308,7 +348,10 @@ class StorageGatewaysApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listStorageGatewaysWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listStorageGatewaysWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/storage-gateways';
 
@@ -328,7 +371,6 @@ class StorageGatewaysApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -351,17 +393,26 @@ class StorageGatewaysApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListStorageGateways200Response?> listStorageGateways({ int? perPage, String? cursor, }) async {
-    final response = await listStorageGatewaysWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListStorageGateways200Response?> listStorageGateways({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listStorageGatewaysWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListStorageGateways200Response',) as ListStorageGateways200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListStorageGateways200Response',
+      ) as ListStorageGateways200Response;
     }
     return null;
   }
@@ -379,10 +430,13 @@ class StorageGatewaysApi {
   ///
   /// * [UpdateStorageGatewayRequest] updateStorageGatewayRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateStorageGatewayWithHttpInfo(String storageGatewayId, { UpdateStorageGatewayRequest? updateStorageGatewayRequest, }) async {
+  Future<Response> updateStorageGatewayWithHttpInfo(
+    String storageGatewayId, {
+    UpdateStorageGatewayRequest? updateStorageGatewayRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/storage-gateways/{storage-gateway-id}'
-      .replaceAll('{storage-gateway-id}', storageGatewayId);
+        .replaceAll('{storage-gateway-id}', storageGatewayId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateStorageGatewayRequest;
@@ -392,7 +446,6 @@ class StorageGatewaysApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -416,8 +469,14 @@ class StorageGatewaysApi {
   ///
   /// * [UpdateStorageGatewayRequest] updateStorageGatewayRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateStorageGateway(String storageGatewayId, { UpdateStorageGatewayRequest? updateStorageGatewayRequest, }) async {
-    final response = await updateStorageGatewayWithHttpInfo(storageGatewayId,  updateStorageGatewayRequest: updateStorageGatewayRequest, );
+  Future<void> updateStorageGateway(
+    String storageGatewayId, {
+    UpdateStorageGatewayRequest? updateStorageGatewayRequest,
+  }) async {
+    final response = await updateStorageGatewayWithHttpInfo(
+      storageGatewayId,
+      updateStorageGatewayRequest: updateStorageGatewayRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

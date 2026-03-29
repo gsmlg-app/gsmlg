@@ -66,48 +66,51 @@ class CreateUserRequest {
   bool? serviceUser;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateUserRequest &&
-    other.email == email &&
-    other.name == name &&
-    other.firstName == firstName &&
-    other.lastName == lastName &&
-    other.password == password &&
-    other.apiEnabled == apiEnabled &&
-    _deepEquality.equals(other.acls, acls) &&
-    other.serviceUser == serviceUser;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateUserRequest &&
+          other.email == email &&
+          other.name == name &&
+          other.firstName == firstName &&
+          other.lastName == lastName &&
+          other.password == password &&
+          other.apiEnabled == apiEnabled &&
+          _deepEquality.equals(other.acls, acls) &&
+          other.serviceUser == serviceUser;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (email.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (firstName.hashCode) +
-    (lastName.hashCode) +
-    (password.hashCode) +
-    (apiEnabled == null ? 0 : apiEnabled!.hashCode) +
-    (acls.hashCode) +
-    (serviceUser == null ? 0 : serviceUser!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (email.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (firstName.hashCode) +
+      (lastName.hashCode) +
+      (password.hashCode) +
+      (apiEnabled == null ? 0 : apiEnabled!.hashCode) +
+      (acls.hashCode) +
+      (serviceUser == null ? 0 : serviceUser!.hashCode);
 
   @override
-  String toString() => 'CreateUserRequest[email=$email, name=$name, firstName=$firstName, lastName=$lastName, password=$password, apiEnabled=$apiEnabled, acls=$acls, serviceUser=$serviceUser]';
+  String toString() =>
+      'CreateUserRequest[email=$email, name=$name, firstName=$firstName, lastName=$lastName, password=$password, apiEnabled=$apiEnabled, acls=$acls, serviceUser=$serviceUser]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'email'] = this.email;
+    json[r'email'] = this.email;
     if (this.name != null) {
       json[r'name'] = this.name;
     } else {
       json[r'name'] = null;
     }
-      json[r'first_name'] = this.firstName;
-      json[r'last_name'] = this.lastName;
-      json[r'password'] = this.password;
+    json[r'first_name'] = this.firstName;
+    json[r'last_name'] = this.lastName;
+    json[r'password'] = this.password;
     if (this.apiEnabled != null) {
       json[r'api_enabled'] = this.apiEnabled;
     } else {
       json[r'api_enabled'] = null;
     }
-      json[r'acls'] = this.acls;
+    json[r'acls'] = this.acls;
     if (this.serviceUser != null) {
       json[r'service_user'] = this.serviceUser;
     } else {
@@ -128,8 +131,10 @@ class CreateUserRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateUserRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateUserRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateUserRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateUserRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -150,7 +155,10 @@ class CreateUserRequest {
     return null;
   }
 
-  static List<CreateUserRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateUserRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateUserRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -178,13 +186,19 @@ class CreateUserRequest {
   }
 
   // maps a json object with a list of CreateUserRequest-objects as value to a dart map
-  static Map<String, List<CreateUserRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateUserRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateUserRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateUserRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateUserRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -198,4 +212,3 @@ class CreateUserRequest {
     'password',
   };
 }
-

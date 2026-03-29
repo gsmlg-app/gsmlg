@@ -46,7 +46,7 @@ class Os {
   ///
   String? arch;
 
-  /// The Operating System family. 
+  /// The Operating System family.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -56,19 +56,21 @@ class Os {
   String? family;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Os &&
-    other.id == id &&
-    other.name == name &&
-    other.arch == arch &&
-    other.family == family;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Os &&
+          other.id == id &&
+          other.name == name &&
+          other.arch == arch &&
+          other.family == family;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (arch == null ? 0 : arch!.hashCode) +
-    (family == null ? 0 : family!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (arch == null ? 0 : arch!.hashCode) +
+      (family == null ? 0 : family!.hashCode);
 
   @override
   String toString() => 'Os[id=$id, name=$name, arch=$arch, family=$family]';
@@ -110,8 +112,10 @@ class Os {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Os[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Os[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Os[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Os[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -126,7 +130,10 @@ class Os {
     return null;
   }
 
-  static List<Os> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Os> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Os>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -154,20 +161,24 @@ class Os {
   }
 
   // maps a json object with a list of Os-objects as value to a dart map
-  static Map<String, List<Os>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Os>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Os>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Os.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Os.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

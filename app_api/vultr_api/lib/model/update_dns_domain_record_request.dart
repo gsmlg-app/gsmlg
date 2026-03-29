@@ -56,22 +56,25 @@ class UpdateDnsDomainRecordRequest {
   int? priority;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateDnsDomainRecordRequest &&
-    other.name == name &&
-    other.data == data &&
-    other.ttl == ttl &&
-    other.priority == priority;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateDnsDomainRecordRequest &&
+          other.name == name &&
+          other.data == data &&
+          other.ttl == ttl &&
+          other.priority == priority;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (name == null ? 0 : name!.hashCode) +
-    (data == null ? 0 : data!.hashCode) +
-    (ttl == null ? 0 : ttl!.hashCode) +
-    (priority == null ? 0 : priority!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (name == null ? 0 : name!.hashCode) +
+      (data == null ? 0 : data!.hashCode) +
+      (ttl == null ? 0 : ttl!.hashCode) +
+      (priority == null ? 0 : priority!.hashCode);
 
   @override
-  String toString() => 'UpdateDnsDomainRecordRequest[name=$name, data=$data, ttl=$ttl, priority=$priority]';
+  String toString() =>
+      'UpdateDnsDomainRecordRequest[name=$name, data=$data, ttl=$ttl, priority=$priority]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -110,8 +113,10 @@ class UpdateDnsDomainRecordRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateDnsDomainRecordRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateDnsDomainRecordRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateDnsDomainRecordRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateDnsDomainRecordRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -126,7 +131,10 @@ class UpdateDnsDomainRecordRequest {
     return null;
   }
 
-  static List<UpdateDnsDomainRecordRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateDnsDomainRecordRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateDnsDomainRecordRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -154,20 +162,24 @@ class UpdateDnsDomainRecordRequest {
   }
 
   // maps a json object with a list of UpdateDnsDomainRecordRequest-objects as value to a dart map
-  static Map<String, List<UpdateDnsDomainRecordRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateDnsDomainRecordRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateDnsDomainRecordRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateDnsDomainRecordRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateDnsDomainRecordRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

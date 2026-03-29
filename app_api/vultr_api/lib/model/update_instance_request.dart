@@ -194,58 +194,63 @@ class UpdateInstanceRequest {
   String? userScheme;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateInstanceRequest &&
-    other.appId == appId &&
-    other.imageId == imageId &&
-    other.backups == backups &&
-    other.firewallGroupId == firewallGroupId &&
-    other.enableIpv6 == enableIpv6 &&
-    other.osId == osId &&
-    other.userData == userData &&
-    other.tag == tag &&
-    other.plan == plan &&
-    other.ddosProtection == ddosProtection &&
-    _deepEquality.equals(other.attachPrivateNetwork, attachPrivateNetwork) &&
-    _deepEquality.equals(other.attachVpc, attachVpc) &&
-    _deepEquality.equals(other.attachVpc2, attachVpc2) &&
-    _deepEquality.equals(other.detachPrivateNetwork, detachPrivateNetwork) &&
-    _deepEquality.equals(other.detachVpc, detachVpc) &&
-    _deepEquality.equals(other.detachVpc2, detachVpc2) &&
-    other.enablePrivateNetwork == enablePrivateNetwork &&
-    other.enableVpc == enableVpc &&
-    other.enableVpc2 == enableVpc2 &&
-    other.label == label &&
-    _deepEquality.equals(other.tags, tags) &&
-    other.userScheme == userScheme;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateInstanceRequest &&
+          other.appId == appId &&
+          other.imageId == imageId &&
+          other.backups == backups &&
+          other.firewallGroupId == firewallGroupId &&
+          other.enableIpv6 == enableIpv6 &&
+          other.osId == osId &&
+          other.userData == userData &&
+          other.tag == tag &&
+          other.plan == plan &&
+          other.ddosProtection == ddosProtection &&
+          _deepEquality.equals(
+              other.attachPrivateNetwork, attachPrivateNetwork) &&
+          _deepEquality.equals(other.attachVpc, attachVpc) &&
+          _deepEquality.equals(other.attachVpc2, attachVpc2) &&
+          _deepEquality.equals(
+              other.detachPrivateNetwork, detachPrivateNetwork) &&
+          _deepEquality.equals(other.detachVpc, detachVpc) &&
+          _deepEquality.equals(other.detachVpc2, detachVpc2) &&
+          other.enablePrivateNetwork == enablePrivateNetwork &&
+          other.enableVpc == enableVpc &&
+          other.enableVpc2 == enableVpc2 &&
+          other.label == label &&
+          _deepEquality.equals(other.tags, tags) &&
+          other.userScheme == userScheme;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (appId == null ? 0 : appId!.hashCode) +
-    (imageId == null ? 0 : imageId!.hashCode) +
-    (backups == null ? 0 : backups!.hashCode) +
-    (firewallGroupId == null ? 0 : firewallGroupId!.hashCode) +
-    (enableIpv6 == null ? 0 : enableIpv6!.hashCode) +
-    (osId == null ? 0 : osId!.hashCode) +
-    (userData == null ? 0 : userData!.hashCode) +
-    (tag == null ? 0 : tag!.hashCode) +
-    (plan == null ? 0 : plan!.hashCode) +
-    (ddosProtection == null ? 0 : ddosProtection!.hashCode) +
-    (attachPrivateNetwork.hashCode) +
-    (attachVpc.hashCode) +
-    (attachVpc2.hashCode) +
-    (detachPrivateNetwork.hashCode) +
-    (detachVpc.hashCode) +
-    (detachVpc2.hashCode) +
-    (enablePrivateNetwork == null ? 0 : enablePrivateNetwork!.hashCode) +
-    (enableVpc == null ? 0 : enableVpc!.hashCode) +
-    (enableVpc2 == null ? 0 : enableVpc2!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (tags.hashCode) +
-    (userScheme == null ? 0 : userScheme!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (appId == null ? 0 : appId!.hashCode) +
+      (imageId == null ? 0 : imageId!.hashCode) +
+      (backups == null ? 0 : backups!.hashCode) +
+      (firewallGroupId == null ? 0 : firewallGroupId!.hashCode) +
+      (enableIpv6 == null ? 0 : enableIpv6!.hashCode) +
+      (osId == null ? 0 : osId!.hashCode) +
+      (userData == null ? 0 : userData!.hashCode) +
+      (tag == null ? 0 : tag!.hashCode) +
+      (plan == null ? 0 : plan!.hashCode) +
+      (ddosProtection == null ? 0 : ddosProtection!.hashCode) +
+      (attachPrivateNetwork.hashCode) +
+      (attachVpc.hashCode) +
+      (attachVpc2.hashCode) +
+      (detachPrivateNetwork.hashCode) +
+      (detachVpc.hashCode) +
+      (detachVpc2.hashCode) +
+      (enablePrivateNetwork == null ? 0 : enablePrivateNetwork!.hashCode) +
+      (enableVpc == null ? 0 : enableVpc!.hashCode) +
+      (enableVpc2 == null ? 0 : enableVpc2!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (tags.hashCode) +
+      (userScheme == null ? 0 : userScheme!.hashCode);
 
   @override
-  String toString() => 'UpdateInstanceRequest[appId=$appId, imageId=$imageId, backups=$backups, firewallGroupId=$firewallGroupId, enableIpv6=$enableIpv6, osId=$osId, userData=$userData, tag=$tag, plan=$plan, ddosProtection=$ddosProtection, attachPrivateNetwork=$attachPrivateNetwork, attachVpc=$attachVpc, attachVpc2=$attachVpc2, detachPrivateNetwork=$detachPrivateNetwork, detachVpc=$detachVpc, detachVpc2=$detachVpc2, enablePrivateNetwork=$enablePrivateNetwork, enableVpc=$enableVpc, enableVpc2=$enableVpc2, label=$label, tags=$tags, userScheme=$userScheme]';
+  String toString() =>
+      'UpdateInstanceRequest[appId=$appId, imageId=$imageId, backups=$backups, firewallGroupId=$firewallGroupId, enableIpv6=$enableIpv6, osId=$osId, userData=$userData, tag=$tag, plan=$plan, ddosProtection=$ddosProtection, attachPrivateNetwork=$attachPrivateNetwork, attachVpc=$attachVpc, attachVpc2=$attachVpc2, detachPrivateNetwork=$detachPrivateNetwork, detachVpc=$detachVpc, detachVpc2=$detachVpc2, enablePrivateNetwork=$enablePrivateNetwork, enableVpc=$enableVpc, enableVpc2=$enableVpc2, label=$label, tags=$tags, userScheme=$userScheme]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -299,12 +304,12 @@ class UpdateInstanceRequest {
     } else {
       json[r'ddos_protection'] = null;
     }
-      json[r'attach_private_network'] = this.attachPrivateNetwork;
-      json[r'attach_vpc'] = this.attachVpc;
-      json[r'attach_vpc2'] = this.attachVpc2;
-      json[r'detach_private_network'] = this.detachPrivateNetwork;
-      json[r'detach_vpc'] = this.detachVpc;
-      json[r'detach_vpc2'] = this.detachVpc2;
+    json[r'attach_private_network'] = this.attachPrivateNetwork;
+    json[r'attach_vpc'] = this.attachVpc;
+    json[r'attach_vpc2'] = this.attachVpc2;
+    json[r'detach_private_network'] = this.detachPrivateNetwork;
+    json[r'detach_vpc'] = this.detachVpc;
+    json[r'detach_vpc2'] = this.detachVpc2;
     if (this.enablePrivateNetwork != null) {
       json[r'enable_private_network'] = this.enablePrivateNetwork;
     } else {
@@ -325,7 +330,7 @@ class UpdateInstanceRequest {
     } else {
       json[r'label'] = null;
     }
-      json[r'tags'] = this.tags;
+    json[r'tags'] = this.tags;
     if (this.userScheme != null) {
       json[r'user_scheme'] = this.userScheme;
     } else {
@@ -346,8 +351,10 @@ class UpdateInstanceRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateInstanceRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateInstanceRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateInstanceRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateInstanceRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -364,24 +371,37 @@ class UpdateInstanceRequest {
         plan: mapValueOfType<String>(json, r'plan'),
         ddosProtection: mapValueOfType<bool>(json, r'ddos_protection'),
         attachPrivateNetwork: json[r'attach_private_network'] is Iterable
-            ? (json[r'attach_private_network'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'attach_private_network'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         attachVpc: json[r'attach_vpc'] is Iterable
-            ? (json[r'attach_vpc'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'attach_vpc'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         attachVpc2: json[r'attach_vpc2'] is Iterable
-            ? (json[r'attach_vpc2'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'attach_vpc2'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         detachPrivateNetwork: json[r'detach_private_network'] is Iterable
-            ? (json[r'detach_private_network'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'detach_private_network'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         detachVpc: json[r'detach_vpc'] is Iterable
-            ? (json[r'detach_vpc'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'detach_vpc'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         detachVpc2: json[r'detach_vpc2'] is Iterable
-            ? (json[r'detach_vpc2'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'detach_vpc2'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
-        enablePrivateNetwork: mapValueOfType<bool>(json, r'enable_private_network'),
+        enablePrivateNetwork:
+            mapValueOfType<bool>(json, r'enable_private_network'),
         enableVpc: mapValueOfType<bool>(json, r'enable_vpc'),
         enableVpc2: mapValueOfType<bool>(json, r'enable_vpc2'),
         label: mapValueOfType<String>(json, r'label'),
@@ -394,7 +414,10 @@ class UpdateInstanceRequest {
     return null;
   }
 
-  static List<UpdateInstanceRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateInstanceRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateInstanceRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -422,20 +445,24 @@ class UpdateInstanceRequest {
   }
 
   // maps a json object with a list of UpdateInstanceRequest-objects as value to a dart map
-  static Map<String, List<UpdateInstanceRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateInstanceRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateInstanceRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateInstanceRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateInstanceRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

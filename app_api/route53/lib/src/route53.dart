@@ -27,7 +27,9 @@ class Route53 {
   HostedZonesClient? _hostedZones;
   ResourceRecordSetsClient? _resourceRecordSets;
 
-  HostedZonesClient get hostedZones => _hostedZones ??= HostedZonesClient(_dio, baseUrl: _baseUrl);
+  HostedZonesClient get hostedZones =>
+      _hostedZones ??= HostedZonesClient(_dio, baseUrl: _baseUrl);
 
-  ResourceRecordSetsClient get resourceRecordSets => _resourceRecordSets ??= ResourceRecordSetsClient(_dio, baseUrl: _baseUrl);
+  ResourceRecordSetsClient get resourceRecordSets =>
+      _resourceRecordSets ??= ResourceRecordSetsClient(_dio, baseUrl: _baseUrl);
 }

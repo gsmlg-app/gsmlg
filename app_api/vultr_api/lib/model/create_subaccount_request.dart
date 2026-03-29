@@ -40,24 +40,27 @@ class CreateSubaccountRequest {
   String? subaccountId;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateSubaccountRequest &&
-    other.email == email &&
-    other.subaccountName == subaccountName &&
-    other.subaccountId == subaccountId;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateSubaccountRequest &&
+          other.email == email &&
+          other.subaccountName == subaccountName &&
+          other.subaccountId == subaccountId;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (email.hashCode) +
-    (subaccountName == null ? 0 : subaccountName!.hashCode) +
-    (subaccountId == null ? 0 : subaccountId!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (email.hashCode) +
+      (subaccountName == null ? 0 : subaccountName!.hashCode) +
+      (subaccountId == null ? 0 : subaccountId!.hashCode);
 
   @override
-  String toString() => 'CreateSubaccountRequest[email=$email, subaccountName=$subaccountName, subaccountId=$subaccountId]';
+  String toString() =>
+      'CreateSubaccountRequest[email=$email, subaccountName=$subaccountName, subaccountId=$subaccountId]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'email'] = this.email;
+    json[r'email'] = this.email;
     if (this.subaccountName != null) {
       json[r'subaccount_name'] = this.subaccountName;
     } else {
@@ -83,8 +86,10 @@ class CreateSubaccountRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateSubaccountRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateSubaccountRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateSubaccountRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateSubaccountRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -98,7 +103,10 @@ class CreateSubaccountRequest {
     return null;
   }
 
-  static List<CreateSubaccountRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateSubaccountRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateSubaccountRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -126,13 +134,19 @@ class CreateSubaccountRequest {
   }
 
   // maps a json object with a list of CreateSubaccountRequest-objects as value to a dart map
-  static Map<String, List<CreateSubaccountRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateSubaccountRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateSubaccountRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateSubaccountRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateSubaccountRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -143,4 +157,3 @@ class CreateSubaccountRequest {
     'email',
   };
 }
-

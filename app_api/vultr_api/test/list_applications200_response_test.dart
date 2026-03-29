@@ -16,7 +16,7 @@ void main() {
   // final instance = ListApplications200Response();
 
   group('test ListApplications200Response', () {
-    // 
+    //
     // List<Application> applications (default value: const [])
     test('to test the property `applications`', () async {
       // TODO
@@ -26,8 +26,5 @@ void main() {
     test('to test the property `meta`', () async {
       // TODO
     });
-
-
   });
-
 }

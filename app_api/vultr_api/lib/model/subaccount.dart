@@ -86,28 +86,31 @@ class Subaccount {
   double? pendingCharges;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Subaccount &&
-    other.id == id &&
-    other.email == email &&
-    other.subaccountName == subaccountName &&
-    other.subaccountId == subaccountId &&
-    other.activated == activated &&
-    other.balance == balance &&
-    other.pendingCharges == pendingCharges;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Subaccount &&
+          other.id == id &&
+          other.email == email &&
+          other.subaccountName == subaccountName &&
+          other.subaccountId == subaccountId &&
+          other.activated == activated &&
+          other.balance == balance &&
+          other.pendingCharges == pendingCharges;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (email == null ? 0 : email!.hashCode) +
-    (subaccountName == null ? 0 : subaccountName!.hashCode) +
-    (subaccountId == null ? 0 : subaccountId!.hashCode) +
-    (activated == null ? 0 : activated!.hashCode) +
-    (balance == null ? 0 : balance!.hashCode) +
-    (pendingCharges == null ? 0 : pendingCharges!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (email == null ? 0 : email!.hashCode) +
+      (subaccountName == null ? 0 : subaccountName!.hashCode) +
+      (subaccountId == null ? 0 : subaccountId!.hashCode) +
+      (activated == null ? 0 : activated!.hashCode) +
+      (balance == null ? 0 : balance!.hashCode) +
+      (pendingCharges == null ? 0 : pendingCharges!.hashCode);
 
   @override
-  String toString() => 'Subaccount[id=$id, email=$email, subaccountName=$subaccountName, subaccountId=$subaccountId, activated=$activated, balance=$balance, pendingCharges=$pendingCharges]';
+  String toString() =>
+      'Subaccount[id=$id, email=$email, subaccountName=$subaccountName, subaccountId=$subaccountId, activated=$activated, balance=$balance, pendingCharges=$pendingCharges]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -161,8 +164,10 @@ class Subaccount {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Subaccount[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Subaccount[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Subaccount[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Subaccount[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -180,7 +185,10 @@ class Subaccount {
     return null;
   }
 
-  static List<Subaccount> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Subaccount> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Subaccount>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -208,20 +216,24 @@ class Subaccount {
   }
 
   // maps a json object with a list of Subaccount-objects as value to a dart map
-  static Map<String, List<Subaccount>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Subaccount>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Subaccount>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Subaccount.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Subaccount.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

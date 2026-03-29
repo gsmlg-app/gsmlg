@@ -76,26 +76,29 @@ class CreateLoadBalancerRequestSsl {
   String? chainB64;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateLoadBalancerRequestSsl &&
-    other.privateKey == privateKey &&
-    other.certificate == certificate &&
-    other.chain == chain &&
-    other.privateKeyB64 == privateKeyB64 &&
-    other.certificateB64 == certificateB64 &&
-    other.chainB64 == chainB64;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateLoadBalancerRequestSsl &&
+          other.privateKey == privateKey &&
+          other.certificate == certificate &&
+          other.chain == chain &&
+          other.privateKeyB64 == privateKeyB64 &&
+          other.certificateB64 == certificateB64 &&
+          other.chainB64 == chainB64;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (privateKey == null ? 0 : privateKey!.hashCode) +
-    (certificate == null ? 0 : certificate!.hashCode) +
-    (chain == null ? 0 : chain!.hashCode) +
-    (privateKeyB64 == null ? 0 : privateKeyB64!.hashCode) +
-    (certificateB64 == null ? 0 : certificateB64!.hashCode) +
-    (chainB64 == null ? 0 : chainB64!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (privateKey == null ? 0 : privateKey!.hashCode) +
+      (certificate == null ? 0 : certificate!.hashCode) +
+      (chain == null ? 0 : chain!.hashCode) +
+      (privateKeyB64 == null ? 0 : privateKeyB64!.hashCode) +
+      (certificateB64 == null ? 0 : certificateB64!.hashCode) +
+      (chainB64 == null ? 0 : chainB64!.hashCode);
 
   @override
-  String toString() => 'CreateLoadBalancerRequestSsl[privateKey=$privateKey, certificate=$certificate, chain=$chain, privateKeyB64=$privateKeyB64, certificateB64=$certificateB64, chainB64=$chainB64]';
+  String toString() =>
+      'CreateLoadBalancerRequestSsl[privateKey=$privateKey, certificate=$certificate, chain=$chain, privateKeyB64=$privateKeyB64, certificateB64=$certificateB64, chainB64=$chainB64]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -144,8 +147,10 @@ class CreateLoadBalancerRequestSsl {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateLoadBalancerRequestSsl[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateLoadBalancerRequestSsl[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateLoadBalancerRequestSsl[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateLoadBalancerRequestSsl[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -162,7 +167,10 @@ class CreateLoadBalancerRequestSsl {
     return null;
   }
 
-  static List<CreateLoadBalancerRequestSsl> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateLoadBalancerRequestSsl> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateLoadBalancerRequestSsl>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -190,20 +198,24 @@ class CreateLoadBalancerRequestSsl {
   }
 
   // maps a json object with a list of CreateLoadBalancerRequestSsl-objects as value to a dart map
-  static Map<String, List<CreateLoadBalancerRequestSsl>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateLoadBalancerRequestSsl>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateLoadBalancerRequestSsl>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateLoadBalancerRequestSsl.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateLoadBalancerRequestSsl.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

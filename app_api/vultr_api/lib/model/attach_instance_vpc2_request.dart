@@ -20,7 +20,7 @@ class AttachInstanceVpc2Request {
   /// The [VPC ID](#operation/list-vpc2) to attach to this Instance.
   String vpcId;
 
-  /// The IP address to use for this instance on the attached VPC 2.0 network.  
+  /// The IP address to use for this instance on the attached VPC 2.0 network.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -30,22 +30,24 @@ class AttachInstanceVpc2Request {
   String? ipAddress;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AttachInstanceVpc2Request &&
-    other.vpcId == vpcId &&
-    other.ipAddress == ipAddress;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AttachInstanceVpc2Request &&
+          other.vpcId == vpcId &&
+          other.ipAddress == ipAddress;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (vpcId.hashCode) +
-    (ipAddress == null ? 0 : ipAddress!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (vpcId.hashCode) + (ipAddress == null ? 0 : ipAddress!.hashCode);
 
   @override
-  String toString() => 'AttachInstanceVpc2Request[vpcId=$vpcId, ipAddress=$ipAddress]';
+  String toString() =>
+      'AttachInstanceVpc2Request[vpcId=$vpcId, ipAddress=$ipAddress]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'vpc_id'] = this.vpcId;
+    json[r'vpc_id'] = this.vpcId;
     if (this.ipAddress != null) {
       json[r'ip_address'] = this.ipAddress;
     } else {
@@ -66,8 +68,10 @@ class AttachInstanceVpc2Request {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "AttachInstanceVpc2Request[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "AttachInstanceVpc2Request[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "AttachInstanceVpc2Request[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "AttachInstanceVpc2Request[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -80,7 +84,10 @@ class AttachInstanceVpc2Request {
     return null;
   }
 
-  static List<AttachInstanceVpc2Request> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<AttachInstanceVpc2Request> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <AttachInstanceVpc2Request>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -108,13 +115,19 @@ class AttachInstanceVpc2Request {
   }
 
   // maps a json object with a list of AttachInstanceVpc2Request-objects as value to a dart map
-  static Map<String, List<AttachInstanceVpc2Request>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<AttachInstanceVpc2Request>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<AttachInstanceVpc2Request>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = AttachInstanceVpc2Request.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = AttachInstanceVpc2Request.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -125,4 +138,3 @@ class AttachInstanceVpc2Request {
     'vpc_id',
   };
 }
-

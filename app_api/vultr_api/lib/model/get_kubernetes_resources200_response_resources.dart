@@ -22,23 +22,25 @@ class GetKubernetesResources200ResponseResources {
   Set<GetKubernetesResources200ResponseResourcesLoadBalancerInner> loadBalancer;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetKubernetesResources200ResponseResources &&
-    _deepEquality.equals(other.blockStorage, blockStorage) &&
-    _deepEquality.equals(other.loadBalancer, loadBalancer);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetKubernetesResources200ResponseResources &&
+          _deepEquality.equals(other.blockStorage, blockStorage) &&
+          _deepEquality.equals(other.loadBalancer, loadBalancer);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (blockStorage.hashCode) +
-    (loadBalancer.hashCode);
+      // ignore: unnecessary_parenthesis
+      (blockStorage.hashCode) + (loadBalancer.hashCode);
 
   @override
-  String toString() => 'GetKubernetesResources200ResponseResources[blockStorage=$blockStorage, loadBalancer=$loadBalancer]';
+  String toString() =>
+      'GetKubernetesResources200ResponseResources[blockStorage=$blockStorage, loadBalancer=$loadBalancer]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'block_storage'] = this.blockStorage.toList(growable: false);
-      json[r'load_balancer'] = this.loadBalancer.toList(growable: false);
+    json[r'block_storage'] = this.blockStorage.toList(growable: false);
+    json[r'load_balancer'] = this.loadBalancer.toList(growable: false);
     return json;
   }
 
@@ -54,21 +56,32 @@ class GetKubernetesResources200ResponseResources {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetKubernetesResources200ResponseResources[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetKubernetesResources200ResponseResources[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetKubernetesResources200ResponseResources[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetKubernetesResources200ResponseResources[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return GetKubernetesResources200ResponseResources(
-        blockStorage: GetKubernetesResources200ResponseResourcesBlockStorageInner.listFromJson(json[r'block_storage']).toSet(),
-        loadBalancer: GetKubernetesResources200ResponseResourcesLoadBalancerInner.listFromJson(json[r'load_balancer']).toSet(),
+        blockStorage:
+            GetKubernetesResources200ResponseResourcesBlockStorageInner
+                    .listFromJson(json[r'block_storage'])
+                .toSet(),
+        loadBalancer:
+            GetKubernetesResources200ResponseResourcesLoadBalancerInner
+                    .listFromJson(json[r'load_balancer'])
+                .toSet(),
       );
     }
     return null;
   }
 
-  static List<GetKubernetesResources200ResponseResources> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetKubernetesResources200ResponseResources> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetKubernetesResources200ResponseResources>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -81,12 +94,14 @@ class GetKubernetesResources200ResponseResources {
     return result.toList(growable: growable);
   }
 
-  static Map<String, GetKubernetesResources200ResponseResources> mapFromJson(dynamic json) {
+  static Map<String, GetKubernetesResources200ResponseResources> mapFromJson(
+      dynamic json) {
     final map = <String, GetKubernetesResources200ResponseResources>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = GetKubernetesResources200ResponseResources.fromJson(entry.value);
+        final value =
+            GetKubernetesResources200ResponseResources.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -96,20 +111,26 @@ class GetKubernetesResources200ResponseResources {
   }
 
   // maps a json object with a list of GetKubernetesResources200ResponseResources-objects as value to a dart map
-  static Map<String, List<GetKubernetesResources200ResponseResources>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetKubernetesResources200ResponseResources>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetKubernetesResources200ResponseResources>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetKubernetesResources200ResponseResources.listFromJson(entry.value, growable: growable,);
+        map[entry.key] =
+            GetKubernetesResources200ResponseResources.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

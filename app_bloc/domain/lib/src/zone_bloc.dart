@@ -13,7 +13,8 @@ class ZoneBloc extends Bloc<ZoneEvent, ZoneState> {
   final AppDatabase database;
   final CredentialsService credentialsService;
 
-  ZoneBloc(this.database, this.credentialsService) : super(const ZoneInitial()) {
+  ZoneBloc(this.database, this.credentialsService)
+      : super(const ZoneInitial()) {
     on<ZoneSync>(_onSync);
     on<ZoneAdd>(_onAdd);
     on<ZoneUpdate>(_onUpdate);

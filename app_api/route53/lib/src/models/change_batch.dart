@@ -14,9 +14,10 @@ class ChangeBatch {
     required this.changes,
     this.comment,
   });
-  
-  factory ChangeBatch.fromJson(Map<String, Object?> json) => _$ChangeBatchFromJson(json);
-  
+
+  factory ChangeBatch.fromJson(Map<String, Object?> json) =>
+      _$ChangeBatchFromJson(json);
+
   /// Optional comment about the changes.
   final String? comment;
   final List<Change> changes;

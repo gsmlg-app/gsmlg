@@ -36,15 +36,15 @@ class DnsSoa {
   String? email;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is DnsSoa &&
-    other.nsprimary == nsprimary &&
-    other.email == email;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DnsSoa && other.nsprimary == nsprimary && other.email == email;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (nsprimary == null ? 0 : nsprimary!.hashCode) +
-    (email == null ? 0 : email!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (nsprimary == null ? 0 : nsprimary!.hashCode) +
+      (email == null ? 0 : email!.hashCode);
 
   @override
   String toString() => 'DnsSoa[nsprimary=$nsprimary, email=$email]';
@@ -76,8 +76,10 @@ class DnsSoa {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "DnsSoa[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "DnsSoa[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "DnsSoa[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "DnsSoa[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -90,7 +92,10 @@ class DnsSoa {
     return null;
   }
 
-  static List<DnsSoa> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<DnsSoa> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <DnsSoa>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -118,20 +123,24 @@ class DnsSoa {
   }
 
   // maps a json object with a list of DnsSoa-objects as value to a dart map
-  static Map<String, List<DnsSoa>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<DnsSoa>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<DnsSoa>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = DnsSoa.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = DnsSoa.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

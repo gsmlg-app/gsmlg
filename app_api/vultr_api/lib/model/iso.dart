@@ -86,28 +86,31 @@ class Iso {
   String? status;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Iso &&
-    other.id == id &&
-    other.dateCreated == dateCreated &&
-    other.filename == filename &&
-    other.size == size &&
-    other.md5sum == md5sum &&
-    other.sha512sum == sha512sum &&
-    other.status == status;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Iso &&
+          other.id == id &&
+          other.dateCreated == dateCreated &&
+          other.filename == filename &&
+          other.size == size &&
+          other.md5sum == md5sum &&
+          other.sha512sum == sha512sum &&
+          other.status == status;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (filename == null ? 0 : filename!.hashCode) +
-    (size == null ? 0 : size!.hashCode) +
-    (md5sum == null ? 0 : md5sum!.hashCode) +
-    (sha512sum == null ? 0 : sha512sum!.hashCode) +
-    (status == null ? 0 : status!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (filename == null ? 0 : filename!.hashCode) +
+      (size == null ? 0 : size!.hashCode) +
+      (md5sum == null ? 0 : md5sum!.hashCode) +
+      (sha512sum == null ? 0 : sha512sum!.hashCode) +
+      (status == null ? 0 : status!.hashCode);
 
   @override
-  String toString() => 'Iso[id=$id, dateCreated=$dateCreated, filename=$filename, size=$size, md5sum=$md5sum, sha512sum=$sha512sum, status=$status]';
+  String toString() =>
+      'Iso[id=$id, dateCreated=$dateCreated, filename=$filename, size=$size, md5sum=$md5sum, sha512sum=$sha512sum, status=$status]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -161,8 +164,10 @@ class Iso {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Iso[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Iso[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Iso[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Iso[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -180,7 +185,10 @@ class Iso {
     return null;
   }
 
-  static List<Iso> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Iso> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Iso>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -208,20 +216,24 @@ class Iso {
   }
 
   // maps a json object with a list of Iso-objects as value to a dart map
-  static Map<String, List<Iso>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Iso>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Iso>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Iso.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Iso.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

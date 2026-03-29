@@ -25,13 +25,14 @@ class CreateIso201Response {
   Iso? iso;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateIso201Response &&
-    other.iso == iso;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateIso201Response && other.iso == iso;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (iso == null ? 0 : iso!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (iso == null ? 0 : iso!.hashCode);
 
   @override
   String toString() => 'CreateIso201Response[iso=$iso]';
@@ -58,8 +59,10 @@ class CreateIso201Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateIso201Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateIso201Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateIso201Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateIso201Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -71,7 +74,10 @@ class CreateIso201Response {
     return null;
   }
 
-  static List<CreateIso201Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateIso201Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateIso201Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,20 +105,24 @@ class CreateIso201Response {
   }
 
   // maps a json object with a list of CreateIso201Response-objects as value to a dart map
-  static Map<String, List<CreateIso201Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateIso201Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateIso201Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateIso201Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateIso201Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

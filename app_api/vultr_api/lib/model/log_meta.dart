@@ -20,10 +20,10 @@ class LogMeta {
     required this.totalCount,
   });
 
-  /// In the event that there are more logs found for a specified time period than can be returned, this field will contain a URL that can be used to request the next block of logs for the time period.  The new request is inclusive of the timestamp for the last logs from the previous request. This is done to avoid skipping over any logs that may have the same timestamp as the last log in the previous request, but which may not have been included in that response.  **Be aware that because of this there will be boundary duplicates between this new request and the previous one.** 
+  /// In the event that there are more logs found for a specified time period than can be returned, this field will contain a URL that can be used to request the next block of logs for the time period.  The new request is inclusive of the timestamp for the last logs from the previous request. This is done to avoid skipping over any logs that may have the same timestamp as the last log in the previous request, but which may not have been included in that response.  **Be aware that because of this there will be boundary duplicates between this new request and the previous one.**
   String nextPageUrl;
 
-  /// In the event that there are more logs found for a specified time period that can be returned, this field will be set with a UTC timestamp of where the logs were left off. 
+  /// In the event that there are more logs found for a specified time period that can be returned, this field will be set with a UTC timestamp of where the logs were left off.
   String continueTime;
 
   /// The number of log records that were returned. There is a maximum limit of 5,000 logs returned by any request.
@@ -36,32 +36,35 @@ class LogMeta {
   int totalCount;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is LogMeta &&
-    other.nextPageUrl == nextPageUrl &&
-    other.continueTime == continueTime &&
-    other.returnedCount == returnedCount &&
-    other.unreturnedCount == unreturnedCount &&
-    other.totalCount == totalCount;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LogMeta &&
+          other.nextPageUrl == nextPageUrl &&
+          other.continueTime == continueTime &&
+          other.returnedCount == returnedCount &&
+          other.unreturnedCount == unreturnedCount &&
+          other.totalCount == totalCount;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (nextPageUrl.hashCode) +
-    (continueTime.hashCode) +
-    (returnedCount.hashCode) +
-    (unreturnedCount.hashCode) +
-    (totalCount.hashCode);
+      // ignore: unnecessary_parenthesis
+      (nextPageUrl.hashCode) +
+      (continueTime.hashCode) +
+      (returnedCount.hashCode) +
+      (unreturnedCount.hashCode) +
+      (totalCount.hashCode);
 
   @override
-  String toString() => 'LogMeta[nextPageUrl=$nextPageUrl, continueTime=$continueTime, returnedCount=$returnedCount, unreturnedCount=$unreturnedCount, totalCount=$totalCount]';
+  String toString() =>
+      'LogMeta[nextPageUrl=$nextPageUrl, continueTime=$continueTime, returnedCount=$returnedCount, unreturnedCount=$unreturnedCount, totalCount=$totalCount]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'next_page_url'] = this.nextPageUrl;
-      json[r'continue_time'] = this.continueTime;
-      json[r'returned_count'] = this.returnedCount;
-      json[r'unreturned_count'] = this.unreturnedCount;
-      json[r'total_count'] = this.totalCount;
+    json[r'next_page_url'] = this.nextPageUrl;
+    json[r'continue_time'] = this.continueTime;
+    json[r'returned_count'] = this.returnedCount;
+    json[r'unreturned_count'] = this.unreturnedCount;
+    json[r'total_count'] = this.totalCount;
     return json;
   }
 
@@ -77,8 +80,10 @@ class LogMeta {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "LogMeta[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "LogMeta[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "LogMeta[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "LogMeta[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -94,7 +99,10 @@ class LogMeta {
     return null;
   }
 
-  static List<LogMeta> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<LogMeta> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <LogMeta>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -122,13 +130,19 @@ class LogMeta {
   }
 
   // maps a json object with a list of LogMeta-objects as value to a dart map
-  static Map<String, List<LogMeta>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<LogMeta>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<LogMeta>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = LogMeta.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = LogMeta.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -143,4 +157,3 @@ class LogMeta {
     'total_count',
   };
 }
-

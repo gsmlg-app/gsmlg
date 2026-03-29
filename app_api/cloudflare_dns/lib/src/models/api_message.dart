@@ -12,9 +12,10 @@ class ApiMessage {
     this.code,
     this.message,
   });
-  
-  factory ApiMessage.fromJson(Map<String, Object?> json) => _$ApiMessageFromJson(json);
-  
+
+  factory ApiMessage.fromJson(Map<String, Object?> json) =>
+      _$ApiMessageFromJson(json);
+
   final int? code;
   final String? message;
 

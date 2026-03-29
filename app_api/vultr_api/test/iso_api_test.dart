@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for IsoApi
 void main() {
   // final instance = IsoApi();
@@ -61,6 +60,5 @@ void main() {
     test('test listPublicIsos', () async {
       // TODO
     });
-
   });
 }

@@ -20,9 +20,10 @@ class ListZonesResponse {
     required this.result,
     this.resultInfo,
   });
-  
-  factory ListZonesResponse.fromJson(Map<String, Object?> json) => _$ListZonesResponseFromJson(json);
-  
+
+  factory ListZonesResponse.fromJson(Map<String, Object?> json) =>
+      _$ListZonesResponseFromJson(json);
+
   final bool success;
   final List<ApiError> errors;
   final List<ApiMessage> messages;

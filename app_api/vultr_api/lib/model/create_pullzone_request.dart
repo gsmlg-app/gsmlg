@@ -98,40 +98,43 @@ class CreatePullzoneRequest {
   bool? blockBadBots;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreatePullzoneRequest &&
-    other.label == label &&
-    other.originScheme == originScheme &&
-    other.originDomain == originDomain &&
-    other.vanityDomain == vanityDomain &&
-    other.sslCert == sslCert &&
-    other.sslCertKey == sslCertKey &&
-    other.cors == cors &&
-    other.gzip == gzip &&
-    other.blockAi == blockAi &&
-    other.blockBadBots == blockBadBots;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreatePullzoneRequest &&
+          other.label == label &&
+          other.originScheme == originScheme &&
+          other.originDomain == originDomain &&
+          other.vanityDomain == vanityDomain &&
+          other.sslCert == sslCert &&
+          other.sslCertKey == sslCertKey &&
+          other.cors == cors &&
+          other.gzip == gzip &&
+          other.blockAi == blockAi &&
+          other.blockBadBots == blockBadBots;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label.hashCode) +
-    (originScheme.hashCode) +
-    (originDomain.hashCode) +
-    (vanityDomain == null ? 0 : vanityDomain!.hashCode) +
-    (sslCert == null ? 0 : sslCert!.hashCode) +
-    (sslCertKey == null ? 0 : sslCertKey!.hashCode) +
-    (cors == null ? 0 : cors!.hashCode) +
-    (gzip == null ? 0 : gzip!.hashCode) +
-    (blockAi == null ? 0 : blockAi!.hashCode) +
-    (blockBadBots == null ? 0 : blockBadBots!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label.hashCode) +
+      (originScheme.hashCode) +
+      (originDomain.hashCode) +
+      (vanityDomain == null ? 0 : vanityDomain!.hashCode) +
+      (sslCert == null ? 0 : sslCert!.hashCode) +
+      (sslCertKey == null ? 0 : sslCertKey!.hashCode) +
+      (cors == null ? 0 : cors!.hashCode) +
+      (gzip == null ? 0 : gzip!.hashCode) +
+      (blockAi == null ? 0 : blockAi!.hashCode) +
+      (blockBadBots == null ? 0 : blockBadBots!.hashCode);
 
   @override
-  String toString() => 'CreatePullzoneRequest[label=$label, originScheme=$originScheme, originDomain=$originDomain, vanityDomain=$vanityDomain, sslCert=$sslCert, sslCertKey=$sslCertKey, cors=$cors, gzip=$gzip, blockAi=$blockAi, blockBadBots=$blockBadBots]';
+  String toString() =>
+      'CreatePullzoneRequest[label=$label, originScheme=$originScheme, originDomain=$originDomain, vanityDomain=$vanityDomain, sslCert=$sslCert, sslCertKey=$sslCertKey, cors=$cors, gzip=$gzip, blockAi=$blockAi, blockBadBots=$blockBadBots]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'label'] = this.label;
-      json[r'origin_scheme'] = this.originScheme;
-      json[r'origin_domain'] = this.originDomain;
+    json[r'label'] = this.label;
+    json[r'origin_scheme'] = this.originScheme;
+    json[r'origin_domain'] = this.originDomain;
     if (this.vanityDomain != null) {
       json[r'vanity_domain'] = this.vanityDomain;
     } else {
@@ -182,15 +185,18 @@ class CreatePullzoneRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreatePullzoneRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreatePullzoneRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreatePullzoneRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreatePullzoneRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return CreatePullzoneRequest(
         label: mapValueOfType<String>(json, r'label')!,
-        originScheme: CreatePullzoneRequestOriginSchemeEnum.fromJson(json[r'origin_scheme'])!,
+        originScheme: CreatePullzoneRequestOriginSchemeEnum.fromJson(
+            json[r'origin_scheme'])!,
         originDomain: mapValueOfType<String>(json, r'origin_domain')!,
         vanityDomain: mapValueOfType<String>(json, r'vanity_domain'),
         sslCert: mapValueOfType<String>(json, r'ssl_cert'),
@@ -204,7 +210,10 @@ class CreatePullzoneRequest {
     return null;
   }
 
-  static List<CreatePullzoneRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreatePullzoneRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreatePullzoneRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -232,13 +241,19 @@ class CreatePullzoneRequest {
   }
 
   // maps a json object with a list of CreatePullzoneRequest-objects as value to a dart map
-  static Map<String, List<CreatePullzoneRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreatePullzoneRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreatePullzoneRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreatePullzoneRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreatePullzoneRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -274,9 +289,13 @@ class CreatePullzoneRequestOriginSchemeEnum {
     https,
   ];
 
-  static CreatePullzoneRequestOriginSchemeEnum? fromJson(dynamic value) => CreatePullzoneRequestOriginSchemeEnumTypeTransformer().decode(value);
+  static CreatePullzoneRequestOriginSchemeEnum? fromJson(dynamic value) =>
+      CreatePullzoneRequestOriginSchemeEnumTypeTransformer().decode(value);
 
-  static List<CreatePullzoneRequestOriginSchemeEnum> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreatePullzoneRequestOriginSchemeEnum> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreatePullzoneRequestOriginSchemeEnum>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -293,7 +312,9 @@ class CreatePullzoneRequestOriginSchemeEnum {
 /// Transformation class that can [encode] an instance of [CreatePullzoneRequestOriginSchemeEnum] to String,
 /// and [decode] dynamic data back to [CreatePullzoneRequestOriginSchemeEnum].
 class CreatePullzoneRequestOriginSchemeEnumTypeTransformer {
-  factory CreatePullzoneRequestOriginSchemeEnumTypeTransformer() => _instance ??= const CreatePullzoneRequestOriginSchemeEnumTypeTransformer._();
+  factory CreatePullzoneRequestOriginSchemeEnumTypeTransformer() =>
+      _instance ??=
+          const CreatePullzoneRequestOriginSchemeEnumTypeTransformer._();
 
   const CreatePullzoneRequestOriginSchemeEnumTypeTransformer._();
 
@@ -307,11 +328,14 @@ class CreatePullzoneRequestOriginSchemeEnumTypeTransformer {
   ///
   /// The [allowNull] is very handy when an API changes and a new enum value is added or removed,
   /// and users are still using an old app with the old code.
-  CreatePullzoneRequestOriginSchemeEnum? decode(dynamic data, {bool allowNull = true}) {
+  CreatePullzoneRequestOriginSchemeEnum? decode(dynamic data,
+      {bool allowNull = true}) {
     if (data != null) {
       switch (data) {
-        case r'http': return CreatePullzoneRequestOriginSchemeEnum.http;
-        case r'https': return CreatePullzoneRequestOriginSchemeEnum.https;
+        case r'http':
+          return CreatePullzoneRequestOriginSchemeEnum.http;
+        case r'https':
+          return CreatePullzoneRequestOriginSchemeEnum.https;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');
@@ -324,5 +348,3 @@ class CreatePullzoneRequestOriginSchemeEnumTypeTransformer {
   /// Singleton [CreatePullzoneRequestOriginSchemeEnumTypeTransformer] instance.
   static CreatePullzoneRequestOriginSchemeEnumTypeTransformer? _instance;
 }
-
-

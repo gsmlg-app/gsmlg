@@ -20,10 +20,7 @@ final class AccountsLoading extends AccountsState {
 
 /// Successfully loaded accounts
 final class AccountsLoaded extends AccountsState {
-  const AccountsLoaded({
-    required this.accounts,
-    this.error,
-  });
+  const AccountsLoaded({required this.accounts, this.error});
 
   final List<ServiceAccountTableData> accounts;
   final String? error;

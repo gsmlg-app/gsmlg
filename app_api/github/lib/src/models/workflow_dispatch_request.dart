@@ -9,13 +9,11 @@ part 'workflow_dispatch_request.g.dart';
 /// Request body for creating a workflow dispatch event
 @JsonSerializable()
 class WorkflowDispatchRequest {
-  const WorkflowDispatchRequest({
-    required this.ref,
-    this.inputs,
-  });
-  
-  factory WorkflowDispatchRequest.fromJson(Map<String, Object?> json) => _$WorkflowDispatchRequestFromJson(json);
-  
+  const WorkflowDispatchRequest({required this.ref, this.inputs});
+
+  factory WorkflowDispatchRequest.fromJson(Map<String, Object?> json) =>
+      _$WorkflowDispatchRequestFromJson(json);
+
   /// The git reference for the workflow. The reference can be a branch or tag name.
   final String ref;
 

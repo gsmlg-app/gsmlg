@@ -25,16 +25,19 @@ class GetStartupScript200Response {
   Startup? startupScript;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetStartupScript200Response &&
-    other.startupScript == startupScript;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetStartupScript200Response &&
+          other.startupScript == startupScript;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (startupScript == null ? 0 : startupScript!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (startupScript == null ? 0 : startupScript!.hashCode);
 
   @override
-  String toString() => 'GetStartupScript200Response[startupScript=$startupScript]';
+  String toString() =>
+      'GetStartupScript200Response[startupScript=$startupScript]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -58,8 +61,10 @@ class GetStartupScript200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetStartupScript200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetStartupScript200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetStartupScript200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetStartupScript200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -71,7 +76,10 @@ class GetStartupScript200Response {
     return null;
   }
 
-  static List<GetStartupScript200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetStartupScript200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetStartupScript200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,20 +107,24 @@ class GetStartupScript200Response {
   }
 
   // maps a json object with a list of GetStartupScript200Response-objects as value to a dart map
-  static Map<String, List<GetStartupScript200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetStartupScript200Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetStartupScript200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetStartupScript200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetStartupScript200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -26,13 +26,14 @@ class AttachBaremetalsVpcsRequest {
   String? vpcId;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AttachBaremetalsVpcsRequest &&
-    other.vpcId == vpcId;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AttachBaremetalsVpcsRequest && other.vpcId == vpcId;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (vpcId == null ? 0 : vpcId!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (vpcId == null ? 0 : vpcId!.hashCode);
 
   @override
   String toString() => 'AttachBaremetalsVpcsRequest[vpcId=$vpcId]';
@@ -59,8 +60,10 @@ class AttachBaremetalsVpcsRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "AttachBaremetalsVpcsRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "AttachBaremetalsVpcsRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "AttachBaremetalsVpcsRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "AttachBaremetalsVpcsRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -72,7 +75,10 @@ class AttachBaremetalsVpcsRequest {
     return null;
   }
 
-  static List<AttachBaremetalsVpcsRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<AttachBaremetalsVpcsRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <AttachBaremetalsVpcsRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -100,20 +106,24 @@ class AttachBaremetalsVpcsRequest {
   }
 
   // maps a json object with a list of AttachBaremetalsVpcsRequest-objects as value to a dart map
-  static Map<String, List<AttachBaremetalsVpcsRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<AttachBaremetalsVpcsRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<AttachBaremetalsVpcsRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = AttachBaremetalsVpcsRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = AttachBaremetalsVpcsRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

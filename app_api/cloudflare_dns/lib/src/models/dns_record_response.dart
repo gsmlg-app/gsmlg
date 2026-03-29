@@ -18,9 +18,10 @@ class DnsRecordResponse {
     required this.messages,
     required this.result,
   });
-  
-  factory DnsRecordResponse.fromJson(Map<String, Object?> json) => _$DnsRecordResponseFromJson(json);
-  
+
+  factory DnsRecordResponse.fromJson(Map<String, Object?> json) =>
+      _$DnsRecordResponseFromJson(json);
+
   final bool success;
   final List<ApiError> errors;
   final List<ApiMessage> messages;

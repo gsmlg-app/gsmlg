@@ -116,34 +116,37 @@ class ClusterTiers {
   String? slug;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ClusterTiers &&
-    other.id == id &&
-    other.bwGbPrice == bwGbPrice &&
-    other.diskGbPrice == diskGbPrice &&
-    other.isDefault == isDefault &&
-    other.price == price &&
-    other.ratelimitOpsBytes == ratelimitOpsBytes &&
-    other.ratelimitOpsSecs == ratelimitOpsSecs &&
-    other.salesDesc == salesDesc &&
-    other.salesName == salesName &&
-    other.slug == slug;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClusterTiers &&
+          other.id == id &&
+          other.bwGbPrice == bwGbPrice &&
+          other.diskGbPrice == diskGbPrice &&
+          other.isDefault == isDefault &&
+          other.price == price &&
+          other.ratelimitOpsBytes == ratelimitOpsBytes &&
+          other.ratelimitOpsSecs == ratelimitOpsSecs &&
+          other.salesDesc == salesDesc &&
+          other.salesName == salesName &&
+          other.slug == slug;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (bwGbPrice == null ? 0 : bwGbPrice!.hashCode) +
-    (diskGbPrice == null ? 0 : diskGbPrice!.hashCode) +
-    (isDefault == null ? 0 : isDefault!.hashCode) +
-    (price == null ? 0 : price!.hashCode) +
-    (ratelimitOpsBytes == null ? 0 : ratelimitOpsBytes!.hashCode) +
-    (ratelimitOpsSecs == null ? 0 : ratelimitOpsSecs!.hashCode) +
-    (salesDesc == null ? 0 : salesDesc!.hashCode) +
-    (salesName == null ? 0 : salesName!.hashCode) +
-    (slug == null ? 0 : slug!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (bwGbPrice == null ? 0 : bwGbPrice!.hashCode) +
+      (diskGbPrice == null ? 0 : diskGbPrice!.hashCode) +
+      (isDefault == null ? 0 : isDefault!.hashCode) +
+      (price == null ? 0 : price!.hashCode) +
+      (ratelimitOpsBytes == null ? 0 : ratelimitOpsBytes!.hashCode) +
+      (ratelimitOpsSecs == null ? 0 : ratelimitOpsSecs!.hashCode) +
+      (salesDesc == null ? 0 : salesDesc!.hashCode) +
+      (salesName == null ? 0 : salesName!.hashCode) +
+      (slug == null ? 0 : slug!.hashCode);
 
   @override
-  String toString() => 'ClusterTiers[id=$id, bwGbPrice=$bwGbPrice, diskGbPrice=$diskGbPrice, isDefault=$isDefault, price=$price, ratelimitOpsBytes=$ratelimitOpsBytes, ratelimitOpsSecs=$ratelimitOpsSecs, salesDesc=$salesDesc, salesName=$salesName, slug=$slug]';
+  String toString() =>
+      'ClusterTiers[id=$id, bwGbPrice=$bwGbPrice, diskGbPrice=$diskGbPrice, isDefault=$isDefault, price=$price, ratelimitOpsBytes=$ratelimitOpsBytes, ratelimitOpsSecs=$ratelimitOpsSecs, salesDesc=$salesDesc, salesName=$salesName, slug=$slug]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -212,8 +215,10 @@ class ClusterTiers {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "ClusterTiers[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "ClusterTiers[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "ClusterTiers[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "ClusterTiers[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -234,7 +239,10 @@ class ClusterTiers {
     return null;
   }
 
-  static List<ClusterTiers> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<ClusterTiers> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <ClusterTiers>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -262,20 +270,24 @@ class ClusterTiers {
   }
 
   // maps a json object with a list of ClusterTiers-objects as value to a dart map
-  static Map<String, List<ClusterTiers>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<ClusterTiers>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<ClusterTiers>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = ClusterTiers.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = ClusterTiers.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

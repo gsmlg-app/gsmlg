@@ -108,34 +108,37 @@ class StorageGateway {
   StorageGatewayExport? exportConfig;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is StorageGateway &&
-    other.id == id &&
-    other.dateCreated == dateCreated &&
-    other.status == status &&
-    other.type == type &&
-    other.label == label &&
-    other.pendingCharges == pendingCharges &&
-    _deepEquality.equals(other.tags, tags) &&
-    other.health == health &&
-    other.networkConfig == networkConfig &&
-    other.exportConfig == exportConfig;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StorageGateway &&
+          other.id == id &&
+          other.dateCreated == dateCreated &&
+          other.status == status &&
+          other.type == type &&
+          other.label == label &&
+          other.pendingCharges == pendingCharges &&
+          _deepEquality.equals(other.tags, tags) &&
+          other.health == health &&
+          other.networkConfig == networkConfig &&
+          other.exportConfig == exportConfig;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (status == null ? 0 : status!.hashCode) +
-    (type == null ? 0 : type!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (pendingCharges == null ? 0 : pendingCharges!.hashCode) +
-    (tags.hashCode) +
-    (health == null ? 0 : health!.hashCode) +
-    (networkConfig == null ? 0 : networkConfig!.hashCode) +
-    (exportConfig == null ? 0 : exportConfig!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (status == null ? 0 : status!.hashCode) +
+      (type == null ? 0 : type!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (pendingCharges == null ? 0 : pendingCharges!.hashCode) +
+      (tags.hashCode) +
+      (health == null ? 0 : health!.hashCode) +
+      (networkConfig == null ? 0 : networkConfig!.hashCode) +
+      (exportConfig == null ? 0 : exportConfig!.hashCode);
 
   @override
-  String toString() => 'StorageGateway[id=$id, dateCreated=$dateCreated, status=$status, type=$type, label=$label, pendingCharges=$pendingCharges, tags=$tags, health=$health, networkConfig=$networkConfig, exportConfig=$exportConfig]';
+  String toString() =>
+      'StorageGateway[id=$id, dateCreated=$dateCreated, status=$status, type=$type, label=$label, pendingCharges=$pendingCharges, tags=$tags, health=$health, networkConfig=$networkConfig, exportConfig=$exportConfig]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -169,7 +172,7 @@ class StorageGateway {
     } else {
       json[r'pending_charges'] = null;
     }
-      json[r'tags'] = this.tags;
+    json[r'tags'] = this.tags;
     if (this.health != null) {
       json[r'health'] = this.health;
     } else {
@@ -200,8 +203,10 @@ class StorageGateway {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "StorageGateway[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "StorageGateway[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "StorageGateway[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "StorageGateway[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -224,7 +229,10 @@ class StorageGateway {
     return null;
   }
 
-  static List<StorageGateway> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<StorageGateway> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <StorageGateway>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -252,20 +260,24 @@ class StorageGateway {
   }
 
   // maps a json object with a list of StorageGateway-objects as value to a dart map
-  static Map<String, List<StorageGateway>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<StorageGateway>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<StorageGateway>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = StorageGateway.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = StorageGateway.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

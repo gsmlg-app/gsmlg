@@ -66,24 +66,27 @@ class Pushzonefile {
   String? lastModified;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Pushzonefile &&
-    other.name == name &&
-    other.mime == mime &&
-    other.size == size &&
-    other.content == content &&
-    other.lastModified == lastModified;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Pushzonefile &&
+          other.name == name &&
+          other.mime == mime &&
+          other.size == size &&
+          other.content == content &&
+          other.lastModified == lastModified;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (name == null ? 0 : name!.hashCode) +
-    (mime == null ? 0 : mime!.hashCode) +
-    (size == null ? 0 : size!.hashCode) +
-    (content == null ? 0 : content!.hashCode) +
-    (lastModified == null ? 0 : lastModified!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (name == null ? 0 : name!.hashCode) +
+      (mime == null ? 0 : mime!.hashCode) +
+      (size == null ? 0 : size!.hashCode) +
+      (content == null ? 0 : content!.hashCode) +
+      (lastModified == null ? 0 : lastModified!.hashCode);
 
   @override
-  String toString() => 'Pushzonefile[name=$name, mime=$mime, size=$size, content=$content, lastModified=$lastModified]';
+  String toString() =>
+      'Pushzonefile[name=$name, mime=$mime, size=$size, content=$content, lastModified=$lastModified]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -127,8 +130,10 @@ class Pushzonefile {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Pushzonefile[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Pushzonefile[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Pushzonefile[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Pushzonefile[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -144,7 +149,10 @@ class Pushzonefile {
     return null;
   }
 
-  static List<Pushzonefile> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Pushzonefile> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Pushzonefile>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -172,20 +180,24 @@ class Pushzonefile {
   }
 
   // maps a json object with a list of Pushzonefile-objects as value to a dart map
-  static Map<String, List<Pushzonefile>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Pushzonefile>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Pushzonefile>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Pushzonefile.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Pushzonefile.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

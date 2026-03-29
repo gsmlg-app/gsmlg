@@ -13,9 +13,10 @@ class GeoLocation {
     this.countryCode,
     this.subdivisionCode,
   });
-  
-  factory GeoLocation.fromJson(Map<String, Object?> json) => _$GeoLocationFromJson(json);
-  
+
+  factory GeoLocation.fromJson(Map<String, Object?> json) =>
+      _$GeoLocationFromJson(json);
+
   final String? continentCode;
   final String? countryCode;
   final String? subdivisionCode;

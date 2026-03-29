@@ -125,8 +125,5 @@ void main() {
     test('to test the property `globalRegions`', () async {
       // TODO
     });
-
-
   });
-
 }

@@ -9,12 +9,10 @@ part 'event.dart';
 part 'state.dart';
 
 class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
-  AccountsBloc({
-    required AppDatabase database,
-    required VaultRepository vault,
-  })  : _db = database,
-        _vault = vault,
-        super(const AccountsInitial()) {
+  AccountsBloc({required AppDatabase database, required VaultRepository vault})
+    : _db = database,
+      _vault = vault,
+      super(const AccountsInitial()) {
     on<AccountsLoad>(_onLoad);
     on<AccountsAdd>(_onAdd);
     on<AccountsUpdate>(_onUpdate);
@@ -30,10 +28,7 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
 
   String _vaultKey(int id) => '$_keyPrefix$id';
 
-  Future<void> _onLoad(
-    AccountsLoad event,
-    Emitter<AccountsState> emit,
-  ) async {
+  Future<void> _onLoad(AccountsLoad event, Emitter<AccountsState> emit) async {
     emit(const AccountsLoading());
 
     try {
@@ -44,10 +39,7 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     }
   }
 
-  Future<void> _onAdd(
-    AccountsAdd event,
-    Emitter<AccountsState> emit,
-  ) async {
+  Future<void> _onAdd(AccountsAdd event, Emitter<AccountsState> emit) async {
     final currentState = state;
     final currentAccounts = currentState is AccountsLoaded
         ? currentState.accounts
@@ -56,7 +48,9 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     emit(const AccountsLoading());
 
     try {
-      final id = await _db.into(_db.serviceAccountTable).insert(
+      final id = await _db
+          .into(_db.serviceAccountTable)
+          .insert(
             ServiceAccountTableCompanion.insert(
               provider: event.provider,
               name: event.name,
@@ -69,10 +63,12 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
       final accounts = await _db.select(_db.serviceAccountTable).get();
       emit(AccountsLoaded(accounts: accounts));
     } catch (e) {
-      emit(AccountsLoaded(
-        accounts: currentAccounts,
-        error: 'Failed to add account: ${e.toString()}',
-      ));
+      emit(
+        AccountsLoaded(
+          accounts: currentAccounts,
+          error: 'Failed to add account: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -84,21 +80,25 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     if (currentState is! AccountsLoaded) return;
 
     try {
-      await (_db.update(_db.serviceAccountTable)
-            ..where((t) => t.id.equals(event.id)))
-          .write(ServiceAccountTableCompanion(
-        name: Value(event.name),
-        description: Value(event.description),
-        updatedAt: Value(DateTime.now()),
-      ));
+      await (_db.update(
+        _db.serviceAccountTable,
+      )..where((t) => t.id.equals(event.id))).write(
+        ServiceAccountTableCompanion(
+          name: Value(event.name),
+          description: Value(event.description),
+          updatedAt: Value(DateTime.now()),
+        ),
+      );
 
       final accounts = await _db.select(_db.serviceAccountTable).get();
       emit(AccountsLoaded(accounts: accounts));
     } catch (e) {
-      emit(AccountsLoaded(
-        accounts: currentState.accounts,
-        error: 'Failed to update account: ${e.toString()}',
-      ));
+      emit(
+        AccountsLoaded(
+          accounts: currentState.accounts,
+          error: 'Failed to update account: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -112,18 +112,20 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     try {
       await _vault.write(key: _vaultKey(event.id), value: event.apiKey);
 
-      await (_db.update(_db.serviceAccountTable)
-            ..where((t) => t.id.equals(event.id)))
-          .write(ServiceAccountTableCompanion(
-        updatedAt: Value(DateTime.now()),
-      ));
+      await (_db.update(
+        _db.serviceAccountTable,
+      )..where((t) => t.id.equals(event.id))).write(
+        ServiceAccountTableCompanion(updatedAt: Value(DateTime.now())),
+      );
 
       emit(AccountsLoaded(accounts: currentState.accounts));
     } catch (e) {
-      emit(AccountsLoaded(
-        accounts: currentState.accounts,
-        error: 'Failed to update API key: ${e.toString()}',
-      ));
+      emit(
+        AccountsLoaded(
+          accounts: currentState.accounts,
+          error: 'Failed to update API key: ${e.toString()}',
+        ),
+      );
     }
   }
 
@@ -137,17 +139,19 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     try {
       await _vault.delete(key: _vaultKey(event.id));
 
-      await (_db.delete(_db.serviceAccountTable)
-            ..where((t) => t.id.equals(event.id)))
-          .go();
+      await (_db.delete(
+        _db.serviceAccountTable,
+      )..where((t) => t.id.equals(event.id))).go();
 
       final accounts = await _db.select(_db.serviceAccountTable).get();
       emit(AccountsLoaded(accounts: accounts));
     } catch (e) {
-      emit(AccountsLoaded(
-        accounts: currentState.accounts,
-        error: 'Failed to delete account: ${e.toString()}',
-      ));
+      emit(
+        AccountsLoaded(
+          accounts: currentState.accounts,
+          error: 'Failed to delete account: ${e.toString()}',
+        ),
+      );
     }
   }
 

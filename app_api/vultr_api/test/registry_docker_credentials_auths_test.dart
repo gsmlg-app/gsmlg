@@ -17,11 +17,10 @@ void main() {
 
   group('test RegistryDockerCredentialsAuths', () {
     // RegistryDockerCredentialsAuthsRegistryRegionNameVultrcrCom leftCurlyBracketRegistryRegionNameRightCurlyBracketPeriodVultrcrPeriodCom
-    test('to test the property `leftCurlyBracketRegistryRegionNameRightCurlyBracketPeriodVultrcrPeriodCom`', () async {
+    test(
+        'to test the property `leftCurlyBracketRegistryRegionNameRightCurlyBracketPeriodVultrcrPeriodCom`',
+        () async {
       // TODO
     });
-
-
   });
-
 }

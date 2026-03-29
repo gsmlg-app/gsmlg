@@ -10,7 +10,6 @@
 
 part of openapi.api;
 
-
 class BackupApi {
   BackupApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
 
@@ -26,10 +25,11 @@ class BackupApi {
   ///
   /// * [String] backupId (required):
   ///   The [Backup id](#operation/list-backups).
-  Future<Response> getBackupWithHttpInfo(String backupId,) async {
+  Future<Response> getBackupWithHttpInfo(
+    String backupId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/backups/{backup-id}'
-      .replaceAll('{backup-id}', backupId);
+    final path = r'/backups/{backup-id}'.replaceAll('{backup-id}', backupId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -39,7 +39,6 @@ class BackupApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -60,17 +59,24 @@ class BackupApi {
   ///
   /// * [String] backupId (required):
   ///   The [Backup id](#operation/list-backups).
-  Future<GetBackup200Response?> getBackup(String backupId,) async {
-    final response = await getBackupWithHttpInfo(backupId,);
+  Future<GetBackup200Response?> getBackup(
+    String backupId,
+  ) async {
+    final response = await getBackupWithHttpInfo(
+      backupId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetBackup200Response',) as GetBackup200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetBackup200Response',
+      ) as GetBackup200Response;
     }
     return null;
   }
@@ -91,7 +97,11 @@ class BackupApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listBackupsWithHttpInfo({ String? instanceId, int? perPage, String? cursor, }) async {
+  Future<Response> listBackupsWithHttpInfo({
+    String? instanceId,
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/backups';
 
@@ -114,7 +124,6 @@ class BackupApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -140,17 +149,28 @@ class BackupApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListBackups200Response?> listBackups({ String? instanceId, int? perPage, String? cursor, }) async {
-    final response = await listBackupsWithHttpInfo( instanceId: instanceId, perPage: perPage, cursor: cursor, );
+  Future<ListBackups200Response?> listBackups({
+    String? instanceId,
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listBackupsWithHttpInfo(
+      instanceId: instanceId,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListBackups200Response',) as ListBackups200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListBackups200Response',
+      ) as ListBackups200Response;
     }
     return null;
   }

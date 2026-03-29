@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class ReservedIpApi {
-  ReservedIpApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  ReservedIpApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -29,10 +29,13 @@ class ReservedIpApi {
   ///
   /// * [AttachReservedIpRequest] attachReservedIpRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> attachReservedIpWithHttpInfo(String reservedIp, { AttachReservedIpRequest? attachReservedIpRequest, }) async {
+  Future<Response> attachReservedIpWithHttpInfo(
+    String reservedIp, {
+    AttachReservedIpRequest? attachReservedIpRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/reserved-ips/{reserved-ip}/attach'
-      .replaceAll('{reserved-ip}', reservedIp);
+        .replaceAll('{reserved-ip}', reservedIp);
 
     // ignore: prefer_final_locals
     Object? postBody = attachReservedIpRequest;
@@ -42,7 +45,6 @@ class ReservedIpApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -66,8 +68,14 @@ class ReservedIpApi {
   ///
   /// * [AttachReservedIpRequest] attachReservedIpRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> attachReservedIp(String reservedIp, { AttachReservedIpRequest? attachReservedIpRequest, }) async {
-    final response = await attachReservedIpWithHttpInfo(reservedIp,  attachReservedIpRequest: attachReservedIpRequest, );
+  Future<void> attachReservedIp(
+    String reservedIp, {
+    AttachReservedIpRequest? attachReservedIpRequest,
+  }) async {
+    final response = await attachReservedIpWithHttpInfo(
+      reservedIp,
+      attachReservedIpRequest: attachReservedIpRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -83,7 +91,9 @@ class ReservedIpApi {
   ///
   /// * [ConvertReservedIpRequest] convertReservedIpRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> convertReservedIpWithHttpInfo({ ConvertReservedIpRequest? convertReservedIpRequest, }) async {
+  Future<Response> convertReservedIpWithHttpInfo({
+    ConvertReservedIpRequest? convertReservedIpRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/reserved-ips/convert';
 
@@ -95,7 +105,6 @@ class ReservedIpApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -116,17 +125,24 @@ class ReservedIpApi {
   ///
   /// * [ConvertReservedIpRequest] convertReservedIpRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<GetReservedIp200Response?> convertReservedIp({ ConvertReservedIpRequest? convertReservedIpRequest, }) async {
-    final response = await convertReservedIpWithHttpInfo( convertReservedIpRequest: convertReservedIpRequest, );
+  Future<GetReservedIp200Response?> convertReservedIp({
+    ConvertReservedIpRequest? convertReservedIpRequest,
+  }) async {
+    final response = await convertReservedIpWithHttpInfo(
+      convertReservedIpRequest: convertReservedIpRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetReservedIp200Response',) as GetReservedIp200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetReservedIp200Response',
+      ) as GetReservedIp200Response;
     }
     return null;
   }
@@ -141,7 +157,9 @@ class ReservedIpApi {
   ///
   /// * [CreateReservedIpRequest] createReservedIpRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createReservedIpWithHttpInfo({ CreateReservedIpRequest? createReservedIpRequest, }) async {
+  Future<Response> createReservedIpWithHttpInfo({
+    CreateReservedIpRequest? createReservedIpRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/reserved-ips';
 
@@ -153,7 +171,6 @@ class ReservedIpApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -174,17 +191,24 @@ class ReservedIpApi {
   ///
   /// * [CreateReservedIpRequest] createReservedIpRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<GetReservedIp200Response?> createReservedIp({ CreateReservedIpRequest? createReservedIpRequest, }) async {
-    final response = await createReservedIpWithHttpInfo( createReservedIpRequest: createReservedIpRequest, );
+  Future<GetReservedIp200Response?> createReservedIp({
+    CreateReservedIpRequest? createReservedIpRequest,
+  }) async {
+    final response = await createReservedIpWithHttpInfo(
+      createReservedIpRequest: createReservedIpRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetReservedIp200Response',) as GetReservedIp200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetReservedIp200Response',
+      ) as GetReservedIp200Response;
     }
     return null;
   }
@@ -199,10 +223,12 @@ class ReservedIpApi {
   ///
   /// * [String] reservedIp (required):
   ///   The [Reserved IP id](#operation/list-reserved-ips).
-  Future<Response> deleteReservedIpWithHttpInfo(String reservedIp,) async {
+  Future<Response> deleteReservedIpWithHttpInfo(
+    String reservedIp,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/reserved-ips/{reserved-ip}'
-      .replaceAll('{reserved-ip}', reservedIp);
+    final path =
+        r'/reserved-ips/{reserved-ip}'.replaceAll('{reserved-ip}', reservedIp);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -212,7 +238,6 @@ class ReservedIpApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -233,8 +258,12 @@ class ReservedIpApi {
   ///
   /// * [String] reservedIp (required):
   ///   The [Reserved IP id](#operation/list-reserved-ips).
-  Future<void> deleteReservedIp(String reservedIp,) async {
-    final response = await deleteReservedIpWithHttpInfo(reservedIp,);
+  Future<void> deleteReservedIp(
+    String reservedIp,
+  ) async {
+    final response = await deleteReservedIpWithHttpInfo(
+      reservedIp,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -250,10 +279,12 @@ class ReservedIpApi {
   ///
   /// * [String] reservedIp (required):
   ///   The [Reserved IP id](#operation/list-reserved-ips)
-  Future<Response> detachReservedIpWithHttpInfo(String reservedIp,) async {
+  Future<Response> detachReservedIpWithHttpInfo(
+    String reservedIp,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/reserved-ips/{reserved-ip}/detach'
-      .replaceAll('{reserved-ip}', reservedIp);
+        .replaceAll('{reserved-ip}', reservedIp);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -263,7 +294,6 @@ class ReservedIpApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -284,8 +314,12 @@ class ReservedIpApi {
   ///
   /// * [String] reservedIp (required):
   ///   The [Reserved IP id](#operation/list-reserved-ips)
-  Future<void> detachReservedIp(String reservedIp,) async {
-    final response = await detachReservedIpWithHttpInfo(reservedIp,);
+  Future<void> detachReservedIp(
+    String reservedIp,
+  ) async {
+    final response = await detachReservedIpWithHttpInfo(
+      reservedIp,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -301,10 +335,12 @@ class ReservedIpApi {
   ///
   /// * [String] reservedIp (required):
   ///   The [Reserved IP id](#operation/list-reserved-ips).
-  Future<Response> getReservedIpWithHttpInfo(String reservedIp,) async {
+  Future<Response> getReservedIpWithHttpInfo(
+    String reservedIp,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/reserved-ips/{reserved-ip}'
-      .replaceAll('{reserved-ip}', reservedIp);
+    final path =
+        r'/reserved-ips/{reserved-ip}'.replaceAll('{reserved-ip}', reservedIp);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -314,7 +350,6 @@ class ReservedIpApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -335,17 +370,24 @@ class ReservedIpApi {
   ///
   /// * [String] reservedIp (required):
   ///   The [Reserved IP id](#operation/list-reserved-ips).
-  Future<GetReservedIp200Response?> getReservedIp(String reservedIp,) async {
-    final response = await getReservedIpWithHttpInfo(reservedIp,);
+  Future<GetReservedIp200Response?> getReservedIp(
+    String reservedIp,
+  ) async {
+    final response = await getReservedIpWithHttpInfo(
+      reservedIp,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetReservedIp200Response',) as GetReservedIp200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetReservedIp200Response',
+      ) as GetReservedIp200Response;
     }
     return null;
   }
@@ -363,7 +405,10 @@ class ReservedIpApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listReservedIpsWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listReservedIpsWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/reserved-ips';
 
@@ -383,7 +428,6 @@ class ReservedIpApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -406,17 +450,26 @@ class ReservedIpApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListReservedIps200Response?> listReservedIps({ int? perPage, String? cursor, }) async {
-    final response = await listReservedIpsWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListReservedIps200Response?> listReservedIps({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listReservedIpsWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListReservedIps200Response',) as ListReservedIps200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListReservedIps200Response',
+      ) as ListReservedIps200Response;
     }
     return null;
   }
@@ -434,10 +487,13 @@ class ReservedIpApi {
   ///
   /// * [PatchReservedIpsReservedIpRequest] patchReservedIpsReservedIpRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> patchReservedIpsReservedIpWithHttpInfo(String reservedIp, { PatchReservedIpsReservedIpRequest? patchReservedIpsReservedIpRequest, }) async {
+  Future<Response> patchReservedIpsReservedIpWithHttpInfo(
+    String reservedIp, {
+    PatchReservedIpsReservedIpRequest? patchReservedIpsReservedIpRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/reserved-ips/{reserved-ip}'
-      .replaceAll('{reserved-ip}', reservedIp);
+    final path =
+        r'/reserved-ips/{reserved-ip}'.replaceAll('{reserved-ip}', reservedIp);
 
     // ignore: prefer_final_locals
     Object? postBody = patchReservedIpsReservedIpRequest;
@@ -447,7 +503,6 @@ class ReservedIpApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -471,17 +526,26 @@ class ReservedIpApi {
   ///
   /// * [PatchReservedIpsReservedIpRequest] patchReservedIpsReservedIpRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<GetReservedIp200Response?> patchReservedIpsReservedIp(String reservedIp, { PatchReservedIpsReservedIpRequest? patchReservedIpsReservedIpRequest, }) async {
-    final response = await patchReservedIpsReservedIpWithHttpInfo(reservedIp,  patchReservedIpsReservedIpRequest: patchReservedIpsReservedIpRequest, );
+  Future<GetReservedIp200Response?> patchReservedIpsReservedIp(
+    String reservedIp, {
+    PatchReservedIpsReservedIpRequest? patchReservedIpsReservedIpRequest,
+  }) async {
+    final response = await patchReservedIpsReservedIpWithHttpInfo(
+      reservedIp,
+      patchReservedIpsReservedIpRequest: patchReservedIpsReservedIpRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetReservedIp200Response',) as GetReservedIp200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetReservedIp200Response',
+      ) as GetReservedIp200Response;
     }
     return null;
   }

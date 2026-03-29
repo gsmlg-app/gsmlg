@@ -36,15 +36,17 @@ class UpdateSshKeyRequest {
   String? sshKey;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateSshKeyRequest &&
-    other.name == name &&
-    other.sshKey == sshKey;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateSshKeyRequest &&
+          other.name == name &&
+          other.sshKey == sshKey;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (name == null ? 0 : name!.hashCode) +
-    (sshKey == null ? 0 : sshKey!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (name == null ? 0 : name!.hashCode) +
+      (sshKey == null ? 0 : sshKey!.hashCode);
 
   @override
   String toString() => 'UpdateSshKeyRequest[name=$name, sshKey=$sshKey]';
@@ -76,8 +78,10 @@ class UpdateSshKeyRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateSshKeyRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateSshKeyRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateSshKeyRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateSshKeyRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -90,7 +94,10 @@ class UpdateSshKeyRequest {
     return null;
   }
 
-  static List<UpdateSshKeyRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateSshKeyRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateSshKeyRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -118,20 +125,24 @@ class UpdateSshKeyRequest {
   }
 
   // maps a json object with a list of UpdateSshKeyRequest-objects as value to a dart map
-  static Map<String, List<UpdateSshKeyRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateSshKeyRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateSshKeyRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateSshKeyRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateSshKeyRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

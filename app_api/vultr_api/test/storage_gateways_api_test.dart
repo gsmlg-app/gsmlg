@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for StorageGatewaysApi
 void main() {
   // final instance = StorageGatewaysApi();
@@ -75,6 +74,5 @@ void main() {
     test('test updateStorageGateway', () async {
       // TODO
     });
-
   });
 }

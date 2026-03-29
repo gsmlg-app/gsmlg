@@ -274,68 +274,71 @@ class BaremetalGet {
   String? userScheme;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is BaremetalGet &&
-    other.id == id &&
-    other.os == os &&
-    other.ram == ram &&
-    other.disk == disk &&
-    other.mainIp == mainIp &&
-    other.cpuCount == cpuCount &&
-    other.region == region &&
-    other.defaultPassword == defaultPassword &&
-    other.dateCreated == dateCreated &&
-    other.status == status &&
-    other.netmaskV4 == netmaskV4 &&
-    other.gatewayV4 == gatewayV4 &&
-    other.plan == plan &&
-    other.label == label &&
-    other.internalIp == internalIp &&
-    _deepEquality.equals(other.vpcs, vpcs) &&
-    other.tag == tag &&
-    other.osId == osId &&
-    other.appId == appId &&
-    other.imageId == imageId &&
-    other.snapshotId == snapshotId &&
-    other.v6Network == v6Network &&
-    other.v6MainIp == v6MainIp &&
-    other.v6NetworkSize == v6NetworkSize &&
-    other.macAddress == macAddress &&
-    _deepEquality.equals(other.tags, tags) &&
-    other.userScheme == userScheme;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BaremetalGet &&
+          other.id == id &&
+          other.os == os &&
+          other.ram == ram &&
+          other.disk == disk &&
+          other.mainIp == mainIp &&
+          other.cpuCount == cpuCount &&
+          other.region == region &&
+          other.defaultPassword == defaultPassword &&
+          other.dateCreated == dateCreated &&
+          other.status == status &&
+          other.netmaskV4 == netmaskV4 &&
+          other.gatewayV4 == gatewayV4 &&
+          other.plan == plan &&
+          other.label == label &&
+          other.internalIp == internalIp &&
+          _deepEquality.equals(other.vpcs, vpcs) &&
+          other.tag == tag &&
+          other.osId == osId &&
+          other.appId == appId &&
+          other.imageId == imageId &&
+          other.snapshotId == snapshotId &&
+          other.v6Network == v6Network &&
+          other.v6MainIp == v6MainIp &&
+          other.v6NetworkSize == v6NetworkSize &&
+          other.macAddress == macAddress &&
+          _deepEquality.equals(other.tags, tags) &&
+          other.userScheme == userScheme;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (os == null ? 0 : os!.hashCode) +
-    (ram == null ? 0 : ram!.hashCode) +
-    (disk == null ? 0 : disk!.hashCode) +
-    (mainIp == null ? 0 : mainIp!.hashCode) +
-    (cpuCount == null ? 0 : cpuCount!.hashCode) +
-    (region == null ? 0 : region!.hashCode) +
-    (defaultPassword == null ? 0 : defaultPassword!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (status == null ? 0 : status!.hashCode) +
-    (netmaskV4 == null ? 0 : netmaskV4!.hashCode) +
-    (gatewayV4 == null ? 0 : gatewayV4!.hashCode) +
-    (plan == null ? 0 : plan!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (internalIp == null ? 0 : internalIp!.hashCode) +
-    (vpcs.hashCode) +
-    (tag == null ? 0 : tag!.hashCode) +
-    (osId == null ? 0 : osId!.hashCode) +
-    (appId == null ? 0 : appId!.hashCode) +
-    (imageId == null ? 0 : imageId!.hashCode) +
-    (snapshotId == null ? 0 : snapshotId!.hashCode) +
-    (v6Network == null ? 0 : v6Network!.hashCode) +
-    (v6MainIp == null ? 0 : v6MainIp!.hashCode) +
-    (v6NetworkSize == null ? 0 : v6NetworkSize!.hashCode) +
-    (macAddress == null ? 0 : macAddress!.hashCode) +
-    (tags.hashCode) +
-    (userScheme == null ? 0 : userScheme!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (os == null ? 0 : os!.hashCode) +
+      (ram == null ? 0 : ram!.hashCode) +
+      (disk == null ? 0 : disk!.hashCode) +
+      (mainIp == null ? 0 : mainIp!.hashCode) +
+      (cpuCount == null ? 0 : cpuCount!.hashCode) +
+      (region == null ? 0 : region!.hashCode) +
+      (defaultPassword == null ? 0 : defaultPassword!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (status == null ? 0 : status!.hashCode) +
+      (netmaskV4 == null ? 0 : netmaskV4!.hashCode) +
+      (gatewayV4 == null ? 0 : gatewayV4!.hashCode) +
+      (plan == null ? 0 : plan!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (internalIp == null ? 0 : internalIp!.hashCode) +
+      (vpcs.hashCode) +
+      (tag == null ? 0 : tag!.hashCode) +
+      (osId == null ? 0 : osId!.hashCode) +
+      (appId == null ? 0 : appId!.hashCode) +
+      (imageId == null ? 0 : imageId!.hashCode) +
+      (snapshotId == null ? 0 : snapshotId!.hashCode) +
+      (v6Network == null ? 0 : v6Network!.hashCode) +
+      (v6MainIp == null ? 0 : v6MainIp!.hashCode) +
+      (v6NetworkSize == null ? 0 : v6NetworkSize!.hashCode) +
+      (macAddress == null ? 0 : macAddress!.hashCode) +
+      (tags.hashCode) +
+      (userScheme == null ? 0 : userScheme!.hashCode);
 
   @override
-  String toString() => 'BaremetalGet[id=$id, os=$os, ram=$ram, disk=$disk, mainIp=$mainIp, cpuCount=$cpuCount, region=$region, defaultPassword=$defaultPassword, dateCreated=$dateCreated, status=$status, netmaskV4=$netmaskV4, gatewayV4=$gatewayV4, plan=$plan, label=$label, internalIp=$internalIp, vpcs=$vpcs, tag=$tag, osId=$osId, appId=$appId, imageId=$imageId, snapshotId=$snapshotId, v6Network=$v6Network, v6MainIp=$v6MainIp, v6NetworkSize=$v6NetworkSize, macAddress=$macAddress, tags=$tags, userScheme=$userScheme]';
+  String toString() =>
+      'BaremetalGet[id=$id, os=$os, ram=$ram, disk=$disk, mainIp=$mainIp, cpuCount=$cpuCount, region=$region, defaultPassword=$defaultPassword, dateCreated=$dateCreated, status=$status, netmaskV4=$netmaskV4, gatewayV4=$gatewayV4, plan=$plan, label=$label, internalIp=$internalIp, vpcs=$vpcs, tag=$tag, osId=$osId, appId=$appId, imageId=$imageId, snapshotId=$snapshotId, v6Network=$v6Network, v6MainIp=$v6MainIp, v6NetworkSize=$v6NetworkSize, macAddress=$macAddress, tags=$tags, userScheme=$userScheme]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -414,7 +417,7 @@ class BaremetalGet {
     } else {
       json[r'internal_ip'] = null;
     }
-      json[r'vpcs'] = this.vpcs;
+    json[r'vpcs'] = this.vpcs;
     if (this.tag != null) {
       json[r'tag'] = this.tag;
     } else {
@@ -460,7 +463,7 @@ class BaremetalGet {
     } else {
       json[r'mac_address'] = null;
     }
-      json[r'tags'] = this.tags;
+    json[r'tags'] = this.tags;
     if (this.userScheme != null) {
       json[r'user_scheme'] = this.userScheme;
     } else {
@@ -481,8 +484,10 @@ class BaremetalGet {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "BaremetalGet[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "BaremetalGet[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "BaremetalGet[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "BaremetalGet[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -522,7 +527,10 @@ class BaremetalGet {
     return null;
   }
 
-  static List<BaremetalGet> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<BaremetalGet> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <BaremetalGet>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -550,20 +558,24 @@ class BaremetalGet {
   }
 
   // maps a json object with a list of BaremetalGet-objects as value to a dart map
-  static Map<String, List<BaremetalGet>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<BaremetalGet>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<BaremetalGet>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = BaremetalGet.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = BaremetalGet.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

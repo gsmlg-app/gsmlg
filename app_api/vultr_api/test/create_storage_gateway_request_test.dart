@@ -43,8 +43,5 @@ void main() {
     test('to test the property `networkConfig`', () async {
       // TODO
     });
-
-
   });
-
 }

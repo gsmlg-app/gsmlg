@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for ApplicationApi
 void main() {
   // final instance = ApplicationApi();
@@ -25,6 +24,5 @@ void main() {
     test('test listApplications', () async {
       // TODO
     });
-
   });
 }

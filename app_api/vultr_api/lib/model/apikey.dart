@@ -66,24 +66,27 @@ class Apikey {
   String? dateExpire;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Apikey &&
-    other.id == id &&
-    other.apiKey == apiKey &&
-    other.name == name &&
-    other.expire == expire &&
-    other.dateExpire == dateExpire;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Apikey &&
+          other.id == id &&
+          other.apiKey == apiKey &&
+          other.name == name &&
+          other.expire == expire &&
+          other.dateExpire == dateExpire;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (apiKey == null ? 0 : apiKey!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (expire == null ? 0 : expire!.hashCode) +
-    (dateExpire == null ? 0 : dateExpire!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (apiKey == null ? 0 : apiKey!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (expire == null ? 0 : expire!.hashCode) +
+      (dateExpire == null ? 0 : dateExpire!.hashCode);
 
   @override
-  String toString() => 'Apikey[id=$id, apiKey=$apiKey, name=$name, expire=$expire, dateExpire=$dateExpire]';
+  String toString() =>
+      'Apikey[id=$id, apiKey=$apiKey, name=$name, expire=$expire, dateExpire=$dateExpire]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -127,8 +130,10 @@ class Apikey {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Apikey[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Apikey[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Apikey[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Apikey[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -144,7 +149,10 @@ class Apikey {
     return null;
   }
 
-  static List<Apikey> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Apikey> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Apikey>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -172,20 +180,24 @@ class Apikey {
   }
 
   // maps a json object with a list of Apikey-objects as value to a dart map
-  static Map<String, List<Apikey>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Apikey>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Apikey>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Apikey.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Apikey.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

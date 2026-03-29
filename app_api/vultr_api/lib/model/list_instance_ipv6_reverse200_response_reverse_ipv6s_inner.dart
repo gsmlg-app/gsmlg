@@ -36,18 +36,21 @@ class ListInstanceIpv6Reverse200ResponseReverseIpv6sInner {
   String? ip;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ListInstanceIpv6Reverse200ResponseReverseIpv6sInner &&
-    other.reverse == reverse &&
-    other.ip == ip;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListInstanceIpv6Reverse200ResponseReverseIpv6sInner &&
+          other.reverse == reverse &&
+          other.ip == ip;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (reverse == null ? 0 : reverse!.hashCode) +
-    (ip == null ? 0 : ip!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (reverse == null ? 0 : reverse!.hashCode) +
+      (ip == null ? 0 : ip!.hashCode);
 
   @override
-  String toString() => 'ListInstanceIpv6Reverse200ResponseReverseIpv6sInner[reverse=$reverse, ip=$ip]';
+  String toString() =>
+      'ListInstanceIpv6Reverse200ResponseReverseIpv6sInner[reverse=$reverse, ip=$ip]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -67,7 +70,8 @@ class ListInstanceIpv6Reverse200ResponseReverseIpv6sInner {
   /// Returns a new [ListInstanceIpv6Reverse200ResponseReverseIpv6sInner] instance and imports its values from
   /// [value] if it's a [Map], null otherwise.
   // ignore: prefer_constructors_over_static_methods
-  static ListInstanceIpv6Reverse200ResponseReverseIpv6sInner? fromJson(dynamic value) {
+  static ListInstanceIpv6Reverse200ResponseReverseIpv6sInner? fromJson(
+      dynamic value) {
     if (value is Map) {
       final json = value.cast<String, dynamic>();
 
@@ -76,8 +80,10 @@ class ListInstanceIpv6Reverse200ResponseReverseIpv6sInner {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "ListInstanceIpv6Reverse200ResponseReverseIpv6sInner[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "ListInstanceIpv6Reverse200ResponseReverseIpv6sInner[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "ListInstanceIpv6Reverse200ResponseReverseIpv6sInner[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "ListInstanceIpv6Reverse200ResponseReverseIpv6sInner[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -90,11 +96,15 @@ class ListInstanceIpv6Reverse200ResponseReverseIpv6sInner {
     return null;
   }
 
-  static List<ListInstanceIpv6Reverse200ResponseReverseIpv6sInner> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<ListInstanceIpv6Reverse200ResponseReverseIpv6sInner> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <ListInstanceIpv6Reverse200ResponseReverseIpv6sInner>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
-        final value = ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.fromJson(row);
+        final value =
+            ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.fromJson(row);
         if (value != null) {
           result.add(value);
         }
@@ -103,12 +113,15 @@ class ListInstanceIpv6Reverse200ResponseReverseIpv6sInner {
     return result.toList(growable: growable);
   }
 
-  static Map<String, ListInstanceIpv6Reverse200ResponseReverseIpv6sInner> mapFromJson(dynamic json) {
+  static Map<String, ListInstanceIpv6Reverse200ResponseReverseIpv6sInner>
+      mapFromJson(dynamic json) {
     final map = <String, ListInstanceIpv6Reverse200ResponseReverseIpv6sInner>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.fromJson(entry.value);
+        final value =
+            ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.fromJson(
+                entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -118,20 +131,27 @@ class ListInstanceIpv6Reverse200ResponseReverseIpv6sInner {
   }
 
   // maps a json object with a list of ListInstanceIpv6Reverse200ResponseReverseIpv6sInner-objects as value to a dart map
-  static Map<String, List<ListInstanceIpv6Reverse200ResponseReverseIpv6sInner>> mapListFromJson(dynamic json, {bool growable = false,}) {
-    final map = <String, List<ListInstanceIpv6Reverse200ResponseReverseIpv6sInner>>{};
+  static Map<String, List<ListInstanceIpv6Reverse200ResponseReverseIpv6sInner>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
+    final map =
+        <String, List<ListInstanceIpv6Reverse200ResponseReverseIpv6sInner>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.listFromJson(entry.value, growable: growable,);
+        map[entry.key] =
+            ListInstanceIpv6Reverse200ResponseReverseIpv6sInner.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

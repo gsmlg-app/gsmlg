@@ -13,10 +13,13 @@ class ChangeResourceRecordSetsResponse {
   const ChangeResourceRecordSetsResponse({
     required this.changeInfo,
   });
-  
-  factory ChangeResourceRecordSetsResponse.fromJson(Map<String, Object?> json) => _$ChangeResourceRecordSetsResponseFromJson(json);
-  
+
+  factory ChangeResourceRecordSetsResponse.fromJson(
+          Map<String, Object?> json) =>
+      _$ChangeResourceRecordSetsResponseFromJson(json);
+
   final ChangeInfo changeInfo;
 
-  Map<String, Object?> toJson() => _$ChangeResourceRecordSetsResponseToJson(this);
+  Map<String, Object?> toJson() =>
+      _$ChangeResourceRecordSetsResponseToJson(this);
 }

@@ -36,18 +36,21 @@ class CreateLoadBalancerRequestAutoSsl {
   String? domainSub;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateLoadBalancerRequestAutoSsl &&
-    other.domainZone == domainZone &&
-    other.domainSub == domainSub;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateLoadBalancerRequestAutoSsl &&
+          other.domainZone == domainZone &&
+          other.domainSub == domainSub;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (domainZone == null ? 0 : domainZone!.hashCode) +
-    (domainSub == null ? 0 : domainSub!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (domainZone == null ? 0 : domainZone!.hashCode) +
+      (domainSub == null ? 0 : domainSub!.hashCode);
 
   @override
-  String toString() => 'CreateLoadBalancerRequestAutoSsl[domainZone=$domainZone, domainSub=$domainSub]';
+  String toString() =>
+      'CreateLoadBalancerRequestAutoSsl[domainZone=$domainZone, domainSub=$domainSub]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -76,8 +79,10 @@ class CreateLoadBalancerRequestAutoSsl {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateLoadBalancerRequestAutoSsl[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateLoadBalancerRequestAutoSsl[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateLoadBalancerRequestAutoSsl[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateLoadBalancerRequestAutoSsl[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -90,7 +95,10 @@ class CreateLoadBalancerRequestAutoSsl {
     return null;
   }
 
-  static List<CreateLoadBalancerRequestAutoSsl> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateLoadBalancerRequestAutoSsl> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateLoadBalancerRequestAutoSsl>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -103,7 +111,8 @@ class CreateLoadBalancerRequestAutoSsl {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateLoadBalancerRequestAutoSsl> mapFromJson(dynamic json) {
+  static Map<String, CreateLoadBalancerRequestAutoSsl> mapFromJson(
+      dynamic json) {
     final map = <String, CreateLoadBalancerRequestAutoSsl>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -118,20 +127,24 @@ class CreateLoadBalancerRequestAutoSsl {
   }
 
   // maps a json object with a list of CreateLoadBalancerRequestAutoSsl-objects as value to a dart map
-  static Map<String, List<CreateLoadBalancerRequestAutoSsl>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateLoadBalancerRequestAutoSsl>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateLoadBalancerRequestAutoSsl>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateLoadBalancerRequestAutoSsl.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateLoadBalancerRequestAutoSsl.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

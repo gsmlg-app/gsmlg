@@ -86,28 +86,31 @@ class FirewallGroup {
   int? maxRuleCount;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is FirewallGroup &&
-    other.id == id &&
-    other.description == description &&
-    other.dateCreated == dateCreated &&
-    other.dateModified == dateModified &&
-    other.instanceCount == instanceCount &&
-    other.ruleCount == ruleCount &&
-    other.maxRuleCount == maxRuleCount;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FirewallGroup &&
+          other.id == id &&
+          other.description == description &&
+          other.dateCreated == dateCreated &&
+          other.dateModified == dateModified &&
+          other.instanceCount == instanceCount &&
+          other.ruleCount == ruleCount &&
+          other.maxRuleCount == maxRuleCount;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (dateModified == null ? 0 : dateModified!.hashCode) +
-    (instanceCount == null ? 0 : instanceCount!.hashCode) +
-    (ruleCount == null ? 0 : ruleCount!.hashCode) +
-    (maxRuleCount == null ? 0 : maxRuleCount!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (dateModified == null ? 0 : dateModified!.hashCode) +
+      (instanceCount == null ? 0 : instanceCount!.hashCode) +
+      (ruleCount == null ? 0 : ruleCount!.hashCode) +
+      (maxRuleCount == null ? 0 : maxRuleCount!.hashCode);
 
   @override
-  String toString() => 'FirewallGroup[id=$id, description=$description, dateCreated=$dateCreated, dateModified=$dateModified, instanceCount=$instanceCount, ruleCount=$ruleCount, maxRuleCount=$maxRuleCount]';
+  String toString() =>
+      'FirewallGroup[id=$id, description=$description, dateCreated=$dateCreated, dateModified=$dateModified, instanceCount=$instanceCount, ruleCount=$ruleCount, maxRuleCount=$maxRuleCount]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -161,8 +164,10 @@ class FirewallGroup {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "FirewallGroup[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "FirewallGroup[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "FirewallGroup[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "FirewallGroup[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -180,7 +185,10 @@ class FirewallGroup {
     return null;
   }
 
-  static List<FirewallGroup> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<FirewallGroup> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <FirewallGroup>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -208,20 +216,24 @@ class FirewallGroup {
   }
 
   // maps a json object with a list of FirewallGroup-objects as value to a dart map
-  static Map<String, List<FirewallGroup>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<FirewallGroup>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<FirewallGroup>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = FirewallGroup.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = FirewallGroup.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

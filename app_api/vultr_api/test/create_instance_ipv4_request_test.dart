@@ -21,8 +21,5 @@ void main() {
     test('to test the property `reboot`', () async {
       // TODO
     });
-
-
   });
-
 }

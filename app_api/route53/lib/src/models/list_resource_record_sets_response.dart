@@ -19,9 +19,10 @@ class ListResourceRecordSetsResponse {
     this.nextRecordType,
     this.nextRecordIdentifier,
   });
-  
-  factory ListResourceRecordSetsResponse.fromJson(Map<String, Object?> json) => _$ListResourceRecordSetsResponseFromJson(json);
-  
+
+  factory ListResourceRecordSetsResponse.fromJson(Map<String, Object?> json) =>
+      _$ListResourceRecordSetsResponseFromJson(json);
+
   final List<ResourceRecordSet> resourceRecordSets;
   final bool isTruncated;
   final String? nextRecordName;

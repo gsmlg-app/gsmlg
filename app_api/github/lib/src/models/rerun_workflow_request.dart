@@ -9,12 +9,11 @@ part 'rerun_workflow_request.g.dart';
 /// Request body for re-running a workflow
 @JsonSerializable()
 class RerunWorkflowRequest {
-  const RerunWorkflowRequest({
-    this.enableDebugLogging = false,
-  });
-  
-  factory RerunWorkflowRequest.fromJson(Map<String, Object?> json) => _$RerunWorkflowRequestFromJson(json);
-  
+  const RerunWorkflowRequest({this.enableDebugLogging = false});
+
+  factory RerunWorkflowRequest.fromJson(Map<String, Object?> json) =>
+      _$RerunWorkflowRequestFromJson(json);
+
   /// Whether to enable debug logging for the re-run.
   @JsonKey(name: 'enable_debug_logging')
   final bool enableDebugLogging;

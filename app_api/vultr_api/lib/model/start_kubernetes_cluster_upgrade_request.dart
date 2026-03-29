@@ -20,20 +20,23 @@ class StartKubernetesClusterUpgradeRequest {
   String upgradeVersion;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is StartKubernetesClusterUpgradeRequest &&
-    other.upgradeVersion == upgradeVersion;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StartKubernetesClusterUpgradeRequest &&
+          other.upgradeVersion == upgradeVersion;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (upgradeVersion.hashCode);
+      // ignore: unnecessary_parenthesis
+      (upgradeVersion.hashCode);
 
   @override
-  String toString() => 'StartKubernetesClusterUpgradeRequest[upgradeVersion=$upgradeVersion]';
+  String toString() =>
+      'StartKubernetesClusterUpgradeRequest[upgradeVersion=$upgradeVersion]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'upgrade_version'] = this.upgradeVersion;
+    json[r'upgrade_version'] = this.upgradeVersion;
     return json;
   }
 
@@ -49,8 +52,10 @@ class StartKubernetesClusterUpgradeRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "StartKubernetesClusterUpgradeRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "StartKubernetesClusterUpgradeRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "StartKubernetesClusterUpgradeRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "StartKubernetesClusterUpgradeRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +67,10 @@ class StartKubernetesClusterUpgradeRequest {
     return null;
   }
 
-  static List<StartKubernetesClusterUpgradeRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<StartKubernetesClusterUpgradeRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <StartKubernetesClusterUpgradeRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -75,12 +83,14 @@ class StartKubernetesClusterUpgradeRequest {
     return result.toList(growable: growable);
   }
 
-  static Map<String, StartKubernetesClusterUpgradeRequest> mapFromJson(dynamic json) {
+  static Map<String, StartKubernetesClusterUpgradeRequest> mapFromJson(
+      dynamic json) {
     final map = <String, StartKubernetesClusterUpgradeRequest>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = StartKubernetesClusterUpgradeRequest.fromJson(entry.value);
+        final value =
+            StartKubernetesClusterUpgradeRequest.fromJson(entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -90,13 +100,20 @@ class StartKubernetesClusterUpgradeRequest {
   }
 
   // maps a json object with a list of StartKubernetesClusterUpgradeRequest-objects as value to a dart map
-  static Map<String, List<StartKubernetesClusterUpgradeRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<StartKubernetesClusterUpgradeRequest>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<StartKubernetesClusterUpgradeRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = StartKubernetesClusterUpgradeRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = StartKubernetesClusterUpgradeRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -107,4 +124,3 @@ class StartKubernetesClusterUpgradeRequest {
     'upgrade_version',
   };
 }
-

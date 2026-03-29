@@ -35,12 +35,10 @@ class GitHubRepoTable extends Table {
   IntColumn get stargazersCount => integer().withDefault(const Constant(0))();
 
   /// Timestamp when the record was created.
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   /// Timestamp when the record was last updated.
-  DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   List<Set<Column>> get uniqueKeys => [

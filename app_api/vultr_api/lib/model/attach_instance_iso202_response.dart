@@ -25,13 +25,14 @@ class AttachInstanceIso202Response {
   AttachInstanceIso202ResponseIsoStatus? isoStatus;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AttachInstanceIso202Response &&
-    other.isoStatus == isoStatus;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AttachInstanceIso202Response && other.isoStatus == isoStatus;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (isoStatus == null ? 0 : isoStatus!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (isoStatus == null ? 0 : isoStatus!.hashCode);
 
   @override
   String toString() => 'AttachInstanceIso202Response[isoStatus=$isoStatus]';
@@ -58,20 +59,26 @@ class AttachInstanceIso202Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "AttachInstanceIso202Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "AttachInstanceIso202Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "AttachInstanceIso202Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "AttachInstanceIso202Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return AttachInstanceIso202Response(
-        isoStatus: AttachInstanceIso202ResponseIsoStatus.fromJson(json[r'iso_status']),
+        isoStatus:
+            AttachInstanceIso202ResponseIsoStatus.fromJson(json[r'iso_status']),
       );
     }
     return null;
   }
 
-  static List<AttachInstanceIso202Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<AttachInstanceIso202Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <AttachInstanceIso202Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,20 +106,24 @@ class AttachInstanceIso202Response {
   }
 
   // maps a json object with a list of AttachInstanceIso202Response-objects as value to a dart map
-  static Map<String, List<AttachInstanceIso202Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<AttachInstanceIso202Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<AttachInstanceIso202Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = AttachInstanceIso202Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = AttachInstanceIso202Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

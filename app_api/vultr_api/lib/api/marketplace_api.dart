@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class MarketplaceApi {
-  MarketplaceApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  MarketplaceApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,10 +26,12 @@ class MarketplaceApi {
   ///
   /// * [String] imageId (required):
   ///   The application's [Image ID](#operation/list-applications).
-  Future<Response> listMarketplaceAppVariablesWithHttpInfo(String imageId,) async {
+  Future<Response> listMarketplaceAppVariablesWithHttpInfo(
+    String imageId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/marketplace/apps/{image-id}/variables'
-      .replaceAll('{image-id}', imageId);
+        .replaceAll('{image-id}', imageId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -39,7 +41,6 @@ class MarketplaceApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -60,17 +61,24 @@ class MarketplaceApi {
   ///
   /// * [String] imageId (required):
   ///   The application's [Image ID](#operation/list-applications).
-  Future<ListMarketplaceAppVariables200Response?> listMarketplaceAppVariables(String imageId,) async {
-    final response = await listMarketplaceAppVariablesWithHttpInfo(imageId,);
+  Future<ListMarketplaceAppVariables200Response?> listMarketplaceAppVariables(
+    String imageId,
+  ) async {
+    final response = await listMarketplaceAppVariablesWithHttpInfo(
+      imageId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListMarketplaceAppVariables200Response',) as ListMarketplaceAppVariables200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListMarketplaceAppVariables200Response',
+      ) as ListMarketplaceAppVariables200Response;
     }
     return null;
   }

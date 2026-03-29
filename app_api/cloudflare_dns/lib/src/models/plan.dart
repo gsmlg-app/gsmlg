@@ -20,9 +20,9 @@ class Plan {
     this.legacyDiscount,
     this.externallyManaged,
   });
-  
+
   factory Plan.fromJson(Map<String, Object?> json) => _$PlanFromJson(json);
-  
+
   final String? id;
   final String? name;
   final num? price;

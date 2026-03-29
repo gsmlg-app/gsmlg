@@ -10,12 +10,10 @@ part 'state.dart';
 part 'github_user.dart';
 
 class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
-  GitHubBloc({
-    required VaultRepository vault,
-    GitHubApi? api,
-  })  : _vault = vault,
-        _api = api,
-        super(const GitHubInitial()) {
+  GitHubBloc({required VaultRepository vault, GitHubApi? api})
+    : _vault = vault,
+      _api = api,
+      super(const GitHubInitial()) {
     on<GitHubLoad>(_onLoad);
     on<GitHubConnect>(_onConnect);
     on<GitHubDisconnect>(_onDisconnect);
@@ -31,24 +29,23 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
 
   /// Creates a Dio instance configured for GitHub API.
   Dio _createDio(String token) {
-    final dio = Dio(BaseOptions(
-      baseUrl: _baseUrl,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
-    ));
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: _baseUrl,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      ),
+    );
     return dio;
   }
 
   /// Get the current API instance (if connected).
   GitHubApi? get api => _api;
 
-  Future<void> _onLoad(
-    GitHubLoad event,
-    Emitter<GitHubState> emit,
-  ) async {
+  Future<void> _onLoad(GitHubLoad event, Emitter<GitHubState> emit) async {
     emit(const GitHubLoading());
 
     try {

@@ -149,14 +149,16 @@ class _WorldMapPainter extends CustomPainter {
     final geoPathGenerator = GeoPath(proj);
     final landPaths = geoPathGenerator.generate(worldData);
 
-    final landPaint = Paint()
-      ..color = Colors.green.shade200
-      ..style = PaintingStyle.fill;
+    final landPaint =
+        Paint()
+          ..color = Colors.green.shade200
+          ..style = PaintingStyle.fill;
 
-    final landBorderPaint = Paint()
-      ..color = Colors.green.shade600
-      ..strokeWidth = 0.5
-      ..style = PaintingStyle.stroke;
+    final landBorderPaint =
+        Paint()
+          ..color = Colors.green.shade600
+          ..strokeWidth = 0.5
+          ..style = PaintingStyle.stroke;
 
     for (final pathPoints in landPaths) {
       if (pathPoints.length < 3) continue;
@@ -173,10 +175,11 @@ class _WorldMapPainter extends CustomPainter {
     }
 
     // Draw graticule (grid lines)
-    final graticulePaint = Paint()
-      ..color = Colors.blue.shade200.withAlpha(80)
-      ..strokeWidth = 0.5
-      ..style = PaintingStyle.stroke;
+    final graticulePaint =
+        Paint()
+          ..color = Colors.blue.shade200.withAlpha(80)
+          ..strokeWidth = 0.5
+          ..style = PaintingStyle.stroke;
 
     // Latitude lines
     for (double lat = -60; lat <= 80; lat += 30) {
@@ -211,10 +214,11 @@ class _WorldMapPainter extends CustomPainter {
     }
 
     // Draw equator
-    final equatorPaint = Paint()
-      ..color = Colors.red.shade300.withAlpha(100)
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
+    final equatorPaint =
+        Paint()
+          ..color = Colors.red.shade300.withAlpha(100)
+          ..strokeWidth = 1
+          ..style = PaintingStyle.stroke;
 
     final equatorPoints = <Offset>[];
     for (double lon = -180; lon <= 180; lon += 5) {
@@ -222,8 +226,8 @@ class _WorldMapPainter extends CustomPainter {
       if (!p.hasNaN) equatorPoints.add(Offset(p.x, p.y));
     }
     if (equatorPoints.length > 1) {
-      final path = Path()
-        ..moveTo(equatorPoints.first.dx, equatorPoints.first.dy);
+      final path =
+          Path()..moveTo(equatorPoints.first.dx, equatorPoints.first.dy);
       for (int i = 1; i < equatorPoints.length; i++) {
         path.lineTo(equatorPoints[i].dx, equatorPoints[i].dy);
       }

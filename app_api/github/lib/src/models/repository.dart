@@ -96,9 +96,10 @@ class Repository {
     this.defaultBranch,
     this.svnUrl,
   });
-  
-  factory Repository.fromJson(Map<String, Object?> json) => _$RepositoryFromJson(json);
-  
+
+  factory Repository.fromJson(Map<String, Object?> json) =>
+      _$RepositoryFromJson(json);
+
   /// Unique identifier of the repository
   final int id;
   @JsonKey(name: 'node_id')

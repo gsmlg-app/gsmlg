@@ -75,8 +75,5 @@ void main() {
     test('to test the property `apiKey`', () async {
       // TODO
     });
-
-
   });
-
 }

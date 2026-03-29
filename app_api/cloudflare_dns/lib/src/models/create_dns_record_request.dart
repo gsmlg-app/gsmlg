@@ -22,9 +22,10 @@ class CreateDnsRecordRequest {
     this.ttl = 1,
     this.proxied = false,
   });
-  
-  factory CreateDnsRecordRequest.fromJson(Map<String, Object?> json) => _$CreateDnsRecordRequestFromJson(json);
-  
+
+  factory CreateDnsRecordRequest.fromJson(Map<String, Object?> json) =>
+      _$CreateDnsRecordRequestFromJson(json);
+
   /// DNS record name (or @ for the zone apex).
   final String name;
   final DnsRecordType type;

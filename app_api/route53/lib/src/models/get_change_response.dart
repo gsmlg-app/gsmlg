@@ -13,9 +13,10 @@ class GetChangeResponse {
   const GetChangeResponse({
     required this.changeInfo,
   });
-  
-  factory GetChangeResponse.fromJson(Map<String, Object?> json) => _$GetChangeResponseFromJson(json);
-  
+
+  factory GetChangeResponse.fromJson(Map<String, Object?> json) =>
+      _$GetChangeResponseFromJson(json);
+
   final ChangeInfo changeInfo;
 
   Map<String, Object?> toJson() => _$GetChangeResponseToJson(this);

@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class ApiKeysApi {
-  ApiKeysApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  ApiKeysApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,7 +26,9 @@ class ApiKeysApi {
   ///
   /// * [CreateUserApiKeyRequest] createUserApiKeyRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createApiKeyWithHttpInfo({ CreateUserApiKeyRequest? createUserApiKeyRequest, }) async {
+  Future<Response> createApiKeyWithHttpInfo({
+    CreateUserApiKeyRequest? createUserApiKeyRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/apikeys';
 
@@ -38,7 +40,6 @@ class ApiKeysApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +60,24 @@ class ApiKeysApi {
   ///
   /// * [CreateUserApiKeyRequest] createUserApiKeyRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<GetUserApiKey200Response?> createApiKey({ CreateUserApiKeyRequest? createUserApiKeyRequest, }) async {
-    final response = await createApiKeyWithHttpInfo( createUserApiKeyRequest: createUserApiKeyRequest, );
+  Future<GetUserApiKey200Response?> createApiKey({
+    CreateUserApiKeyRequest? createUserApiKeyRequest,
+  }) async {
+    final response = await createApiKeyWithHttpInfo(
+      createUserApiKeyRequest: createUserApiKeyRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetUserApiKey200Response',) as GetUserApiKey200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetUserApiKey200Response',
+      ) as GetUserApiKey200Response;
     }
     return null;
   }
@@ -91,7 +99,6 @@ class ApiKeysApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -132,7 +139,6 @@ class ApiKeysApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -155,9 +161,12 @@ class ApiKeysApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetUserApiKey200Response',) as GetUserApiKey200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetUserApiKey200Response',
+      ) as GetUserApiKey200Response;
     }
     return null;
   }
@@ -179,7 +188,6 @@ class ApiKeysApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -203,9 +211,12 @@ class ApiKeysApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListUserApiKeys200Response',) as ListUserApiKeys200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListUserApiKeys200Response',
+      ) as ListUserApiKeys200Response;
     }
     return null;
   }

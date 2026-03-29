@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for SnapshotApi
 void main() {
   // final instance = SnapshotApi();
@@ -70,6 +69,5 @@ void main() {
     test('test putSnapshotsSnapshotId', () async {
       // TODO
     });
-
   });
 }

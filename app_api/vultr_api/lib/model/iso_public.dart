@@ -55,22 +55,25 @@ class IsoPublic {
   String? md5sum;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is IsoPublic &&
-    other.id == id &&
-    other.name == name &&
-    other.description == description &&
-    other.md5sum == md5sum;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is IsoPublic &&
+          other.id == id &&
+          other.name == name &&
+          other.description == description &&
+          other.md5sum == md5sum;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (md5sum == null ? 0 : md5sum!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (md5sum == null ? 0 : md5sum!.hashCode);
 
   @override
-  String toString() => 'IsoPublic[id=$id, name=$name, description=$description, md5sum=$md5sum]';
+  String toString() =>
+      'IsoPublic[id=$id, name=$name, description=$description, md5sum=$md5sum]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -109,8 +112,10 @@ class IsoPublic {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "IsoPublic[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "IsoPublic[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "IsoPublic[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "IsoPublic[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -125,7 +130,10 @@ class IsoPublic {
     return null;
   }
 
-  static List<IsoPublic> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<IsoPublic> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <IsoPublic>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -153,20 +161,24 @@ class IsoPublic {
   }
 
   // maps a json object with a list of IsoPublic-objects as value to a dart map
-  static Map<String, List<IsoPublic>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<IsoPublic>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<IsoPublic>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = IsoPublic.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = IsoPublic.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

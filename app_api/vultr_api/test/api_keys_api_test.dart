@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for ApiKeysApi
 void main() {
   // final instance = ApiKeysApi();
@@ -52,6 +51,5 @@ void main() {
     test('test listApiKeys', () async {
       // TODO
     });
-
   });
 }

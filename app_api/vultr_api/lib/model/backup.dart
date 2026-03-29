@@ -86,28 +86,31 @@ class Backup {
   int? appId;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Backup &&
-    other.id == id &&
-    other.dateCreated == dateCreated &&
-    other.description == description &&
-    other.size == size &&
-    other.status == status &&
-    other.osId == osId &&
-    other.appId == appId;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Backup &&
+          other.id == id &&
+          other.dateCreated == dateCreated &&
+          other.description == description &&
+          other.size == size &&
+          other.status == status &&
+          other.osId == osId &&
+          other.appId == appId;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (size == null ? 0 : size!.hashCode) +
-    (status == null ? 0 : status!.hashCode) +
-    (osId == null ? 0 : osId!.hashCode) +
-    (appId == null ? 0 : appId!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (size == null ? 0 : size!.hashCode) +
+      (status == null ? 0 : status!.hashCode) +
+      (osId == null ? 0 : osId!.hashCode) +
+      (appId == null ? 0 : appId!.hashCode);
 
   @override
-  String toString() => 'Backup[id=$id, dateCreated=$dateCreated, description=$description, size=$size, status=$status, osId=$osId, appId=$appId]';
+  String toString() =>
+      'Backup[id=$id, dateCreated=$dateCreated, description=$description, size=$size, status=$status, osId=$osId, appId=$appId]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -161,8 +164,10 @@ class Backup {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Backup[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Backup[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Backup[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Backup[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -180,7 +185,10 @@ class Backup {
     return null;
   }
 
-  static List<Backup> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Backup> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Backup>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -208,20 +216,24 @@ class Backup {
   }
 
   // maps a json object with a list of Backup-objects as value to a dart map
-  static Map<String, List<Backup>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Backup>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Backup>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Backup.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Backup.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

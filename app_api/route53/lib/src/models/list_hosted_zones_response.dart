@@ -17,9 +17,10 @@ class ListHostedZonesResponse {
     this.marker,
     this.nextMarker,
   });
-  
-  factory ListHostedZonesResponse.fromJson(Map<String, Object?> json) => _$ListHostedZonesResponseFromJson(json);
-  
+
+  factory ListHostedZonesResponse.fromJson(Map<String, Object?> json) =>
+      _$ListHostedZonesResponseFromJson(json);
+
   final List<HostedZone> hostedZones;
   final String? marker;
   final bool isTruncated;

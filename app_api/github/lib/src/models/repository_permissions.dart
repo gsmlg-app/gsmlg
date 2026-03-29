@@ -15,9 +15,10 @@ class RepositoryPermissions {
     this.triage,
     this.pull,
   });
-  
-  factory RepositoryPermissions.fromJson(Map<String, Object?> json) => _$RepositoryPermissionsFromJson(json);
-  
+
+  factory RepositoryPermissions.fromJson(Map<String, Object?> json) =>
+      _$RepositoryPermissionsFromJson(json);
+
   final bool? admin;
   final bool? maintain;
   final bool? push;

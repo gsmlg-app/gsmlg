@@ -105,8 +105,5 @@ void main() {
     test('to test the property `locationCost`', () async {
       // TODO
     });
-
-
   });
-
 }

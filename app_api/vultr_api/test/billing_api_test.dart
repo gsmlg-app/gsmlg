@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for BillingApi
 void main() {
   // final instance = BillingApi();
@@ -70,6 +69,5 @@ void main() {
     test('test pendingChargesCsv', () async {
       // TODO
     });
-
   });
 }

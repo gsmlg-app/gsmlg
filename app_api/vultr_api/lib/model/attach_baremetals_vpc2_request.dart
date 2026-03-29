@@ -26,7 +26,7 @@ class AttachBaremetalsVpc2Request {
   ///
   String? vpcId;
 
-  /// The IP address to use for this instance on the attached VPC 2.0 network.  
+  /// The IP address to use for this instance on the attached VPC 2.0 network.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -36,18 +36,21 @@ class AttachBaremetalsVpc2Request {
   String? ipAddress;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is AttachBaremetalsVpc2Request &&
-    other.vpcId == vpcId &&
-    other.ipAddress == ipAddress;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AttachBaremetalsVpc2Request &&
+          other.vpcId == vpcId &&
+          other.ipAddress == ipAddress;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (vpcId == null ? 0 : vpcId!.hashCode) +
-    (ipAddress == null ? 0 : ipAddress!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (vpcId == null ? 0 : vpcId!.hashCode) +
+      (ipAddress == null ? 0 : ipAddress!.hashCode);
 
   @override
-  String toString() => 'AttachBaremetalsVpc2Request[vpcId=$vpcId, ipAddress=$ipAddress]';
+  String toString() =>
+      'AttachBaremetalsVpc2Request[vpcId=$vpcId, ipAddress=$ipAddress]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -76,8 +79,10 @@ class AttachBaremetalsVpc2Request {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "AttachBaremetalsVpc2Request[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "AttachBaremetalsVpc2Request[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "AttachBaremetalsVpc2Request[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "AttachBaremetalsVpc2Request[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -90,7 +95,10 @@ class AttachBaremetalsVpc2Request {
     return null;
   }
 
-  static List<AttachBaremetalsVpc2Request> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<AttachBaremetalsVpc2Request> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <AttachBaremetalsVpc2Request>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -118,20 +126,24 @@ class AttachBaremetalsVpc2Request {
   }
 
   // maps a json object with a list of AttachBaremetalsVpc2Request-objects as value to a dart map
-  static Map<String, List<AttachBaremetalsVpc2Request>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<AttachBaremetalsVpc2Request>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<AttachBaremetalsVpc2Request>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = AttachBaremetalsVpc2Request.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = AttachBaremetalsVpc2Request.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for FirewallApi
 void main() {
   // final instance = FirewallApi();
@@ -97,6 +96,5 @@ void main() {
     test('test updateFirewallGroup', () async {
       // TODO
     });
-
   });
 }

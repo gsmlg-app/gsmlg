@@ -271,8 +271,5 @@ void main() {
     test('to test the property `walWriterDelay`', () async {
       // TODO
     });
-
-
   });
-
 }

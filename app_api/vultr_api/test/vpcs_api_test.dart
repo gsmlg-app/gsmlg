@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for VPCsApi
 void main() {
   // final instance = VPCsApi();
@@ -19,7 +18,7 @@ void main() {
   group('tests for VPCsApi', () {
     // Create a VPC
     //
-    // Create a new VPC in a `region`. VPCs should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix) 
+    // Create a new VPC in a `region`. VPCs should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
     //
     //Future<GetVpc200Response> createVpc({ CreateVpcRequest createVpcRequest }) async
     test('test createVpc', () async {
@@ -70,6 +69,5 @@ void main() {
     test('test updateVpc', () async {
       // TODO
     });
-
   });
 }

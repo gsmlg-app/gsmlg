@@ -12,12 +12,10 @@ class ChatConversationTable extends Table {
   TextColumn get systemPrompt => text().nullable()();
 
   /// Timestamp when the conversation was created.
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   /// Timestamp when the conversation was last updated.
-  DateTimeColumn get updatedAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};

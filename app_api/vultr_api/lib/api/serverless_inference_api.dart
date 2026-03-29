@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class ServerlessInferenceApi {
-  ServerlessInferenceApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  ServerlessInferenceApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,7 +26,9 @@ class ServerlessInferenceApi {
   ///
   /// * [CreateInferenceRequest] createInferenceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createInferenceWithHttpInfo({ CreateInferenceRequest? createInferenceRequest, }) async {
+  Future<Response> createInferenceWithHttpInfo({
+    CreateInferenceRequest? createInferenceRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/inference';
 
@@ -38,7 +40,6 @@ class ServerlessInferenceApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +60,24 @@ class ServerlessInferenceApi {
   ///
   /// * [CreateInferenceRequest] createInferenceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateInference201Response?> createInference({ CreateInferenceRequest? createInferenceRequest, }) async {
-    final response = await createInferenceWithHttpInfo( createInferenceRequest: createInferenceRequest, );
+  Future<CreateInference201Response?> createInference({
+    CreateInferenceRequest? createInferenceRequest,
+  }) async {
+    final response = await createInferenceWithHttpInfo(
+      createInferenceRequest: createInferenceRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateInference201Response',) as CreateInference201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateInference201Response',
+      ) as CreateInference201Response;
     }
     return null;
   }
@@ -84,10 +92,12 @@ class ServerlessInferenceApi {
   ///
   /// * [String] inferenceId (required):
   ///   The [Inference ID](#operation/list-inference).
-  Future<Response> deleteInferenceWithHttpInfo(String inferenceId,) async {
+  Future<Response> deleteInferenceWithHttpInfo(
+    String inferenceId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/inference/{inference-id}'
-      .replaceAll('{inference-id}', inferenceId);
+    final path =
+        r'/inference/{inference-id}'.replaceAll('{inference-id}', inferenceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -97,7 +107,6 @@ class ServerlessInferenceApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -118,8 +127,12 @@ class ServerlessInferenceApi {
   ///
   /// * [String] inferenceId (required):
   ///   The [Inference ID](#operation/list-inference).
-  Future<void> deleteInference(String inferenceId,) async {
-    final response = await deleteInferenceWithHttpInfo(inferenceId,);
+  Future<void> deleteInference(
+    String inferenceId,
+  ) async {
+    final response = await deleteInferenceWithHttpInfo(
+      inferenceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -135,10 +148,12 @@ class ServerlessInferenceApi {
   ///
   /// * [String] inferenceId (required):
   ///   The [Inference ID](#operation/list-inference).
-  Future<Response> getInferenceWithHttpInfo(String inferenceId,) async {
+  Future<Response> getInferenceWithHttpInfo(
+    String inferenceId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/inference/{inference-id}'
-      .replaceAll('{inference-id}', inferenceId);
+    final path =
+        r'/inference/{inference-id}'.replaceAll('{inference-id}', inferenceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -148,7 +163,6 @@ class ServerlessInferenceApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -169,17 +183,24 @@ class ServerlessInferenceApi {
   ///
   /// * [String] inferenceId (required):
   ///   The [Inference ID](#operation/list-inference).
-  Future<CreateInference201Response?> getInference(String inferenceId,) async {
-    final response = await getInferenceWithHttpInfo(inferenceId,);
+  Future<CreateInference201Response?> getInference(
+    String inferenceId,
+  ) async {
+    final response = await getInferenceWithHttpInfo(
+      inferenceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateInference201Response',) as CreateInference201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateInference201Response',
+      ) as CreateInference201Response;
     }
     return null;
   }
@@ -194,10 +215,12 @@ class ServerlessInferenceApi {
   ///
   /// * [String] inferenceId (required):
   ///   The [Inference ID](#operation/list-inference).
-  Future<Response> getInferenceUsageWithHttpInfo(String inferenceId,) async {
+  Future<Response> getInferenceUsageWithHttpInfo(
+    String inferenceId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/inference/{inference-id}/usage'
-      .replaceAll('{inference-id}', inferenceId);
+        .replaceAll('{inference-id}', inferenceId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -207,7 +230,6 @@ class ServerlessInferenceApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -228,17 +250,24 @@ class ServerlessInferenceApi {
   ///
   /// * [String] inferenceId (required):
   ///   The [Inference ID](#operation/list-inference).
-  Future<GetInferenceUsage200Response?> getInferenceUsage(String inferenceId,) async {
-    final response = await getInferenceUsageWithHttpInfo(inferenceId,);
+  Future<GetInferenceUsage200Response?> getInferenceUsage(
+    String inferenceId,
+  ) async {
+    final response = await getInferenceUsageWithHttpInfo(
+      inferenceId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetInferenceUsage200Response',) as GetInferenceUsage200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetInferenceUsage200Response',
+      ) as GetInferenceUsage200Response;
     }
     return null;
   }
@@ -260,7 +289,6 @@ class ServerlessInferenceApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -284,9 +312,12 @@ class ServerlessInferenceApi {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListInference200Response',) as ListInference200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListInference200Response',
+      ) as ListInference200Response;
     }
     return null;
   }
@@ -304,10 +335,13 @@ class ServerlessInferenceApi {
   ///
   /// * [UpdateInferenceRequest] updateInferenceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateInferenceWithHttpInfo(String inferenceId, { UpdateInferenceRequest? updateInferenceRequest, }) async {
+  Future<Response> updateInferenceWithHttpInfo(
+    String inferenceId, {
+    UpdateInferenceRequest? updateInferenceRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/inference/{inference-id}'
-      .replaceAll('{inference-id}', inferenceId);
+    final path =
+        r'/inference/{inference-id}'.replaceAll('{inference-id}', inferenceId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateInferenceRequest;
@@ -317,7 +351,6 @@ class ServerlessInferenceApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -341,17 +374,26 @@ class ServerlessInferenceApi {
   ///
   /// * [UpdateInferenceRequest] updateInferenceRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateInference201Response?> updateInference(String inferenceId, { UpdateInferenceRequest? updateInferenceRequest, }) async {
-    final response = await updateInferenceWithHttpInfo(inferenceId,  updateInferenceRequest: updateInferenceRequest, );
+  Future<CreateInference201Response?> updateInference(
+    String inferenceId, {
+    UpdateInferenceRequest? updateInferenceRequest,
+  }) async {
+    final response = await updateInferenceWithHttpInfo(
+      inferenceId,
+      updateInferenceRequest: updateInferenceRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateInference201Response',) as CreateInference201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateInference201Response',
+      ) as CreateInference201Response;
     }
     return null;
   }

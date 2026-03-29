@@ -100,32 +100,35 @@ class UpdatePushzoneRequest {
   List<String> regions;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdatePushzoneRequest &&
-    other.label == label &&
-    other.vanityDomain == vanityDomain &&
-    other.sslCert == sslCert &&
-    other.sslCertKey == sslCertKey &&
-    other.cors == cors &&
-    other.gzip == gzip &&
-    other.blockAi == blockAi &&
-    other.blockBadBots == blockBadBots &&
-    _deepEquality.equals(other.regions, regions);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdatePushzoneRequest &&
+          other.label == label &&
+          other.vanityDomain == vanityDomain &&
+          other.sslCert == sslCert &&
+          other.sslCertKey == sslCertKey &&
+          other.cors == cors &&
+          other.gzip == gzip &&
+          other.blockAi == blockAi &&
+          other.blockBadBots == blockBadBots &&
+          _deepEquality.equals(other.regions, regions);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label == null ? 0 : label!.hashCode) +
-    (vanityDomain == null ? 0 : vanityDomain!.hashCode) +
-    (sslCert == null ? 0 : sslCert!.hashCode) +
-    (sslCertKey == null ? 0 : sslCertKey!.hashCode) +
-    (cors == null ? 0 : cors!.hashCode) +
-    (gzip == null ? 0 : gzip!.hashCode) +
-    (blockAi == null ? 0 : blockAi!.hashCode) +
-    (blockBadBots == null ? 0 : blockBadBots!.hashCode) +
-    (regions.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label == null ? 0 : label!.hashCode) +
+      (vanityDomain == null ? 0 : vanityDomain!.hashCode) +
+      (sslCert == null ? 0 : sslCert!.hashCode) +
+      (sslCertKey == null ? 0 : sslCertKey!.hashCode) +
+      (cors == null ? 0 : cors!.hashCode) +
+      (gzip == null ? 0 : gzip!.hashCode) +
+      (blockAi == null ? 0 : blockAi!.hashCode) +
+      (blockBadBots == null ? 0 : blockBadBots!.hashCode) +
+      (regions.hashCode);
 
   @override
-  String toString() => 'UpdatePushzoneRequest[label=$label, vanityDomain=$vanityDomain, sslCert=$sslCert, sslCertKey=$sslCertKey, cors=$cors, gzip=$gzip, blockAi=$blockAi, blockBadBots=$blockBadBots, regions=$regions]';
+  String toString() =>
+      'UpdatePushzoneRequest[label=$label, vanityDomain=$vanityDomain, sslCert=$sslCert, sslCertKey=$sslCertKey, cors=$cors, gzip=$gzip, blockAi=$blockAi, blockBadBots=$blockBadBots, regions=$regions]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -169,7 +172,7 @@ class UpdatePushzoneRequest {
     } else {
       json[r'block_bad_bots'] = null;
     }
-      json[r'regions'] = this.regions;
+    json[r'regions'] = this.regions;
     return json;
   }
 
@@ -185,8 +188,10 @@ class UpdatePushzoneRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdatePushzoneRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdatePushzoneRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdatePushzoneRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdatePushzoneRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -201,14 +206,19 @@ class UpdatePushzoneRequest {
         blockAi: mapValueOfType<bool>(json, r'block_ai'),
         blockBadBots: mapValueOfType<bool>(json, r'block_bad_bots'),
         regions: json[r'regions'] is Iterable
-            ? (json[r'regions'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'regions'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
       );
     }
     return null;
   }
 
-  static List<UpdatePushzoneRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdatePushzoneRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdatePushzoneRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -236,20 +246,24 @@ class UpdatePushzoneRequest {
   }
 
   // maps a json object with a list of UpdatePushzoneRequest-objects as value to a dart map
-  static Map<String, List<UpdatePushzoneRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdatePushzoneRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdatePushzoneRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdatePushzoneRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdatePushzoneRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

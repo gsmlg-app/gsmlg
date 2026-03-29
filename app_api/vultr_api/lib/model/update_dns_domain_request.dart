@@ -20,20 +20,21 @@ class UpdateDnsDomainRequest {
   String dnsSec;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateDnsDomainRequest &&
-    other.dnsSec == dnsSec;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateDnsDomainRequest && other.dnsSec == dnsSec;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (dnsSec.hashCode);
+      // ignore: unnecessary_parenthesis
+      (dnsSec.hashCode);
 
   @override
   String toString() => 'UpdateDnsDomainRequest[dnsSec=$dnsSec]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'dns_sec'] = this.dnsSec;
+    json[r'dns_sec'] = this.dnsSec;
     return json;
   }
 
@@ -49,8 +50,10 @@ class UpdateDnsDomainRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateDnsDomainRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateDnsDomainRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateDnsDomainRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateDnsDomainRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +65,10 @@ class UpdateDnsDomainRequest {
     return null;
   }
 
-  static List<UpdateDnsDomainRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateDnsDomainRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateDnsDomainRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -90,13 +96,19 @@ class UpdateDnsDomainRequest {
   }
 
   // maps a json object with a list of UpdateDnsDomainRequest-objects as value to a dart map
-  static Map<String, List<UpdateDnsDomainRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateDnsDomainRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateDnsDomainRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateDnsDomainRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateDnsDomainRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -107,4 +119,3 @@ class UpdateDnsDomainRequest {
     'dns_sec',
   };
 }
-

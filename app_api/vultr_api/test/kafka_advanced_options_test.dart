@@ -47,7 +47,8 @@ void main() {
 
     // Accepted values: 1000 - 10000
     // int maxIncrementalFetchSessionCacheSlots
-    test('to test the property `maxIncrementalFetchSessionCacheSlots`', () async {
+    test('to test the property `maxIncrementalFetchSessionCacheSlots`',
+        () async {
       // TODO
     });
 
@@ -236,7 +237,8 @@ void main() {
 
     // Accepted values: 10 - 10000
     // int producerPurgatoryPurgeIntervalRequests
-    test('to test the property `producerPurgatoryPurgeIntervalRequests`', () async {
+    test('to test the property `producerPurgatoryPurgeIntervalRequests`',
+        () async {
       // TODO
     });
 
@@ -278,16 +280,16 @@ void main() {
 
     // Accepted values: 600000 - 3600000
     // int transactionRemoveExpiredTransactionCleanupIntervalMs
-    test('to test the property `transactionRemoveExpiredTransactionCleanupIntervalMs`', () async {
+    test(
+        'to test the property `transactionRemoveExpiredTransactionCleanupIntervalMs`',
+        () async {
       // TODO
     });
 
     // bool transactionPartitionVerificationEnable
-    test('to test the property `transactionPartitionVerificationEnable`', () async {
+    test('to test the property `transactionPartitionVerificationEnable`',
+        () async {
       // TODO
     });
-
-
   });
-
 }

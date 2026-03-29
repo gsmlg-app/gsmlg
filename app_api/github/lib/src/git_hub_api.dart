@@ -15,11 +15,7 @@ import 'actions/actions_client.dart';
 /// This specification covers a subset of the GitHub API for the gsmlg app.
 ///
 class GitHubApi {
-  GitHubApi(
-    Dio dio, {
-    String? baseUrl,
-  })  : _dio = dio,
-        _baseUrl = baseUrl;
+  GitHubApi(Dio dio, {String? baseUrl}) : _dio = dio, _baseUrl = baseUrl;
 
   final Dio _dio;
   final String? _baseUrl;
@@ -37,5 +33,6 @@ class GitHubApi {
 
   OrgsClient get orgs => _orgs ??= OrgsClient(_dio, baseUrl: _baseUrl);
 
-  ActionsClient get actions => _actions ??= ActionsClient(_dio, baseUrl: _baseUrl);
+  ActionsClient get actions =>
+      _actions ??= ActionsClient(_dio, baseUrl: _baseUrl);
 }

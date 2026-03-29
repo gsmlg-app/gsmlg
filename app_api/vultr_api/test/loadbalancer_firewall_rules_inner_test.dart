@@ -34,13 +34,10 @@ void main() {
       // TODO
     });
 
-    // The type of IP rule.  * v4 * v6 
+    // The type of IP rule.  * v4 * v6
     // String ipType
     test('to test the property `ipType`', () async {
       // TODO
     });
-
-
   });
-
 }

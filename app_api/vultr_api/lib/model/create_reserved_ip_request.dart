@@ -34,25 +34,28 @@ class CreateReservedIpRequest {
   String? label;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateReservedIpRequest &&
-    other.region == region &&
-    other.ipType == ipType &&
-    other.label == label;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateReservedIpRequest &&
+          other.region == region &&
+          other.ipType == ipType &&
+          other.label == label;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (region.hashCode) +
-    (ipType.hashCode) +
-    (label == null ? 0 : label!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (region.hashCode) +
+      (ipType.hashCode) +
+      (label == null ? 0 : label!.hashCode);
 
   @override
-  String toString() => 'CreateReservedIpRequest[region=$region, ipType=$ipType, label=$label]';
+  String toString() =>
+      'CreateReservedIpRequest[region=$region, ipType=$ipType, label=$label]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'region'] = this.region;
-      json[r'ip_type'] = this.ipType;
+    json[r'region'] = this.region;
+    json[r'ip_type'] = this.ipType;
     if (this.label != null) {
       json[r'label'] = this.label;
     } else {
@@ -73,8 +76,10 @@ class CreateReservedIpRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateReservedIpRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateReservedIpRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateReservedIpRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateReservedIpRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -88,7 +93,10 @@ class CreateReservedIpRequest {
     return null;
   }
 
-  static List<CreateReservedIpRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateReservedIpRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateReservedIpRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -116,13 +124,19 @@ class CreateReservedIpRequest {
   }
 
   // maps a json object with a list of CreateReservedIpRequest-objects as value to a dart map
-  static Map<String, List<CreateReservedIpRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateReservedIpRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateReservedIpRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateReservedIpRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateReservedIpRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -134,4 +148,3 @@ class CreateReservedIpRequest {
     'ip_type',
   };
 }
-

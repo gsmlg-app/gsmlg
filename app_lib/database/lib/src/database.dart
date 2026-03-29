@@ -8,6 +8,8 @@ import 'tables/chat_message.dart';
 import 'tables/chat_settings.dart';
 import 'tables/dns_zone.dart';
 import 'tables/github_repo.dart';
+import 'tables/monitor_host.dart';
+import 'tables/monitor_trusted_cert.dart';
 import 'tables/service_account.dart';
 import 'tables/whois_history.dart';
 import 'type_converter.dart';
@@ -17,6 +19,8 @@ export 'tables/chat_message.dart';
 export 'tables/chat_settings.dart';
 export 'tables/dns_zone.dart';
 export 'tables/github_repo.dart';
+export 'tables/monitor_host.dart';
+export 'tables/monitor_trusted_cert.dart';
 export 'tables/service_account.dart';
 export 'tables/whois_history.dart';
 export 'type_converter.dart';
@@ -31,6 +35,8 @@ part 'database.g.dart';
   ChatMessageTable,
   ChatSettingsTable,
   ServiceAccountTable,
+  MonitorHostTable,
+  MonitorTrustedCertTable,
 ])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
@@ -44,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration {
@@ -73,8 +79,72 @@ class AppDatabase extends _$AppDatabase {
           await m.deleteTable('service_account_table');
           await m.createTable(serviceAccountTable);
         }
+        if (from < 7) {
+          await m.createTable(monitorHostTable);
+          await m.createTable(monitorTrustedCertTable);
+        }
       },
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Monitor host methods
+  // ---------------------------------------------------------------------------
+
+  /// Watch all monitor hosts, ordered by creation date.
+  Stream<List<MonitorHostTableData>> watchMonitorHosts() {
+    return (select(monitorHostTable)
+          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+        .watch();
+  }
+
+  /// Get all monitor hosts.
+  Future<List<MonitorHostTableData>> getMonitorHosts() {
+    return (select(monitorHostTable)
+          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+        .get();
+  }
+
+  /// Insert or replace a monitor host.
+  Future<void> insertMonitorHost(MonitorHostTableCompanion entry) {
+    return into(monitorHostTable).insertOnConflictUpdate(entry);
+  }
+
+  /// Delete a monitor host (and its pinned cert via cascade).
+  Future<void> deleteMonitorHost(String id) async {
+    // Remove trusted cert first (foreign key).
+    await (delete(monitorTrustedCertTable)..where((t) => t.hostId.equals(id)))
+        .go();
+    await (delete(monitorHostTable)..where((t) => t.id.equals(id))).go();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Monitor trusted cert methods
+  // ---------------------------------------------------------------------------
+
+  /// Get the pinned fingerprint for a host, or null if none.
+  Future<String?> getPinnedFingerprint(String hostId) async {
+    final row = await (select(monitorTrustedCertTable)
+          ..where((t) => t.hostId.equals(hostId)))
+        .getSingleOrNull();
+    return row?.fingerprint;
+  }
+
+  /// Pin (insert or update) a fingerprint for a host.
+  Future<void> pinFingerprint(String hostId, String fingerprint) {
+    return into(monitorTrustedCertTable).insertOnConflictUpdate(
+      MonitorTrustedCertTableCompanion.insert(
+        hostId: hostId,
+        fingerprint: fingerprint,
+      ),
+    );
+  }
+
+  /// Remove a pinned fingerprint for a host.
+  Future<void> removePinnedFingerprint(String hostId) {
+    return (delete(monitorTrustedCertTable)
+          ..where((t) => t.hostId.equals(hostId)))
+        .go();
   }
 
   static QueryExecutor _openConnection() {

@@ -14,12 +14,10 @@ part 'pinned_repos_state.dart';
 /// Uses database for persistence and GitHub API for fetching repo details.
 class GitHubPinnedReposBloc
     extends Bloc<GitHubPinnedReposEvent, GitHubPinnedReposState> {
-  GitHubPinnedReposBloc({
-    required AppDatabase database,
-    required GitHubApi api,
-  })  : _database = database,
-        _api = api,
-        super(const GitHubPinnedReposInitial()) {
+  GitHubPinnedReposBloc({required AppDatabase database, required GitHubApi api})
+    : _database = database,
+      _api = api,
+      super(const GitHubPinnedReposInitial()) {
     on<GitHubPinnedReposLoad>(_onLoad);
     on<GitHubPinnedReposAdd>(_onAdd);
     on<GitHubPinnedReposRemove>(_onRemove);
@@ -73,10 +71,9 @@ class GitHubPinnedReposBloc
         stargazersCount: Value(repoDetails?.stargazersCount ?? 0),
       );
 
-      await _database.into(_database.gitHubRepoTable).insert(
-            companion,
-            mode: InsertMode.insertOrReplace,
-          );
+      await _database
+          .into(_database.gitHubRepoTable)
+          .insert(companion, mode: InsertMode.insertOrReplace);
 
       // Reload repos
       final repos = await _database.select(_database.gitHubRepoTable).get();
@@ -94,9 +91,9 @@ class GitHubPinnedReposBloc
     if (currentState is! GitHubPinnedReposLoaded) return;
 
     try {
-      await (_database.delete(_database.gitHubRepoTable)
-            ..where((t) => t.repoId.equals(event.repoId)))
-          .go();
+      await (_database.delete(
+        _database.gitHubRepoTable,
+      )..where((t) => t.repoId.equals(event.repoId))).go();
 
       // Reload repos
       final repos = await _database.select(_database.gitHubRepoTable).get();
@@ -124,9 +121,9 @@ class GitHubPinnedReposBloc
             repo: repo.name,
           );
 
-          await (_database.update(_database.gitHubRepoTable)
-                ..where((t) => t.repoId.equals(repo.repoId)))
-              .write(
+          await (_database.update(
+            _database.gitHubRepoTable,
+          )..where((t) => t.repoId.equals(repo.repoId))).write(
             GitHubRepoTableCompanion(
               description: Value(repoDetails.description),
               stargazersCount: Value(repoDetails.stargazersCount ?? 0),

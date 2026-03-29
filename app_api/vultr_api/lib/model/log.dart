@@ -39,35 +39,38 @@ class Log {
   LogMetadata metadata;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Log &&
-    other.resourceId == resourceId &&
-    other.resourceType == resourceType &&
-    other.logLevel == logLevel &&
-    other.message == message &&
-    other.timestamp == timestamp &&
-    other.metadata == metadata;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Log &&
+          other.resourceId == resourceId &&
+          other.resourceType == resourceType &&
+          other.logLevel == logLevel &&
+          other.message == message &&
+          other.timestamp == timestamp &&
+          other.metadata == metadata;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (resourceId.hashCode) +
-    (resourceType.hashCode) +
-    (logLevel.hashCode) +
-    (message.hashCode) +
-    (timestamp.hashCode) +
-    (metadata.hashCode);
+      // ignore: unnecessary_parenthesis
+      (resourceId.hashCode) +
+      (resourceType.hashCode) +
+      (logLevel.hashCode) +
+      (message.hashCode) +
+      (timestamp.hashCode) +
+      (metadata.hashCode);
 
   @override
-  String toString() => 'Log[resourceId=$resourceId, resourceType=$resourceType, logLevel=$logLevel, message=$message, timestamp=$timestamp, metadata=$metadata]';
+  String toString() =>
+      'Log[resourceId=$resourceId, resourceType=$resourceType, logLevel=$logLevel, message=$message, timestamp=$timestamp, metadata=$metadata]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'resource_id'] = this.resourceId;
-      json[r'resource_type'] = this.resourceType;
-      json[r'log_level'] = this.logLevel;
-      json[r'message'] = this.message;
-      json[r'timestamp'] = this.timestamp;
-      json[r'metadata'] = this.metadata;
+    json[r'resource_id'] = this.resourceId;
+    json[r'resource_type'] = this.resourceType;
+    json[r'log_level'] = this.logLevel;
+    json[r'message'] = this.message;
+    json[r'timestamp'] = this.timestamp;
+    json[r'metadata'] = this.metadata;
     return json;
   }
 
@@ -83,8 +86,10 @@ class Log {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Log[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Log[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Log[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Log[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -101,7 +106,10 @@ class Log {
     return null;
   }
 
-  static List<Log> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Log> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Log>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -129,13 +137,19 @@ class Log {
   }
 
   // maps a json object with a list of Log-objects as value to a dart map
-  static Map<String, List<Log>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Log>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Log>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Log.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Log.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -151,4 +165,3 @@ class Log {
     'metadata',
   };
 }
-

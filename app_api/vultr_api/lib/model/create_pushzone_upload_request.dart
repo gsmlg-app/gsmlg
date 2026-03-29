@@ -24,23 +24,24 @@ class CreatePushzoneUploadRequest {
   int size;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreatePushzoneUploadRequest &&
-    other.name == name &&
-    other.size == size;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreatePushzoneUploadRequest &&
+          other.name == name &&
+          other.size == size;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (name.hashCode) +
-    (size.hashCode);
+      // ignore: unnecessary_parenthesis
+      (name.hashCode) + (size.hashCode);
 
   @override
   String toString() => 'CreatePushzoneUploadRequest[name=$name, size=$size]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'name'] = this.name;
-      json[r'size'] = this.size;
+    json[r'name'] = this.name;
+    json[r'size'] = this.size;
     return json;
   }
 
@@ -56,8 +57,10 @@ class CreatePushzoneUploadRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreatePushzoneUploadRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreatePushzoneUploadRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreatePushzoneUploadRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreatePushzoneUploadRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -70,7 +73,10 @@ class CreatePushzoneUploadRequest {
     return null;
   }
 
-  static List<CreatePushzoneUploadRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreatePushzoneUploadRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreatePushzoneUploadRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -98,13 +104,19 @@ class CreatePushzoneUploadRequest {
   }
 
   // maps a json object with a list of CreatePushzoneUploadRequest-objects as value to a dart map
-  static Map<String, List<CreatePushzoneUploadRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreatePushzoneUploadRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreatePushzoneUploadRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreatePushzoneUploadRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreatePushzoneUploadRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -116,4 +128,3 @@ class CreatePushzoneUploadRequest {
     'size',
   };
 }
-

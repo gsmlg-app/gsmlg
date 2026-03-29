@@ -543,8 +543,9 @@ class _SliverResponsiveDataListState<T>
               ],
               rows: items.map((item) {
                 return DataRow(
-                  onSelectChanged:
-                      widget.onItemTap != null ? (_) => widget.onItemTap!(item) : null,
+                  onSelectChanged: widget.onItemTap != null
+                      ? (_) => widget.onItemTap!(item)
+                      : null,
                   cells: [
                     ...widget.columns.map((col) => DataCell(
                           _buildCellContent(col, item, theme),
@@ -618,8 +619,7 @@ class _SliverResponsiveDataListState<T>
     ColorScheme colorScheme,
   ) {
     // Find primary column
-    final primaryColumn =
-        widget.columns.where((c) => c.isPrimary).firstOrNull;
+    final primaryColumn = widget.columns.where((c) => c.isPrimary).firstOrNull;
     // Get columns to show in list view
     final listColumns =
         widget.columns.where((c) => c.showInList && !c.isPrimary).toList();

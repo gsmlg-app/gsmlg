@@ -20,20 +20,21 @@ class UpdateNodepoolRequest1 {
   int nodeQuantity;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is UpdateNodepoolRequest1 &&
-    other.nodeQuantity == nodeQuantity;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UpdateNodepoolRequest1 && other.nodeQuantity == nodeQuantity;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (nodeQuantity.hashCode);
+      // ignore: unnecessary_parenthesis
+      (nodeQuantity.hashCode);
 
   @override
   String toString() => 'UpdateNodepoolRequest1[nodeQuantity=$nodeQuantity]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'node_quantity'] = this.nodeQuantity;
+    json[r'node_quantity'] = this.nodeQuantity;
     return json;
   }
 
@@ -49,8 +50,10 @@ class UpdateNodepoolRequest1 {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "UpdateNodepoolRequest1[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "UpdateNodepoolRequest1[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "UpdateNodepoolRequest1[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "UpdateNodepoolRequest1[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +65,10 @@ class UpdateNodepoolRequest1 {
     return null;
   }
 
-  static List<UpdateNodepoolRequest1> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<UpdateNodepoolRequest1> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <UpdateNodepoolRequest1>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -90,13 +96,19 @@ class UpdateNodepoolRequest1 {
   }
 
   // maps a json object with a list of UpdateNodepoolRequest1-objects as value to a dart map
-  static Map<String, List<UpdateNodepoolRequest1>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<UpdateNodepoolRequest1>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<UpdateNodepoolRequest1>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = UpdateNodepoolRequest1.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = UpdateNodepoolRequest1.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -107,4 +119,3 @@ class UpdateNodepoolRequest1 {
     'node_quantity',
   };
 }
-

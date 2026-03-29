@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:theme_bloc/theme_bloc.dart';
 import 'package:vultr_bloc/vultr_bloc.dart';
 import 'package:whois_bloc/whois_bloc.dart';
+import 'package:monitor_bloc/monitor_bloc.dart';
 import 'package:whois_history_bloc/whois_history_bloc.dart';
 
 class MainProvider extends StatelessWidget {
@@ -87,6 +88,12 @@ class MainProvider extends StatelessWidget {
             create: (context) => ChatBloc(
               gemmaRepository: context.read<GemmaRepository>(),
               storageRepository: context.read<ChatStorageRepository>(),
+            ),
+          ),
+          BlocProvider<MonitorBloc>(
+            create: (context) => MonitorBloc(
+              repository: MonitorRepository(),
+              trustStore: DbTrustStore(database),
             ),
           ),
         ],

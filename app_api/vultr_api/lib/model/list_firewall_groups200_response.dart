@@ -28,22 +28,24 @@ class ListFirewallGroups200Response {
   Meta? meta;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is ListFirewallGroups200Response &&
-    _deepEquality.equals(other.firewallGroups, firewallGroups) &&
-    other.meta == meta;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListFirewallGroups200Response &&
+          _deepEquality.equals(other.firewallGroups, firewallGroups) &&
+          other.meta == meta;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (firewallGroups.hashCode) +
-    (meta == null ? 0 : meta!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (firewallGroups.hashCode) + (meta == null ? 0 : meta!.hashCode);
 
   @override
-  String toString() => 'ListFirewallGroups200Response[firewallGroups=$firewallGroups, meta=$meta]';
+  String toString() =>
+      'ListFirewallGroups200Response[firewallGroups=$firewallGroups, meta=$meta]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'firewall_groups'] = this.firewallGroups;
+    json[r'firewall_groups'] = this.firewallGroups;
     if (this.meta != null) {
       json[r'meta'] = this.meta;
     } else {
@@ -64,8 +66,10 @@ class ListFirewallGroups200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "ListFirewallGroups200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "ListFirewallGroups200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "ListFirewallGroups200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "ListFirewallGroups200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -78,7 +82,10 @@ class ListFirewallGroups200Response {
     return null;
   }
 
-  static List<ListFirewallGroups200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<ListFirewallGroups200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <ListFirewallGroups200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -106,20 +113,24 @@ class ListFirewallGroups200Response {
   }
 
   // maps a json object with a list of ListFirewallGroups200Response-objects as value to a dart map
-  static Map<String, List<ListFirewallGroups200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<ListFirewallGroups200Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<ListFirewallGroups200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = ListFirewallGroups200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = ListFirewallGroups200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

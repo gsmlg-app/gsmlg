@@ -10,7 +10,6 @@
 
 part of openapi.api;
 
-
 class S3Api {
   S3Api([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
 
@@ -26,7 +25,9 @@ class S3Api {
   ///
   /// * [CreateObjectStorageRequest] createObjectStorageRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createObjectStorageWithHttpInfo({ CreateObjectStorageRequest? createObjectStorageRequest, }) async {
+  Future<Response> createObjectStorageWithHttpInfo({
+    CreateObjectStorageRequest? createObjectStorageRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/object-storage';
 
@@ -38,7 +39,6 @@ class S3Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +59,24 @@ class S3Api {
   ///
   /// * [CreateObjectStorageRequest] createObjectStorageRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateObjectStorage202Response?> createObjectStorage({ CreateObjectStorageRequest? createObjectStorageRequest, }) async {
-    final response = await createObjectStorageWithHttpInfo( createObjectStorageRequest: createObjectStorageRequest, );
+  Future<CreateObjectStorage202Response?> createObjectStorage({
+    CreateObjectStorageRequest? createObjectStorageRequest,
+  }) async {
+    final response = await createObjectStorageWithHttpInfo(
+      createObjectStorageRequest: createObjectStorageRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateObjectStorage202Response',) as CreateObjectStorage202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateObjectStorage202Response',
+      ) as CreateObjectStorage202Response;
     }
     return null;
   }
@@ -84,10 +91,12 @@ class S3Api {
   ///
   /// * [String] objectStorageId (required):
   ///   The [Object Storage id](#operation/list-object-storages).
-  Future<Response> deleteObjectStorageWithHttpInfo(String objectStorageId,) async {
+  Future<Response> deleteObjectStorageWithHttpInfo(
+    String objectStorageId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/object-storage/{object-storage-id}'
-      .replaceAll('{object-storage-id}', objectStorageId);
+        .replaceAll('{object-storage-id}', objectStorageId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -97,7 +106,6 @@ class S3Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -118,8 +126,12 @@ class S3Api {
   ///
   /// * [String] objectStorageId (required):
   ///   The [Object Storage id](#operation/list-object-storages).
-  Future<void> deleteObjectStorage(String objectStorageId,) async {
-    final response = await deleteObjectStorageWithHttpInfo(objectStorageId,);
+  Future<void> deleteObjectStorage(
+    String objectStorageId,
+  ) async {
+    final response = await deleteObjectStorageWithHttpInfo(
+      objectStorageId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -135,10 +147,12 @@ class S3Api {
   ///
   /// * [String] objectStorageId (required):
   ///   The [Object Storage id](#operation/list-object-storages).
-  Future<Response> getObjectStorageWithHttpInfo(String objectStorageId,) async {
+  Future<Response> getObjectStorageWithHttpInfo(
+    String objectStorageId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/object-storage/{object-storage-id}'
-      .replaceAll('{object-storage-id}', objectStorageId);
+        .replaceAll('{object-storage-id}', objectStorageId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -148,7 +162,6 @@ class S3Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -169,17 +182,24 @@ class S3Api {
   ///
   /// * [String] objectStorageId (required):
   ///   The [Object Storage id](#operation/list-object-storages).
-  Future<CreateObjectStorage202Response?> getObjectStorage(String objectStorageId,) async {
-    final response = await getObjectStorageWithHttpInfo(objectStorageId,);
+  Future<CreateObjectStorage202Response?> getObjectStorage(
+    String objectStorageId,
+  ) async {
+    final response = await getObjectStorageWithHttpInfo(
+      objectStorageId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateObjectStorage202Response',) as CreateObjectStorage202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateObjectStorage202Response',
+      ) as CreateObjectStorage202Response;
     }
     return null;
   }
@@ -194,10 +214,12 @@ class S3Api {
   ///
   /// * [String] clusterId (required):
   ///   The [Cluster id](#operation/list-object-storage-clusters).
-  Future<Response> listObjectStorageClusterTiersWithHttpInfo(String clusterId,) async {
+  Future<Response> listObjectStorageClusterTiersWithHttpInfo(
+    String clusterId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/object-storage/clusters/{cluster-id}/tiers'
-      .replaceAll('{cluster-id}', clusterId);
+        .replaceAll('{cluster-id}', clusterId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -207,7 +229,6 @@ class S3Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -228,17 +249,25 @@ class S3Api {
   ///
   /// * [String] clusterId (required):
   ///   The [Cluster id](#operation/list-object-storage-clusters).
-  Future<ListObjectStorageClusterTiers200Response?> listObjectStorageClusterTiers(String clusterId,) async {
-    final response = await listObjectStorageClusterTiersWithHttpInfo(clusterId,);
+  Future<ListObjectStorageClusterTiers200Response?>
+      listObjectStorageClusterTiers(
+    String clusterId,
+  ) async {
+    final response = await listObjectStorageClusterTiersWithHttpInfo(
+      clusterId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListObjectStorageClusterTiers200Response',) as ListObjectStorageClusterTiers200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListObjectStorageClusterTiers200Response',
+      ) as ListObjectStorageClusterTiers200Response;
     }
     return null;
   }
@@ -256,7 +285,10 @@ class S3Api {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listObjectStorageClustersWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listObjectStorageClustersWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/object-storage/clusters';
 
@@ -276,7 +308,6 @@ class S3Api {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -299,17 +330,26 @@ class S3Api {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListObjectStorageClusters200Response?> listObjectStorageClusters({ int? perPage, String? cursor, }) async {
-    final response = await listObjectStorageClustersWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListObjectStorageClusters200Response?> listObjectStorageClusters({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listObjectStorageClustersWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListObjectStorageClusters200Response',) as ListObjectStorageClusters200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListObjectStorageClusters200Response',
+      ) as ListObjectStorageClusters200Response;
     }
     return null;
   }
@@ -331,7 +371,6 @@ class S3Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -355,9 +394,12 @@ class S3Api {
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListObjectStorageTiers200Response',) as ListObjectStorageTiers200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListObjectStorageTiers200Response',
+      ) as ListObjectStorageTiers200Response;
     }
     return null;
   }
@@ -375,7 +417,10 @@ class S3Api {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listObjectStoragesWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listObjectStoragesWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/object-storage';
 
@@ -394,7 +439,6 @@ class S3Api {
     }
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -418,17 +462,26 @@ class S3Api {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListObjectStorages200Response?> listObjectStorages({ int? perPage, String? cursor, }) async {
-    final response = await listObjectStoragesWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListObjectStorages200Response?> listObjectStorages({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listObjectStoragesWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListObjectStorages200Response',) as ListObjectStorages200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListObjectStorages200Response',
+      ) as ListObjectStorages200Response;
     }
     return null;
   }
@@ -443,10 +496,12 @@ class S3Api {
   ///
   /// * [String] objectStorageId (required):
   ///   The [Object Storage id](#operation/list-object-storages).
-  Future<Response> regenerateObjectStorageKeysWithHttpInfo(String objectStorageId,) async {
+  Future<Response> regenerateObjectStorageKeysWithHttpInfo(
+    String objectStorageId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/object-storage/{object-storage-id}/regenerate-keys'
-      .replaceAll('{object-storage-id}', objectStorageId);
+        .replaceAll('{object-storage-id}', objectStorageId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -456,7 +511,6 @@ class S3Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -477,17 +531,24 @@ class S3Api {
   ///
   /// * [String] objectStorageId (required):
   ///   The [Object Storage id](#operation/list-object-storages).
-  Future<RegenerateObjectStorageKeys201Response?> regenerateObjectStorageKeys(String objectStorageId,) async {
-    final response = await regenerateObjectStorageKeysWithHttpInfo(objectStorageId,);
+  Future<RegenerateObjectStorageKeys201Response?> regenerateObjectStorageKeys(
+    String objectStorageId,
+  ) async {
+    final response = await regenerateObjectStorageKeysWithHttpInfo(
+      objectStorageId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'RegenerateObjectStorageKeys201Response',) as RegenerateObjectStorageKeys201Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'RegenerateObjectStorageKeys201Response',
+      ) as RegenerateObjectStorageKeys201Response;
     }
     return null;
   }
@@ -505,10 +566,13 @@ class S3Api {
   ///
   /// * [UpdateObjectStorageRequest] updateObjectStorageRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateObjectStorageWithHttpInfo(String objectStorageId, { UpdateObjectStorageRequest? updateObjectStorageRequest, }) async {
+  Future<Response> updateObjectStorageWithHttpInfo(
+    String objectStorageId, {
+    UpdateObjectStorageRequest? updateObjectStorageRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/object-storage/{object-storage-id}'
-      .replaceAll('{object-storage-id}', objectStorageId);
+        .replaceAll('{object-storage-id}', objectStorageId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateObjectStorageRequest;
@@ -518,7 +582,6 @@ class S3Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -542,8 +605,14 @@ class S3Api {
   ///
   /// * [UpdateObjectStorageRequest] updateObjectStorageRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateObjectStorage(String objectStorageId, { UpdateObjectStorageRequest? updateObjectStorageRequest, }) async {
-    final response = await updateObjectStorageWithHttpInfo(objectStorageId,  updateObjectStorageRequest: updateObjectStorageRequest, );
+  Future<void> updateObjectStorage(
+    String objectStorageId, {
+    UpdateObjectStorageRequest? updateObjectStorageRequest,
+  }) async {
+    final response = await updateObjectStorageWithHttpInfo(
+      objectStorageId,
+      updateObjectStorageRequest: updateObjectStorageRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

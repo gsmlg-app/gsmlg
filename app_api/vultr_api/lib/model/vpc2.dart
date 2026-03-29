@@ -70,30 +70,33 @@ class Vpc2 {
   int? prefixLength;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Vpc2 &&
-    other.id == id &&
-    other.region == region &&
-    other.dateCreated == dateCreated &&
-    other.description == description &&
-    other.ipBlock == ipBlock &&
-    other.prefixLength == prefixLength;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Vpc2 &&
+          other.id == id &&
+          other.region == region &&
+          other.dateCreated == dateCreated &&
+          other.description == description &&
+          other.ipBlock == ipBlock &&
+          other.prefixLength == prefixLength;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id.hashCode) +
-    (region == null ? 0 : region!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (ipBlock == null ? 0 : ipBlock!.hashCode) +
-    (prefixLength == null ? 0 : prefixLength!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id.hashCode) +
+      (region == null ? 0 : region!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (ipBlock == null ? 0 : ipBlock!.hashCode) +
+      (prefixLength == null ? 0 : prefixLength!.hashCode);
 
   @override
-  String toString() => 'Vpc2[id=$id, region=$region, dateCreated=$dateCreated, description=$description, ipBlock=$ipBlock, prefixLength=$prefixLength]';
+  String toString() =>
+      'Vpc2[id=$id, region=$region, dateCreated=$dateCreated, description=$description, ipBlock=$ipBlock, prefixLength=$prefixLength]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'id'] = this.id;
+    json[r'id'] = this.id;
     if (this.region != null) {
       json[r'region'] = this.region;
     } else {
@@ -134,8 +137,10 @@ class Vpc2 {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Vpc2[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Vpc2[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Vpc2[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Vpc2[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -152,7 +157,10 @@ class Vpc2 {
     return null;
   }
 
-  static List<Vpc2> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Vpc2> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Vpc2>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -180,13 +188,19 @@ class Vpc2 {
   }
 
   // maps a json object with a list of Vpc2-objects as value to a dart map
-  static Map<String, List<Vpc2>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Vpc2>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Vpc2>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Vpc2.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Vpc2.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -197,4 +211,3 @@ class Vpc2 {
     'id',
   };
 }
-

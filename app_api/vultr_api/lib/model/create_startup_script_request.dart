@@ -34,30 +34,31 @@ class CreateStartupScriptRequest {
   String script;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateStartupScriptRequest &&
-    other.name == name &&
-    other.type == type &&
-    other.script == script;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateStartupScriptRequest &&
+          other.name == name &&
+          other.type == type &&
+          other.script == script;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (name.hashCode) +
-    (type == null ? 0 : type!.hashCode) +
-    (script.hashCode);
+      // ignore: unnecessary_parenthesis
+      (name.hashCode) + (type == null ? 0 : type!.hashCode) + (script.hashCode);
 
   @override
-  String toString() => 'CreateStartupScriptRequest[name=$name, type=$type, script=$script]';
+  String toString() =>
+      'CreateStartupScriptRequest[name=$name, type=$type, script=$script]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'name'] = this.name;
+    json[r'name'] = this.name;
     if (this.type != null) {
       json[r'type'] = this.type;
     } else {
       json[r'type'] = null;
     }
-      json[r'script'] = this.script;
+    json[r'script'] = this.script;
     return json;
   }
 
@@ -73,8 +74,10 @@ class CreateStartupScriptRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateStartupScriptRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateStartupScriptRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateStartupScriptRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateStartupScriptRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -88,7 +91,10 @@ class CreateStartupScriptRequest {
     return null;
   }
 
-  static List<CreateStartupScriptRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateStartupScriptRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateStartupScriptRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -116,13 +122,19 @@ class CreateStartupScriptRequest {
   }
 
   // maps a json object with a list of CreateStartupScriptRequest-objects as value to a dart map
-  static Map<String, List<CreateStartupScriptRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateStartupScriptRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateStartupScriptRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateStartupScriptRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateStartupScriptRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -134,4 +146,3 @@ class CreateStartupScriptRequest {
     'script',
   };
 }
-

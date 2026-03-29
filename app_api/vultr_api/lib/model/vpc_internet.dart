@@ -30,15 +30,16 @@ class VpcInternet {
   List<String> types;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is VpcInternet &&
-    other.connectivity == connectivity &&
-    _deepEquality.equals(other.types, types);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VpcInternet &&
+          other.connectivity == connectivity &&
+          _deepEquality.equals(other.types, types);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (connectivity == null ? 0 : connectivity!.hashCode) +
-    (types.hashCode);
+      // ignore: unnecessary_parenthesis
+      (connectivity == null ? 0 : connectivity!.hashCode) + (types.hashCode);
 
   @override
   String toString() => 'VpcInternet[connectivity=$connectivity, types=$types]';
@@ -50,7 +51,7 @@ class VpcInternet {
     } else {
       json[r'connectivity'] = null;
     }
-      json[r'types'] = this.types;
+    json[r'types'] = this.types;
     return json;
   }
 
@@ -66,8 +67,10 @@ class VpcInternet {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "VpcInternet[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "VpcInternet[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "VpcInternet[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "VpcInternet[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -75,14 +78,19 @@ class VpcInternet {
       return VpcInternet(
         connectivity: mapValueOfType<bool>(json, r'connectivity'),
         types: json[r'types'] is Iterable
-            ? (json[r'types'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'types'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
       );
     }
     return null;
   }
 
-  static List<VpcInternet> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<VpcInternet> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <VpcInternet>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -110,20 +118,24 @@ class VpcInternet {
   }
 
   // maps a json object with a list of VpcInternet-objects as value to a dart map
-  static Map<String, List<VpcInternet>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<VpcInternet>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<VpcInternet>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = VpcInternet.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = VpcInternet.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

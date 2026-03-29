@@ -20,20 +20,21 @@ class CreateInferenceRequest {
   String label;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateInferenceRequest &&
-    other.label == label;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateInferenceRequest && other.label == label;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label.hashCode);
 
   @override
   String toString() => 'CreateInferenceRequest[label=$label]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'label'] = this.label;
+    json[r'label'] = this.label;
     return json;
   }
 
@@ -49,8 +50,10 @@ class CreateInferenceRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateInferenceRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateInferenceRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateInferenceRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateInferenceRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -62,7 +65,10 @@ class CreateInferenceRequest {
     return null;
   }
 
-  static List<CreateInferenceRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateInferenceRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateInferenceRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -90,13 +96,19 @@ class CreateInferenceRequest {
   }
 
   // maps a json object with a list of CreateInferenceRequest-objects as value to a dart map
-  static Map<String, List<CreateInferenceRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateInferenceRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateInferenceRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateInferenceRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateInferenceRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -107,4 +119,3 @@ class CreateInferenceRequest {
     'label',
   };
 }
-

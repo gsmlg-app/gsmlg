@@ -220,67 +220,70 @@ class CreateBaremetalRequest {
   Object? appVariables;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateBaremetalRequest &&
-    other.region == region &&
-    other.plan == plan &&
-    other.scriptId == scriptId &&
-    other.enableIpv6 == enableIpv6 &&
-    _deepEquality.equals(other.sshkeyId, sshkeyId) &&
-    other.userData == userData &&
-    other.label == label &&
-    other.activationEmail == activationEmail &&
-    other.hostname == hostname &&
-    other.tag == tag &&
-    other.reservedIpv4 == reservedIpv4 &&
-    other.osId == osId &&
-    other.snapshotId == snapshotId &&
-    other.appId == appId &&
-    other.imageId == imageId &&
-    other.ipxeChainUrl == ipxeChainUrl &&
-    other.persistentPxe == persistentPxe &&
-    _deepEquality.equals(other.attachVpc2, attachVpc2) &&
-    _deepEquality.equals(other.detachVpc2, detachVpc2) &&
-    other.enableVpc2 == enableVpc2 &&
-    _deepEquality.equals(other.tags, tags) &&
-    other.userScheme == userScheme &&
-    other.mdiskMode == mdiskMode &&
-    other.appVariables == appVariables;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateBaremetalRequest &&
+          other.region == region &&
+          other.plan == plan &&
+          other.scriptId == scriptId &&
+          other.enableIpv6 == enableIpv6 &&
+          _deepEquality.equals(other.sshkeyId, sshkeyId) &&
+          other.userData == userData &&
+          other.label == label &&
+          other.activationEmail == activationEmail &&
+          other.hostname == hostname &&
+          other.tag == tag &&
+          other.reservedIpv4 == reservedIpv4 &&
+          other.osId == osId &&
+          other.snapshotId == snapshotId &&
+          other.appId == appId &&
+          other.imageId == imageId &&
+          other.ipxeChainUrl == ipxeChainUrl &&
+          other.persistentPxe == persistentPxe &&
+          _deepEquality.equals(other.attachVpc2, attachVpc2) &&
+          _deepEquality.equals(other.detachVpc2, detachVpc2) &&
+          other.enableVpc2 == enableVpc2 &&
+          _deepEquality.equals(other.tags, tags) &&
+          other.userScheme == userScheme &&
+          other.mdiskMode == mdiskMode &&
+          other.appVariables == appVariables;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (region.hashCode) +
-    (plan.hashCode) +
-    (scriptId == null ? 0 : scriptId!.hashCode) +
-    (enableIpv6 == null ? 0 : enableIpv6!.hashCode) +
-    (sshkeyId.hashCode) +
-    (userData == null ? 0 : userData!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (activationEmail == null ? 0 : activationEmail!.hashCode) +
-    (hostname == null ? 0 : hostname!.hashCode) +
-    (tag == null ? 0 : tag!.hashCode) +
-    (reservedIpv4 == null ? 0 : reservedIpv4!.hashCode) +
-    (osId == null ? 0 : osId!.hashCode) +
-    (snapshotId == null ? 0 : snapshotId!.hashCode) +
-    (appId == null ? 0 : appId!.hashCode) +
-    (imageId == null ? 0 : imageId!.hashCode) +
-    (ipxeChainUrl == null ? 0 : ipxeChainUrl!.hashCode) +
-    (persistentPxe == null ? 0 : persistentPxe!.hashCode) +
-    (attachVpc2.hashCode) +
-    (detachVpc2.hashCode) +
-    (enableVpc2 == null ? 0 : enableVpc2!.hashCode) +
-    (tags.hashCode) +
-    (userScheme == null ? 0 : userScheme!.hashCode) +
-    (mdiskMode == null ? 0 : mdiskMode!.hashCode) +
-    (appVariables == null ? 0 : appVariables!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (region.hashCode) +
+      (plan.hashCode) +
+      (scriptId == null ? 0 : scriptId!.hashCode) +
+      (enableIpv6 == null ? 0 : enableIpv6!.hashCode) +
+      (sshkeyId.hashCode) +
+      (userData == null ? 0 : userData!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (activationEmail == null ? 0 : activationEmail!.hashCode) +
+      (hostname == null ? 0 : hostname!.hashCode) +
+      (tag == null ? 0 : tag!.hashCode) +
+      (reservedIpv4 == null ? 0 : reservedIpv4!.hashCode) +
+      (osId == null ? 0 : osId!.hashCode) +
+      (snapshotId == null ? 0 : snapshotId!.hashCode) +
+      (appId == null ? 0 : appId!.hashCode) +
+      (imageId == null ? 0 : imageId!.hashCode) +
+      (ipxeChainUrl == null ? 0 : ipxeChainUrl!.hashCode) +
+      (persistentPxe == null ? 0 : persistentPxe!.hashCode) +
+      (attachVpc2.hashCode) +
+      (detachVpc2.hashCode) +
+      (enableVpc2 == null ? 0 : enableVpc2!.hashCode) +
+      (tags.hashCode) +
+      (userScheme == null ? 0 : userScheme!.hashCode) +
+      (mdiskMode == null ? 0 : mdiskMode!.hashCode) +
+      (appVariables == null ? 0 : appVariables!.hashCode);
 
   @override
-  String toString() => 'CreateBaremetalRequest[region=$region, plan=$plan, scriptId=$scriptId, enableIpv6=$enableIpv6, sshkeyId=$sshkeyId, userData=$userData, label=$label, activationEmail=$activationEmail, hostname=$hostname, tag=$tag, reservedIpv4=$reservedIpv4, osId=$osId, snapshotId=$snapshotId, appId=$appId, imageId=$imageId, ipxeChainUrl=$ipxeChainUrl, persistentPxe=$persistentPxe, attachVpc2=$attachVpc2, detachVpc2=$detachVpc2, enableVpc2=$enableVpc2, tags=$tags, userScheme=$userScheme, mdiskMode=$mdiskMode, appVariables=$appVariables]';
+  String toString() =>
+      'CreateBaremetalRequest[region=$region, plan=$plan, scriptId=$scriptId, enableIpv6=$enableIpv6, sshkeyId=$sshkeyId, userData=$userData, label=$label, activationEmail=$activationEmail, hostname=$hostname, tag=$tag, reservedIpv4=$reservedIpv4, osId=$osId, snapshotId=$snapshotId, appId=$appId, imageId=$imageId, ipxeChainUrl=$ipxeChainUrl, persistentPxe=$persistentPxe, attachVpc2=$attachVpc2, detachVpc2=$detachVpc2, enableVpc2=$enableVpc2, tags=$tags, userScheme=$userScheme, mdiskMode=$mdiskMode, appVariables=$appVariables]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'region'] = this.region;
-      json[r'plan'] = this.plan;
+    json[r'region'] = this.region;
+    json[r'plan'] = this.plan;
     if (this.scriptId != null) {
       json[r'script_id'] = this.scriptId;
     } else {
@@ -291,7 +294,7 @@ class CreateBaremetalRequest {
     } else {
       json[r'enable_ipv6'] = null;
     }
-      json[r'sshkey_id'] = this.sshkeyId;
+    json[r'sshkey_id'] = this.sshkeyId;
     if (this.userData != null) {
       json[r'user_data'] = this.userData;
     } else {
@@ -352,14 +355,14 @@ class CreateBaremetalRequest {
     } else {
       json[r'persistent_pxe'] = null;
     }
-      json[r'attach_vpc2'] = this.attachVpc2;
-      json[r'detach_vpc2'] = this.detachVpc2;
+    json[r'attach_vpc2'] = this.attachVpc2;
+    json[r'detach_vpc2'] = this.detachVpc2;
     if (this.enableVpc2 != null) {
       json[r'enable_vpc2'] = this.enableVpc2;
     } else {
       json[r'enable_vpc2'] = null;
     }
-      json[r'tags'] = this.tags;
+    json[r'tags'] = this.tags;
     if (this.userScheme != null) {
       json[r'user_scheme'] = this.userScheme;
     } else {
@@ -390,8 +393,10 @@ class CreateBaremetalRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateBaremetalRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateBaremetalRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateBaremetalRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateBaremetalRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -402,7 +407,9 @@ class CreateBaremetalRequest {
         scriptId: mapValueOfType<String>(json, r'script_id'),
         enableIpv6: mapValueOfType<bool>(json, r'enable_ipv6'),
         sshkeyId: json[r'sshkey_id'] is Iterable
-            ? (json[r'sshkey_id'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'sshkey_id'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         userData: mapValueOfType<String>(json, r'user_data'),
         label: mapValueOfType<String>(json, r'label'),
@@ -417,10 +424,14 @@ class CreateBaremetalRequest {
         ipxeChainUrl: mapValueOfType<String>(json, r'ipxe_chain_url'),
         persistentPxe: mapValueOfType<bool>(json, r'persistent_pxe'),
         attachVpc2: json[r'attach_vpc2'] is Iterable
-            ? (json[r'attach_vpc2'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'attach_vpc2'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         detachVpc2: json[r'detach_vpc2'] is Iterable
-            ? (json[r'detach_vpc2'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'detach_vpc2'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         enableVpc2: mapValueOfType<bool>(json, r'enable_vpc2'),
         tags: json[r'tags'] is Iterable
@@ -434,7 +445,10 @@ class CreateBaremetalRequest {
     return null;
   }
 
-  static List<CreateBaremetalRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateBaremetalRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateBaremetalRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -462,13 +476,19 @@ class CreateBaremetalRequest {
   }
 
   // maps a json object with a list of CreateBaremetalRequest-objects as value to a dart map
-  static Map<String, List<CreateBaremetalRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateBaremetalRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateBaremetalRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateBaremetalRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateBaremetalRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -480,4 +500,3 @@ class CreateBaremetalRequest {
     'plan',
   };
 }
-

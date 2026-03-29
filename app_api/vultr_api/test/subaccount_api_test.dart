@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for SubaccountApi
 void main() {
   // final instance = SubaccountApi();
@@ -34,6 +33,5 @@ void main() {
     test('test listSubaccounts', () async {
       // TODO
     });
-
   });
 }

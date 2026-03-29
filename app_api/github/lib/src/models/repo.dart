@@ -8,14 +8,10 @@ part 'repo.g.dart';
 
 @JsonSerializable()
 class Repo {
-  const Repo({
-    this.id,
-    this.url,
-    this.name,
-  });
-  
+  const Repo({this.id, this.url, this.name});
+
   factory Repo.fromJson(Map<String, Object?> json) => _$RepoFromJson(json);
-  
+
   final int? id;
   final String? url;
   final String? name;

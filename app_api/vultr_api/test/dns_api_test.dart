@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for DnsApi
 void main() {
   // final instance = DnsApi();
@@ -109,7 +108,7 @@ void main() {
 
     // Update a DNS Domain
     //
-    // Update the DNS Domain. 
+    // Update the DNS Domain.
     //
     //Future updateDnsDomain(String dnsDomain, { UpdateDnsDomainRequest updateDnsDomainRequest }) async
     test('test updateDnsDomain', () async {
@@ -133,6 +132,5 @@ void main() {
     test('test updateDnsDomainSoa', () async {
       // TODO
     });
-
   });
 }

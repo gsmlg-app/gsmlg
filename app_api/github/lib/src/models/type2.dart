@@ -17,5 +17,5 @@ enum Type2 {
   @JsonValue('sources')
   sources,
   @JsonValue('member')
-  member;
+  member,
 }

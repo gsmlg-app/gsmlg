@@ -46,17 +46,19 @@ class NodepoolLabel {
   String? value;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is NodepoolLabel &&
-    other.id == id &&
-    other.key == key &&
-    other.value == value;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is NodepoolLabel &&
+          other.id == id &&
+          other.key == key &&
+          other.value == value;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (key == null ? 0 : key!.hashCode) +
-    (value == null ? 0 : value!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (key == null ? 0 : key!.hashCode) +
+      (value == null ? 0 : value!.hashCode);
 
   @override
   String toString() => 'NodepoolLabel[id=$id, key=$key, value=$value]';
@@ -93,8 +95,10 @@ class NodepoolLabel {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "NodepoolLabel[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "NodepoolLabel[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "NodepoolLabel[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "NodepoolLabel[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -108,7 +112,10 @@ class NodepoolLabel {
     return null;
   }
 
-  static List<NodepoolLabel> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<NodepoolLabel> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <NodepoolLabel>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -136,20 +143,24 @@ class NodepoolLabel {
   }
 
   // maps a json object with a list of NodepoolLabel-objects as value to a dart map
-  static Map<String, List<NodepoolLabel>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<NodepoolLabel>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<NodepoolLabel>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = NodepoolLabel.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = NodepoolLabel.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

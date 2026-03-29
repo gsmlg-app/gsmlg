@@ -10,9 +10,9 @@
 
 part of openapi.api;
 
-
 class LoadBalancerApi {
-  LoadBalancerApi([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
+  LoadBalancerApi([ApiClient? apiClient])
+      : apiClient = apiClient ?? defaultApiClient;
 
   final ApiClient apiClient;
 
@@ -26,7 +26,9 @@ class LoadBalancerApi {
   ///
   /// * [CreateLoadBalancerRequest] createLoadBalancerRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createLoadBalancerWithHttpInfo({ CreateLoadBalancerRequest? createLoadBalancerRequest, }) async {
+  Future<Response> createLoadBalancerWithHttpInfo({
+    CreateLoadBalancerRequest? createLoadBalancerRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers';
 
@@ -38,7 +40,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -59,17 +60,24 @@ class LoadBalancerApi {
   ///
   /// * [CreateLoadBalancerRequest] createLoadBalancerRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<CreateLoadBalancer202Response?> createLoadBalancer({ CreateLoadBalancerRequest? createLoadBalancerRequest, }) async {
-    final response = await createLoadBalancerWithHttpInfo( createLoadBalancerRequest: createLoadBalancerRequest, );
+  Future<CreateLoadBalancer202Response?> createLoadBalancer({
+    CreateLoadBalancerRequest? createLoadBalancerRequest,
+  }) async {
+    final response = await createLoadBalancerWithHttpInfo(
+      createLoadBalancerRequest: createLoadBalancerRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateLoadBalancer202Response',) as CreateLoadBalancer202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateLoadBalancer202Response',
+      ) as CreateLoadBalancer202Response;
     }
     return null;
   }
@@ -87,10 +95,14 @@ class LoadBalancerApi {
   ///
   /// * [CreateLoadBalancerForwardingRulesRequest] createLoadBalancerForwardingRulesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createLoadBalancerForwardingRulesWithHttpInfo(String loadBalancerId, { CreateLoadBalancerForwardingRulesRequest? createLoadBalancerForwardingRulesRequest, }) async {
+  Future<Response> createLoadBalancerForwardingRulesWithHttpInfo(
+    String loadBalancerId, {
+    CreateLoadBalancerForwardingRulesRequest?
+        createLoadBalancerForwardingRulesRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}/forwarding-rules'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody = createLoadBalancerForwardingRulesRequest;
@@ -100,7 +112,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -124,8 +135,16 @@ class LoadBalancerApi {
   ///
   /// * [CreateLoadBalancerForwardingRulesRequest] createLoadBalancerForwardingRulesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> createLoadBalancerForwardingRules(String loadBalancerId, { CreateLoadBalancerForwardingRulesRequest? createLoadBalancerForwardingRulesRequest, }) async {
-    final response = await createLoadBalancerForwardingRulesWithHttpInfo(loadBalancerId,  createLoadBalancerForwardingRulesRequest: createLoadBalancerForwardingRulesRequest, );
+  Future<void> createLoadBalancerForwardingRules(
+    String loadBalancerId, {
+    CreateLoadBalancerForwardingRulesRequest?
+        createLoadBalancerForwardingRulesRequest,
+  }) async {
+    final response = await createLoadBalancerForwardingRulesWithHttpInfo(
+      loadBalancerId,
+      createLoadBalancerForwardingRulesRequest:
+          createLoadBalancerForwardingRulesRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -144,10 +163,14 @@ class LoadBalancerApi {
   ///
   /// * [CreateLoadBalancerReverseDnsIpv4Request] createLoadBalancerReverseDnsIpv4Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createLoadBalancerReverseDnsIpv4WithHttpInfo(String loadBalancerId, { CreateLoadBalancerReverseDnsIpv4Request? createLoadBalancerReverseDnsIpv4Request, }) async {
+  Future<Response> createLoadBalancerReverseDnsIpv4WithHttpInfo(
+    String loadBalancerId, {
+    CreateLoadBalancerReverseDnsIpv4Request?
+        createLoadBalancerReverseDnsIpv4Request,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}/reverse-dns'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody = createLoadBalancerReverseDnsIpv4Request;
@@ -157,7 +180,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -181,8 +203,16 @@ class LoadBalancerApi {
   ///
   /// * [CreateLoadBalancerReverseDnsIpv4Request] createLoadBalancerReverseDnsIpv4Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> createLoadBalancerReverseDnsIpv4(String loadBalancerId, { CreateLoadBalancerReverseDnsIpv4Request? createLoadBalancerReverseDnsIpv4Request, }) async {
-    final response = await createLoadBalancerReverseDnsIpv4WithHttpInfo(loadBalancerId,  createLoadBalancerReverseDnsIpv4Request: createLoadBalancerReverseDnsIpv4Request, );
+  Future<void> createLoadBalancerReverseDnsIpv4(
+    String loadBalancerId, {
+    CreateLoadBalancerReverseDnsIpv4Request?
+        createLoadBalancerReverseDnsIpv4Request,
+  }) async {
+    final response = await createLoadBalancerReverseDnsIpv4WithHttpInfo(
+      loadBalancerId,
+      createLoadBalancerReverseDnsIpv4Request:
+          createLoadBalancerReverseDnsIpv4Request,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -201,10 +231,14 @@ class LoadBalancerApi {
   ///
   /// * [CreateLoadBalancerReverseDnsIpv6Request] createLoadBalancerReverseDnsIpv6Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createLoadBalancerReverseDnsIpv6WithHttpInfo(String loadBalancerId, { CreateLoadBalancerReverseDnsIpv6Request? createLoadBalancerReverseDnsIpv6Request, }) async {
+  Future<Response> createLoadBalancerReverseDnsIpv6WithHttpInfo(
+    String loadBalancerId, {
+    CreateLoadBalancerReverseDnsIpv6Request?
+        createLoadBalancerReverseDnsIpv6Request,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}/reverse-dns'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody = createLoadBalancerReverseDnsIpv6Request;
@@ -214,7 +248,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -238,8 +271,16 @@ class LoadBalancerApi {
   ///
   /// * [CreateLoadBalancerReverseDnsIpv6Request] createLoadBalancerReverseDnsIpv6Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> createLoadBalancerReverseDnsIpv6(String loadBalancerId, { CreateLoadBalancerReverseDnsIpv6Request? createLoadBalancerReverseDnsIpv6Request, }) async {
-    final response = await createLoadBalancerReverseDnsIpv6WithHttpInfo(loadBalancerId,  createLoadBalancerReverseDnsIpv6Request: createLoadBalancerReverseDnsIpv6Request, );
+  Future<void> createLoadBalancerReverseDnsIpv6(
+    String loadBalancerId, {
+    CreateLoadBalancerReverseDnsIpv6Request?
+        createLoadBalancerReverseDnsIpv6Request,
+  }) async {
+    final response = await createLoadBalancerReverseDnsIpv6WithHttpInfo(
+      loadBalancerId,
+      createLoadBalancerReverseDnsIpv6Request:
+          createLoadBalancerReverseDnsIpv6Request,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -255,10 +296,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<Response> deleteLoadBalancerWithHttpInfo(String loadBalancerId,) async {
+  Future<Response> deleteLoadBalancerWithHttpInfo(
+    String loadBalancerId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -268,7 +311,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -289,8 +331,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<void> deleteLoadBalancer(String loadBalancerId,) async {
-    final response = await deleteLoadBalancerWithHttpInfo(loadBalancerId,);
+  Future<void> deleteLoadBalancer(
+    String loadBalancerId,
+  ) async {
+    final response = await deleteLoadBalancerWithHttpInfo(
+      loadBalancerId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -306,10 +352,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<Response> deleteLoadBalancerAutoSslWithHttpInfo(String loadBalancerId,) async {
+  Future<Response> deleteLoadBalancerAutoSslWithHttpInfo(
+    String loadBalancerId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}/auto_ssl'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -319,7 +367,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -340,8 +387,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<void> deleteLoadBalancerAutoSsl(String loadBalancerId,) async {
-    final response = await deleteLoadBalancerAutoSslWithHttpInfo(loadBalancerId,);
+  Future<void> deleteLoadBalancerAutoSsl(
+    String loadBalancerId,
+  ) async {
+    final response = await deleteLoadBalancerAutoSslWithHttpInfo(
+      loadBalancerId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -360,11 +411,15 @@ class LoadBalancerApi {
   ///
   /// * [String] forwardingRuleId (required):
   ///   The [Forwarding Rule id](#operation/list-load-balancer-forwarding-rules).
-  Future<Response> deleteLoadBalancerForwardingRuleWithHttpInfo(String loadBalancerId, String forwardingRuleId,) async {
+  Future<Response> deleteLoadBalancerForwardingRuleWithHttpInfo(
+    String loadBalancerId,
+    String forwardingRuleId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/load-balancers/{load-balancer-id}/forwarding-rules/{forwarding-rule-id}'
-      .replaceAll('{load-balancer-id}', loadBalancerId)
-      .replaceAll('{forwarding-rule-id}', forwardingRuleId);
+    final path =
+        r'/load-balancers/{load-balancer-id}/forwarding-rules/{forwarding-rule-id}'
+            .replaceAll('{load-balancer-id}', loadBalancerId)
+            .replaceAll('{forwarding-rule-id}', forwardingRuleId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -374,7 +429,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -398,8 +452,14 @@ class LoadBalancerApi {
   ///
   /// * [String] forwardingRuleId (required):
   ///   The [Forwarding Rule id](#operation/list-load-balancer-forwarding-rules).
-  Future<void> deleteLoadBalancerForwardingRule(String loadBalancerId, String forwardingRuleId,) async {
-    final response = await deleteLoadBalancerForwardingRuleWithHttpInfo(loadBalancerId, forwardingRuleId,);
+  Future<void> deleteLoadBalancerForwardingRule(
+    String loadBalancerId,
+    String forwardingRuleId,
+  ) async {
+    final response = await deleteLoadBalancerForwardingRuleWithHttpInfo(
+      loadBalancerId,
+      forwardingRuleId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -415,10 +475,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<Response> deleteLoadBalancerReverseDnsWithHttpInfo(String loadBalancerId,) async {
+  Future<Response> deleteLoadBalancerReverseDnsWithHttpInfo(
+    String loadBalancerId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}/reverse-dns'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -428,7 +490,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -449,8 +510,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<void> deleteLoadBalancerReverseDns(String loadBalancerId,) async {
-    final response = await deleteLoadBalancerReverseDnsWithHttpInfo(loadBalancerId,);
+  Future<void> deleteLoadBalancerReverseDns(
+    String loadBalancerId,
+  ) async {
+    final response = await deleteLoadBalancerReverseDnsWithHttpInfo(
+      loadBalancerId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -466,10 +531,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<Response> deleteLoadBalancerSslWithHttpInfo(String loadBalancerId,) async {
+  Future<Response> deleteLoadBalancerSslWithHttpInfo(
+    String loadBalancerId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}/ssl'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -479,7 +546,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -500,8 +566,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<void> deleteLoadBalancerSsl(String loadBalancerId,) async {
-    final response = await deleteLoadBalancerSslWithHttpInfo(loadBalancerId,);
+  Future<void> deleteLoadBalancerSsl(
+    String loadBalancerId,
+  ) async {
+    final response = await deleteLoadBalancerSslWithHttpInfo(
+      loadBalancerId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -517,10 +587,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<Response> getLoadBalancerWithHttpInfo(String loadBalancerId,) async {
+  Future<Response> getLoadBalancerWithHttpInfo(
+    String loadBalancerId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -530,7 +602,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -551,17 +622,24 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<CreateLoadBalancer202Response?> getLoadBalancer(String loadBalancerId,) async {
-    final response = await getLoadBalancerWithHttpInfo(loadBalancerId,);
+  Future<CreateLoadBalancer202Response?> getLoadBalancer(
+    String loadBalancerId,
+  ) async {
+    final response = await getLoadBalancerWithHttpInfo(
+      loadBalancerId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'CreateLoadBalancer202Response',) as CreateLoadBalancer202Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'CreateLoadBalancer202Response',
+      ) as CreateLoadBalancer202Response;
     }
     return null;
   }
@@ -579,11 +657,15 @@ class LoadBalancerApi {
   ///
   /// * [String] forwardingRuleId (required):
   ///   The [Forwarding Rule id](#operation/list-load-balancer-forwarding-rules).
-  Future<Response> getLoadBalancerForwardingRuleWithHttpInfo(String loadBalancerId, String forwardingRuleId,) async {
+  Future<Response> getLoadBalancerForwardingRuleWithHttpInfo(
+    String loadBalancerId,
+    String forwardingRuleId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/load-balancers/{load-balancer-id}/forwarding-rules/{forwarding-rule-id}'
-      .replaceAll('{load-balancer-id}', loadBalancerId)
-      .replaceAll('{forwarding-rule-id}', forwardingRuleId);
+    final path =
+        r'/load-balancers/{load-balancer-id}/forwarding-rules/{forwarding-rule-id}'
+            .replaceAll('{load-balancer-id}', loadBalancerId)
+            .replaceAll('{forwarding-rule-id}', forwardingRuleId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -593,7 +675,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -617,17 +698,27 @@ class LoadBalancerApi {
   ///
   /// * [String] forwardingRuleId (required):
   ///   The [Forwarding Rule id](#operation/list-load-balancer-forwarding-rules).
-  Future<GetLoadBalancerForwardingRule200Response?> getLoadBalancerForwardingRule(String loadBalancerId, String forwardingRuleId,) async {
-    final response = await getLoadBalancerForwardingRuleWithHttpInfo(loadBalancerId, forwardingRuleId,);
+  Future<GetLoadBalancerForwardingRule200Response?>
+      getLoadBalancerForwardingRule(
+    String loadBalancerId,
+    String forwardingRuleId,
+  ) async {
+    final response = await getLoadBalancerForwardingRuleWithHttpInfo(
+      loadBalancerId,
+      forwardingRuleId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetLoadBalancerForwardingRule200Response',) as GetLoadBalancerForwardingRule200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetLoadBalancerForwardingRule200Response',
+      ) as GetLoadBalancerForwardingRule200Response;
     }
     return null;
   }
@@ -642,10 +733,12 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<Response> getLoadBalancerReverseDnsWithHttpInfo(String loadBalancerId,) async {
+  Future<Response> getLoadBalancerReverseDnsWithHttpInfo(
+    String loadBalancerId,
+  ) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}/reverse-dns'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -655,7 +748,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -676,17 +768,24 @@ class LoadBalancerApi {
   ///
   /// * [String] loadBalancerId (required):
   ///   The [Load Balancer id](#operation/list-load-balancers).
-  Future<GetLoadBalancerReverseDns200Response?> getLoadBalancerReverseDns(String loadBalancerId,) async {
-    final response = await getLoadBalancerReverseDnsWithHttpInfo(loadBalancerId,);
+  Future<GetLoadBalancerReverseDns200Response?> getLoadBalancerReverseDns(
+    String loadBalancerId,
+  ) async {
+    final response = await getLoadBalancerReverseDnsWithHttpInfo(
+      loadBalancerId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetLoadBalancerReverseDns200Response',) as GetLoadBalancerReverseDns200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetLoadBalancerReverseDns200Response',
+      ) as GetLoadBalancerReverseDns200Response;
     }
     return null;
   }
@@ -702,11 +801,15 @@ class LoadBalancerApi {
   /// * [String] loadbalancerId (required):
   ///
   /// * [String] firewallRuleId (required):
-  Future<Response> getLoadbalancerFirewallRuleWithHttpInfo(String loadbalancerId, String firewallRuleId,) async {
+  Future<Response> getLoadbalancerFirewallRuleWithHttpInfo(
+    String loadbalancerId,
+    String firewallRuleId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/load-balancers/{loadbalancer-id}/firewall-rules/{firewall-rule-id}'
-      .replaceAll('{loadbalancer-id}', loadbalancerId)
-      .replaceAll('{firewall-rule-id}', firewallRuleId);
+    final path =
+        r'/load-balancers/{loadbalancer-id}/firewall-rules/{firewall-rule-id}'
+            .replaceAll('{loadbalancer-id}', loadbalancerId)
+            .replaceAll('{firewall-rule-id}', firewallRuleId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -716,7 +819,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -738,17 +840,26 @@ class LoadBalancerApi {
   /// * [String] loadbalancerId (required):
   ///
   /// * [String] firewallRuleId (required):
-  Future<LoadbalancerFirewallRule?> getLoadbalancerFirewallRule(String loadbalancerId, String firewallRuleId,) async {
-    final response = await getLoadbalancerFirewallRuleWithHttpInfo(loadbalancerId, firewallRuleId,);
+  Future<LoadbalancerFirewallRule?> getLoadbalancerFirewallRule(
+    String loadbalancerId,
+    String firewallRuleId,
+  ) async {
+    final response = await getLoadbalancerFirewallRuleWithHttpInfo(
+      loadbalancerId,
+      firewallRuleId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'LoadbalancerFirewallRule',) as LoadbalancerFirewallRule;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'LoadbalancerFirewallRule',
+      ) as LoadbalancerFirewallRule;
     }
     return null;
   }
@@ -769,10 +880,14 @@ class LoadBalancerApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listLoadBalancerForwardingRulesWithHttpInfo(String loadBalancerId, { int? perPage, String? cursor, }) async {
+  Future<Response> listLoadBalancerForwardingRulesWithHttpInfo(
+    String loadBalancerId, {
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}/forwarding-rules'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -790,7 +905,6 @@ class LoadBalancerApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -816,17 +930,29 @@ class LoadBalancerApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListLoadBalancerForwardingRules200Response?> listLoadBalancerForwardingRules(String loadBalancerId, { int? perPage, String? cursor, }) async {
-    final response = await listLoadBalancerForwardingRulesWithHttpInfo(loadBalancerId,  perPage: perPage, cursor: cursor, );
+  Future<ListLoadBalancerForwardingRules200Response?>
+      listLoadBalancerForwardingRules(
+    String loadBalancerId, {
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listLoadBalancerForwardingRulesWithHttpInfo(
+      loadBalancerId,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListLoadBalancerForwardingRules200Response',) as ListLoadBalancerForwardingRules200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListLoadBalancerForwardingRules200Response',
+      ) as ListLoadBalancerForwardingRules200Response;
     }
     return null;
   }
@@ -840,11 +966,14 @@ class LoadBalancerApi {
   /// Parameters:
   ///
   /// * [int] perPage:
-  ///   Number of items requested per page. Default is 100 and Max is 500. 
+  ///   Number of items requested per page. Default is 100 and Max is 500.
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listLoadBalancersWithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listLoadBalancersWithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers';
 
@@ -864,7 +993,6 @@ class LoadBalancerApi {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -883,21 +1011,30 @@ class LoadBalancerApi {
   /// Parameters:
   ///
   /// * [int] perPage:
-  ///   Number of items requested per page. Default is 100 and Max is 500. 
+  ///   Number of items requested per page. Default is 100 and Max is 500.
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListLoadBalancers200Response?> listLoadBalancers({ int? perPage, String? cursor, }) async {
-    final response = await listLoadBalancersWithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListLoadBalancers200Response?> listLoadBalancers({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listLoadBalancersWithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListLoadBalancers200Response',) as ListLoadBalancers200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListLoadBalancers200Response',
+      ) as ListLoadBalancers200Response;
     }
     return null;
   }
@@ -917,10 +1054,14 @@ class LoadBalancerApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listLoadbalancerFirewallRulesWithHttpInfo(String loadbalancerId, { String? perPage, String? cursor, }) async {
+  Future<Response> listLoadbalancerFirewallRulesWithHttpInfo(
+    String loadbalancerId, {
+    String? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{loadbalancer-id}/firewall-rules'
-      .replaceAll('{loadbalancer-id}', loadbalancerId);
+        .replaceAll('{loadbalancer-id}', loadbalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -937,7 +1078,6 @@ class LoadBalancerApi {
     }
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -963,17 +1103,28 @@ class LoadBalancerApi {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<LoadbalancerFirewallRule?> listLoadbalancerFirewallRules(String loadbalancerId, { String? perPage, String? cursor, }) async {
-    final response = await listLoadbalancerFirewallRulesWithHttpInfo(loadbalancerId,  perPage: perPage, cursor: cursor, );
+  Future<LoadbalancerFirewallRule?> listLoadbalancerFirewallRules(
+    String loadbalancerId, {
+    String? perPage,
+    String? cursor,
+  }) async {
+    final response = await listLoadbalancerFirewallRulesWithHttpInfo(
+      loadbalancerId,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'LoadbalancerFirewallRule',) as LoadbalancerFirewallRule;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'LoadbalancerFirewallRule',
+      ) as LoadbalancerFirewallRule;
     }
     return null;
   }
@@ -991,10 +1142,13 @@ class LoadBalancerApi {
   ///
   /// * [UpdateLoadBalancerRequest] updateLoadBalancerRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateLoadBalancerWithHttpInfo(String loadBalancerId, { UpdateLoadBalancerRequest? updateLoadBalancerRequest, }) async {
+  Future<Response> updateLoadBalancerWithHttpInfo(
+    String loadBalancerId, {
+    UpdateLoadBalancerRequest? updateLoadBalancerRequest,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/load-balancers/{load-balancer-id}'
-      .replaceAll('{load-balancer-id}', loadBalancerId);
+        .replaceAll('{load-balancer-id}', loadBalancerId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateLoadBalancerRequest;
@@ -1004,7 +1158,6 @@ class LoadBalancerApi {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -1028,8 +1181,14 @@ class LoadBalancerApi {
   ///
   /// * [UpdateLoadBalancerRequest] updateLoadBalancerRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateLoadBalancer(String loadBalancerId, { UpdateLoadBalancerRequest? updateLoadBalancerRequest, }) async {
-    final response = await updateLoadBalancerWithHttpInfo(loadBalancerId,  updateLoadBalancerRequest: updateLoadBalancerRequest, );
+  Future<void> updateLoadBalancer(
+    String loadBalancerId, {
+    UpdateLoadBalancerRequest? updateLoadBalancerRequest,
+  }) async {
+    final response = await updateLoadBalancerWithHttpInfo(
+      loadBalancerId,
+      updateLoadBalancerRequest: updateLoadBalancerRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

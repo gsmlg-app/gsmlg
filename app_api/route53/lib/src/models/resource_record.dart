@@ -11,9 +11,10 @@ class ResourceRecord {
   const ResourceRecord({
     required this.value,
   });
-  
-  factory ResourceRecord.fromJson(Map<String, Object?> json) => _$ResourceRecordFromJson(json);
-  
+
+  factory ResourceRecord.fromJson(Map<String, Object?> json) =>
+      _$ResourceRecordFromJson(json);
+
   /// The current or new DNS record value.
   final String value;
 

@@ -10,7 +10,6 @@
 
 part of openapi.api;
 
-
 class VPC2Api {
   VPC2Api([ApiClient? apiClient]) : apiClient = apiClient ?? defaultApiClient;
 
@@ -29,10 +28,12 @@ class VPC2Api {
   ///
   /// * [AttachVpc2NodesRequest] attachVpc2NodesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> attachVpc2NodesWithHttpInfo(String vpcId, { AttachVpc2NodesRequest? attachVpc2NodesRequest, }) async {
+  Future<Response> attachVpc2NodesWithHttpInfo(
+    String vpcId, {
+    AttachVpc2NodesRequest? attachVpc2NodesRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/vpc2/{vpc-id}/nodes/attach'
-      .replaceAll('{vpc-id}', vpcId);
+    final path = r'/vpc2/{vpc-id}/nodes/attach'.replaceAll('{vpc-id}', vpcId);
 
     // ignore: prefer_final_locals
     Object? postBody = attachVpc2NodesRequest;
@@ -42,7 +43,6 @@ class VPC2Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -66,8 +66,14 @@ class VPC2Api {
   ///
   /// * [AttachVpc2NodesRequest] attachVpc2NodesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> attachVpc2Nodes(String vpcId, { AttachVpc2NodesRequest? attachVpc2NodesRequest, }) async {
-    final response = await attachVpc2NodesWithHttpInfo(vpcId,  attachVpc2NodesRequest: attachVpc2NodesRequest, );
+  Future<void> attachVpc2Nodes(
+    String vpcId, {
+    AttachVpc2NodesRequest? attachVpc2NodesRequest,
+  }) async {
+    final response = await attachVpc2NodesWithHttpInfo(
+      vpcId,
+      attachVpc2NodesRequest: attachVpc2NodesRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -75,7 +81,7 @@ class VPC2Api {
 
   /// Create a VPC 2.0 network
   ///
-  /// Create a new VPC 2.0 network in a `region`.  **Deprecated**: Migrate to VPC Networks and use [Create a VPC](#operation/create-vpc) instead.  VPCs should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix) 
+  /// Create a new VPC 2.0 network in a `region`.  **Deprecated**: Migrate to VPC Networks and use [Create a VPC](#operation/create-vpc) instead.  VPCs should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
   ///
   /// Note: This method returns the HTTP [Response].
   ///
@@ -83,7 +89,9 @@ class VPC2Api {
   ///
   /// * [CreateVpc2Request] createVpc2Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> createVpc2WithHttpInfo({ CreateVpc2Request? createVpc2Request, }) async {
+  Future<Response> createVpc2WithHttpInfo({
+    CreateVpc2Request? createVpc2Request,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/vpc2';
 
@@ -95,7 +103,6 @@ class VPC2Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -110,23 +117,30 @@ class VPC2Api {
 
   /// Create a VPC 2.0 network
   ///
-  /// Create a new VPC 2.0 network in a `region`.  **Deprecated**: Migrate to VPC Networks and use [Create a VPC](#operation/create-vpc) instead.  VPCs should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix) 
+  /// Create a new VPC 2.0 network in a `region`.  **Deprecated**: Migrate to VPC Networks and use [Create a VPC](#operation/create-vpc) instead.  VPCs should use [RFC1918 private address space](https://tools.ietf.org/html/rfc1918):      10.0.0.0    - 10.255.255.255  (10/8 prefix)     172.16.0.0  - 172.31.255.255  (172.16/12 prefix)     192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
   ///
   /// Parameters:
   ///
   /// * [CreateVpc2Request] createVpc2Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<GetVpc2200Response?> createVpc2({ CreateVpc2Request? createVpc2Request, }) async {
-    final response = await createVpc2WithHttpInfo( createVpc2Request: createVpc2Request, );
+  Future<GetVpc2200Response?> createVpc2({
+    CreateVpc2Request? createVpc2Request,
+  }) async {
+    final response = await createVpc2WithHttpInfo(
+      createVpc2Request: createVpc2Request,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetVpc2200Response',) as GetVpc2200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetVpc2200Response',
+      ) as GetVpc2200Response;
     }
     return null;
   }
@@ -141,10 +155,11 @@ class VPC2Api {
   ///
   /// * [String] vpcId (required):
   ///   The [VPC ID](#operation/list-vpcs).
-  Future<Response> deleteVpc2WithHttpInfo(String vpcId,) async {
+  Future<Response> deleteVpc2WithHttpInfo(
+    String vpcId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/vpc2/{vpc-id}'
-      .replaceAll('{vpc-id}', vpcId);
+    final path = r'/vpc2/{vpc-id}'.replaceAll('{vpc-id}', vpcId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -154,7 +169,6 @@ class VPC2Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -175,8 +189,12 @@ class VPC2Api {
   ///
   /// * [String] vpcId (required):
   ///   The [VPC ID](#operation/list-vpcs).
-  Future<void> deleteVpc2(String vpcId,) async {
-    final response = await deleteVpc2WithHttpInfo(vpcId,);
+  Future<void> deleteVpc2(
+    String vpcId,
+  ) async {
+    final response = await deleteVpc2WithHttpInfo(
+      vpcId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -195,10 +213,12 @@ class VPC2Api {
   ///
   /// * [DetachVpc2NodesRequest] detachVpc2NodesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> detachVpc2NodesWithHttpInfo(String vpcId, { DetachVpc2NodesRequest? detachVpc2NodesRequest, }) async {
+  Future<Response> detachVpc2NodesWithHttpInfo(
+    String vpcId, {
+    DetachVpc2NodesRequest? detachVpc2NodesRequest,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/vpc2/{vpc-id}/nodes/detach'
-      .replaceAll('{vpc-id}', vpcId);
+    final path = r'/vpc2/{vpc-id}/nodes/detach'.replaceAll('{vpc-id}', vpcId);
 
     // ignore: prefer_final_locals
     Object? postBody = detachVpc2NodesRequest;
@@ -208,7 +228,6 @@ class VPC2Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -232,8 +251,14 @@ class VPC2Api {
   ///
   /// * [DetachVpc2NodesRequest] detachVpc2NodesRequest:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> detachVpc2Nodes(String vpcId, { DetachVpc2NodesRequest? detachVpc2NodesRequest, }) async {
-    final response = await detachVpc2NodesWithHttpInfo(vpcId,  detachVpc2NodesRequest: detachVpc2NodesRequest, );
+  Future<void> detachVpc2Nodes(
+    String vpcId, {
+    DetachVpc2NodesRequest? detachVpc2NodesRequest,
+  }) async {
+    final response = await detachVpc2NodesWithHttpInfo(
+      vpcId,
+      detachVpc2NodesRequest: detachVpc2NodesRequest,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
@@ -249,10 +274,11 @@ class VPC2Api {
   ///
   /// * [String] vpcId (required):
   ///   The [VPC ID](#operation/list-vpcs).
-  Future<Response> getVpc2WithHttpInfo(String vpcId,) async {
+  Future<Response> getVpc2WithHttpInfo(
+    String vpcId,
+  ) async {
     // ignore: prefer_const_declarations
-    final path = r'/vpc2/{vpc-id}'
-      .replaceAll('{vpc-id}', vpcId);
+    final path = r'/vpc2/{vpc-id}'.replaceAll('{vpc-id}', vpcId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -262,7 +288,6 @@ class VPC2Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -283,17 +308,24 @@ class VPC2Api {
   ///
   /// * [String] vpcId (required):
   ///   The [VPC ID](#operation/list-vpcs).
-  Future<GetVpc2200Response?> getVpc2(String vpcId,) async {
-    final response = await getVpc2WithHttpInfo(vpcId,);
+  Future<GetVpc2200Response?> getVpc2(
+    String vpcId,
+  ) async {
+    final response = await getVpc2WithHttpInfo(
+      vpcId,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'GetVpc2200Response',) as GetVpc2200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'GetVpc2200Response',
+      ) as GetVpc2200Response;
     }
     return null;
   }
@@ -311,7 +343,10 @@ class VPC2Api {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listVpc2WithHttpInfo({ int? perPage, String? cursor, }) async {
+  Future<Response> listVpc2WithHttpInfo({
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
     final path = r'/vpc2';
 
@@ -331,7 +366,6 @@ class VPC2Api {
 
     const contentTypes = <String>[];
 
-
     return apiClient.invokeAPI(
       path,
       'GET',
@@ -354,17 +388,26 @@ class VPC2Api {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListVpc2200Response?> listVpc2({ int? perPage, String? cursor, }) async {
-    final response = await listVpc2WithHttpInfo( perPage: perPage, cursor: cursor, );
+  Future<ListVpc2200Response?> listVpc2({
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listVpc2WithHttpInfo(
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListVpc2200Response',) as ListVpc2200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListVpc2200Response',
+      ) as ListVpc2200Response;
     }
     return null;
   }
@@ -385,10 +428,13 @@ class VPC2Api {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<Response> listVpc2NodesWithHttpInfo(String vpcId, { int? perPage, String? cursor, }) async {
+  Future<Response> listVpc2NodesWithHttpInfo(
+    String vpcId, {
+    int? perPage,
+    String? cursor,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/vpc2/{vpc-id}/nodes'
-      .replaceAll('{vpc-id}', vpcId);
+    final path = r'/vpc2/{vpc-id}/nodes'.replaceAll('{vpc-id}', vpcId);
 
     // ignore: prefer_final_locals
     Object? postBody;
@@ -405,7 +451,6 @@ class VPC2Api {
     }
 
     const contentTypes = <String>[];
-
 
     return apiClient.invokeAPI(
       path,
@@ -432,17 +477,28 @@ class VPC2Api {
   ///
   /// * [String] cursor:
   ///   Cursor for paging. See [Meta and Pagination](#section/Introduction/Meta-and-Pagination).
-  Future<ListVpc2Nodes200Response?> listVpc2Nodes(String vpcId, { int? perPage, String? cursor, }) async {
-    final response = await listVpc2NodesWithHttpInfo(vpcId,  perPage: perPage, cursor: cursor, );
+  Future<ListVpc2Nodes200Response?> listVpc2Nodes(
+    String vpcId, {
+    int? perPage,
+    String? cursor,
+  }) async {
+    final response = await listVpc2NodesWithHttpInfo(
+      vpcId,
+      perPage: perPage,
+      cursor: cursor,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }
     // When a remote server returns no body with a status of 204, we shall not decode it.
     // At the time of writing this, `dart:convert` will throw an "Unexpected end of input"
     // FormatException when trying to decode an empty string.
-    if (response.body.isNotEmpty && response.statusCode != HttpStatus.noContent) {
-      return await apiClient.deserializeAsync(await _decodeBodyBytes(response), 'ListVpc2Nodes200Response',) as ListVpc2Nodes200Response;
-    
+    if (response.body.isNotEmpty &&
+        response.statusCode != HttpStatus.noContent) {
+      return await apiClient.deserializeAsync(
+        await _decodeBodyBytes(response),
+        'ListVpc2Nodes200Response',
+      ) as ListVpc2Nodes200Response;
     }
     return null;
   }
@@ -460,10 +516,12 @@ class VPC2Api {
   ///
   /// * [UpdateVpc2Request] updateVpc2Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<Response> updateVpc2WithHttpInfo(String vpcId, { UpdateVpc2Request? updateVpc2Request, }) async {
+  Future<Response> updateVpc2WithHttpInfo(
+    String vpcId, {
+    UpdateVpc2Request? updateVpc2Request,
+  }) async {
     // ignore: prefer_const_declarations
-    final path = r'/vpc2/{vpc-id}'
-      .replaceAll('{vpc-id}', vpcId);
+    final path = r'/vpc2/{vpc-id}'.replaceAll('{vpc-id}', vpcId);
 
     // ignore: prefer_final_locals
     Object? postBody = updateVpc2Request;
@@ -473,7 +531,6 @@ class VPC2Api {
     final formParams = <String, String>{};
 
     const contentTypes = <String>['application/json'];
-
 
     return apiClient.invokeAPI(
       path,
@@ -497,8 +554,14 @@ class VPC2Api {
   ///
   /// * [UpdateVpc2Request] updateVpc2Request:
   ///   Include a JSON object in the request body with a content type of **application/json**.
-  Future<void> updateVpc2(String vpcId, { UpdateVpc2Request? updateVpc2Request, }) async {
-    final response = await updateVpc2WithHttpInfo(vpcId,  updateVpc2Request: updateVpc2Request, );
+  Future<void> updateVpc2(
+    String vpcId, {
+    UpdateVpc2Request? updateVpc2Request,
+  }) async {
+    final response = await updateVpc2WithHttpInfo(
+      vpcId,
+      updateVpc2Request: updateVpc2Request,
+    );
     if (response.statusCode >= HttpStatus.badRequest) {
       throw ApiException(response.statusCode, await _decodeBodyBytes(response));
     }

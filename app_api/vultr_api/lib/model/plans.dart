@@ -148,44 +148,47 @@ class Plans {
   Map<String, PlansLocationCostValue> locationCost;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Plans &&
-    other.id == id &&
-    other.name == name &&
-    other.vcpuCount == vcpuCount &&
-    other.ram == ram &&
-    other.disk == disk &&
-    other.bandwidth == bandwidth &&
-    other.invoiceType == invoiceType &&
-    other.monthlyCost == monthlyCost &&
-    other.hourlyCost == hourlyCost &&
-    other.monthlyCostPreemptible == monthlyCostPreemptible &&
-    other.hourlyCostPreemptible == hourlyCostPreemptible &&
-    other.type == type &&
-    _deepEquality.equals(other.locations, locations) &&
-    other.diskCount == diskCount &&
-    _deepEquality.equals(other.locationCost, locationCost);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Plans &&
+          other.id == id &&
+          other.name == name &&
+          other.vcpuCount == vcpuCount &&
+          other.ram == ram &&
+          other.disk == disk &&
+          other.bandwidth == bandwidth &&
+          other.invoiceType == invoiceType &&
+          other.monthlyCost == monthlyCost &&
+          other.hourlyCost == hourlyCost &&
+          other.monthlyCostPreemptible == monthlyCostPreemptible &&
+          other.hourlyCostPreemptible == hourlyCostPreemptible &&
+          other.type == type &&
+          _deepEquality.equals(other.locations, locations) &&
+          other.diskCount == diskCount &&
+          _deepEquality.equals(other.locationCost, locationCost);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (vcpuCount == null ? 0 : vcpuCount!.hashCode) +
-    (ram == null ? 0 : ram!.hashCode) +
-    (disk == null ? 0 : disk!.hashCode) +
-    (bandwidth == null ? 0 : bandwidth!.hashCode) +
-    (invoiceType == null ? 0 : invoiceType!.hashCode) +
-    (monthlyCost == null ? 0 : monthlyCost!.hashCode) +
-    (hourlyCost == null ? 0 : hourlyCost!.hashCode) +
-    (monthlyCostPreemptible == null ? 0 : monthlyCostPreemptible!.hashCode) +
-    (hourlyCostPreemptible == null ? 0 : hourlyCostPreemptible!.hashCode) +
-    (type == null ? 0 : type!.hashCode) +
-    (locations.hashCode) +
-    (diskCount == null ? 0 : diskCount!.hashCode) +
-    (locationCost.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (vcpuCount == null ? 0 : vcpuCount!.hashCode) +
+      (ram == null ? 0 : ram!.hashCode) +
+      (disk == null ? 0 : disk!.hashCode) +
+      (bandwidth == null ? 0 : bandwidth!.hashCode) +
+      (invoiceType == null ? 0 : invoiceType!.hashCode) +
+      (monthlyCost == null ? 0 : monthlyCost!.hashCode) +
+      (hourlyCost == null ? 0 : hourlyCost!.hashCode) +
+      (monthlyCostPreemptible == null ? 0 : monthlyCostPreemptible!.hashCode) +
+      (hourlyCostPreemptible == null ? 0 : hourlyCostPreemptible!.hashCode) +
+      (type == null ? 0 : type!.hashCode) +
+      (locations.hashCode) +
+      (diskCount == null ? 0 : diskCount!.hashCode) +
+      (locationCost.hashCode);
 
   @override
-  String toString() => 'Plans[id=$id, name=$name, vcpuCount=$vcpuCount, ram=$ram, disk=$disk, bandwidth=$bandwidth, invoiceType=$invoiceType, monthlyCost=$monthlyCost, hourlyCost=$hourlyCost, monthlyCostPreemptible=$monthlyCostPreemptible, hourlyCostPreemptible=$hourlyCostPreemptible, type=$type, locations=$locations, diskCount=$diskCount, locationCost=$locationCost]';
+  String toString() =>
+      'Plans[id=$id, name=$name, vcpuCount=$vcpuCount, ram=$ram, disk=$disk, bandwidth=$bandwidth, invoiceType=$invoiceType, monthlyCost=$monthlyCost, hourlyCost=$hourlyCost, monthlyCostPreemptible=$monthlyCostPreemptible, hourlyCostPreemptible=$hourlyCostPreemptible, type=$type, locations=$locations, diskCount=$diskCount, locationCost=$locationCost]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -249,13 +252,13 @@ class Plans {
     } else {
       json[r'type'] = null;
     }
-      json[r'locations'] = this.locations;
+    json[r'locations'] = this.locations;
     if (this.diskCount != null) {
       json[r'disk_count'] = this.diskCount;
     } else {
       json[r'disk_count'] = null;
     }
-      json[r'location_cost'] = this.locationCost;
+    json[r'location_cost'] = this.locationCost;
     return json;
   }
 
@@ -271,8 +274,10 @@ class Plans {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Plans[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Plans[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Plans[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Plans[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -287,20 +292,27 @@ class Plans {
         invoiceType: mapValueOfType<Object>(json, r'invoice_type'),
         monthlyCost: num.parse('${json[r'monthly_cost']}'),
         hourlyCost: num.parse('${json[r'hourly_cost']}'),
-        monthlyCostPreemptible: num.parse('${json[r'monthly_cost_preemptible']}'),
+        monthlyCostPreemptible:
+            num.parse('${json[r'monthly_cost_preemptible']}'),
         hourlyCostPreemptible: num.parse('${json[r'hourly_cost_preemptible']}'),
         type: mapValueOfType<String>(json, r'type'),
         locations: json[r'locations'] is Iterable
-            ? (json[r'locations'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'locations'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
         diskCount: mapValueOfType<int>(json, r'disk_count'),
-        locationCost: PlansLocationCostValue.mapFromJson(json[r'location_cost']),
+        locationCost:
+            PlansLocationCostValue.mapFromJson(json[r'location_cost']),
       );
     }
     return null;
   }
 
-  static List<Plans> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Plans> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Plans>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -328,20 +340,24 @@ class Plans {
   }
 
   // maps a json object with a list of Plans-objects as value to a dart map
-  static Map<String, List<Plans>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Plans>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Plans>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Plans.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Plans.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

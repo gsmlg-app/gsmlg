@@ -10,14 +10,11 @@ part 'base_value.g.dart';
 
 @JsonSerializable()
 class BaseValue {
-  const BaseValue({
-    this.ref,
-    this.sha,
-    this.repo,
-  });
-  
-  factory BaseValue.fromJson(Map<String, Object?> json) => _$BaseValueFromJson(json);
-  
+  const BaseValue({this.ref, this.sha, this.repo});
+
+  factory BaseValue.fromJson(Map<String, Object?> json) =>
+      _$BaseValueFromJson(json);
+
   final String? ref;
   final String? sha;
   final Repo2? repo;

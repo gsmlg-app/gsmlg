@@ -56,22 +56,25 @@ class BaremetalIpv6 {
   String? type;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is BaremetalIpv6 &&
-    other.ip == ip &&
-    other.network == network &&
-    other.networkSize == networkSize &&
-    other.type == type;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BaremetalIpv6 &&
+          other.ip == ip &&
+          other.network == network &&
+          other.networkSize == networkSize &&
+          other.type == type;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (ip == null ? 0 : ip!.hashCode) +
-    (network == null ? 0 : network!.hashCode) +
-    (networkSize == null ? 0 : networkSize!.hashCode) +
-    (type == null ? 0 : type!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (ip == null ? 0 : ip!.hashCode) +
+      (network == null ? 0 : network!.hashCode) +
+      (networkSize == null ? 0 : networkSize!.hashCode) +
+      (type == null ? 0 : type!.hashCode);
 
   @override
-  String toString() => 'BaremetalIpv6[ip=$ip, network=$network, networkSize=$networkSize, type=$type]';
+  String toString() =>
+      'BaremetalIpv6[ip=$ip, network=$network, networkSize=$networkSize, type=$type]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -110,8 +113,10 @@ class BaremetalIpv6 {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "BaremetalIpv6[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "BaremetalIpv6[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "BaremetalIpv6[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "BaremetalIpv6[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -126,7 +131,10 @@ class BaremetalIpv6 {
     return null;
   }
 
-  static List<BaremetalIpv6> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<BaremetalIpv6> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <BaremetalIpv6>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -154,20 +162,24 @@ class BaremetalIpv6 {
   }
 
   // maps a json object with a list of BaremetalIpv6-objects as value to a dart map
-  static Map<String, List<BaremetalIpv6>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<BaremetalIpv6>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<BaremetalIpv6>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = BaremetalIpv6.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = BaremetalIpv6.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

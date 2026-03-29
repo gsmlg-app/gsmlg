@@ -104,9 +104,11 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
 
       switch (event.zone.provider) {
         case DnsProvider.route53:
-          final credentials = await credentialsService.getRoute53Credentials(event.zone.id);
+          final credentials =
+              await credentialsService.getRoute53Credentials(event.zone.id);
           if (credentials == null) {
-            throw Exception('No credentials found for zone. Please re-add the zone.');
+            throw Exception(
+                'No credentials found for zone. Please re-add the zone.');
           }
           final dio = _createRoute53Dio(credentials);
           final client = r53.Route53(dio);
@@ -126,9 +128,11 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
           }
 
         case DnsProvider.cloudflare:
-          final credentials = await credentialsService.getCloudflareCredentials(event.zone.id);
+          final credentials =
+              await credentialsService.getCloudflareCredentials(event.zone.id);
           if (credentials == null) {
-            throw Exception('No credentials found for zone. Please re-add the zone.');
+            throw Exception(
+                'No credentials found for zone. Please re-add the zone.');
           }
           final client = _createCloudflareClient(credentials);
 
@@ -162,7 +166,8 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
     try {
       switch (event.zone.provider) {
         case DnsProvider.route53:
-          final credentials = await credentialsService.getRoute53Credentials(event.zone.id);
+          final credentials =
+              await credentialsService.getRoute53Credentials(event.zone.id);
           if (credentials == null) {
             throw Exception('No credentials found for zone.');
           }
@@ -191,7 +196,8 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
           );
 
         case DnsProvider.cloudflare:
-          final credentials = await credentialsService.getCloudflareCredentials(event.zone.id);
+          final credentials =
+              await credentialsService.getCloudflareCredentials(event.zone.id);
           if (credentials == null) {
             throw Exception('No credentials found for zone.');
           }
@@ -223,7 +229,8 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
     try {
       switch (event.zone.provider) {
         case DnsProvider.route53:
-          final credentials = await credentialsService.getRoute53Credentials(event.zone.id);
+          final credentials =
+              await credentialsService.getRoute53Credentials(event.zone.id);
           if (credentials == null) {
             throw Exception('No credentials found for zone.');
           }
@@ -253,7 +260,8 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
           );
 
         case DnsProvider.cloudflare:
-          final credentials = await credentialsService.getCloudflareCredentials(event.zone.id);
+          final credentials =
+              await credentialsService.getCloudflareCredentials(event.zone.id);
           if (credentials == null) {
             throw Exception('No credentials found for zone.');
           }
@@ -290,7 +298,8 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
     try {
       switch (event.zone.provider) {
         case DnsProvider.route53:
-          final credentials = await credentialsService.getRoute53Credentials(event.zone.id);
+          final credentials =
+              await credentialsService.getRoute53Credentials(event.zone.id);
           if (credentials == null) {
             throw Exception('No credentials found for zone.');
           }
@@ -319,7 +328,8 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
           );
 
         case DnsProvider.cloudflare:
-          final credentials = await credentialsService.getCloudflareCredentials(event.zone.id);
+          final credentials =
+              await credentialsService.getCloudflareCredentials(event.zone.id);
           if (credentials == null) {
             throw Exception('No credentials found for zone.');
           }

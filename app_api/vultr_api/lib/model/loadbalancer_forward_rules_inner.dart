@@ -56,7 +56,7 @@ class LoadbalancerForwardRulesInner {
   ///
   String? backendPortocol;
 
-  /// The port number destination on the backend server. 
+  /// The port number destination on the backend server.
   ///
   /// Please note: This property should have been non-nullable! Since the specification file
   /// does not include a default value (using the "default:" property), however, the generated
@@ -66,24 +66,27 @@ class LoadbalancerForwardRulesInner {
   int? backendPort;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is LoadbalancerForwardRulesInner &&
-    other.id == id &&
-    other.frontendProtocol == frontendProtocol &&
-    other.frontendPort == frontendPort &&
-    other.backendPortocol == backendPortocol &&
-    other.backendPort == backendPort;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LoadbalancerForwardRulesInner &&
+          other.id == id &&
+          other.frontendProtocol == frontendProtocol &&
+          other.frontendPort == frontendPort &&
+          other.backendPortocol == backendPortocol &&
+          other.backendPort == backendPort;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (frontendProtocol == null ? 0 : frontendProtocol!.hashCode) +
-    (frontendPort == null ? 0 : frontendPort!.hashCode) +
-    (backendPortocol == null ? 0 : backendPortocol!.hashCode) +
-    (backendPort == null ? 0 : backendPort!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (frontendProtocol == null ? 0 : frontendProtocol!.hashCode) +
+      (frontendPort == null ? 0 : frontendPort!.hashCode) +
+      (backendPortocol == null ? 0 : backendPortocol!.hashCode) +
+      (backendPort == null ? 0 : backendPort!.hashCode);
 
   @override
-  String toString() => 'LoadbalancerForwardRulesInner[id=$id, frontendProtocol=$frontendProtocol, frontendPort=$frontendPort, backendPortocol=$backendPortocol, backendPort=$backendPort]';
+  String toString() =>
+      'LoadbalancerForwardRulesInner[id=$id, frontendProtocol=$frontendProtocol, frontendPort=$frontendPort, backendPortocol=$backendPortocol, backendPort=$backendPort]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -127,8 +130,10 @@ class LoadbalancerForwardRulesInner {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "LoadbalancerForwardRulesInner[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "LoadbalancerForwardRulesInner[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "LoadbalancerForwardRulesInner[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "LoadbalancerForwardRulesInner[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -144,7 +149,10 @@ class LoadbalancerForwardRulesInner {
     return null;
   }
 
-  static List<LoadbalancerForwardRulesInner> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<LoadbalancerForwardRulesInner> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <LoadbalancerForwardRulesInner>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -172,20 +180,24 @@ class LoadbalancerForwardRulesInner {
   }
 
   // maps a json object with a list of LoadbalancerForwardRulesInner-objects as value to a dart map
-  static Map<String, List<LoadbalancerForwardRulesInner>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<LoadbalancerForwardRulesInner>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<LoadbalancerForwardRulesInner>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = LoadbalancerForwardRulesInner.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = LoadbalancerForwardRulesInner.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

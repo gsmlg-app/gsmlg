@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for SshApi
 void main() {
   // final instance = SshApi();
@@ -61,6 +60,5 @@ void main() {
     test('test updateSshKey', () async {
       // TODO
     });
-
   });
 }

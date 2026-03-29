@@ -19,20 +19,21 @@ class PatchReservedIpsReservedIpRequest {
   String label;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is PatchReservedIpsReservedIpRequest &&
-    other.label == label;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PatchReservedIpsReservedIpRequest && other.label == label;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label.hashCode);
 
   @override
   String toString() => 'PatchReservedIpsReservedIpRequest[label=$label]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'label'] = this.label;
+    json[r'label'] = this.label;
     return json;
   }
 
@@ -48,8 +49,10 @@ class PatchReservedIpsReservedIpRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "PatchReservedIpsReservedIpRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "PatchReservedIpsReservedIpRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "PatchReservedIpsReservedIpRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "PatchReservedIpsReservedIpRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -61,7 +64,10 @@ class PatchReservedIpsReservedIpRequest {
     return null;
   }
 
-  static List<PatchReservedIpsReservedIpRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<PatchReservedIpsReservedIpRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <PatchReservedIpsReservedIpRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -74,7 +80,8 @@ class PatchReservedIpsReservedIpRequest {
     return result.toList(growable: growable);
   }
 
-  static Map<String, PatchReservedIpsReservedIpRequest> mapFromJson(dynamic json) {
+  static Map<String, PatchReservedIpsReservedIpRequest> mapFromJson(
+      dynamic json) {
     final map = <String, PatchReservedIpsReservedIpRequest>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -89,13 +96,19 @@ class PatchReservedIpsReservedIpRequest {
   }
 
   // maps a json object with a list of PatchReservedIpsReservedIpRequest-objects as value to a dart map
-  static Map<String, List<PatchReservedIpsReservedIpRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<PatchReservedIpsReservedIpRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<PatchReservedIpsReservedIpRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = PatchReservedIpsReservedIpRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = PatchReservedIpsReservedIpRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -106,4 +119,3 @@ class PatchReservedIpsReservedIpRequest {
     'label',
   };
 }
-

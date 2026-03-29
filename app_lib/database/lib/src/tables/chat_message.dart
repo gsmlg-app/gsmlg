@@ -21,8 +21,7 @@ class ChatMessageTable extends Table {
   IntColumn get tokenCount => integer().nullable()();
 
   /// Timestamp when the message was created.
-  DateTimeColumn get timestamp =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};

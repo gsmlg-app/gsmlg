@@ -4,7 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 /// A bar widget that displays Bluetooth scanner status and controls.
-class BluetoothScannerBar extends StatefulWidget implements PreferredSizeWidget {
+class BluetoothScannerBar extends StatefulWidget
+    implements PreferredSizeWidget {
   const BluetoothScannerBar({
     super.key,
     this.preferredSize = const Size.fromHeight(24 + 24),

@@ -25,13 +25,14 @@ class RestoreInstance202Response {
   RestoreInstance202ResponseStatus? status;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is RestoreInstance202Response &&
-    other.status == status;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RestoreInstance202Response && other.status == status;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (status == null ? 0 : status!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (status == null ? 0 : status!.hashCode);
 
   @override
   String toString() => 'RestoreInstance202Response[status=$status]';
@@ -58,8 +59,10 @@ class RestoreInstance202Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "RestoreInstance202Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "RestoreInstance202Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "RestoreInstance202Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "RestoreInstance202Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -71,7 +74,10 @@ class RestoreInstance202Response {
     return null;
   }
 
-  static List<RestoreInstance202Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<RestoreInstance202Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <RestoreInstance202Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,20 +105,24 @@ class RestoreInstance202Response {
   }
 
   // maps a json object with a list of RestoreInstance202Response-objects as value to a dart map
-  static Map<String, List<RestoreInstance202Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<RestoreInstance202Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<RestoreInstance202Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = RestoreInstance202Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = RestoreInstance202Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -25,13 +25,14 @@ class GetInstanceUserdata200Response {
   GetInstanceUserdata200ResponseUserData? userData;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetInstanceUserdata200Response &&
-    other.userData == userData;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetInstanceUserdata200Response && other.userData == userData;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (userData == null ? 0 : userData!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (userData == null ? 0 : userData!.hashCode);
 
   @override
   String toString() => 'GetInstanceUserdata200Response[userData=$userData]';
@@ -58,20 +59,26 @@ class GetInstanceUserdata200Response {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetInstanceUserdata200Response[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetInstanceUserdata200Response[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetInstanceUserdata200Response[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetInstanceUserdata200Response[$key]" has a null value in JSON.');
         });
         return true;
       }());
 
       return GetInstanceUserdata200Response(
-        userData: GetInstanceUserdata200ResponseUserData.fromJson(json[r'user_data']),
+        userData:
+            GetInstanceUserdata200ResponseUserData.fromJson(json[r'user_data']),
       );
     }
     return null;
   }
 
-  static List<GetInstanceUserdata200Response> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetInstanceUserdata200Response> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetInstanceUserdata200Response>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -99,20 +106,24 @@ class GetInstanceUserdata200Response {
   }
 
   // maps a json object with a list of GetInstanceUserdata200Response-objects as value to a dart map
-  static Map<String, List<GetInstanceUserdata200Response>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetInstanceUserdata200Response>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetInstanceUserdata200Response>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetInstanceUserdata200Response.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetInstanceUserdata200Response.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

@@ -22,7 +22,7 @@ void main() {
       // TODO
     });
 
-    // The protocol for this rule.  * ICMP * TCP * UDP * GRE * ESP * AH 
+    // The protocol for this rule.  * ICMP * TCP * UDP * GRE * ESP * AH
     // String protocol
     test('to test the property `protocol`', () async {
       // TODO
@@ -46,7 +46,7 @@ void main() {
       // TODO
     });
 
-    // If the source string is given a value of \"cloudflare\" subnet and subnet_size will both be ignored. Possible values:  |   | Value | Description | | - | ------ | ------------- | |   | \"\" | Use the value from `subnet` and `subnet_size`. | |   | cloudflare | Allow all of Cloudflare's IP space through the firewall | |   | [Load Balancer id](#operation/list-load-balancers) | Provide a load balancer ID to use its IPs | 
+    // If the source string is given a value of \"cloudflare\" subnet and subnet_size will both be ignored. Possible values:  |   | Value | Description | | - | ------ | ------------- | |   | \"\" | Use the value from `subnet` and `subnet_size`. | |   | cloudflare | Allow all of Cloudflare's IP space through the firewall | |   | [Load Balancer id](#operation/list-load-balancers) | Provide a load balancer ID to use its IPs |
     // String source_
     test('to test the property `source_`', () async {
       // TODO
@@ -57,8 +57,5 @@ void main() {
     test('to test the property `notes`', () async {
       // TODO
     });
-
-
   });
-
 }

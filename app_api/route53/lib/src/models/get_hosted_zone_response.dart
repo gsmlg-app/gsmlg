@@ -17,9 +17,10 @@ class GetHostedZoneResponse {
     this.delegationSet,
     this.vpCs,
   });
-  
-  factory GetHostedZoneResponse.fromJson(Map<String, Object?> json) => _$GetHostedZoneResponseFromJson(json);
-  
+
+  factory GetHostedZoneResponse.fromJson(Map<String, Object?> json) =>
+      _$GetHostedZoneResponseFromJson(json);
+
   final HostedZone hostedZone;
   final DelegationSet? delegationSet;
   final List<Vpc>? vpCs;

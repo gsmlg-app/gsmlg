@@ -54,28 +54,31 @@ class CreateVpc2Request {
   int? prefixLength;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateVpc2Request &&
-    other.region == region &&
-    other.description == description &&
-    other.ipType == ipType &&
-    other.ipBlock == ipBlock &&
-    other.prefixLength == prefixLength;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateVpc2Request &&
+          other.region == region &&
+          other.description == description &&
+          other.ipType == ipType &&
+          other.ipBlock == ipBlock &&
+          other.prefixLength == prefixLength;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (region.hashCode) +
-    (description == null ? 0 : description!.hashCode) +
-    (ipType == null ? 0 : ipType!.hashCode) +
-    (ipBlock == null ? 0 : ipBlock!.hashCode) +
-    (prefixLength == null ? 0 : prefixLength!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (region.hashCode) +
+      (description == null ? 0 : description!.hashCode) +
+      (ipType == null ? 0 : ipType!.hashCode) +
+      (ipBlock == null ? 0 : ipBlock!.hashCode) +
+      (prefixLength == null ? 0 : prefixLength!.hashCode);
 
   @override
-  String toString() => 'CreateVpc2Request[region=$region, description=$description, ipType=$ipType, ipBlock=$ipBlock, prefixLength=$prefixLength]';
+  String toString() =>
+      'CreateVpc2Request[region=$region, description=$description, ipType=$ipType, ipBlock=$ipBlock, prefixLength=$prefixLength]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'region'] = this.region;
+    json[r'region'] = this.region;
     if (this.description != null) {
       json[r'description'] = this.description;
     } else {
@@ -111,8 +114,10 @@ class CreateVpc2Request {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateVpc2Request[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateVpc2Request[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateVpc2Request[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateVpc2Request[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -128,7 +133,10 @@ class CreateVpc2Request {
     return null;
   }
 
-  static List<CreateVpc2Request> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateVpc2Request> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateVpc2Request>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -156,13 +164,19 @@ class CreateVpc2Request {
   }
 
   // maps a json object with a list of CreateVpc2Request-objects as value to a dart map
-  static Map<String, List<CreateVpc2Request>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateVpc2Request>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateVpc2Request>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateVpc2Request.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateVpc2Request.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -194,9 +208,13 @@ class CreateVpc2RequestIpTypeEnum {
     v4,
   ];
 
-  static CreateVpc2RequestIpTypeEnum? fromJson(dynamic value) => CreateVpc2RequestIpTypeEnumTypeTransformer().decode(value);
+  static CreateVpc2RequestIpTypeEnum? fromJson(dynamic value) =>
+      CreateVpc2RequestIpTypeEnumTypeTransformer().decode(value);
 
-  static List<CreateVpc2RequestIpTypeEnum> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateVpc2RequestIpTypeEnum> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateVpc2RequestIpTypeEnum>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -213,7 +231,8 @@ class CreateVpc2RequestIpTypeEnum {
 /// Transformation class that can [encode] an instance of [CreateVpc2RequestIpTypeEnum] to String,
 /// and [decode] dynamic data back to [CreateVpc2RequestIpTypeEnum].
 class CreateVpc2RequestIpTypeEnumTypeTransformer {
-  factory CreateVpc2RequestIpTypeEnumTypeTransformer() => _instance ??= const CreateVpc2RequestIpTypeEnumTypeTransformer._();
+  factory CreateVpc2RequestIpTypeEnumTypeTransformer() =>
+      _instance ??= const CreateVpc2RequestIpTypeEnumTypeTransformer._();
 
   const CreateVpc2RequestIpTypeEnumTypeTransformer._();
 
@@ -230,7 +249,8 @@ class CreateVpc2RequestIpTypeEnumTypeTransformer {
   CreateVpc2RequestIpTypeEnum? decode(dynamic data, {bool allowNull = true}) {
     if (data != null) {
       switch (data) {
-        case r'v4': return CreateVpc2RequestIpTypeEnum.v4;
+        case r'v4':
+          return CreateVpc2RequestIpTypeEnum.v4;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');
@@ -243,5 +263,3 @@ class CreateVpc2RequestIpTypeEnumTypeTransformer {
   /// Singleton [CreateVpc2RequestIpTypeEnumTypeTransformer] instance.
   static CreateVpc2RequestIpTypeEnumTypeTransformer? _instance;
 }
-
-

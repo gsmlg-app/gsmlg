@@ -101,34 +101,37 @@ class Vfs {
   VfsBilling? billing;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Vfs &&
-    other.id == id &&
-    other.region == region &&
-    other.dateCreated == dateCreated &&
-    other.status == status &&
-    other.label == label &&
-    _deepEquality.equals(other.tags, tags) &&
-    other.diskType == diskType &&
-    other.storageSize == storageSize &&
-    other.storageUsed == storageUsed &&
-    other.billing == billing;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Vfs &&
+          other.id == id &&
+          other.region == region &&
+          other.dateCreated == dateCreated &&
+          other.status == status &&
+          other.label == label &&
+          _deepEquality.equals(other.tags, tags) &&
+          other.diskType == diskType &&
+          other.storageSize == storageSize &&
+          other.storageUsed == storageUsed &&
+          other.billing == billing;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (region == null ? 0 : region!.hashCode) +
-    (dateCreated == null ? 0 : dateCreated!.hashCode) +
-    (status == null ? 0 : status!.hashCode) +
-    (label == null ? 0 : label!.hashCode) +
-    (tags.hashCode) +
-    (diskType == null ? 0 : diskType!.hashCode) +
-    (storageSize == null ? 0 : storageSize!.hashCode) +
-    (storageUsed == null ? 0 : storageUsed!.hashCode) +
-    (billing == null ? 0 : billing!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (region == null ? 0 : region!.hashCode) +
+      (dateCreated == null ? 0 : dateCreated!.hashCode) +
+      (status == null ? 0 : status!.hashCode) +
+      (label == null ? 0 : label!.hashCode) +
+      (tags.hashCode) +
+      (diskType == null ? 0 : diskType!.hashCode) +
+      (storageSize == null ? 0 : storageSize!.hashCode) +
+      (storageUsed == null ? 0 : storageUsed!.hashCode) +
+      (billing == null ? 0 : billing!.hashCode);
 
   @override
-  String toString() => 'Vfs[id=$id, region=$region, dateCreated=$dateCreated, status=$status, label=$label, tags=$tags, diskType=$diskType, storageSize=$storageSize, storageUsed=$storageUsed, billing=$billing]';
+  String toString() =>
+      'Vfs[id=$id, region=$region, dateCreated=$dateCreated, status=$status, label=$label, tags=$tags, diskType=$diskType, storageSize=$storageSize, storageUsed=$storageUsed, billing=$billing]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -157,7 +160,7 @@ class Vfs {
     } else {
       json[r'label'] = null;
     }
-      json[r'tags'] = this.tags;
+    json[r'tags'] = this.tags;
     if (this.diskType != null) {
       json[r'disk_type'] = this.diskType;
     } else {
@@ -193,8 +196,10 @@ class Vfs {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Vfs[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Vfs[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Vfs[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Vfs[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -217,7 +222,10 @@ class Vfs {
     return null;
   }
 
-  static List<Vfs> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Vfs> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Vfs>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -245,21 +253,26 @@ class Vfs {
   }
 
   // maps a json object with a list of Vfs-objects as value to a dart map
-  static Map<String, List<Vfs>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Vfs>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Vfs>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Vfs.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Vfs.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
 
 /// Type of storage disk
@@ -282,9 +295,13 @@ class VfsDiskTypeEnum {
     nvme,
   ];
 
-  static VfsDiskTypeEnum? fromJson(dynamic value) => VfsDiskTypeEnumTypeTransformer().decode(value);
+  static VfsDiskTypeEnum? fromJson(dynamic value) =>
+      VfsDiskTypeEnumTypeTransformer().decode(value);
 
-  static List<VfsDiskTypeEnum> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<VfsDiskTypeEnum> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <VfsDiskTypeEnum>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -301,7 +318,8 @@ class VfsDiskTypeEnum {
 /// Transformation class that can [encode] an instance of [VfsDiskTypeEnum] to String,
 /// and [decode] dynamic data back to [VfsDiskTypeEnum].
 class VfsDiskTypeEnumTypeTransformer {
-  factory VfsDiskTypeEnumTypeTransformer() => _instance ??= const VfsDiskTypeEnumTypeTransformer._();
+  factory VfsDiskTypeEnumTypeTransformer() =>
+      _instance ??= const VfsDiskTypeEnumTypeTransformer._();
 
   const VfsDiskTypeEnumTypeTransformer._();
 
@@ -318,7 +336,8 @@ class VfsDiskTypeEnumTypeTransformer {
   VfsDiskTypeEnum? decode(dynamic data, {bool allowNull = true}) {
     if (data != null) {
       switch (data) {
-        case r'nvme': return VfsDiskTypeEnum.nvme;
+        case r'nvme':
+          return VfsDiskTypeEnum.nvme;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');
@@ -331,5 +350,3 @@ class VfsDiskTypeEnumTypeTransformer {
   /// Singleton [VfsDiskTypeEnumTypeTransformer] instance.
   static VfsDiskTypeEnumTypeTransformer? _instance;
 }
-
-

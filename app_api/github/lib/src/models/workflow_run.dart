@@ -54,9 +54,10 @@ class WorkflowRun {
     this.repository,
     this.triggeringActor,
   });
-  
-  factory WorkflowRun.fromJson(Map<String, Object?> json) => _$WorkflowRunFromJson(json);
-  
+
+  factory WorkflowRun.fromJson(Map<String, Object?> json) =>
+      _$WorkflowRunFromJson(json);
+
   /// The ID of the workflow run
   final int id;
 

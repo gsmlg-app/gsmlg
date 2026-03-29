@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for UsersApi
 void main() {
   // final instance = UsersApi();
@@ -133,6 +132,5 @@ void main() {
     test('test updateUser', () async {
       // TODO
     });
-
   });
 }

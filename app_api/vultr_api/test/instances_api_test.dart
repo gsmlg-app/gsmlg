@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for InstancesApi
 void main() {
   // final instance = InstancesApi();
@@ -82,7 +81,7 @@ void main() {
 
     // Create Instance Reverse IPv4
     //
-    // Create a reverse IPv4 entry for an Instance. The `ip` and `reverse` attributes are required. 
+    // Create a reverse IPv4 entry for an Instance. The `ip` and `reverse` attributes are required.
     //
     //Future createInstanceReverseIpv4(String instanceId, { CreateBaremetalReverseIpv4Request createBaremetalReverseIpv4Request }) async
     test('test createInstanceReverseIpv4', () async {
@@ -385,6 +384,5 @@ void main() {
     test('test updateInstance', () async {
       // TODO
     });
-
   });
 }

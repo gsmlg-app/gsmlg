@@ -43,7 +43,8 @@ abstract class ReposClient {
   Future<List<Repository>> listReposForAuthenticatedUser({
     @Query('direction') Direction? direction,
     @Query('visibility') Visibility? visibility = Visibility.all,
-    @Query('affiliation') String? affiliation = 'owner,collaborator,organization_member',
+    @Query('affiliation')
+    String? affiliation = 'owner,collaborator,organization_member',
     @Query('type') Type? type = Type.all,
     @Query('sort') Sort? sort = Sort.fullName,
     @Query('per_page') int? perPage = 30,

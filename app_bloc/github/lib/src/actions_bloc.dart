@@ -13,10 +13,10 @@ class GitHubActionsBloc extends Bloc<GitHubActionsEvent, GitHubActionsState> {
     required GitHubApi api,
     required String owner,
     required String repo,
-  })  : _api = api,
-        _owner = owner,
-        _repo = repo,
-        super(const GitHubActionsInitial()) {
+  }) : _api = api,
+       _owner = owner,
+       _repo = repo,
+       super(const GitHubActionsInitial()) {
     on<GitHubActionsFetch>(_onFetch);
     on<GitHubActionsFetchRuns>(_onFetchRuns);
     on<GitHubActionsDispatch>(_onDispatch);
@@ -53,10 +53,7 @@ class GitHubActionsBloc extends Bloc<GitHubActionsEvent, GitHubActionsState> {
           .map(GitHubWorkflowRun.fromApiResponse)
           .toList();
 
-      emit(GitHubActionsLoaded(
-        workflows: workflows,
-        runs: runs,
-      ));
+      emit(GitHubActionsLoaded(workflows: workflows, runs: runs));
     } catch (e) {
       emit(GitHubActionsError(message: e.toString()));
     }
@@ -99,10 +96,7 @@ class GitHubActionsBloc extends Bloc<GitHubActionsEvent, GitHubActionsState> {
         owner: _owner,
         repo: _repo,
         workflowId: event.workflowId.toString(),
-        body: WorkflowDispatchRequest(
-          ref: event.ref,
-          inputs: event.inputs,
-        ),
+        body: WorkflowDispatchRequest(ref: event.ref, inputs: event.inputs),
       );
 
       // Wait a bit and refresh runs

@@ -36,18 +36,20 @@ class CreateLoadBalancerReverseDnsIpv6RequestV6Inner {
   String? ip;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateLoadBalancerReverseDnsIpv6RequestV6Inner &&
-    other.domain == domain &&
-    other.ip == ip;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateLoadBalancerReverseDnsIpv6RequestV6Inner &&
+          other.domain == domain &&
+          other.ip == ip;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (domain == null ? 0 : domain!.hashCode) +
-    (ip == null ? 0 : ip!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (domain == null ? 0 : domain!.hashCode) + (ip == null ? 0 : ip!.hashCode);
 
   @override
-  String toString() => 'CreateLoadBalancerReverseDnsIpv6RequestV6Inner[domain=$domain, ip=$ip]';
+  String toString() =>
+      'CreateLoadBalancerReverseDnsIpv6RequestV6Inner[domain=$domain, ip=$ip]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -67,7 +69,8 @@ class CreateLoadBalancerReverseDnsIpv6RequestV6Inner {
   /// Returns a new [CreateLoadBalancerReverseDnsIpv6RequestV6Inner] instance and imports its values from
   /// [value] if it's a [Map], null otherwise.
   // ignore: prefer_constructors_over_static_methods
-  static CreateLoadBalancerReverseDnsIpv6RequestV6Inner? fromJson(dynamic value) {
+  static CreateLoadBalancerReverseDnsIpv6RequestV6Inner? fromJson(
+      dynamic value) {
     if (value is Map) {
       final json = value.cast<String, dynamic>();
 
@@ -76,8 +79,10 @@ class CreateLoadBalancerReverseDnsIpv6RequestV6Inner {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateLoadBalancerReverseDnsIpv6RequestV6Inner[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateLoadBalancerReverseDnsIpv6RequestV6Inner[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateLoadBalancerReverseDnsIpv6RequestV6Inner[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateLoadBalancerReverseDnsIpv6RequestV6Inner[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -90,11 +95,15 @@ class CreateLoadBalancerReverseDnsIpv6RequestV6Inner {
     return null;
   }
 
-  static List<CreateLoadBalancerReverseDnsIpv6RequestV6Inner> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateLoadBalancerReverseDnsIpv6RequestV6Inner> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateLoadBalancerReverseDnsIpv6RequestV6Inner>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
-        final value = CreateLoadBalancerReverseDnsIpv6RequestV6Inner.fromJson(row);
+        final value =
+            CreateLoadBalancerReverseDnsIpv6RequestV6Inner.fromJson(row);
         if (value != null) {
           result.add(value);
         }
@@ -103,12 +112,14 @@ class CreateLoadBalancerReverseDnsIpv6RequestV6Inner {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateLoadBalancerReverseDnsIpv6RequestV6Inner> mapFromJson(dynamic json) {
+  static Map<String, CreateLoadBalancerReverseDnsIpv6RequestV6Inner>
+      mapFromJson(dynamic json) {
     final map = <String, CreateLoadBalancerReverseDnsIpv6RequestV6Inner>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
       for (final entry in json.entries) {
-        final value = CreateLoadBalancerReverseDnsIpv6RequestV6Inner.fromJson(entry.value);
+        final value = CreateLoadBalancerReverseDnsIpv6RequestV6Inner.fromJson(
+            entry.value);
         if (value != null) {
           map[entry.key] = value;
         }
@@ -118,20 +129,27 @@ class CreateLoadBalancerReverseDnsIpv6RequestV6Inner {
   }
 
   // maps a json object with a list of CreateLoadBalancerReverseDnsIpv6RequestV6Inner-objects as value to a dart map
-  static Map<String, List<CreateLoadBalancerReverseDnsIpv6RequestV6Inner>> mapListFromJson(dynamic json, {bool growable = false,}) {
-    final map = <String, List<CreateLoadBalancerReverseDnsIpv6RequestV6Inner>>{};
+  static Map<String, List<CreateLoadBalancerReverseDnsIpv6RequestV6Inner>>
+      mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
+    final map =
+        <String, List<CreateLoadBalancerReverseDnsIpv6RequestV6Inner>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateLoadBalancerReverseDnsIpv6RequestV6Inner.listFromJson(entry.value, growable: growable,);
+        map[entry.key] =
+            CreateLoadBalancerReverseDnsIpv6RequestV6Inner.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

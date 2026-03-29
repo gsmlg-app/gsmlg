@@ -59,3 +59,4 @@ macos/Runner/Resources/litertlm-server.jar
 /.claude/*
 !/.claude/commands/
 !/.claude/skills/
+.mcp.json

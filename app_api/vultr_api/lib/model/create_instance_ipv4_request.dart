@@ -26,13 +26,14 @@ class CreateInstanceIpv4Request {
   bool? reboot;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateInstanceIpv4Request &&
-    other.reboot == reboot;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateInstanceIpv4Request && other.reboot == reboot;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (reboot == null ? 0 : reboot!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (reboot == null ? 0 : reboot!.hashCode);
 
   @override
   String toString() => 'CreateInstanceIpv4Request[reboot=$reboot]';
@@ -59,8 +60,10 @@ class CreateInstanceIpv4Request {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateInstanceIpv4Request[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateInstanceIpv4Request[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateInstanceIpv4Request[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateInstanceIpv4Request[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -72,7 +75,10 @@ class CreateInstanceIpv4Request {
     return null;
   }
 
-  static List<CreateInstanceIpv4Request> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateInstanceIpv4Request> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateInstanceIpv4Request>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -100,20 +106,24 @@ class CreateInstanceIpv4Request {
   }
 
   // maps a json object with a list of CreateInstanceIpv4Request-objects as value to a dart map
-  static Map<String, List<CreateInstanceIpv4Request>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateInstanceIpv4Request>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateInstanceIpv4Request>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateInstanceIpv4Request.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateInstanceIpv4Request.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

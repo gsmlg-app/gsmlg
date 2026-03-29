@@ -15,7 +15,8 @@ part 'resource_record_sets_client.g.dart';
 
 @RestApi()
 abstract class ResourceRecordSetsClient {
-  factory ResourceRecordSetsClient(Dio dio, {String? baseUrl}) = _ResourceRecordSetsClient;
+  factory ResourceRecordSetsClient(Dio dio, {String? baseUrl}) =
+      _ResourceRecordSetsClient;
 
   /// List resource record sets.
   ///

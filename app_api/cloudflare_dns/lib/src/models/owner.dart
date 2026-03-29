@@ -13,9 +13,9 @@ class Owner {
     this.type,
     this.email,
   });
-  
+
   factory Owner.fromJson(Map<String, Object?> json) => _$OwnerFromJson(json);
-  
+
   final String? id;
   final String? type;
   final String? email;

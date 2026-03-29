@@ -24,23 +24,25 @@ class CreateBaremetalReverseIpv4Request {
   String reverse;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateBaremetalReverseIpv4Request &&
-    other.ip == ip &&
-    other.reverse == reverse;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateBaremetalReverseIpv4Request &&
+          other.ip == ip &&
+          other.reverse == reverse;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (ip.hashCode) +
-    (reverse.hashCode);
+      // ignore: unnecessary_parenthesis
+      (ip.hashCode) + (reverse.hashCode);
 
   @override
-  String toString() => 'CreateBaremetalReverseIpv4Request[ip=$ip, reverse=$reverse]';
+  String toString() =>
+      'CreateBaremetalReverseIpv4Request[ip=$ip, reverse=$reverse]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'ip'] = this.ip;
-      json[r'reverse'] = this.reverse;
+    json[r'ip'] = this.ip;
+    json[r'reverse'] = this.reverse;
     return json;
   }
 
@@ -56,8 +58,10 @@ class CreateBaremetalReverseIpv4Request {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateBaremetalReverseIpv4Request[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateBaremetalReverseIpv4Request[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateBaremetalReverseIpv4Request[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateBaremetalReverseIpv4Request[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -70,7 +74,10 @@ class CreateBaremetalReverseIpv4Request {
     return null;
   }
 
-  static List<CreateBaremetalReverseIpv4Request> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateBaremetalReverseIpv4Request> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateBaremetalReverseIpv4Request>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -83,7 +90,8 @@ class CreateBaremetalReverseIpv4Request {
     return result.toList(growable: growable);
   }
 
-  static Map<String, CreateBaremetalReverseIpv4Request> mapFromJson(dynamic json) {
+  static Map<String, CreateBaremetalReverseIpv4Request> mapFromJson(
+      dynamic json) {
     final map = <String, CreateBaremetalReverseIpv4Request>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -98,13 +106,19 @@ class CreateBaremetalReverseIpv4Request {
   }
 
   // maps a json object with a list of CreateBaremetalReverseIpv4Request-objects as value to a dart map
-  static Map<String, List<CreateBaremetalReverseIpv4Request>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateBaremetalReverseIpv4Request>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateBaremetalReverseIpv4Request>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateBaremetalReverseIpv4Request.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateBaremetalReverseIpv4Request.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -116,4 +130,3 @@ class CreateBaremetalReverseIpv4Request {
     'reverse',
   };
 }
-

@@ -76,30 +76,33 @@ class CreateKubernetesClusterRequest {
   List<CreateKubernetesClusterRequestNodePoolsInner> nodePools;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateKubernetesClusterRequest &&
-    other.label == label &&
-    other.region == region &&
-    other.version == version &&
-    other.vpcId == vpcId &&
-    other.haControlplanes == haControlplanes &&
-    other.enableFirewall == enableFirewall &&
-    other.oidc == oidc &&
-    _deepEquality.equals(other.nodePools, nodePools);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateKubernetesClusterRequest &&
+          other.label == label &&
+          other.region == region &&
+          other.version == version &&
+          other.vpcId == vpcId &&
+          other.haControlplanes == haControlplanes &&
+          other.enableFirewall == enableFirewall &&
+          other.oidc == oidc &&
+          _deepEquality.equals(other.nodePools, nodePools);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label == null ? 0 : label!.hashCode) +
-    (region.hashCode) +
-    (version.hashCode) +
-    (vpcId == null ? 0 : vpcId!.hashCode) +
-    (haControlplanes == null ? 0 : haControlplanes!.hashCode) +
-    (enableFirewall == null ? 0 : enableFirewall!.hashCode) +
-    (oidc == null ? 0 : oidc!.hashCode) +
-    (nodePools.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label == null ? 0 : label!.hashCode) +
+      (region.hashCode) +
+      (version.hashCode) +
+      (vpcId == null ? 0 : vpcId!.hashCode) +
+      (haControlplanes == null ? 0 : haControlplanes!.hashCode) +
+      (enableFirewall == null ? 0 : enableFirewall!.hashCode) +
+      (oidc == null ? 0 : oidc!.hashCode) +
+      (nodePools.hashCode);
 
   @override
-  String toString() => 'CreateKubernetesClusterRequest[label=$label, region=$region, version=$version, vpcId=$vpcId, haControlplanes=$haControlplanes, enableFirewall=$enableFirewall, oidc=$oidc, nodePools=$nodePools]';
+  String toString() =>
+      'CreateKubernetesClusterRequest[label=$label, region=$region, version=$version, vpcId=$vpcId, haControlplanes=$haControlplanes, enableFirewall=$enableFirewall, oidc=$oidc, nodePools=$nodePools]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -108,8 +111,8 @@ class CreateKubernetesClusterRequest {
     } else {
       json[r'label'] = null;
     }
-      json[r'region'] = this.region;
-      json[r'version'] = this.version;
+    json[r'region'] = this.region;
+    json[r'version'] = this.version;
     if (this.vpcId != null) {
       json[r'vpc_id'] = this.vpcId;
     } else {
@@ -130,7 +133,7 @@ class CreateKubernetesClusterRequest {
     } else {
       json[r'oidc'] = null;
     }
-      json[r'node_pools'] = this.nodePools;
+    json[r'node_pools'] = this.nodePools;
     return json;
   }
 
@@ -146,8 +149,10 @@ class CreateKubernetesClusterRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateKubernetesClusterRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateKubernetesClusterRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateKubernetesClusterRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateKubernetesClusterRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -160,13 +165,17 @@ class CreateKubernetesClusterRequest {
         haControlplanes: mapValueOfType<bool>(json, r'ha_controlplanes'),
         enableFirewall: mapValueOfType<bool>(json, r'enable_firewall'),
         oidc: CreateKubernetesClusterRequestOidc.fromJson(json[r'oidc']),
-        nodePools: CreateKubernetesClusterRequestNodePoolsInner.listFromJson(json[r'node_pools']),
+        nodePools: CreateKubernetesClusterRequestNodePoolsInner.listFromJson(
+            json[r'node_pools']),
       );
     }
     return null;
   }
 
-  static List<CreateKubernetesClusterRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateKubernetesClusterRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateKubernetesClusterRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -194,13 +203,19 @@ class CreateKubernetesClusterRequest {
   }
 
   // maps a json object with a list of CreateKubernetesClusterRequest-objects as value to a dart map
-  static Map<String, List<CreateKubernetesClusterRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateKubernetesClusterRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateKubernetesClusterRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateKubernetesClusterRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateKubernetesClusterRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -212,4 +227,3 @@ class CreateKubernetesClusterRequest {
     'version',
   };
 }
-

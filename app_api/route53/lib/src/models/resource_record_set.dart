@@ -28,9 +28,10 @@ class ResourceRecordSet {
     this.aliasTarget,
     this.healthCheckId,
   });
-  
-  factory ResourceRecordSet.fromJson(Map<String, Object?> json) => _$ResourceRecordSetFromJson(json);
-  
+
+  factory ResourceRecordSet.fromJson(Map<String, Object?> json) =>
+      _$ResourceRecordSetFromJson(json);
+
   /// The name of the domain.
   final String name;
   final RecordType type;

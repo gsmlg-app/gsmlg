@@ -57,8 +57,5 @@ void main() {
     test('to test the property `lastPaymentAmount`', () async {
       // TODO
     });
-
-
   });
-
 }

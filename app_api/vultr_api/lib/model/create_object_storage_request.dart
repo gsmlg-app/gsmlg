@@ -34,25 +34,28 @@ class CreateObjectStorageRequest {
   String? label;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is CreateObjectStorageRequest &&
-    other.clusterId == clusterId &&
-    other.tierId == tierId &&
-    other.label == label;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CreateObjectStorageRequest &&
+          other.clusterId == clusterId &&
+          other.tierId == tierId &&
+          other.label == label;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (clusterId.hashCode) +
-    (tierId.hashCode) +
-    (label == null ? 0 : label!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (clusterId.hashCode) +
+      (tierId.hashCode) +
+      (label == null ? 0 : label!.hashCode);
 
   @override
-  String toString() => 'CreateObjectStorageRequest[clusterId=$clusterId, tierId=$tierId, label=$label]';
+  String toString() =>
+      'CreateObjectStorageRequest[clusterId=$clusterId, tierId=$tierId, label=$label]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
-      json[r'cluster_id'] = this.clusterId;
-      json[r'tier_id'] = this.tierId;
+    json[r'cluster_id'] = this.clusterId;
+    json[r'tier_id'] = this.tierId;
     if (this.label != null) {
       json[r'label'] = this.label;
     } else {
@@ -73,8 +76,10 @@ class CreateObjectStorageRequest {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "CreateObjectStorageRequest[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "CreateObjectStorageRequest[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "CreateObjectStorageRequest[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "CreateObjectStorageRequest[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -88,7 +93,10 @@ class CreateObjectStorageRequest {
     return null;
   }
 
-  static List<CreateObjectStorageRequest> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<CreateObjectStorageRequest> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <CreateObjectStorageRequest>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -116,13 +124,19 @@ class CreateObjectStorageRequest {
   }
 
   // maps a json object with a list of CreateObjectStorageRequest-objects as value to a dart map
-  static Map<String, List<CreateObjectStorageRequest>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<CreateObjectStorageRequest>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<CreateObjectStorageRequest>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = CreateObjectStorageRequest.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = CreateObjectStorageRequest.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
@@ -134,4 +148,3 @@ class CreateObjectStorageRequest {
     'tier_id',
   };
 }
-

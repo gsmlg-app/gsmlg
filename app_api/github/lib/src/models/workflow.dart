@@ -23,9 +23,10 @@ class Workflow {
     this.htmlUrl,
     this.badgeUrl,
   });
-  
-  factory Workflow.fromJson(Map<String, Object?> json) => _$WorkflowFromJson(json);
-  
+
+  factory Workflow.fromJson(Map<String, Object?> json) =>
+      _$WorkflowFromJson(json);
+
   /// Unique identifier of the workflow
   final int id;
   @JsonKey(name: 'node_id')

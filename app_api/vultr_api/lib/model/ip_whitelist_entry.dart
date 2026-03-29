@@ -50,22 +50,25 @@ class IpWhitelistEntry {
   IpWhitelistEntryIpTypeEnum? ipType;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is IpWhitelistEntry &&
-    other.subnet == subnet &&
-    other.subnetSize == subnetSize &&
-    other.dateAdded == dateAdded &&
-    other.ipType == ipType;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is IpWhitelistEntry &&
+          other.subnet == subnet &&
+          other.subnetSize == subnetSize &&
+          other.dateAdded == dateAdded &&
+          other.ipType == ipType;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (subnet == null ? 0 : subnet!.hashCode) +
-    (subnetSize == null ? 0 : subnetSize!.hashCode) +
-    (dateAdded == null ? 0 : dateAdded!.hashCode) +
-    (ipType == null ? 0 : ipType!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (subnet == null ? 0 : subnet!.hashCode) +
+      (subnetSize == null ? 0 : subnetSize!.hashCode) +
+      (dateAdded == null ? 0 : dateAdded!.hashCode) +
+      (ipType == null ? 0 : ipType!.hashCode);
 
   @override
-  String toString() => 'IpWhitelistEntry[subnet=$subnet, subnetSize=$subnetSize, dateAdded=$dateAdded, ipType=$ipType]';
+  String toString() =>
+      'IpWhitelistEntry[subnet=$subnet, subnetSize=$subnetSize, dateAdded=$dateAdded, ipType=$ipType]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -104,8 +107,10 @@ class IpWhitelistEntry {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "IpWhitelistEntry[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "IpWhitelistEntry[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "IpWhitelistEntry[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "IpWhitelistEntry[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -120,7 +125,10 @@ class IpWhitelistEntry {
     return null;
   }
 
-  static List<IpWhitelistEntry> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<IpWhitelistEntry> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <IpWhitelistEntry>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -148,21 +156,26 @@ class IpWhitelistEntry {
   }
 
   // maps a json object with a list of IpWhitelistEntry-objects as value to a dart map
-  static Map<String, List<IpWhitelistEntry>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<IpWhitelistEntry>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<IpWhitelistEntry>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = IpWhitelistEntry.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = IpWhitelistEntry.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
 
 /// The IP type (v4 or v6).
@@ -187,9 +200,13 @@ class IpWhitelistEntryIpTypeEnum {
     v6,
   ];
 
-  static IpWhitelistEntryIpTypeEnum? fromJson(dynamic value) => IpWhitelistEntryIpTypeEnumTypeTransformer().decode(value);
+  static IpWhitelistEntryIpTypeEnum? fromJson(dynamic value) =>
+      IpWhitelistEntryIpTypeEnumTypeTransformer().decode(value);
 
-  static List<IpWhitelistEntryIpTypeEnum> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<IpWhitelistEntryIpTypeEnum> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <IpWhitelistEntryIpTypeEnum>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -206,7 +223,8 @@ class IpWhitelistEntryIpTypeEnum {
 /// Transformation class that can [encode] an instance of [IpWhitelistEntryIpTypeEnum] to String,
 /// and [decode] dynamic data back to [IpWhitelistEntryIpTypeEnum].
 class IpWhitelistEntryIpTypeEnumTypeTransformer {
-  factory IpWhitelistEntryIpTypeEnumTypeTransformer() => _instance ??= const IpWhitelistEntryIpTypeEnumTypeTransformer._();
+  factory IpWhitelistEntryIpTypeEnumTypeTransformer() =>
+      _instance ??= const IpWhitelistEntryIpTypeEnumTypeTransformer._();
 
   const IpWhitelistEntryIpTypeEnumTypeTransformer._();
 
@@ -223,8 +241,10 @@ class IpWhitelistEntryIpTypeEnumTypeTransformer {
   IpWhitelistEntryIpTypeEnum? decode(dynamic data, {bool allowNull = true}) {
     if (data != null) {
       switch (data) {
-        case r'v4': return IpWhitelistEntryIpTypeEnum.v4;
-        case r'v6': return IpWhitelistEntryIpTypeEnum.v6;
+        case r'v4':
+          return IpWhitelistEntryIpTypeEnum.v4;
+        case r'v6':
+          return IpWhitelistEntryIpTypeEnum.v6;
         default:
           if (!allowNull) {
             throw ArgumentError('Unknown enum value to decode: $data');
@@ -237,5 +257,3 @@ class IpWhitelistEntryIpTypeEnumTypeTransformer {
   /// Singleton [IpWhitelistEntryIpTypeEnumTypeTransformer] instance.
   static IpWhitelistEntryIpTypeEnumTypeTransformer? _instance;
 }
-
-

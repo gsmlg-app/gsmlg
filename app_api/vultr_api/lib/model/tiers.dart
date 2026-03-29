@@ -120,36 +120,39 @@ class Tiers {
   List<TiersLocationsInner> locations;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is Tiers &&
-    other.id == id &&
-    other.bwGbPrice == bwGbPrice &&
-    other.diskGbPrice == diskGbPrice &&
-    other.isDefault == isDefault &&
-    other.price == price &&
-    other.ratelimitOpsBytes == ratelimitOpsBytes &&
-    other.ratelimitOpsSecs == ratelimitOpsSecs &&
-    other.salesDesc == salesDesc &&
-    other.salesName == salesName &&
-    other.slug == slug &&
-    _deepEquality.equals(other.locations, locations);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Tiers &&
+          other.id == id &&
+          other.bwGbPrice == bwGbPrice &&
+          other.diskGbPrice == diskGbPrice &&
+          other.isDefault == isDefault &&
+          other.price == price &&
+          other.ratelimitOpsBytes == ratelimitOpsBytes &&
+          other.ratelimitOpsSecs == ratelimitOpsSecs &&
+          other.salesDesc == salesDesc &&
+          other.salesName == salesName &&
+          other.slug == slug &&
+          _deepEquality.equals(other.locations, locations);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (id == null ? 0 : id!.hashCode) +
-    (bwGbPrice == null ? 0 : bwGbPrice!.hashCode) +
-    (diskGbPrice == null ? 0 : diskGbPrice!.hashCode) +
-    (isDefault == null ? 0 : isDefault!.hashCode) +
-    (price == null ? 0 : price!.hashCode) +
-    (ratelimitOpsBytes == null ? 0 : ratelimitOpsBytes!.hashCode) +
-    (ratelimitOpsSecs == null ? 0 : ratelimitOpsSecs!.hashCode) +
-    (salesDesc == null ? 0 : salesDesc!.hashCode) +
-    (salesName == null ? 0 : salesName!.hashCode) +
-    (slug == null ? 0 : slug!.hashCode) +
-    (locations.hashCode);
+      // ignore: unnecessary_parenthesis
+      (id == null ? 0 : id!.hashCode) +
+      (bwGbPrice == null ? 0 : bwGbPrice!.hashCode) +
+      (diskGbPrice == null ? 0 : diskGbPrice!.hashCode) +
+      (isDefault == null ? 0 : isDefault!.hashCode) +
+      (price == null ? 0 : price!.hashCode) +
+      (ratelimitOpsBytes == null ? 0 : ratelimitOpsBytes!.hashCode) +
+      (ratelimitOpsSecs == null ? 0 : ratelimitOpsSecs!.hashCode) +
+      (salesDesc == null ? 0 : salesDesc!.hashCode) +
+      (salesName == null ? 0 : salesName!.hashCode) +
+      (slug == null ? 0 : slug!.hashCode) +
+      (locations.hashCode);
 
   @override
-  String toString() => 'Tiers[id=$id, bwGbPrice=$bwGbPrice, diskGbPrice=$diskGbPrice, isDefault=$isDefault, price=$price, ratelimitOpsBytes=$ratelimitOpsBytes, ratelimitOpsSecs=$ratelimitOpsSecs, salesDesc=$salesDesc, salesName=$salesName, slug=$slug, locations=$locations]';
+  String toString() =>
+      'Tiers[id=$id, bwGbPrice=$bwGbPrice, diskGbPrice=$diskGbPrice, isDefault=$isDefault, price=$price, ratelimitOpsBytes=$ratelimitOpsBytes, ratelimitOpsSecs=$ratelimitOpsSecs, salesDesc=$salesDesc, salesName=$salesName, slug=$slug, locations=$locations]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -203,7 +206,7 @@ class Tiers {
     } else {
       json[r'slug'] = null;
     }
-      json[r'locations'] = this.locations;
+    json[r'locations'] = this.locations;
     return json;
   }
 
@@ -219,8 +222,10 @@ class Tiers {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "Tiers[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "Tiers[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "Tiers[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "Tiers[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -242,7 +247,10 @@ class Tiers {
     return null;
   }
 
-  static List<Tiers> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<Tiers> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <Tiers>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -270,20 +278,24 @@ class Tiers {
   }
 
   // maps a json object with a list of Tiers-objects as value to a dart map
-  static Map<String, List<Tiers>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<Tiers>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<Tiers>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = Tiers.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = Tiers.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

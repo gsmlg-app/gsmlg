@@ -34,18 +34,20 @@ class GetInvoiceItems200ResponseMetaLinks {
   String? prev;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is GetInvoiceItems200ResponseMetaLinks &&
-    other.next == next &&
-    other.prev == prev;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetInvoiceItems200ResponseMetaLinks &&
+          other.next == next &&
+          other.prev == prev;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (next == null ? 0 : next!.hashCode) +
-    (prev == null ? 0 : prev!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (next == null ? 0 : next!.hashCode) + (prev == null ? 0 : prev!.hashCode);
 
   @override
-  String toString() => 'GetInvoiceItems200ResponseMetaLinks[next=$next, prev=$prev]';
+  String toString() =>
+      'GetInvoiceItems200ResponseMetaLinks[next=$next, prev=$prev]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -74,8 +76,10 @@ class GetInvoiceItems200ResponseMetaLinks {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "GetInvoiceItems200ResponseMetaLinks[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "GetInvoiceItems200ResponseMetaLinks[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "GetInvoiceItems200ResponseMetaLinks[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "GetInvoiceItems200ResponseMetaLinks[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -88,7 +92,10 @@ class GetInvoiceItems200ResponseMetaLinks {
     return null;
   }
 
-  static List<GetInvoiceItems200ResponseMetaLinks> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<GetInvoiceItems200ResponseMetaLinks> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <GetInvoiceItems200ResponseMetaLinks>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -101,7 +108,8 @@ class GetInvoiceItems200ResponseMetaLinks {
     return result.toList(growable: growable);
   }
 
-  static Map<String, GetInvoiceItems200ResponseMetaLinks> mapFromJson(dynamic json) {
+  static Map<String, GetInvoiceItems200ResponseMetaLinks> mapFromJson(
+      dynamic json) {
     final map = <String, GetInvoiceItems200ResponseMetaLinks>{};
     if (json is Map && json.isNotEmpty) {
       json = json.cast<String, dynamic>(); // ignore: parameter_assignments
@@ -116,20 +124,24 @@ class GetInvoiceItems200ResponseMetaLinks {
   }
 
   // maps a json object with a list of GetInvoiceItems200ResponseMetaLinks-objects as value to a dart map
-  static Map<String, List<GetInvoiceItems200ResponseMetaLinks>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<GetInvoiceItems200ResponseMetaLinks>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<GetInvoiceItems200ResponseMetaLinks>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = GetInvoiceItems200ResponseMetaLinks.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = GetInvoiceItems200ResponseMetaLinks.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

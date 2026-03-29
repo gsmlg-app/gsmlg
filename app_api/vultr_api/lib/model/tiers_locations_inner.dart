@@ -56,22 +56,25 @@ class TiersLocationsInner {
   String? region;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is TiersLocationsInner &&
-    other.hostname == hostname &&
-    other.id == id &&
-    other.name == name &&
-    other.region == region;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TiersLocationsInner &&
+          other.hostname == hostname &&
+          other.id == id &&
+          other.name == name &&
+          other.region == region;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (hostname == null ? 0 : hostname!.hashCode) +
-    (id == null ? 0 : id!.hashCode) +
-    (name == null ? 0 : name!.hashCode) +
-    (region == null ? 0 : region!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (hostname == null ? 0 : hostname!.hashCode) +
+      (id == null ? 0 : id!.hashCode) +
+      (name == null ? 0 : name!.hashCode) +
+      (region == null ? 0 : region!.hashCode);
 
   @override
-  String toString() => 'TiersLocationsInner[hostname=$hostname, id=$id, name=$name, region=$region]';
+  String toString() =>
+      'TiersLocationsInner[hostname=$hostname, id=$id, name=$name, region=$region]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -110,8 +113,10 @@ class TiersLocationsInner {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "TiersLocationsInner[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "TiersLocationsInner[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "TiersLocationsInner[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "TiersLocationsInner[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -126,7 +131,10 @@ class TiersLocationsInner {
     return null;
   }
 
-  static List<TiersLocationsInner> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<TiersLocationsInner> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <TiersLocationsInner>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -154,20 +162,24 @@ class TiersLocationsInner {
   }
 
   // maps a json object with a list of TiersLocationsInner-objects as value to a dart map
-  static Map<String, List<TiersLocationsInner>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<TiersLocationsInner>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<TiersLocationsInner>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = TiersLocationsInner.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = TiersLocationsInner.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

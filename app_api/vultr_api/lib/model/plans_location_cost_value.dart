@@ -56,22 +56,25 @@ class PlansLocationCostValue {
   num? hourlyCostPreemptible;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is PlansLocationCostValue &&
-    other.monthlyCost == monthlyCost &&
-    other.hourlyCost == hourlyCost &&
-    other.monthlyCostPreemptible == monthlyCostPreemptible &&
-    other.hourlyCostPreemptible == hourlyCostPreemptible;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlansLocationCostValue &&
+          other.monthlyCost == monthlyCost &&
+          other.hourlyCost == hourlyCost &&
+          other.monthlyCostPreemptible == monthlyCostPreemptible &&
+          other.hourlyCostPreemptible == hourlyCostPreemptible;
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (monthlyCost == null ? 0 : monthlyCost!.hashCode) +
-    (hourlyCost == null ? 0 : hourlyCost!.hashCode) +
-    (monthlyCostPreemptible == null ? 0 : monthlyCostPreemptible!.hashCode) +
-    (hourlyCostPreemptible == null ? 0 : hourlyCostPreemptible!.hashCode);
+      // ignore: unnecessary_parenthesis
+      (monthlyCost == null ? 0 : monthlyCost!.hashCode) +
+      (hourlyCost == null ? 0 : hourlyCost!.hashCode) +
+      (monthlyCostPreemptible == null ? 0 : monthlyCostPreemptible!.hashCode) +
+      (hourlyCostPreemptible == null ? 0 : hourlyCostPreemptible!.hashCode);
 
   @override
-  String toString() => 'PlansLocationCostValue[monthlyCost=$monthlyCost, hourlyCost=$hourlyCost, monthlyCostPreemptible=$monthlyCostPreemptible, hourlyCostPreemptible=$hourlyCostPreemptible]';
+  String toString() =>
+      'PlansLocationCostValue[monthlyCost=$monthlyCost, hourlyCost=$hourlyCost, monthlyCostPreemptible=$monthlyCostPreemptible, hourlyCostPreemptible=$hourlyCostPreemptible]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -110,8 +113,10 @@ class PlansLocationCostValue {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "PlansLocationCostValue[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "PlansLocationCostValue[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "PlansLocationCostValue[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "PlansLocationCostValue[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -119,14 +124,18 @@ class PlansLocationCostValue {
       return PlansLocationCostValue(
         monthlyCost: num.parse('${json[r'monthly_cost']}'),
         hourlyCost: num.parse('${json[r'hourly_cost']}'),
-        monthlyCostPreemptible: num.parse('${json[r'monthly_cost_preemptible']}'),
+        monthlyCostPreemptible:
+            num.parse('${json[r'monthly_cost_preemptible']}'),
         hourlyCostPreemptible: num.parse('${json[r'hourly_cost_preemptible']}'),
       );
     }
     return null;
   }
 
-  static List<PlansLocationCostValue> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<PlansLocationCostValue> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <PlansLocationCostValue>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -154,20 +163,24 @@ class PlansLocationCostValue {
   }
 
   // maps a json object with a list of PlansLocationCostValue-objects as value to a dart map
-  static Map<String, List<PlansLocationCostValue>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<PlansLocationCostValue>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<PlansLocationCostValue>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = PlansLocationCostValue.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = PlansLocationCostValue.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

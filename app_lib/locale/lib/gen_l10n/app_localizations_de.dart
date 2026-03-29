@@ -346,4 +346,101 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get account => 'Account';
+
+  @override
+  String get monitorTitle => 'Monitor';
+
+  @override
+  String get monitorAddHost => 'Add Host';
+
+  @override
+  String get monitorDiscovering => 'Scanning network...';
+
+  @override
+  String get monitorNoHosts =>
+      'No hosts found. Add one manually or start an agent on your network.';
+
+  @override
+  String get monitorCpu => 'CPU';
+
+  @override
+  String get monitorMemory => 'Memory';
+
+  @override
+  String get monitorGpu => 'GPU';
+
+  @override
+  String get monitorNetwork => 'Network';
+
+  @override
+  String get monitorDisk => 'Disk';
+
+  @override
+  String get monitorConnecting => 'Connecting...';
+
+  @override
+  String get monitorConnected => 'Connected';
+
+  @override
+  String get monitorDisconnected => 'Disconnected';
+
+  @override
+  String get monitorError => 'Unreachable';
+
+  @override
+  String monitorLoadAvg(String one, String five, String fifteen) {
+    return 'Load: $one, $five, $fifteen';
+  }
+
+  @override
+  String monitorSwap(String percent) {
+    return 'Swap: $percent%';
+  }
+
+  @override
+  String monitorGpuTemp(String temp) {
+    return '$temp°C';
+  }
+
+  @override
+  String get monitorHostIp => 'IP Address';
+
+  @override
+  String get monitorHostPort => 'Port';
+
+  @override
+  String get monitorHostPortDefault => 'Default: 9723';
+
+  @override
+  String get monitorRemoveHost => 'Remove Host';
+
+  @override
+  String monitorRemoveHostConfirm(String hostname) {
+    return 'Remove $hostname from the list?';
+  }
+
+  @override
+  String get monitorTrustTitle => 'Trust this agent?';
+
+  @override
+  String get monitorTrustBody =>
+      'Verify this fingerprint matches the agent\'s terminal output.';
+
+  @override
+  String get monitorTrustAction => 'Trust';
+
+  @override
+  String get monitorCertMismatchTitle => 'Certificate changed!';
+
+  @override
+  String get monitorCertMismatchBody =>
+      'The agent\'s certificate has changed since you last connected. This could indicate a security issue.';
+
+  @override
+  String get monitorReTrust => 'Trust Anyway';
+
+  @override
+  String monitorVersionWarning(String version) {
+    return 'Agent v$version — update available';
+  }
 }

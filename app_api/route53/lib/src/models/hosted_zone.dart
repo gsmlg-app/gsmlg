@@ -19,9 +19,10 @@ class HostedZone {
     this.resourceRecordSetCount,
     this.linkedService,
   });
-  
-  factory HostedZone.fromJson(Map<String, Object?> json) => _$HostedZoneFromJson(json);
-  
+
+  factory HostedZone.fromJson(Map<String, Object?> json) =>
+      _$HostedZoneFromJson(json);
+
   /// The ID that Amazon Route 53 assigned to the hosted zone when you created it.
   final String id;
 

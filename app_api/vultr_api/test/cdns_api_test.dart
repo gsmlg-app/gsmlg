@@ -11,7 +11,6 @@
 import 'package:vultr_api/api.dart';
 import 'package:test/test.dart';
 
-
 /// tests for CDNsApi
 void main() {
   // final instance = CDNsApi();
@@ -151,6 +150,5 @@ void main() {
     test('test updatePushzone', () async {
       // TODO
     });
-
   });
 }

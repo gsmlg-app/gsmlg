@@ -10,14 +10,10 @@ part 'head.g.dart';
 
 @JsonSerializable()
 class Head {
-  const Head({
-    this.ref,
-    this.sha,
-    this.repo,
-  });
-  
+  const Head({this.ref, this.sha, this.repo});
+
   factory Head.fromJson(Map<String, Object?> json) => _$HeadFromJson(json);
-  
+
   final String? ref;
   final String? sha;
   final Repo? repo;

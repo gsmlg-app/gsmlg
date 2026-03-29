@@ -9,10 +9,9 @@ part 'repos_event.dart';
 part 'repos_state.dart';
 
 class GitHubReposBloc extends Bloc<GitHubReposEvent, GitHubReposState> {
-  GitHubReposBloc({
-    required GitHubApi api,
-  })  : _api = api,
-        super(const GitHubReposInitial()) {
+  GitHubReposBloc({required GitHubApi api})
+    : _api = api,
+      super(const GitHubReposInitial()) {
     on<GitHubReposFetch>(_onFetch);
     on<GitHubReposFetchOrgs>(_onFetchOrgs);
     on<GitHubReposFetchOrgRepos>(_onFetchOrgRepos);
@@ -30,17 +29,17 @@ class GitHubReposBloc extends Bloc<GitHubReposEvent, GitHubReposState> {
     try {
       // Fetch user repos
       final userRepoResponses = await _fetchAllUserRepos();
-      final userRepos = userRepoResponses.map(GitHubRepo.fromApiResponse).toList();
+      final userRepos = userRepoResponses
+          .map(GitHubRepo.fromApiResponse)
+          .toList();
 
       // Fetch organizations
       final orgResponses = await _api.users.listOrgsForAuthenticatedUser();
       final orgs = orgResponses.map(GitHubOrg.fromApiResponse).toList();
 
-      emit(GitHubReposLoaded(
-        userRepos: userRepos,
-        orgs: orgs,
-        orgRepos: const {},
-      ));
+      emit(
+        GitHubReposLoaded(userRepos: userRepos, orgs: orgs, orgRepos: const {}),
+      );
     } catch (e) {
       emit(GitHubReposError(message: e.toString()));
     }
@@ -72,7 +71,9 @@ class GitHubReposBloc extends Bloc<GitHubReposEvent, GitHubReposState> {
     try {
       final repoResponses = await _fetchAllOrgRepos(event.orgLogin);
       final repos = repoResponses.map(GitHubRepo.fromApiResponse).toList();
-      final updatedOrgRepos = Map<String, List<GitHubRepo>>.from(currentState.orgRepos);
+      final updatedOrgRepos = Map<String, List<GitHubRepo>>.from(
+        currentState.orgRepos,
+      );
       updatedOrgRepos[event.orgLogin] = repos;
       emit(currentState.copyWith(orgRepos: updatedOrgRepos));
     } catch (e) {

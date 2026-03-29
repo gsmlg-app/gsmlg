@@ -49,22 +49,25 @@ class StorageGatewayExport {
   List<String> allowedIps;
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is StorageGatewayExport &&
-    other.label == label &&
-    other.vfsUuid == vfsUuid &&
-    other.pseudoRootPath == pseudoRootPath &&
-    _deepEquality.equals(other.allowedIps, allowedIps);
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StorageGatewayExport &&
+          other.label == label &&
+          other.vfsUuid == vfsUuid &&
+          other.pseudoRootPath == pseudoRootPath &&
+          _deepEquality.equals(other.allowedIps, allowedIps);
 
   @override
   int get hashCode =>
-    // ignore: unnecessary_parenthesis
-    (label == null ? 0 : label!.hashCode) +
-    (vfsUuid == null ? 0 : vfsUuid!.hashCode) +
-    (pseudoRootPath == null ? 0 : pseudoRootPath!.hashCode) +
-    (allowedIps.hashCode);
+      // ignore: unnecessary_parenthesis
+      (label == null ? 0 : label!.hashCode) +
+      (vfsUuid == null ? 0 : vfsUuid!.hashCode) +
+      (pseudoRootPath == null ? 0 : pseudoRootPath!.hashCode) +
+      (allowedIps.hashCode);
 
   @override
-  String toString() => 'StorageGatewayExport[label=$label, vfsUuid=$vfsUuid, pseudoRootPath=$pseudoRootPath, allowedIps=$allowedIps]';
+  String toString() =>
+      'StorageGatewayExport[label=$label, vfsUuid=$vfsUuid, pseudoRootPath=$pseudoRootPath, allowedIps=$allowedIps]';
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
@@ -83,7 +86,7 @@ class StorageGatewayExport {
     } else {
       json[r'pseudo_root_path'] = null;
     }
-      json[r'allowed_ips'] = this.allowedIps;
+    json[r'allowed_ips'] = this.allowedIps;
     return json;
   }
 
@@ -99,8 +102,10 @@ class StorageGatewayExport {
       // Note 2: this code is stripped in release mode!
       assert(() {
         requiredKeys.forEach((key) {
-          assert(json.containsKey(key), 'Required key "StorageGatewayExport[$key]" is missing from JSON.');
-          assert(json[key] != null, 'Required key "StorageGatewayExport[$key]" has a null value in JSON.');
+          assert(json.containsKey(key),
+              'Required key "StorageGatewayExport[$key]" is missing from JSON.');
+          assert(json[key] != null,
+              'Required key "StorageGatewayExport[$key]" has a null value in JSON.');
         });
         return true;
       }());
@@ -110,14 +115,19 @@ class StorageGatewayExport {
         vfsUuid: mapValueOfType<String>(json, r'vfs_uuid'),
         pseudoRootPath: mapValueOfType<String>(json, r'pseudo_root_path'),
         allowedIps: json[r'allowed_ips'] is Iterable
-            ? (json[r'allowed_ips'] as Iterable).cast<String>().toList(growable: false)
+            ? (json[r'allowed_ips'] as Iterable)
+                .cast<String>()
+                .toList(growable: false)
             : const [],
       );
     }
     return null;
   }
 
-  static List<StorageGatewayExport> listFromJson(dynamic json, {bool growable = false,}) {
+  static List<StorageGatewayExport> listFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final result = <StorageGatewayExport>[];
     if (json is List && json.isNotEmpty) {
       for (final row in json) {
@@ -145,20 +155,24 @@ class StorageGatewayExport {
   }
 
   // maps a json object with a list of StorageGatewayExport-objects as value to a dart map
-  static Map<String, List<StorageGatewayExport>> mapListFromJson(dynamic json, {bool growable = false,}) {
+  static Map<String, List<StorageGatewayExport>> mapListFromJson(
+    dynamic json, {
+    bool growable = false,
+  }) {
     final map = <String, List<StorageGatewayExport>>{};
     if (json is Map && json.isNotEmpty) {
       // ignore: parameter_assignments
       json = json.cast<String, dynamic>();
       for (final entry in json.entries) {
-        map[entry.key] = StorageGatewayExport.listFromJson(entry.value, growable: growable,);
+        map[entry.key] = StorageGatewayExport.listFromJson(
+          entry.value,
+          growable: growable,
+        );
       }
     }
     return map;
   }
 
   /// The list of required keys that must be present in a JSON.
-  static const requiredKeys = <String>{
-  };
+  static const requiredKeys = <String>{};
 }
-

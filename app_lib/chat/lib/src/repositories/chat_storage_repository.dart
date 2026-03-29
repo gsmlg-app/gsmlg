@@ -51,12 +51,11 @@ class ChatStorageRepository {
 
   /// Updates only the conversation title.
   Future<void> updateConversationTitle(String id, String title) async {
-    await (_db.update(_db.chatConversationTable)
-          ..where((t) => t.id.equals(id)))
+    await (_db.update(_db.chatConversationTable)..where((t) => t.id.equals(id)))
         .write(ChatConversationTableCompanion(
-          title: Value(title),
-          updatedAt: Value(DateTime.now()),
-        ));
+      title: Value(title),
+      updatedAt: Value(DateTime.now()),
+    ));
   }
 
   /// Deletes a conversation and all its messages.
@@ -64,8 +63,7 @@ class ChatStorageRepository {
     await (_db.delete(_db.chatMessageTable)
           ..where((t) => t.conversationId.equals(id)))
         .go();
-    await (_db.delete(_db.chatConversationTable)
-          ..where((t) => t.id.equals(id)))
+    await (_db.delete(_db.chatConversationTable)..where((t) => t.id.equals(id)))
         .go();
   }
 
@@ -111,8 +109,8 @@ class ChatStorageRepository {
     await (_db.update(_db.chatConversationTable)
           ..where((t) => t.id.equals(message.conversationId)))
         .write(ChatConversationTableCompanion(
-          updatedAt: Value(DateTime.now()),
-        ));
+      updatedAt: Value(DateTime.now()),
+    ));
   }
 
   /// Updates the content of an existing message.

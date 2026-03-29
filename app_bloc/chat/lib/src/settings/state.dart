@@ -67,8 +67,9 @@ class ChatSettingsState extends Equatable {
     return ChatSettingsState(
       status: status ?? this.status,
       config: config ?? this.config,
-      defaultSystemPrompt:
-          clearSystemPrompt ? null : (defaultSystemPrompt ?? this.defaultSystemPrompt),
+      defaultSystemPrompt: clearSystemPrompt
+          ? null
+          : (defaultSystemPrompt ?? this.defaultSystemPrompt),
       errorMessage: errorMessage,
       configChanged: configChanged ?? false,
     );
