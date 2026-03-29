@@ -26,6 +26,7 @@ workspace:
   - app_bloc/vultr
   - app_bloc/accounts
   - app_bloc/chat
+  - app_bloc/monitor
   - app_widget/adaptive
   - app_widget/artwork
   - app_widget/feedback
@@ -51,6 +52,8 @@ workspace:
   - third_party/gsmlg_whois
   - app_form/camera_settings
   - app_lib/ip_db
+  - monitor_models
+  - monitor_agent
 
 dependencies:
   flutter:
@@ -80,8 +83,10 @@ dependencies:
   camera: ^0.11.1
   camera_macos: any
 
+  crypto: any
   dio: any
   flutter_gemma: any
+  multicast_dns: any
   url_launcher: ^6.3.1
 
   # workspace packages
@@ -121,6 +126,9 @@ dependencies:
   ip_db: any
   app_chat: any
   chat_bloc: any
+  monitor_bloc: any
+  monitor_models: any
+  monitor_agent: any
 
   # data visualization
   data_visualization: ^1.0.0

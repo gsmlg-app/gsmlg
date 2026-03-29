@@ -25,6 +25,7 @@ dependencies:
   github_bloc: any
   vultr_bloc: any
   chat_bloc: any
+  monitor_bloc: any
   app_database: any
   app_secure_storage: any
   app_chat: any

@@ -1,0 +1,16 @@
+name: monitor_models
+description: Shared data models for GSMLG Monitor
+publish_to: none
+resolution: workspace
+
+version: 1.0.0
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  equatable: any
+  meta: any
+
+dev_dependencies:
+  test: any

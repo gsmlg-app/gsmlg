@@ -791,6 +791,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account'**
   String get account;
+
+  /// No description provided for @monitorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Monitor'**
+  String get monitorTitle;
+
+  /// No description provided for @monitorAddHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Host'**
+  String get monitorAddHost;
+
+  /// No description provided for @monitorDiscovering.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning network...'**
+  String get monitorDiscovering;
+
+  /// No description provided for @monitorNoHosts.
+  ///
+  /// In en, this message translates to:
+  /// **'No hosts found. Add one manually or start an agent on your network.'**
+  String get monitorNoHosts;
+
+  /// No description provided for @monitorCpu.
+  ///
+  /// In en, this message translates to:
+  /// **'CPU'**
+  String get monitorCpu;
+
+  /// No description provided for @monitorMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get monitorMemory;
+
+  /// No description provided for @monitorGpu.
+  ///
+  /// In en, this message translates to:
+  /// **'GPU'**
+  String get monitorGpu;
+
+  /// No description provided for @monitorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get monitorNetwork;
+
+  /// No description provided for @monitorDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Disk'**
+  String get monitorDisk;
+
+  /// No description provided for @monitorConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting...'**
+  String get monitorConnecting;
+
+  /// No description provided for @monitorConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get monitorConnected;
+
+  /// No description provided for @monitorDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected'**
+  String get monitorDisconnected;
+
+  /// No description provided for @monitorError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unreachable'**
+  String get monitorError;
+
+  /// No description provided for @monitorLoadAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Load: {one}, {five}, {fifteen}'**
+  String monitorLoadAvg(String one, String five, String fifteen);
+
+  /// No description provided for @monitorSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap: {percent}%'**
+  String monitorSwap(String percent);
+
+  /// No description provided for @monitorGpuTemp.
+  ///
+  /// In en, this message translates to:
+  /// **'{temp}°C'**
+  String monitorGpuTemp(String temp);
+
+  /// No description provided for @monitorHostIp.
+  ///
+  /// In en, this message translates to:
+  /// **'IP Address'**
+  String get monitorHostIp;
+
+  /// No description provided for @monitorHostPort.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get monitorHostPort;
+
+  /// No description provided for @monitorHostPortDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'Default: 9723'**
+  String get monitorHostPortDefault;
+
+  /// No description provided for @monitorRemoveHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Host'**
+  String get monitorRemoveHost;
+
+  /// No description provided for @monitorRemoveHostConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {hostname} from the list?'**
+  String monitorRemoveHostConfirm(String hostname);
+
+  /// No description provided for @monitorTrustTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trust this agent?'**
+  String get monitorTrustTitle;
+
+  /// No description provided for @monitorTrustBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify this fingerprint matches the agent\'s terminal output.'**
+  String get monitorTrustBody;
+
+  /// No description provided for @monitorTrustAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Trust'**
+  String get monitorTrustAction;
+
+  /// No description provided for @monitorCertMismatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Certificate changed!'**
+  String get monitorCertMismatchTitle;
+
+  /// No description provided for @monitorCertMismatchBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The agent\'s certificate has changed since you last connected. This could indicate a security issue.'**
+  String get monitorCertMismatchBody;
+
+  /// No description provided for @monitorReTrust.
+  ///
+  /// In en, this message translates to:
+  /// **'Trust Anyway'**
+  String get monitorReTrust;
+
+  /// No description provided for @monitorVersionWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent v{version} — update available'**
+  String monitorVersionWarning(String version);
 }
 
 class _AppLocalizationsDelegate

@@ -2855,6 +2855,659 @@ class ServiceAccountTableCompanion
   }
 }
 
+class $MonitorHostTableTable extends MonitorHostTable
+    with TableInfo<$MonitorHostTableTable, MonitorHostTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MonitorHostTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _ipMeta = const VerificationMeta('ip');
+  @override
+  late final GeneratedColumn<String> ip = GeneratedColumn<String>(
+      'ip', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _portMeta = const VerificationMeta('port');
+  @override
+  late final GeneratedColumn<int> port = GeneratedColumn<int>(
+      'port', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+      'label', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isManualMeta =
+      const VerificationMeta('isManual');
+  @override
+  late final GeneratedColumn<bool> isManual = GeneratedColumn<bool>(
+      'is_manual', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_manual" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, ip, port, label, isManual, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'monitor_host_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<MonitorHostTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('ip')) {
+      context.handle(_ipMeta, ip.isAcceptableOrUnknown(data['ip']!, _ipMeta));
+    } else if (isInserting) {
+      context.missing(_ipMeta);
+    }
+    if (data.containsKey('port')) {
+      context.handle(
+          _portMeta, port.isAcceptableOrUnknown(data['port']!, _portMeta));
+    } else if (isInserting) {
+      context.missing(_portMeta);
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+          _labelMeta, label.isAcceptableOrUnknown(data['label']!, _labelMeta));
+    }
+    if (data.containsKey('is_manual')) {
+      context.handle(_isManualMeta,
+          isManual.isAcceptableOrUnknown(data['is_manual']!, _isManualMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MonitorHostTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MonitorHostTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      ip: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}ip'])!,
+      port: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}port'])!,
+      label: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}label']),
+      isManual: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_manual'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $MonitorHostTableTable createAlias(String alias) {
+    return $MonitorHostTableTable(attachedDatabase, alias);
+  }
+}
+
+class MonitorHostTableData extends DataClass
+    implements Insertable<MonitorHostTableData> {
+  /// Primary key: "ip:port".
+  final String id;
+
+  /// IP address of the host.
+  final String ip;
+
+  /// Port number.
+  final int port;
+
+  /// Optional human-readable label.
+  final String? label;
+
+  /// Whether this host was added manually (vs discovered via mDNS).
+  final bool isManual;
+
+  /// Timestamp when the host was first added.
+  final DateTime createdAt;
+  const MonitorHostTableData(
+      {required this.id,
+      required this.ip,
+      required this.port,
+      this.label,
+      required this.isManual,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['ip'] = Variable<String>(ip);
+    map['port'] = Variable<int>(port);
+    if (!nullToAbsent || label != null) {
+      map['label'] = Variable<String>(label);
+    }
+    map['is_manual'] = Variable<bool>(isManual);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  MonitorHostTableCompanion toCompanion(bool nullToAbsent) {
+    return MonitorHostTableCompanion(
+      id: Value(id),
+      ip: Value(ip),
+      port: Value(port),
+      label:
+          label == null && nullToAbsent ? const Value.absent() : Value(label),
+      isManual: Value(isManual),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory MonitorHostTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MonitorHostTableData(
+      id: serializer.fromJson<String>(json['id']),
+      ip: serializer.fromJson<String>(json['ip']),
+      port: serializer.fromJson<int>(json['port']),
+      label: serializer.fromJson<String?>(json['label']),
+      isManual: serializer.fromJson<bool>(json['isManual']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ip': serializer.toJson<String>(ip),
+      'port': serializer.toJson<int>(port),
+      'label': serializer.toJson<String?>(label),
+      'isManual': serializer.toJson<bool>(isManual),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  MonitorHostTableData copyWith(
+          {String? id,
+          String? ip,
+          int? port,
+          Value<String?> label = const Value.absent(),
+          bool? isManual,
+          DateTime? createdAt}) =>
+      MonitorHostTableData(
+        id: id ?? this.id,
+        ip: ip ?? this.ip,
+        port: port ?? this.port,
+        label: label.present ? label.value : this.label,
+        isManual: isManual ?? this.isManual,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  MonitorHostTableData copyWithCompanion(MonitorHostTableCompanion data) {
+    return MonitorHostTableData(
+      id: data.id.present ? data.id.value : this.id,
+      ip: data.ip.present ? data.ip.value : this.ip,
+      port: data.port.present ? data.port.value : this.port,
+      label: data.label.present ? data.label.value : this.label,
+      isManual: data.isManual.present ? data.isManual.value : this.isManual,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MonitorHostTableData(')
+          ..write('id: $id, ')
+          ..write('ip: $ip, ')
+          ..write('port: $port, ')
+          ..write('label: $label, ')
+          ..write('isManual: $isManual, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, ip, port, label, isManual, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MonitorHostTableData &&
+          other.id == this.id &&
+          other.ip == this.ip &&
+          other.port == this.port &&
+          other.label == this.label &&
+          other.isManual == this.isManual &&
+          other.createdAt == this.createdAt);
+}
+
+class MonitorHostTableCompanion extends UpdateCompanion<MonitorHostTableData> {
+  final Value<String> id;
+  final Value<String> ip;
+  final Value<int> port;
+  final Value<String?> label;
+  final Value<bool> isManual;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const MonitorHostTableCompanion({
+    this.id = const Value.absent(),
+    this.ip = const Value.absent(),
+    this.port = const Value.absent(),
+    this.label = const Value.absent(),
+    this.isManual = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MonitorHostTableCompanion.insert({
+    required String id,
+    required String ip,
+    required int port,
+    this.label = const Value.absent(),
+    this.isManual = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        ip = Value(ip),
+        port = Value(port);
+  static Insertable<MonitorHostTableData> custom({
+    Expression<String>? id,
+    Expression<String>? ip,
+    Expression<int>? port,
+    Expression<String>? label,
+    Expression<bool>? isManual,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ip != null) 'ip': ip,
+      if (port != null) 'port': port,
+      if (label != null) 'label': label,
+      if (isManual != null) 'is_manual': isManual,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MonitorHostTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? ip,
+      Value<int>? port,
+      Value<String?>? label,
+      Value<bool>? isManual,
+      Value<DateTime>? createdAt,
+      Value<int>? rowid}) {
+    return MonitorHostTableCompanion(
+      id: id ?? this.id,
+      ip: ip ?? this.ip,
+      port: port ?? this.port,
+      label: label ?? this.label,
+      isManual: isManual ?? this.isManual,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ip.present) {
+      map['ip'] = Variable<String>(ip.value);
+    }
+    if (port.present) {
+      map['port'] = Variable<int>(port.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (isManual.present) {
+      map['is_manual'] = Variable<bool>(isManual.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MonitorHostTableCompanion(')
+          ..write('id: $id, ')
+          ..write('ip: $ip, ')
+          ..write('port: $port, ')
+          ..write('label: $label, ')
+          ..write('isManual: $isManual, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $MonitorTrustedCertTableTable extends MonitorTrustedCertTable
+    with TableInfo<$MonitorTrustedCertTableTable, MonitorTrustedCertTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MonitorTrustedCertTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _hostIdMeta = const VerificationMeta('hostId');
+  @override
+  late final GeneratedColumn<String> hostId = GeneratedColumn<String>(
+      'host_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES monitor_host_table (id)'));
+  static const VerificationMeta _fingerprintMeta =
+      const VerificationMeta('fingerprint');
+  @override
+  late final GeneratedColumn<String> fingerprint = GeneratedColumn<String>(
+      'fingerprint', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _firstTrustedAtMeta =
+      const VerificationMeta('firstTrustedAt');
+  @override
+  late final GeneratedColumn<DateTime> firstTrustedAt =
+      GeneratedColumn<DateTime>('first_trusted_at', aliasedName, false,
+          type: DriftSqlType.dateTime,
+          requiredDuringInsert: false,
+          defaultValue: currentDateAndTime);
+  static const VerificationMeta _lastVerifiedAtMeta =
+      const VerificationMeta('lastVerifiedAt');
+  @override
+  late final GeneratedColumn<DateTime> lastVerifiedAt =
+      GeneratedColumn<DateTime>('last_verified_at', aliasedName, false,
+          type: DriftSqlType.dateTime,
+          requiredDuringInsert: false,
+          defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [hostId, fingerprint, firstTrustedAt, lastVerifiedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'monitor_trusted_cert_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<MonitorTrustedCertTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('host_id')) {
+      context.handle(_hostIdMeta,
+          hostId.isAcceptableOrUnknown(data['host_id']!, _hostIdMeta));
+    } else if (isInserting) {
+      context.missing(_hostIdMeta);
+    }
+    if (data.containsKey('fingerprint')) {
+      context.handle(
+          _fingerprintMeta,
+          fingerprint.isAcceptableOrUnknown(
+              data['fingerprint']!, _fingerprintMeta));
+    } else if (isInserting) {
+      context.missing(_fingerprintMeta);
+    }
+    if (data.containsKey('first_trusted_at')) {
+      context.handle(
+          _firstTrustedAtMeta,
+          firstTrustedAt.isAcceptableOrUnknown(
+              data['first_trusted_at']!, _firstTrustedAtMeta));
+    }
+    if (data.containsKey('last_verified_at')) {
+      context.handle(
+          _lastVerifiedAtMeta,
+          lastVerifiedAt.isAcceptableOrUnknown(
+              data['last_verified_at']!, _lastVerifiedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {hostId};
+  @override
+  MonitorTrustedCertTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MonitorTrustedCertTableData(
+      hostId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}host_id'])!,
+      fingerprint: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}fingerprint'])!,
+      firstTrustedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}first_trusted_at'])!,
+      lastVerifiedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_verified_at'])!,
+    );
+  }
+
+  @override
+  $MonitorTrustedCertTableTable createAlias(String alias) {
+    return $MonitorTrustedCertTableTable(attachedDatabase, alias);
+  }
+}
+
+class MonitorTrustedCertTableData extends DataClass
+    implements Insertable<MonitorTrustedCertTableData> {
+  /// Foreign key referencing [MonitorHostTable.id].
+  final String hostId;
+
+  /// SHA-256 fingerprint of the pinned certificate.
+  final String fingerprint;
+
+  /// When the fingerprint was first trusted.
+  final DateTime firstTrustedAt;
+
+  /// When the fingerprint was last verified against a live connection.
+  final DateTime lastVerifiedAt;
+  const MonitorTrustedCertTableData(
+      {required this.hostId,
+      required this.fingerprint,
+      required this.firstTrustedAt,
+      required this.lastVerifiedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['host_id'] = Variable<String>(hostId);
+    map['fingerprint'] = Variable<String>(fingerprint);
+    map['first_trusted_at'] = Variable<DateTime>(firstTrustedAt);
+    map['last_verified_at'] = Variable<DateTime>(lastVerifiedAt);
+    return map;
+  }
+
+  MonitorTrustedCertTableCompanion toCompanion(bool nullToAbsent) {
+    return MonitorTrustedCertTableCompanion(
+      hostId: Value(hostId),
+      fingerprint: Value(fingerprint),
+      firstTrustedAt: Value(firstTrustedAt),
+      lastVerifiedAt: Value(lastVerifiedAt),
+    );
+  }
+
+  factory MonitorTrustedCertTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MonitorTrustedCertTableData(
+      hostId: serializer.fromJson<String>(json['hostId']),
+      fingerprint: serializer.fromJson<String>(json['fingerprint']),
+      firstTrustedAt: serializer.fromJson<DateTime>(json['firstTrustedAt']),
+      lastVerifiedAt: serializer.fromJson<DateTime>(json['lastVerifiedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'hostId': serializer.toJson<String>(hostId),
+      'fingerprint': serializer.toJson<String>(fingerprint),
+      'firstTrustedAt': serializer.toJson<DateTime>(firstTrustedAt),
+      'lastVerifiedAt': serializer.toJson<DateTime>(lastVerifiedAt),
+    };
+  }
+
+  MonitorTrustedCertTableData copyWith(
+          {String? hostId,
+          String? fingerprint,
+          DateTime? firstTrustedAt,
+          DateTime? lastVerifiedAt}) =>
+      MonitorTrustedCertTableData(
+        hostId: hostId ?? this.hostId,
+        fingerprint: fingerprint ?? this.fingerprint,
+        firstTrustedAt: firstTrustedAt ?? this.firstTrustedAt,
+        lastVerifiedAt: lastVerifiedAt ?? this.lastVerifiedAt,
+      );
+  MonitorTrustedCertTableData copyWithCompanion(
+      MonitorTrustedCertTableCompanion data) {
+    return MonitorTrustedCertTableData(
+      hostId: data.hostId.present ? data.hostId.value : this.hostId,
+      fingerprint:
+          data.fingerprint.present ? data.fingerprint.value : this.fingerprint,
+      firstTrustedAt: data.firstTrustedAt.present
+          ? data.firstTrustedAt.value
+          : this.firstTrustedAt,
+      lastVerifiedAt: data.lastVerifiedAt.present
+          ? data.lastVerifiedAt.value
+          : this.lastVerifiedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MonitorTrustedCertTableData(')
+          ..write('hostId: $hostId, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('firstTrustedAt: $firstTrustedAt, ')
+          ..write('lastVerifiedAt: $lastVerifiedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(hostId, fingerprint, firstTrustedAt, lastVerifiedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MonitorTrustedCertTableData &&
+          other.hostId == this.hostId &&
+          other.fingerprint == this.fingerprint &&
+          other.firstTrustedAt == this.firstTrustedAt &&
+          other.lastVerifiedAt == this.lastVerifiedAt);
+}
+
+class MonitorTrustedCertTableCompanion
+    extends UpdateCompanion<MonitorTrustedCertTableData> {
+  final Value<String> hostId;
+  final Value<String> fingerprint;
+  final Value<DateTime> firstTrustedAt;
+  final Value<DateTime> lastVerifiedAt;
+  final Value<int> rowid;
+  const MonitorTrustedCertTableCompanion({
+    this.hostId = const Value.absent(),
+    this.fingerprint = const Value.absent(),
+    this.firstTrustedAt = const Value.absent(),
+    this.lastVerifiedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MonitorTrustedCertTableCompanion.insert({
+    required String hostId,
+    required String fingerprint,
+    this.firstTrustedAt = const Value.absent(),
+    this.lastVerifiedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : hostId = Value(hostId),
+        fingerprint = Value(fingerprint);
+  static Insertable<MonitorTrustedCertTableData> custom({
+    Expression<String>? hostId,
+    Expression<String>? fingerprint,
+    Expression<DateTime>? firstTrustedAt,
+    Expression<DateTime>? lastVerifiedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (hostId != null) 'host_id': hostId,
+      if (fingerprint != null) 'fingerprint': fingerprint,
+      if (firstTrustedAt != null) 'first_trusted_at': firstTrustedAt,
+      if (lastVerifiedAt != null) 'last_verified_at': lastVerifiedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MonitorTrustedCertTableCompanion copyWith(
+      {Value<String>? hostId,
+      Value<String>? fingerprint,
+      Value<DateTime>? firstTrustedAt,
+      Value<DateTime>? lastVerifiedAt,
+      Value<int>? rowid}) {
+    return MonitorTrustedCertTableCompanion(
+      hostId: hostId ?? this.hostId,
+      fingerprint: fingerprint ?? this.fingerprint,
+      firstTrustedAt: firstTrustedAt ?? this.firstTrustedAt,
+      lastVerifiedAt: lastVerifiedAt ?? this.lastVerifiedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (hostId.present) {
+      map['host_id'] = Variable<String>(hostId.value);
+    }
+    if (fingerprint.present) {
+      map['fingerprint'] = Variable<String>(fingerprint.value);
+    }
+    if (firstTrustedAt.present) {
+      map['first_trusted_at'] = Variable<DateTime>(firstTrustedAt.value);
+    }
+    if (lastVerifiedAt.present) {
+      map['last_verified_at'] = Variable<DateTime>(lastVerifiedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MonitorTrustedCertTableCompanion(')
+          ..write('hostId: $hostId, ')
+          ..write('fingerprint: $fingerprint, ')
+          ..write('firstTrustedAt: $firstTrustedAt, ')
+          ..write('lastVerifiedAt: $lastVerifiedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2871,6 +3524,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ChatSettingsTableTable(this);
   late final $ServiceAccountTableTable serviceAccountTable =
       $ServiceAccountTableTable(this);
+  late final $MonitorHostTableTable monitorHostTable =
+      $MonitorHostTableTable(this);
+  late final $MonitorTrustedCertTableTable monitorTrustedCertTable =
+      $MonitorTrustedCertTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2882,7 +3539,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         chatConversationTable,
         chatMessageTable,
         chatSettingsTable,
-        serviceAccountTable
+        serviceAccountTable,
+        monitorHostTable,
+        monitorTrustedCertTable
       ];
 }
 
@@ -4517,6 +5176,562 @@ typedef $$ServiceAccountTableTableProcessedTableManager = ProcessedTableManager<
     ),
     ServiceAccountTableData,
     PrefetchHooks Function()>;
+typedef $$MonitorHostTableTableCreateCompanionBuilder
+    = MonitorHostTableCompanion Function({
+  required String id,
+  required String ip,
+  required int port,
+  Value<String?> label,
+  Value<bool> isManual,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+typedef $$MonitorHostTableTableUpdateCompanionBuilder
+    = MonitorHostTableCompanion Function({
+  Value<String> id,
+  Value<String> ip,
+  Value<int> port,
+  Value<String?> label,
+  Value<bool> isManual,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+final class $$MonitorHostTableTableReferences extends BaseReferences<
+    _$AppDatabase, $MonitorHostTableTable, MonitorHostTableData> {
+  $$MonitorHostTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$MonitorTrustedCertTableTable,
+      List<MonitorTrustedCertTableData>> _monitorTrustedCertTableRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.monitorTrustedCertTable,
+          aliasName: $_aliasNameGenerator(
+              db.monitorHostTable.id, db.monitorTrustedCertTable.hostId));
+
+  $$MonitorTrustedCertTableTableProcessedTableManager
+      get monitorTrustedCertTableRefs {
+    final manager = $$MonitorTrustedCertTableTableTableManager(
+            $_db, $_db.monitorTrustedCertTable)
+        .filter((f) => f.hostId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_monitorTrustedCertTableRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$MonitorHostTableTableFilterComposer
+    extends Composer<_$AppDatabase, $MonitorHostTableTable> {
+  $$MonitorHostTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get ip => $composableBuilder(
+      column: $table.ip, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get port => $composableBuilder(
+      column: $table.port, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get label => $composableBuilder(
+      column: $table.label, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isManual => $composableBuilder(
+      column: $table.isManual, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> monitorTrustedCertTableRefs(
+      Expression<bool> Function($$MonitorTrustedCertTableTableFilterComposer f)
+          f) {
+    final $$MonitorTrustedCertTableTableFilterComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.monitorTrustedCertTable,
+            getReferencedColumn: (t) => t.hostId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$MonitorTrustedCertTableTableFilterComposer(
+                  $db: $db,
+                  $table: $db.monitorTrustedCertTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+}
+
+class $$MonitorHostTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $MonitorHostTableTable> {
+  $$MonitorHostTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get ip => $composableBuilder(
+      column: $table.ip, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get port => $composableBuilder(
+      column: $table.port, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get label => $composableBuilder(
+      column: $table.label, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isManual => $composableBuilder(
+      column: $table.isManual, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$MonitorHostTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MonitorHostTableTable> {
+  $$MonitorHostTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get ip =>
+      $composableBuilder(column: $table.ip, builder: (column) => column);
+
+  GeneratedColumn<int> get port =>
+      $composableBuilder(column: $table.port, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<bool> get isManual =>
+      $composableBuilder(column: $table.isManual, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> monitorTrustedCertTableRefs<T extends Object>(
+      Expression<T> Function($$MonitorTrustedCertTableTableAnnotationComposer a)
+          f) {
+    final $$MonitorTrustedCertTableTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.monitorTrustedCertTable,
+            getReferencedColumn: (t) => t.hostId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$MonitorTrustedCertTableTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.monitorTrustedCertTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
+}
+
+class $$MonitorHostTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $MonitorHostTableTable,
+    MonitorHostTableData,
+    $$MonitorHostTableTableFilterComposer,
+    $$MonitorHostTableTableOrderingComposer,
+    $$MonitorHostTableTableAnnotationComposer,
+    $$MonitorHostTableTableCreateCompanionBuilder,
+    $$MonitorHostTableTableUpdateCompanionBuilder,
+    (MonitorHostTableData, $$MonitorHostTableTableReferences),
+    MonitorHostTableData,
+    PrefetchHooks Function({bool monitorTrustedCertTableRefs})> {
+  $$MonitorHostTableTableTableManager(
+      _$AppDatabase db, $MonitorHostTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MonitorHostTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MonitorHostTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MonitorHostTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> ip = const Value.absent(),
+            Value<int> port = const Value.absent(),
+            Value<String?> label = const Value.absent(),
+            Value<bool> isManual = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              MonitorHostTableCompanion(
+            id: id,
+            ip: ip,
+            port: port,
+            label: label,
+            isManual: isManual,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String ip,
+            required int port,
+            Value<String?> label = const Value.absent(),
+            Value<bool> isManual = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              MonitorHostTableCompanion.insert(
+            id: id,
+            ip: ip,
+            port: port,
+            label: label,
+            isManual: isManual,
+            createdAt: createdAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$MonitorHostTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({monitorTrustedCertTableRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (monitorTrustedCertTableRefs) db.monitorTrustedCertTable
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (monitorTrustedCertTableRefs)
+                    await $_getPrefetchedData<
+                            MonitorHostTableData,
+                            $MonitorHostTableTable,
+                            MonitorTrustedCertTableData>(
+                        currentTable: table,
+                        referencedTable: $$MonitorHostTableTableReferences
+                            ._monitorTrustedCertTableRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$MonitorHostTableTableReferences(db, table, p0)
+                                .monitorTrustedCertTableRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.hostId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$MonitorHostTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $MonitorHostTableTable,
+    MonitorHostTableData,
+    $$MonitorHostTableTableFilterComposer,
+    $$MonitorHostTableTableOrderingComposer,
+    $$MonitorHostTableTableAnnotationComposer,
+    $$MonitorHostTableTableCreateCompanionBuilder,
+    $$MonitorHostTableTableUpdateCompanionBuilder,
+    (MonitorHostTableData, $$MonitorHostTableTableReferences),
+    MonitorHostTableData,
+    PrefetchHooks Function({bool monitorTrustedCertTableRefs})>;
+typedef $$MonitorTrustedCertTableTableCreateCompanionBuilder
+    = MonitorTrustedCertTableCompanion Function({
+  required String hostId,
+  required String fingerprint,
+  Value<DateTime> firstTrustedAt,
+  Value<DateTime> lastVerifiedAt,
+  Value<int> rowid,
+});
+typedef $$MonitorTrustedCertTableTableUpdateCompanionBuilder
+    = MonitorTrustedCertTableCompanion Function({
+  Value<String> hostId,
+  Value<String> fingerprint,
+  Value<DateTime> firstTrustedAt,
+  Value<DateTime> lastVerifiedAt,
+  Value<int> rowid,
+});
+
+final class $$MonitorTrustedCertTableTableReferences extends BaseReferences<
+    _$AppDatabase, $MonitorTrustedCertTableTable, MonitorTrustedCertTableData> {
+  $$MonitorTrustedCertTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $MonitorHostTableTable _hostIdTable(_$AppDatabase db) =>
+      db.monitorHostTable.createAlias($_aliasNameGenerator(
+          db.monitorTrustedCertTable.hostId, db.monitorHostTable.id));
+
+  $$MonitorHostTableTableProcessedTableManager get hostId {
+    final $_column = $_itemColumn<String>('host_id')!;
+
+    final manager =
+        $$MonitorHostTableTableTableManager($_db, $_db.monitorHostTable)
+            .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_hostIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$MonitorTrustedCertTableTableFilterComposer
+    extends Composer<_$AppDatabase, $MonitorTrustedCertTableTable> {
+  $$MonitorTrustedCertTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get fingerprint => $composableBuilder(
+      column: $table.fingerprint, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get firstTrustedAt => $composableBuilder(
+      column: $table.firstTrustedAt,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastVerifiedAt => $composableBuilder(
+      column: $table.lastVerifiedAt,
+      builder: (column) => ColumnFilters(column));
+
+  $$MonitorHostTableTableFilterComposer get hostId {
+    final $$MonitorHostTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.hostId,
+        referencedTable: $db.monitorHostTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$MonitorHostTableTableFilterComposer(
+              $db: $db,
+              $table: $db.monitorHostTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$MonitorTrustedCertTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $MonitorTrustedCertTableTable> {
+  $$MonitorTrustedCertTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get fingerprint => $composableBuilder(
+      column: $table.fingerprint, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get firstTrustedAt => $composableBuilder(
+      column: $table.firstTrustedAt,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastVerifiedAt => $composableBuilder(
+      column: $table.lastVerifiedAt,
+      builder: (column) => ColumnOrderings(column));
+
+  $$MonitorHostTableTableOrderingComposer get hostId {
+    final $$MonitorHostTableTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.hostId,
+        referencedTable: $db.monitorHostTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$MonitorHostTableTableOrderingComposer(
+              $db: $db,
+              $table: $db.monitorHostTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$MonitorTrustedCertTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MonitorTrustedCertTableTable> {
+  $$MonitorTrustedCertTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get fingerprint => $composableBuilder(
+      column: $table.fingerprint, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get firstTrustedAt => $composableBuilder(
+      column: $table.firstTrustedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastVerifiedAt => $composableBuilder(
+      column: $table.lastVerifiedAt, builder: (column) => column);
+
+  $$MonitorHostTableTableAnnotationComposer get hostId {
+    final $$MonitorHostTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.hostId,
+        referencedTable: $db.monitorHostTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$MonitorHostTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.monitorHostTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$MonitorTrustedCertTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $MonitorTrustedCertTableTable,
+    MonitorTrustedCertTableData,
+    $$MonitorTrustedCertTableTableFilterComposer,
+    $$MonitorTrustedCertTableTableOrderingComposer,
+    $$MonitorTrustedCertTableTableAnnotationComposer,
+    $$MonitorTrustedCertTableTableCreateCompanionBuilder,
+    $$MonitorTrustedCertTableTableUpdateCompanionBuilder,
+    (MonitorTrustedCertTableData, $$MonitorTrustedCertTableTableReferences),
+    MonitorTrustedCertTableData,
+    PrefetchHooks Function({bool hostId})> {
+  $$MonitorTrustedCertTableTableTableManager(
+      _$AppDatabase db, $MonitorTrustedCertTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MonitorTrustedCertTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MonitorTrustedCertTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MonitorTrustedCertTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> hostId = const Value.absent(),
+            Value<String> fingerprint = const Value.absent(),
+            Value<DateTime> firstTrustedAt = const Value.absent(),
+            Value<DateTime> lastVerifiedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              MonitorTrustedCertTableCompanion(
+            hostId: hostId,
+            fingerprint: fingerprint,
+            firstTrustedAt: firstTrustedAt,
+            lastVerifiedAt: lastVerifiedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String hostId,
+            required String fingerprint,
+            Value<DateTime> firstTrustedAt = const Value.absent(),
+            Value<DateTime> lastVerifiedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              MonitorTrustedCertTableCompanion.insert(
+            hostId: hostId,
+            fingerprint: fingerprint,
+            firstTrustedAt: firstTrustedAt,
+            lastVerifiedAt: lastVerifiedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$MonitorTrustedCertTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({hostId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (hostId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.hostId,
+                    referencedTable: $$MonitorTrustedCertTableTableReferences
+                        ._hostIdTable(db),
+                    referencedColumn: $$MonitorTrustedCertTableTableReferences
+                        ._hostIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$MonitorTrustedCertTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $MonitorTrustedCertTableTable,
+        MonitorTrustedCertTableData,
+        $$MonitorTrustedCertTableTableFilterComposer,
+        $$MonitorTrustedCertTableTableOrderingComposer,
+        $$MonitorTrustedCertTableTableAnnotationComposer,
+        $$MonitorTrustedCertTableTableCreateCompanionBuilder,
+        $$MonitorTrustedCertTableTableUpdateCompanionBuilder,
+        (MonitorTrustedCertTableData, $$MonitorTrustedCertTableTableReferences),
+        MonitorTrustedCertTableData,
+        PrefetchHooks Function({bool hostId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4535,4 +5750,9 @@ class $AppDatabaseManager {
       $$ChatSettingsTableTableTableManager(_db, _db.chatSettingsTable);
   $$ServiceAccountTableTableTableManager get serviceAccountTable =>
       $$ServiceAccountTableTableTableManager(_db, _db.serviceAccountTable);
+  $$MonitorHostTableTableTableManager get monitorHostTable =>
+      $$MonitorHostTableTableTableManager(_db, _db.monitorHostTable);
+  $$MonitorTrustedCertTableTableTableManager get monitorTrustedCertTable =>
+      $$MonitorTrustedCertTableTableTableManager(
+          _db, _db.monitorTrustedCertTable);
 }

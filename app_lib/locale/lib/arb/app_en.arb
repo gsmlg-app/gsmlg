@@ -112,5 +112,60 @@
   "aboutYellowDog2": "Your are a Strong, Clever and Loyal Dog",
   "deviceInfo": "Device Info",
   "wifiInfo": "Wifi Info",
-  "account": "Account"
+  "account": "Account",
+  "monitorTitle": "Monitor",
+  "monitorAddHost": "Add Host",
+  "monitorDiscovering": "Scanning network...",
+  "monitorNoHosts": "No hosts found. Add one manually or start an agent on your network.",
+  "monitorCpu": "CPU",
+  "monitorMemory": "Memory",
+  "monitorGpu": "GPU",
+  "monitorNetwork": "Network",
+  "monitorDisk": "Disk",
+  "monitorConnecting": "Connecting...",
+  "monitorConnected": "Connected",
+  "monitorDisconnected": "Disconnected",
+  "monitorError": "Unreachable",
+  "monitorLoadAvg": "Load: {one}, {five}, {fifteen}",
+  "@monitorLoadAvg": {
+    "placeholders": {
+      "one": {"type": "String"},
+      "five": {"type": "String"},
+      "fifteen": {"type": "String"}
+    }
+  },
+  "monitorSwap": "Swap: {percent}%",
+  "@monitorSwap": {
+    "placeholders": {
+      "percent": {"type": "String"}
+    }
+  },
+  "monitorGpuTemp": "{temp}°C",
+  "@monitorGpuTemp": {
+    "placeholders": {
+      "temp": {"type": "String"}
+    }
+  },
+  "monitorHostIp": "IP Address",
+  "monitorHostPort": "Port",
+  "monitorHostPortDefault": "Default: 9723",
+  "monitorRemoveHost": "Remove Host",
+  "monitorRemoveHostConfirm": "Remove {hostname} from the list?",
+  "@monitorRemoveHostConfirm": {
+    "placeholders": {
+      "hostname": {"type": "String"}
+    }
+  },
+  "monitorTrustTitle": "Trust this agent?",
+  "monitorTrustBody": "Verify this fingerprint matches the agent's terminal output.",
+  "monitorTrustAction": "Trust",
+  "monitorCertMismatchTitle": "Certificate changed!",
+  "monitorCertMismatchBody": "The agent's certificate has changed since you last connected. This could indicate a security issue.",
+  "monitorReTrust": "Trust Anyway",
+  "monitorVersionWarning": "Agent v{version} — update available",
+  "@monitorVersionWarning": {
+    "placeholders": {
+      "version": {"type": "String"}
+    }
+  }
 }
