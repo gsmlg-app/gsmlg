@@ -256,7 +256,6 @@ class AccountScreen extends StatelessWidget {
   void _showAddAwsDialog(BuildContext context) {
     final nameController = TextEditingController();
     final descController = TextEditingController();
-    final regionController = TextEditingController(text: 'us-east-1');
     final accessKeyIdController = TextEditingController();
     final secretKeyController = TextEditingController();
     bool obscureSecret = true;
@@ -291,15 +290,6 @@ class AccountScreen extends StatelessWidget {
                           border: OutlineInputBorder(),
                         ),
                         maxLines: 2,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: regionController,
-                        decoration: const InputDecoration(
-                          labelText: 'Region',
-                          hintText: 'us-east-1',
-                          border: OutlineInputBorder(),
-                        ),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -339,18 +329,15 @@ class AccountScreen extends StatelessWidget {
                 FilledButton(
                   onPressed: () {
                     final name = nameController.text.trim();
-                    final region = regionController.text.trim();
                     final accessKeyId = accessKeyIdController.text.trim();
                     final secretKey = secretKeyController.text.trim();
                     if (name.isEmpty ||
-                        region.isEmpty ||
                         accessKeyId.isEmpty ||
                         secretKey.isEmpty) {
                       return;
                     }
 
                     final credential = jsonEncode({
-                      'region': region,
                       'accessKeyId': accessKeyId,
                       'secretAccessKey': secretKey,
                     });
@@ -496,7 +483,6 @@ class AccountScreen extends StatelessWidget {
 
   void _showUpdateAwsKeyDialog(
       BuildContext context, ServiceAccountTableData account) {
-    final regionController = TextEditingController(text: 'us-east-1');
     final accessKeyIdController = TextEditingController();
     final secretKeyController = TextEditingController();
     bool obscureSecret = true;
@@ -514,15 +500,6 @@ class AccountScreen extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextField(
-                        controller: regionController,
-                        decoration: const InputDecoration(
-                          labelText: 'Region',
-                          hintText: 'us-east-1',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
                       TextField(
                         controller: accessKeyIdController,
                         decoration: const InputDecoration(
@@ -560,17 +537,14 @@ class AccountScreen extends StatelessWidget {
                 ),
                 FilledButton(
                   onPressed: () {
-                    final region = regionController.text.trim();
                     final accessKeyId = accessKeyIdController.text.trim();
                     final secretKey = secretKeyController.text.trim();
-                    if (region.isEmpty ||
-                        accessKeyId.isEmpty ||
+                    if (accessKeyId.isEmpty ||
                         secretKey.isEmpty) {
                       return;
                     }
 
                     final credential = jsonEncode({
-                      'region': region,
                       'accessKeyId': accessKeyId,
                       'secretAccessKey': secretKey,
                     });

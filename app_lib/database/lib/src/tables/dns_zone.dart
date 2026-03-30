@@ -8,7 +8,7 @@ enum DnsProvider {
 
 /// Drift table definition for DnsZone.
 ///
-/// Stores DNS zones with provider information and credentials.
+/// Stores DNS zones linked to a service account for credentials.
 class DnsZoneTable extends Table {
   /// Auto-incrementing primary key.
   IntColumn get id => integer().autoIncrement()();
@@ -22,8 +22,8 @@ class DnsZoneTable extends Table {
   /// Zone name (domain name).
   TextColumn get zoneName => text()();
 
-  /// API credentials (encrypted JSON containing keys/tokens).
-  TextColumn get credentials => text()();
+  /// Reference to the service account that holds API credentials.
+  IntColumn get serviceAccountId => integer()();
 
   /// Optional comment/description.
   TextColumn get comment => text().nullable()();

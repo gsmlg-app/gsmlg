@@ -99,6 +99,7 @@ class GitHubReposBloc extends Bloc<GitHubReposEvent, GitHubReposState> {
         page: page,
         sort: Sort.updated,
         affiliation: 'owner,collaborator',
+        type: null,
       );
 
       if (response.isEmpty) break;

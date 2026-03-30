@@ -9,19 +9,19 @@ final class ZoneSync extends ZoneEvent {
   const ZoneSync();
 }
 
-/// Add a new DNS zone.
+/// Add a new DNS zone linked to a service account.
 final class ZoneAdd extends ZoneEvent {
   final DnsProvider provider;
   final String zoneId;
   final String zoneName;
-  final String credentials;
+  final int serviceAccountId;
   final String? comment;
 
   const ZoneAdd({
     required this.provider,
     required this.zoneId,
     required this.zoneName,
-    required this.credentials,
+    required this.serviceAccountId,
     this.comment,
   });
 }
@@ -30,13 +30,13 @@ final class ZoneAdd extends ZoneEvent {
 final class ZoneUpdate extends ZoneEvent {
   final DnsZoneTableData zone;
   final String? zoneName;
-  final String? credentials;
+  final int? serviceAccountId;
   final String? comment;
 
   const ZoneUpdate({
     required this.zone,
     this.zoneName,
-    this.credentials,
+    this.serviceAccountId,
     this.comment,
   });
 }

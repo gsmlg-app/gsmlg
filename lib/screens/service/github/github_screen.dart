@@ -1,11 +1,11 @@
 import 'dart:io';
 
+import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
 import 'package:app_database/app_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:github_api/github_api.dart';
 import 'package:github_bloc/github_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
@@ -62,27 +62,210 @@ class GitHubServiceScreen extends StatelessWidget {
         minimum: Platform.isMacOS
             ? const EdgeInsets.all(kDefaultGridGap)
             : const EdgeInsets.symmetric(horizontal: kDefaultGridGap),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.link_off, size: 64),
-              const SizedBox(height: 16),
-              Text(
-                'GitHub Not Connected',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              const Text('Please connect your GitHub account in Settings'),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => context.go('/settings/account'),
-                child: const Text('Go to Settings'),
-              ),
-            ],
-          ),
+        child: BlocBuilder<AccountsBloc, AccountsState>(
+          builder: (context, accountsState) {
+            final githubAccounts = accountsState is AccountsLoaded
+                ? accountsState.byProvider(ServiceProvider.github)
+                : <ServiceAccountTableData>[];
+
+            return CustomScrollView(
+              slivers: [
+                SliverAppBar(title: const Text('GitHub')),
+                if (state is GitHubLoading)
+                  const SliverFillRemaining(
+                    child:
+                        Center(child: CircularProgressIndicator.adaptive()),
+                  )
+                else if (state is GitHubError)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Card(
+                        color:
+                            Theme.of(context).colorScheme.errorContainer,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Icon(Icons.error,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onErrorContainer),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  state.message,
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onErrorContainer),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (githubAccounts.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      child: Text(
+                        'Select a GitHub Account',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                  ),
+                  SliverList.builder(
+                    itemCount: githubAccounts.length,
+                    itemBuilder: (context, index) {
+                      final account = githubAccounts[index];
+                      return ListTile(
+                        leading: const Icon(Icons.code),
+                        title: Text(account.name),
+                        subtitle: account.description.isNotEmpty
+                            ? Text(account.description)
+                            : null,
+                        trailing: FilledButton(
+                          onPressed: () => _connectWithAccount(
+                              context, account),
+                          child: const Text('Connect'),
+                        ),
+                      );
+                    },
+                  ),
+                  const SliverToBoxAdapter(
+                    child: Divider(indent: 16, endIndent: 16),
+                  ),
+                ] else ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(Icons.code,
+                              size: 64,
+                              color:
+                                  Theme.of(context).colorScheme.outline),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No GitHub Accounts',
+                            style:
+                                Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                              'Add a GitHub account to get started'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add GitHub Account'),
+                      onPressed: () =>
+                          _showAddAccountDialog(context),
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              ],
+            );
+          },
         ),
       ),
+    );
+  }
+
+  Future<void> _connectWithAccount(
+    BuildContext context,
+    ServiceAccountTableData account,
+  ) async {
+    final accountsBloc = context.read<AccountsBloc>();
+    final apiKey = await accountsBloc.getApiKey(account.id);
+    if (apiKey != null && context.mounted) {
+      context.read<GitHubBloc>().add(GitHubConnect(pat: apiKey));
+    }
+  }
+
+  void _showAddAccountDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    final patController = TextEditingController();
+    bool obscurePat = true;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (ctx, setState) {
+            return AlertDialog(
+              title: const Text('Add GitHub Account'),
+              content: SizedBox(
+                width: 400,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Name',
+                          hintText: 'e.g. Personal, Work',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: patController,
+                        obscureText: obscurePat,
+                        decoration: InputDecoration(
+                          labelText: 'Personal Access Token',
+                          hintText: 'ghp_xxxxxxxxxxxxxxxxxxxx',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            icon: Icon(obscurePat
+                                ? Icons.visibility_off
+                                : Icons.visibility),
+                            onPressed: () =>
+                                setState(() => obscurePat = !obscurePat),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    final pat = patController.text.trim();
+                    if (name.isEmpty || pat.isEmpty) return;
+
+                    context.read<AccountsBloc>().add(AccountsAdd(
+                          provider: ServiceProvider.github,
+                          name: name,
+                          apiKey: pat,
+                        ));
+                    context.read<GitHubBloc>().add(GitHubConnect(pat: pat));
+                    Navigator.pop(dialogContext);
+                  },
+                  child: const Text('Add & Connect'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -121,44 +304,35 @@ class _GitHubReposViewState extends State<_GitHubReposView>
       ),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
-      body: (_) => SafeArea(
-        minimum: Platform.isMacOS
-            ? const EdgeInsets.all(kDefaultGridGap)
-            : const EdgeInsets.symmetric(horizontal: kDefaultGridGap),
-        child: Column(
+      body: (_) => Scaffold(
+        appBar: AppBar(
+          title: const Text('GitHub Repositories'),
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'Pinned'),
+              Tab(text: 'All Repos'),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                context.read<GitHubPinnedReposBloc>().add(
+                      const GitHubPinnedReposRefresh(),
+                    );
+                context.read<GitHubReposBloc>().add(
+                      const GitHubReposRefresh(),
+                    );
+              },
+            ),
+          ],
+        ),
+        body: TabBarView(
+          controller: _tabController,
           children: [
-            AppBar(
-              title: const Text('GitHub Repositories'),
-              bottom: TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Pinned'),
-                  Tab(text: 'All Repos'),
-                ],
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () {
-                    context.read<GitHubPinnedReposBloc>().add(
-                          const GitHubPinnedReposRefresh(),
-                        );
-                    context.read<GitHubReposBloc>().add(
-                          const GitHubReposRefresh(),
-                        );
-                  },
-                ),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _PinnedReposTab(user: widget.user),
-                  _AllReposTab(user: widget.user),
-                ],
-              ),
-            ),
+            _PinnedReposTab(user: widget.user),
+            _AllReposTab(user: widget.user),
           ],
         ),
       ),

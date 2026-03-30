@@ -1,11 +1,13 @@
+import 'dart:convert';
+
 import 'package:app_database/app_database.dart';
+import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:bloc/bloc.dart';
 import 'package:cloudflare_dns/cloudflare_dns.dart' as cf;
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:route53/route53.dart' as r53;
 
-import 'credentials_service.dart';
 import 'models/credentials_model.dart';
 import 'models/dns_record_model.dart';
 
@@ -13,14 +15,47 @@ part 'record_event.dart';
 part 'record_state.dart';
 
 /// BLoC for managing DNS records within a zone.
+///
+/// Fetches credentials from the vault via the zone's linked service account.
 class RecordBloc extends Bloc<RecordEvent, RecordState> {
-  final CredentialsService credentialsService;
+  final VaultRepository vault;
 
-  RecordBloc(this.credentialsService) : super(const RecordInitial()) {
+  RecordBloc(this.vault) : super(const RecordInitial()) {
     on<RecordSync>(_onSync);
     on<RecordAdd>(_onCreate);
     on<RecordUpdate>(_onUpdate);
     on<RecordRemove>(_onDelete);
+  }
+
+  /// Retrieve credentials for a zone by reading the linked service account
+  /// from the vault using key `service_account_<serviceAccountId>`.
+  Future<String> _getApiKey(DnsZoneTableData zone) async {
+    final key = 'service_account_${zone.serviceAccountId}';
+    final apiKey = await vault.read(key: key);
+    if (apiKey == null) {
+      throw Exception(
+        'No credentials found for service account. '
+        'Please check Settings > Accounts.',
+      );
+    }
+    return apiKey;
+  }
+
+  Future<Route53Credentials> _getRoute53Credentials(
+      DnsZoneTableData zone) async {
+    final apiKey = await _getApiKey(zone);
+    final map = jsonDecode(apiKey) as Map<String, dynamic>;
+    return Route53Credentials(
+      accessKeyId: map['accessKeyId'] as String,
+      secretAccessKey: map['secretAccessKey'] as String,
+      region: map['region'] as String? ?? 'us-east-1',
+    );
+  }
+
+  Future<CloudflareCredentials> _getCloudflareCredentials(
+      DnsZoneTableData zone) async {
+    final apiKey = await _getApiKey(zone);
+    return CloudflareCredentials(apiToken: apiKey);
   }
 
   Dio _createRoute53Dio(Route53Credentials credentials) {
@@ -31,7 +66,6 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
       },
     ));
     dio.transformer = r53.XmlTransformer();
-    // Order matters: XML conversion -> AWS signing -> logging
     dio.interceptors.add(r53.XmlRequestInterceptor());
     dio.interceptors.add(r53.AwsSigV4Interceptor(
       accessKeyId: credentials.accessKeyId,
@@ -92,7 +126,6 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
     RecordSync event,
     Emitter<RecordState> emit,
   ) async {
-    // Preserve existing records if available
     final existingRecords = state is RecordLoaded
         ? (state as RecordLoaded).records
         : state is RecordLoading
@@ -104,12 +137,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
 
       switch (event.zone.provider) {
         case DnsProvider.route53:
-          final credentials =
-              await credentialsService.getRoute53Credentials(event.zone.id);
-          if (credentials == null) {
-            throw Exception(
-                'No credentials found for zone. Please re-add the zone.');
-          }
+          final credentials = await _getRoute53Credentials(event.zone);
           final dio = _createRoute53Dio(credentials);
           final client = r53.Route53(dio);
 
@@ -128,12 +156,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
           }
 
         case DnsProvider.cloudflare:
-          final credentials =
-              await credentialsService.getCloudflareCredentials(event.zone.id);
-          if (credentials == null) {
-            throw Exception(
-                'No credentials found for zone. Please re-add the zone.');
-          }
+          final credentials = await _getCloudflareCredentials(event.zone);
           final client = _createCloudflareClient(credentials);
 
           final response = await client.dnsRecords.listDnsRecords(
@@ -166,11 +189,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
     try {
       switch (event.zone.provider) {
         case DnsProvider.route53:
-          final credentials =
-              await credentialsService.getRoute53Credentials(event.zone.id);
-          if (credentials == null) {
-            throw Exception('No credentials found for zone.');
-          }
+          final credentials = await _getRoute53Credentials(event.zone);
           final dio = _createRoute53Dio(credentials);
           final client = r53.Route53(dio);
 
@@ -196,11 +215,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
           );
 
         case DnsProvider.cloudflare:
-          final credentials =
-              await credentialsService.getCloudflareCredentials(event.zone.id);
-          if (credentials == null) {
-            throw Exception('No credentials found for zone.');
-          }
+          final credentials = await _getCloudflareCredentials(event.zone);
           final client = _createCloudflareClient(credentials);
 
           await client.dnsRecords.createDnsRecord(
@@ -229,15 +244,10 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
     try {
       switch (event.zone.provider) {
         case DnsProvider.route53:
-          final credentials =
-              await credentialsService.getRoute53Credentials(event.zone.id);
-          if (credentials == null) {
-            throw Exception('No credentials found for zone.');
-          }
+          final credentials = await _getRoute53Credentials(event.zone);
           final dio = _createRoute53Dio(credentials);
           final client = r53.Route53(dio);
 
-          // Route53 uses UPSERT for updates
           await client.resourceRecordSets.changeResourceRecordSets(
             hostedZoneId: event.zone.zoneId,
             body: r53.ChangeResourceRecordSetsRequest(
@@ -260,11 +270,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
           );
 
         case DnsProvider.cloudflare:
-          final credentials =
-              await credentialsService.getCloudflareCredentials(event.zone.id);
-          if (credentials == null) {
-            throw Exception('No credentials found for zone.');
-          }
+          final credentials = await _getCloudflareCredentials(event.zone);
           final client = _createCloudflareClient(credentials);
 
           if (event.record.id == null) {
@@ -298,11 +304,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
     try {
       switch (event.zone.provider) {
         case DnsProvider.route53:
-          final credentials =
-              await credentialsService.getRoute53Credentials(event.zone.id);
-          if (credentials == null) {
-            throw Exception('No credentials found for zone.');
-          }
+          final credentials = await _getRoute53Credentials(event.zone);
           final dio = _createRoute53Dio(credentials);
           final client = r53.Route53(dio);
 
@@ -328,11 +330,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
           );
 
         case DnsProvider.cloudflare:
-          final credentials =
-              await credentialsService.getCloudflareCredentials(event.zone.id);
-          if (credentials == null) {
-            throw Exception('No credentials found for zone.');
-          }
+          final credentials = await _getCloudflareCredentials(event.zone);
           final client = _createCloudflareClient(credentials);
 
           if (event.record.id == null) {

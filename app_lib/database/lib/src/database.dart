@@ -50,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration {
@@ -82,6 +82,12 @@ class AppDatabase extends _$AppDatabase {
         if (from < 7) {
           await m.createTable(monitorHostTable);
           await m.createTable(monitorTrustedCertTable);
+        }
+        if (from < 8) {
+          // Recreate dns_zone_table with serviceAccountId column,
+          // replacing the old per-zone credentials field.
+          await m.deleteTable('dns_zone_table');
+          await m.createTable(dnsZoneTable);
         }
       },
     );

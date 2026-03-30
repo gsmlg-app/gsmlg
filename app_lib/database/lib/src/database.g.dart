@@ -305,12 +305,12 @@ class $DnsZoneTableTable extends DnsZoneTable
   late final GeneratedColumn<String> zoneName = GeneratedColumn<String>(
       'zone_name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
-  static const VerificationMeta _credentialsMeta =
-      const VerificationMeta('credentials');
+  static const VerificationMeta _serviceAccountIdMeta =
+      const VerificationMeta('serviceAccountId');
   @override
-  late final GeneratedColumn<String> credentials = GeneratedColumn<String>(
-      'credentials', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+  late final GeneratedColumn<int> serviceAccountId = GeneratedColumn<int>(
+      'service_account_id', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
   static const VerificationMeta _commentMeta =
       const VerificationMeta('comment');
   @override
@@ -339,7 +339,7 @@ class $DnsZoneTableTable extends DnsZoneTable
         provider,
         zoneId,
         zoneName,
-        credentials,
+        serviceAccountId,
         comment,
         createdAt,
         updatedAt
@@ -369,13 +369,13 @@ class $DnsZoneTableTable extends DnsZoneTable
     } else if (isInserting) {
       context.missing(_zoneNameMeta);
     }
-    if (data.containsKey('credentials')) {
+    if (data.containsKey('service_account_id')) {
       context.handle(
-          _credentialsMeta,
-          credentials.isAcceptableOrUnknown(
-              data['credentials']!, _credentialsMeta));
+          _serviceAccountIdMeta,
+          serviceAccountId.isAcceptableOrUnknown(
+              data['service_account_id']!, _serviceAccountIdMeta));
     } else if (isInserting) {
-      context.missing(_credentialsMeta);
+      context.missing(_serviceAccountIdMeta);
     }
     if (data.containsKey('comment')) {
       context.handle(_commentMeta,
@@ -407,8 +407,8 @@ class $DnsZoneTableTable extends DnsZoneTable
           .read(DriftSqlType.string, data['${effectivePrefix}zone_id'])!,
       zoneName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}zone_name'])!,
-      credentials: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}credentials'])!,
+      serviceAccountId: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}service_account_id'])!,
       comment: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}comment']),
       createdAt: attachedDatabase.typeMapping
@@ -441,8 +441,8 @@ class DnsZoneTableData extends DataClass
   /// Zone name (domain name).
   final String zoneName;
 
-  /// API credentials (encrypted JSON containing keys/tokens).
-  final String credentials;
+  /// Reference to the service account that holds API credentials.
+  final int serviceAccountId;
 
   /// Optional comment/description.
   final String? comment;
@@ -457,7 +457,7 @@ class DnsZoneTableData extends DataClass
       required this.provider,
       required this.zoneId,
       required this.zoneName,
-      required this.credentials,
+      required this.serviceAccountId,
       this.comment,
       required this.createdAt,
       required this.updatedAt});
@@ -471,7 +471,7 @@ class DnsZoneTableData extends DataClass
     }
     map['zone_id'] = Variable<String>(zoneId);
     map['zone_name'] = Variable<String>(zoneName);
-    map['credentials'] = Variable<String>(credentials);
+    map['service_account_id'] = Variable<int>(serviceAccountId);
     if (!nullToAbsent || comment != null) {
       map['comment'] = Variable<String>(comment);
     }
@@ -486,7 +486,7 @@ class DnsZoneTableData extends DataClass
       provider: Value(provider),
       zoneId: Value(zoneId),
       zoneName: Value(zoneName),
-      credentials: Value(credentials),
+      serviceAccountId: Value(serviceAccountId),
       comment: comment == null && nullToAbsent
           ? const Value.absent()
           : Value(comment),
@@ -504,7 +504,7 @@ class DnsZoneTableData extends DataClass
           .fromJson(serializer.fromJson<String>(json['provider'])),
       zoneId: serializer.fromJson<String>(json['zoneId']),
       zoneName: serializer.fromJson<String>(json['zoneName']),
-      credentials: serializer.fromJson<String>(json['credentials']),
+      serviceAccountId: serializer.fromJson<int>(json['serviceAccountId']),
       comment: serializer.fromJson<String?>(json['comment']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -519,7 +519,7 @@ class DnsZoneTableData extends DataClass
           $DnsZoneTableTable.$converterprovider.toJson(provider)),
       'zoneId': serializer.toJson<String>(zoneId),
       'zoneName': serializer.toJson<String>(zoneName),
-      'credentials': serializer.toJson<String>(credentials),
+      'serviceAccountId': serializer.toJson<int>(serviceAccountId),
       'comment': serializer.toJson<String?>(comment),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -531,7 +531,7 @@ class DnsZoneTableData extends DataClass
           DnsProvider? provider,
           String? zoneId,
           String? zoneName,
-          String? credentials,
+          int? serviceAccountId,
           Value<String?> comment = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
@@ -540,7 +540,7 @@ class DnsZoneTableData extends DataClass
         provider: provider ?? this.provider,
         zoneId: zoneId ?? this.zoneId,
         zoneName: zoneName ?? this.zoneName,
-        credentials: credentials ?? this.credentials,
+        serviceAccountId: serviceAccountId ?? this.serviceAccountId,
         comment: comment.present ? comment.value : this.comment,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
@@ -551,8 +551,9 @@ class DnsZoneTableData extends DataClass
       provider: data.provider.present ? data.provider.value : this.provider,
       zoneId: data.zoneId.present ? data.zoneId.value : this.zoneId,
       zoneName: data.zoneName.present ? data.zoneName.value : this.zoneName,
-      credentials:
-          data.credentials.present ? data.credentials.value : this.credentials,
+      serviceAccountId: data.serviceAccountId.present
+          ? data.serviceAccountId.value
+          : this.serviceAccountId,
       comment: data.comment.present ? data.comment.value : this.comment,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -566,7 +567,7 @@ class DnsZoneTableData extends DataClass
           ..write('provider: $provider, ')
           ..write('zoneId: $zoneId, ')
           ..write('zoneName: $zoneName, ')
-          ..write('credentials: $credentials, ')
+          ..write('serviceAccountId: $serviceAccountId, ')
           ..write('comment: $comment, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -575,8 +576,8 @@ class DnsZoneTableData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(id, provider, zoneId, zoneName, credentials,
-      comment, createdAt, updatedAt);
+  int get hashCode => Object.hash(id, provider, zoneId, zoneName,
+      serviceAccountId, comment, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -585,7 +586,7 @@ class DnsZoneTableData extends DataClass
           other.provider == this.provider &&
           other.zoneId == this.zoneId &&
           other.zoneName == this.zoneName &&
-          other.credentials == this.credentials &&
+          other.serviceAccountId == this.serviceAccountId &&
           other.comment == this.comment &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -596,7 +597,7 @@ class DnsZoneTableCompanion extends UpdateCompanion<DnsZoneTableData> {
   final Value<DnsProvider> provider;
   final Value<String> zoneId;
   final Value<String> zoneName;
-  final Value<String> credentials;
+  final Value<int> serviceAccountId;
   final Value<String?> comment;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -605,7 +606,7 @@ class DnsZoneTableCompanion extends UpdateCompanion<DnsZoneTableData> {
     this.provider = const Value.absent(),
     this.zoneId = const Value.absent(),
     this.zoneName = const Value.absent(),
-    this.credentials = const Value.absent(),
+    this.serviceAccountId = const Value.absent(),
     this.comment = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -615,20 +616,20 @@ class DnsZoneTableCompanion extends UpdateCompanion<DnsZoneTableData> {
     required DnsProvider provider,
     required String zoneId,
     required String zoneName,
-    required String credentials,
+    required int serviceAccountId,
     this.comment = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   })  : provider = Value(provider),
         zoneId = Value(zoneId),
         zoneName = Value(zoneName),
-        credentials = Value(credentials);
+        serviceAccountId = Value(serviceAccountId);
   static Insertable<DnsZoneTableData> custom({
     Expression<int>? id,
     Expression<String>? provider,
     Expression<String>? zoneId,
     Expression<String>? zoneName,
-    Expression<String>? credentials,
+    Expression<int>? serviceAccountId,
     Expression<String>? comment,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -638,7 +639,7 @@ class DnsZoneTableCompanion extends UpdateCompanion<DnsZoneTableData> {
       if (provider != null) 'provider': provider,
       if (zoneId != null) 'zone_id': zoneId,
       if (zoneName != null) 'zone_name': zoneName,
-      if (credentials != null) 'credentials': credentials,
+      if (serviceAccountId != null) 'service_account_id': serviceAccountId,
       if (comment != null) 'comment': comment,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -650,7 +651,7 @@ class DnsZoneTableCompanion extends UpdateCompanion<DnsZoneTableData> {
       Value<DnsProvider>? provider,
       Value<String>? zoneId,
       Value<String>? zoneName,
-      Value<String>? credentials,
+      Value<int>? serviceAccountId,
       Value<String?>? comment,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt}) {
@@ -659,7 +660,7 @@ class DnsZoneTableCompanion extends UpdateCompanion<DnsZoneTableData> {
       provider: provider ?? this.provider,
       zoneId: zoneId ?? this.zoneId,
       zoneName: zoneName ?? this.zoneName,
-      credentials: credentials ?? this.credentials,
+      serviceAccountId: serviceAccountId ?? this.serviceAccountId,
       comment: comment ?? this.comment,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -682,8 +683,8 @@ class DnsZoneTableCompanion extends UpdateCompanion<DnsZoneTableData> {
     if (zoneName.present) {
       map['zone_name'] = Variable<String>(zoneName.value);
     }
-    if (credentials.present) {
-      map['credentials'] = Variable<String>(credentials.value);
+    if (serviceAccountId.present) {
+      map['service_account_id'] = Variable<int>(serviceAccountId.value);
     }
     if (comment.present) {
       map['comment'] = Variable<String>(comment.value);
@@ -704,7 +705,7 @@ class DnsZoneTableCompanion extends UpdateCompanion<DnsZoneTableData> {
           ..write('provider: $provider, ')
           ..write('zoneId: $zoneId, ')
           ..write('zoneName: $zoneName, ')
-          ..write('credentials: $credentials, ')
+          ..write('serviceAccountId: $serviceAccountId, ')
           ..write('comment: $comment, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -3709,7 +3710,7 @@ typedef $$DnsZoneTableTableCreateCompanionBuilder = DnsZoneTableCompanion
   required DnsProvider provider,
   required String zoneId,
   required String zoneName,
-  required String credentials,
+  required int serviceAccountId,
   Value<String?> comment,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
@@ -3720,7 +3721,7 @@ typedef $$DnsZoneTableTableUpdateCompanionBuilder = DnsZoneTableCompanion
   Value<DnsProvider> provider,
   Value<String> zoneId,
   Value<String> zoneName,
-  Value<String> credentials,
+  Value<int> serviceAccountId,
   Value<String?> comment,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
@@ -3749,8 +3750,9 @@ class $$DnsZoneTableTableFilterComposer
   ColumnFilters<String> get zoneName => $composableBuilder(
       column: $table.zoneName, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<String> get credentials => $composableBuilder(
-      column: $table.credentials, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get serviceAccountId => $composableBuilder(
+      column: $table.serviceAccountId,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get comment => $composableBuilder(
       column: $table.comment, builder: (column) => ColumnFilters(column));
@@ -3783,8 +3785,9 @@ class $$DnsZoneTableTableOrderingComposer
   ColumnOrderings<String> get zoneName => $composableBuilder(
       column: $table.zoneName, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<String> get credentials => $composableBuilder(
-      column: $table.credentials, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get serviceAccountId => $composableBuilder(
+      column: $table.serviceAccountId,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get comment => $composableBuilder(
       column: $table.comment, builder: (column) => ColumnOrderings(column));
@@ -3817,8 +3820,8 @@ class $$DnsZoneTableTableAnnotationComposer
   GeneratedColumn<String> get zoneName =>
       $composableBuilder(column: $table.zoneName, builder: (column) => column);
 
-  GeneratedColumn<String> get credentials => $composableBuilder(
-      column: $table.credentials, builder: (column) => column);
+  GeneratedColumn<int> get serviceAccountId => $composableBuilder(
+      column: $table.serviceAccountId, builder: (column) => column);
 
   GeneratedColumn<String> get comment =>
       $composableBuilder(column: $table.comment, builder: (column) => column);
@@ -3860,7 +3863,7 @@ class $$DnsZoneTableTableTableManager extends RootTableManager<
             Value<DnsProvider> provider = const Value.absent(),
             Value<String> zoneId = const Value.absent(),
             Value<String> zoneName = const Value.absent(),
-            Value<String> credentials = const Value.absent(),
+            Value<int> serviceAccountId = const Value.absent(),
             Value<String?> comment = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
@@ -3870,7 +3873,7 @@ class $$DnsZoneTableTableTableManager extends RootTableManager<
             provider: provider,
             zoneId: zoneId,
             zoneName: zoneName,
-            credentials: credentials,
+            serviceAccountId: serviceAccountId,
             comment: comment,
             createdAt: createdAt,
             updatedAt: updatedAt,
@@ -3880,7 +3883,7 @@ class $$DnsZoneTableTableTableManager extends RootTableManager<
             required DnsProvider provider,
             required String zoneId,
             required String zoneName,
-            required String credentials,
+            required int serviceAccountId,
             Value<String?> comment = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
@@ -3890,7 +3893,7 @@ class $$DnsZoneTableTableTableManager extends RootTableManager<
             provider: provider,
             zoneId: zoneId,
             zoneName: zoneName,
-            credentials: credentials,
+            serviceAccountId: serviceAccountId,
             comment: comment,
             createdAt: createdAt,
             updatedAt: updatedAt,

@@ -33,8 +33,6 @@ class MainProvider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final credentialsService = CredentialsService(vault);
-
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<SharedPreferences>(create: (context) => sharedPrefs),
@@ -57,17 +55,15 @@ class MainProvider extends StatelessWidget {
           ),
           BlocProvider<BluetoothBloc>(create: (context) => BluetoothBloc()),
           BlocProvider<CameraBloc>(create: (context) => CameraBloc()),
-          BlocProvider<ZoneBloc>(
-            create: (context) => ZoneBloc(database, credentialsService),
-          ),
-          BlocProvider<RecordBloc>(
-            create: (context) => RecordBloc(credentialsService),
-          ),
+          BlocProvider<ZoneBloc>(create: (context) => ZoneBloc(database)),
+          BlocProvider<RecordBloc>(create: (context) => RecordBloc(vault)),
           BlocProvider<GitHubBloc>(
             create: (context) =>
                 GitHubBloc(vault: vault)..add(const GitHubLoad()),
           ),
-          BlocProvider<VultrBloc>(create: (context) => VultrBloc(vault: vault)),
+          BlocProvider<VultrBloc>(
+            create: (context) => VultrBloc(vault: vault, database: database),
+          ),
           BlocProvider<AccountsBloc>(
             create: (context) =>
                 AccountsBloc(database: database, vault: vault)

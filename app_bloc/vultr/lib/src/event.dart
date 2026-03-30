@@ -8,32 +8,22 @@ sealed class VultrEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Load Vultr instances from stored API key
-final class VultrLoad extends VultrEvent {
-  const VultrLoad();
-}
+/// Select a Vultr service account and load its instances.
+final class VultrSelectAccount extends VultrEvent {
+  const VultrSelectAccount({required this.accountId});
 
-/// Connect with an API key
-final class VultrConnect extends VultrEvent {
-  const VultrConnect({required this.apiKey});
-
-  final String apiKey;
+  final int accountId;
 
   @override
-  List<Object?> get props => [apiKey];
+  List<Object?> get props => [accountId];
 }
 
-/// Disconnect and remove API key
-final class VultrDisconnect extends VultrEvent {
-  const VultrDisconnect();
-}
-
-/// Refresh the instances list
+/// Refresh the instances list.
 final class VultrRefresh extends VultrEvent {
   const VultrRefresh();
 }
 
-/// Start a server instance
+/// Start a server instance.
 final class VultrStartInstance extends VultrEvent {
   const VultrStartInstance({required this.instanceId});
 
@@ -43,7 +33,7 @@ final class VultrStartInstance extends VultrEvent {
   List<Object?> get props => [instanceId];
 }
 
-/// Stop (halt) a server instance
+/// Stop (halt) a server instance.
 final class VultrStopInstance extends VultrEvent {
   const VultrStopInstance({required this.instanceId});
 
@@ -53,7 +43,7 @@ final class VultrStopInstance extends VultrEvent {
   List<Object?> get props => [instanceId];
 }
 
-/// Reboot a server instance
+/// Reboot a server instance.
 final class VultrRebootInstance extends VultrEvent {
   const VultrRebootInstance({required this.instanceId});
 

@@ -3,18 +3,14 @@ import 'package:bloc/bloc.dart';
 import 'package:drift/drift.dart';
 import 'package:equatable/equatable.dart';
 
-import 'credentials_service.dart';
-
 part 'zone_event.dart';
 part 'zone_state.dart';
 
 /// BLoC for managing DNS zones.
 class ZoneBloc extends Bloc<ZoneEvent, ZoneState> {
   final AppDatabase database;
-  final CredentialsService credentialsService;
 
-  ZoneBloc(this.database, this.credentialsService)
-      : super(const ZoneInitial()) {
+  ZoneBloc(this.database) : super(const ZoneInitial()) {
     on<ZoneSync>(_onSync);
     on<ZoneAdd>(_onAdd);
     on<ZoneUpdate>(_onUpdate);
@@ -61,22 +57,15 @@ class ZoneBloc extends Bloc<ZoneEvent, ZoneState> {
         return;
       }
 
-      // Insert zone into database (credentials stored in vault, not DB)
-      final zoneId = await database.into(database.dnsZoneTable).insert(
+      await database.into(database.dnsZoneTable).insert(
             DnsZoneTableCompanion.insert(
               provider: event.provider,
               zoneId: event.zoneId,
               zoneName: event.zoneName,
-              credentials: '', // Empty - credentials stored in secure vault
+              serviceAccountId: event.serviceAccountId,
               comment: Value(event.comment),
             ),
           );
-
-      // Save credentials to secure vault using the zone's database ID
-      await credentialsService.saveCredentials(
-        zoneId: zoneId,
-        encodedCredentials: event.credentials,
-      );
 
       add(const ZoneSync());
     } catch (e) {
@@ -94,18 +83,13 @@ class ZoneBloc extends Bloc<ZoneEvent, ZoneState> {
           .write(
         DnsZoneTableCompanion(
           zoneName: Value(event.zoneName ?? event.zone.zoneName),
+          serviceAccountId: event.serviceAccountId != null
+              ? Value(event.serviceAccountId!)
+              : const Value.absent(),
           comment: Value(event.comment ?? event.zone.comment),
           updatedAt: Value(DateTime.now()),
         ),
       );
-
-      // Update credentials in vault if provided
-      if (event.credentials != null) {
-        await credentialsService.saveCredentials(
-          zoneId: event.zone.id,
-          encodedCredentials: event.credentials!,
-        );
-      }
 
       add(const ZoneSync());
     } catch (e) {
@@ -118,10 +102,6 @@ class ZoneBloc extends Bloc<ZoneEvent, ZoneState> {
     Emitter<ZoneState> emit,
   ) async {
     try {
-      // Delete credentials from vault first
-      await credentialsService.deleteCredentials(event.zone.id);
-
-      // Then delete zone from database
       await (database.delete(database.dnsZoneTable)
             ..where((t) => t.id.equals(event.zone.id)))
           .go();

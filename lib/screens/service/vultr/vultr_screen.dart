@@ -1,4 +1,6 @@
+import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
+import 'package:app_database/app_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,22 +9,11 @@ import 'package:gsmlg/screens/service/service_screen.dart';
 import 'package:vultr_api/api.dart' show InstanceGet;
 import 'package:vultr_bloc/vultr_bloc.dart';
 
-class VultrScreen extends StatefulWidget {
+class VultrScreen extends StatelessWidget {
   static const name = 'Vultr';
   static const path = 'vultr';
 
   const VultrScreen({super.key});
-
-  @override
-  State<VultrScreen> createState() => _VultrScreenState();
-}
-
-class _VultrScreenState extends State<VultrScreen> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<VultrBloc>().add(const VultrLoad());
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,17 +28,16 @@ class _VultrScreenState extends State<VultrScreen> {
         child: BlocConsumer<VultrBloc, VultrState>(
           listener: (context, state) {
             if (state is VultrLoaded && state.error != null) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(state.error!)));
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(state.error!)));
             }
           },
           builder: (context, state) {
             return switch (state) {
-              VultrInitial() || VultrLoading() => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              VultrDisconnected() => _ConnectView(),
+              VultrLoading() => const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              VultrInitial() => const _AccountSelectView(),
               VultrError(:final message) => _ErrorView(message: message),
               VultrLoaded(:final instances, :final refreshing) =>
                 _InstancesListView(
@@ -62,68 +52,81 @@ class _VultrScreenState extends State<VultrScreen> {
   }
 }
 
-class _ConnectView extends StatefulWidget {
-  @override
-  State<_ConnectView> createState() => _ConnectViewState();
-}
-
-class _ConnectViewState extends State<_ConnectView> {
-  final _controller = TextEditingController();
-  bool _obscure = true;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class _AccountSelectView extends StatelessWidget {
+  const _AccountSelectView();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.cloud_outlined, size: 64),
-              const SizedBox(height: 16),
-              const Text('Connect to Vultr'),
-              const SizedBox(height: 8),
-              const Text(
-                'Enter your Vultr API key to manage cloud servers.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: _controller,
-                obscureText: _obscure,
-                decoration: InputDecoration(
-                  labelText: 'API Key',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscure ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: () => setState(() => _obscure = !_obscure),
+    return BlocBuilder<AccountsBloc, AccountsState>(
+      builder: (context, state) {
+        final accounts = state is AccountsLoaded
+            ? state.accounts
+                .where((a) => a.provider == ServiceProvider.vultr)
+                .toList()
+            : <ServiceAccountTableData>[];
+
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.cloud_outlined, size: 64),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Vultr Servers',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Select a Vultr account to manage cloud servers.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  if (accounts.isEmpty) ...[
+                    const Text(
+                      'No Vultr accounts configured.',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () => context.go('/settings/account'),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Vultr Account'),
+                    ),
+                  ] else ...[
+                    ...accounts.map((account) => Card(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: ListTile(
+                            leading: const Icon(Icons.cloud),
+                            title: Text(account.name),
+                            subtitle: account.description.isNotEmpty
+                                ? Text(account.description)
+                                : null,
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () {
+                              context.read<VultrBloc>().add(
+                                    VultrSelectAccount(
+                                        accountId: account.id),
+                                  );
+                            },
+                          ),
+                        )),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () => context.go('/settings/account'),
+                      icon: const Icon(Icons.settings),
+                      label: const Text('Manage Accounts'),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () {
-                  final key = _controller.text.trim();
-                  if (key.isNotEmpty) {
-                    context.read<VultrBloc>().add(VultrConnect(apiKey: key));
-                  }
-                },
-                child: const Text('Connect'),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -144,7 +147,8 @@ class _ErrorView extends StatelessWidget {
           Text('Error: $message'),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => context.read<VultrBloc>().add(const VultrLoad()),
+            onPressed: () =>
+                context.read<VultrBloc>().add(const VultrRefresh()),
             child: const Text('Retry'),
           ),
         ],
@@ -154,7 +158,10 @@ class _ErrorView extends StatelessWidget {
 }
 
 class _InstancesListView extends StatelessWidget {
-  const _InstancesListView({required this.instances, required this.refreshing});
+  const _InstancesListView({
+    required this.instances,
+    required this.refreshing,
+  });
 
   final List<InstanceGet> instances;
   final bool refreshing;
@@ -172,11 +179,6 @@ class _InstancesListView extends StatelessWidget {
               onPressed: () =>
                   context.read<VultrBloc>().add(const VultrRefresh()),
               tooltip: 'Refresh',
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () => _showDisconnectDialog(context),
-              tooltip: 'Disconnect',
             ),
           ],
         ),
@@ -205,30 +207,6 @@ class _InstancesListView extends StatelessWidget {
       ],
     );
   }
-
-  void _showDisconnectDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Disconnect'),
-        content: const Text('Remove Vultr API key and disconnect?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<VultrBloc>().add(const VultrDisconnect());
-              Navigator.of(ctx).pop();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Disconnect'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _InstanceTile extends StatelessWidget {
@@ -243,8 +221,7 @@ class _InstanceTile extends StatelessWidget {
     final statusIcon = isRunning ? Icons.play_circle : Icons.stop_circle;
 
     final bloc = context.watch<VultrBloc>();
-    final isActioning =
-        bloc.state is VultrLoaded &&
+    final isActioning = bloc.state is VultrLoaded &&
         (bloc.state as VultrLoaded).actionInstanceId == instance.id;
 
     return Card(
@@ -279,9 +256,10 @@ class _InstanceTile extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   '${instance.status ?? 'unknown'} / ${instance.powerStatus ?? 'unknown'}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: statusColor),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: statusColor),
                 ),
               ],
             ),
@@ -353,8 +331,8 @@ class _InstanceTile extends StatelessWidget {
           title: 'Reboot Server',
           content: 'Reboot "${instance.label ?? instance.hostname}"?',
           onConfirm: () => context.read<VultrBloc>().add(
-            VultrRebootInstance(instanceId: id),
-          ),
+                VultrRebootInstance(instanceId: id),
+              ),
         );
     }
   }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_database/app_database.dart';
 import 'package:cloudflare_dns/cloudflare_dns.dart' as cf;
@@ -31,16 +34,10 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
   final _formKey = GlobalKey<FormState>();
   DnsProvider _provider = DnsProvider.cloudflare;
 
-  // Common fields
   final _commentController = TextEditingController();
 
-  // Route53 fields
-  final _accessKeyIdController = TextEditingController();
-  final _secretAccessKeyController = TextEditingController();
-  final _regionController = TextEditingController(text: 'us-east-1');
-
-  // Cloudflare fields
-  final _apiTokenController = TextEditingController();
+  // Service account selection
+  ServiceAccountTableData? _selectedAccount;
 
   // Zone selection
   List<_ZoneOption>? _availableZones;
@@ -52,27 +49,24 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
   @override
   void dispose() {
     _commentController.dispose();
-    _accessKeyIdController.dispose();
-    _secretAccessKeyController.dispose();
-    _regionController.dispose();
-    _apiTokenController.dispose();
     super.dispose();
   }
 
-  bool get _hasCredentials {
-    if (_provider == DnsProvider.cloudflare) {
-      return _apiTokenController.text.isNotEmpty;
-    } else {
-      return _accessKeyIdController.text.isNotEmpty &&
-          _secretAccessKeyController.text.isNotEmpty;
-    }
+  ServiceProvider get _serviceProvider => switch (_provider) {
+        DnsProvider.cloudflare => ServiceProvider.cloudflare,
+        DnsProvider.route53 => ServiceProvider.aws,
+      };
+
+  List<ServiceAccountTableData> _filteredAccounts(AccountsState state) {
+    if (state is! AccountsLoaded) return [];
+    return state.accounts
+        .where((a) => a.provider == _serviceProvider)
+        .toList();
   }
 
   Future<void> _fetchZones() async {
-    if (!_hasCredentials) {
-      setState(() {
-        _fetchError = 'Please enter credentials first';
-      });
+    if (_selectedAccount == null) {
+      setState(() => _fetchError = 'Please select a service account first');
       return;
     }
 
@@ -84,21 +78,27 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
     });
 
     try {
+      final accountsBloc = context.read<AccountsBloc>();
+      final apiKey = await accountsBloc.getApiKey(_selectedAccount!.id);
+      if (apiKey == null) {
+        throw Exception('No API key found for this account');
+      }
+
       final zones = <_ZoneOption>[];
 
       switch (_provider) {
         case DnsProvider.route53:
+          final credentials = jsonDecode(apiKey) as Map<String, dynamic>;
           final dio = Dio(BaseOptions(
             baseUrl: 'https://route53.amazonaws.com/2013-04-01',
             headers: {'Content-Type': 'application/xml'},
           ));
           dio.transformer = r53.XmlTransformer();
-          // Order matters: XML conversion -> AWS signing -> logging
           dio.interceptors.add(r53.XmlRequestInterceptor());
           dio.interceptors.add(r53.AwsSigV4Interceptor(
-            accessKeyId: _accessKeyIdController.text,
-            secretAccessKey: _secretAccessKeyController.text,
-            region: _regionController.text,
+            accessKeyId: credentials['accessKeyId'] as String,
+            secretAccessKey: credentials['secretAccessKey'] as String,
+            region: credentials['region'] as String? ?? 'us-east-1',
             serviceName: 'route53',
           ));
           dio.interceptors.add(LogInterceptor(
@@ -126,7 +126,7 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
           final dio = Dio(BaseOptions(
             baseUrl: 'https://api.cloudflare.com/client/v4',
             headers: {
-              'Authorization': 'Bearer ${_apiTokenController.text}',
+              'Authorization': 'Bearer $apiKey',
               'Content-Type': 'application/json',
             },
           ));
@@ -149,10 +149,8 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
         }
       });
     } catch (e, stackTrace) {
-      // ignore: avoid_print
-      print('Failed to fetch zones: $e');
-      // ignore: avoid_print
-      print('Stack trace: $stackTrace');
+      debugPrint('Failed to fetch zones: $e');
+      debugPrint('Stack trace: $stackTrace');
       setState(() {
         _isFetchingZones = false;
         _fetchError = 'Failed to fetch zones: ${e.toString()}';
@@ -163,30 +161,21 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedZone == null) {
-      setState(() {
-        _fetchError = 'Please select a zone';
-      });
+      setState(() => _fetchError = 'Please select a zone');
+      return;
+    }
+    if (_selectedAccount == null) {
+      setState(() => _fetchError = 'Please select a service account');
       return;
     }
 
     setState(() => _isSubmitting = true);
 
-    final credentials = switch (_provider) {
-      DnsProvider.route53 => Route53Credentials(
-          accessKeyId: _accessKeyIdController.text,
-          secretAccessKey: _secretAccessKeyController.text,
-          region: _regionController.text,
-        ).encode(),
-      DnsProvider.cloudflare => CloudflareCredentials(
-          apiToken: _apiTokenController.text,
-        ).encode(),
-    };
-
     context.read<ZoneBloc>().add(ZoneAdd(
           provider: _provider,
           zoneId: _selectedZone!.id,
           zoneName: _selectedZone!.name,
-          credentials: credentials,
+          serviceAccountId: _selectedAccount!.id,
           comment: _commentController.text.isEmpty
               ? null
               : _commentController.text,
@@ -198,6 +187,7 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
   void _onProviderChanged(DnsProvider provider) {
     setState(() {
       _provider = provider;
+      _selectedAccount = null;
       _availableZones = null;
       _selectedZone = null;
       _fetchError = null;
@@ -207,7 +197,8 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
-      selectedIndex: Destinations.indexOf(const Key(ServiceScreen.name), context),
+      selectedIndex:
+          Destinations.indexOf(const Key(ServiceScreen.name), context),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => SafeArea(
@@ -255,90 +246,89 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Provider-specific credentials
+                      // Service account selection
                       const Text(
-                        'Credentials',
+                        'Service Account',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
+                      BlocBuilder<AccountsBloc, AccountsState>(
+                        builder: (context, state) {
+                          final accounts = _filteredAccounts(state);
 
-                      if (_provider == DnsProvider.cloudflare) ...[
-                        TextFormField(
-                          controller: _apiTokenController,
-                          decoration: const InputDecoration(
-                            labelText: 'API Token',
-                            hintText: 'Your Cloudflare API token',
-                            border: OutlineInputBorder(),
-                          ),
-                          obscureText: true,
-                          onChanged: (_) => setState(() {
-                            _availableZones = null;
-                            _selectedZone = null;
-                          }),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your API token';
-                            }
-                            return null;
-                          },
-                        ),
-                      ] else ...[
-                        TextFormField(
-                          controller: _accessKeyIdController,
-                          decoration: const InputDecoration(
-                            labelText: 'Access Key ID',
-                            border: OutlineInputBorder(),
-                          ),
-                          onChanged: (_) => setState(() {
-                            _availableZones = null;
-                            _selectedZone = null;
-                          }),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your Access Key ID';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _secretAccessKeyController,
-                          decoration: const InputDecoration(
-                            labelText: 'Secret Access Key',
-                            border: OutlineInputBorder(),
-                          ),
-                          obscureText: true,
-                          onChanged: (_) => setState(() {
-                            _availableZones = null;
-                            _selectedZone = null;
-                          }),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your Secret Access Key';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _regionController,
-                          decoration: const InputDecoration(
-                            labelText: 'Region',
-                            hintText: 'us-east-1',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ],
+                          if (accounts.isEmpty) {
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color:
+                                      Theme.of(context).colorScheme.outline,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'No ${_provider == DnsProvider.cloudflare ? "Cloudflare" : "AWS"} accounts configured',
+                                    style:
+                                        const TextStyle(color: Colors.grey),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  OutlinedButton.icon(
+                                    onPressed: () =>
+                                        context.go('/settings/account'),
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('Add Account'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return DropdownButtonFormField<
+                              ServiceAccountTableData>(
+                            value: _selectedAccount,
+                            decoration: const InputDecoration(
+                              labelText: 'Account',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: accounts
+                                .map((account) => DropdownMenuItem(
+                                      value: account,
+                                      child: Text(account.name),
+                                    ))
+                                .toList(),
+                            onChanged: (account) {
+                              setState(() {
+                                _selectedAccount = account;
+                                _availableZones = null;
+                                _selectedZone = null;
+                                _fetchError = null;
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Please select an account';
+                              }
+                              return null;
+                            },
+                          );
+                        },
+                      ),
                       const SizedBox(height: 16),
 
                       // Fetch zones button
                       OutlinedButton.icon(
-                        onPressed: _isFetchingZones ? null : _fetchZones,
+                        onPressed: (_isFetchingZones ||
+                                _selectedAccount == null)
+                            ? null
+                            : _fetchZones,
                         icon: _isFetchingZones
                             ? const SizedBox(
                                 height: 16,
                                 width: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2),
                               )
                             : const Icon(Icons.refresh),
                         label: Text(_isFetchingZones
@@ -376,7 +366,7 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
-                            'Enter credentials and tap "Fetch Available Zones" to see your zones',
+                            'Select an account and tap "Fetch Available Zones" to see your zones',
                             style: TextStyle(color: Colors.grey),
                             textAlign: TextAlign.center,
                           ),
@@ -406,7 +396,8 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                           items: _availableZones!
                               .map((zone) => DropdownMenuItem(
                                     value: zone,
-                                    child: Text('${zone.name} (${zone.id})'),
+                                    child:
+                                        Text('${zone.name} (${zone.id})'),
                                   ))
                               .toList(),
                           onChanged: (zone) {
@@ -443,7 +434,8 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                             ? const SizedBox(
                                 height: 20,
                                 width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2),
                               )
                             : const Text('Add Zone'),
                       ),

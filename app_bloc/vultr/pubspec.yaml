@@ -13,6 +13,7 @@ dependencies:
   bloc: any
   equatable: any
   app_secure_storage: any
+  app_database: any
   vultr_api: any
 
 dev_dependencies:

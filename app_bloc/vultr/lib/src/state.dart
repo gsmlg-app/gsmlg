@@ -8,28 +8,28 @@ sealed class VultrState extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Initial state before loading
+/// Initial state — no account selected yet.
 final class VultrInitial extends VultrState {
   const VultrInitial();
 }
 
-/// Loading state
+/// Loading state.
 final class VultrLoading extends VultrState {
   const VultrLoading();
 }
 
-/// Successfully loaded with instances list
+/// Successfully loaded with instances list.
 final class VultrLoaded extends VultrState {
   const VultrLoaded({
     required this.instances,
-    required this.apiKey,
+    required this.accountId,
     this.refreshing = false,
     this.actionInstanceId,
     this.error,
   });
 
   final List<InstanceGet> instances;
-  final String apiKey;
+  final int accountId;
   final bool refreshing;
   final String? actionInstanceId;
   final String? error;
@@ -37,19 +37,14 @@ final class VultrLoaded extends VultrState {
   @override
   List<Object?> get props => [
     instances,
-    apiKey,
+    accountId,
     refreshing,
     actionInstanceId,
     error,
   ];
 }
 
-/// Not connected (no API key stored)
-final class VultrDisconnected extends VultrState {
-  const VultrDisconnected();
-}
-
-/// Error state
+/// Error state.
 final class VultrError extends VultrState {
   const VultrError({required this.message});
 

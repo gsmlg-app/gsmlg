@@ -1,3 +1,4 @@
+import 'package:app_database/app_database.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -8,12 +9,11 @@ part 'event.dart';
 part 'state.dart';
 
 class VultrBloc extends Bloc<VultrEvent, VultrState> {
-  VultrBloc({required VaultRepository vault})
+  VultrBloc({required VaultRepository vault, required AppDatabase database})
     : _vault = vault,
+      _database = database,
       super(const VultrInitial()) {
-    on<VultrLoad>(_onLoad);
-    on<VultrConnect>(_onConnect);
-    on<VultrDisconnect>(_onDisconnect);
+    on<VultrSelectAccount>(_onSelectAccount);
     on<VultrRefresh>(_onRefresh);
     on<VultrStartInstance>(_onStart);
     on<VultrStopInstance>(_onStop);
@@ -21,10 +21,9 @@ class VultrBloc extends Bloc<VultrEvent, VultrState> {
   }
 
   final VaultRepository _vault;
+  final AppDatabase _database;
   ApiClient? _apiClient;
   InstancesApi? _api;
-
-  static const String _apiKeyKey = 'vultr_api_key';
 
   void _initApi(String apiKey) {
     final auth = HttpBearerAuth()..accessToken = apiKey;
@@ -32,61 +31,37 @@ class VultrBloc extends Bloc<VultrEvent, VultrState> {
     _api = InstancesApi(_apiClient!);
   }
 
-  Future<void> _onLoad(VultrLoad event, Emitter<VultrState> emit) async {
-    emit(const VultrLoading());
-
-    try {
-      final apiKey = await _vault.read(key: _apiKeyKey);
-      if (apiKey == null || apiKey.isEmpty) {
-        emit(const VultrDisconnected());
-        return;
-      }
-
-      _initApi(apiKey);
-      final response = await _api!.listInstances();
-      final instances = response?.instances ?? <InstanceGet>[];
-      emit(VultrLoaded(instances: instances, apiKey: apiKey));
-    } catch (e) {
-      _apiClient = null;
-      _api = null;
-      emit(VultrError(message: e.toString()));
+  Future<String> _getApiKey(int accountId) async {
+    final key = 'service_account_$accountId';
+    final apiKey = await _vault.read(key: key);
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('No API key found for this account');
     }
+    return apiKey;
   }
 
-  Future<void> _onConnect(VultrConnect event, Emitter<VultrState> emit) async {
-    emit(const VultrLoading());
-
-    try {
-      _initApi(event.apiKey);
-      final response = await _api!.listInstances();
-      final instances = response?.instances ?? <InstanceGet>[];
-
-      await _vault.write(key: _apiKeyKey, value: event.apiKey);
-      emit(VultrLoaded(instances: instances, apiKey: event.apiKey));
-    } catch (e) {
-      _apiClient = null;
-      _api = null;
-      final message = e.toString();
-      if (message.contains('401') || message.contains('403')) {
-        emit(const VultrError(message: 'Invalid API key'));
-      } else {
-        emit(VultrError(message: 'Failed to connect: $message'));
-      }
-    }
+  /// Get all Vultr service accounts from the database.
+  Future<List<ServiceAccountTableData>> getVultrAccounts() async {
+    final query = _database.select(_database.serviceAccountTable)
+      ..where((t) => t.provider.equals(ServiceProvider.vultr.name));
+    return query.get();
   }
 
-  Future<void> _onDisconnect(
-    VultrDisconnect event,
+  Future<void> _onSelectAccount(
+    VultrSelectAccount event,
     Emitter<VultrState> emit,
   ) async {
     emit(const VultrLoading());
 
     try {
+      final apiKey = await _getApiKey(event.accountId);
+      _initApi(apiKey);
+      final response = await _api!.listInstances();
+      final instances = response?.instances ?? <InstanceGet>[];
+      emit(VultrLoaded(instances: instances, accountId: event.accountId));
+    } catch (e) {
       _apiClient = null;
       _api = null;
-      await _vault.delete(key: _apiKeyKey);
-      emit(const VultrDisconnected());
-    } catch (e) {
       emit(VultrError(message: e.toString()));
     }
   }
@@ -98,16 +73,21 @@ class VultrBloc extends Bloc<VultrEvent, VultrState> {
     emit(
       VultrLoaded(
         instances: currentState.instances,
-        apiKey: currentState.apiKey,
+        accountId: currentState.accountId,
         refreshing: true,
       ),
     );
 
     try {
-      if (_api == null) _initApi(currentState.apiKey);
+      if (_api == null) {
+        final apiKey = await _getApiKey(currentState.accountId);
+        _initApi(apiKey);
+      }
       final response = await _api!.listInstances();
       final instances = response?.instances ?? <InstanceGet>[];
-      emit(VultrLoaded(instances: instances, apiKey: currentState.apiKey));
+      emit(
+        VultrLoaded(instances: instances, accountId: currentState.accountId),
+      );
     } catch (e) {
       emit(VultrError(message: e.toString()));
     }
@@ -123,22 +103,23 @@ class VultrBloc extends Bloc<VultrEvent, VultrState> {
     emit(
       VultrLoaded(
         instances: currentState.instances,
-        apiKey: currentState.apiKey,
+        accountId: currentState.accountId,
         actionInstanceId: event.instanceId,
       ),
     );
 
     try {
       await _api!.startInstance(event.instanceId);
-      // Refresh instances list after action
       final response = await _api!.listInstances();
       final instances = response?.instances ?? <InstanceGet>[];
-      emit(VultrLoaded(instances: instances, apiKey: currentState.apiKey));
+      emit(
+        VultrLoaded(instances: instances, accountId: currentState.accountId),
+      );
     } catch (e) {
       emit(
         VultrLoaded(
           instances: currentState.instances,
-          apiKey: currentState.apiKey,
+          accountId: currentState.accountId,
           error: 'Failed to start: ${e.toString()}',
         ),
       );
@@ -155,7 +136,7 @@ class VultrBloc extends Bloc<VultrEvent, VultrState> {
     emit(
       VultrLoaded(
         instances: currentState.instances,
-        apiKey: currentState.apiKey,
+        accountId: currentState.accountId,
         actionInstanceId: event.instanceId,
       ),
     );
@@ -164,12 +145,14 @@ class VultrBloc extends Bloc<VultrEvent, VultrState> {
       await _api!.haltInstance(event.instanceId);
       final response = await _api!.listInstances();
       final instances = response?.instances ?? <InstanceGet>[];
-      emit(VultrLoaded(instances: instances, apiKey: currentState.apiKey));
+      emit(
+        VultrLoaded(instances: instances, accountId: currentState.accountId),
+      );
     } catch (e) {
       emit(
         VultrLoaded(
           instances: currentState.instances,
-          apiKey: currentState.apiKey,
+          accountId: currentState.accountId,
           error: 'Failed to stop: ${e.toString()}',
         ),
       );
@@ -186,7 +169,7 @@ class VultrBloc extends Bloc<VultrEvent, VultrState> {
     emit(
       VultrLoaded(
         instances: currentState.instances,
-        apiKey: currentState.apiKey,
+        accountId: currentState.accountId,
         actionInstanceId: event.instanceId,
       ),
     );
@@ -195,12 +178,14 @@ class VultrBloc extends Bloc<VultrEvent, VultrState> {
       await _api!.rebootInstance(event.instanceId);
       final response = await _api!.listInstances();
       final instances = response?.instances ?? <InstanceGet>[];
-      emit(VultrLoaded(instances: instances, apiKey: currentState.apiKey));
+      emit(
+        VultrLoaded(instances: instances, accountId: currentState.accountId),
+      );
     } catch (e) {
       emit(
         VultrLoaded(
           instances: currentState.instances,
-          apiKey: currentState.apiKey,
+          accountId: currentState.accountId,
           error: 'Failed to reboot: ${e.toString()}',
         ),
       );
