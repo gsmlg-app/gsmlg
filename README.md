@@ -10,6 +10,48 @@ A cross-platform developer toolbox and services management app built with Flutte
 - **Cross-Platform** - Runs on Android, iOS, macOS, Linux, Windows, and Web
 - **Privacy-First** - LLM inference happens on-device; conversations never leave your machine
 
+## Screens
+
+### Home
+
+The main landing screen with an animated GSMLG logo and quick access to all sections via the navigation bar.
+
+### Chat
+
+On-device AI chat powered by Google Gemma models. Includes conversation history, configurable system prompts, and model management. All inference runs locally — no data leaves the device.
+
+- **Chat** - Send messages and receive responses from Gemma models
+- **Chat History** - Browse and resume previous conversations
+- **Chat Settings** - Configure default system prompts and generation parameters
+
+### Services
+
+Cloud infrastructure management from a single dashboard.
+
+- **Domain (DNS)** - Manage CloudFlare DNS zones and records. Sync zones, add/edit/delete records, and browse zone details
+- **GitHub** - Browse your GitHub repositories with pinned repos and search. View repository details and metadata
+- **Vultr** - Monitor and manage Vultr cloud instances. View server status, specs, and configuration
+
+### Toolbox
+
+A collection of network and device utility tools.
+
+- **WHOIS** - Look up domain and IP registration information with automatic search history tracking
+- **IP Geolocation** - Locate IP addresses on a world map using a local offline database
+- **Bluetooth Scanner** - Discover and inspect nearby Bluetooth devices (Android, iOS, macOS)
+- **Camera** - Access device camera for photo and video capture, with a dedicated macOS implementation
+- **Monitor** - Real-time system metrics dashboard for machines on the local network. Connects to monitor agents via WebSocket with mDNS auto-discovery, displaying CPU, memory, GPU, network, and disk metrics through radial gauges and sparkline charts
+
+### Settings
+
+App configuration and device information.
+
+- **Account** - Authentication and credential management
+- **Appearance** - Theme selection (light/dark/system) and accent color customization
+- **Model Management** - Download, install, and switch between Gemma language models
+- **Device Info** - Hardware and software details for the current device
+- **Wi-Fi Info** - Network connection details and status
+
 ## Getting Started
 
 ### Prerequisites
@@ -62,4 +104,7 @@ melos run brick-test       # Test Mason templates
 - [Mason Bricks Guide](./docs/BRICKS.md) - Code generation templates
 - [Brick Testing](./docs/BRICK_TESTING.md) - Testing Mason bricks
 - [Form BLoC Guide](./docs/FORM_BLOC.md) - Form validation and submission
+- [Monitor PRD](./docs/MONITOR_PRD.md) - Monitor module requirements
+- [Monitor Design](./docs/MONITOR_DESIGN.md) - Monitor architecture and protocol
+- [Monitor Implementation](./docs/MONITOR_IMPLEMENTATION.md) - Monitor build guide
 - [CLAUDE.md](./CLAUDE.md) - AI assistant development guidance
