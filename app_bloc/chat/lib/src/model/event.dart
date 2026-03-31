@@ -94,6 +94,13 @@ final class GemmaModelDeleteById extends GemmaModelEvent {
   final String modelId;
 }
 
+/// Dismiss a failed download from the failed list.
+final class GemmaModelDismissFailure extends GemmaModelEvent {
+  const GemmaModelDismissFailure({required this.modelId});
+
+  final String modelId;
+}
+
 /// Internal event for status changes from the repository.
 final class _GemmaModelStatusChanged extends GemmaModelEvent {
   const _GemmaModelStatusChanged(this.status);
@@ -110,7 +117,13 @@ final class _GemmaModelDownloadProgress extends GemmaModelEvent {
 
 /// Internal event fired when a single model download completes.
 final class _GemmaModelDownloadComplete extends GemmaModelEvent {
-  const _GemmaModelDownloadComplete({required this.modelId});
+  const _GemmaModelDownloadComplete({
+    required this.modelId,
+    this.errorMessage,
+  });
 
   final String modelId;
+
+  /// Non-null when the download failed.
+  final String? errorMessage;
 }

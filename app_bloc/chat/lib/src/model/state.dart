@@ -16,6 +16,20 @@ class ModelDownloadProgress extends Equatable {
   List<Object?> get props => [modelId, progress];
 }
 
+/// Info about a failed download.
+class FailedDownload extends Equatable {
+  const FailedDownload({
+    required this.modelId,
+    required this.errorMessage,
+  });
+
+  final String modelId;
+  final String errorMessage;
+
+  @override
+  List<Object?> get props => [modelId, errorMessage];
+}
+
 /// State for the GemmaModelBloc.
 class GemmaModelState extends Equatable {
   const GemmaModelState({
@@ -26,6 +40,7 @@ class GemmaModelState extends Equatable {
     this.proxyUrl,
     this.selectedModelId,
     this.activeDownloads = const [],
+    this.failedDownloads = const [],
   });
 
   /// Current status of the model.
@@ -49,6 +64,9 @@ class GemmaModelState extends Equatable {
   /// Currently active downloads (max 3 concurrent).
   final List<ModelDownloadProgress> activeDownloads;
 
+  /// Downloads that failed with their error messages.
+  final List<FailedDownload> failedDownloads;
+
   @override
   List<Object?> get props => [
         status,
@@ -58,6 +76,7 @@ class GemmaModelState extends Equatable {
         proxyUrl,
         selectedModelId,
         activeDownloads,
+        failedDownloads,
       ];
 
   /// Whether the model is ready for inference.
@@ -107,6 +126,7 @@ class GemmaModelState extends Equatable {
     String? selectedModelId,
     bool clearSelectedModel = false,
     List<ModelDownloadProgress>? activeDownloads,
+    List<FailedDownload>? failedDownloads,
   }) {
     return GemmaModelState(
       status: status ?? this.status,
@@ -117,6 +137,7 @@ class GemmaModelState extends Equatable {
       selectedModelId:
           clearSelectedModel ? null : (selectedModelId ?? this.selectedModelId),
       activeDownloads: activeDownloads ?? this.activeDownloads,
+      failedDownloads: failedDownloads ?? this.failedDownloads,
     );
   }
 }

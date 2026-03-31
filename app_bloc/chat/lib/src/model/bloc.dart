@@ -32,6 +32,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     on<GemmaModelDelete>(_onDelete);
     on<GemmaModelSelect>(_onSelect);
     on<GemmaModelDeleteById>(_onDeleteById);
+    on<GemmaModelDismissFailure>(_onDismissFailure);
     on<_GemmaModelStatusChanged>(_onStatusChanged);
     on<_GemmaModelDownloadProgress>(_onDownloadProgress);
     on<_GemmaModelDownloadComplete>(_onDownloadComplete);
@@ -203,14 +204,17 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       return;
     }
 
-    // Add to active downloads
+    // Add to active downloads, clear from failed list
     final updatedDownloads = [
       ...state.activeDownloads,
       ModelDownloadProgress(modelId: modelId),
     ];
+    final updatedFailed =
+        state.failedDownloads.where((f) => f.modelId != modelId).toList();
     emit(state.copyWith(
       status: GemmaModelStatus.downloading,
       activeDownloads: updatedDownloads,
+      failedDownloads: updatedFailed,
     ));
 
     // Start the actual download
@@ -227,6 +231,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     // Run download in a fire-and-forget fashion so multiple can be queued.
     // The repository streams progress/status that we handle via events.
     () async {
+      String? errorMessage;
       try {
         if (proxy != null && proxy.isNotEmpty) {
           await _repository.installModelWithProxy(
@@ -242,8 +247,14 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
             token: event.token,
           );
         }
+      } catch (e) {
+        errorMessage = e.toString();
+        debugPrint('[GemmaModelBloc] Download failed for $modelId: $errorMessage');
       } finally {
-        add(_GemmaModelDownloadComplete(modelId: modelId));
+        add(_GemmaModelDownloadComplete(
+          modelId: modelId,
+          errorMessage: errorMessage ?? _repository.lastError,
+        ));
       }
     }();
   }
@@ -252,12 +263,24 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     _GemmaModelDownloadComplete event,
     Emitter<GemmaModelState> emit,
   ) async {
-    debugPrint('[GemmaModelBloc] Download complete: ${event.modelId}');
+    final hasFailed = event.errorMessage != null;
+    debugPrint(
+        '[GemmaModelBloc] Download complete: ${event.modelId}, failed=$hasFailed');
 
     // Remove from active downloads
     final updatedDownloads = state.activeDownloads
         .where((d) => d.modelId != event.modelId)
         .toList();
+
+    // Track failed download (replace existing entry for same model)
+    final updatedFailed = [
+      ...state.failedDownloads.where((f) => f.modelId != event.modelId),
+      if (hasFailed)
+        FailedDownload(
+          modelId: event.modelId,
+          errorMessage: event.errorMessage!,
+        ),
+    ];
 
     // Refresh installed list
     final installed = await _repository.listInstalledModels();
@@ -266,6 +289,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     emit(state.copyWith(
       installedModels: installed,
       activeDownloads: updatedDownloads,
+      failedDownloads: updatedFailed,
       status: updatedDownloads.isEmpty && state.status == GemmaModelStatus.downloading
           ? (installed.isNotEmpty
               ? GemmaModelStatus.installed
@@ -521,6 +545,15 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       installedModels: installed,
       clearSelectedModel: wasSelected,
     ));
+  }
+
+  void _onDismissFailure(
+    GemmaModelDismissFailure event,
+    Emitter<GemmaModelState> emit,
+  ) {
+    final updatedFailed =
+        state.failedDownloads.where((f) => f.modelId != event.modelId).toList();
+    emit(state.copyWith(failedDownloads: updatedFailed));
   }
 
   void _onStatusChanged(

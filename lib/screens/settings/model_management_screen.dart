@@ -62,6 +62,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                         _buildDownloadedSection(context, state),
                         if (state.isDownloading)
                           _buildDownloadingSection(context, state),
+                        if (state.failedDownloads.isNotEmpty)
+                          _buildFailedSection(context, state),
                         ..._buildAvailableSections(context, state),
                         _buildProxySection(context, state),
                       ],
@@ -184,6 +186,67 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
     return SettingsSection(
       title: Text('Downloading (${state.activeDownloads.length}/3)'),
+      tiles: tiles,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Failed Downloads
+  // ---------------------------------------------------------------------------
+
+  SettingsSection _buildFailedSection(
+      BuildContext context, GemmaModelState state) {
+    final tiles = <SettingsTile>[];
+
+    for (final failed in state.failedDownloads) {
+      final info = GemmaModelInfo.findById(failed.modelId);
+      final displayName = info?.displayName ?? failed.modelId;
+
+      tiles.add(
+        SettingsTile(
+          leading: Icon(
+            Icons.error_outline,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          title: Text(displayName),
+          description: Text(
+            failed.errorMessage,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Retry',
+                onPressed: () {
+                  if (info != null) {
+                    _installModel(context, info);
+                  }
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: 'Dismiss',
+                onPressed: () {
+                  context.read<GemmaModelBloc>().add(
+                        GemmaModelDismissFailure(modelId: failed.modelId),
+                      );
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SettingsSection(
+      title: Text(
+        'Failed Downloads',
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      ),
       tiles: tiles,
     );
   }
