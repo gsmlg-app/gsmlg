@@ -48,16 +48,25 @@ class ModelStatusBanner extends StatelessWidget {
     };
   }
 
+  String? get _selectedModelName {
+    final selectedId = state.selectedModelId;
+    if (selectedId == null) return null;
+    return GemmaModelInfo.findById(selectedId)?.displayName;
+  }
+
   Widget _buildCheckingContent(BuildContext context) {
-    return const Row(
+    final modelName = _selectedModelName;
+    final text =
+        modelName != null ? 'Checking $modelName...' : 'Checking model status...';
+    return Row(
       children: [
-        SizedBox(
+        const SizedBox(
           width: 16,
           height: 16,
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
-        SizedBox(width: 12),
-        Text('Checking model status...'),
+        const SizedBox(width: 12),
+        Expanded(child: Text(text)),
       ],
     );
   }
@@ -193,13 +202,17 @@ class ModelStatusBanner extends StatelessWidget {
 
   Widget _buildErrorContent(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final modelName = _selectedModelName;
+    final errorText = modelName != null
+        ? '$modelName: ${state.errorMessage ?? 'An error occurred'}'
+        : state.errorMessage ?? 'An error occurred';
     return Row(
       children: [
         Icon(Icons.error_outline, size: 20, color: colorScheme.error),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            state.errorMessage ?? 'An error occurred',
+            errorText,
             style: TextStyle(color: colorScheme.error),
           ),
         ),

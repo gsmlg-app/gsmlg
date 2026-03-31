@@ -491,7 +491,11 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     _suppressStatusStream = true;
 
     await _preferences.setString(_selectedModelKey, event.modelId);
-    emit(state.copyWith(selectedModelId: event.modelId));
+    // Emit loading immediately so the UI shows the model switch transition.
+    emit(state.copyWith(
+      selectedModelId: event.modelId,
+      status: GemmaModelStatus.loading,
+    ));
 
     await _repository.unloadModel();
 
