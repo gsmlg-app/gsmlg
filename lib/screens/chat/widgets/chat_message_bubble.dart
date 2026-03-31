@@ -86,10 +86,65 @@ class ChatMessageBubble extends StatelessWidget {
     final textColor =
         isUser ? colorScheme.onPrimary : colorScheme.onSurface;
 
+    // Tool response messages
+    if (message is ToolResponseMessage) {
+      final toolMsg = message as ToolResponseMessage;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.build, size: 14, color: colorScheme.primary),
+              const SizedBox(width: 6),
+              Text(
+                toolMsg.toolName,
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            toolMsg.content,
+            style: TextStyle(
+              color: colorScheme.onSurface,
+              fontSize: 12,
+              fontFamily: 'monospace',
+            ),
+            maxLines: 8,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      );
+    }
+
     if (isUser) {
-      return Text(
-        message.content,
-        style: TextStyle(color: textColor, fontSize: 16, height: 1.4),
+      final userMsg = message as UserMessage;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (userMsg.hasImage)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  userMsg.imageBytes!,
+                  width: 200,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          if (message.content.isNotEmpty)
+            Text(
+              message.content,
+              style: TextStyle(color: textColor, fontSize: 16, height: 1.4),
+            ),
+        ],
       );
     }
 

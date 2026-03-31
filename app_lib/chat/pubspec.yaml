@@ -18,6 +18,8 @@ dependencies:
   path_provider: ^2.1.5
   path: any
   app_database: any
+  gsmlg_whois: any
+  ip_db: any
 
 dev_dependencies:
   flutter_test:

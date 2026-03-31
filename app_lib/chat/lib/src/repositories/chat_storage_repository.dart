@@ -101,6 +101,10 @@ class ChatStorageRepository {
             role: Value(message.role),
             content: Value(message.content),
             tokenCount: Value(tokenCount),
+            imageBytes: Value(
+                message is UserMessage ? message.imageBytes : null),
+            toolName: Value(
+                message is ToolResponseMessage ? message.toolName : null),
             timestamp: Value(message.timestamp),
           ),
         );
@@ -211,6 +215,7 @@ class ChatStorageRepository {
           content: row.content,
           conversationId: row.conversationId,
           timestamp: row.timestamp,
+          imageBytes: row.imageBytes,
         ),
       'assistant' => AssistantMessage(
           id: row.id,
@@ -224,6 +229,13 @@ class ChatStorageRepository {
           content: row.content,
           conversationId: row.conversationId,
           timestamp: row.timestamp,
+        ),
+      'tool_response' => ToolResponseMessage(
+          id: row.id,
+          content: row.content,
+          conversationId: row.conversationId,
+          timestamp: row.timestamp,
+          toolName: row.toolName ?? 'unknown',
         ),
       _ => UserMessage(
           id: row.id,

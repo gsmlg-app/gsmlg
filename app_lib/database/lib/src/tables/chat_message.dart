@@ -20,6 +20,12 @@ class ChatMessageTable extends Table {
   /// Number of tokens in the message (null if not computed).
   IntColumn get tokenCount => integer().nullable()();
 
+  /// Image data for multimodal user messages (null for text-only).
+  BlobColumn get imageBytes => blob().nullable()();
+
+  /// Tool name for tool_response messages (null for other roles).
+  TextColumn get toolName => text().nullable()();
+
   /// Timestamp when the message was created.
   DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
 

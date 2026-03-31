@@ -39,7 +39,11 @@ class GemmaModelInfo {
     required this.modelType,
     this.category = ModelCategory.gemma,
     this.assetPath,
+    this.desktopUrl,
+    this.desktopSizeLabel,
     this.needsAuth = false,
+    this.supportsMultimodal = false,
+    this.supportsFunctionCalls = false,
   });
 
   /// Unique identifier, e.g. 'gemma3-1b-int4'.
@@ -60,6 +64,14 @@ class GemmaModelInfo {
   /// Flutter asset path if bundled with the app (null = download only).
   final String? assetPath;
 
+  /// Optional `.litertlm` download URL for desktop platforms.
+  /// When provided, desktop platforms use this URL instead of [url].
+  final String? desktopUrl;
+
+  /// Approximate download size on desktop (when [desktopUrl] differs from
+  /// [url]). Falls back to [sizeLabel] if null.
+  final String? desktopSizeLabel;
+
   /// The model type for flutter_gemma.
   final gemma.ModelType modelType;
 
@@ -69,6 +81,12 @@ class GemmaModelInfo {
   /// Whether HuggingFace auth token is required.
   final bool needsAuth;
 
+  /// Whether this model supports multimodal (image) input.
+  final bool supportsMultimodal;
+
+  /// Whether this model supports function/tool calling.
+  final bool supportsFunctionCalls;
+
   /// Whether this model is bundled as an app asset.
   bool get isBundled => assetPath != null;
 
@@ -76,15 +94,38 @@ class GemmaModelInfo {
   /// required on desktop platforms (macOS, Linux, Windows).
   bool get isLiteRtLm => url.endsWith('.litertlm');
 
+  /// Whether a `.litertlm` variant is available (either natively or via
+  /// [desktopUrl]).
+  bool get hasLiteRtLm => isLiteRtLm || desktopUrl != null;
+
   /// Whether this model is compatible with the current platform.
   ///
-  /// Desktop platforms require `.litertlm` format; mobile platforms support
-  /// both `.task` and `.litertlm`.
+  /// Desktop platforms require `.litertlm` format (either the primary [url]
+  /// or a separate [desktopUrl]); mobile platforms support all formats.
   bool get isCurrentPlatformCompatible {
     if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-      return isLiteRtLm;
+      return hasLiteRtLm;
     }
     return true; // Mobile supports all formats
+  }
+
+  /// The download URL appropriate for the current platform.
+  ///
+  /// On desktop, returns [desktopUrl] if available, otherwise [url].
+  /// On mobile, always returns [url].
+  String get downloadUrl {
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+      return desktopUrl ?? url;
+    }
+    return url;
+  }
+
+  /// The size label appropriate for the current platform.
+  String get effectiveSizeLabel {
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+      return desktopSizeLabel ?? sizeLabel;
+    }
+    return sizeLabel;
   }
 
   // ---------------------------------------------------------------------------
@@ -98,8 +139,13 @@ class GemmaModelInfo {
     sizeLabel: '3.1 GB',
     url:
         'https://huggingface.co/google/gemma-3n-E2B-it-litert-preview/resolve/main/gemma-3n-E2B-it-int4.task',
+    desktopUrl:
+        'https://huggingface.co/google/gemma-3n-E2B-it-litert-lm/resolve/main/gemma-3n-E2B-it-int4.litertlm',
+    desktopSizeLabel: '3.7 GB',
     modelType: gemma.ModelType.gemmaIt,
     needsAuth: true,
+    supportsMultimodal: true,
+    supportsFunctionCalls: true,
   );
 
   static const _gemma3n4b = GemmaModelInfo(
@@ -109,8 +155,13 @@ class GemmaModelInfo {
     sizeLabel: '6.5 GB',
     url:
         'https://huggingface.co/google/gemma-3n-E4B-it-litert-preview/resolve/main/gemma-3n-E4B-it-int4.task',
+    desktopUrl:
+        'https://huggingface.co/google/gemma-3n-E4B-it-litert-lm/resolve/main/gemma-3n-E4B-it-int4.litertlm',
+    desktopSizeLabel: '4.9 GB',
     modelType: gemma.ModelType.gemmaIt,
     needsAuth: true,
+    supportsMultimodal: true,
+    supportsFunctionCalls: true,
   );
 
   static const _gemma3_1b = GemmaModelInfo(
@@ -120,6 +171,8 @@ class GemmaModelInfo {
     sizeLabel: '529 MB',
     url:
         'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task',
+    desktopUrl:
+        'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.litertlm',
     modelType: gemma.ModelType.gemmaIt,
     needsAuth: true,
   );
@@ -131,6 +184,9 @@ class GemmaModelInfo {
     sizeLabel: '270 MB',
     url:
         'https://huggingface.co/litert-community/gemma-3-270m-it/resolve/main/gemma3-270m-it-q8.task',
+    desktopUrl:
+        'https://huggingface.co/litert-community/gemma-3-270m-it/resolve/main/gemma3-270m-it-q8.litertlm',
+    desktopSizeLabel: '304 MB',
     modelType: gemma.ModelType.gemmaIt,
     needsAuth: true,
   );
@@ -143,6 +199,7 @@ class GemmaModelInfo {
     url:
         'https://huggingface.co/sasha-denisov/function-gemma-270M-it/resolve/main/functiongemma-270M-it.task',
     modelType: gemma.ModelType.functionGemma,
+    supportsFunctionCalls: true,
   );
 
   // ---------------------------------------------------------------------------
@@ -158,6 +215,7 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B.litertlm',
     modelType: gemma.ModelType.qwen,
     category: ModelCategory.qwen,
+    supportsFunctionCalls: true,
   );
 
   static const _qwen25_15b = GemmaModelInfo(
@@ -167,8 +225,11 @@ class GemmaModelInfo {
     sizeLabel: '1.6 GB',
     url:
         'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv1280.task',
+    desktopUrl:
+        'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm',
     modelType: gemma.ModelType.qwen,
     category: ModelCategory.qwen,
+    supportsFunctionCalls: true,
   );
 
   static const _qwen25_05b = GemmaModelInfo(
@@ -180,6 +241,7 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task',
     modelType: gemma.ModelType.qwen,
     category: ModelCategory.qwen,
+    supportsFunctionCalls: true,
   );
 
   // ---------------------------------------------------------------------------
@@ -193,6 +255,9 @@ class GemmaModelInfo {
     sizeLabel: '1.7 GB',
     url:
         'https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B/resolve/main/deepseek_q8_ekv1280.task',
+    desktopUrl:
+        'https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B_multi-prefill-seq_q8_ekv4096.litertlm',
+    desktopSizeLabel: '1.8 GB',
     modelType: gemma.ModelType.deepSeek,
     category: ModelCategory.deepSeek,
   );
@@ -208,8 +273,11 @@ class GemmaModelInfo {
     sizeLabel: '3.9 GB',
     url:
         'https://huggingface.co/litert-community/Phi-4-mini-instruct/resolve/main/Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.task',
+    desktopUrl:
+        'https://huggingface.co/litert-community/Phi-4-mini-instruct/resolve/main/Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.litertlm',
     modelType: gemma.ModelType.general,
     category: ModelCategory.phi,
+    supportsFunctionCalls: true,
   );
 
   // ---------------------------------------------------------------------------
@@ -225,6 +293,7 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/FastVLM-0.5B/resolve/main/FastVLM-0.5B.litertlm',
     modelType: gemma.ModelType.general,
     category: ModelCategory.other,
+    supportsMultimodal: true,
   );
 
   static const _smolLM = GemmaModelInfo(

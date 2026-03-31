@@ -1705,6 +1705,18 @@ class $ChatMessageTableTable extends ChatMessageTable
   late final GeneratedColumn<int> tokenCount = GeneratedColumn<int>(
       'token_count', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _imageBytesMeta =
+      const VerificationMeta('imageBytes');
+  @override
+  late final GeneratedColumn<Uint8List> imageBytes = GeneratedColumn<Uint8List>(
+      'image_bytes', aliasedName, true,
+      type: DriftSqlType.blob, requiredDuringInsert: false);
+  static const VerificationMeta _toolNameMeta =
+      const VerificationMeta('toolName');
+  @override
+  late final GeneratedColumn<String> toolName = GeneratedColumn<String>(
+      'tool_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _timestampMeta =
       const VerificationMeta('timestamp');
   @override
@@ -1714,8 +1726,16 @@ class $ChatMessageTableTable extends ChatMessageTable
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, conversationId, role, content, tokenCount, timestamp];
+  List<GeneratedColumn> get $columns => [
+        id,
+        conversationId,
+        role,
+        content,
+        tokenCount,
+        imageBytes,
+        toolName,
+        timestamp
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1758,6 +1778,16 @@ class $ChatMessageTableTable extends ChatMessageTable
           tokenCount.isAcceptableOrUnknown(
               data['token_count']!, _tokenCountMeta));
     }
+    if (data.containsKey('image_bytes')) {
+      context.handle(
+          _imageBytesMeta,
+          imageBytes.isAcceptableOrUnknown(
+              data['image_bytes']!, _imageBytesMeta));
+    }
+    if (data.containsKey('tool_name')) {
+      context.handle(_toolNameMeta,
+          toolName.isAcceptableOrUnknown(data['tool_name']!, _toolNameMeta));
+    }
     if (data.containsKey('timestamp')) {
       context.handle(_timestampMeta,
           timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta));
@@ -1781,6 +1811,10 @@ class $ChatMessageTableTable extends ChatMessageTable
           .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
       tokenCount: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}token_count']),
+      imageBytes: attachedDatabase.typeMapping
+          .read(DriftSqlType.blob, data['${effectivePrefix}image_bytes']),
+      toolName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}tool_name']),
       timestamp: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
     );
@@ -1809,6 +1843,12 @@ class ChatMessageTableData extends DataClass
   /// Number of tokens in the message (null if not computed).
   final int? tokenCount;
 
+  /// Image data for multimodal user messages (null for text-only).
+  final Uint8List? imageBytes;
+
+  /// Tool name for tool_response messages (null for other roles).
+  final String? toolName;
+
   /// Timestamp when the message was created.
   final DateTime timestamp;
   const ChatMessageTableData(
@@ -1817,6 +1857,8 @@ class ChatMessageTableData extends DataClass
       required this.role,
       required this.content,
       this.tokenCount,
+      this.imageBytes,
+      this.toolName,
       required this.timestamp});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1827,6 +1869,12 @@ class ChatMessageTableData extends DataClass
     map['content'] = Variable<String>(content);
     if (!nullToAbsent || tokenCount != null) {
       map['token_count'] = Variable<int>(tokenCount);
+    }
+    if (!nullToAbsent || imageBytes != null) {
+      map['image_bytes'] = Variable<Uint8List>(imageBytes);
+    }
+    if (!nullToAbsent || toolName != null) {
+      map['tool_name'] = Variable<String>(toolName);
     }
     map['timestamp'] = Variable<DateTime>(timestamp);
     return map;
@@ -1841,6 +1889,12 @@ class ChatMessageTableData extends DataClass
       tokenCount: tokenCount == null && nullToAbsent
           ? const Value.absent()
           : Value(tokenCount),
+      imageBytes: imageBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imageBytes),
+      toolName: toolName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(toolName),
       timestamp: Value(timestamp),
     );
   }
@@ -1854,6 +1908,8 @@ class ChatMessageTableData extends DataClass
       role: serializer.fromJson<String>(json['role']),
       content: serializer.fromJson<String>(json['content']),
       tokenCount: serializer.fromJson<int?>(json['tokenCount']),
+      imageBytes: serializer.fromJson<Uint8List?>(json['imageBytes']),
+      toolName: serializer.fromJson<String?>(json['toolName']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
     );
   }
@@ -1866,6 +1922,8 @@ class ChatMessageTableData extends DataClass
       'role': serializer.toJson<String>(role),
       'content': serializer.toJson<String>(content),
       'tokenCount': serializer.toJson<int?>(tokenCount),
+      'imageBytes': serializer.toJson<Uint8List?>(imageBytes),
+      'toolName': serializer.toJson<String?>(toolName),
       'timestamp': serializer.toJson<DateTime>(timestamp),
     };
   }
@@ -1876,6 +1934,8 @@ class ChatMessageTableData extends DataClass
           String? role,
           String? content,
           Value<int?> tokenCount = const Value.absent(),
+          Value<Uint8List?> imageBytes = const Value.absent(),
+          Value<String?> toolName = const Value.absent(),
           DateTime? timestamp}) =>
       ChatMessageTableData(
         id: id ?? this.id,
@@ -1883,6 +1943,8 @@ class ChatMessageTableData extends DataClass
         role: role ?? this.role,
         content: content ?? this.content,
         tokenCount: tokenCount.present ? tokenCount.value : this.tokenCount,
+        imageBytes: imageBytes.present ? imageBytes.value : this.imageBytes,
+        toolName: toolName.present ? toolName.value : this.toolName,
         timestamp: timestamp ?? this.timestamp,
       );
   ChatMessageTableData copyWithCompanion(ChatMessageTableCompanion data) {
@@ -1895,6 +1957,9 @@ class ChatMessageTableData extends DataClass
       content: data.content.present ? data.content.value : this.content,
       tokenCount:
           data.tokenCount.present ? data.tokenCount.value : this.tokenCount,
+      imageBytes:
+          data.imageBytes.present ? data.imageBytes.value : this.imageBytes,
+      toolName: data.toolName.present ? data.toolName.value : this.toolName,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
     );
   }
@@ -1907,14 +1972,16 @@ class ChatMessageTableData extends DataClass
           ..write('role: $role, ')
           ..write('content: $content, ')
           ..write('tokenCount: $tokenCount, ')
+          ..write('imageBytes: $imageBytes, ')
+          ..write('toolName: $toolName, ')
           ..write('timestamp: $timestamp')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, conversationId, role, content, tokenCount, timestamp);
+  int get hashCode => Object.hash(id, conversationId, role, content, tokenCount,
+      $driftBlobEquality.hash(imageBytes), toolName, timestamp);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1924,6 +1991,8 @@ class ChatMessageTableData extends DataClass
           other.role == this.role &&
           other.content == this.content &&
           other.tokenCount == this.tokenCount &&
+          $driftBlobEquality.equals(other.imageBytes, this.imageBytes) &&
+          other.toolName == this.toolName &&
           other.timestamp == this.timestamp);
 }
 
@@ -1933,6 +2002,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
   final Value<String> role;
   final Value<String> content;
   final Value<int?> tokenCount;
+  final Value<Uint8List?> imageBytes;
+  final Value<String?> toolName;
   final Value<DateTime> timestamp;
   final Value<int> rowid;
   const ChatMessageTableCompanion({
@@ -1941,6 +2012,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     this.role = const Value.absent(),
     this.content = const Value.absent(),
     this.tokenCount = const Value.absent(),
+    this.imageBytes = const Value.absent(),
+    this.toolName = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1950,6 +2023,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     required String role,
     required String content,
     this.tokenCount = const Value.absent(),
+    this.imageBytes = const Value.absent(),
+    this.toolName = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -1962,6 +2037,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     Expression<String>? role,
     Expression<String>? content,
     Expression<int>? tokenCount,
+    Expression<Uint8List>? imageBytes,
+    Expression<String>? toolName,
     Expression<DateTime>? timestamp,
     Expression<int>? rowid,
   }) {
@@ -1971,6 +2048,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       if (role != null) 'role': role,
       if (content != null) 'content': content,
       if (tokenCount != null) 'token_count': tokenCount,
+      if (imageBytes != null) 'image_bytes': imageBytes,
+      if (toolName != null) 'tool_name': toolName,
       if (timestamp != null) 'timestamp': timestamp,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1982,6 +2061,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       Value<String>? role,
       Value<String>? content,
       Value<int?>? tokenCount,
+      Value<Uint8List?>? imageBytes,
+      Value<String?>? toolName,
       Value<DateTime>? timestamp,
       Value<int>? rowid}) {
     return ChatMessageTableCompanion(
@@ -1990,6 +2071,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       role: role ?? this.role,
       content: content ?? this.content,
       tokenCount: tokenCount ?? this.tokenCount,
+      imageBytes: imageBytes ?? this.imageBytes,
+      toolName: toolName ?? this.toolName,
       timestamp: timestamp ?? this.timestamp,
       rowid: rowid ?? this.rowid,
     );
@@ -2013,6 +2096,12 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     if (tokenCount.present) {
       map['token_count'] = Variable<int>(tokenCount.value);
     }
+    if (imageBytes.present) {
+      map['image_bytes'] = Variable<Uint8List>(imageBytes.value);
+    }
+    if (toolName.present) {
+      map['tool_name'] = Variable<String>(toolName.value);
+    }
     if (timestamp.present) {
       map['timestamp'] = Variable<DateTime>(timestamp.value);
     }
@@ -2030,6 +2119,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
           ..write('role: $role, ')
           ..write('content: $content, ')
           ..write('tokenCount: $tokenCount, ')
+          ..write('imageBytes: $imageBytes, ')
+          ..write('toolName: $toolName, ')
           ..write('timestamp: $timestamp, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4472,6 +4563,8 @@ typedef $$ChatMessageTableTableCreateCompanionBuilder
   required String role,
   required String content,
   Value<int?> tokenCount,
+  Value<Uint8List?> imageBytes,
+  Value<String?> toolName,
   Value<DateTime> timestamp,
   Value<int> rowid,
 });
@@ -4482,6 +4575,8 @@ typedef $$ChatMessageTableTableUpdateCompanionBuilder
   Value<String> role,
   Value<String> content,
   Value<int?> tokenCount,
+  Value<Uint8List?> imageBytes,
+  Value<String?> toolName,
   Value<DateTime> timestamp,
   Value<int> rowid,
 });
@@ -4529,6 +4624,12 @@ class $$ChatMessageTableTableFilterComposer
   ColumnFilters<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<Uint8List> get imageBytes => $composableBuilder(
+      column: $table.imageBytes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get toolName => $composableBuilder(
+      column: $table.toolName, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnFilters(column));
 
@@ -4575,6 +4676,12 @@ class $$ChatMessageTableTableOrderingComposer
   ColumnOrderings<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<Uint8List> get imageBytes => $composableBuilder(
+      column: $table.imageBytes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get toolName => $composableBuilder(
+      column: $table.toolName, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnOrderings(column));
 
@@ -4620,6 +4727,12 @@ class $$ChatMessageTableTableAnnotationComposer
 
   GeneratedColumn<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get imageBytes => $composableBuilder(
+      column: $table.imageBytes, builder: (column) => column);
+
+  GeneratedColumn<String> get toolName =>
+      $composableBuilder(column: $table.toolName, builder: (column) => column);
 
   GeneratedColumn<DateTime> get timestamp =>
       $composableBuilder(column: $table.timestamp, builder: (column) => column);
@@ -4675,6 +4788,8 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             Value<String> role = const Value.absent(),
             Value<String> content = const Value.absent(),
             Value<int?> tokenCount = const Value.absent(),
+            Value<Uint8List?> imageBytes = const Value.absent(),
+            Value<String?> toolName = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -4684,6 +4799,8 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             role: role,
             content: content,
             tokenCount: tokenCount,
+            imageBytes: imageBytes,
+            toolName: toolName,
             timestamp: timestamp,
             rowid: rowid,
           ),
@@ -4693,6 +4810,8 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             required String role,
             required String content,
             Value<int?> tokenCount = const Value.absent(),
+            Value<Uint8List?> imageBytes = const Value.absent(),
+            Value<String?> toolName = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -4702,6 +4821,8 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             role: role,
             content: content,
             tokenCount: tokenCount,
+            imageBytes: imageBytes,
+            toolName: toolName,
             timestamp: timestamp,
             rowid: rowid,
           ),

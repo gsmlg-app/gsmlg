@@ -24,11 +24,17 @@ final class ChatNewConversation extends ChatEvent {
 ///
 /// If no conversation exists, one will be auto-created.
 /// [systemPrompt] is used only when auto-creating the conversation.
+/// [imageBytes] is optional image data for multimodal models.
 final class ChatSendMessage extends ChatEvent {
-  const ChatSendMessage({required this.content, this.systemPrompt});
+  const ChatSendMessage({
+    required this.content,
+    this.systemPrompt,
+    this.imageBytes,
+  });
 
   final String content;
   final String? systemPrompt;
+  final Uint8List? imageBytes;
 }
 
 /// Stop the current response generation.
@@ -75,4 +81,12 @@ final class _ChatStreamError extends ChatEvent {
   const _ChatStreamError(this.error);
 
   final String error;
+}
+
+/// Internal event when the model requests a function call.
+final class _ChatFunctionCall extends ChatEvent {
+  const _ChatFunctionCall({required this.name, required this.args});
+
+  final String name;
+  final Map<String, dynamic> args;
 }

@@ -9,3 +9,6 @@ export 'src/models/model_config.dart';
 // Repositories
 export 'src/repositories/gemma_repository.dart';
 export 'src/repositories/chat_storage_repository.dart';
+
+// Services
+export 'src/services/tool_executor.dart';

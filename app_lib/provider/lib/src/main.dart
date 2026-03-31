@@ -44,6 +44,9 @@ class MainProvider extends StatelessWidget {
         RepositoryProvider<ChatStorageRepository>(
           create: (context) => ChatStorageRepository(database),
         ),
+        RepositoryProvider<ToolExecutor>(
+          create: (context) => ToolExecutor(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -78,12 +81,14 @@ class MainProvider extends StatelessWidget {
             create: (context) => GemmaModelBloc(
               repository: context.read<GemmaRepository>(),
               preferences: context.read<SharedPreferences>(),
+              toolExecutor: context.read<ToolExecutor>(),
             ),
           ),
           BlocProvider<ChatBloc>(
             create: (context) => ChatBloc(
               gemmaRepository: context.read<GemmaRepository>(),
               storageRepository: context.read<ChatStorageRepository>(),
+              toolExecutor: context.read<ToolExecutor>(),
             ),
           ),
           BlocProvider<MonitorBloc>(

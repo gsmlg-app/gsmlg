@@ -132,7 +132,7 @@ class GemmaRepository {
       );
       // fromNetwork detects the model is already installed and skips download,
       // but still calls setActiveModel internally.
-      await builder.fromNetwork(info.url).install();
+      await builder.fromNetwork(info.downloadUrl).install();
       debugPrint('[GemmaRepo] activateModel completed for ${info.id}');
       _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
@@ -464,7 +464,17 @@ class GemmaRepository {
   }
 
   /// Loads the model into memory with the given configuration.
-  Future<void> loadModel(ModelConfig config) async {
+  ///
+  /// When [supportImage] is true, the model is configured for multimodal input.
+  /// When [supportsFunctionCalls] is true and [tools] are provided, the model
+  /// is configured for function/tool calling.
+  Future<void> loadModel(
+    ModelConfig config, {
+    bool supportImage = false,
+    bool supportsFunctionCalls = false,
+    List<gemma.Tool> tools = const [],
+    gemma.ModelType? nativeModelType,
+  }) async {
     // Unload existing model if any
     await unloadModel();
 
@@ -474,11 +484,16 @@ class GemmaRepository {
       _model = await gemma.FlutterGemma.getActiveModel(
         maxTokens: config.maxTokens,
         preferredBackend: _toGemmaBackend(config.backend),
+        supportImage: supportImage,
       );
 
       _chat = await _model!.createChat(
         temperature: config.temperature,
         topK: config.topK,
+        supportImage: supportImage,
+        supportsFunctionCalls: supportsFunctionCalls,
+        tools: tools,
+        modelType: nativeModelType,
       );
       _setStatus(GemmaModelStatus.ready);
     } catch (e) {
@@ -558,8 +573,10 @@ class GemmaRepository {
 
   /// Generates a response for a list of messages.
   ///
-  /// Returns a stream of tokens as they are generated.
-  Stream<String> generateResponse(List<Message> messages) async* {
+  /// Returns a stream of [gemma.ModelResponse] which can be:
+  /// - [gemma.TextResponse] for text tokens
+  /// - [gemma.FunctionCallResponse] for tool/function calls
+  Stream<gemma.ModelResponse> generateResponse(List<Message> messages) async* {
     if (_chat == null || _model == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
@@ -593,12 +610,24 @@ class GemmaRepository {
         content = '$systemPrompt\n\n$content';
       }
 
-      await _chat!.addQueryChunk(
-        gemma.Message.text(
-          text: content,
-          isUser: message is UserMessage,
-        ),
-      );
+      final gemmaMessage = switch (message) {
+        UserMessage(:final imageBytes) when imageBytes != null =>
+          gemma.Message.withImage(
+            text: content,
+            imageBytes: imageBytes,
+            isUser: true,
+          ),
+        ToolResponseMessage(:final toolName) => gemma.Message.toolResponse(
+            toolName: toolName,
+            response: _tryParseJson(content),
+          ),
+        _ => gemma.Message.text(
+            text: content,
+            isUser: message is UserMessage,
+          ),
+      };
+
+      await _chat!.addQueryChunk(gemmaMessage);
     }
 
     // Track whether we're inside a <think> block (Qwen3 reasoning tokens)
@@ -607,6 +636,16 @@ class GemmaRepository {
 
     // Generate response with streaming
     await for (final response in _chat!.generateChatResponseAsync()) {
+      if (response is gemma.FunctionCallResponse) {
+        // Flush any buffered text before yielding the function call
+        if (buffer.isNotEmpty && !inThinkBlock) {
+          yield gemma.TextResponse(buffer);
+          buffer = '';
+        }
+        yield response;
+        continue;
+      }
+
       if (response is gemma.TextResponse && response.token.isNotEmpty) {
         buffer += response.token;
 
@@ -628,7 +667,7 @@ class GemmaRepository {
             if (startIdx != -1) {
               // Yield text before <think>
               if (startIdx > 0) {
-                yield buffer.substring(0, startIdx);
+                yield gemma.TextResponse(buffer.substring(0, startIdx));
               }
               buffer = buffer.substring(startIdx + 7);
               inThinkBlock = true;
@@ -639,12 +678,12 @@ class GemmaRepository {
                 final lastLt = buffer.lastIndexOf('<');
                 if (lastLt > buffer.length - 8) {
                   // Potential partial tag at end, hold it
-                  yield buffer.substring(0, lastLt);
+                  yield gemma.TextResponse(buffer.substring(0, lastLt));
                   buffer = buffer.substring(lastLt);
                   break;
                 }
               }
-              yield buffer;
+              yield gemma.TextResponse(buffer);
               buffer = '';
               break;
             }
@@ -655,8 +694,16 @@ class GemmaRepository {
 
     // Flush any remaining buffer
     if (buffer.isNotEmpty && !inThinkBlock) {
-      yield buffer;
+      yield gemma.TextResponse(buffer);
     }
+  }
+
+  Map<String, dynamic> _tryParseJson(String content) {
+    try {
+      final decoded = jsonDecode(content);
+      if (decoded is Map<String, dynamic>) return decoded;
+    } catch (_) {}
+    return {'result': content};
   }
 
   /// Generates a complete response without streaming.
@@ -665,10 +712,12 @@ class GemmaRepository {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
 
-    // Collect streaming response into a single string
+    // Collect streaming text response into a single string
     final buffer = StringBuffer();
-    await for (final token in generateResponse(messages)) {
-      buffer.write(token);
+    await for (final response in generateResponse(messages)) {
+      if (response is gemma.TextResponse) {
+        buffer.write(response.token);
+      }
     }
     return buffer.toString();
   }

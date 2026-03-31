@@ -50,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration {
@@ -88,6 +88,10 @@ class AppDatabase extends _$AppDatabase {
           // replacing the old per-zone credentials field.
           await m.deleteTable('dns_zone_table');
           await m.createTable(dnsZoneTable);
+        }
+        if (from < 9) {
+          await m.addColumn(chatMessageTable, chatMessageTable.imageBytes);
+          await m.addColumn(chatMessageTable, chatMessageTable.toolName);
         }
       },
     );

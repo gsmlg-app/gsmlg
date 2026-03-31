@@ -3,6 +3,8 @@ PODS:
     - FlutterMacOS
   - camera_macos (0.0.1):
     - FlutterMacOS
+  - file_selector_macos (0.0.1):
+    - FlutterMacOS
   - flutter_blue_plus_darwin (0.0.2):
     - Flutter
     - FlutterMacOS
@@ -51,6 +53,7 @@ PODS:
 DEPENDENCIES:
   - app_client_info_macos (from `Flutter/ephemeral/.symlinks/plugins/app_client_info_macos/macos`)
   - camera_macos (from `Flutter/ephemeral/.symlinks/plugins/camera_macos/macos`)
+  - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - flutter_blue_plus_darwin (from `Flutter/ephemeral/.symlinks/plugins/flutter_blue_plus_darwin/darwin`)
   - flutter_gemma (from `Flutter/ephemeral/.symlinks/plugins/flutter_gemma/macos`)
   - flutter_secure_storage_macos (from `Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_macos/macos`)
@@ -70,6 +73,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/app_client_info_macos/macos
   camera_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/camera_macos/macos
+  file_selector_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
   flutter_blue_plus_darwin:
     :path: Flutter/ephemeral/.symlinks/plugins/flutter_blue_plus_darwin/darwin
   flutter_gemma:
@@ -92,6 +97,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   app_client_info_macos: 6a8689ae857fdf4d315a18516aca7a2affb34578
   camera_macos: 9fd766915a6c236c8b3fd902f7ccd215636cd07a
+  file_selector_macos: 9e9e068e90ebee155097d00e89ae91edb2374db7
   flutter_blue_plus_darwin: 20a08bfeaa0f7804d524858d3d8744bcc1b6dbc3
   flutter_gemma: 91f6b6df28c2fb230f709e42690d8d65ae4d04b9
   flutter_secure_storage_macos: 7f45e30f838cf2659862a4e4e3ee1c347c2b3b54

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:equatable/equatable.dart';
 
 /// Represents a chat message in a conversation.
@@ -35,22 +37,34 @@ final class UserMessage extends Message {
     required super.content,
     required super.conversationId,
     required super.timestamp,
+    this.imageBytes,
   });
+
+  /// Optional image data attached to this message.
+  final Uint8List? imageBytes;
+
+  /// Whether this message has an image attachment.
+  bool get hasImage => imageBytes != null;
 
   @override
   String get role => 'user';
+
+  @override
+  List<Object?> get props => [...super.props, imageBytes];
 
   UserMessage copyWith({
     String? id,
     String? content,
     String? conversationId,
     DateTime? timestamp,
+    Uint8List? imageBytes,
   }) {
     return UserMessage(
       id: id ?? this.id,
       content: content ?? this.content,
       conversationId: conversationId ?? this.conversationId,
       timestamp: timestamp ?? this.timestamp,
+      imageBytes: imageBytes ?? this.imageBytes,
     );
   }
 }
@@ -120,6 +134,42 @@ final class SystemMessage extends Message {
       content: content ?? this.content,
       conversationId: conversationId ?? this.conversationId,
       timestamp: timestamp ?? this.timestamp,
+    );
+  }
+}
+
+/// A tool execution result fed back to the model.
+final class ToolResponseMessage extends Message {
+  const ToolResponseMessage({
+    required super.id,
+    required super.content,
+    required super.conversationId,
+    required super.timestamp,
+    required this.toolName,
+  });
+
+  /// The name of the tool that produced this response.
+  final String toolName;
+
+  @override
+  String get role => 'tool_response';
+
+  @override
+  List<Object?> get props => [...super.props, toolName];
+
+  ToolResponseMessage copyWith({
+    String? id,
+    String? content,
+    String? conversationId,
+    DateTime? timestamp,
+    String? toolName,
+  }) {
+    return ToolResponseMessage(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      conversationId: conversationId ?? this.conversationId,
+      timestamp: timestamp ?? this.timestamp,
+      toolName: toolName ?? this.toolName,
     );
   }
 }

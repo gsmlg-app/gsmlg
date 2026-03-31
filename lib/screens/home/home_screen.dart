@@ -1,4 +1,5 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
+import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -93,6 +94,10 @@ class _HomeScreenState extends State<HomeScreen> {
               // Input bar
               BlocBuilder<GemmaModelBloc, GemmaModelState>(
                 builder: (context, modelState) {
+                  final selectedId = modelState.selectedModelId;
+                  final modelInfo = selectedId != null
+                      ? GemmaModelInfo.findById(selectedId)
+                      : null;
                   return BlocBuilder<ChatBloc, ChatState>(
                     builder: (context, chatState) {
                       final canSend =
@@ -100,11 +105,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       return ChatInputBar(
                         enabled: canSend,
                         isStreaming: chatState.isStreaming,
-                        onSend: (message) {
+                        supportsImage:
+                            modelInfo?.supportsMultimodal ?? false,
+                        onSend: (message, {imageBytes}) {
                           final settingsState =
                               context.read<ChatSettingsBloc>().state;
                           context.read<ChatBloc>().add(ChatSendMessage(
                                 content: message,
+                                imageBytes: imageBytes,
                                 systemPrompt:
                                     chatState.conversation == null
                                         ? settingsState.defaultSystemPrompt

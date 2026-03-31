@@ -295,7 +295,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                         size: 18,
                         color: Theme.of(context).colorScheme.primary),
                   ),
-                Text(model.sizeLabel),
+                Text(model.effectiveSizeLabel),
               ],
             ),
             onPressed: (_) => _showDownloadConfirmDialog(
@@ -338,7 +338,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 const SizedBox(height: 8),
                 Text(model.description),
                 const SizedBox(height: 8),
-                Text('Size: ${model.sizeLabel}'),
+                Text('Size: ${model.effectiveSizeLabel}'),
                 if (model.needsAuth) ...[
                   const SizedBox(height: 8),
                   Text(
@@ -391,7 +391,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     } else {
       context.read<GemmaModelBloc>().add(GemmaModelInstall(
             nativeModelType: model.modelType,
-            url: model.url,
+            url: model.downloadUrl,
             modelId: model.id,
           ));
     }
@@ -423,7 +423,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     if (context.mounted) {
       context.read<GemmaModelBloc>().add(GemmaModelInstall(
             nativeModelType: model.modelType,
-            url: model.url,
+            url: model.downloadUrl,
             modelId: model.id,
             token: token,
           ));

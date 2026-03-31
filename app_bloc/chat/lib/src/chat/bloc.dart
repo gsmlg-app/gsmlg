@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:uuid/uuid.dart';
 
 part 'event.dart';
@@ -13,8 +16,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ChatBloc({
     required GemmaRepository gemmaRepository,
     required ChatStorageRepository storageRepository,
+    required ToolExecutor toolExecutor,
   })  : _gemmaRepository = gemmaRepository,
         _storageRepository = storageRepository,
+        _toolExecutor = toolExecutor,
         super(const ChatState()) {
     on<ChatLoadConversation>(_onLoadConversation);
     on<ChatNewConversation>(_onNewConversation);
@@ -27,11 +32,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<_ChatStreamToken>(_onStreamToken);
     on<_ChatStreamComplete>(_onStreamComplete);
     on<_ChatStreamError>(_onStreamError);
+    on<_ChatFunctionCall>(_onFunctionCall);
   }
 
   final GemmaRepository _gemmaRepository;
   final ChatStorageRepository _storageRepository;
-  StreamSubscription<String>? _streamSubscription;
+  final ToolExecutor _toolExecutor;
+  StreamSubscription<gemma.ModelResponse>? _streamSubscription;
   final _uuid = const Uuid();
 
   Future<void> _onLoadConversation(
@@ -140,6 +147,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       content: event.content,
       conversationId: conversation.id,
       timestamp: DateTime.now(),
+      imageBytes: event.imageBytes,
     );
 
     // Add user message to conversation
@@ -179,7 +187,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   void _startStreaming(List<Message> messages) {
     _streamSubscription?.cancel();
     _streamSubscription = _gemmaRepository.generateResponse(messages).listen(
-          (token) => add(_ChatStreamToken(token)),
+          (response) {
+            switch (response) {
+              case gemma.TextResponse(:final token):
+                add(_ChatStreamToken(token));
+              case gemma.FunctionCallResponse(:final name, :final args):
+                add(_ChatFunctionCall(name: name, args: args));
+              case gemma.ThinkingResponse():
+                break; // Already filtered in repository
+            }
+          },
           onDone: () => add(const _ChatStreamComplete()),
           onError: (error) => add(_ChatStreamError(error.toString())),
           cancelOnError: true,
@@ -354,6 +371,49 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       conversation: state.conversation!.copyWith(messages: messages),
       clearStreamingMessageId: true,
     ));
+  }
+
+  Future<void> _onFunctionCall(
+    _ChatFunctionCall event,
+    Emitter<ChatState> emit,
+  ) async {
+    // Pause generation while executing the tool
+    await _streamSubscription?.cancel();
+    _streamSubscription = null;
+
+    if (state.conversation == null || state.streamingMessageId == null) return;
+
+    // Execute the tool
+    final result = await _toolExecutor.execute(event.name, event.args);
+
+    // Create a ToolResponseMessage
+    final toolMsg = ToolResponseMessage(
+      id: _uuid.v4(),
+      toolName: event.name,
+      content: jsonEncode(result),
+      conversationId: state.conversation!.id,
+      timestamp: DateTime.now(),
+    );
+
+    // Add tool response to conversation
+    var updatedConversation = state.conversation!.addMessage(toolMsg);
+    await _storageRepository.saveMessage(toolMsg);
+
+    // Update the streaming assistant message to show tool was called
+    final messages = updatedConversation.messages.map((m) {
+      if (m.id == state.streamingMessageId && m is AssistantMessage) {
+        return m.copyWith(
+          content: '${m.content}\n\n> **${event.name}** executed\n\n',
+        );
+      }
+      return m;
+    }).toList();
+    updatedConversation = updatedConversation.copyWith(messages: messages);
+
+    emit(state.copyWith(conversation: updatedConversation));
+
+    // Resume generation — feed all messages (including tool response) back
+    _startStreaming(updatedConversation.messages);
   }
 
   void _onStreamError(

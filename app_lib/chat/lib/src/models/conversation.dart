@@ -54,9 +54,11 @@ class Conversation extends Equatable {
   /// Returns the last message in the conversation, if any.
   Message? get lastMessage => messages.isNotEmpty ? messages.last : null;
 
-  /// Returns only user and assistant messages (excludes system messages).
-  List<Message> get chatMessages =>
-      messages.where((m) => m is UserMessage || m is AssistantMessage).toList();
+  /// Returns user, assistant, and tool response messages (excludes system).
+  List<Message> get chatMessages => messages
+      .where(
+          (m) => m is UserMessage || m is AssistantMessage || m is ToolResponseMessage)
+      .toList();
 
   Conversation copyWith({
     String? id,
