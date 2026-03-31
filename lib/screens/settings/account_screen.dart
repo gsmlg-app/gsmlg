@@ -605,6 +605,7 @@ IconData _providerIcon(ServiceProvider provider) {
     ServiceProvider.vultr => Icons.cloud,
     ServiceProvider.aws => Icons.cloud_queue,
     ServiceProvider.cloudflare => Icons.shield,
+    ServiceProvider.huggingface => Icons.smart_toy,
   };
 }
 
@@ -614,6 +615,7 @@ String _providerLabel(ServiceProvider provider) {
     ServiceProvider.vultr => 'Vultr',
     ServiceProvider.aws => 'AWS',
     ServiceProvider.cloudflare => 'Cloudflare',
+    ServiceProvider.huggingface => 'HuggingFace',
   };
 }
 
@@ -623,6 +625,7 @@ String _apiKeyLabel(ServiceProvider provider) {
     ServiceProvider.vultr => 'API Key',
     ServiceProvider.aws => 'Access Key ID',
     ServiceProvider.cloudflare => 'API Token',
+    ServiceProvider.huggingface => 'Access Token',
   };
 }
 
@@ -632,5 +635,6 @@ String _apiKeyHint(ServiceProvider provider) {
     ServiceProvider.vultr => 'Enter your Vultr API key',
     ServiceProvider.aws => 'AKIAIOSFODNN7EXAMPLE',
     ServiceProvider.cloudflare => 'Enter your Cloudflare API token',
+    ServiceProvider.huggingface => 'hf_xxxxxxxxxxxxxxxxxxxx',
   };
 }

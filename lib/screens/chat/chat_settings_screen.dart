@@ -98,25 +98,8 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                 ],
               ),
               SettingsSection(
-                title: const Text('Model Management'),
+                title: const Text('Actions'),
                 tiles: [
-                  BlocBuilder<GemmaModelBloc, GemmaModelState>(
-                    builder: (context, modelState) {
-                      return SettingsTile(
-                        leading: const Icon(Icons.delete_outline),
-                        title: const Text('Delete Model'),
-                        description: Text(
-                          modelState.isInstalled
-                              ? 'Remove downloaded model to free space'
-                              : 'No model installed',
-                        ),
-                        enabled: modelState.isInstalled,
-                        onPressed: modelState.isInstalled
-                            ? (_) => _confirmDeleteModel(context)
-                            : null,
-                      );
-                    },
-                  ),
                   SettingsTile(
                     leading: const Icon(Icons.restore),
                     title: const Text('Reset to Defaults'),
@@ -381,38 +364,6 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
               Navigator.pop(dialogContext);
             },
             child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmDeleteModel(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Model?'),
-        content: const Text(
-          'This will remove the downloaded model from your device. '
-          'You will need to download it again to use chat.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            onPressed: () {
-              final modelState = context.read<GemmaModelBloc>().state;
-              context.read<GemmaModelBloc>().add(
-                    GemmaModelDelete(modelType: modelState.modelType),
-                  );
-              Navigator.pop(dialogContext);
-            },
-            child: const Text('Delete'),
           ),
         ],
       ),

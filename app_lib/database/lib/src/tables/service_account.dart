@@ -6,6 +6,7 @@ enum ServiceProvider {
   vultr,
   aws,
   cloudflare,
+  huggingface,
 }
 
 /// Drift table definition for ServiceAccount.

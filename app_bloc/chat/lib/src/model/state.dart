@@ -1,16 +1,31 @@
 part of 'bloc.dart';
 
+/// Progress info for a single model download.
+class ModelDownloadProgress extends Equatable {
+  const ModelDownloadProgress({
+    required this.modelId,
+    this.progress = 0,
+  });
+
+  final String modelId;
+
+  /// Download progress percentage (0-100).
+  final double progress;
+
+  @override
+  List<Object?> get props => [modelId, progress];
+}
+
 /// State for the GemmaModelBloc.
 class GemmaModelState extends Equatable {
   const GemmaModelState({
     this.status = GemmaModelStatus.initial,
     this.modelType = GemmaModelType.gemma2bIt,
-    this.downloadProgress = 0,
     this.errorMessage,
     this.installedModels = const [],
     this.proxyUrl,
     this.selectedModelId,
-    this.downloadingModelId,
+    this.activeDownloads = const [],
   });
 
   /// Current status of the model.
@@ -18,9 +33,6 @@ class GemmaModelState extends Equatable {
 
   /// The currently selected model type.
   final GemmaModelType modelType;
-
-  /// Download progress percentage (0-100).
-  final double downloadProgress;
 
   /// Error message if status is error.
   final String? errorMessage;
@@ -34,19 +46,18 @@ class GemmaModelState extends Equatable {
   /// The user-selected model ID, persisted in SharedPreferences.
   final String? selectedModelId;
 
-  /// The model ID currently being downloaded (null when not downloading).
-  final String? downloadingModelId;
+  /// Currently active downloads (max 3 concurrent).
+  final List<ModelDownloadProgress> activeDownloads;
 
   @override
   List<Object?> get props => [
         status,
         modelType,
-        downloadProgress,
         errorMessage,
         installedModels,
         proxyUrl,
         selectedModelId,
-        downloadingModelId,
+        activeDownloads,
       ];
 
   /// Whether the model is ready for inference.
@@ -65,31 +76,47 @@ class GemmaModelState extends Equatable {
   /// Whether there is an error.
   bool get hasError => status == GemmaModelStatus.error;
 
+  /// Whether any download is currently active.
+  bool get isDownloading => activeDownloads.isNotEmpty;
+
+  /// The first downloading model ID (for backward-compat banner display).
+  String? get downloadingModelId =>
+      activeDownloads.isNotEmpty ? activeDownloads.first.modelId : null;
+
+  /// The first download's progress (for backward-compat banner display).
+  double get downloadProgress =>
+      activeDownloads.isNotEmpty ? activeDownloads.first.progress : 0;
+
+  /// Check if a specific model is currently downloading.
+  bool isModelDownloading(String modelId) =>
+      activeDownloads.any((d) => d.modelId == modelId);
+
+  /// Get download progress for a specific model.
+  double? downloadProgressFor(String modelId) {
+    final match = activeDownloads.where((d) => d.modelId == modelId);
+    return match.isNotEmpty ? match.first.progress : null;
+  }
+
   GemmaModelState copyWith({
     GemmaModelStatus? status,
     GemmaModelType? modelType,
-    double? downloadProgress,
     String? errorMessage,
     List<String>? installedModels,
     String? proxyUrl,
     bool clearProxy = false,
     String? selectedModelId,
     bool clearSelectedModel = false,
-    String? downloadingModelId,
-    bool clearDownloadingModel = false,
+    List<ModelDownloadProgress>? activeDownloads,
   }) {
     return GemmaModelState(
       status: status ?? this.status,
       modelType: modelType ?? this.modelType,
-      downloadProgress: downloadProgress ?? this.downloadProgress,
       errorMessage: errorMessage,
       installedModels: installedModels ?? this.installedModels,
       proxyUrl: clearProxy ? null : (proxyUrl ?? this.proxyUrl),
       selectedModelId:
           clearSelectedModel ? null : (selectedModelId ?? this.selectedModelId),
-      downloadingModelId: clearDownloadingModel
-          ? null
-          : (downloadingModelId ?? this.downloadingModelId),
+      activeDownloads: activeDownloads ?? this.activeDownloads,
     );
   }
 }

@@ -107,3 +107,10 @@ final class _GemmaModelDownloadProgress extends GemmaModelEvent {
 
   final DownloadProgress progress;
 }
+
+/// Internal event fired when a single model download completes.
+final class _GemmaModelDownloadComplete extends GemmaModelEvent {
+  const _GemmaModelDownloadComplete({required this.modelId});
+
+  final String modelId;
+}

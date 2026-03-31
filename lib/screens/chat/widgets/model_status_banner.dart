@@ -2,8 +2,6 @@ import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:gsmlg/screens/settings/model_management_screen.dart';
 
 class ModelStatusBanner extends StatelessWidget {
   const ModelStatusBanner({
@@ -65,25 +63,46 @@ class ModelStatusBanner extends StatelessWidget {
   }
 
   Widget _buildNotInstalledContent(BuildContext context) {
-    return Row(
+    return const Row(
       children: [
-        const Icon(Icons.download, size: 20),
-        const SizedBox(width: 12),
-        const Expanded(
-          child: Text('No model available. Download one to start chatting.'),
-        ),
-        TextButton(
-          onPressed: () => context.goNamed(ModelManagementScreen.name),
-          child: const Text('Get Models'),
+        Icon(Icons.info_outline, size: 20),
+        SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'No model available. Go to Settings > AI Models to download one.',
+          ),
         ),
       ],
     );
   }
 
   Widget _buildDownloadingContent(BuildContext context) {
-    final downloadId = state.downloadingModelId;
-    final info = downloadId != null ? GemmaModelInfo.findById(downloadId) : null;
-    final modelName = info?.displayName ?? 'model';
+    final downloads = state.activeDownloads;
+    if (downloads.isEmpty) return const SizedBox.shrink();
+
+    if (downloads.length == 1) {
+      final d = downloads.first;
+      final info = GemmaModelInfo.findById(d.modelId);
+      final modelName = info?.displayName ?? 'model';
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 12),
+              Text('Downloading $modelName... ${d.progress.toStringAsFixed(1)}%'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(value: d.progress / 100),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,13 +115,31 @@ class ModelStatusBanner extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             const SizedBox(width: 12),
-            Text('Downloading $modelName... ${state.downloadProgress.toStringAsFixed(1)}%'),
+            Text('Downloading ${downloads.length} models...'),
           ],
         ),
         const SizedBox(height: 8),
-        LinearProgressIndicator(
-          value: state.downloadProgress / 100,
-        ),
+        for (final d in downloads) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  GemmaModelInfo.findById(d.modelId)?.displayName ?? d.modelId,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${d.progress.toStringAsFixed(0)}%',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(value: d.progress / 100),
+          const SizedBox(height: 4),
+        ],
       ],
     );
   }
@@ -165,10 +202,6 @@ class ModelStatusBanner extends StatelessWidget {
             state.errorMessage ?? 'An error occurred',
             style: TextStyle(color: colorScheme.error),
           ),
-        ),
-        TextButton(
-          onPressed: () => context.goNamed(ModelManagementScreen.name),
-          child: const Text('Manage'),
         ),
         TextButton(
           onPressed: () {

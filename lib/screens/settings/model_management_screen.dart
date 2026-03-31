@@ -1,9 +1,13 @@
+import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
+import 'package:app_database/app_database.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
+import 'package:gsmlg/screens/settings/account_screen.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -56,7 +60,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                     child: SettingsList(
                       sections: [
                         _buildDownloadedSection(context, state),
-                        if (state.downloadingModelId != null)
+                        if (state.isDownloading)
                           _buildDownloadingSection(context, state),
                         ..._buildAvailableSections(context, state),
                         _buildProxySection(context, state),
@@ -146,14 +150,14 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
   SettingsSection _buildDownloadingSection(
       BuildContext context, GemmaModelState state) {
-    final modelId = state.downloadingModelId!;
-    final info = GemmaModelInfo.findById(modelId);
-    final displayName = info?.displayName ?? modelId;
-    final category = info?.category ?? ModelCategory.other;
+    final tiles = <SettingsTile>[];
 
-    return SettingsSection(
-      title: const Text('Downloading'),
-      tiles: [
+    for (final download in state.activeDownloads) {
+      final info = GemmaModelInfo.findById(download.modelId);
+      final displayName = info?.displayName ?? download.modelId;
+      final category = info?.category ?? ModelCategory.other;
+
+      tiles.add(
         SettingsTile(
           leading: Icon(_categoryIcon(category)),
           title: Text(displayName),
@@ -164,18 +168,23 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 LinearProgressIndicator(
-                  value: state.downloadProgress / 100,
+                  value: download.progress / 100,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${state.downloadProgress.toStringAsFixed(0)}%',
+                  '${download.progress.toStringAsFixed(0)}%',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
             ),
           ),
         ),
-      ],
+      );
+    }
+
+    return SettingsSection(
+      title: Text('Downloading (${state.activeDownloads.length}/3)'),
+      tiles: tiles,
     );
   }
 
@@ -197,28 +206,37 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
       BuildContext context, GemmaModelState state) {
     final sections = <SettingsSection>[];
 
-    final isDownloading = state.status == GemmaModelStatus.downloading;
-
     for (final category in ModelCategory.values) {
       final models = GemmaModelInfo.platformModels
           .where((m) => m.category == category)
-          .where((m) => !_isInstalled(m, state.installedModels))
-          .where((m) => m.id != state.downloadingModelId)
+          .where((m) => !state.isModelDownloading(m.id))
           .toList();
 
       if (models.isEmpty) continue;
 
       final tiles = <SettingsTile>[];
       for (final model in models) {
+        final installed = _isInstalled(model, state.installedModels);
         tiles.add(
           SettingsTile(
             leading: Icon(_categoryIcon(category)),
             title: Text(model.displayName),
             description: Text(model.description),
-            trailing: Text(model.sizeLabel),
-            onPressed: isDownloading
-                ? null
-                : (_) => _installModel(context, model),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (installed)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Icon(Icons.check_circle,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary),
+                  ),
+                Text(model.sizeLabel),
+              ],
+            ),
+            onPressed: (_) => _showDownloadConfirmDialog(
+                    context, model, installed),
           ),
         );
       }
@@ -237,35 +255,13 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         id == model.id || id.contains(model.id) || model.id.contains(id));
   }
 
-  void _installModel(BuildContext context, GemmaModelInfo model) {
-    if (model.isBundled) {
-      context.read<GemmaModelBloc>().add(GemmaModelInstallFromAsset(
-            modelId: model.id,
-            assetPath: model.assetPath!,
-          ));
-    } else if (model.needsAuth) {
-      _showTokenDialog(context, model);
-    } else {
-      context.read<GemmaModelBloc>().add(GemmaModelInstall(
-            nativeModelType: model.modelType,
-            url: model.url,
-            modelId: model.id,
-          ));
-    }
-  }
-
-  static const _hfTokenKey = 'huggingface_token';
-
-  void _showTokenDialog(BuildContext context, GemmaModelInfo model) {
-    final prefs = context.read<SharedPreferences>();
-    final savedToken = prefs.getString(_hfTokenKey) ?? '';
-    final controller = TextEditingController(text: savedToken);
-
+  void _showDownloadConfirmDialog(
+      BuildContext context, GemmaModelInfo model, bool isInstalled) {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('HuggingFace Token Required'),
+          title: Text(isInstalled ? 'Model Already Downloaded' : 'Download Model'),
           content: SizedBox(
             width: 400,
             child: Column(
@@ -273,21 +269,33 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${model.displayName} requires a HuggingFace access token. '
-                  'You can create one at huggingface.co/settings/tokens.',
-                  style: const TextStyle(fontSize: 12),
+                  model.displayName,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller,
-                  decoration: const InputDecoration(
-                    labelText: 'Access Token',
-                    hintText: 'hf_...',
-                    border: OutlineInputBorder(),
+                const SizedBox(height: 8),
+                Text(model.description),
+                const SizedBox(height: 8),
+                Text('Size: ${model.sizeLabel}'),
+                if (model.needsAuth) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Requires HuggingFace authentication.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.tertiary,
+                      fontSize: 12,
+                    ),
                   ),
-                  obscureText: true,
-                  autofocus: true,
-                ),
+                ],
+                if (isInstalled) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'This model is already downloaded. '
+                    'Would you like to force re-download?',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -298,18 +306,92 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
             ),
             FilledButton(
               onPressed: () {
-                final token = controller.text.trim();
-                if (token.isEmpty) return;
-                prefs.setString(_hfTokenKey, token);
-                context.read<GemmaModelBloc>().add(GemmaModelInstall(
-                      nativeModelType: model.modelType,
-                      url: model.url,
-                      modelId: model.id,
-                      token: token,
-                    ));
                 Navigator.pop(dialogContext);
+                _installModel(context, model);
               },
-              child: const Text('Download'),
+              child: Text(isInstalled ? 'Re-download' : 'Download'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _installModel(BuildContext context, GemmaModelInfo model) {
+    if (model.isBundled) {
+      context.read<GemmaModelBloc>().add(GemmaModelInstallFromAsset(
+            modelId: model.id,
+            assetPath: model.assetPath!,
+          ));
+    } else if (model.needsAuth) {
+      _installWithHuggingFaceToken(context, model);
+    } else {
+      context.read<GemmaModelBloc>().add(GemmaModelInstall(
+            nativeModelType: model.modelType,
+            url: model.url,
+            modelId: model.id,
+          ));
+    }
+  }
+
+  Future<void> _installWithHuggingFaceToken(
+      BuildContext context, GemmaModelInfo model) async {
+    final accountsState = context.read<AccountsBloc>().state;
+    if (accountsState is! AccountsLoaded) return;
+
+    final hfAccounts =
+        accountsState.byProvider(ServiceProvider.huggingface);
+
+    if (hfAccounts.isEmpty) {
+      _showNoHuggingFaceAccountDialog(context);
+      return;
+    }
+
+    // Use the first HuggingFace account
+    final account = hfAccounts.first;
+    final token =
+        await context.read<AccountsBloc>().getApiKey(account.id);
+
+    if (token == null || token.isEmpty) {
+      if (context.mounted) _showNoHuggingFaceAccountDialog(context);
+      return;
+    }
+
+    if (context.mounted) {
+      context.read<GemmaModelBloc>().add(GemmaModelInstall(
+            nativeModelType: model.modelType,
+            url: model.url,
+            modelId: model.id,
+            token: token,
+          ));
+    }
+  }
+
+  void _showNoHuggingFaceAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('HuggingFace Account Required'),
+          content: const SizedBox(
+            width: 400,
+            child: Text(
+              'This model requires a HuggingFace access token. '
+              'Please add a HuggingFace account in Settings > Accounts first.\n\n'
+              'You can create a token at huggingface.co/settings/tokens.',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                context.goNamed(AccountScreen.name);
+              },
+              child: const Text('Go to Accounts'),
             ),
           ],
         );
