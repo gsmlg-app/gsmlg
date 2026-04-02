@@ -42,6 +42,8 @@ melos run brick-test       # Tests Mason templates
 flutter run -d macos       # or chrome, linux
 ```
 
+**Note:** Melos configuration is inline in the root `pubspec.yaml` (no separate `melos.yaml`).
+
 ### Mason Code Generation
 
 ```bash
@@ -66,6 +68,8 @@ app_widget/                 UI components (adaptive, artwork, feedback, web_view
 app_api/                    API clients (route53, cloudflare_dns, github, vultr_api)
 app_form/                   Form modules (camera_settings)
 app_plugin/                 Native plugins (federated client_info)
+monitor_models/             Shared models for device monitoring
+monitor_agent/              Background agent for device monitoring
 third_party/                Modified third-party packages
 bricks/                     Mason templates
 ```
@@ -79,8 +83,8 @@ Use `<package_name>: any` for workspace packages in pubspec.yaml. Never use path
 `lib/main.dart` initializes logging, SharedPreferences, AppDatabase, and SecureStorageVaultRepository, then passes them to `MainProvider`.
 
 `app_lib/provider/lib/src/main.dart` (`MainProvider`) is the **single source of truth** for all dependency injection. It registers:
-- **Repositories** via `MultiRepositoryProvider`: SharedPreferences, AppDatabase, VaultRepository, GemmaRepository, ChatStorageRepository
-- **BLoCs** via `MultiBlocProvider`: all app BLoCs in dependency order (ThemeBloc, AuthBloc, WhoisBloc, WhoisHistoryBloc, BluetoothBloc, CameraBloc, ZoneBloc, RecordBloc, GitHubBloc, VultrBloc, AccountsBloc, ChatSettingsBloc, GemmaModelBloc, ChatBloc)
+- **Repositories** via `MultiRepositoryProvider`: SharedPreferences, AppDatabase, VaultRepository, GemmaRepository, ChatStorageRepository, ToolExecutor
+- **BLoCs** via `MultiBlocProvider`: all app BLoCs in dependency order (ThemeBloc, AuthBloc, WhoisBloc, WhoisHistoryBloc, BluetoothBloc, CameraBloc, ZoneBloc, RecordBloc, GitHubBloc, VultrBloc, AccountsBloc, ChatSettingsBloc, GemmaModelBloc, ChatBloc, MonitorBloc)
 
 When adding a new BLoC, register it in `MainProvider`, not in `main.dart`.
 
