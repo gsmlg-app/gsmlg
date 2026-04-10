@@ -1,0 +1,3 @@
+# sqlite3: useSystemSQLite on macOS
+sqlite3:
+  uses-system-sqlite3: true

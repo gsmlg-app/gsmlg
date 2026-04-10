@@ -132,6 +132,32 @@ class GemmaModelInfo {
   // Gemma models
   // ---------------------------------------------------------------------------
 
+  static const _gemma4e2b = GemmaModelInfo(
+    id: 'gemma-4-E2B-it',
+    displayName: 'Gemma 4 E2B IT',
+    description: 'Next-gen multimodal + function calls + thinking, 2.4B params',
+    sizeLabel: '2.4 GB',
+    url:
+        'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+    modelType: gemma.ModelType.gemmaIt,
+    needsAuth: false,
+    supportsMultimodal: true,
+    supportsFunctionCalls: true,
+  );
+
+  static const _gemma4e4b = GemmaModelInfo(
+    id: 'gemma-4-E4B-it',
+    displayName: 'Gemma 4 E4B IT',
+    description: 'Next-gen multimodal + function calls + thinking, 4.3B params',
+    sizeLabel: '4.3 GB',
+    url:
+        'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
+    modelType: gemma.ModelType.gemmaIt,
+    needsAuth: false,
+    supportsMultimodal: true,
+    supportsFunctionCalls: true,
+  );
+
   static const _gemma3n2b = GemmaModelInfo(
     id: 'gemma-3n-E2B-it-int4',
     displayName: 'Gemma 3n E2B IT',
@@ -310,6 +336,8 @@ class GemmaModelInfo {
   /// All available models.
   static const availableModels = <GemmaModelInfo>[
     // Gemma
+    _gemma4e2b,
+    _gemma4e4b,
     _gemma3n2b,
     _gemma3n4b,
     _gemma3_1b,

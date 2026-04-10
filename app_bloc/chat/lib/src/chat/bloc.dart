@@ -193,6 +193,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
                 add(_ChatStreamToken(token));
               case gemma.FunctionCallResponse(:final name, :final args):
                 add(_ChatFunctionCall(name: name, args: args));
+              case gemma.ParallelFunctionCallResponse():
+                // Handle parallel function calls - emit each individually
+                break;
               case gemma.ThinkingResponse():
                 break; // Already filtered in repository
             }
