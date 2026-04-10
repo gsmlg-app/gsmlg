@@ -39,4 +39,26 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
   end
+
+  # Add LiteRT-LM desktop setup script phase to Runner target
+  installer.pods_project.targets.each do |target|
+    if target.name == 'Runner'
+      script_phase = target.new_shell_script_build_phase('LiteRT-LM Desktop Setup')
+      script_phase.shell_path = '/bin/bash'
+      script_phase.script = <<-SCRIPT
+        # Run flutter_gemma desktop setup
+        "#{File.join(Dir.pwd, 'Pods', 'flutter_gemma', 'macos', 'scripts', 'setup_desktop.sh')}" \
+          "#{Pod::Config.instance.installation_root}" \
+          "#{File.join(Dir.pwd, 'build', 'macos', 'Build', 'Products', '$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)', 'gsmlg.app')}"
+      SCRIPT
+
+      # Move script phase to run after Copy Pods Resources
+      target.build_phases.each do |phase|
+        if phase.class == Xcodeproj::Project::Object::PBXResourcesBuildPhase && phase.name == 'Copy Pods Resources'
+          target.build_phases.insert(target.build_phases.index(phase) + 1, script_phase)
+          break
+        end
+      end
+    end
+  end
 end
