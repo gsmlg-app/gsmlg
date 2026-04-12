@@ -38,19 +38,26 @@ final class UserMessage extends Message {
     required super.conversationId,
     required super.timestamp,
     this.imageBytes,
+    this.audioBytes,
   });
 
   /// Optional image data attached to this message.
   final Uint8List? imageBytes;
 
+  /// Optional audio data attached to this message.
+  final Uint8List? audioBytes;
+
   /// Whether this message has an image attachment.
   bool get hasImage => imageBytes != null;
+
+  /// Whether this message has an audio attachment.
+  bool get hasAudio => audioBytes != null;
 
   @override
   String get role => 'user';
 
   @override
-  List<Object?> get props => [...super.props, imageBytes];
+  List<Object?> get props => [...super.props, imageBytes, audioBytes];
 
   UserMessage copyWith({
     String? id,
@@ -58,6 +65,7 @@ final class UserMessage extends Message {
     String? conversationId,
     DateTime? timestamp,
     Uint8List? imageBytes,
+    Uint8List? audioBytes,
   }) {
     return UserMessage(
       id: id ?? this.id,
@@ -65,6 +73,7 @@ final class UserMessage extends Message {
       conversationId: conversationId ?? this.conversationId,
       timestamp: timestamp ?? this.timestamp,
       imageBytes: imageBytes ?? this.imageBytes,
+      audioBytes: audioBytes ?? this.audioBytes,
     );
   }
 }
@@ -78,6 +87,7 @@ final class AssistantMessage extends Message {
     required super.timestamp,
     this.isStreaming = false,
     this.tokenCount,
+    this.thinkingContent,
   });
 
   /// Whether the message is currently being streamed.
@@ -86,11 +96,19 @@ final class AssistantMessage extends Message {
   /// The number of tokens in this message (null if not yet computed).
   final int? tokenCount;
 
+  /// Chain-of-thought reasoning content from the model's thinking process.
+  final String? thinkingContent;
+
+  /// Whether this message has thinking/reasoning content.
+  bool get hasThinking =>
+      thinkingContent != null && thinkingContent!.isNotEmpty;
+
   @override
   String get role => 'assistant';
 
   @override
-  List<Object?> get props => [...super.props, isStreaming, tokenCount];
+  List<Object?> get props =>
+      [...super.props, isStreaming, tokenCount, thinkingContent];
 
   AssistantMessage copyWith({
     String? id,
@@ -99,6 +117,7 @@ final class AssistantMessage extends Message {
     DateTime? timestamp,
     bool? isStreaming,
     int? tokenCount,
+    String? thinkingContent,
   }) {
     return AssistantMessage(
       id: id ?? this.id,
@@ -107,6 +126,7 @@ final class AssistantMessage extends Message {
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,
       tokenCount: tokenCount ?? this.tokenCount,
+      thinkingContent: thinkingContent ?? this.thinkingContent,
     );
   }
 }

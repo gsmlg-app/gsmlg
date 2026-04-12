@@ -59,6 +59,7 @@ class GemmaRepository {
 
   gemma.InferenceModel? _model;
   gemma.InferenceChat? _chat;
+  bool _isThinking = false;
 
   /// Current status of the model.
   GemmaModelStatus get status => _status;
@@ -471,6 +472,8 @@ class GemmaRepository {
   Future<void> loadModel(
     ModelConfig config, {
     bool supportImage = false,
+    bool supportAudio = false,
+    bool isThinking = false,
     bool supportsFunctionCalls = false,
     List<gemma.Tool> tools = const [],
     gemma.ModelType? nativeModelType,
@@ -478,6 +481,7 @@ class GemmaRepository {
     // Unload existing model if any
     await unloadModel();
 
+    _isThinking = isThinking;
     _setStatus(GemmaModelStatus.loading);
 
     try {
@@ -485,12 +489,15 @@ class GemmaRepository {
         maxTokens: config.maxTokens,
         preferredBackend: _toGemmaBackend(config.backend),
         supportImage: supportImage,
+        supportAudio: supportAudio,
       );
 
       _chat = await _model!.createChat(
         temperature: config.temperature,
         topK: config.topK,
         supportImage: supportImage,
+        supportAudio: supportAudio,
+        isThinking: isThinking,
         supportsFunctionCalls: supportsFunctionCalls,
         tools: tools,
         modelType: nativeModelType,
@@ -611,6 +618,12 @@ class GemmaRepository {
       }
 
       final gemmaMessage = switch (message) {
+        UserMessage(:final audioBytes) when audioBytes != null =>
+          gemma.Message.withAudio(
+            text: content,
+            audioBytes: audioBytes,
+            isUser: true,
+          ),
         UserMessage(:final imageBytes) when imageBytes != null =>
           gemma.Message.withImage(
             text: content,
@@ -630,71 +643,70 @@ class GemmaRepository {
       await _chat!.addQueryChunk(gemmaMessage);
     }
 
-    // Track whether we're inside a <think> block (Qwen3 reasoning tokens)
-    var inThinkBlock = false;
-    var buffer = '';
-
-    // Generate response with streaming
-    await for (final response in _chat!.generateChatResponseAsync()) {
-      if (response is gemma.FunctionCallResponse) {
-        // Flush any buffered text before yielding the function call
-        if (buffer.isNotEmpty && !inThinkBlock) {
-          yield gemma.TextResponse(buffer);
-          buffer = '';
-        }
+    // When _isThinking is true, flutter_gemma's ModelThinkingFilter handles
+    // <think> separation and emits ThinkingResponse objects — pass through.
+    // When false, manually strip <think> blocks (DeepSeek always emits them).
+    if (_isThinking) {
+      await for (final response in _chat!.generateChatResponseAsync()) {
         yield response;
-        continue;
       }
+    } else {
+      // Track whether we're inside a <think> block (reasoning tokens)
+      var inThinkBlock = false;
+      var buffer = '';
 
-      if (response is gemma.TextResponse && response.token.isNotEmpty) {
-        buffer += response.token;
+      await for (final response in _chat!.generateChatResponseAsync()) {
+        if (response is gemma.FunctionCallResponse) {
+          if (buffer.isNotEmpty && !inThinkBlock) {
+            yield gemma.TextResponse(buffer);
+            buffer = '';
+          }
+          yield response;
+          continue;
+        }
 
-        // Handle <think>...</think> blocks — strip reasoning tokens
-        while (buffer.isNotEmpty) {
-          if (inThinkBlock) {
-            final endIdx = buffer.indexOf('</think>');
-            if (endIdx != -1) {
-              // Skip everything up to and including </think>
-              buffer = buffer.substring(endIdx + 8);
-              inThinkBlock = false;
-            } else {
-              // Still inside think block, consume buffer
-              buffer = '';
-              break;
-            }
-          } else {
-            final startIdx = buffer.indexOf('<think>');
-            if (startIdx != -1) {
-              // Yield text before <think>
-              if (startIdx > 0) {
-                yield gemma.TextResponse(buffer.substring(0, startIdx));
+        if (response is gemma.TextResponse && response.token.isNotEmpty) {
+          buffer += response.token;
+
+          while (buffer.isNotEmpty) {
+            if (inThinkBlock) {
+              final endIdx = buffer.indexOf('</think>');
+              if (endIdx != -1) {
+                buffer = buffer.substring(endIdx + 8);
+                inThinkBlock = false;
+              } else {
+                buffer = '';
+                break;
               }
-              buffer = buffer.substring(startIdx + 7);
-              inThinkBlock = true;
             } else {
-              // No think tags — but buffer might end with partial '<'
-              // so hold back the last few chars to check next iteration
-              if (buffer.length > 7 && buffer.contains('<')) {
-                final lastLt = buffer.lastIndexOf('<');
-                if (lastLt > buffer.length - 8) {
-                  // Potential partial tag at end, hold it
-                  yield gemma.TextResponse(buffer.substring(0, lastLt));
-                  buffer = buffer.substring(lastLt);
-                  break;
+              final startIdx = buffer.indexOf('<think>');
+              if (startIdx != -1) {
+                if (startIdx > 0) {
+                  yield gemma.TextResponse(buffer.substring(0, startIdx));
                 }
+                buffer = buffer.substring(startIdx + 7);
+                inThinkBlock = true;
+              } else {
+                if (buffer.length > 7 && buffer.contains('<')) {
+                  final lastLt = buffer.lastIndexOf('<');
+                  if (lastLt > buffer.length - 8) {
+                    yield gemma.TextResponse(buffer.substring(0, lastLt));
+                    buffer = buffer.substring(lastLt);
+                    break;
+                  }
+                }
+                yield gemma.TextResponse(buffer);
+                buffer = '';
+                break;
               }
-              yield gemma.TextResponse(buffer);
-              buffer = '';
-              break;
             }
           }
         }
       }
-    }
 
-    // Flush any remaining buffer
-    if (buffer.isNotEmpty && !inThinkBlock) {
-      yield gemma.TextResponse(buffer);
+      if (buffer.isNotEmpty && !inThinkBlock) {
+        yield gemma.TextResponse(buffer);
+      }
     }
   }
 
@@ -742,6 +754,13 @@ class GemmaRepository {
     _lastError = null;
     _statusController.add(newStatus);
   }
+
+  /// Sets an error state with the given message.
+  ///
+  /// Exposed for the BLoC layer to report platform-level incompatibilities
+  /// (e.g. desktop server not supporting vision models) without attempting
+  /// a load that would crash the native process.
+  void setError(String message) => _setError(message);
 
   void _setError(String message) {
     debugPrint('[GemmaRepo] ERROR: $message (status was $_status)');
