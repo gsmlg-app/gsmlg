@@ -1,8 +1,4 @@
 library;
 
-export 'src/bottom_sheet_action.dart';
-export 'src/dialog.dart';
-export 'src/fullscreen_dialog.dart';
-export 'src/helper.dart';
-export 'src/snackbar.dart';
-export 'src/toast.dart';
+export 'package:duskmoon_feedback/duskmoon_feedback.dart';
+export 'src/compat.dart';
