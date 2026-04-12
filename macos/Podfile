@@ -40,25 +40,29 @@ post_install do |installer|
     flutter_additional_macos_build_settings(target)
   end
 
-  # Add LiteRT-LM desktop setup script phase to Runner target
-  installer.pods_project.targets.each do |target|
-    if target.name == 'Runner'
-      script_phase = target.new_shell_script_build_phase('LiteRT-LM Desktop Setup')
-      script_phase.shell_path = '/bin/bash'
-      script_phase.script = <<-SCRIPT
-        # Run flutter_gemma desktop setup
-        "#{File.join(Dir.pwd, 'Pods', 'flutter_gemma', 'macos', 'scripts', 'setup_desktop.sh')}" \
-          "#{Pod::Config.instance.installation_root}" \
-          "#{File.join(Dir.pwd, 'build', 'macos', 'Build', 'Products', '$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)', 'gsmlg.app')}"
-      SCRIPT
+  # Add LiteRT-LM desktop setup script phase to the main Runner target.
+  # Must use the main project (Runner.xcodeproj), not the Pods project.
+  main_project = installer.aggregate_targets.first.user_project
+  runner_target = main_project.targets.find { |t| t.name == 'Runner' }
 
-      # Move script phase to run after Copy Pods Resources
-      target.build_phases.each do |phase|
-        if phase.class == Xcodeproj::Project::Object::PBXResourcesBuildPhase && phase.name == 'Copy Pods Resources'
-          target.build_phases.insert(target.build_phases.index(phase) + 1, script_phase)
-          break
-        end
-      end
-    end
+  if runner_target
+    # Remove any existing LiteRT-LM phase to avoid duplicates on re-install
+    runner_target.build_phases.reject! { |phase|
+      phase.respond_to?(:name) && phase.name == 'LiteRT-LM Desktop Setup'
+    }
+
+    # Use our own setup script that correctly handles JRE bundling.
+    # The flutter_gemma setup_desktop.sh signs JRE with sandbox entitlements,
+    # but Xcode's implicit code-signing then corrupts the binary (SIGBUS).
+    # Our script copies the JRE from cache on every build to work around this.
+    setup_script = File.join(Dir.pwd, 'scripts', 'setup_litertlm.sh')
+
+    script_phase = runner_target.new_shell_script_build_phase('LiteRT-LM Desktop Setup')
+    script_phase.shell_path = '/bin/bash'
+    script_phase.shell_script = <<-SCRIPT
+"#{setup_script}" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app"
+    SCRIPT
+
+    main_project.save
   end
 end

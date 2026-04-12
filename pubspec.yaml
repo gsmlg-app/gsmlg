@@ -7,6 +7,11 @@ version: 1.0.0+1
 environment:
   sdk: ">=3.8.0 <4.0.0"
 
+hooks:
+  user_defines:
+    sqlite3:
+      source: system
+
 workspace:
   - app_lib/database
   - app_lib/theme
@@ -133,6 +138,8 @@ dependencies:
 
   # data visualization
   data_visualization: ^1.0.0
+  record: ^6.2.0
+  file_picker: ^11.0.2
 
 dev_dependencies:
   flutter_test:

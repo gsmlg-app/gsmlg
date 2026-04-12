@@ -1,3 +1,1 @@
-# sqlite3: useSystemSQLite on macOS
-sqlite3:
-  uses-system-sqlite3: true
+# sqlite3 configuration is now in pubspec.yaml under hooks.user_defines
