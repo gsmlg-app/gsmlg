@@ -8,13 +8,13 @@ import 'package:app_locale/app_locale.dart';
 
 void main() {
   group('SettingsScreen', () {
-    late ThemeBloc themeBloc;
+    late DmThemeBloc themeBloc;
     late SharedPreferences sharedPreferences;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       sharedPreferences = await SharedPreferences.getInstance();
-      themeBloc = ThemeBloc(sharedPreferences);
+      themeBloc = DmThemeBloc(prefs: sharedPreferences);
     });
 
     tearDown(() {
@@ -28,7 +28,7 @@ void main() {
       await tester.pumpWidget(
         RepositoryProvider<SharedPreferences>(
           create: (context) => sharedPreferences,
-          child: BlocProvider<ThemeBloc>(
+          child: BlocProvider<DmThemeBloc>(
             create: (context) => themeBloc,
             child: MaterialApp(
               localizationsDelegates: AppLocale.localizationsDelegates,
@@ -47,7 +47,7 @@ void main() {
       await tester.pumpWidget(
         RepositoryProvider<SharedPreferences>(
           create: (context) => sharedPreferences,
-          child: BlocProvider<ThemeBloc>(
+          child: BlocProvider<DmThemeBloc>(
             create: (context) => themeBloc,
             child: MaterialApp(
               localizationsDelegates: AppLocale.localizationsDelegates,
@@ -65,7 +65,7 @@ void main() {
       await tester.pumpWidget(
         RepositoryProvider<SharedPreferences>(
           create: (context) => sharedPreferences,
-          child: BlocProvider<ThemeBloc>(
+          child: BlocProvider<DmThemeBloc>(
             create: (context) => themeBloc,
             child: MaterialApp(
               localizationsDelegates: AppLocale.localizationsDelegates,
@@ -83,7 +83,7 @@ void main() {
       await tester.pumpWidget(
         RepositoryProvider<SharedPreferences>(
           create: (context) => sharedPreferences,
-          child: BlocProvider<ThemeBloc>(
+          child: BlocProvider<DmThemeBloc>(
             create: (context) => themeBloc,
             child: MaterialApp(
               localizationsDelegates: AppLocale.localizationsDelegates,
@@ -103,7 +103,7 @@ void main() {
       await tester.pumpWidget(
         RepositoryProvider<SharedPreferences>(
           create: (context) => sharedPreferences,
-          child: BlocProvider<ThemeBloc>(
+          child: BlocProvider<DmThemeBloc>(
             create: (context) => themeBloc,
             child: MaterialApp(
               localizationsDelegates: AppLocale.localizationsDelegates,

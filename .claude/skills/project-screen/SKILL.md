@@ -170,7 +170,7 @@ AppAdaptiveScaffold(
   secondaryBody: (context) => DetailView(),
 
   // Hide secondary on small screens
-  smallSecondaryBody: AdaptiveScaffold.emptyBuilder,
+  smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
 
   // Body to secondary ratio (0.3 = 30% body, 70% secondary)
   bodyRatio: 0.3,
