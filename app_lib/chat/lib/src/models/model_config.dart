@@ -43,6 +43,8 @@ class GemmaModelInfo {
     this.desktopSizeLabel,
     this.needsAuth = false,
     this.supportsMultimodal = false,
+    this.supportsAudio = false,
+    this.supportsThinking = false,
     this.supportsFunctionCalls = false,
   });
 
@@ -83,6 +85,12 @@ class GemmaModelInfo {
 
   /// Whether this model supports multimodal (image) input.
   final bool supportsMultimodal;
+
+  /// Whether this model supports audio input (e.g. Gemma 3n E4B).
+  final bool supportsAudio;
+
+  /// Whether this model supports thinking/chain-of-thought reasoning.
+  final bool supportsThinking;
 
   /// Whether this model supports function/tool calling.
   final bool supportsFunctionCalls;
@@ -142,6 +150,7 @@ class GemmaModelInfo {
     modelType: gemma.ModelType.gemmaIt,
     needsAuth: false,
     supportsMultimodal: true,
+    supportsThinking: true,
     supportsFunctionCalls: true,
   );
 
@@ -155,6 +164,7 @@ class GemmaModelInfo {
     modelType: gemma.ModelType.gemmaIt,
     needsAuth: false,
     supportsMultimodal: true,
+    supportsThinking: true,
     supportsFunctionCalls: true,
   );
 
@@ -177,7 +187,7 @@ class GemmaModelInfo {
   static const _gemma3n4b = GemmaModelInfo(
     id: 'gemma-3n-E4B-it-int4',
     displayName: 'Gemma 3n E4B IT',
-    description: 'Multimodal + function calls, 4B params',
+    description: 'Multimodal + audio + function calls, 4B params',
     sizeLabel: '6.5 GB',
     url:
         'https://huggingface.co/google/gemma-3n-E4B-it-litert-preview/resolve/main/gemma-3n-E4B-it-int4.task',
@@ -187,6 +197,7 @@ class GemmaModelInfo {
     modelType: gemma.ModelType.gemmaIt,
     needsAuth: true,
     supportsMultimodal: true,
+    supportsAudio: true,
     supportsFunctionCalls: true,
   );
 
@@ -286,6 +297,7 @@ class GemmaModelInfo {
     desktopSizeLabel: '1.8 GB',
     modelType: gemma.ModelType.deepSeek,
     category: ModelCategory.deepSeek,
+    supportsThinking: true,
   );
 
   // ---------------------------------------------------------------------------
@@ -372,10 +384,15 @@ class GemmaModelInfo {
     return candidates.first;
   }
 
-  /// Look up a model by its ID.
+  /// Look up a model by its ID or installed filename.
   static GemmaModelInfo? findById(String id) {
     for (final model in availableModels) {
       if (model.id == id) return model;
+      // Match desktop filenames (installed filename may differ from ID)
+      if (id.contains(model.id) || model.id.contains(id)) return model;
+      final urlFilename =
+          Uri.parse(model.downloadUrl).pathSegments.lastOrNull ?? '';
+      if (urlFilename.isNotEmpty && id == urlFilename) return model;
     }
     return null;
   }
