@@ -168,11 +168,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                 ],
               ),
             ),
-          if (message.content.isNotEmpty)
-            Text(
-              message.content,
-              style: TextStyle(color: textColor, fontSize: 16, height: 1.4),
-            ),
+          if (message.content.isNotEmpty) _buildUserMarkdown(context),
         ],
       );
     }
@@ -249,6 +245,30 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildUserMarkdown(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final userTheme = theme.copyWith(
+      textTheme: theme.textTheme.apply(
+        bodyColor: colorScheme.onPrimary,
+        displayColor: colorScheme.onPrimary,
+      ),
+      colorScheme: colorScheme.copyWith(
+        onSurface: colorScheme.onPrimary,
+        onSurfaceVariant: colorScheme.onPrimary.withAlpha(200),
+      ),
+    );
+    return DmMarkdown(
+      data: message.content,
+      selectable: true,
+      shrinkWrap: true,
+      themeData: userTheme,
+      onLinkTap: (url, title) {
+        launchUrl(Uri.parse(url));
+      },
     );
   }
 
