@@ -37,7 +37,7 @@ class {{name.pascalCase()}}Screen extends StatelessWidget {
           ],
         ),
       ),
-      smallSecondaryBody: AdaptiveScaffold.emptyBuilder,
+      smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
     );{{/has_adaptive_scaffold}}{{^has_adaptive_scaffold}}return Scaffold(
       {{#has_app_bar}}appBar: AppBar(
         title: const Text('{{name.titleCase()}}'),

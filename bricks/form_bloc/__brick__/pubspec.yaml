@@ -7,25 +7,22 @@ environment:
   sdk: ">=3.8.0 <4.0.0"
   flutter: ">=3.0.0"
 
+resolution: workspace
+
 dependencies:
   flutter:
     sdk: flutter
-  
-  # Form BLoC for advanced form handling
-  form_bloc:
-    path: ../../third_party/form_bloc
-  
-  # Flutter BLoC for state management
-  flutter_bloc: ^8.1.6
+
+  duskmoon_form: ^1.4.0
+
+  flutter_bloc: ^9.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
-  
-  # Testing
+  flutter_lints: ^6.0.0
+
   bloc_test: ^10.0.0
   mocktail: ^1.0.3
 
 flutter:
-  # No Flutter-specific configuration needed
