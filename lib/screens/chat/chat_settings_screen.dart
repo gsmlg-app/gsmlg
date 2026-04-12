@@ -98,6 +98,24 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                 ],
               ),
               SettingsSection(
+                title: const Text('Advanced'),
+                tiles: [
+                  SettingsTile.switchTile(
+                    leading: const Icon(Icons.psychology),
+                    title: const Text('Show Thinking Process'),
+                    description: const Text(
+                      'Display chain-of-thought reasoning from the model',
+                    ),
+                    initialValue: state.thinkingEnabled,
+                    onToggle: (value) {
+                      context.read<ChatSettingsBloc>().add(
+                            ChatSettingsToggleThinking(enabled: value),
+                          );
+                    },
+                  ),
+                ],
+              ),
+              SettingsSection(
                 title: const Text('Actions'),
                 tiles: [
                   SettingsTile(

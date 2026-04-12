@@ -59,9 +59,35 @@ class _ChatScreenState extends State<ChatScreen> {
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
         appBar: AppBar(
-        title: BlocBuilder<ChatBloc, ChatState>(
-          builder: (context, state) {
-            return Text(state.conversation?.title ?? 'Chat');
+        title: BlocBuilder<GemmaModelBloc, GemmaModelState>(
+          builder: (context, modelState) {
+            final selectedId = modelState.selectedModelId;
+            final modelInfo = selectedId != null
+                ? GemmaModelInfo.findById(selectedId)
+                : null;
+            final modelName = modelInfo?.displayName;
+            return BlocBuilder<ChatBloc, ChatState>(
+              builder: (context, state) {
+                final title = state.conversation?.title ?? 'Chat';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: const TextStyle(fontSize: 16)),
+                    if (modelName != null)
+                      Text(
+                        modelName,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withAlpha(153),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            );
           },
         ),
         actions: [
@@ -92,14 +118,21 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           // Chat messages
           Expanded(
-            child: BlocBuilder<ChatBloc, ChatState>(
-              builder: (context, state) {
-                if (state.conversation == null) {
-                  return _buildWelcomeView();
-                }
-                return ChatMessageList(
-                  messages: state.messages,
-                  isStreaming: state.isStreaming,
+            child: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+              buildWhen: (prev, curr) =>
+                  prev.thinkingEnabled != curr.thinkingEnabled,
+              builder: (context, settingsState) {
+                return BlocBuilder<ChatBloc, ChatState>(
+                  builder: (context, state) {
+                    if (state.conversation == null) {
+                      return _buildWelcomeView();
+                    }
+                    return ChatMessageList(
+                      messages: state.messages,
+                      isStreaming: state.isStreaming,
+                      showThinking: settingsState.thinkingEnabled,
+                    );
+                  },
                 );
               },
             ),
@@ -111,34 +144,54 @@ class _ChatScreenState extends State<ChatScreen> {
               final modelInfo = selectedId != null
                   ? GemmaModelInfo.findById(selectedId)
                   : null;
-              return BlocBuilder<ChatBloc, ChatState>(
-                builder: (context, chatState) {
-                  final canSend = modelState.isReady && chatState.canSendMessage;
-                  return ChatInputBar(
-                    enabled: canSend,
-                    isStreaming: chatState.isStreaming,
-                    supportsImage:
-                        modelInfo?.supportsMultimodal ?? false,
-                    onSend: (message, {imageBytes}) {
-                      // Start new conversation if none exists
-                      if (chatState.conversation == null) {
-                        _startNewConversation();
-                        // Wait for next frame then send
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          context.read<ChatBloc>().add(ChatSendMessage(
-                                content: message,
-                                imageBytes: imageBytes,
-                              ));
-                        });
-                      } else {
-                        context.read<ChatBloc>().add(ChatSendMessage(
-                              content: message,
-                              imageBytes: imageBytes,
-                            ));
-                      }
-                    },
-                    onStop: () {
-                      context.read<ChatBloc>().add(const ChatStopGeneration());
+              return BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+                buildWhen: (prev, curr) =>
+                    prev.thinkingEnabled != curr.thinkingEnabled,
+                builder: (context, settingsState) {
+                  return BlocBuilder<ChatBloc, ChatState>(
+                    builder: (context, chatState) {
+                      final canSend =
+                          modelState.isReady && chatState.canSendMessage;
+                      return ChatInputBar(
+                        enabled: canSend,
+                        isStreaming: chatState.isStreaming,
+                        supportsImage:
+                            modelInfo?.supportsMultimodal ?? false,
+                        supportsAudio:
+                            modelInfo?.supportsAudio ?? false,
+                        supportsThinking:
+                            modelInfo?.supportsThinking ?? false,
+                        thinkingEnabled: settingsState.thinkingEnabled,
+                        onThinkingToggle: (enabled) {
+                          context.read<ChatSettingsBloc>().add(
+                                ChatSettingsToggleThinking(enabled: enabled),
+                              );
+                        },
+                        onSend: (message, {imageBytes, audioBytes}) {
+                          if (chatState.conversation == null) {
+                            _startNewConversation();
+                            WidgetsBinding.instance
+                                .addPostFrameCallback((_) {
+                              context.read<ChatBloc>().add(ChatSendMessage(
+                                    content: message,
+                                    imageBytes: imageBytes,
+                                    audioBytes: audioBytes,
+                                  ));
+                            });
+                          } else {
+                            context.read<ChatBloc>().add(ChatSendMessage(
+                                  content: message,
+                                  imageBytes: imageBytes,
+                                  audioBytes: audioBytes,
+                                ));
+                          }
+                        },
+                        onStop: () {
+                          context
+                              .read<ChatBloc>()
+                              .add(const ChatStopGeneration());
+                        },
+                      );
                     },
                   );
                 },

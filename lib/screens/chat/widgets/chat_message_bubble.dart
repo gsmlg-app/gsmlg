@@ -4,16 +4,26 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class ChatMessageBubble extends StatelessWidget {
+class ChatMessageBubble extends StatefulWidget {
   const ChatMessageBubble({
     super.key,
     required this.message,
     this.showTypingIndicator = false,
+    this.showThinking = false,
   });
 
   final Message message;
   final bool showTypingIndicator;
+  final bool showThinking;
 
+  @override
+  State<ChatMessageBubble> createState() => _ChatMessageBubbleState();
+}
+
+class _ChatMessageBubbleState extends State<ChatMessageBubble> {
+  bool _thinkingExpanded = false;
+
+  Message get message => widget.message;
   bool get isUser => message is UserMessage;
 
   @override
@@ -58,7 +68,7 @@ class ChatMessageBubble extends StatelessWidget {
                     bottomRight: Radius.circular(isUser ? 4 : 16),
                   ),
                 ),
-                child: showTypingIndicator
+                child: widget.showTypingIndicator
                     ? _buildTypingIndicator(context)
                     : _buildMessageContent(context),
               ),
@@ -139,6 +149,25 @@ class ChatMessageBubble extends StatelessWidget {
                 ),
               ),
             ),
+          if (userMsg.hasAudio)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.mic, size: 16, color: textColor.withAlpha(180)),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Audio attached',
+                    style: TextStyle(
+                      color: textColor.withAlpha(180),
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           if (message.content.isNotEmpty)
             Text(
               message.content,
@@ -148,7 +177,82 @@ class ChatMessageBubble extends StatelessWidget {
       );
     }
 
-    // Assistant messages rendered as markdown
+    // Assistant messages — optionally show thinking section
+    final assistantMsg = message as AssistantMessage;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.showThinking && assistantMsg.hasThinking)
+          _buildThinkingSection(context, assistantMsg),
+        if (message.content.isNotEmpty) _buildAssistantMarkdown(context),
+      ],
+    );
+  }
+
+  Widget _buildThinkingSection(
+      BuildContext context, AssistantMessage assistantMsg) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: () => setState(() => _thinkingExpanded = !_thinkingExpanded),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.psychology,
+                      size: 16, color: colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 6),
+                  Text(
+                    assistantMsg.isStreaming &&
+                            assistantMsg.content.isEmpty
+                        ? 'Thinking...'
+                        : 'Thinking',
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _thinkingExpanded
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                    size: 18,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+              if (_thinkingExpanded) ...[
+                const SizedBox(height: 6),
+                Text(
+                  assistantMsg.thinkingContent!,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAssistantMarkdown(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textColor = colorScheme.onSurface;
     return MarkdownBody(
       data: message.content,
       selectable: true,

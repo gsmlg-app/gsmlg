@@ -8,10 +8,12 @@ class ChatMessageList extends StatefulWidget {
     super.key,
     required this.messages,
     this.isStreaming = false,
+    this.showThinking = false,
   });
 
   final List<Message> messages;
   final bool isStreaming;
+  final bool showThinking;
 
   @override
   State<ChatMessageList> createState() => _ChatMessageListState();
@@ -76,6 +78,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
         return ChatMessageBubble(
           message: message,
           showTypingIndicator: showTypingIndicator && message.content.isEmpty,
+          showThinking: widget.showThinking,
         );
       },
     );
