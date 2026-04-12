@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_chat/app_chat.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 part 'event.dart';
 part 'state.dart';
@@ -11,15 +12,21 @@ part 'state.dart';
 class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
   ChatSettingsBloc({
     required ChatStorageRepository repository,
+    required SharedPreferences preferences,
   })  : _repository = repository,
+        _preferences = preferences,
         super(const ChatSettingsState()) {
     on<ChatSettingsLoad>(_onLoad);
     on<ChatSettingsUpdateConfig>(_onUpdateConfig);
     on<ChatSettingsUpdateSystemPrompt>(_onUpdateSystemPrompt);
+    on<ChatSettingsToggleThinking>(_onToggleThinking);
     on<ChatSettingsReset>(_onReset);
   }
 
+  static const _thinkingEnabledKey = 'chat_thinking_enabled';
+
   final ChatStorageRepository _repository;
+  final SharedPreferences _preferences;
 
   Future<void> _onLoad(
     ChatSettingsLoad event,
@@ -30,11 +37,14 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     try {
       final config = await _repository.loadSettings();
       final systemPrompt = await _repository.loadDefaultSystemPrompt();
+      final thinkingEnabled =
+          _preferences.getBool(_thinkingEnabledKey) ?? false;
 
       emit(state.copyWith(
         status: ChatSettingsStatus.loaded,
         config: config,
         defaultSystemPrompt: systemPrompt,
+        thinkingEnabled: thinkingEnabled,
       ));
     } catch (e) {
       emit(state.copyWith(
@@ -89,6 +99,17 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
         errorMessage: 'Failed to save system prompt: $e',
       ));
     }
+  }
+
+  Future<void> _onToggleThinking(
+    ChatSettingsToggleThinking event,
+    Emitter<ChatSettingsState> emit,
+  ) async {
+    await _preferences.setBool(_thinkingEnabledKey, event.enabled);
+    emit(state.copyWith(
+      thinkingEnabled: event.enabled,
+      configChanged: true,
+    ));
   }
 
   Future<void> _onReset(

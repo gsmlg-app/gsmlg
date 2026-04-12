@@ -23,6 +23,7 @@ class ChatSettingsState extends Equatable {
     this.defaultSystemPrompt,
     this.errorMessage,
     this.configChanged = false,
+    this.thinkingEnabled = false,
   });
 
   /// Current status of settings.
@@ -41,6 +42,9 @@ class ChatSettingsState extends Equatable {
   /// Used to trigger model reload when navigating away from settings.
   final bool configChanged;
 
+  /// Whether to display thinking/chain-of-thought content from the model.
+  final bool thinkingEnabled;
+
   @override
   List<Object?> get props => [
         status,
@@ -48,6 +52,7 @@ class ChatSettingsState extends Equatable {
         defaultSystemPrompt,
         errorMessage,
         configChanged,
+        thinkingEnabled,
       ];
 
   /// Whether settings are loaded.
@@ -62,6 +67,7 @@ class ChatSettingsState extends Equatable {
     String? defaultSystemPrompt,
     String? errorMessage,
     bool? configChanged,
+    bool? thinkingEnabled,
     bool clearSystemPrompt = false,
   }) {
     return ChatSettingsState(
@@ -72,6 +78,7 @@ class ChatSettingsState extends Equatable {
           : (defaultSystemPrompt ?? this.defaultSystemPrompt),
       errorMessage: errorMessage,
       configChanged: configChanged ?? false,
+      thinkingEnabled: thinkingEnabled ?? this.thinkingEnabled,
     );
   }
 }

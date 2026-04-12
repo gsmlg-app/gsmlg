@@ -24,6 +24,13 @@ final class ChatSettingsUpdateSystemPrompt extends ChatSettingsEvent {
   final String? prompt;
 }
 
+/// Toggle thinking/chain-of-thought display.
+final class ChatSettingsToggleThinking extends ChatSettingsEvent {
+  const ChatSettingsToggleThinking({required this.enabled});
+
+  final bool enabled;
+}
+
 /// Reset settings to defaults.
 final class ChatSettingsReset extends ChatSettingsEvent {
   const ChatSettingsReset();
