@@ -53,15 +53,13 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
   }
 
   ServiceProvider get _serviceProvider => switch (_provider) {
-        DnsProvider.cloudflare => ServiceProvider.cloudflare,
-        DnsProvider.route53 => ServiceProvider.aws,
-      };
+    DnsProvider.cloudflare => ServiceProvider.cloudflare,
+    DnsProvider.route53 => ServiceProvider.aws,
+  };
 
   List<ServiceAccountTableData> _filteredAccounts(AccountsState state) {
     if (state is! AccountsLoaded) return [];
-    return state.accounts
-        .where((a) => a.provider == _serviceProvider)
-        .toList();
+    return state.accounts.where((a) => a.provider == _serviceProvider).toList();
   }
 
   Future<void> _fetchZones() async {
@@ -89,55 +87,62 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
       switch (_provider) {
         case DnsProvider.route53:
           final credentials = jsonDecode(apiKey) as Map<String, dynamic>;
-          final dio = Dio(BaseOptions(
-            baseUrl: 'https://route53.amazonaws.com/2013-04-01',
-            headers: {'Content-Type': 'application/xml'},
-          ));
+          final dio = Dio(
+            BaseOptions(
+              baseUrl: 'https://route53.amazonaws.com/2013-04-01',
+              headers: {'Content-Type': 'application/xml'},
+            ),
+          );
           dio.transformer = r53.XmlTransformer();
           dio.interceptors.add(r53.XmlRequestInterceptor());
-          dio.interceptors.add(r53.AwsSigV4Interceptor(
-            accessKeyId: credentials['accessKeyId'] as String,
-            secretAccessKey: credentials['secretAccessKey'] as String,
-            region: credentials['region'] as String? ?? 'us-east-1',
-            serviceName: 'route53',
-          ));
-          dio.interceptors.add(LogInterceptor(
-            request: true,
-            requestHeader: true,
-            requestBody: true,
-            responseHeader: true,
-            responseBody: true,
-            error: true,
-            logPrint: (o) => debugPrint(o.toString()),
-          ));
+          dio.interceptors.add(
+            r53.AwsSigV4Interceptor(
+              accessKeyId: credentials['accessKeyId'] as String,
+              secretAccessKey: credentials['secretAccessKey'] as String,
+              region: credentials['region'] as String? ?? 'us-east-1',
+              serviceName: 'route53',
+            ),
+          );
+          dio.interceptors.add(
+            LogInterceptor(
+              request: true,
+              requestHeader: true,
+              requestBody: true,
+              responseHeader: true,
+              responseBody: true,
+              error: true,
+              logPrint: (o) => debugPrint(o.toString()),
+            ),
+          );
           final client = r53.Route53(dio);
           final response = await client.hostedZones.listHostedZones();
 
           for (final zone in response.hostedZones) {
-            zones.add(_ZoneOption(
-              id: zone.id.replaceFirst('/hostedzone/', ''),
-              name: zone.name.endsWith('.')
-                  ? zone.name.substring(0, zone.name.length - 1)
-                  : zone.name,
-            ));
+            zones.add(
+              _ZoneOption(
+                id: zone.id.replaceFirst('/hostedzone/', ''),
+                name: zone.name.endsWith('.')
+                    ? zone.name.substring(0, zone.name.length - 1)
+                    : zone.name,
+              ),
+            );
           }
 
         case DnsProvider.cloudflare:
-          final dio = Dio(BaseOptions(
-            baseUrl: 'https://api.cloudflare.com/client/v4',
-            headers: {
-              'Authorization': 'Bearer $apiKey',
-              'Content-Type': 'application/json',
-            },
-          ));
+          final dio = Dio(
+            BaseOptions(
+              baseUrl: 'https://api.cloudflare.com/client/v4',
+              headers: {
+                'Authorization': 'Bearer $apiKey',
+                'Content-Type': 'application/json',
+              },
+            ),
+          );
           final client = cf.CloudflareDns(dio, enableLogging: true);
           final response = await client.zones.listZones();
 
           for (final zone in response.result) {
-            zones.add(_ZoneOption(
-              id: zone.id,
-              name: zone.name,
-            ));
+            zones.add(_ZoneOption(id: zone.id, name: zone.name));
           }
       }
 
@@ -171,15 +176,17 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
 
     setState(() => _isSubmitting = true);
 
-    context.read<ZoneBloc>().add(ZoneAdd(
-          provider: _provider,
-          zoneId: _selectedZone!.id,
-          zoneName: _selectedZone!.name,
-          serviceAccountId: _selectedAccount!.id,
-          comment: _commentController.text.isEmpty
-              ? null
-              : _commentController.text,
-        ));
+    context.read<ZoneBloc>().add(
+      ZoneAdd(
+        provider: _provider,
+        zoneId: _selectedZone!.id,
+        zoneName: _selectedZone!.name,
+        serviceAccountId: _selectedAccount!.id,
+        comment: _commentController.text.isEmpty
+            ? null
+            : _commentController.text,
+      ),
+    );
 
     context.go('/service/domain');
   }
@@ -197,8 +204,10 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
-      selectedIndex:
-          Destinations.indexOf(const Key(ServiceScreen.name), context),
+      selectedIndex: Destinations.indexOf(
+        const Key(ServiceScreen.name),
+        context,
+      ),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => SafeArea(
@@ -261,8 +270,7 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color:
-                                      Theme.of(context).colorScheme.outline,
+                                  color: Theme.of(context).colorScheme.outline,
                                 ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -270,8 +278,7 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                                 children: [
                                   Text(
                                     'No ${_provider == DnsProvider.cloudflare ? "Cloudflare" : "AWS"} accounts configured',
-                                    style:
-                                        const TextStyle(color: Colors.grey),
+                                    style: const TextStyle(color: Colors.grey),
                                   ),
                                   const SizedBox(height: 8),
                                   OutlinedButton.icon(
@@ -286,17 +293,20 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                           }
 
                           return DropdownButtonFormField<
-                              ServiceAccountTableData>(
+                            ServiceAccountTableData
+                          >(
                             value: _selectedAccount,
                             decoration: const InputDecoration(
                               labelText: 'Account',
                               border: OutlineInputBorder(),
                             ),
                             items: accounts
-                                .map((account) => DropdownMenuItem(
-                                      value: account,
-                                      child: Text(account.name),
-                                    ))
+                                .map(
+                                  (account) => DropdownMenuItem(
+                                    value: account,
+                                    child: Text(account.name),
+                                  ),
+                                )
                                 .toList(),
                             onChanged: (account) {
                               setState(() {
@@ -319,8 +329,8 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
 
                       // Fetch zones button
                       OutlinedButton.icon(
-                        onPressed: (_isFetchingZones ||
-                                _selectedAccount == null)
+                        onPressed:
+                            (_isFetchingZones || _selectedAccount == null)
                             ? null
                             : _fetchZones,
                         icon: _isFetchingZones
@@ -328,12 +338,15 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                                 height: 16,
                                 width: 16,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2),
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Icon(Icons.refresh),
-                        label: Text(_isFetchingZones
-                            ? 'Fetching zones...'
-                            : 'Fetch Available Zones'),
+                        label: Text(
+                          _isFetchingZones
+                              ? 'Fetching zones...'
+                              : 'Fetch Available Zones',
+                        ),
                       ),
 
                       if (_fetchError != null) ...[
@@ -394,11 +407,12 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                             border: OutlineInputBorder(),
                           ),
                           items: _availableZones!
-                              .map((zone) => DropdownMenuItem(
-                                    value: zone,
-                                    child:
-                                        Text('${zone.name} (${zone.id})'),
-                                  ))
+                              .map(
+                                (zone) => DropdownMenuItem(
+                                  value: zone,
+                                  child: Text('${zone.name} (${zone.id})'),
+                                ),
+                              )
                               .toList(),
                           onChanged: (zone) {
                             setState(() => _selectedZone = zone);
@@ -435,7 +449,8 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2),
+                                  strokeWidth: 2,
+                                ),
                               )
                             : const Text('Add Zone'),
                       ),

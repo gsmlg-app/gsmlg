@@ -9,7 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
-import 'package:settings_ui/settings_ui.dart';
+import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ModelManagementScreen extends StatefulWidget {
@@ -75,7 +75,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           ),
         );
       },
-      smallSecondaryBody: AdaptiveScaffold.emptyBuilder,
+      smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
     );
   }
 
@@ -94,7 +94,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }
 
   SettingsSection _buildDownloadedSection(
-      BuildContext context, GemmaModelState state) {
+    BuildContext context,
+    GemmaModelState state,
+  ) {
     final installedIds = state.installedModels;
 
     if (installedIds.isEmpty) {
@@ -103,8 +105,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         tiles: [
           SettingsTile(
             title: const Text('No models downloaded'),
-            description:
-                const Text('Download a model below to start chatting.'),
+            description: const Text(
+              'Download a model below to start chatting.',
+            ),
             leading: const Icon(Icons.info_outline),
           ),
         ],
@@ -126,24 +129,23 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           trailing: isSelected
               ? const Icon(Icons.check)
               : IconButton(
-                  icon: Icon(Icons.delete_outline,
-                      color: Theme.of(context).colorScheme.error),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   onPressed: () =>
                       _showDeleteDialog(context, modelId, displayName),
                 ),
           onPressed: (_) {
-            context
-                .read<GemmaModelBloc>()
-                .add(GemmaModelSelect(modelId: modelId));
+            context.read<GemmaModelBloc>().add(
+              GemmaModelSelect(modelId: modelId),
+            );
           },
         ),
       );
     }
 
-    return SettingsSection(
-      title: const Text('Available Models'),
-      tiles: tiles,
-    );
+    return SettingsSection(title: const Text('Available Models'), tiles: tiles);
   }
 
   // ---------------------------------------------------------------------------
@@ -151,7 +153,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   // ---------------------------------------------------------------------------
 
   SettingsSection _buildDownloadingSection(
-      BuildContext context, GemmaModelState state) {
+    BuildContext context,
+    GemmaModelState state,
+  ) {
     final tiles = <SettingsTile>[];
 
     for (final download in state.activeDownloads) {
@@ -169,9 +173,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                LinearProgressIndicator(
-                  value: download.progress / 100,
-                ),
+                LinearProgressIndicator(value: download.progress / 100),
                 const SizedBox(height: 4),
                 Text(
                   '${download.progress.toStringAsFixed(0)}%',
@@ -195,7 +197,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   // ---------------------------------------------------------------------------
 
   SettingsSection _buildFailedSection(
-      BuildContext context, GemmaModelState state) {
+    BuildContext context,
+    GemmaModelState state,
+  ) {
     final tiles = <SettingsTile>[];
 
     for (final failed in state.failedDownloads) {
@@ -232,8 +236,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 tooltip: 'Dismiss',
                 onPressed: () {
                   context.read<GemmaModelBloc>().add(
-                        GemmaModelDismissFailure(modelId: failed.modelId),
-                      );
+                    GemmaModelDismissFailure(modelId: failed.modelId),
+                  );
                 },
               ),
             ],
@@ -266,7 +270,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }
 
   List<SettingsSection> _buildAvailableSections(
-      BuildContext context, GemmaModelState state) {
+    BuildContext context,
+    GemmaModelState state,
+  ) {
     final sections = <SettingsSection>[];
 
     for (final category in ModelCategory.values) {
@@ -291,40 +297,47 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 if (installed)
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: Icon(Icons.check_circle,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.primary),
+                    child: Icon(
+                      Icons.check_circle,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 Text(model.effectiveSizeLabel),
               ],
             ),
-            onPressed: (_) => _showDownloadConfirmDialog(
-                    context, model, installed),
+            onPressed: (_) =>
+                _showDownloadConfirmDialog(context, model, installed),
           ),
         );
       }
 
-      sections.add(SettingsSection(
-        title: Text(_categoryTitle(category)),
-        tiles: tiles,
-      ));
+      sections.add(
+        SettingsSection(title: Text(_categoryTitle(category)), tiles: tiles),
+      );
     }
 
     return sections;
   }
 
   bool _isInstalled(GemmaModelInfo model, List<String> installedIds) {
-    return installedIds.any((id) =>
-        id == model.id || id.contains(model.id) || model.id.contains(id));
+    return installedIds.any(
+      (id) => id == model.id || id.contains(model.id) || model.id.contains(id),
+    );
   }
 
   void _showDownloadConfirmDialog(
-      BuildContext context, GemmaModelInfo model, bool isInstalled) {
+    BuildContext context,
+    GemmaModelInfo model,
+    bool isInstalled,
+  ) {
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(isInstalled ? 'Model Already Downloaded' : 'Download Model'),
+          title: Text(
+            isInstalled ? 'Model Already Downloaded' : 'Download Model',
+          ),
           content: SizedBox(
             width: 400,
             child: Column(
@@ -382,28 +395,33 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
   void _installModel(BuildContext context, GemmaModelInfo model) {
     if (model.isBundled) {
-      context.read<GemmaModelBloc>().add(GemmaModelInstallFromAsset(
-            modelId: model.id,
-            assetPath: model.assetPath!,
-          ));
+      context.read<GemmaModelBloc>().add(
+        GemmaModelInstallFromAsset(
+          modelId: model.id,
+          assetPath: model.assetPath!,
+        ),
+      );
     } else if (model.needsAuth) {
       _installWithHuggingFaceToken(context, model);
     } else {
-      context.read<GemmaModelBloc>().add(GemmaModelInstall(
-            nativeModelType: model.modelType,
-            url: model.downloadUrl,
-            modelId: model.id,
-          ));
+      context.read<GemmaModelBloc>().add(
+        GemmaModelInstall(
+          nativeModelType: model.modelType,
+          url: model.downloadUrl,
+          modelId: model.id,
+        ),
+      );
     }
   }
 
   Future<void> _installWithHuggingFaceToken(
-      BuildContext context, GemmaModelInfo model) async {
+    BuildContext context,
+    GemmaModelInfo model,
+  ) async {
     final accountsState = context.read<AccountsBloc>().state;
     if (accountsState is! AccountsLoaded) return;
 
-    final hfAccounts =
-        accountsState.byProvider(ServiceProvider.huggingface);
+    final hfAccounts = accountsState.byProvider(ServiceProvider.huggingface);
 
     if (hfAccounts.isEmpty) {
       _showNoHuggingFaceAccountDialog(context);
@@ -412,8 +430,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
     // Use the first HuggingFace account
     final account = hfAccounts.first;
-    final token =
-        await context.read<AccountsBloc>().getApiKey(account.id);
+    final token = await context.read<AccountsBloc>().getApiKey(account.id);
 
     if (token == null || token.isEmpty) {
       if (context.mounted) _showNoHuggingFaceAccountDialog(context);
@@ -421,12 +438,14 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     }
 
     if (context.mounted) {
-      context.read<GemmaModelBloc>().add(GemmaModelInstall(
-            nativeModelType: model.modelType,
-            url: model.downloadUrl,
-            modelId: model.id,
-            token: token,
-          ));
+      context.read<GemmaModelBloc>().add(
+        GemmaModelInstall(
+          nativeModelType: model.modelType,
+          url: model.downloadUrl,
+          modelId: model.id,
+          token: token,
+        ),
+      );
     }
   }
 
@@ -467,7 +486,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   // ---------------------------------------------------------------------------
 
   SettingsSection _buildProxySection(
-      BuildContext context, GemmaModelState state) {
+    BuildContext context,
+    GemmaModelState state,
+  ) {
     final proxy = state.proxyUrl;
     final hasProxy = proxy != null && proxy.isNotEmpty;
 
@@ -486,9 +507,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                   onPressed: () {
                     final prefs = context.read<SharedPreferences>();
                     prefs.remove(_proxyKey);
-                    context
-                        .read<GemmaModelBloc>()
-                        .add(const GemmaModelSetProxy());
+                    context.read<GemmaModelBloc>().add(
+                      const GemmaModelSetProxy(),
+                    );
                   },
                 )
               : null,
@@ -541,14 +562,14 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 final prefs = context.read<SharedPreferences>();
                 if (value.isEmpty) {
                   prefs.remove(_proxyKey);
-                  context
-                      .read<GemmaModelBloc>()
-                      .add(const GemmaModelSetProxy());
+                  context.read<GemmaModelBloc>().add(
+                    const GemmaModelSetProxy(),
+                  );
                 } else {
                   prefs.setString(_proxyKey, value);
-                  context
-                      .read<GemmaModelBloc>()
-                      .add(GemmaModelSetProxy(proxyUrl: value));
+                  context.read<GemmaModelBloc>().add(
+                    GemmaModelSetProxy(proxyUrl: value),
+                  );
                 }
                 Navigator.pop(dialogContext);
               },
@@ -565,7 +586,10 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   // ---------------------------------------------------------------------------
 
   void _showDeleteDialog(
-      BuildContext context, String modelId, String displayName) {
+    BuildContext context,
+    String modelId,
+    String displayName,
+  ) {
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -582,9 +606,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
               onPressed: () {
-                context
-                    .read<GemmaModelBloc>()
-                    .add(GemmaModelDeleteById(modelId: modelId));
+                context.read<GemmaModelBloc>().add(
+                  GemmaModelDeleteById(modelId: modelId),
+                );
                 Navigator.pop(dialogContext);
               },
               child: const Text('Delete'),

@@ -1,6 +1,7 @@
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_database/app_database.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -28,15 +29,16 @@ class VultrScreen extends StatelessWidget {
         child: BlocConsumer<VultrBloc, VultrState>(
           listener: (context, state) {
             if (state is VultrLoaded && state.error != null) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(state.error!)));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(state.error!)));
             }
           },
           builder: (context, state) {
             return switch (state) {
               VultrLoading() => const Center(
-                  child: CircularProgressIndicator(),
-                ),
+                child: CircularProgressIndicator(),
+              ),
               VultrInitial() => const _AccountSelectView(),
               VultrError(:final message) => _ErrorView(message: message),
               VultrLoaded(:final instances, :final refreshing) =>
@@ -61,8 +63,8 @@ class _AccountSelectView extends StatelessWidget {
       builder: (context, state) {
         final accounts = state is AccountsLoaded
             ? state.accounts
-                .where((a) => a.provider == ServiceProvider.vultr)
-                .toList()
+                  .where((a) => a.provider == ServiceProvider.vultr)
+                  .toList()
             : <ServiceAccountTableData>[];
 
         return Center(
@@ -97,23 +99,24 @@ class _AccountSelectView extends StatelessWidget {
                       label: const Text('Add Vultr Account'),
                     ),
                   ] else ...[
-                    ...accounts.map((account) => Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            leading: const Icon(Icons.cloud),
-                            title: Text(account.name),
-                            subtitle: account.description.isNotEmpty
-                                ? Text(account.description)
-                                : null,
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              context.read<VultrBloc>().add(
-                                    VultrSelectAccount(
-                                        accountId: account.id),
-                                  );
-                            },
-                          ),
-                        )),
+                    ...accounts.map(
+                      (account) => Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: const Icon(Icons.cloud),
+                          title: Text(account.name),
+                          subtitle: account.description.isNotEmpty
+                              ? Text(account.description)
+                              : null,
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            context.read<VultrBloc>().add(
+                              VultrSelectAccount(accountId: account.id),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     TextButton.icon(
                       onPressed: () => context.go('/settings/account'),
@@ -158,10 +161,7 @@ class _ErrorView extends StatelessWidget {
 }
 
 class _InstancesListView extends StatelessWidget {
-  const _InstancesListView({
-    required this.instances,
-    required this.refreshing,
-  });
+  const _InstancesListView({required this.instances, required this.refreshing});
 
   final List<InstanceGet> instances;
   final bool refreshing;
@@ -221,7 +221,8 @@ class _InstanceTile extends StatelessWidget {
     final statusIcon = isRunning ? Icons.play_circle : Icons.stop_circle;
 
     final bloc = context.watch<VultrBloc>();
-    final isActioning = bloc.state is VultrLoaded &&
+    final isActioning =
+        bloc.state is VultrLoaded &&
         (bloc.state as VultrLoaded).actionInstanceId == instance.id;
 
     return Card(
@@ -256,10 +257,9 @@ class _InstanceTile extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   '${instance.status ?? 'unknown'} / ${instance.powerStatus ?? 'unknown'}',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: statusColor),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: statusColor),
                 ),
               ],
             ),
@@ -331,8 +331,8 @@ class _InstanceTile extends StatelessWidget {
           title: 'Reboot Server',
           content: 'Reboot "${instance.label ?? instance.hostname}"?',
           onConfirm: () => context.read<VultrBloc>().add(
-                VultrRebootInstance(instanceId: id),
-              ),
+            VultrRebootInstance(instanceId: id),
+          ),
         );
     }
   }
@@ -343,26 +343,23 @@ class _InstanceTile extends StatelessWidget {
     required String content,
     required VoidCallback onConfirm,
   }) {
-    showDialog(
+    showDmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              onConfirm();
-              Navigator.of(ctx).pop();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
+      title: Text(title),
+      content: Text(content),
+      actions: [
+        DmDialogAction(
+          onPressed: (ctx) => Navigator.of(ctx).pop(),
+          child: const Text('Cancel'),
+        ),
+        DmDialogAction(
+          onPressed: (ctx) {
+            onConfirm();
+            Navigator.of(ctx).pop();
+          },
+          child: const Text('Confirm'),
+        ),
+      ],
     );
   }
 }

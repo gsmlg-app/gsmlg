@@ -4,6 +4,7 @@ import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
 import 'package:app_database/app_database.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_bloc/github_bloc.dart';
@@ -40,8 +41,8 @@ class GitHubServiceScreen extends StatelessWidget {
               )..add(const GitHubPinnedReposLoad()),
             ),
             BlocProvider<GitHubReposBloc>(
-              create: (context) => GitHubReposBloc(api: api)
-                ..add(const GitHubReposFetch()),
+              create: (context) =>
+                  GitHubReposBloc(api: api)..add(const GitHubReposFetch()),
             ),
           ],
           child: _GitHubReposView(user: state.user),
@@ -73,32 +74,33 @@ class GitHubServiceScreen extends StatelessWidget {
                 SliverAppBar(title: const Text('GitHub')),
                 if (state is GitHubLoading)
                   const SliverFillRemaining(
-                    child:
-                        Center(child: CircularProgressIndicator.adaptive()),
+                    child: Center(child: CircularProgressIndicator.adaptive()),
                   )
                 else if (state is GitHubError)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Card(
-                        color:
-                            Theme.of(context).colorScheme.errorContainer,
+                        color: Theme.of(context).colorScheme.errorContainer,
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Row(
                             children: [
-                              Icon(Icons.error,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onErrorContainer),
+                              Icon(
+                                Icons.error,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   state.message,
                                   style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onErrorContainer),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onErrorContainer,
+                                  ),
                                 ),
                               ),
                             ],
@@ -128,8 +130,8 @@ class GitHubServiceScreen extends StatelessWidget {
                             ? Text(account.description)
                             : null,
                         trailing: FilledButton(
-                          onPressed: () => _connectWithAccount(
-                              context, account),
+                          onPressed: () =>
+                              _connectWithAccount(context, account),
                           child: const Text('Connect'),
                         ),
                       );
@@ -144,19 +146,18 @@ class GitHubServiceScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(32),
                       child: Column(
                         children: [
-                          Icon(Icons.code,
-                              size: 64,
-                              color:
-                                  Theme.of(context).colorScheme.outline),
+                          Icon(
+                            Icons.code,
+                            size: 64,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                           const SizedBox(height: 16),
                           Text(
                             'No GitHub Accounts',
-                            style:
-                                Theme.of(context).textTheme.headlineSmall,
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                              'Add a GitHub account to get started'),
+                          const Text('Add a GitHub account to get started'),
                         ],
                       ),
                     ),
@@ -168,8 +169,7 @@ class GitHubServiceScreen extends StatelessWidget {
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.add),
                       label: const Text('Add GitHub Account'),
-                      onPressed: () =>
-                          _showAddAccountDialog(context),
+                      onPressed: () => _showAddAccountDialog(context),
                     ),
                   ),
                 ),
@@ -228,9 +228,11 @@ class GitHubServiceScreen extends StatelessWidget {
                           hintText: 'ghp_xxxxxxxxxxxxxxxxxxxx',
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
-                            icon: Icon(obscurePat
-                                ? Icons.visibility_off
-                                : Icons.visibility),
+                            icon: Icon(
+                              obscurePat
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
                             onPressed: () =>
                                 setState(() => obscurePat = !obscurePat),
                           ),
@@ -241,8 +243,8 @@ class GitHubServiceScreen extends StatelessWidget {
                 ),
               ),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
+                DmDialogAction(
+                  onPressed: (ctx) => Navigator.pop(ctx),
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
@@ -251,11 +253,13 @@ class GitHubServiceScreen extends StatelessWidget {
                     final pat = patController.text.trim();
                     if (name.isEmpty || pat.isEmpty) return;
 
-                    context.read<AccountsBloc>().add(AccountsAdd(
-                          provider: ServiceProvider.github,
-                          name: name,
-                          apiKey: pat,
-                        ));
+                    context.read<AccountsBloc>().add(
+                      AccountsAdd(
+                        provider: ServiceProvider.github,
+                        name: name,
+                        apiKey: pat,
+                      ),
+                    );
                     context.read<GitHubBloc>().add(GitHubConnect(pat: pat));
                     Navigator.pop(dialogContext);
                   },
@@ -305,34 +309,38 @@ class _GitHubReposViewState extends State<_GitHubReposView>
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
-        appBar: AppBar(
+        appBar: DmAppBar(
           title: const Text('GitHub Repositories'),
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: const [
-              Tab(text: 'Pinned'),
-              Tab(text: 'All Repos'),
-            ],
-          ),
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () {
                 context.read<GitHubPinnedReposBloc>().add(
-                      const GitHubPinnedReposRefresh(),
-                    );
-                context.read<GitHubReposBloc>().add(
-                      const GitHubReposRefresh(),
-                    );
+                  const GitHubPinnedReposRefresh(),
+                );
+                context.read<GitHubReposBloc>().add(const GitHubReposRefresh());
               },
             ),
           ],
         ),
-        body: TabBarView(
-          controller: _tabController,
+        body: Column(
           children: [
-            _PinnedReposTab(user: widget.user),
-            _AllReposTab(user: widget.user),
+            TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Pinned'),
+                Tab(text: 'All Repos'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _PinnedReposTab(user: widget.user),
+                  _AllReposTab(user: widget.user),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -358,16 +366,19 @@ class _PinnedReposTab extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.error,
-                    size: 48, color: Theme.of(context).colorScheme.error),
+                Icon(
+                  Icons.error,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 const SizedBox(height: 16),
                 Text(state.message),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () {
-                    context
-                        .read<GitHubPinnedReposBloc>()
-                        .add(const GitHubPinnedReposLoad());
+                    context.read<GitHubPinnedReposBloc>().add(
+                      const GitHubPinnedReposLoad(),
+                    );
                   },
                   child: const Text('Retry'),
                 ),
@@ -382,8 +393,11 @@ class _PinnedReposTab extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.bookmark_border,
-                      size: 64, color: Theme.of(context).colorScheme.outline),
+                  Icon(
+                    Icons.bookmark_border,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'No Pinned Repositories',
@@ -420,9 +434,7 @@ class _PinnedRepoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: repo.ownerAvatarUrl != null
-          ? CircleAvatar(
-              backgroundImage: NetworkImage(repo.ownerAvatarUrl!),
-            )
+          ? CircleAvatar(backgroundImage: NetworkImage(repo.ownerAvatarUrl!))
           : Icon(
               repo.isPrivate ? Icons.lock : Icons.public,
               color: repo.isPrivate
@@ -454,8 +466,8 @@ class _PinnedRepoTile extends StatelessWidget {
             icon: const Icon(Icons.bookmark_remove),
             onPressed: () {
               context.read<GitHubPinnedReposBloc>().add(
-                    GitHubPinnedReposRemove(repoId: repo.repoId),
-                  );
+                GitHubPinnedReposRemove(repoId: repo.repoId),
+              );
             },
           ),
           const Icon(Icons.chevron_right),
@@ -465,10 +477,7 @@ class _PinnedRepoTile extends StatelessWidget {
       onTap: () {
         context.goNamed(
           GitHubRepoScreen.name,
-          pathParameters: {
-            'owner': repo.ownerLogin,
-            'repo': repo.name,
-          },
+          pathParameters: {'owner': repo.ownerLogin, 'repo': repo.name},
         );
       },
     );
@@ -493,16 +502,19 @@ class _AllReposTab extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.error,
-                    size: 48, color: Theme.of(context).colorScheme.error),
+                Icon(
+                  Icons.error,
+                  size: 48,
+                  color: Theme.of(context).colorScheme.error,
+                ),
                 const SizedBox(height: 16),
                 Text(state.message),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () {
-                    context
-                        .read<GitHubReposBloc>()
-                        .add(const GitHubReposFetch());
+                    context.read<GitHubReposBloc>().add(
+                      const GitHubReposFetch(),
+                    );
                   },
                   child: const Text('Retry'),
                 ),
@@ -572,8 +584,8 @@ class _AllReposTab extends StatelessWidget {
                       onExpand: () {
                         if (orgRepos == null) {
                           context.read<GitHubReposBloc>().add(
-                                GitHubReposFetchOrgRepos(orgLogin: org.login),
-                              );
+                            GitHubReposFetchOrgRepos(orgLogin: org.login),
+                          );
                         }
                       },
                     );
@@ -602,7 +614,8 @@ class _RepoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<GitHubPinnedReposBloc, GitHubPinnedReposState>(
       builder: (context, pinnedState) {
-        final isPinned = pinnedState is GitHubPinnedReposLoaded &&
+        final isPinned =
+            pinnedState is GitHubPinnedReposLoaded &&
             pinnedState.repos.any((r) => r.repoId == repo.id);
 
         return ListTile(
@@ -637,16 +650,16 @@ class _RepoTile extends StatelessWidget {
                 onPressed: () {
                   if (isPinned) {
                     context.read<GitHubPinnedReposBloc>().add(
-                          GitHubPinnedReposRemove(repoId: repo.id),
-                        );
+                      GitHubPinnedReposRemove(repoId: repo.id),
+                    );
                   } else {
                     context.read<GitHubPinnedReposBloc>().add(
-                          GitHubPinnedReposAdd(
-                            repoId: repo.id,
-                            owner: repo.owner.login,
-                            repoName: repo.name,
-                          ),
-                        );
+                      GitHubPinnedReposAdd(
+                        repoId: repo.id,
+                        owner: repo.owner.login,
+                        repoName: repo.name,
+                      ),
+                    );
                   }
                 },
               ),
@@ -656,10 +669,7 @@ class _RepoTile extends StatelessWidget {
           onTap: () {
             context.goNamed(
               GitHubRepoScreen.name,
-              pathParameters: {
-                'owner': repo.owner.login,
-                'repo': repo.name,
-              },
+              pathParameters: {'owner': repo.owner.login, 'repo': repo.name},
             );
           },
         );
@@ -690,11 +700,7 @@ class _OrgExpansionTile extends StatelessWidget {
           : const Icon(Icons.business),
       title: Text(org.login),
       subtitle: org.description != null
-          ? Text(
-              org.description!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            )
+          ? Text(org.description!, maxLines: 1, overflow: TextOverflow.ellipsis)
           : null,
       onExpansionChanged: (expanded) {
         if (expanded) onExpand();

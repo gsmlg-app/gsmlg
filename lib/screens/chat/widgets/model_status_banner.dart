@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ModelStatusBanner extends StatelessWidget {
-  const ModelStatusBanner({
-    super.key,
-    required this.state,
-  });
+  const ModelStatusBanner({super.key, required this.state});
 
   final GemmaModelState state;
 
@@ -37,8 +34,7 @@ class ModelStatusBanner extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     return switch (state.status) {
       GemmaModelStatus.initial ||
-      GemmaModelStatus.checking =>
-        _buildCheckingContent(context),
+      GemmaModelStatus.checking => _buildCheckingContent(context),
       GemmaModelStatus.notInstalled => _buildNotInstalledContent(context),
       GemmaModelStatus.downloading => _buildDownloadingContent(context),
       GemmaModelStatus.installed => _buildInstalledContent(context),
@@ -56,8 +52,9 @@ class ModelStatusBanner extends StatelessWidget {
 
   Widget _buildCheckingContent(BuildContext context) {
     final modelName = _selectedModelName;
-    final text =
-        modelName != null ? 'Checking $modelName...' : 'Checking model status...';
+    final text = modelName != null
+        ? 'Checking $modelName...'
+        : 'Checking model status...';
     return Row(
       children: [
         const SizedBox(
@@ -104,7 +101,9 @@ class ModelStatusBanner extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 12),
-              Text('Downloading $modelName... ${d.progress.toStringAsFixed(1)}%'),
+              Text(
+                'Downloading $modelName... ${d.progress.toStringAsFixed(1)}%',
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -158,13 +157,15 @@ class ModelStatusBanner extends StatelessWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) return;
       final settingsState = context.read<ChatSettingsBloc>().state;
-      context
-          .read<GemmaModelBloc>()
-          .add(GemmaModelLoad(config: settingsState.config));
+      context.read<GemmaModelBloc>().add(
+        GemmaModelLoad(config: settingsState.config),
+      );
     });
 
     final selectedId = state.selectedModelId;
-    final info = selectedId != null ? GemmaModelInfo.findById(selectedId) : null;
+    final info = selectedId != null
+        ? GemmaModelInfo.findById(selectedId)
+        : null;
     final modelName = info?.displayName ?? 'Model';
 
     return Row(
@@ -175,16 +176,16 @@ class ModelStatusBanner extends StatelessWidget {
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: Text('Loading $modelName...'),
-        ),
+        Expanded(child: Text('Loading $modelName...')),
       ],
     );
   }
 
   Widget _buildLoadingContent(BuildContext context) {
     final selectedId = state.selectedModelId;
-    final info = selectedId != null ? GemmaModelInfo.findById(selectedId) : null;
+    final info = selectedId != null
+        ? GemmaModelInfo.findById(selectedId)
+        : null;
     final modelName = info?.displayName ?? 'model';
 
     return Row(
@@ -211,21 +212,17 @@ class ModelStatusBanner extends StatelessWidget {
         Icon(Icons.error_outline, size: 20, color: colorScheme.error),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            errorText,
-            style: TextStyle(color: colorScheme.error),
-          ),
+          child: Text(errorText, style: TextStyle(color: colorScheme.error)),
         ),
         TextButton(
           onPressed: () {
-            context
-                .read<GemmaModelBloc>()
-                .add(GemmaModelInitialize(modelType: state.modelType));
+            context.read<GemmaModelBloc>().add(
+              GemmaModelInitialize(modelType: state.modelType),
+            );
           },
           child: const Text('Retry'),
         ),
       ],
     );
   }
-
 }

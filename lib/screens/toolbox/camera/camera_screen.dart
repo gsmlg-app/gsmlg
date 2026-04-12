@@ -46,18 +46,13 @@ class _CameraScreenState extends State<CameraScreen> {
         child: BlocBuilder<CameraBloc, CameraState>(
           builder: (context, state) {
             if (state is CameraInitial) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
             if (state is CameraError) {
               return CustomScrollView(
                 slivers: [
-                  const SliverAppBar(
-                    floating: true,
-                    title: Text(title),
-                  ),
+                  const SliverAppBar(floating: true, title: Text(title)),
                   SliverToBoxAdapter(
                     child: SizedBox(
                       height: MediaQuery.of(context).size.height * 0.618,
@@ -83,10 +78,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
               return CustomScrollView(
                 slivers: [
-                  const SliverAppBar(
-                    floating: true,
-                    title: Text(title),
-                  ),
+                  const SliverAppBar(floating: true, title: Text(title)),
                   SliverList.list(
                     children: [
                       const SizedBox(height: kDefaultGridGap),
@@ -101,8 +93,8 @@ class _CameraScreenState extends State<CameraScreen> {
                             '${camera.sensorOrientation}',
                           ),
                           onTap: () => context.read<CameraBloc>().add(
-                                CameraSwitched(camera),
-                              ),
+                            CameraSwitched(camera),
+                          ),
                         ),
                       if (controller != null)
                         InkWell(

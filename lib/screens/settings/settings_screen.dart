@@ -2,8 +2,8 @@ import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:app_locale/app_locale.dart';
-import 'package:app_theme/app_theme.dart';
 import 'package:chat_bloc/chat_bloc.dart';
+import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
@@ -15,7 +15,7 @@ import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:settings_ui/settings_ui.dart';
+import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:theme_bloc/theme_bloc.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -31,14 +31,14 @@ class SettingsScreen extends StatelessWidget {
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       destinations: Destinations.navs(context),
       body: (context) {
-        final themeBloc = context.read<ThemeBloc>();
+        final themeBloc = context.read<DmThemeBloc>();
 
         return SafeArea(
           child: CustomScrollView(
             slivers: <Widget>[
               SliverAppBar(title: Text(context.l10n.settingsTitle)),
               SliverFillRemaining(
-                child: BlocBuilder<ThemeBloc, ThemeState>(
+                child: BlocBuilder<DmThemeBloc, DmThemeState>(
                   bloc: themeBloc,
                   builder: (context, state) {
                     return SettingsList(
@@ -53,7 +53,9 @@ class SettingsScreen extends StatelessWidget {
                                 builder: (context, accountsState) {
                                   if (accountsState is AccountsLoaded) {
                                     final count = accountsState.accounts.length;
-                                    return Text('$count account${count == 1 ? '' : 's'} configured');
+                                    return Text(
+                                      '$count account${count == 1 ? '' : 's'} configured',
+                                    );
                                   }
                                   return const Text('Manage API accounts');
                                 },
@@ -70,14 +72,13 @@ class SettingsScreen extends StatelessWidget {
                             SettingsTile.navigation(
                               leading: const Icon(Icons.smart_toy),
                               title: const Text('AI Models'),
-                              value: BlocBuilder<GemmaModelBloc,
-                                  GemmaModelState>(
+                              value: BlocBuilder<GemmaModelBloc, GemmaModelState>(
                                 builder: (context, modelState) {
-                                  final selectedId =
-                                      modelState.selectedModelId;
+                                  final selectedId = modelState.selectedModelId;
                                   if (selectedId != null) {
-                                    final info =
-                                        GemmaModelInfo.findById(selectedId);
+                                    final info = GemmaModelInfo.findById(
+                                      selectedId,
+                                    );
                                     if (info != null) {
                                       return Text(info.displayName);
                                     }
@@ -86,12 +87,12 @@ class SettingsScreen extends StatelessWidget {
                                   final count =
                                       modelState.installedModels.length;
                                   return Text(
-                                      '$count model${count == 1 ? '' : 's'} installed');
+                                    '$count model${count == 1 ? '' : 's'} installed',
+                                  );
                                 },
                               ),
                               onPressed: (context) {
-                                context
-                                    .goNamed(ModelManagementScreen.name);
+                                context.goNamed(ModelManagementScreen.name);
                               },
                             ),
                           ],
@@ -122,7 +123,7 @@ class SettingsScreen extends StatelessWidget {
                             SettingsTile.navigation(
                               leading: const Icon(Icons.palette),
                               title: Text(context.l10n.accentColor),
-                              value: Text(state.theme.name),
+                              value: Text(state.themeName),
                               onPressed: (context) {
                                 context.goNamed(AccentColorSettingsScreen.name);
                               },
@@ -157,7 +158,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         );
       },
-      smallSecondaryBody: AdaptiveScaffold.emptyBuilder,
+      smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
     );
   }
 }

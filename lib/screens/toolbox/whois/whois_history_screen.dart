@@ -1,5 +1,6 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
@@ -57,36 +58,32 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
                         icon: Icons.clear_all_rounded,
                         title: 'Clear History',
                         onPressed: () {
-                          showAdaptiveDialog(
+                          showDmDialog(
                             context: context,
-                            builder: (context) {
-                              return AlertDialog.adaptive(
-                                title: const Text('Clear History'),
-                                content: const Text(
-                                  'Are you sure you want to clear the history?',
+                            title: const Text('Clear History'),
+                            content: const Text(
+                              'Are you sure you want to clear the history?',
+                            ),
+                            actions: [
+                              DmDialogAction(
+                                onPressed: (ctx) {
+                                  Navigator.of(ctx).pop();
+                                  context.read<WhoisHistoryBloc>().add(
+                                    const WhoisHistoryRemoveAll(),
+                                  );
+                                },
+                                child: const Text(
+                                  'Clear',
+                                  style: TextStyle(color: Colors.red),
                                 ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                      context
-                                          .read<WhoisHistoryBloc>()
-                                          .add(const WhoisHistoryRemoveAll());
-                                    },
-                                    child: const Text(
-                                      'Clear',
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: const Text('Cancel'),
-                                  ),
-                                ],
-                              );
-                            },
+                              ),
+                              DmDialogAction(
+                                onPressed: (ctx) {
+                                  Navigator.of(ctx).pop();
+                                },
+                                child: const Text('Cancel'),
+                              ),
+                            ],
                           );
                         },
                       ),
@@ -128,9 +125,7 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
                       return SliverToBoxAdapter(
                         child: SizedBox(
                           height: MediaQuery.of(context).size.height * 0.618,
-                          child: const Center(
-                            child: Text('No history yet'),
-                          ),
+                          child: const Center(child: Text('No history yet')),
                         ),
                       );
                     }
@@ -138,8 +133,9 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
                       children: [
                         for (final item in state.data)
                           Card(
-                            color:
-                                Theme.of(context).colorScheme.primaryContainer,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
                             elevation: kDefaultGridGap,
                             child: Slidable(
                               endActionPane: ActionPane(
@@ -148,13 +144,13 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
                                   SlidableAction(
                                     onPressed: (context) {
                                       context.read<WhoisHistoryBloc>().add(
-                                            WhoisHistoryRemoveOne(item),
-                                          );
+                                        WhoisHistoryRemoveOne(item),
+                                      );
                                     },
                                     label: 'Delete',
-                                    backgroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .errorContainer,
+                                    backgroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.errorContainer,
                                     icon: Icons.delete,
                                   ),
                                 ],
@@ -184,11 +180,10 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
                                   ),
                                 ),
                                 trailing: Text(
-                                  DateFormat('yyyy-MM-dd HH:mm:ss')
-                                      .format(item.createdAt),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  DateFormat(
+                                    'yyyy-MM-dd HH:mm:ss',
+                                  ).format(item.createdAt),
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: Theme.of(context)
                                             .colorScheme

@@ -1,4 +1,5 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -226,26 +227,23 @@ class _DetailView extends StatelessWidget {
     required String content,
     required VoidCallback onConfirm,
   }) {
-    showDialog(
+    showDmDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              onConfirm();
-              Navigator.of(ctx).pop();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
+      title: Text(title),
+      content: Text(content),
+      actions: [
+        DmDialogAction(
+          onPressed: (ctx) => Navigator.of(ctx).pop(),
+          child: const Text('Cancel'),
+        ),
+        DmDialogAction(
+          onPressed: (ctx) {
+            onConfirm();
+            Navigator.of(ctx).pop();
+          },
+          child: const Text('Confirm'),
+        ),
+      ],
     );
   }
 }

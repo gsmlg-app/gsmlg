@@ -4,7 +4,7 @@ import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
-import 'package:settings_ui/settings_ui.dart';
+import 'package:duskmoon_settings/duskmoon_settings.dart';
 
 class DeviceInfoScreen extends StatelessWidget {
   static const name = 'Device Info';
@@ -35,9 +35,7 @@ class DeviceInfoScreen extends StatelessWidget {
                     }
 
                     if (snapshot.hasError) {
-                      return Center(
-                        child: Text('Error: ${snapshot.error}'),
-                      );
+                      return Center(child: Text('Error: ${snapshot.error}'));
                     }
 
                     final clientInfo = snapshot.data;
@@ -63,29 +61,33 @@ class DeviceInfoScreen extends StatelessWidget {
                               SettingsTile(
                                 leading: const Icon(Icons.devices),
                                 title: const Text('Device Name'),
-                                value:
-                                    Text(additionalData['deviceName'] as String),
+                                value: Text(
+                                  additionalData['deviceName'] as String,
+                                ),
                               ),
                             if (additionalData['deviceModel'] != null)
                               SettingsTile(
                                 leading: const Icon(Icons.phone_android),
                                 title: const Text('Device Model'),
-                                value:
-                                    Text(additionalData['deviceModel'] as String),
+                                value: Text(
+                                  additionalData['deviceModel'] as String,
+                                ),
                               ),
                             if (additionalData['systemName'] != null)
                               SettingsTile(
                                 leading: const Icon(Icons.memory),
                                 title: const Text('System Name'),
-                                value:
-                                    Text(additionalData['systemName'] as String),
+                                value: Text(
+                                  additionalData['systemName'] as String,
+                                ),
                               ),
                             if (additionalData['systemVersion'] != null)
                               SettingsTile(
                                 leading: const Icon(Icons.info_outline),
                                 title: const Text('System Version'),
                                 value: Text(
-                                    additionalData['systemVersion'] as String),
+                                  additionalData['systemVersion'] as String,
+                                ),
                               ),
                           ],
                         ),
@@ -98,22 +100,25 @@ class DeviceInfoScreen extends StatelessWidget {
                                 SettingsTile(
                                   leading: const Icon(Icons.apps),
                                   title: const Text('App Name'),
-                                  value:
-                                      Text(additionalData['appName'] as String),
+                                  value: Text(
+                                    additionalData['appName'] as String,
+                                  ),
                                 ),
                               if (additionalData['appVersion'] != null)
                                 SettingsTile(
                                   leading: const Icon(Icons.tag),
                                   title: const Text('App Version'),
                                   value: Text(
-                                      additionalData['appVersion'] as String),
+                                    additionalData['appVersion'] as String,
+                                  ),
                                 ),
                               if (additionalData['appBuildNumber'] != null)
                                 SettingsTile(
                                   leading: const Icon(Icons.build),
                                   title: const Text('Build Number'),
                                   value: Text(
-                                      additionalData['appBuildNumber'] as String),
+                                    additionalData['appBuildNumber'] as String,
+                                  ),
                                 ),
                             ],
                           ),
@@ -123,7 +128,9 @@ class DeviceInfoScreen extends StatelessWidget {
                             SettingsTile(
                               leading: const Icon(Icons.access_time),
                               title: const Text('Timestamp'),
-                              value: Text(clientInfo.timestamp.toLocal().toString()),
+                              value: Text(
+                                clientInfo.timestamp.toLocal().toString(),
+                              ),
                             ),
                           ],
                         ),
@@ -136,7 +143,7 @@ class DeviceInfoScreen extends StatelessWidget {
           ),
         );
       },
-      smallSecondaryBody: AdaptiveScaffold.emptyBuilder,
+      smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
     );
   }
 }

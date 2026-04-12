@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -30,7 +31,8 @@ class ChatInputBar extends StatefulWidget {
     String text, {
     Uint8List? imageBytes,
     Uint8List? audioBytes,
-  }) onSend;
+  })
+  onSend;
   final VoidCallback onStop;
   final ValueChanged<bool>? onThinkingToggle;
 
@@ -39,8 +41,7 @@ class ChatInputBar extends StatefulWidget {
 }
 
 class _ChatInputBarState extends State<ChatInputBar> {
-  final _controller = TextEditingController();
-  final _focusNode = FocusNode();
+  final _controller = DmMarkdownInputController();
   final _recorder = AudioRecorder();
   Uint8List? _pendingImage;
   Uint8List? _pendingAudio;
@@ -50,11 +51,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
     final text = _controller.text.trim();
     if (text.isEmpty && _pendingImage == null && _pendingAudio == null) return;
 
-    widget.onSend(
-      text,
-      imageBytes: _pendingImage,
-      audioBytes: _pendingAudio,
-    );
+    widget.onSend(text, imageBytes: _pendingImage, audioBytes: _pendingAudio);
     _controller.clear();
     setState(() {
       _pendingImage = null;
@@ -75,9 +72,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   }
 
   Future<void> _pickAudioFile() async {
-    final result = await FilePicker.pickFiles(
-      type: FileType.audio,
-    );
+    final result = await FilePicker.pickFiles(type: FileType.audio);
     if (result == null || result.files.isEmpty) return;
     final path = result.files.single.path;
     if (path == null) return;
@@ -161,7 +156,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
   @override
   void dispose() {
     _controller.dispose();
-    _focusNode.dispose();
     _recorder.dispose();
     super.dispose();
   }
@@ -176,10 +170,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          top: BorderSide(
-            color: colorScheme.outlineVariant,
-            width: 1,
-          ),
+          top: BorderSide(color: colorScheme.outlineVariant, width: 1),
         ),
       ),
       child: SafeArea(
@@ -203,16 +194,19 @@ class _ChatInputBarState extends State<ChatInputBar> {
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close,
-                          size: 18, color: colorScheme.onSurface),
+                      icon: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: colorScheme.onSurface,
+                      ),
                       style: IconButton.styleFrom(
-                        backgroundColor:
-                            colorScheme.surface.withValues(alpha: 0.8),
+                        backgroundColor: colorScheme.surface.withValues(
+                          alpha: 0.8,
+                        ),
                         minimumSize: const Size(28, 28),
                         padding: EdgeInsets.zero,
                       ),
-                      onPressed: () =>
-                          setState(() => _pendingImage = null),
+                      onPressed: () => setState(() => _pendingImage = null),
                     ),
                   ],
                 ),
@@ -256,8 +250,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 // Thinking toggle (only when model supports it)
                 if (widget.supportsThinking)
                   IconButton(
-                    onPressed: () => widget.onThinkingToggle
-                        ?.call(!widget.thinkingEnabled),
+                    onPressed: () =>
+                        widget.onThinkingToggle?.call(!widget.thinkingEnabled),
                     icon: Icon(
                       Icons.psychology,
                       color: widget.thinkingEnabled
@@ -269,33 +263,27 @@ class _ChatInputBarState extends State<ChatInputBar> {
                         : 'Thinking: OFF',
                   ),
                 Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    enabled: widget.enabled && !widget.isStreaming,
-                    maxLines: 4,
-                    minLines: 1,
-                    textInputAction: TextInputAction.send,
-                    decoration: InputDecoration(
-                      hintText: _isRecording
-                          ? 'Recording...'
-                          : widget.enabled
-                              ? 'Type a message...'
-                              : 'Model not ready',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: colorScheme.surfaceContainerHighest,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 120,
+                    ),
+                    child: DmMarkdownInput(
+                      controller: _controller,
+                      enabled: widget.enabled && !widget.isStreaming,
+                      showPreview: false,
+                      showLineNumbers: false,
+                      decoration: InputDecoration(
+                        hintText: _isRecording
+                            ? 'Recording...'
+                            : widget.enabled
+                            ? 'Type a message...'
+                            : 'Model not ready',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
-                    onSubmitted: widget.enabled && !widget.isStreaming
-                        ? (_) => _handleSend()
-                        : null,
                   ),
                 ),
                 const SizedBox(width: 8),

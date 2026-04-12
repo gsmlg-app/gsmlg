@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
-import 'package:settings_ui/settings_ui.dart';
+import 'package:duskmoon_settings/duskmoon_settings.dart';
 
 class AccountScreen extends StatelessWidget {
   static const name = 'Account';
@@ -52,15 +52,17 @@ class AccountScreen extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.error,
-                                color: Theme.of(context).colorScheme.error),
+                            Icon(
+                              Icons.error,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
                             const SizedBox(height: 8),
                             Text(state.message),
                             const SizedBox(height: 16),
                             FilledButton(
-                              onPressed: () => context
-                                  .read<AccountsBloc>()
-                                  .add(const AccountsLoad()),
+                              onPressed: () => context.read<AccountsBloc>().add(
+                                const AccountsLoad(),
+                              ),
                               child: const Text('Retry'),
                             ),
                           ],
@@ -77,15 +79,18 @@ class AccountScreen extends StatelessWidget {
           ),
         );
       },
-      smallSecondaryBody: AdaptiveScaffold.emptyBuilder,
+      smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
     );
   }
 
   Widget _buildProviderSections(
-      BuildContext context, List<ServiceAccountTableData> accounts) {
+    BuildContext context,
+    List<ServiceAccountTableData> accounts,
+  ) {
     final sections = ServiceProvider.values.map((provider) {
-      final providerAccounts =
-          accounts.where((a) => a.provider == provider).toList();
+      final providerAccounts = accounts
+          .where((a) => a.provider == provider)
+          .toList();
 
       return SettingsSection(
         title: Row(
@@ -96,56 +101,65 @@ class AccountScreen extends StatelessWidget {
           ],
         ),
         tiles: [
-          ...providerAccounts.map((account) => SettingsTile(
-                leading: Icon(_providerIcon(account.provider)),
-                title: Text(account.name),
-                description: account.description.isNotEmpty
-                    ? Text(account.description)
-                    : null,
-                trailing: PopupMenuButton<String>(
-                  onSelected: (action) {
-                    switch (action) {
-                      case 'edit':
-                        _showEditDialog(context, account);
-                      case 'update_key':
-                        _showUpdateApiKeyDialog(context, account);
-                      case 'delete':
-                        _showDeleteDialog(context, account);
-                    }
-                  },
-                  itemBuilder: (ctx) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: ListTile(
-                        leading: Icon(Icons.edit),
-                        title: Text('Edit'),
-                        contentPadding: EdgeInsets.zero,
-                      ),
+          ...providerAccounts.map(
+            (account) => SettingsTile(
+              leading: Icon(_providerIcon(account.provider)),
+              title: Text(account.name),
+              description: account.description.isNotEmpty
+                  ? Text(account.description)
+                  : null,
+              trailing: PopupMenuButton<String>(
+                onSelected: (action) {
+                  switch (action) {
+                    case 'edit':
+                      _showEditDialog(context, account);
+                    case 'update_key':
+                      _showUpdateApiKeyDialog(context, account);
+                    case 'delete':
+                      _showDeleteDialog(context, account);
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: ListTile(
+                      leading: Icon(Icons.edit),
+                      title: Text('Edit'),
+                      contentPadding: EdgeInsets.zero,
                     ),
-                    PopupMenuItem(
-                      value: 'update_key',
-                      child: ListTile(
-                        leading: const Icon(Icons.key),
-                        title: Text(account.provider == ServiceProvider.aws
+                  ),
+                  PopupMenuItem(
+                    value: 'update_key',
+                    child: ListTile(
+                      leading: const Icon(Icons.key),
+                      title: Text(
+                        account.provider == ServiceProvider.aws
                             ? 'Update Credentials'
-                            : 'Update API Key'),
-                        contentPadding: EdgeInsets.zero,
+                            : 'Update API Key',
                       ),
+                      contentPadding: EdgeInsets.zero,
                     ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: ListTile(
-                        leading: Icon(Icons.delete,
-                            color: Theme.of(context).colorScheme.error),
-                        title: Text('Delete',
-                            style: TextStyle(
-                                color: Theme.of(context).colorScheme.error)),
-                        contentPadding: EdgeInsets.zero,
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.delete,
+                        color: Theme.of(context).colorScheme.error,
                       ),
+                      title: Text(
+                        'Delete',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                      contentPadding: EdgeInsets.zero,
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
           SettingsTile(
             leading: const Icon(Icons.add),
             title: Text('Add ${_providerLabel(provider)} Account'),
@@ -212,9 +226,11 @@ class AccountScreen extends StatelessWidget {
                           hintText: _apiKeyHint(provider),
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
-                            icon: Icon(obscureKey
-                                ? Icons.visibility_off
-                                : Icons.visibility),
+                            icon: Icon(
+                              obscureKey
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
                             onPressed: () =>
                                 setState(() => obscureKey = !obscureKey),
                           ),
@@ -235,12 +251,14 @@ class AccountScreen extends StatelessWidget {
                     final apiKey = apiKeyController.text.trim();
                     if (name.isEmpty || apiKey.isEmpty) return;
 
-                    context.read<AccountsBloc>().add(AccountsAdd(
-                          provider: provider,
-                          name: name,
-                          description: descController.text.trim(),
-                          apiKey: apiKey,
-                        ));
+                    context.read<AccountsBloc>().add(
+                      AccountsAdd(
+                        provider: provider,
+                        name: name,
+                        description: descController.text.trim(),
+                        apiKey: apiKey,
+                      ),
+                    );
                     Navigator.pop(dialogContext);
                   },
                   child: const Text('Add'),
@@ -309,9 +327,11 @@ class AccountScreen extends StatelessWidget {
                           hintText: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
-                            icon: Icon(obscureSecret
-                                ? Icons.visibility_off
-                                : Icons.visibility),
+                            icon: Icon(
+                              obscureSecret
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
                             onPressed: () =>
                                 setState(() => obscureSecret = !obscureSecret),
                           ),
@@ -342,12 +362,14 @@ class AccountScreen extends StatelessWidget {
                       'secretAccessKey': secretKey,
                     });
 
-                    context.read<AccountsBloc>().add(AccountsAdd(
-                          provider: ServiceProvider.aws,
-                          name: name,
-                          description: descController.text.trim(),
-                          apiKey: credential,
-                        ));
+                    context.read<AccountsBloc>().add(
+                      AccountsAdd(
+                        provider: ServiceProvider.aws,
+                        name: name,
+                        description: descController.text.trim(),
+                        apiKey: credential,
+                      ),
+                    );
                     Navigator.pop(dialogContext);
                   },
                   child: const Text('Add'),
@@ -360,8 +382,7 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  void _showEditDialog(
-      BuildContext context, ServiceAccountTableData account) {
+  void _showEditDialog(BuildContext context, ServiceAccountTableData account) {
     final nameController = TextEditingController(text: account.name);
     final descController = TextEditingController(text: account.description);
 
@@ -405,11 +426,13 @@ class AccountScreen extends StatelessWidget {
               onPressed: () {
                 final name = nameController.text.trim();
                 if (name.isEmpty) return;
-                context.read<AccountsBloc>().add(AccountsUpdate(
-                      id: account.id,
-                      name: name,
-                      description: descController.text.trim(),
-                    ));
+                context.read<AccountsBloc>().add(
+                  AccountsUpdate(
+                    id: account.id,
+                    name: name,
+                    description: descController.text.trim(),
+                  ),
+                );
                 Navigator.pop(dialogContext);
               },
               child: const Text('Save'),
@@ -421,7 +444,9 @@ class AccountScreen extends StatelessWidget {
   }
 
   void _showUpdateApiKeyDialog(
-      BuildContext context, ServiceAccountTableData account) {
+    BuildContext context,
+    ServiceAccountTableData account,
+  ) {
     if (account.provider == ServiceProvider.aws) {
       _showUpdateAwsKeyDialog(context, account);
     } else {
@@ -430,7 +455,9 @@ class AccountScreen extends StatelessWidget {
   }
 
   void _showUpdateGenericKeyDialog(
-      BuildContext context, ServiceAccountTableData account) {
+    BuildContext context,
+    ServiceAccountTableData account,
+  ) {
     final controller = TextEditingController();
     bool obscure = true;
 
@@ -440,8 +467,7 @@ class AccountScreen extends StatelessWidget {
         return StatefulBuilder(
           builder: (ctx, setState) {
             return AlertDialog(
-              title:
-                  Text('Update ${_providerLabel(account.provider)} Key'),
+              title: Text('Update ${_providerLabel(account.provider)} Key'),
               content: TextField(
                 controller: controller,
                 obscureText: obscure,
@@ -451,7 +477,8 @@ class AccountScreen extends StatelessWidget {
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
-                        obscure ? Icons.visibility_off : Icons.visibility),
+                      obscure ? Icons.visibility_off : Icons.visibility,
+                    ),
                     onPressed: () => setState(() => obscure = !obscure),
                   ),
                 ),
@@ -466,9 +493,8 @@ class AccountScreen extends StatelessWidget {
                     final apiKey = controller.text.trim();
                     if (apiKey.isEmpty) return;
                     context.read<AccountsBloc>().add(
-                          AccountsUpdateApiKey(
-                              id: account.id, apiKey: apiKey),
-                        );
+                      AccountsUpdateApiKey(id: account.id, apiKey: apiKey),
+                    );
                     Navigator.pop(dialogContext);
                   },
                   child: const Text('Update'),
@@ -482,7 +508,9 @@ class AccountScreen extends StatelessWidget {
   }
 
   void _showUpdateAwsKeyDialog(
-      BuildContext context, ServiceAccountTableData account) {
+    BuildContext context,
+    ServiceAccountTableData account,
+  ) {
     final accessKeyIdController = TextEditingController();
     final secretKeyController = TextEditingController();
     bool obscureSecret = true;
@@ -514,15 +542,16 @@ class AccountScreen extends StatelessWidget {
                         obscureText: obscureSecret,
                         decoration: InputDecoration(
                           labelText: 'Secret Access Key',
-                          hintText:
-                              'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+                          hintText: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
-                            icon: Icon(obscureSecret
-                                ? Icons.visibility_off
-                                : Icons.visibility),
-                            onPressed: () => setState(
-                                () => obscureSecret = !obscureSecret),
+                            icon: Icon(
+                              obscureSecret
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                            onPressed: () =>
+                                setState(() => obscureSecret = !obscureSecret),
                           ),
                         ),
                       ),
@@ -539,8 +568,7 @@ class AccountScreen extends StatelessWidget {
                   onPressed: () {
                     final accessKeyId = accessKeyIdController.text.trim();
                     final secretKey = secretKeyController.text.trim();
-                    if (accessKeyId.isEmpty ||
-                        secretKey.isEmpty) {
+                    if (accessKeyId.isEmpty || secretKey.isEmpty) {
                       return;
                     }
 
@@ -550,9 +578,8 @@ class AccountScreen extends StatelessWidget {
                     });
 
                     context.read<AccountsBloc>().add(
-                          AccountsUpdateApiKey(
-                              id: account.id, apiKey: credential),
-                        );
+                      AccountsUpdateApiKey(id: account.id, apiKey: credential),
+                    );
                     Navigator.pop(dialogContext);
                   },
                   child: const Text('Update'),
@@ -566,7 +593,9 @@ class AccountScreen extends StatelessWidget {
   }
 
   void _showDeleteDialog(
-      BuildContext context, ServiceAccountTableData account) {
+    BuildContext context,
+    ServiceAccountTableData account,
+  ) {
     showDialog(
       context: context,
       builder: (dialogContext) {
@@ -585,9 +614,9 @@ class AccountScreen extends StatelessWidget {
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
               onPressed: () {
-                context
-                    .read<AccountsBloc>()
-                    .add(AccountsDelete(id: account.id));
+                context.read<AccountsBloc>().add(
+                  AccountsDelete(id: account.id),
+                );
                 Navigator.pop(dialogContext);
               },
               child: const Text('Delete'),

@@ -22,19 +22,20 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    final themeBloc = context.read<ThemeBloc>();
+    final themeBloc = context.read<DmThemeBloc>();
 
-    return BlocBuilder<ThemeBloc, ThemeState>(
+    return BlocBuilder<DmThemeBloc, DmThemeState>(
       bloc: themeBloc,
       builder: (context, state) {
         final router = AppRouter.router;
+        final entry = state.entry;
         return MaterialApp.router(
           key: const Key('app'),
           debugShowCheckedModeBanner: false,
           routerConfig: router,
           onGenerateTitle: (context) => context.l10n.appName,
-          theme: state.theme.lightTheme,
-          darkTheme: state.theme.darkTheme,
+          theme: entry.light,
+          darkTheme: entry.dark,
           themeMode: state.themeMode,
           localizationsDelegates: AppLocale.localizationsDelegates,
           supportedLocales: AppLocale.supportedLocales,

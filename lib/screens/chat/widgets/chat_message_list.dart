@@ -58,9 +58,7 @@ class _ChatMessageListState extends State<ChatMessageList> {
         .toList();
 
     if (visibleMessages.isEmpty) {
-      return const Center(
-        child: Text('No messages yet'),
-      );
+      return const Center(child: Text('No messages yet'));
     }
 
     return ListView.builder(
@@ -70,7 +68,8 @@ class _ChatMessageListState extends State<ChatMessageList> {
       itemBuilder: (context, index) {
         final message = visibleMessages[index];
         final isLast = index == visibleMessages.length - 1;
-        final showTypingIndicator = isLast &&
+        final showTypingIndicator =
+            isLast &&
             widget.isStreaming &&
             message is AssistantMessage &&
             message.isStreaming;

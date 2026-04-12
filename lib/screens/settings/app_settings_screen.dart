@@ -1,11 +1,11 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
-import 'package:app_feedback/app_feedback.dart';
 import 'package:app_locale/app_locale.dart';
+import 'package:duskmoon_feedback/duskmoon_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:settings_ui/settings_ui.dart';
+import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:theme_bloc/theme_bloc.dart';
 
@@ -34,7 +34,7 @@ class AppSettingsScreen extends StatelessWidget {
             slivers: <Widget>[
               SliverAppBar(title: Text(context.l10n.settingsTitle)),
               SliverFillRemaining(
-                child: BlocBuilder<ThemeBloc, ThemeState>(
+                child: BlocBuilder<DmThemeBloc, DmThemeState>(
                   builder: (context, state) {
                     return SettingsList(
                       sections: [
@@ -53,18 +53,18 @@ class AppSettingsScreen extends StatelessWidget {
                                   ? Text('N/A')
                                   : Text(appName),
                               onPressed: (context) {
-                                showAppDialog(
+                                showDmDialog(
                                   context: context,
                                   title: Text(context.l10n.appName),
                                   content: Text(context.l10n.welcomeHome),
                                   actions: [
-                                    AppDialogAction(
+                                    DmDialogAction(
                                       onPressed: (context) {
                                         Navigator.of(context).pop();
                                       },
                                       child: Text(context.l10n.ok),
                                     ),
-                                    AppDialogAction(
+                                    DmDialogAction(
                                       onPressed: (context) {
                                         Navigator.of(context).pop();
                                       },
@@ -85,7 +85,7 @@ class AppSettingsScreen extends StatelessWidget {
           ),
         );
       },
-      smallSecondaryBody: AdaptiveScaffold.emptyBuilder,
+      smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
     );
   }
 }

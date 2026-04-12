@@ -12,130 +12,129 @@ import 'package:gsmlg/screens/toolbox/whois/whois_screen.dart';
 
 /// Returns the GoRoute configuration for the Toolbox feature.
 GoRoute toolboxRoutes() => GoRoute(
-      name: ToolboxScreen.name,
-      path: ToolboxScreen.path,
+  name: ToolboxScreen.name,
+  path: ToolboxScreen.path,
+  pageBuilder: (context, state) {
+    return NoTransitionPage<void>(
+      key: state.pageKey,
+      restorationId: state.pageKey.value,
+      child: const ToolboxScreen(),
+    );
+  },
+  routes: [
+    // Whois routes
+    GoRoute(
+      name: WhoisScreen.name,
+      path: WhoisScreen.path,
       pageBuilder: (context, state) {
         return NoTransitionPage<void>(
           key: state.pageKey,
           restorationId: state.pageKey.value,
-          child: const ToolboxScreen(),
+          child: WhoisScreen(),
         );
       },
       routes: [
-        // Whois routes
         GoRoute(
-          name: WhoisScreen.name,
-          path: WhoisScreen.path,
+          name: WhoisHistoryScreen.name,
+          path: WhoisHistoryScreen.path,
           pageBuilder: (context, state) {
             return NoTransitionPage<void>(
               key: state.pageKey,
               restorationId: state.pageKey.value,
-              child: WhoisScreen(),
+              child: const WhoisHistoryScreen(),
             );
           },
           routes: [
             GoRoute(
-              name: WhoisHistoryScreen.name,
-              path: WhoisHistoryScreen.path,
+              name: WhoisHistoryShowScreen.name,
+              path: WhoisHistoryShowScreen.path,
               pageBuilder: (context, state) {
                 return NoTransitionPage<void>(
                   key: state.pageKey,
                   restorationId: state.pageKey.value,
-                  child: const WhoisHistoryScreen(),
-                );
-              },
-              routes: [
-                GoRoute(
-                  name: WhoisHistoryShowScreen.name,
-                  path: WhoisHistoryShowScreen.path,
-                  pageBuilder: (context, state) {
-                    return NoTransitionPage<void>(
-                      key: state.pageKey,
-                      restorationId: state.pageKey.value,
-                      child: WhoisHistoryShowScreen(
-                        historyId:
-                            int.parse(state.pathParameters['historyId']!),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-        // Bluetooth routes
-        GoRoute(
-          name: BluetoothScannerScreen.name,
-          path: BluetoothScannerScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const BluetoothScannerScreen(),
-            );
-          },
-          routes: [
-            GoRoute(
-              name: BluetoothDeviceScreen.name,
-              path: BluetoothDeviceScreen.path,
-              pageBuilder: (context, state) {
-                return NoTransitionPage<void>(
-                  key: state.pageKey,
-                  restorationId: state.pageKey.value,
-                  child: BluetoothDeviceScreen(
-                    remoteId: state.pathParameters['remoteId']!,
+                  child: WhoisHistoryShowScreen(
+                    historyId: int.parse(state.pathParameters['historyId']!),
                   ),
                 );
               },
             ),
           ],
         ),
-        // Camera routes
+      ],
+    ),
+    // Bluetooth routes
+    GoRoute(
+      name: BluetoothScannerScreen.name,
+      path: BluetoothScannerScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const BluetoothScannerScreen(),
+        );
+      },
+      routes: [
         GoRoute(
-          name: CameraScreen.name,
-          path: CameraScreen.path,
+          name: BluetoothDeviceScreen.name,
+          path: BluetoothDeviceScreen.path,
           pageBuilder: (context, state) {
             return NoTransitionPage<void>(
               key: state.pageKey,
               restorationId: state.pageKey.value,
-              child: const CameraScreen(),
-            );
-          },
-        ),
-        GoRoute(
-          name: CameraMacosScreen.name,
-          path: CameraMacosScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const CameraMacosScreen(),
-            );
-          },
-        ),
-        // Monitor route
-        GoRoute(
-          name: MonitorScreen.name,
-          path: MonitorScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const MonitorScreen(),
-            );
-          },
-        ),
-        // IP Geolocation route
-        GoRoute(
-          name: IpGeoScreen.name,
-          path: IpGeoScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const IpGeoScreen(),
+              child: BluetoothDeviceScreen(
+                remoteId: state.pathParameters['remoteId']!,
+              ),
             );
           },
         ),
       ],
-    );
+    ),
+    // Camera routes
+    GoRoute(
+      name: CameraScreen.name,
+      path: CameraScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const CameraScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      name: CameraMacosScreen.name,
+      path: CameraMacosScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const CameraMacosScreen(),
+        );
+      },
+    ),
+    // Monitor route
+    GoRoute(
+      name: MonitorScreen.name,
+      path: MonitorScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const MonitorScreen(),
+        );
+      },
+    ),
+    // IP Geolocation route
+    GoRoute(
+      name: IpGeoScreen.name,
+      path: IpGeoScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const IpGeoScreen(),
+        );
+      },
+    ),
+  ],
+);

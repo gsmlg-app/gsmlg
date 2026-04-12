@@ -110,7 +110,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       const SizedBox(height: 16),
                       Text(
                         context.l10n.appName,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).colorScheme.primary,
                             ),
@@ -172,7 +173,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                   : Icons.visibility,
                             ),
                             onPressed: () {
-                              setState(() => _obscurePassword = !_obscurePassword);
+                              setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              );
                             },
                           ),
                           border: OutlineInputBorder(

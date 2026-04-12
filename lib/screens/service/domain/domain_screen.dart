@@ -1,6 +1,7 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_database/app_database.dart';
 import 'package:domain_bloc/domain_bloc.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +28,10 @@ class _DomainScreenState extends State<DomainScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
-      selectedIndex: Destinations.indexOf(const Key(ServiceScreen.name), context),
+      selectedIndex: Destinations.indexOf(
+        const Key(ServiceScreen.name),
+        context,
+      ),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => SafeArea(
@@ -44,7 +48,8 @@ class _DomainScreenState extends State<DomainScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.refresh),
-                  onPressed: () => context.read<ZoneBloc>().add(const ZoneSync()),
+                  onPressed: () =>
+                      context.read<ZoneBloc>().add(const ZoneSync()),
                   tooltip: 'Refresh',
                 ),
               ],
@@ -53,29 +58,29 @@ class _DomainScreenState extends State<DomainScreen> {
               builder: (context, state) {
                 return switch (state) {
                   ZoneInitial() => const SliverFillRemaining(
-                      child: Center(child: Text('Loading zones...')),
-                    ),
+                    child: Center(child: Text('Loading zones...')),
+                  ),
                   ZoneLoading() => const SliverFillRemaining(
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
                   ZoneFailure(:final error) => SliverFillRemaining(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.error_outline, size: 48),
-                            const SizedBox(height: 16),
-                            Text('Error: $error'),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () =>
-                                  context.read<ZoneBloc>().add(const ZoneSync()),
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline, size: 48),
+                          const SizedBox(height: 16),
+                          Text('Error: $error'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () =>
+                                context.read<ZoneBloc>().add(const ZoneSync()),
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
                     ),
+                  ),
                   ZoneLoaded(:final zones) when zones.isEmpty =>
                     SliverFillRemaining(
                       child: Center(
@@ -87,7 +92,8 @@ class _DomainScreenState extends State<DomainScreen> {
                             const Text('No DNS zones configured'),
                             const SizedBox(height: 16),
                             ElevatedButton.icon(
-                              onPressed: () => context.go('/service/domain/add'),
+                              onPressed: () =>
+                                  context.go('/service/domain/add'),
                               icon: const Icon(Icons.add),
                               label: const Text('Add Zone'),
                             ),
@@ -96,14 +102,11 @@ class _DomainScreenState extends State<DomainScreen> {
                       ),
                     ),
                   ZoneLoaded(:final zones) => SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final zone = zones[index];
-                          return _ZoneListTile(zone: zone);
-                        },
-                        childCount: zones.length,
-                      ),
-                    ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final zone = zones[index];
+                      return _ZoneListTile(zone: zone);
+                    }, childCount: zones.length),
+                  ),
                 };
               },
             ),
@@ -161,26 +164,23 @@ class _ZoneListTile extends StatelessWidget {
   }
 
   void _showDeleteDialog(BuildContext context, DnsZoneTableData zone) {
-    showDialog(
+    showDmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Zone'),
-        content: Text('Are you sure you want to remove "${zone.zoneName}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<ZoneBloc>().add(ZoneRemove(zone));
-              Navigator.of(context).pop();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      title: const Text('Delete Zone'),
+      content: Text('Are you sure you want to remove "${zone.zoneName}"?'),
+      actions: [
+        DmDialogAction(
+          onPressed: (ctx) => Navigator.of(ctx).pop(),
+          child: const Text('Cancel'),
+        ),
+        DmDialogAction(
+          onPressed: (ctx) {
+            context.read<ZoneBloc>().add(ZoneRemove(zone));
+            Navigator.of(ctx).pop();
+          },
+          child: const Text('Delete'),
+        ),
+      ],
     );
   }
 }

@@ -72,9 +72,9 @@ class WhoisScreen extends StatelessWidget {
                       prefixIcon: IconButton(
                         icon: const Icon(Icons.search),
                         onPressed: () {
-                          context
-                              .read<WhoisBloc>()
-                              .add(WhoisLookup(_controller.text));
+                          context.read<WhoisBloc>().add(
+                            WhoisLookup(_controller.text),
+                          );
                         },
                       ),
                       border: OutlineInputBorder(

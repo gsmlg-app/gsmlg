@@ -76,10 +76,7 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
         child: device == null
             ? CustomScrollView(
                 slivers: <Widget>[
-                  const SliverAppBar(
-                    floating: true,
-                    title: Text(title),
-                  ),
+                  const SliverAppBar(floating: true, title: Text(title)),
                   SliverList.list(
                     children: [
                       Text('Seeking ${widget.remoteId} for device...'),
@@ -131,7 +128,8 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
                           builder: (context, snapshot) {
                             if (snapshot.hasData) {
                               return switch (snapshot.data!) {
-                                BluetoothConnectionState.connected => TextButton(
+                                BluetoothConnectionState.connected =>
+                                  TextButton(
                                     onPressed: () {
                                       device!.disconnect();
                                     },
@@ -208,8 +206,9 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
                                               'Service UUID: ${service.uuid}',
                                             ),
                                             Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
+                                              padding: const EdgeInsets.all(
+                                                8.0,
+                                              ),
                                               child: Column(
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
@@ -217,21 +216,22 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
                                                   const Text(
                                                     'Characteristics:',
                                                   ),
-                                                  ...service.characteristics
-                                                      .map(
-                                                    (BluetoothCharacteristic
-                                                            c) =>
-                                                        Padding(
+                                                  ...service.characteristics.map(
+                                                    (
+                                                      BluetoothCharacteristic c,
+                                                    ) => Padding(
                                                       padding:
                                                           const EdgeInsets.only(
-                                                        left: 8.0,
-                                                      ),
+                                                            left: 8.0,
+                                                          ),
                                                       child: Column(
                                                         crossAxisAlignment:
                                                             CrossAxisAlignment
                                                                 .start,
                                                         children: [
-                                                          Text('UUID: ${c.uuid}'),
+                                                          Text(
+                                                            'UUID: ${c.uuid}',
+                                                          ),
                                                           Text(
                                                             'Properties: ${c.properties}',
                                                           ),
@@ -256,20 +256,22 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
                                                   const Text(
                                                     'Included Services:',
                                                   ),
-                                                  ...service.includedServices
-                                                      .map(
-                                                    (BluetoothService s) =>
-                                                        Padding(
+                                                  ...service.includedServices.map(
+                                                    (
+                                                      BluetoothService s,
+                                                    ) => Padding(
                                                       padding:
                                                           const EdgeInsets.only(
-                                                        left: 8.0,
-                                                      ),
+                                                            left: 8.0,
+                                                          ),
                                                       child: Column(
                                                         crossAxisAlignment:
                                                             CrossAxisAlignment
                                                                 .start,
                                                         children: [
-                                                          Text('UUID: ${s.uuid}'),
+                                                          Text(
+                                                            'UUID: ${s.uuid}',
+                                                          ),
                                                           Text(
                                                             'Primary: ${s.isPrimary}',
                                                           ),
@@ -299,13 +301,9 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
                             );
                           } else if (snapshot.connectionState ==
                               ConnectionState.none) {
-                            return const ListTile(
-                              title: Text('...'),
-                            );
+                            return const ListTile(title: Text('...'));
                           } else {
-                            return const ListTile(
-                              title: Text('Loading...'),
-                            );
+                            return const ListTile(title: Text('Loading...'));
                           }
                         },
                       ),

@@ -1,6 +1,7 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -28,14 +29,11 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
-      selectedIndex: Destinations.indexOf(
-        const Key(HomeScreen.name),
-        context,
-      ),
+      selectedIndex: Destinations.indexOf(const Key(HomeScreen.name), context),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
-        appBar: AppBar(
+        appBar: DmAppBar(
           title: const Text('Chat History'),
           actions: [
             BlocBuilder<ChatBloc, ChatState>(
@@ -66,9 +64,9 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                   conversation: conversation,
                   isSelected: state.conversation?.id == conversation.id,
                   onTap: () {
-                    context
-                        .read<ChatBloc>()
-                        .add(ChatLoadConversation(id: conversation.id));
+                    context.read<ChatBloc>().add(
+                      ChatLoadConversation(id: conversation.id),
+                    );
                     context.pop();
                   },
                   onDelete: () => _confirmDelete(context, conversation),
@@ -95,15 +93,19 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
           Text(
             'No conversations yet',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Start a new chat to begin',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
           ),
         ],
       ),
@@ -129,9 +131,9 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () {
-              context
-                  .read<ChatBloc>()
-                  .add(ChatDeleteConversation(id: conversation.id));
+              context.read<ChatBloc>().add(
+                ChatDeleteConversation(id: conversation.id),
+              );
               Navigator.pop(dialogContext);
             },
             child: const Text('Delete'),
@@ -160,11 +162,14 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () {
-              final history = context.read<ChatBloc>().state.conversationHistory;
+              final history = context
+                  .read<ChatBloc>()
+                  .state
+                  .conversationHistory;
               for (final conv in history) {
-                context
-                    .read<ChatBloc>()
-                    .add(ChatDeleteConversation(id: conv.id));
+                context.read<ChatBloc>().add(
+                  ChatDeleteConversation(id: conv.id),
+                );
               }
               Navigator.pop(dialogContext);
             },
@@ -198,8 +203,9 @@ class _ConversationTile extends StatelessWidget {
       selected: isSelected,
       selectedTileColor: colorScheme.primaryContainer.withValues(alpha: 0.5),
       leading: CircleAvatar(
-        backgroundColor:
-            isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
+        backgroundColor: isSelected
+            ? colorScheme.primary
+            : colorScheme.surfaceContainerHighest,
         child: Icon(
           Icons.chat_bubble_outline,
           color: isSelected ? colorScheme.onPrimary : colorScheme.onSurface,

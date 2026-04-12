@@ -4,9 +4,10 @@ import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
 import 'package:camera_macos/camera_macos.dart';
 import 'package:camera_settings_form/camera_settings_form.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_form_bloc/flutter_form_bloc.dart';
+import 'package:duskmoon_form/duskmoon_form.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 
@@ -97,10 +98,12 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
   }
 
   Future<void> _loadDevices() async {
-    final videos = await CameraMacOS.instance
-        .listDevices(deviceType: CameraMacOSDeviceType.video);
-    final audios = await CameraMacOS.instance
-        .listDevices(deviceType: CameraMacOSDeviceType.audio);
+    final videos = await CameraMacOS.instance.listDevices(
+      deviceType: CameraMacOSDeviceType.video,
+    );
+    final audios = await CameraMacOS.instance.listDevices(
+      deviceType: CameraMacOSDeviceType.audio,
+    );
 
     setState(() {
       videoDevices = videos;
@@ -134,9 +137,7 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
                 title: const Text(title),
                 actions: _buildActions(context),
               ),
-              SliverFillRemaining(
-                child: _buildCameraView(),
-              ),
+              SliverFillRemaining(child: _buildCameraView()),
             ],
           ),
         ),
@@ -153,7 +154,8 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
       cameraMode: _formBloc.cameraMode.value ?? CameraMacOSMode.video,
       toggleTorch: _formBloc.torch.value ?? Torch.off,
       isVideoMirrored: _formBloc.isVideoMirrored.value,
-      orientation: _formBloc.orientation.value ?? CameraOrientation.orientation0deg,
+      orientation:
+          _formBloc.orientation.value ?? CameraOrientation.orientation0deg,
       onCameraInizialized: (CameraMacOSController controller) {
         macOSController = controller;
       },
@@ -176,46 +178,20 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
   }
 
   void _showSettingsDialog(BuildContext context) {
-    showAdaptiveDialog(
+    showDmDialog(
       context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          child: SizedBox(
-            width: 600,
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Camera Settings',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  CameraSettingsFormWidget(
-                    formBloc: _formBloc,
-                    videoDevices: videoDevices,
-                    audioDevices: audioDevices,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+      title: const Text('Camera Settings'),
+      content: CameraSettingsFormWidget(
+        formBloc: _formBloc,
+        videoDevices: videoDevices,
+        audioDevices: audioDevices,
+      ),
+      actions: [
+        DmDialogAction(
+          onPressed: (ctx) => Navigator.of(ctx).pop(),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }

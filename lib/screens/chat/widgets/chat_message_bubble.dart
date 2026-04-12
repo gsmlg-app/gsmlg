@@ -1,7 +1,7 @@
 import 'package:app_chat/app_chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ChatMessageBubble extends StatefulWidget {
@@ -33,8 +33,9 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment:
-            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser) ...[
@@ -93,8 +94,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
 
   Widget _buildMessageContent(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textColor =
-        isUser ? colorScheme.onPrimary : colorScheme.onSurface;
+    final textColor = isUser ? colorScheme.onPrimary : colorScheme.onSurface;
 
     // Tool response messages
     if (message is ToolResponseMessage) {
@@ -191,7 +191,9 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
   }
 
   Widget _buildThinkingSection(
-      BuildContext context, AssistantMessage assistantMsg) {
+    BuildContext context,
+    AssistantMessage assistantMsg,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -208,12 +210,14 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.psychology,
-                      size: 16, color: colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.psychology,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 6),
                   Text(
-                    assistantMsg.isStreaming &&
-                            assistantMsg.content.isEmpty
+                    assistantMsg.isStreaming && assistantMsg.content.isEmpty
                         ? 'Thinking...'
                         : 'Thinking',
                     style: TextStyle(
@@ -224,9 +228,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                   ),
                   const Spacer(),
                   Icon(
-                    _thinkingExpanded
-                        ? Icons.expand_less
-                        : Icons.expand_more,
+                    _thinkingExpanded ? Icons.expand_less : Icons.expand_more,
                     size: 18,
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -251,70 +253,13 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
   }
 
   Widget _buildAssistantMarkdown(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textColor = colorScheme.onSurface;
-    return MarkdownBody(
+    return DmMarkdown(
       data: message.content,
       selectable: true,
-      onTapLink: (text, href, title) {
-        if (href != null) {
-          launchUrl(Uri.parse(href));
-        }
+      shrinkWrap: true,
+      onLinkTap: (url, title) {
+        launchUrl(Uri.parse(url));
       },
-      styleSheet: MarkdownStyleSheet(
-        p: TextStyle(color: textColor, fontSize: 16, height: 1.4),
-        h1: TextStyle(
-          color: textColor,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          height: 1.3,
-        ),
-        h2: TextStyle(
-          color: textColor,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          height: 1.3,
-        ),
-        h3: TextStyle(
-          color: textColor,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          height: 1.3,
-        ),
-        code: TextStyle(
-          color: textColor,
-          backgroundColor: colorScheme.surfaceContainerHigh,
-          fontFamily: 'monospace',
-          fontSize: 14,
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        codeblockPadding: const EdgeInsets.all(12),
-        blockquoteDecoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: colorScheme.primary,
-              width: 3,
-            ),
-          ),
-        ),
-        blockquotePadding: const EdgeInsets.only(left: 12),
-        listBullet: TextStyle(color: textColor, fontSize: 16),
-        a: TextStyle(
-          color: colorScheme.primary,
-          decoration: TextDecoration.underline,
-        ),
-        strong: TextStyle(
-          color: textColor,
-          fontWeight: FontWeight.bold,
-        ),
-        em: TextStyle(
-          color: textColor,
-          fontStyle: FontStyle.italic,
-        ),
-      ),
     );
   }
 
@@ -363,9 +308,10 @@ class _TypingDotState extends State<_TypingDot>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-    _animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     Future.delayed(Duration(milliseconds: widget.delay), () {
       if (mounted) {

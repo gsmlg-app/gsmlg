@@ -42,8 +42,9 @@ class ToolboxScreen extends StatelessWidget {
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => SafeArea(
-        minimum:
-            const EdgeInsets.symmetric(horizontal: Constants.defaultGridGap),
+        minimum: const EdgeInsets.symmetric(
+          horizontal: Constants.defaultGridGap,
+        ),
         child: CustomScrollView(
           slivers: [
             SliverAppBar(

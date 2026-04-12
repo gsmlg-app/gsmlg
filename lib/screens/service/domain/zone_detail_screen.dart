@@ -53,8 +53,10 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   Widget build(BuildContext context) {
     if (_zone == null) {
       return AppAdaptiveScaffold(
-        selectedIndex:
-            Destinations.indexOf(const Key(ServiceScreen.name), context),
+        selectedIndex: Destinations.indexOf(
+          const Key(ServiceScreen.name),
+          context,
+        ),
         destinations: Destinations.navs(context),
         onSelectedIndexChange: (idx) =>
             Destinations.changeHandler(idx, context),
@@ -65,141 +67,145 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     final zone = _zone!;
 
     return AppAdaptiveScaffold(
-      selectedIndex:
-          Destinations.indexOf(const Key(ServiceScreen.name), context),
+      selectedIndex: Destinations.indexOf(
+        const Key(ServiceScreen.name),
+        context,
+      ),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => BlocListener<RecordBloc, RecordState>(
         listener: (context, state) {
           if (state is RecordFailure) {
-            showErrorToast(
-              context: context,
-              message: state.error,
-            );
+            showErrorToast(context: context, message: state.error);
           }
         },
         child: SafeArea(
           child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              floating: true,
-              title: Text(zone.zoneName),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.go('/service/domain'),
-              ),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => _showAddRecordDialog(context, zone),
-                  tooltip: 'Add Record',
+            slivers: [
+              SliverAppBar(
+                floating: true,
+                title: Text(zone.zoneName),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.go('/service/domain'),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () =>
-                      context.read<RecordBloc>().add(RecordSync(zone)),
-                  tooltip: 'Refresh',
-                ),
-              ],
-            ),
-            // Zone info header
-            SliverToBoxAdapter(
-              child: Card(
-                margin: const EdgeInsets.all(16),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            zone.provider == DnsProvider.route53
-                                ? Icons.cloud_outlined
-                                : Icons.cloud_circle_outlined,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            zone.provider == DnsProvider.route53
-                                ? 'AWS Route 53'
-                                : 'Cloudflare',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Zone ID: ${zone.zoneId}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      if (zone.comment != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          zone.comment!,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ],
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => _showAddRecordDialog(context, zone),
+                    tooltip: 'Add Record',
                   ),
-                ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () =>
+                        context.read<RecordBloc>().add(RecordSync(zone)),
+                    tooltip: 'Refresh',
+                  ),
+                ],
               ),
-            ),
-            // Filter field
-            SliverToBoxAdapter(
-              child: DataListFilterField(
-                controller: _filterController,
-                onChanged: (value) => setState(() => _filterText = value),
-                hintText: 'Filter records...',
-              ),
-            ),
-            // Loading indicator (shown at top when refreshing with existing records)
-            BlocBuilder<RecordBloc, RecordState>(
-              builder: (context, state) {
-                if (state is RecordLoading && state.records != null) {
-                  return const SliverToBoxAdapter(
-                    child: LinearProgressIndicator(),
-                  );
-                }
-                return const SliverToBoxAdapter(child: SizedBox.shrink());
-              },
-            ),
-            // Records list
-            BlocBuilder<RecordBloc, RecordState>(
-              builder: (context, state) {
-                return switch (state) {
-                  RecordInitial() => const SliverFillRemaining(
-                      child: Center(child: Text('Select a zone to view records')),
-                    ),
-                  // Initial loading (no existing records)
-                  RecordLoading(:final records) when records == null =>
-                    const SliverFillRemaining(
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  // Refreshing with existing records - show the records
-                  RecordLoading(:final records!) when records.isEmpty =>
-                    SliverFillRemaining(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+              // Zone info header
+              SliverToBoxAdapter(
+                child: Card(
+                  margin: const EdgeInsets.all(16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            const Icon(Icons.dns_outlined, size: 64),
-                            const SizedBox(height: 16),
-                            const Text('No DNS records'),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: () =>
-                                  _showAddRecordDialog(context, zone),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add Record'),
+                            Icon(
+                              zone.provider == DnsProvider.route53
+                                  ? Icons.cloud_outlined
+                                  : Icons.cloud_circle_outlined,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              zone.provider == DnsProvider.route53
+                                  ? 'AWS Route 53'
+                                  : 'Cloudflare',
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ],
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Zone ID: ${zone.zoneId}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        if (zone.comment != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            zone.comment!,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // Filter field
+              SliverToBoxAdapter(
+                child: DataListFilterField(
+                  controller: _filterController,
+                  onChanged: (value) => setState(() => _filterText = value),
+                  hintText: 'Filter records...',
+                ),
+              ),
+              // Loading indicator (shown at top when refreshing with existing records)
+              BlocBuilder<RecordBloc, RecordState>(
+                builder: (context, state) {
+                  if (state is RecordLoading && state.records != null) {
+                    return const SliverToBoxAdapter(
+                      child: LinearProgressIndicator(),
+                    );
+                  }
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                },
+              ),
+              // Records list
+              BlocBuilder<RecordBloc, RecordState>(
+                builder: (context, state) {
+                  return switch (state) {
+                    RecordInitial() => const SliverFillRemaining(
+                      child: Center(
+                        child: Text('Select a zone to view records'),
                       ),
                     ),
-                  RecordLoading(:final records!) =>
-                    _buildRecordList(context, zone, records),
-                  RecordFailure(:final error) => SliverFillRemaining(
+                    // Initial loading (no existing records)
+                    RecordLoading(:final records) when records == null =>
+                      const SliverFillRemaining(
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    // Refreshing with existing records - show the records
+                    RecordLoading(:final records!) when records.isEmpty =>
+                      SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.dns_outlined, size: 64),
+                              const SizedBox(height: 16),
+                              const Text('No DNS records'),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () =>
+                                    _showAddRecordDialog(context, zone),
+                                icon: const Icon(Icons.add),
+                                label: const Text('Add Record'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    RecordLoading(:final records!) => _buildRecordList(
+                      context,
+                      zone,
+                      records,
+                    ),
+                    RecordFailure(:final error) => SliverFillRemaining(
                       child: Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -209,40 +215,43 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                             Text('Error: $error'),
                             const SizedBox(height: 16),
                             ElevatedButton(
-                              onPressed: () => context
-                                  .read<RecordBloc>()
-                                  .add(RecordSync(zone)),
+                              onPressed: () => context.read<RecordBloc>().add(
+                                RecordSync(zone),
+                              ),
                               child: const Text('Retry'),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  RecordLoaded(:final records) when records.isEmpty =>
-                    SliverFillRemaining(
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.dns_outlined, size: 64),
-                            const SizedBox(height: 16),
-                            const Text('No DNS records'),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: () =>
-                                  _showAddRecordDialog(context, zone),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add Record'),
-                            ),
-                          ],
+                    RecordLoaded(:final records) when records.isEmpty =>
+                      SliverFillRemaining(
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.dns_outlined, size: 64),
+                              const SizedBox(height: 16),
+                              const Text('No DNS records'),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: () =>
+                                    _showAddRecordDialog(context, zone),
+                                icon: const Icon(Icons.add),
+                                label: const Text('Add Record'),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
+                    RecordLoaded(:final records) => _buildRecordList(
+                      context,
+                      zone,
+                      records,
                     ),
-                  RecordLoaded(:final records) =>
-                    _buildRecordList(context, zone, records),
-                };
-              },
-            ),
+                  };
+                },
+              ),
             ],
           ),
         ),
@@ -345,9 +354,9 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
         record: record,
         title: 'Edit DNS Record',
         onSave: (updatedRecord) {
-          context
-              .read<RecordBloc>()
-              .add(RecordUpdate(zone: zone, record: updatedRecord));
+          context.read<RecordBloc>().add(
+            RecordUpdate(zone: zone, record: updatedRecord),
+          );
         },
       ),
     );
@@ -358,32 +367,29 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     DnsZoneTableData zone,
     DnsRecordModel record,
   ) {
-    showDialog(
+    showDmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Record'),
-        content: Text(
-          'Are you sure you want to delete this record?\n\n'
-          '${record.type} ${record.name}\n'
-          '→ ${record.content}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              context
-                  .read<RecordBloc>()
-                  .add(RecordRemove(zone: zone, record: record));
-              Navigator.of(context).pop();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
+      title: const Text('Delete Record'),
+      content: Text(
+        'Are you sure you want to delete this record?\n\n'
+        '${record.type} ${record.name}\n'
+        '→ ${record.content}',
       ),
+      actions: [
+        DmDialogAction(
+          onPressed: (ctx) => Navigator.of(ctx).pop(),
+          child: const Text('Cancel'),
+        ),
+        DmDialogAction(
+          onPressed: (ctx) {
+            context.read<RecordBloc>().add(
+              RecordRemove(zone: zone, record: record),
+            );
+            Navigator.of(ctx).pop();
+          },
+          child: const Text('Delete'),
+        ),
+      ],
     );
   }
 }
@@ -419,13 +425,16 @@ class _RecordFormDialogState extends State<_RecordFormDialog> {
     super.initState();
     _type = widget.record?.type ?? 'A';
     _nameController = TextEditingController(text: widget.record?.name ?? '');
-    _contentController =
-        TextEditingController(text: widget.record?.content ?? '');
-    _ttlController =
-        TextEditingController(text: (widget.record?.ttl ?? 300).toString());
+    _contentController = TextEditingController(
+      text: widget.record?.content ?? '',
+    );
+    _ttlController = TextEditingController(
+      text: (widget.record?.ttl ?? 300).toString(),
+    );
     _proxied = widget.record?.proxied ?? false;
-    _commentController =
-        TextEditingController(text: widget.record?.comment ?? '');
+    _commentController = TextEditingController(
+      text: widget.record?.comment ?? '',
+    );
   }
 
   @override
@@ -559,18 +568,21 @@ class _RecordFormDialogState extends State<_RecordFormDialog> {
                 }
               }
 
-              widget.onSave(DnsRecordModel(
-                id: widget.record?.id,
-                name: recordName,
-                type: _type,
-                content: _contentController.text,
-                ttl: int.tryParse(_ttlController.text) ?? 300,
-                proxied:
-                    widget.zone.provider == DnsProvider.cloudflare ? _proxied : null,
-                comment: _commentController.text.isEmpty
-                    ? null
-                    : _commentController.text,
-              ));
+              widget.onSave(
+                DnsRecordModel(
+                  id: widget.record?.id,
+                  name: recordName,
+                  type: _type,
+                  content: _contentController.text,
+                  ttl: int.tryParse(_ttlController.text) ?? 300,
+                  proxied: widget.zone.provider == DnsProvider.cloudflare
+                      ? _proxied
+                      : null,
+                  comment: _commentController.text.isEmpty
+                      ? null
+                      : _commentController.text,
+                ),
+              );
               Navigator.of(context).pop();
             }
           },

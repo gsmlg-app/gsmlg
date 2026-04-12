@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gsmlg/destination.dart';
@@ -243,7 +244,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
   Widget _buildMetricsDetailWithBack(BuildContext context, MonitorHost host) {
     return Column(
       children: [
-        AppBar(
+        DmAppBar(
           title: Text(host.displayName),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -258,7 +259,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
   Widget _buildMetricsDetail(BuildContext context, MonitorHost host) {
     return Column(
       children: [
-        AppBar(title: Text(host.displayName)),
+        DmAppBar(title: Text(host.displayName)),
         Expanded(child: _buildMetricsContent(context, host)),
       ],
     );

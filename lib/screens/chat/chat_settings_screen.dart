@@ -1,11 +1,11 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
-import 'package:settings_ui/settings_ui.dart';
 
 class ChatSettingsScreen extends StatefulWidget {
   static const name = 'ChatSettings';
@@ -21,114 +21,115 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
-      selectedIndex: Destinations.indexOf(
-        const Key(HomeScreen.name),
-        context,
-      ),
+      selectedIndex: Destinations.indexOf(const Key(HomeScreen.name), context),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Chat Settings'),
-        ),
+        appBar: DmAppBar(title: const Text('Chat Settings')),
         body: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
           builder: (context, state) {
             return SettingsList(
-            sections: [
-              SettingsSection(
-                title: const Text('Model'),
-                tiles: [
-                  SettingsTile.navigation(
-                    leading: const Icon(Icons.memory),
-                    title: const Text('Model Type'),
-                    value: Text(state.config.modelDisplayName),
-                    onPressed: (_) => _showModelTypePicker(context, state.config),
-                  ),
-                  SettingsTile.navigation(
-                    leading: const Icon(Icons.speed),
-                    title: const Text('Backend'),
-                    value: Text(state.config.backend == GemmaBackend.gpu
-                        ? 'GPU (Recommended)'
-                        : 'CPU'),
-                    onPressed: (_) => _showBackendPicker(context, state.config),
-                  ),
-                ],
-              ),
-              SettingsSection(
-                title: const Text('Generation'),
-                tiles: [
-                  SettingsTile.navigation(
-                    leading: const Icon(Icons.format_list_numbered),
-                    title: const Text('Max Tokens'),
-                    value: Text('${state.config.maxTokens}'),
-                    onPressed: (_) =>
-                        _showMaxTokensDialog(context, state.config),
-                  ),
-                  SettingsTile.navigation(
-                    leading: const Icon(Icons.thermostat),
-                    title: const Text('Temperature'),
-                    value: Text(state.config.temperature.toStringAsFixed(2)),
-                    description: const Text('Higher = more creative'),
-                    onPressed: (_) =>
-                        _showTemperatureDialog(context, state.config),
-                  ),
-                  SettingsTile.navigation(
-                    leading: const Icon(Icons.filter_list),
-                    title: const Text('Top-K'),
-                    value: Text('${state.config.topK}'),
-                    description: const Text('Sampling diversity'),
-                    onPressed: (_) => _showTopKDialog(context, state.config),
-                  ),
-                ],
-              ),
-              SettingsSection(
-                title: const Text('System Prompt'),
-                tiles: [
-                  SettingsTile.navigation(
-                    leading: const Icon(Icons.edit_note),
-                    title: const Text('Default System Prompt'),
-                    value: Text(
-                      state.defaultSystemPrompt?.isNotEmpty == true
-                          ? '${state.defaultSystemPrompt!.substring(0, state.defaultSystemPrompt!.length.clamp(0, 30))}...'
-                          : 'Not set',
+              sections: [
+                SettingsSection(
+                  title: const Text('Model'),
+                  tiles: [
+                    SettingsTile.navigation(
+                      leading: const Icon(Icons.memory),
+                      title: const Text('Model Type'),
+                      value: Text(state.config.modelDisplayName),
+                      onPressed: (_) =>
+                          _showModelTypePicker(context, state.config),
                     ),
-                    onPressed: (_) =>
-                        _showSystemPromptDialog(context, state.defaultSystemPrompt),
-                  ),
-                ],
-              ),
-              SettingsSection(
-                title: const Text('Advanced'),
-                tiles: [
-                  SettingsTile.switchTile(
-                    leading: const Icon(Icons.psychology),
-                    title: const Text('Show Thinking Process'),
-                    description: const Text(
-                      'Display chain-of-thought reasoning from the model',
+                    SettingsTile.navigation(
+                      leading: const Icon(Icons.speed),
+                      title: const Text('Backend'),
+                      value: Text(
+                        state.config.backend == GemmaBackend.gpu
+                            ? 'GPU (Recommended)'
+                            : 'CPU',
+                      ),
+                      onPressed: (_) =>
+                          _showBackendPicker(context, state.config),
                     ),
-                    initialValue: state.thinkingEnabled,
-                    onToggle: (value) {
-                      context.read<ChatSettingsBloc>().add(
-                            ChatSettingsToggleThinking(enabled: value),
-                          );
-                    },
-                  ),
-                ],
-              ),
-              SettingsSection(
-                title: const Text('Actions'),
-                tiles: [
-                  SettingsTile(
-                    leading: const Icon(Icons.restore),
-                    title: const Text('Reset to Defaults'),
-                    onPressed: (_) => _confirmReset(context),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
-      ),
+                  ],
+                ),
+                SettingsSection(
+                  title: const Text('Generation'),
+                  tiles: [
+                    SettingsTile.navigation(
+                      leading: const Icon(Icons.format_list_numbered),
+                      title: const Text('Max Tokens'),
+                      value: Text('${state.config.maxTokens}'),
+                      onPressed: (_) =>
+                          _showMaxTokensDialog(context, state.config),
+                    ),
+                    SettingsTile.navigation(
+                      leading: const Icon(Icons.thermostat),
+                      title: const Text('Temperature'),
+                      value: Text(state.config.temperature.toStringAsFixed(2)),
+                      description: const Text('Higher = more creative'),
+                      onPressed: (_) =>
+                          _showTemperatureDialog(context, state.config),
+                    ),
+                    SettingsTile.navigation(
+                      leading: const Icon(Icons.filter_list),
+                      title: const Text('Top-K'),
+                      value: Text('${state.config.topK}'),
+                      description: const Text('Sampling diversity'),
+                      onPressed: (_) => _showTopKDialog(context, state.config),
+                    ),
+                  ],
+                ),
+                SettingsSection(
+                  title: const Text('System Prompt'),
+                  tiles: [
+                    SettingsTile.navigation(
+                      leading: const Icon(Icons.edit_note),
+                      title: const Text('Default System Prompt'),
+                      value: Text(
+                        state.defaultSystemPrompt?.isNotEmpty == true
+                            ? '${state.defaultSystemPrompt!.substring(0, state.defaultSystemPrompt!.length.clamp(0, 30))}...'
+                            : 'Not set',
+                      ),
+                      onPressed: (_) => _showSystemPromptDialog(
+                        context,
+                        state.defaultSystemPrompt,
+                      ),
+                    ),
+                  ],
+                ),
+                SettingsSection(
+                  title: const Text('Advanced'),
+                  tiles: [
+                    SettingsTile.switchTile(
+                      leading: const Icon(Icons.psychology),
+                      title: const Text('Show Thinking Process'),
+                      description: const Text(
+                        'Display chain-of-thought reasoning from the model',
+                      ),
+                      initialValue: state.thinkingEnabled,
+                      onToggle: (value) {
+                        context.read<ChatSettingsBloc>().add(
+                          ChatSettingsToggleThinking(enabled: value),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                SettingsSection(
+                  title: const Text('Actions'),
+                  tiles: [
+                    SettingsTile(
+                      leading: const Icon(Icons.restore),
+                      title: const Text('Reset to Defaults'),
+                      onPressed: (_) => _confirmReset(context),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -148,7 +149,10 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
             title: const Text('Gemma 2B-IT'),
             subtitle: const Text('Recommended for most devices'),
             onTap: () => _updateModelType(
-                context, sheetContext, GemmaModelType.gemma2bIt),
+              context,
+              sheetContext,
+              GemmaModelType.gemma2bIt,
+            ),
           ),
           ListTile(
             leading: Radio<GemmaModelType>(
@@ -159,7 +163,10 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
             title: const Text('Gemma 7B-IT'),
             subtitle: const Text('Better quality, requires more RAM'),
             onTap: () => _updateModelType(
-                context, sheetContext, GemmaModelType.gemma7bIt),
+              context,
+              sheetContext,
+              GemmaModelType.gemma7bIt,
+            ),
           ),
           const SizedBox(height: 16),
         ],
@@ -168,11 +175,14 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
   }
 
   void _updateModelType(
-      BuildContext context, BuildContext sheetContext, GemmaModelType type) {
+    BuildContext context,
+    BuildContext sheetContext,
+    GemmaModelType type,
+  ) {
     final currentConfig = context.read<ChatSettingsBloc>().state.config;
     context.read<ChatSettingsBloc>().add(
-          ChatSettingsUpdateConfig(config: currentConfig.copyWith(modelType: type)),
-        );
+      ChatSettingsUpdateConfig(config: currentConfig.copyWith(modelType: type)),
+    );
     Navigator.pop(sheetContext);
   }
 
@@ -211,11 +221,16 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
   }
 
   void _updateBackend(
-      BuildContext context, BuildContext sheetContext, GemmaBackend backend) {
+    BuildContext context,
+    BuildContext sheetContext,
+    GemmaBackend backend,
+  ) {
     final currentConfig = context.read<ChatSettingsBloc>().state.config;
     context.read<ChatSettingsBloc>().add(
-          ChatSettingsUpdateConfig(config: currentConfig.copyWith(backend: backend)),
-        );
+      ChatSettingsUpdateConfig(
+        config: currentConfig.copyWith(backend: backend),
+      ),
+    );
     Navigator.pop(sheetContext);
   }
 
@@ -243,10 +258,10 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
               final value = int.tryParse(controller.text);
               if (value != null && value >= 1 && value <= 8192) {
                 context.read<ChatSettingsBloc>().add(
-                      ChatSettingsUpdateConfig(
-                        config: config.copyWith(maxTokens: value),
-                      ),
-                    );
+                  ChatSettingsUpdateConfig(
+                    config: config.copyWith(maxTokens: value),
+                  ),
+                );
               }
               Navigator.pop(dialogContext);
             },
@@ -290,10 +305,10 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
             FilledButton(
               onPressed: () {
                 context.read<ChatSettingsBloc>().add(
-                      ChatSettingsUpdateConfig(
-                        config: config.copyWith(temperature: temperature),
-                      ),
-                    );
+                  ChatSettingsUpdateConfig(
+                    config: config.copyWith(temperature: temperature),
+                  ),
+                );
                 Navigator.pop(dialogContext);
               },
               child: const Text('Save'),
@@ -337,10 +352,8 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
             FilledButton(
               onPressed: () {
                 context.read<ChatSettingsBloc>().add(
-                      ChatSettingsUpdateConfig(
-                        config: config.copyWith(topK: topK),
-                      ),
-                    );
+                  ChatSettingsUpdateConfig(config: config.copyWith(topK: topK)),
+                );
                 Navigator.pop(dialogContext);
               },
               child: const Text('Save'),
@@ -375,10 +388,10 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
             onPressed: () {
               final prompt = controller.text.trim();
               context.read<ChatSettingsBloc>().add(
-                    ChatSettingsUpdateSystemPrompt(
-                      prompt: prompt.isEmpty ? null : prompt,
-                    ),
-                  );
+                ChatSettingsUpdateSystemPrompt(
+                  prompt: prompt.isEmpty ? null : prompt,
+                ),
+              );
               Navigator.pop(dialogContext);
             },
             child: const Text('Save'),

@@ -51,9 +51,9 @@ class BluetoothScannerScreen extends StatelessWidget {
                           icon: Icons.start_outlined,
                           title: 'Start Scan',
                           onPressed: () {
-                            context
-                                .read<BluetoothBloc>()
-                                .add(const BluetoothStartScan());
+                            context.read<BluetoothBloc>().add(
+                              const BluetoothStartScan(),
+                            );
                           },
                         ),
                         AppAdaptiveAction(
@@ -61,9 +61,9 @@ class BluetoothScannerScreen extends StatelessWidget {
                           icon: Icons.stop_outlined,
                           title: 'Stop Scan',
                           onPressed: () {
-                            context
-                                .read<BluetoothBloc>()
-                                .add(const BluetoothStopScan());
+                            context.read<BluetoothBloc>().add(
+                              const BluetoothStopScan(),
+                            );
                           },
                         ),
                       ],
@@ -125,11 +125,13 @@ class BluetoothScannerScreen extends StatelessWidget {
                           ),
                         );
                       }
-                      results.sort((a, b) => a.rssi < b.rssi
-                          ? 1
-                          : a.rssi > b.rssi
-                              ? -1
-                              : 0);
+                      results.sort(
+                        (a, b) => a.rssi < b.rssi
+                            ? 1
+                            : a.rssi > b.rssi
+                            ? -1
+                            : 0,
+                      );
                       return SliverGrid.extent(
                         maxCrossAxisExtent:
                             MediaQuery.of(context).size.width / 360,
@@ -157,9 +159,7 @@ class BluetoothScannerScreen extends StatelessWidget {
                   );
                 }
 
-                return const SliverToBoxAdapter(
-                  child: SizedBox(height: 0),
-                );
+                return const SliverToBoxAdapter(child: SizedBox(height: 0));
               },
             ),
           ],

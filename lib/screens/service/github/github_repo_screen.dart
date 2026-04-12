@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_bloc/github_bloc.dart';
@@ -14,11 +14,7 @@ class GitHubRepoScreen extends StatelessWidget {
   static const name = 'GitHubRepo';
   static const path = ':owner/:repo';
 
-  const GitHubRepoScreen({
-    super.key,
-    required this.owner,
-    required this.repo,
-  });
+  const GitHubRepoScreen({super.key, required this.owner, required this.repo});
 
   final String owner;
   final String repo;
@@ -37,11 +33,9 @@ class GitHubRepoScreen extends StatelessWidget {
         }
 
         return BlocProvider<GitHubActionsBloc>(
-          create: (context) => GitHubActionsBloc(
-            api: api,
-            owner: owner,
-            repo: repo,
-          )..add(const GitHubActionsFetch()),
+          create: (context) =>
+              GitHubActionsBloc(api: api, owner: owner, repo: repo)
+                ..add(const GitHubActionsFetch()),
           child: _GitHubRepoView(owner: owner, repo: repo),
         );
       },
@@ -50,10 +44,7 @@ class GitHubRepoScreen extends StatelessWidget {
 }
 
 class _GitHubRepoView extends StatelessWidget {
-  const _GitHubRepoView({
-    required this.owner,
-    required this.repo,
-  });
+  const _GitHubRepoView({required this.owner, required this.repo});
 
   final String owner;
   final String repo;
@@ -81,10 +72,7 @@ class _GitHubRepoView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(repo),
-                      Text(
-                        owner,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                      Text(owner, style: Theme.of(context).textTheme.bodySmall),
                     ],
                   ),
                   actions: [
@@ -98,7 +86,9 @@ class _GitHubRepoView extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.refresh),
                         onPressed: () {
-                          context.read<GitHubActionsBloc>().add(const GitHubActionsRefresh());
+                          context.read<GitHubActionsBloc>().add(
+                            const GitHubActionsRefresh(),
+                          );
                         },
                       ),
                   ],
@@ -113,13 +103,19 @@ class _GitHubRepoView extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.error, size: 48, color: Theme.of(context).colorScheme.error),
+                          Icon(
+                            Icons.error,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                           const SizedBox(height: 16),
                           Text(state.message),
                           const SizedBox(height: 16),
                           FilledButton(
                             onPressed: () {
-                              context.read<GitHubActionsBloc>().add(const GitHubActionsFetch());
+                              context.read<GitHubActionsBloc>().add(
+                                const GitHubActionsFetch(),
+                              );
                             },
                             child: const Text('Retry'),
                           ),
@@ -218,7 +214,9 @@ class _WorkflowTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(
-        workflow.isActive ? Icons.play_circle_outline : Icons.pause_circle_outline,
+        workflow.isActive
+            ? Icons.play_circle_outline
+            : Icons.pause_circle_outline,
         color: workflow.isActive
             ? Theme.of(context).colorScheme.primary
             : Theme.of(context).colorScheme.outline,
@@ -245,51 +243,46 @@ class _WorkflowTile extends StatelessWidget {
   void _showDispatchDialog(BuildContext context) {
     final branchController = TextEditingController(text: 'main');
 
-    showAdaptiveDialog(
+    showDmDialog(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog.adaptive(
-          title: Text('Run ${workflow.name}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Enter the branch or tag to run this workflow on:'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: branchController,
-                decoration: const InputDecoration(
-                  labelText: 'Branch/Tag',
-                  hintText: 'main',
-                  border: OutlineInputBorder(),
-                ),
+      title: Text('Run ${workflow.name}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Enter the branch or tag to run this workflow on:'),
+          const SizedBox(height: 16),
+          Material(
+            type: MaterialType.transparency,
+            child: TextField(
+              controller: branchController,
+              decoration: const InputDecoration(
+                labelText: 'Branch/Tag',
+                hintText: 'main',
+                border: OutlineInputBorder(),
               ),
-            ],
+            ),
           ),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.pop(dialogContext),
-            ),
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              child: const Text('Run'),
-              onPressed: () {
-                final ref = branchController.text.trim();
-                if (ref.isNotEmpty) {
-                  context.read<GitHubActionsBloc>().add(
-                    GitHubActionsDispatch(
-                      workflowId: workflow.id,
-                      ref: ref,
-                    ),
-                  );
-                  Navigator.pop(dialogContext);
-                }
-              },
-            ),
-          ],
-        );
-      },
+        ],
+      ),
+      actions: [
+        DmDialogAction(
+          onPressed: (ctx) => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        DmDialogAction(
+          onPressed: (ctx) {
+            final ref = branchController.text.trim();
+            if (ref.isNotEmpty) {
+              context.read<GitHubActionsBloc>().add(
+                GitHubActionsDispatch(workflowId: workflow.id, ref: ref),
+              );
+              Navigator.pop(ctx);
+            }
+          },
+          child: const Text('Run'),
+        ),
+      ],
     );
   }
 }

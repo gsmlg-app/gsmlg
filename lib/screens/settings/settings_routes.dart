@@ -9,92 +9,92 @@ import 'package:gsmlg/screens/settings/model_management_screen.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 
 GoRoute settingsRoutes() => GoRoute(
-      name: SettingsScreen.name,
-      path: SettingsScreen.path,
+  name: SettingsScreen.name,
+  path: SettingsScreen.path,
+  pageBuilder: (context, state) {
+    return NoTransitionPage<void>(
+      key: state.pageKey,
+      restorationId: state.pageKey.value,
+      child: const SettingsScreen(),
+    );
+  },
+  routes: [
+    GoRoute(
+      name: AppSettingsScreen.name,
+      path: AppSettingsScreen.path,
       pageBuilder: (context, state) {
         return NoTransitionPage<void>(
           key: state.pageKey,
           restorationId: state.pageKey.value,
-          child: const SettingsScreen(),
+          child: const AppSettingsScreen(),
         );
       },
-      routes: [
-        GoRoute(
-          name: AppSettingsScreen.name,
-          path: AppSettingsScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const AppSettingsScreen(),
-            );
-          },
-        ),
-        GoRoute(
-          name: AccountScreen.name,
-          path: AccountScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const AccountScreen(),
-            );
-          },
-        ),
-        GoRoute(
-          name: ModelManagementScreen.name,
-          path: ModelManagementScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const ModelManagementScreen(),
-            );
-          },
-        ),
-        GoRoute(
-          name: AppearanceSettingsScreen.name,
-          path: AppearanceSettingsScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const AppearanceSettingsScreen(),
-            );
-          },
-        ),
-        GoRoute(
-          name: AccentColorSettingsScreen.name,
-          path: AccentColorSettingsScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const AccentColorSettingsScreen(),
-            );
-          },
-        ),
-        GoRoute(
-          name: DeviceInfoScreen.name,
-          path: DeviceInfoScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const DeviceInfoScreen(),
-            );
-          },
-        ),
-        GoRoute(
-          name: WifiInfoScreen.name,
-          path: WifiInfoScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: const WifiInfoScreen(),
-            );
-          },
-        ),
-      ],
-    );
+    ),
+    GoRoute(
+      name: AccountScreen.name,
+      path: AccountScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const AccountScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      name: ModelManagementScreen.name,
+      path: ModelManagementScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const ModelManagementScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      name: AppearanceSettingsScreen.name,
+      path: AppearanceSettingsScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const AppearanceSettingsScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      name: AccentColorSettingsScreen.name,
+      path: AccentColorSettingsScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const AccentColorSettingsScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      name: DeviceInfoScreen.name,
+      path: DeviceInfoScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const DeviceInfoScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      name: WifiInfoScreen.name,
+      path: WifiInfoScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const WifiInfoScreen(),
+        );
+      },
+    ),
+  ],
+);

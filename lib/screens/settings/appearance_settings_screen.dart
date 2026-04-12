@@ -1,10 +1,11 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_locale/app_locale.dart';
+import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:settings_ui/settings_ui.dart';
+import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:theme_bloc/theme_bloc.dart';
 
 class AppearanceSettingsScreen extends StatelessWidget {
@@ -23,14 +24,14 @@ class AppearanceSettingsScreen extends StatelessWidget {
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       destinations: Destinations.navs(context),
       body: (context) {
-        final themeBloc = context.read<ThemeBloc>();
+        final themeBloc = context.read<DmThemeBloc>();
 
         return SafeArea(
           child: CustomScrollView(
             slivers: <Widget>[
               SliverAppBar(title: Text(context.l10n.appearance)),
               SliverFillRemaining(
-                child: BlocBuilder<ThemeBloc, ThemeState>(
+                child: BlocBuilder<DmThemeBloc, DmThemeState>(
                   bloc: themeBloc,
                   builder: (context, state) {
                     return SettingsList(
@@ -38,42 +39,17 @@ class AppearanceSettingsScreen extends StatelessWidget {
                         SettingsSection(
                           title: Text(context.l10n.appearance),
                           tiles: <SettingsTile>[
-                            SettingsTile(
-                              leading: const Icon(Icons.light_mode),
-                              title: Text(context.l10n.lightTheme),
-                              trailing: state.themeMode == ThemeMode.light
-                                  ? const Icon(Icons.check)
-                                  : null,
-                              onPressed: (context) {
-                                themeBloc.add(
-                                  const ChangeThemeMode(ThemeMode.light),
-                                );
-                              },
-                            ),
-                            SettingsTile(
-                              leading: const Icon(Icons.dark_mode),
-                              title: Text(context.l10n.darkTheme),
-                              trailing: state.themeMode == ThemeMode.dark
-                                  ? const Icon(Icons.check)
-                                  : null,
-                              onPressed: (context) {
-                                themeBloc.add(
-                                  const ChangeThemeMode(ThemeMode.dark),
-                                );
-                              },
-                            ),
-                            SettingsTile(
-                              leading: const Icon(Icons.brightness_auto),
-                              title: Text(context.l10n.systemTheme),
-                              trailing: state.themeMode == ThemeMode.system
-                                  ? const Icon(Icons.check)
-                                  : null,
-                              onPressed: (context) {
-                                themeBloc.add(
-                                  const ChangeThemeMode(ThemeMode.system),
-                                );
-                              },
-                            ),
+                            for (final mode in ThemeMode.values)
+                              SettingsTile(
+                                leading: mode.icon,
+                                title: Text(mode.title),
+                                trailing: state.themeMode == mode
+                                    ? const Icon(Icons.check)
+                                    : null,
+                                onPressed: (context) {
+                                  themeBloc.add(DmSetThemeMode(mode));
+                                },
+                              ),
                           ],
                         ),
                       ],
@@ -85,7 +61,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           ),
         );
       },
-      smallSecondaryBody: AdaptiveScaffold.emptyBuilder,
+      smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
     );
   }
 }
