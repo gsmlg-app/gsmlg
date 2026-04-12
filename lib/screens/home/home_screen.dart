@@ -107,12 +107,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         isStreaming: chatState.isStreaming,
                         supportsImage:
                             modelInfo?.supportsMultimodal ?? false,
-                        onSend: (message, {imageBytes}) {
+                        supportsAudio:
+                            modelInfo?.supportsAudio ?? false,
+                        onSend: (message, {imageBytes, audioBytes}) {
                           final settingsState =
                               context.read<ChatSettingsBloc>().state;
                           context.read<ChatBloc>().add(ChatSendMessage(
                                 content: message,
                                 imageBytes: imageBytes,
+                                audioBytes: audioBytes,
                                 systemPrompt:
                                     chatState.conversation == null
                                         ? settingsState.defaultSystemPrompt

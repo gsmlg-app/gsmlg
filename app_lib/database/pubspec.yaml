@@ -14,12 +14,6 @@ dependencies:
   path_provider: ^2.1.5
   sqlite3_flutter_libs: ^0.6.0+eol
 
-# Configure sqlite3 to use local asset
-sqlite3:
-  macos:
-    dylib:
-      - assets/sqlite3/libsqlite3.arm64.macos.dylib
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -28,5 +22,3 @@ dev_dependencies:
   build_runner: ^2.4.15
 
 flutter:
-  assets:
-    - assets/sqlite3/

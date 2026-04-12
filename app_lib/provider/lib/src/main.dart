@@ -75,6 +75,7 @@ class MainProvider extends StatelessWidget {
           BlocProvider<ChatSettingsBloc>(
             create: (context) => ChatSettingsBloc(
               repository: context.read<ChatStorageRepository>(),
+              preferences: context.read<SharedPreferences>(),
             ),
           ),
           BlocProvider<GemmaModelBloc>(
