@@ -118,6 +118,18 @@ class GemmaRepository {
     }
   }
 
+  /// Determines the [gemma.ModelFileType] from a URL or file path.
+  ///
+  /// `.litertlm` files use [gemma.ModelFileType.litertlm] (LiteRT-LM SDK
+  /// handles chat templates on desktop). `.task` files use
+  /// [gemma.ModelFileType.task] (MediaPipe handles templates). All other
+  /// extensions default to [gemma.ModelFileType.binary].
+  static gemma.ModelFileType _fileTypeFromPath(String path) {
+    if (path.endsWith('.litertlm')) return gemma.ModelFileType.litertlm;
+    if (path.endsWith('.task')) return gemma.ModelFileType.task;
+    return gemma.ModelFileType.binary;
+  }
+
   /// Activates an already-installed model so [getActiveModel] can find it.
   ///
   /// flutter_gemma keeps the "active model" in memory only, so after an app
@@ -128,12 +140,14 @@ class GemmaRepository {
     debugPrint(
         '[GemmaRepo] activateModel(${info.id}, modelType=${info.modelType})');
     try {
+      final downloadUrl = info.downloadUrl;
       final builder = gemma.FlutterGemma.installModel(
         modelType: info.modelType,
+        fileType: _fileTypeFromPath(downloadUrl),
       );
       // fromNetwork detects the model is already installed and skips download,
       // but still calls setActiveModel internally.
-      await builder.fromNetwork(info.downloadUrl).install();
+      await builder.fromNetwork(downloadUrl).install();
       debugPrint('[GemmaRepo] activateModel completed for ${info.id}');
       _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
@@ -167,6 +181,7 @@ class GemmaRepository {
           '[GemmaRepo] Installing model from downloaded file: $filePath');
       await gemma.FlutterGemma.installModel(
         modelType: nativeModelType,
+        fileType: _fileTypeFromPath(url),
       ).fromFile(filePath).install();
       debugPrint('[GemmaRepo] fromFile().install() completed successfully');
 
@@ -208,6 +223,7 @@ class GemmaRepository {
           '[GemmaRepo] Installing model from downloaded file: $filePath');
       await gemma.FlutterGemma.installModel(
         modelType: nativeModelType,
+        fileType: _fileTypeFromPath(url),
       ).fromFile(filePath).install();
       debugPrint('[GemmaRepo] fromFile().install() completed successfully');
 
@@ -374,6 +390,7 @@ class GemmaRepository {
               '[GemmaRepo] Asset file found (${File(resolvedPath).lengthSync()} bytes), installing via fromFile...');
           await gemma.FlutterGemma.installModel(
             modelType: modelType,
+            fileType: _fileTypeFromPath(resolvedPath),
           ).fromFile(resolvedPath).install();
           debugPrint(
               '[GemmaRepo] fromFile().install() completed successfully (desktop asset fallback)');
@@ -388,6 +405,7 @@ class GemmaRepository {
             '[GemmaRepo] Mobile platform, using fromAsset($assetPath)...');
         await gemma.FlutterGemma.installModel(
           modelType: modelType,
+          fileType: _fileTypeFromPath(assetPath),
         ).fromAsset(assetPath).install();
         debugPrint('[GemmaRepo] fromAsset().install() completed successfully');
       }
@@ -436,6 +454,7 @@ class GemmaRepository {
       debugPrint('[GemmaRepo] Creating install builder fromFile($filePath)...');
       await gemma.FlutterGemma.installModel(
         modelType: nativeModelType,
+        fileType: _fileTypeFromPath(filePath),
       ).fromFile(filePath).install();
       debugPrint('[GemmaRepo] fromFile().install() completed successfully');
 
