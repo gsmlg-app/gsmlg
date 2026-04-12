@@ -381,6 +381,27 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     if (state.conversation == null || state.streamingMessageId == null) return;
 
+    // Check if the assistant message is empty (0 tokens generated)
+    final streamingMsg = state.conversation!.messages
+        .whereType<AssistantMessage>()
+        .where((m) => m.id == state.streamingMessageId)
+        .firstOrNull;
+    final hasContent = streamingMsg != null &&
+        (streamingMsg.content.trim().isNotEmpty ||
+            (streamingMsg.thinkingContent?.trim().isNotEmpty ?? false));
+
+    if (!hasContent) {
+      // Model returned empty response — report error instead of saving blank
+      emit(state.copyWith(
+        status: ChatStatus.error,
+        errorMessage:
+            'Model generated an empty response. Try switching to CPU '
+            'backend in settings, or select a different model.',
+        clearStreamingMessageId: true,
+      ));
+      return;
+    }
+
     final messages = state.conversation!.messages.map((m) {
       if (m.id == state.streamingMessageId && m is AssistantMessage) {
         final completed = m.copyWith(isStreaming: false);
