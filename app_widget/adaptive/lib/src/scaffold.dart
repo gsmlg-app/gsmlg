@@ -267,7 +267,28 @@ class AppAdaptiveScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DmAdaptiveScaffold(
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final navRailTheme = theme.navigationRailTheme.copyWith(
+      backgroundColor: colorScheme.secondaryContainer,
+      selectedIconTheme: IconThemeData(
+        color: colorScheme.onSecondaryContainer,
+      ),
+      unselectedIconTheme: IconThemeData(
+        color: colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
+      ),
+      selectedLabelTextStyle: theme.textTheme.labelMedium?.copyWith(
+        color: colorScheme.onSecondaryContainer,
+      ),
+      unselectedLabelTextStyle: theme.textTheme.labelMedium?.copyWith(
+        color: colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
+      ),
+      indicatorColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.2),
+    );
+
+    return Theme(
+      data: theme.copyWith(navigationRailTheme: navRailTheme),
+      child: DmAdaptiveScaffold(
       destinations: destinations,
       selectedIndex: selectedIndex,
       leadingUnextendedNavRail: leadingUnextendedNavRail,
@@ -307,6 +328,7 @@ class AppAdaptiveScaffold extends StatelessWidget {
       showCollapseToggle: showCollapseToggle,
       collapseIcon: collapseIcon,
       expandIcon: expandIcon,
+    ),
     );
   }
 }
