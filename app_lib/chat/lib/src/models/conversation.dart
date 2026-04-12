@@ -56,8 +56,8 @@ class Conversation extends Equatable {
 
   /// Returns user, assistant, and tool response messages (excludes system).
   List<Message> get chatMessages => messages
-      .where(
-          (m) => m is UserMessage || m is AssistantMessage || m is ToolResponseMessage)
+      .where((m) =>
+          m is UserMessage || m is AssistantMessage || m is ToolResponseMessage)
       .toList();
 
   Conversation copyWith({

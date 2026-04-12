@@ -101,10 +101,10 @@ class ChatStorageRepository {
             role: Value(message.role),
             content: Value(message.content),
             tokenCount: Value(tokenCount),
-            imageBytes: Value(
-                message is UserMessage ? message.imageBytes : null),
-            toolName: Value(
-                message is ToolResponseMessage ? message.toolName : null),
+            imageBytes:
+                Value(message is UserMessage ? message.imageBytes : null),
+            toolName:
+                Value(message is ToolResponseMessage ? message.toolName : null),
             timestamp: Value(message.timestamp),
           ),
         );

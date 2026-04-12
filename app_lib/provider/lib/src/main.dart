@@ -44,13 +44,13 @@ class MainProvider extends StatelessWidget {
         RepositoryProvider<ChatStorageRepository>(
           create: (context) => ChatStorageRepository(database),
         ),
-        RepositoryProvider<ToolExecutor>(
-          create: (context) => ToolExecutor(),
-        ),
+        RepositoryProvider<ToolExecutor>(create: (context) => ToolExecutor()),
       ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider<ThemeBloc>(create: (context) => ThemeBloc(sharedPrefs)),
+          BlocProvider<DmThemeBloc>(
+            create: (context) => DmThemeBloc(prefs: sharedPrefs),
+          ),
           BlocProvider<AuthBloc>(create: (context) => AuthBloc()),
           BlocProvider<WhoisBloc>(create: (context) => WhoisBloc(database)),
           BlocProvider<WhoisHistoryBloc>(
