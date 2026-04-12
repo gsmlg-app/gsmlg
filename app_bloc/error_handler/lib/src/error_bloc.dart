@@ -48,9 +48,8 @@ class ErrorBloc extends Bloc<ErrorEvent, ErrorState> {
   }
 
   void _onErrorDismissed(ErrorDismissed event, Emitter<ErrorState> emit) {
-    final activeErrors = state.activeErrors
-        .where((error) => error.id != event.errorId)
-        .toList();
+    final activeErrors =
+        state.activeErrors.where((error) => error.id != event.errorId).toList();
 
     emit(state.copyWith(activeErrors: activeErrors));
   }
@@ -66,9 +65,8 @@ class ErrorBloc extends Bloc<ErrorEvent, ErrorState> {
 
     final resolvedError = errorToResolve.copyWith(isResolved: true);
 
-    final activeErrors = state.activeErrors
-        .where((error) => error.id != event.errorId)
-        .toList();
+    final activeErrors =
+        state.activeErrors.where((error) => error.id != event.errorId).toList();
 
     final resolvedErrors = List<AppError>.from(state.resolvedErrors)
       ..add(resolvedError);

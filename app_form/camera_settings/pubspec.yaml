@@ -10,8 +10,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  form_bloc: any
-  flutter_form_bloc: any
+  duskmoon_form: ^1.4.0
   camera_macos: any
 
 dev_dependencies:

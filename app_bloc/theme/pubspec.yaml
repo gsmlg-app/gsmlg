@@ -7,13 +7,12 @@ environment:
 resolution: workspace
 
 dependencies:
-  bloc: ^9.0.0
-  equatable: ^2.0.7
   flutter:
     sdk: flutter
+  duskmoon_theme_bloc: ^1.4.0
+  duskmoon_theme: ^1.4.0
+  flutter_bloc: ^9.0.0
   shared_preferences: ^2.3.5
-
-  app_theme: any
 
 dev_dependencies:
   flutter_test:

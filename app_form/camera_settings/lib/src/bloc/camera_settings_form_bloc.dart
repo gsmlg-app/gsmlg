@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:camera_macos/camera_macos.dart';
-import 'package:flutter_form_bloc/flutter_form_bloc.dart';
+import 'package:duskmoon_form/duskmoon_form.dart';
 
 /// FormBloc for Camera Settings
 class CameraSettingsFormBloc extends FormBloc<String, String> {

@@ -35,11 +35,11 @@ class ErrorState extends Equatable {
 
   @override
   List<Object?> get props => [
-    activeErrors,
-    resolvedErrors,
-    isLoading,
-    lastErrorMessage,
-  ];
+        activeErrors,
+        resolvedErrors,
+        isLoading,
+        lastErrorMessage,
+      ];
 }
 
 class AppError extends Equatable {
@@ -95,12 +95,12 @@ class AppError extends Equatable {
 
   @override
   List<Object?> get props => [
-    id,
-    error,
-    stackTrace,
-    context,
-    severity,
-    timestamp,
-    isResolved,
-  ];
+        id,
+        error,
+        stackTrace,
+        context,
+        severity,
+        timestamp,
+        isResolved,
+      ];
 }

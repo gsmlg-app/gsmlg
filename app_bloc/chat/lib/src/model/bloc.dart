@@ -142,7 +142,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
             modelType: event.modelType,
           ));
           await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
-              thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
+              thinkingEnabled:
+                  _preferences.getBool(_thinkingEnabledKey) ?? false);
           debugPrint(
               '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
@@ -234,7 +235,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     _activeRepositoryDownloadModelId = modelId;
 
     final proxy = state.proxyUrl;
-    debugPrint('[GemmaModelBloc] Starting download for $modelId, proxy: $proxy');
+    debugPrint(
+        '[GemmaModelBloc] Starting download for $modelId, proxy: $proxy');
 
     // Run download in a fire-and-forget fashion so multiple can be queued.
     // The repository streams progress/status that we handle via events.
@@ -257,7 +259,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         }
       } catch (e) {
         errorMessage = e.toString();
-        debugPrint('[GemmaModelBloc] Download failed for $modelId: $errorMessage');
+        debugPrint(
+            '[GemmaModelBloc] Download failed for $modelId: $errorMessage');
       } finally {
         add(_GemmaModelDownloadComplete(
           modelId: modelId,
@@ -276,9 +279,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         '[GemmaModelBloc] Download complete: ${event.modelId}, failed=$hasFailed');
 
     // Remove from active downloads
-    final updatedDownloads = state.activeDownloads
-        .where((d) => d.modelId != event.modelId)
-        .toList();
+    final updatedDownloads =
+        state.activeDownloads.where((d) => d.modelId != event.modelId).toList();
 
     // Track failed download (replace existing entry for same model)
     final updatedFailed = [
@@ -298,7 +300,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       installedModels: installed,
       activeDownloads: updatedDownloads,
       failedDownloads: updatedFailed,
-      status: updatedDownloads.isEmpty && state.status == GemmaModelStatus.downloading
+      status: updatedDownloads.isEmpty &&
+              state.status == GemmaModelStatus.downloading
           ? (installed.isNotEmpty
               ? GemmaModelStatus.installed
               : GemmaModelStatus.notInstalled)
@@ -342,9 +345,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     final installed = await _repository.listInstalledModels();
     debugPrint('[GemmaModelBloc] Post-asset-install models: $installed');
 
-    final postDownloads = state.activeDownloads
-        .where((d) => d.modelId != event.modelId)
-        .toList();
+    final postDownloads =
+        state.activeDownloads.where((d) => d.modelId != event.modelId).toList();
     emit(state.copyWith(
       installedModels: installed,
       activeDownloads: postDownloads,
@@ -394,7 +396,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         debugPrint('[GemmaModelBloc] Auto-loading model into memory...');
         emit(state.copyWith(status: GemmaModelStatus.loading));
         await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
-              thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
+            thinkingEnabled:
+                _preferences.getBool(_thinkingEnabledKey) ?? false);
         debugPrint(
             '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
@@ -523,7 +526,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       debugPrint('[GemmaModelBloc] Auto-loading selected model...');
       emit(state.copyWith(status: GemmaModelStatus.loading));
       await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
-              thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
+          thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
       debugPrint(
           '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
@@ -600,7 +603,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
 
     final pct = event.progress.percentage.toInt();
     if (pct % 10 == 0) {
-      debugPrint('[GemmaModelBloc] Download progress ($modelId): ${event.progress}');
+      debugPrint(
+          '[GemmaModelBloc] Download progress ($modelId): ${event.progress}');
     }
 
     // Update progress for the specific model in activeDownloads

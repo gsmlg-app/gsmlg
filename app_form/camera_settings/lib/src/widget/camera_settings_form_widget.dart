@@ -1,6 +1,6 @@
 import 'package:camera_macos/camera_macos.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_form_bloc/flutter_form_bloc.dart';
+import 'package:duskmoon_form/duskmoon_form.dart';
 
 import '../bloc/camera_settings_form_bloc.dart';
 
@@ -33,7 +33,7 @@ class CameraSettingsFormWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DropdownFieldBlocBuilder<CameraMacOSMode>(
+            DmDropdownFieldBlocBuilder<CameraMacOSMode>(
               selectFieldBloc: formBloc.cameraMode,
               decoration: const InputDecoration(
                 labelText: 'Camera Mode',
@@ -43,7 +43,7 @@ class CameraSettingsFormWidget extends StatelessWidget {
                   FieldItem(child: Text(value.name)),
             ),
             const SizedBox(height: 16),
-            DropdownFieldBlocBuilder<String>(
+            DmDropdownFieldBlocBuilder<String>(
               selectFieldBloc: formBloc.deviceId,
               decoration: const InputDecoration(
                 labelText: 'Video Device',
@@ -54,7 +54,7 @@ class CameraSettingsFormWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            DropdownFieldBlocBuilder<String>(
+            DmDropdownFieldBlocBuilder<String>(
               selectFieldBloc: formBloc.audioDeviceId,
               decoration: const InputDecoration(
                 labelText: 'Audio Device',
@@ -65,7 +65,7 @@ class CameraSettingsFormWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            DropdownFieldBlocBuilder<CameraOrientation>(
+            DmDropdownFieldBlocBuilder<CameraOrientation>(
               selectFieldBloc: formBloc.orientation,
               decoration: const InputDecoration(
                 labelText: 'Orientation',
@@ -75,7 +75,7 @@ class CameraSettingsFormWidget extends StatelessWidget {
                   FieldItem(child: Text(value.name)),
             ),
             const SizedBox(height: 16),
-            DropdownFieldBlocBuilder<Torch>(
+            DmDropdownFieldBlocBuilder<Torch>(
               selectFieldBloc: formBloc.torch,
               decoration: const InputDecoration(
                 labelText: 'Torch',
@@ -85,7 +85,7 @@ class CameraSettingsFormWidget extends StatelessWidget {
                   FieldItem(child: Text(value.name)),
             ),
             const SizedBox(height: 16),
-            SwitchFieldBlocBuilder(
+            DmSwitchFieldBlocBuilder(
               booleanFieldBloc: formBloc.isVideoMirrored,
               body: const Text('Mirror-Flip Video'),
             ),

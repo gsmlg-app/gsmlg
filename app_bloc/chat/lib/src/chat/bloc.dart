@@ -189,23 +189,23 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   void _startStreaming(List<Message> messages) {
     _streamSubscription?.cancel();
     _streamSubscription = _gemmaRepository.generateResponse(messages).listen(
-          (response) {
-            switch (response) {
-              case gemma.TextResponse(:final token):
-                add(_ChatStreamToken(token));
-              case gemma.FunctionCallResponse(:final name, :final args):
-                add(_ChatFunctionCall(name: name, args: args));
-              case gemma.ParallelFunctionCallResponse():
-                // Handle parallel function calls - emit each individually
-                break;
-              case gemma.ThinkingResponse(:final content):
-                add(_ChatThinkingToken(content));
-            }
-          },
-          onDone: () => add(const _ChatStreamComplete()),
-          onError: (error) => add(_ChatStreamError(error.toString())),
-          cancelOnError: true,
-        );
+      (response) {
+        switch (response) {
+          case gemma.TextResponse(:final token):
+            add(_ChatStreamToken(token));
+          case gemma.FunctionCallResponse(:final name, :final args):
+            add(_ChatFunctionCall(name: name, args: args));
+          case gemma.ParallelFunctionCallResponse():
+            // Handle parallel function calls - emit each individually
+            break;
+          case gemma.ThinkingResponse(:final content):
+            add(_ChatThinkingToken(content));
+        }
+      },
+      onDone: () => add(const _ChatStreamComplete()),
+      onError: (error) => add(_ChatStreamError(error.toString())),
+      cancelOnError: true,
+    );
   }
 
   Future<void> _onStopGeneration(
