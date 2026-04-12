@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io' show Platform;
 
 import 'package:app_chat/app_chat.dart';
 import 'package:bloc/bloc.dart';
@@ -22,7 +23,9 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
   })  : _repository = repository,
         _preferences = preferences,
         _toolExecutor = toolExecutor,
-        super(const GemmaModelState()) {
+        super(GemmaModelState(
+          selectedModelId: preferences.getString('gemma_selected_model_id'),
+        )) {
     on<GemmaModelInitialize>(_onInitialize);
     on<GemmaModelCheckInstallation>(_onCheckInstallation);
     on<GemmaModelInstall>(_onInstall);
@@ -49,6 +52,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
   }
 
   static const _selectedModelKey = 'gemma_selected_model_id';
+  static const _thinkingEnabledKey = 'chat_thinking_enabled';
 
   final GemmaRepository _repository;
   final SharedPreferences _preferences;
@@ -137,7 +141,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
             status: GemmaModelStatus.loading,
             modelType: event.modelType,
           ));
-          await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo);
+          await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
+              thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
           debugPrint(
               '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
@@ -388,7 +393,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       if (_repository.status == GemmaModelStatus.installed) {
         debugPrint('[GemmaModelBloc] Auto-loading model into memory...');
         emit(state.copyWith(status: GemmaModelStatus.loading));
-        await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo);
+        await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
+              thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
         debugPrint(
             '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
@@ -451,7 +457,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     final modelInfo = state.selectedModelId != null
         ? _findModelInfoByInstalledId(state.selectedModelId!)
         : null;
-    await _loadModelWithCapabilities(event.config, modelInfo);
+    await _loadModelWithCapabilities(event.config, modelInfo,
+        thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
     debugPrint(
         '[GemmaModelBloc] _onLoad done, repo status: ${_repository.status}');
 
@@ -515,7 +522,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     if (_repository.status == GemmaModelStatus.installed) {
       debugPrint('[GemmaModelBloc] Auto-loading selected model...');
       emit(state.copyWith(status: GemmaModelStatus.loading));
-      await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo);
+      await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
+              thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
       debugPrint(
           '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
@@ -612,11 +620,32 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
   /// Loads a model with its capability flags and tool definitions.
   Future<void> _loadModelWithCapabilities(
     ModelConfig config,
-    GemmaModelInfo? modelInfo,
-  ) async {
+    GemmaModelInfo? modelInfo, {
+    bool thinkingEnabled = false,
+  }) async {
+    // Desktop LiteRT-LM server (v0.13.1) does not support vision model
+    // sections yet — the server crashes with "Unknown model type:
+    // tf_lite_end_of_vision" when loading multimodal .litertlm files.
+    // On desktop, reject multimodal models entirely (the crash happens
+    // during model file parsing, not from the enableVision flag).
+    final isDesktop =
+        Platform.isMacOS || Platform.isLinux || Platform.isWindows;
+    if (isDesktop && (modelInfo?.supportsMultimodal ?? false)) {
+      _repository.setError(
+        '${modelInfo!.displayName} uses vision components not yet '
+        'supported on desktop. Please select a text-only model.',
+      );
+      return;
+    }
+
+    final enableThinking =
+        thinkingEnabled && (modelInfo?.supportsThinking ?? false);
+
     await _repository.loadModel(
       config,
       supportImage: modelInfo?.supportsMultimodal ?? false,
+      supportAudio: modelInfo?.supportsAudio ?? false,
+      isThinking: enableThinking,
       supportsFunctionCalls: modelInfo?.supportsFunctionCalls ?? false,
       tools: (modelInfo?.supportsFunctionCalls ?? false)
           ? _toolExecutor.toolDefinitions
@@ -630,6 +659,13 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       if (installedId == model.id ||
           installedId.contains(model.id) ||
           model.id.contains(installedId)) {
+        return model;
+      }
+      // On desktop, the installed filename comes from desktopUrl which may
+      // differ from the catalog id. Match against the download URL filename.
+      final downloadUrl = model.downloadUrl;
+      final urlFilename = Uri.parse(downloadUrl).pathSegments.lastOrNull ?? '';
+      if (urlFilename.isNotEmpty && installedId == urlFilename) {
         return model;
       }
     }

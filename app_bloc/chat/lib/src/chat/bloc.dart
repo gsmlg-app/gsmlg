@@ -30,6 +30,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<ChatDeleteConversation>(_onDeleteConversation);
     on<ChatLoadHistory>(_onLoadHistory);
     on<_ChatStreamToken>(_onStreamToken);
+    on<_ChatThinkingToken>(_onThinkingToken);
     on<_ChatStreamComplete>(_onStreamComplete);
     on<_ChatStreamError>(_onStreamError);
     on<_ChatFunctionCall>(_onFunctionCall);
@@ -148,6 +149,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       conversationId: conversation.id,
       timestamp: DateTime.now(),
       imageBytes: event.imageBytes,
+      audioBytes: event.audioBytes,
     );
 
     // Add user message to conversation
@@ -196,8 +198,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               case gemma.ParallelFunctionCallResponse():
                 // Handle parallel function calls - emit each individually
                 break;
-              case gemma.ThinkingResponse():
-                break; // Already filtered in repository
+              case gemma.ThinkingResponse(:final content):
+                add(_ChatThinkingToken(content));
             }
           },
           onDone: () => add(const _ChatStreamComplete()),
@@ -342,6 +344,26 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final messages = state.conversation!.messages.map((m) {
       if (m.id == state.streamingMessageId && m is AssistantMessage) {
         return m.copyWith(content: m.content + event.token);
+      }
+      return m;
+    }).toList();
+
+    emit(state.copyWith(
+      conversation: state.conversation!.copyWith(messages: messages),
+    ));
+  }
+
+  void _onThinkingToken(
+    _ChatThinkingToken event,
+    Emitter<ChatState> emit,
+  ) {
+    if (state.conversation == null || state.streamingMessageId == null) return;
+
+    final messages = state.conversation!.messages.map((m) {
+      if (m.id == state.streamingMessageId && m is AssistantMessage) {
+        return m.copyWith(
+          thinkingContent: (m.thinkingContent ?? '') + event.content,
+        );
       }
       return m;
     }).toList();

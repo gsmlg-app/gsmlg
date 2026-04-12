@@ -30,11 +30,13 @@ final class ChatSendMessage extends ChatEvent {
     required this.content,
     this.systemPrompt,
     this.imageBytes,
+    this.audioBytes,
   });
 
   final String content;
   final String? systemPrompt;
   final Uint8List? imageBytes;
+  final Uint8List? audioBytes;
 }
 
 /// Stop the current response generation.
@@ -69,6 +71,13 @@ final class _ChatStreamToken extends ChatEvent {
   const _ChatStreamToken(this.token);
 
   final String token;
+}
+
+/// Internal event for thinking/reasoning tokens.
+final class _ChatThinkingToken extends ChatEvent {
+  const _ChatThinkingToken(this.content);
+
+  final String content;
 }
 
 /// Internal event for stream completion.
