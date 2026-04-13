@@ -92,7 +92,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
           _pendingAudio = bytes;
           _isRecording = false;
         });
-        // Clean up temp file
         try {
           await File(path).delete();
         } catch (_) {}
@@ -220,121 +219,143 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   onDeleted: () => setState(() => _pendingAudio = null),
                 ),
               ),
-            // Markdown input with bottom actions
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: DmMarkdownInput(
-              controller: _controller,
-              enabled: widget.enabled && !widget.isStreaming,
-              showPreview: false,
-              showLineNumbers: false,
-              minLines: 1,
-              maxLines: 6,
-              decoration: InputDecoration(
-                hintText: _isRecording
-                    ? 'Recording...'
-                    : widget.enabled
-                        ? 'Type a message...'
-                        : 'Model not ready',
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                border: InputBorder.none,
+            // Unified card: input + bottom bar
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
               ),
-              bottomLeft: Row(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (hasAttachments)
-                    IconButton(
-                      onPressed: widget.enabled && !widget.isStreaming
-                          ? _showAttachmentOptions
-                          : null,
-                      icon: const Icon(Icons.add, size: 20),
-                      tooltip: 'Attach file',
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  if (widget.supportsAudio)
-                    IconButton(
-                      onPressed: widget.enabled && !widget.isStreaming
-                          ? _toggleRecording
-                          : null,
-                      icon: Icon(
-                        _isRecording ? Icons.stop_circle : Icons.mic,
-                        size: 20,
-                        color: _isRecording ? colorScheme.error : null,
-                      ),
-                      tooltip:
-                          _isRecording ? 'Stop recording' : 'Record audio',
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  if (widget.supportsThinking)
-                    IconButton(
-                      onPressed: () =>
-                          widget.onThinkingToggle?.call(!widget.thinkingEnabled),
-                      icon: Icon(
-                        Icons.psychology,
-                        size: 20,
-                        color: widget.thinkingEnabled
-                            ? colorScheme.primary
-                            : null,
-                      ),
-                      tooltip: widget.thinkingEnabled
-                          ? 'Thinking: ON'
-                          : 'Thinking: OFF',
-                      visualDensity: VisualDensity.compact,
-                    ),
-                ],
-              ),
-              bottomRight: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.selectedModelName != null)
-                    InkWell(
-                      onTap: widget.onModelTap,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                  // Text input (no bottom slots — avoids Expanded issue)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 150),
+                    child: DmMarkdownInput(
+                      controller: _controller,
+                      enabled: widget.enabled && !widget.isStreaming,
+                      showPreview: false,
+                      showLineNumbers: false,
+                      minLines: 1,
+                      maxLines: 6,
+                      decoration: InputDecoration(
+                        hintText: _isRecording
+                            ? 'Recording...'
+                            : widget.enabled
+                                ? 'Type a message...'
+                                : 'Model not ready',
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.selectedModelName!,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: colorScheme.onSurfaceVariant,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  // Bottom action bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      children: [
+                        // Left actions
+                        if (hasAttachments)
+                          IconButton(
+                            onPressed: widget.enabled && !widget.isStreaming
+                                ? _showAttachmentOptions
+                                : null,
+                            icon: const Icon(Icons.add, size: 20),
+                            tooltip: 'Attach file',
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        if (widget.supportsAudio)
+                          IconButton(
+                            onPressed: widget.enabled && !widget.isStreaming
+                                ? _toggleRecording
+                                : null,
+                            icon: Icon(
+                              _isRecording ? Icons.stop_circle : Icons.mic,
+                              size: 20,
+                              color: _isRecording ? colorScheme.error : null,
+                            ),
+                            tooltip: _isRecording
+                                ? 'Stop recording'
+                                : 'Record audio',
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        if (widget.supportsThinking)
+                          IconButton(
+                            onPressed: () => widget.onThinkingToggle
+                                ?.call(!widget.thinkingEnabled),
+                            icon: Icon(
+                              Icons.psychology,
+                              size: 20,
+                              color: widget.thinkingEnabled
+                                  ? colorScheme.primary
+                                  : null,
+                            ),
+                            tooltip: widget.thinkingEnabled
+                                ? 'Thinking: ON'
+                                : 'Thinking: OFF',
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        const Spacer(),
+                        // Right: model selector + send
+                        if (widget.selectedModelName != null)
+                          InkWell(
+                            onTap: widget.onModelTap,
+                            borderRadius: BorderRadius.circular(8),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    widget.selectedModelName!,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Icon(
+                                    Icons.arrow_drop_down,
+                                    size: 18,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 2),
-                            Icon(
-                              Icons.arrow_drop_down,
-                              size: 18,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        const SizedBox(width: 4),
+                        widget.isStreaming
+                            ? IconButton.filled(
+                                onPressed: widget.onStop,
+                                icon: const Icon(Icons.stop, size: 20),
+                                tooltip: 'Stop generation',
+                                visualDensity: VisualDensity.compact,
+                              )
+                            : IconButton.filled(
+                                onPressed:
+                                    widget.enabled ? _handleSend : null,
+                                icon:
+                                    const Icon(Icons.arrow_upward, size: 20),
+                                tooltip: 'Send message',
+                                visualDensity: VisualDensity.compact,
+                              ),
+                      ],
                     ),
-                  const SizedBox(width: 4),
-                  widget.isStreaming
-                      ? IconButton.filled(
-                          onPressed: widget.onStop,
-                          icon: const Icon(Icons.stop, size: 20),
-                          tooltip: 'Stop generation',
-                          visualDensity: VisualDensity.compact,
-                        )
-                      : IconButton.filled(
-                          onPressed: widget.enabled ? _handleSend : null,
-                          icon: const Icon(Icons.arrow_upward, size: 20),
-                          tooltip: 'Send message',
-                          visualDensity: VisualDensity.compact,
-                        ),
+                  ),
                 ],
               ),
-            ),
             ),
           ],
         ),
