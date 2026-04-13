@@ -221,7 +221,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 ),
               ),
             // Markdown input with bottom actions
-            DmMarkdownInput(
+            IntrinsicHeight(
+              child: DmMarkdownInput(
               controller: _controller,
               enabled: widget.enabled && !widget.isStreaming,
               showPreview: false,
@@ -332,6 +333,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                         ),
                 ],
               ),
+            ),
             ),
           ],
         ),
