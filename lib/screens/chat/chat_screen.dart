@@ -157,6 +157,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           supportsThinking:
                               modelInfo?.supportsThinking ?? false,
                           thinkingEnabled: settingsState.thinkingEnabled,
+                          selectedModelName: modelInfo?.displayName,
+                          onModelTap: () =>
+                              context.goNamed(ChatSettingsScreen.name),
                           onThinkingToggle: (enabled) {
                             context.read<ChatSettingsBloc>().add(
                               ChatSettingsToggleThinking(enabled: enabled),

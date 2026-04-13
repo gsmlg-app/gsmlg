@@ -16,9 +16,11 @@ class ChatInputBar extends StatefulWidget {
     this.supportsAudio = false,
     this.supportsThinking = false,
     this.thinkingEnabled = false,
+    this.selectedModelName,
     required this.onSend,
     required this.onStop,
     this.onThinkingToggle,
+    this.onModelTap,
   });
 
   final bool enabled;
@@ -27,14 +29,15 @@ class ChatInputBar extends StatefulWidget {
   final bool supportsAudio;
   final bool supportsThinking;
   final bool thinkingEnabled;
+  final String? selectedModelName;
   final void Function(
     String text, {
     Uint8List? imageBytes,
     Uint8List? audioBytes,
-  })
-  onSend;
+  }) onSend;
   final VoidCallback onStop;
   final ValueChanged<bool>? onThinkingToggle;
+  final VoidCallback? onModelTap;
 
   @override
   State<ChatInputBar> createState() => _ChatInputBarState();
@@ -165,16 +168,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
     final colorScheme = Theme.of(context).colorScheme;
     final hasAttachments = widget.supportsImage || widget.supportsAudio;
 
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(
-          top: BorderSide(color: colorScheme.outlineVariant, width: 1),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -200,9 +197,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
                         color: colorScheme.onSurface,
                       ),
                       style: IconButton.styleFrom(
-                        backgroundColor: colorScheme.surface.withValues(
-                          alpha: 0.8,
-                        ),
+                        backgroundColor:
+                            colorScheme.surface.withValues(alpha: 0.8),
                         minimumSize: const Size(28, 28),
                         padding: EdgeInsets.zero,
                       ),
@@ -224,81 +220,117 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   onDeleted: () => setState(() => _pendingAudio = null),
                 ),
               ),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 200),
-              child: DmMarkdownInput(
-                controller: _controller,
-                enabled: widget.enabled && !widget.isStreaming,
-                showPreview: false,
-                showLineNumbers: false,
-                decoration: InputDecoration(
-                  hintText: _isRecording
-                      ? 'Recording...'
-                      : widget.enabled
-                      ? 'Type a message...'
-                      : 'Model not ready',
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+            // Markdown input with bottom actions
+            DmMarkdownInput(
+              controller: _controller,
+              enabled: widget.enabled && !widget.isStreaming,
+              showPreview: false,
+              showLineNumbers: false,
+              minLines: 1,
+              maxLines: 6,
+              decoration: InputDecoration(
+                hintText: _isRecording
+                    ? 'Recording...'
+                    : widget.enabled
+                        ? 'Type a message...'
+                        : 'Model not ready',
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                bottomLeft: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (hasAttachments)
-                      IconButton(
-                        onPressed: widget.enabled && !widget.isStreaming
-                            ? _showAttachmentOptions
+                border: InputBorder.none,
+              ),
+              bottomLeft: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasAttachments)
+                    IconButton(
+                      onPressed: widget.enabled && !widget.isStreaming
+                          ? _showAttachmentOptions
+                          : null,
+                      icon: const Icon(Icons.add, size: 20),
+                      tooltip: 'Attach file',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (widget.supportsAudio)
+                    IconButton(
+                      onPressed: widget.enabled && !widget.isStreaming
+                          ? _toggleRecording
+                          : null,
+                      icon: Icon(
+                        _isRecording ? Icons.stop_circle : Icons.mic,
+                        size: 20,
+                        color: _isRecording ? colorScheme.error : null,
+                      ),
+                      tooltip:
+                          _isRecording ? 'Stop recording' : 'Record audio',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  if (widget.supportsThinking)
+                    IconButton(
+                      onPressed: () =>
+                          widget.onThinkingToggle?.call(!widget.thinkingEnabled),
+                      icon: Icon(
+                        Icons.psychology,
+                        size: 20,
+                        color: widget.thinkingEnabled
+                            ? colorScheme.primary
                             : null,
-                        icon: const Icon(Icons.attach_file, size: 20),
-                        tooltip: 'Attach file',
-                        visualDensity: VisualDensity.compact,
                       ),
-                    if (widget.supportsAudio)
-                      IconButton(
-                        onPressed: widget.enabled && !widget.isStreaming
-                            ? _toggleRecording
-                            : null,
-                        icon: Icon(
-                          _isRecording ? Icons.stop_circle : Icons.mic,
-                          size: 20,
-                          color: _isRecording ? colorScheme.error : null,
+                      tooltip: widget.thinkingEnabled
+                          ? 'Thinking: ON'
+                          : 'Thinking: OFF',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                ],
+              ),
+              bottomRight: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.selectedModelName != null)
+                    InkWell(
+                      onTap: widget.onModelTap,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-                        tooltip:
-                            _isRecording ? 'Stop recording' : 'Record audio',
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    if (widget.supportsThinking)
-                      IconButton(
-                        onPressed: () => widget.onThinkingToggle
-                            ?.call(!widget.thinkingEnabled),
-                        icon: Icon(
-                          Icons.psychology,
-                          size: 20,
-                          color: widget.thinkingEnabled
-                              ? colorScheme.primary
-                              : null,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              widget.selectedModelName!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              Icons.arrow_drop_down,
+                              size: 18,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ],
                         ),
-                        tooltip: widget.thinkingEnabled
-                            ? 'Thinking: ON'
-                            : 'Thinking: OFF',
-                        visualDensity: VisualDensity.compact,
                       ),
-                  ],
-                ),
-                bottomRight: widget.isStreaming
-                    ? IconButton.filled(
-                        onPressed: widget.onStop,
-                        icon: const Icon(Icons.stop, size: 20),
-                        tooltip: 'Stop generation',
-                        visualDensity: VisualDensity.compact,
-                      )
-                    : IconButton.filled(
-                        onPressed: widget.enabled ? _handleSend : null,
-                        icon: const Icon(Icons.send, size: 20),
-                        tooltip: 'Send message',
-                        visualDensity: VisualDensity.compact,
-                      ),
+                    ),
+                  const SizedBox(width: 4),
+                  widget.isStreaming
+                      ? IconButton.filled(
+                          onPressed: widget.onStop,
+                          icon: const Icon(Icons.stop, size: 20),
+                          tooltip: 'Stop generation',
+                          visualDensity: VisualDensity.compact,
+                        )
+                      : IconButton.filled(
+                          onPressed: widget.enabled ? _handleSend : null,
+                          icon: const Icon(Icons.arrow_upward, size: 20),
+                          tooltip: 'Send message',
+                          visualDensity: VisualDensity.compact,
+                        ),
+                ],
               ),
             ),
           ],
