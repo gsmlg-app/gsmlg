@@ -53,8 +53,7 @@ mason-lock.json
 /local.properties
 /.template-sync
 
-# Bundled binaries (built from flutter_gemma, too large for git)
-macos/Runner/Resources/litertlm-server.jar
+# Bundled binaries tracked via Git LFS
 
 /.claude/*
 !/.claude/commands/
