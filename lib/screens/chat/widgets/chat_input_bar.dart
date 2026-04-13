@@ -221,7 +221,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 ),
               ),
             // Markdown input with bottom actions
-            IntrinsicHeight(
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200),
               child: DmMarkdownInput(
               controller: _controller,
               enabled: widget.enabled && !widget.isStreaming,
