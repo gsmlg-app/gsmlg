@@ -112,7 +112,9 @@ class GemmaModelInfo {
   /// or a separate [desktopUrl]); mobile platforms support all formats.
   bool get isCurrentPlatformCompatible {
     if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-      return hasLiteRtLm;
+      // Desktop requires .litertlm format and does not support vision/
+      // multimodal models (LiteRT-LM server crashes on vision sections).
+      return hasLiteRtLm && !supportsMultimodal;
     }
     return true; // Mobile supports all formats
   }
