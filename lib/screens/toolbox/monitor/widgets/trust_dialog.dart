@@ -41,6 +41,7 @@ class TrustDialog extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.copy, size: 16),
+                  tooltip: 'Copy fingerprint',
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: fingerprint));
                     ScaffoldMessenger.of(context).showSnackBar(

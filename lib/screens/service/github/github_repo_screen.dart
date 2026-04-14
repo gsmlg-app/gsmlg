@@ -343,6 +343,8 @@ class _WorkflowRunTile extends StatelessWidget {
   }
 
   Widget _buildStatusIcon(BuildContext context) {
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+
     if (run.isRunning) {
       return SizedBox(
         width: 24,
@@ -355,18 +357,24 @@ class _WorkflowRunTile extends StatelessWidget {
     }
 
     if (run.isSuccess) {
-      return const Icon(Icons.check_circle, color: Colors.green);
+      return Icon(Icons.check_circle, color: dmColors.success);
     }
 
     if (run.isFailure) {
-      return const Icon(Icons.cancel, color: Colors.red);
+      return Icon(Icons.cancel, color: Theme.of(context).colorScheme.error);
     }
 
     if (run.conclusion == 'cancelled') {
-      return const Icon(Icons.block, color: Colors.grey);
+      return Icon(
+        Icons.block,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      );
     }
 
-    return const Icon(Icons.help_outline, color: Colors.grey);
+    return Icon(
+      Icons.help_outline,
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
   }
 
   String _formatDate(DateTime date) {

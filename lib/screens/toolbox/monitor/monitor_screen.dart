@@ -248,6 +248,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
           title: Text(host.displayName),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
+            tooltip: 'Back to host list',
             onPressed: () => setState(() => _selectedHostId = null),
           ),
         ),
@@ -271,7 +272,12 @@ class _MonitorScreenState extends State<MonitorScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.lock_outline, size: 48, color: Colors.orange),
+            Icon(
+              Icons.lock_outline,
+              size: 48,
+              color:
+                  Theme.of(context).extension<DmColorExtension>()!.warning,
+            ),
             const SizedBox(height: 16),
             const Text('Waiting for trust verification'),
             const SizedBox(height: 16),

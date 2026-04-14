@@ -88,6 +88,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.go('/service/domain'),
+                  tooltip: 'Back',
                 ),
                 actions: [
                   IconButton(

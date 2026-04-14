@@ -1,5 +1,6 @@
 import 'package:app_locale/app_locale.dart';
 import 'package:auth_bloc/auth_bloc.dart';
+import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -52,9 +53,9 @@ class _AuthScreenState extends State<AuthScreen> {
     } else {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Invalid username or password'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('Invalid username or password'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -72,9 +73,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
     setState(() => _isLoading = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Sign up successful! Please sign in.'),
-        backgroundColor: Colors.green,
+      SnackBar(
+        content: const Text('Sign up successful! Please sign in.'),
+        backgroundColor:
+            Theme.of(context).extension<DmColorExtension>()!.success,
       ),
     );
     setState(() => _isSignUp = false);
@@ -167,6 +169,9 @@ class _AuthScreenState extends State<AuthScreen> {
                           hintText: 'Enter your password',
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
+                            tooltip: _obscurePassword
+                                ? 'Show password'
+                                : 'Hide password',
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility_off
@@ -206,12 +211,12 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                         child: _isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.onPrimary,
                                 ),
                               )
                             : Text(_isSignUp ? 'SIGN UP' : 'SIGN IN'),

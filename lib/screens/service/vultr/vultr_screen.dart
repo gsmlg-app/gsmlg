@@ -88,9 +88,11 @@ class _AccountSelectView extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   if (accounts.isEmpty) ...[
-                    const Text(
+                    Text(
                       'No Vultr accounts configured.',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
@@ -217,7 +219,9 @@ class _InstanceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isRunning = instance.powerStatus == 'running';
-    final statusColor = isRunning ? Colors.green : Colors.red;
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+    final statusColor =
+        isRunning ? dmColors.success : Theme.of(context).colorScheme.error;
     final statusIcon = isRunning ? Icons.play_circle : Icons.stop_circle;
 
     final bloc = context.watch<VultrBloc>();
@@ -271,29 +275,32 @@ class _InstanceTile extends StatelessWidget {
           onSelected: (value) => _onAction(context, value),
           itemBuilder: (context) => [
             if (!isRunning)
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'start',
                 child: ListTile(
-                  leading: Icon(Icons.play_arrow, color: Colors.green),
-                  title: Text('Start'),
+                  leading: Icon(Icons.play_arrow, color: dmColors.success),
+                  title: const Text('Start'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
             if (isRunning)
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'stop',
                 child: ListTile(
-                  leading: Icon(Icons.stop, color: Colors.red),
-                  title: Text('Stop'),
+                  leading: Icon(
+                    Icons.stop,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: const Text('Stop'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
             if (isRunning)
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'reboot',
                 child: ListTile(
-                  leading: Icon(Icons.restart_alt, color: Colors.orange),
-                  title: Text('Reboot'),
+                  leading: Icon(Icons.restart_alt, color: dmColors.warning),
+                  title: const Text('Reboot'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),

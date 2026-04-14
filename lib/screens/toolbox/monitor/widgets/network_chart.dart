@@ -1,3 +1,4 @@
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:monitor_models/monitor_models.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/memory_gauge.dart';
@@ -18,6 +19,9 @@ class NetworkChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (networks.isEmpty) return const SizedBox.shrink();
+
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
       child: Padding(
@@ -50,7 +54,7 @@ class NetworkChart extends StatelessWidget {
                 SparklineChart(
                   values: rxHistory[net.interface_]!,
                   maxValue: _maxRate(rxHistory[net.interface_]!),
-                  color: Colors.blue,
+                  color: dmColors.info,
                   label: 'RX',
                   height: 40,
                 ),
@@ -58,7 +62,7 @@ class NetworkChart extends StatelessWidget {
                 SparklineChart(
                   values: txHistory[net.interface_]!,
                   maxValue: _maxRate(txHistory[net.interface_]!),
-                  color: Colors.orange,
+                  color: colorScheme.tertiary,
                   label: 'TX',
                   height: 40,
                 ),

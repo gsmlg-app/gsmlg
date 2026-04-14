@@ -1,3 +1,4 @@
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:monitor_bloc/monitor_bloc.dart';
 
@@ -12,14 +13,18 @@ class ConnectionIndicator extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: _color),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: _color(context)),
     );
   }
 
-  Color get _color => switch (status) {
-    ConnectionStatus.connected => Colors.green,
-    ConnectionStatus.connecting => Colors.orange,
-    ConnectionStatus.disconnected => Colors.grey,
-    ConnectionStatus.error => Colors.red,
-  };
+  Color _color(BuildContext context) {
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+    return switch (status) {
+      ConnectionStatus.connected => dmColors.success,
+      ConnectionStatus.connecting => dmColors.warning,
+      ConnectionStatus.disconnected => colorScheme.onSurfaceVariant,
+      ConnectionStatus.error => colorScheme.error,
+    };
+  }
 }

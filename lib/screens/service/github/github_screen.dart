@@ -228,6 +228,9 @@ class GitHubServiceScreen extends StatelessWidget {
                           hintText: 'ghp_xxxxxxxxxxxxxxxxxxxx',
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
+                            tooltip: obscurePat
+                                ? 'Show token'
+                                : 'Hide token',
                             icon: Icon(
                               obscurePat
                                   ? Icons.visibility_off
@@ -313,6 +316,7 @@ class _GitHubReposViewState extends State<_GitHubReposView>
           title: const Text('GitHub Repositories'),
           actions: [
             IconButton(
+              tooltip: 'Refresh',
               icon: const Icon(Icons.refresh),
               onPressed: () {
                 context.read<GitHubPinnedReposBloc>().add(
@@ -463,6 +467,7 @@ class _PinnedRepoTile extends StatelessWidget {
           Text('${repo.stargazersCount}'),
           const SizedBox(width: 8),
           IconButton(
+            tooltip: 'Unpin repository',
             icon: const Icon(Icons.bookmark_remove),
             onPressed: () {
               context.read<GitHubPinnedReposBloc>().add(
@@ -641,6 +646,7 @@ class _RepoTile extends StatelessWidget {
               Text('${repo.stargazersCount}'),
               const SizedBox(width: 8),
               IconButton(
+                tooltip: isPinned ? 'Unpin repository' : 'Pin repository',
                 icon: Icon(
                   isPinned ? Icons.bookmark : Icons.bookmark_border,
                   color: isPinned

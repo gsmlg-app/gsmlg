@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   data_visualization: any
+  duskmoon_theme: any
 
 dev_dependencies:
   flutter_test:

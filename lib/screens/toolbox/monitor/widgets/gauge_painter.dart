@@ -1,15 +1,35 @@
 import 'dart:math' as math;
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:data_visualization/data_visualization.dart';
 import 'package:flutter/material.dart';
 
-Color gaugeColor(double percent) {
+/// Computes a gauge gradient color from [lowColor] through [midColor] to
+/// [highColor] based on [percent] (0-100).
+Color gaugeColorFromTokens(
+  double percent, {
+  required Color lowColor,
+  required Color midColor,
+  required Color highColor,
+}) {
   if (percent < 60) {
-    return Color.lerp(Colors.green, Colors.yellow, percent / 60)!;
+    return Color.lerp(lowColor, midColor, percent / 60)!;
   }
   if (percent < 80) {
-    return Color.lerp(Colors.yellow, Colors.orange, (percent - 60) / 20)!;
+    return Color.lerp(midColor, highColor, (percent - 60) / 20)!;
   }
-  return Color.lerp(Colors.orange, Colors.red, (percent - 80) / 20)!;
+  return highColor;
+}
+
+/// Convenience wrapper that resolves gauge colors from the current theme.
+Color gaugeColor(double percent, {required BuildContext context}) {
+  final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+  final colorScheme = Theme.of(context).colorScheme;
+  return gaugeColorFromTokens(
+    percent,
+    lowColor: dmColors.success,
+    midColor: dmColors.warning,
+    highColor: colorScheme.error,
+  );
 }
 
 class RadialGauge extends StatelessWidget {
@@ -29,7 +49,7 @@ class RadialGauge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final clampedPercent = percent.clamp(0.0, 100.0);
-    final color = gaugeColor(clampedPercent);
+    final color = gaugeColor(clampedPercent, context: context);
     final outerRadius = size / 2;
     final innerRadius = outerRadius * 0.75;
 

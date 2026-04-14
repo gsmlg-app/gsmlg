@@ -1,5 +1,6 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
+import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -87,7 +88,7 @@ class ServiceScreen extends StatelessWidget {
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color: Colors.green,
+                                      color: Theme.of(context).extension<DmColorExtension>()!.success,
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: Theme.of(

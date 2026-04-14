@@ -148,11 +148,11 @@ class _ZoneListTile extends StatelessWidget {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: ListTile(
-                leading: Icon(Icons.delete, color: Colors.red),
-                title: Text('Delete'),
+                leading: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
+                title: const Text('Delete'),
                 contentPadding: EdgeInsets.zero,
               ),
             ),

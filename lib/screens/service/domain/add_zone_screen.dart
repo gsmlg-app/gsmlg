@@ -217,6 +217,7 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
               floating: true,
               title: const Text('Add DNS Zone'),
               leading: IconButton(
+                tooltip: 'Back',
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => context.go('/service/domain'),
               ),
@@ -278,7 +279,7 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                                 children: [
                                   Text(
                                     'No ${_provider == DnsProvider.cloudflare ? "Cloudflare" : "AWS"} accounts configured',
-                                    style: const TextStyle(color: Colors.grey),
+                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                                   ),
                                   const SizedBox(height: 8),
                                   OutlinedButton.icon(
@@ -378,9 +379,9 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Select an account and tap "Fetch Available Zones" to see your zones',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -393,9 +394,9 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
+                          child: Text(
                             'No zones found for this account',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             textAlign: TextAlign.center,
                           ),
                         ),

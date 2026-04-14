@@ -72,9 +72,12 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
                                     const WhoisHistoryRemoveAll(),
                                   );
                                 },
-                                child: const Text(
+                                child: Text(
                                   'Clear',
-                                  style: TextStyle(color: Colors.red),
+                                  style: TextStyle(
+                                    color:
+                                        Theme.of(context).colorScheme.error,
+                                  ),
                                 ),
                               ),
                               DmDialogAction(
@@ -187,7 +190,7 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
                                       ?.copyWith(
                                         color: Theme.of(context)
                                             .colorScheme
-                                            .onSurface
+                                            .onPrimaryContainer
                                             .withValues(alpha: 0.618),
                                       ),
                                 ),

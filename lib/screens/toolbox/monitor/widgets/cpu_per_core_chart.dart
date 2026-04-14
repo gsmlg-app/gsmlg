@@ -1,3 +1,4 @@
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:data_visualization/data_visualization.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/gauge_painter.dart';
@@ -10,6 +11,9 @@ class CpuPerCoreChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (perCore.isEmpty) return const SizedBox.shrink();
+
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return SizedBox(
       height: perCore.length * 28.0 + 16,
@@ -33,8 +37,11 @@ class CpuPerCoreChart extends StatelessWidget {
               perCore: perCore,
               band: band,
               xScale: xScale,
-              textColor: Theme.of(context).colorScheme.onSurface,
-              bgColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              textColor: colorScheme.onSurface,
+              bgColor: colorScheme.surfaceContainerHighest,
+              lowColor: dmColors.success,
+              midColor: dmColors.warning,
+              highColor: colorScheme.error,
             ),
           );
         },
@@ -50,6 +57,9 @@ class _CoreBarPainter extends CustomPainter {
     required this.xScale,
     required this.textColor,
     required this.bgColor,
+    required this.lowColor,
+    required this.midColor,
+    required this.highColor,
   });
 
   final List<double> perCore;
@@ -57,6 +67,9 @@ class _CoreBarPainter extends CustomPainter {
   final LinearScale xScale;
   final Color textColor;
   final Color bgColor;
+  final Color lowColor;
+  final Color midColor;
+  final Color highColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -84,7 +97,13 @@ class _CoreBarPainter extends CustomPainter {
             Rect.fromLTWH(50, y, barWidth, h),
             const Radius.circular(3),
           ),
-          Paint()..color = gaugeColor(perCore[i]),
+          Paint()
+            ..color = gaugeColorFromTokens(
+              perCore[i],
+              lowColor: lowColor,
+              midColor: midColor,
+              highColor: highColor,
+            ),
         );
       }
 

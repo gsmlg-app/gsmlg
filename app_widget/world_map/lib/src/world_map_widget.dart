@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:data_visualization/data_visualization.dart';
+import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -84,7 +85,11 @@ class _WorldMapWidgetState extends State<WorldMapWidget> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
+            ),
             const SizedBox(height: 16),
             Text('Error loading map: $_error'),
           ],
@@ -92,11 +97,14 @@ class _WorldMapWidgetState extends State<WorldMapWidget> {
       );
     }
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.lightBlue.shade50,
+        color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -109,6 +117,18 @@ class _WorldMapWidgetState extends State<WorldMapWidget> {
                 latitude: widget.latitude,
                 longitude: widget.longitude,
                 label: widget.label,
+                oceanColor: colorScheme.surfaceContainerLow,
+                landColor: dmColors.successContainer,
+                landBorderColor: dmColors.success,
+                graticuleColor: colorScheme.primary.withAlpha(80),
+                equatorColor: colorScheme.error.withAlpha(100),
+                markerOuterColor: colorScheme.error.withAlpha(50),
+                markerMiddleColor: colorScheme.error.withAlpha(100),
+                markerShadowColor: colorScheme.scrim.withAlpha(66),
+                markerColor: colorScheme.error,
+                markerCenterColor: colorScheme.onError,
+                labelTextColor: colorScheme.onSurfaceVariant,
+                labelBackgroundColor: colorScheme.surface.withAlpha(220),
               ),
             );
           },
@@ -123,12 +143,36 @@ class _WorldMapPainter extends CustomPainter {
   final double latitude;
   final double longitude;
   final String? label;
+  final Color oceanColor;
+  final Color landColor;
+  final Color landBorderColor;
+  final Color graticuleColor;
+  final Color equatorColor;
+  final Color markerOuterColor;
+  final Color markerMiddleColor;
+  final Color markerShadowColor;
+  final Color markerColor;
+  final Color markerCenterColor;
+  final Color labelTextColor;
+  final Color labelBackgroundColor;
 
   _WorldMapPainter({
     required this.worldData,
     required this.latitude,
     required this.longitude,
     this.label,
+    required this.oceanColor,
+    required this.landColor,
+    required this.landBorderColor,
+    required this.graticuleColor,
+    required this.equatorColor,
+    required this.markerOuterColor,
+    required this.markerMiddleColor,
+    required this.markerShadowColor,
+    required this.markerColor,
+    required this.markerCenterColor,
+    required this.labelTextColor,
+    required this.labelBackgroundColor,
   });
 
   @override
@@ -142,7 +186,7 @@ class _WorldMapPainter extends CustomPainter {
     // Draw ocean background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
-      Paint()..color = Colors.lightBlue.shade100,
+      Paint()..color = oceanColor,
     );
 
     // Draw land masses
@@ -151,12 +195,12 @@ class _WorldMapPainter extends CustomPainter {
 
     final landPaint =
         Paint()
-          ..color = Colors.green.shade200
+          ..color = landColor
           ..style = PaintingStyle.fill;
 
     final landBorderPaint =
         Paint()
-          ..color = Colors.green.shade600
+          ..color = landBorderColor
           ..strokeWidth = 0.5
           ..style = PaintingStyle.stroke;
 
@@ -177,7 +221,7 @@ class _WorldMapPainter extends CustomPainter {
     // Draw graticule (grid lines)
     final graticulePaint =
         Paint()
-          ..color = Colors.blue.shade200.withAlpha(80)
+          ..color = graticuleColor
           ..strokeWidth = 0.5
           ..style = PaintingStyle.stroke;
 
@@ -216,7 +260,7 @@ class _WorldMapPainter extends CustomPainter {
     // Draw equator
     final equatorPaint =
         Paint()
-          ..color = Colors.red.shade300.withAlpha(100)
+          ..color = equatorColor
           ..strokeWidth = 1
           ..style = PaintingStyle.stroke;
 
@@ -245,31 +289,31 @@ class _WorldMapPainter extends CustomPainter {
       canvas.drawCircle(
         Offset(markerPos.x, markerPos.y),
         20,
-        Paint()..color = Colors.red.shade300.withAlpha(50),
+        Paint()..color = markerOuterColor,
       );
       canvas.drawCircle(
         Offset(markerPos.x, markerPos.y),
         12,
-        Paint()..color = Colors.red.shade400.withAlpha(100),
+        Paint()..color = markerMiddleColor,
       );
 
       // Draw marker pin shadow
       canvas.drawCircle(
         Offset(markerPos.x, markerPos.y),
         8,
-        Paint()..color = Colors.black26,
+        Paint()..color = markerShadowColor,
       );
 
       // Draw marker pin
       canvas.drawCircle(
         Offset(markerPos.x, markerPos.y),
         7,
-        Paint()..color = Colors.red.shade700,
+        Paint()..color = markerColor,
       );
       canvas.drawCircle(
         Offset(markerPos.x, markerPos.y),
         3,
-        Paint()..color = Colors.white,
+        Paint()..color = markerCenterColor,
       );
 
       // Draw label if provided
@@ -278,7 +322,7 @@ class _WorldMapPainter extends CustomPainter {
           text: TextSpan(
             text: label,
             style: TextStyle(
-              color: Colors.grey.shade800,
+              color: labelTextColor,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -300,7 +344,7 @@ class _WorldMapPainter extends CustomPainter {
             ),
             const Radius.circular(4),
           ),
-          Paint()..color = Colors.white.withAlpha(220),
+          Paint()..color = labelBackgroundColor,
         );
 
         textPainter.paint(canvas, Offset(textX, textY));

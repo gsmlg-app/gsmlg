@@ -20,6 +20,8 @@ class DiskChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (disks.isEmpty) return const SizedBox.shrink();
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -42,7 +44,10 @@ class DiskChart extends StatelessWidget {
                     Text(
                       '${disk.usagePercent.toStringAsFixed(1)}%',
                       style: TextStyle(
-                        color: gaugeColor(disk.usagePercent),
+                        color: gaugeColor(
+                          disk.usagePercent,
+                          context: context,
+                        ),
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),
@@ -52,7 +57,7 @@ class DiskChart extends StatelessWidget {
                 const SizedBox(height: 4),
                 LinearProgressIndicator(
                   value: disk.usagePercent / 100,
-                  color: gaugeColor(disk.usagePercent),
+                  color: gaugeColor(disk.usagePercent, context: context),
                 ),
                 const SizedBox(height: 4),
               ],
@@ -73,7 +78,7 @@ class DiskChart extends StatelessWidget {
                 SparklineChart(
                   values: readHistory[disk.device]!,
                   maxValue: _maxRate(readHistory[disk.device]!),
-                  color: Colors.teal,
+                  color: colorScheme.tertiary,
                   label: 'Read',
                   height: 40,
                 ),
@@ -81,7 +86,7 @@ class DiskChart extends StatelessWidget {
                 SparklineChart(
                   values: writeHistory[disk.device]!,
                   maxValue: _maxRate(writeHistory[disk.device]!),
-                  color: Colors.deepPurple,
+                  color: colorScheme.secondary,
                   label: 'Write',
                   height: 40,
                 ),

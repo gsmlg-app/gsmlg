@@ -1,3 +1,4 @@
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 
 class VersionBadge extends StatelessWidget {
@@ -7,25 +8,27 @@ class VersionBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final warningColor =
+        Theme.of(context).extension<DmColorExtension>()!.warning;
     return Tooltip(
       message: 'Agent v$version — update available',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: Colors.amber.withValues(alpha: 0.2),
+          color: warningColor.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.amber, width: 0.5),
+          border: Border.all(color: warningColor, width: 0.5),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.warning_amber, size: 12, color: Colors.amber),
+            Icon(Icons.warning_amber, size: 12, color: warningColor),
             const SizedBox(width: 4),
             Text(
               'v$version',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
-                color: Colors.amber,
+                color: warningColor,
                 fontWeight: FontWeight.bold,
               ),
             ),

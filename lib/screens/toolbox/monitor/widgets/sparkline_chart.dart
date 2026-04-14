@@ -6,7 +6,7 @@ class SparklineChart extends StatelessWidget {
     super.key,
     required this.values,
     required this.maxValue,
-    this.color = Colors.blue,
+    required this.color,
     this.fillColor,
     this.height = 60,
     this.width = double.infinity,

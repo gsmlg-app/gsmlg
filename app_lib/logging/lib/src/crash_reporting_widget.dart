@@ -84,8 +84,10 @@ class ErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.red[50],
+      backgroundColor: colorScheme.errorContainer,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -95,13 +97,13 @@ class ErrorScreen extends StatelessWidget {
               Icon(
                 Icons.error_outline,
                 size: 64,
-                color: Colors.red[700],
+                color: colorScheme.error,
               ),
               const SizedBox(height: 24),
               Text(
                 'Oops! Something went wrong',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.red[700],
+                      color: colorScheme.error,
                     ),
               ),
               const SizedBox(height: 16),
@@ -154,7 +156,7 @@ class ErrorScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

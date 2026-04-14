@@ -1,3 +1,4 @@
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:monitor_bloc/monitor_bloc.dart';
 
@@ -19,11 +20,17 @@ class HostListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ListTile(
       selected: selected,
       leading: Stack(
         children: [
-          Icon(_statusIcon, color: _statusColor),
+          Icon(
+            _statusIcon,
+            color: _statusColor(dmColors, colorScheme),
+          ),
           // Badge: discovered (network icon) vs manual (pin icon)
           Positioned(
             right: -2,
@@ -31,7 +38,7 @@ class HostListTile extends StatelessWidget {
             child: Icon(
               host.isManual ? Icons.push_pin : Icons.wifi,
               size: 10,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -42,11 +49,11 @@ class HostListTile extends StatelessWidget {
           Text('${host.ip}:${host.port}'),
           if (host.trustStatus == TrustStatus.pending) ...[
             const SizedBox(width: 8),
-            Icon(Icons.lock_outline, size: 14, color: Colors.orange.shade700),
+            Icon(Icons.lock_outline, size: 14, color: dmColors.warning),
           ],
           if (host.trustStatus == TrustStatus.trusted) ...[
             const SizedBox(width: 8),
-            const Icon(Icons.verified_user, size: 14, color: Colors.green),
+            Icon(Icons.verified_user, size: 14, color: dmColors.success),
           ],
         ],
       ),
@@ -57,7 +64,11 @@ class HostListTile extends StatelessWidget {
             Text(
               '${host.metrics!.cpu!.usagePercent.toStringAsFixed(0)}%',
               style: TextStyle(
-                color: _cpuColor(host.metrics!.cpu!.usagePercent),
+                color: _cpuColor(
+                  host.metrics!.cpu!.usagePercent,
+                  dmColors,
+                  colorScheme,
+                ),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -86,16 +97,21 @@ class HostListTile extends StatelessWidget {
     ConnectionStatus.error => Icons.error,
   };
 
-  Color get _statusColor => switch (host.status) {
-    ConnectionStatus.connected => Colors.green,
-    ConnectionStatus.connecting => Colors.orange,
-    ConnectionStatus.disconnected => Colors.grey,
-    ConnectionStatus.error => Colors.red,
-  };
+  Color _statusColor(DmColorExtension dmColors, ColorScheme colorScheme) =>
+      switch (host.status) {
+        ConnectionStatus.connected => dmColors.success,
+        ConnectionStatus.connecting => dmColors.warning,
+        ConnectionStatus.disconnected => colorScheme.onSurfaceVariant,
+        ConnectionStatus.error => colorScheme.error,
+      };
 
-  Color _cpuColor(double percent) {
-    if (percent < 60) return Colors.green;
-    if (percent < 80) return Colors.orange;
-    return Colors.red;
+  Color _cpuColor(
+    double percent,
+    DmColorExtension dmColors,
+    ColorScheme colorScheme,
+  ) {
+    if (percent < 60) return dmColors.success;
+    if (percent < 80) return dmColors.warning;
+    return colorScheme.error;
   }
 }

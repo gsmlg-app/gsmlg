@@ -1,3 +1,4 @@
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:monitor_models/monitor_models.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/gauge_painter.dart';
@@ -10,11 +11,13 @@ class GpuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+    final colorScheme = Theme.of(context).colorScheme;
     final tempColor = switch (gpu.temperatureCelsius) {
       null => null,
-      < 60 => Colors.green,
-      < 80 => Colors.orange,
-      _ => Colors.red,
+      < 60 => dmColors.success,
+      < 80 => dmColors.warning,
+      _ => colorScheme.error,
     };
 
     return Card(
@@ -69,7 +72,10 @@ class GpuCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       LinearProgressIndicator(
                         value: gpu.memoryUsagePercent / 100,
-                        color: gaugeColor(gpu.memoryUsagePercent),
+                        color: gaugeColor(
+                          gpu.memoryUsagePercent,
+                          context: context,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(

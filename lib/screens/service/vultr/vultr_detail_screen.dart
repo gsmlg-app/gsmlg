@@ -59,7 +59,9 @@ class _DetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isRunning = instance.powerStatus == 'running';
-    final statusColor = isRunning ? Colors.green : Colors.red;
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+    final statusColor =
+        isRunning ? dmColors.success : Theme.of(context).colorScheme.error;
 
     return CustomScrollView(
       slivers: [
@@ -79,19 +81,22 @@ class _DetailView extends StatelessWidget {
             else ...[
               if (!isRunning)
                 IconButton(
-                  icon: const Icon(Icons.play_arrow, color: Colors.green),
+                  icon: Icon(Icons.play_arrow, color: dmColors.success),
                   onPressed: () => _startInstance(context),
                   tooltip: 'Start',
                 ),
               if (isRunning)
                 IconButton(
-                  icon: const Icon(Icons.stop, color: Colors.red),
+                  icon: Icon(
+                    Icons.stop,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   onPressed: () => _stopInstance(context),
                   tooltip: 'Stop',
                 ),
               if (isRunning)
                 IconButton(
-                  icon: const Icon(Icons.restart_alt, color: Colors.orange),
+                  icon: Icon(Icons.restart_alt, color: dmColors.warning),
                   onPressed: () => _rebootInstance(context),
                   tooltip: 'Reboot',
                 ),

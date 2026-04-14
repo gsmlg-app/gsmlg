@@ -1,3 +1,4 @@
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:monitor_bloc/monitor_bloc.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/cpu_gauge.dart';
@@ -32,6 +33,8 @@ class MetricsDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     final metrics = host.metrics;
     final hostInfo = host.hostInfo;
+    final dmColors = Theme.of(context).extension<DmColorExtension>()!;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -94,7 +97,7 @@ class MetricsDashboard extends StatelessWidget {
                   SparklineChart(
                     values: cpuHistory,
                     maxValue: 100,
-                    color: Colors.green,
+                    color: dmColors.success,
                     height: 60,
                   ),
                 ],
@@ -137,7 +140,7 @@ class MetricsDashboard extends StatelessWidget {
                   SparklineChart(
                     values: memoryHistory,
                     maxValue: 100,
-                    color: Colors.purple,
+                    color: colorScheme.secondary,
                     height: 60,
                   ),
                   if (metrics?.memory != null &&
