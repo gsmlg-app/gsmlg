@@ -7,8 +7,8 @@ environment:
 resolution: workspace
 
 dependencies:
-  bloc: ^9.0.0
-  equatable: ^2.0.7
+  bloc: ^9.2.0
+  equatable: ^2.0.8
   flutter:
     sdk: flutter
   uuid: ^4.3.3

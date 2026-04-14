@@ -138,7 +138,7 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
                                 BluetoothConnectionState.disconnected =>
                                   TextButton(
                                     onPressed: () {
-                                      device!.connect();
+                                      device!.connect(license: License.free);
                                     },
                                     child: const Text('Connect'),
                                   ),

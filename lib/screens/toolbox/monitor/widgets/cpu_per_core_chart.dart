@@ -1,5 +1,5 @@
 import 'package:duskmoon_ui/duskmoon_ui.dart';
-import 'package:data_visualization/data_visualization.dart';
+import 'package:duskmoon_visualization/duskmoon_visualization_compat.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/gauge_painter.dart';
 

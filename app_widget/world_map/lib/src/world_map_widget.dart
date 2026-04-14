@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:data_visualization/data_visualization.dart';
+import 'package:duskmoon_visualization/duskmoon_visualization_compat.dart';
 import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

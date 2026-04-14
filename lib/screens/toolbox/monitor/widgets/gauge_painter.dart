@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:duskmoon_ui/duskmoon_ui.dart';
-import 'package:data_visualization/data_visualization.dart';
+import 'package:duskmoon_visualization/duskmoon_visualization_compat.dart';
 import 'package:flutter/material.dart';
 
 /// Computes a gauge gradient color from [lowColor] through [midColor] to
