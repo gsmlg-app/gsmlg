@@ -204,15 +204,30 @@ class ModelStatusBanner extends StatelessWidget {
   Widget _buildErrorContent(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final modelName = _selectedModelName;
-    final errorText = modelName != null
-        ? '$modelName: ${state.errorMessage ?? 'An error occurred'}'
-        : state.errorMessage ?? 'An error occurred';
+    final errorMessage = state.errorMessage ?? 'An error occurred';
     return Row(
       children: [
         Icon(Icons.error_outline, size: 20, color: colorScheme.error),
         const SizedBox(width: 12),
         Expanded(
-          child: Text(errorText, style: TextStyle(color: colorScheme.error)),
+          child: SelectableText.rich(
+            TextSpan(
+              children: [
+                if (modelName != null)
+                  TextSpan(
+                    text: '$modelName\n',
+                    style: TextStyle(
+                      color: colorScheme.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                TextSpan(
+                  text: errorMessage,
+                  style: TextStyle(color: colorScheme.error),
+                ),
+              ],
+            ),
+          ),
         ),
         TextButton(
           onPressed: () {
