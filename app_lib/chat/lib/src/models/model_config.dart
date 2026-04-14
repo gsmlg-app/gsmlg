@@ -106,19 +106,6 @@ class GemmaModelInfo {
   /// [desktopUrl]).
   bool get hasLiteRtLm => isLiteRtLm || desktopUrl != null;
 
-  /// Whether this model is compatible with the current platform.
-  ///
-  /// Desktop platforms require `.litertlm` format (either the primary [url]
-  /// or a separate [desktopUrl]); mobile platforms support all formats.
-  bool get isCurrentPlatformCompatible {
-    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-      // Desktop requires .litertlm format and does not support vision/
-      // multimodal models (LiteRT-LM server crashes on vision sections).
-      return hasLiteRtLm && !supportsMultimodal;
-    }
-    return true; // Mobile supports all formats
-  }
-
   /// The download URL appropriate for the current platform.
   ///
   /// On desktop, returns [desktopUrl] if available, otherwise [url].
@@ -142,6 +129,16 @@ class GemmaModelInfo {
   // Gemma models
   // ---------------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------------
+  // Platform support:
+  //   _mobileOnly       = {android, ios}
+  //   _allNativePlatforms = {android, ios, macos, linux, windows}
+  //
+  // Desktop (LiteRT-LM gRPC server) requires .litertlm format and does NOT
+  // support vision/multimodal model sections — the server crashes with
+  // "Unknown model type: tf_lite_end_of_vision".
+  // ---------------------------------------------------------------------------
+
   static const _gemma4e2b = GemmaModelInfo(
     id: 'gemma-4-E2B-it',
     displayName: 'Gemma 4 E2B IT',
@@ -150,6 +147,7 @@ class GemmaModelInfo {
     url:
         'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
     modelType: gemma.ModelType.gemmaIt,
+
     needsAuth: false,
     supportsMultimodal: true,
     supportsThinking: true,
@@ -164,6 +162,7 @@ class GemmaModelInfo {
     url:
         'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
     modelType: gemma.ModelType.gemmaIt,
+
     needsAuth: false,
     supportsMultimodal: true,
     supportsThinking: true,
@@ -181,6 +180,7 @@ class GemmaModelInfo {
         'https://huggingface.co/google/gemma-3n-E2B-it-litert-lm/resolve/main/gemma-3n-E2B-it-int4.litertlm',
     desktopSizeLabel: '3.7 GB',
     modelType: gemma.ModelType.gemmaIt,
+
     needsAuth: true,
     supportsMultimodal: true,
     supportsFunctionCalls: true,
@@ -197,6 +197,7 @@ class GemmaModelInfo {
         'https://huggingface.co/google/gemma-3n-E4B-it-litert-lm/resolve/main/gemma-3n-E4B-it-int4.litertlm',
     desktopSizeLabel: '4.9 GB',
     modelType: gemma.ModelType.gemmaIt,
+
     needsAuth: true,
     supportsMultimodal: true,
     supportsAudio: true,
@@ -213,6 +214,7 @@ class GemmaModelInfo {
     desktopUrl:
         'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.litertlm',
     modelType: gemma.ModelType.gemmaIt,
+
     needsAuth: true,
   );
 
@@ -227,6 +229,7 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/gemma-3-270m-it/resolve/main/gemma3-270m-it-q8.litertlm',
     desktopSizeLabel: '304 MB',
     modelType: gemma.ModelType.gemmaIt,
+
     needsAuth: true,
   );
 
@@ -238,6 +241,7 @@ class GemmaModelInfo {
     url:
         'https://huggingface.co/sasha-denisov/function-gemma-270M-it/resolve/main/functiongemma-270M-it.task',
     modelType: gemma.ModelType.functionGemma,
+
     supportsFunctionCalls: true,
   );
 
@@ -254,6 +258,7 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B.litertlm',
     modelType: gemma.ModelType.qwen,
     category: ModelCategory.qwen,
+
     supportsFunctionCalls: true,
   );
 
@@ -268,6 +273,7 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm',
     modelType: gemma.ModelType.qwen,
     category: ModelCategory.qwen,
+
     supportsFunctionCalls: true,
   );
 
@@ -280,6 +286,7 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task',
     modelType: gemma.ModelType.qwen,
     category: ModelCategory.qwen,
+
     supportsFunctionCalls: true,
   );
 
@@ -299,6 +306,7 @@ class GemmaModelInfo {
     desktopSizeLabel: '1.8 GB',
     modelType: gemma.ModelType.deepSeek,
     category: ModelCategory.deepSeek,
+
     supportsThinking: true,
   );
 
@@ -317,6 +325,7 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Phi-4-mini-instruct/resolve/main/Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.litertlm',
     modelType: gemma.ModelType.general,
     category: ModelCategory.phi,
+
     supportsFunctionCalls: true,
   );
 
@@ -333,6 +342,7 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/FastVLM-0.5B/resolve/main/FastVLM-0.5B.litertlm',
     modelType: gemma.ModelType.general,
     category: ModelCategory.other,
+
     supportsMultimodal: true,
   );
 
@@ -345,10 +355,19 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/SmolLM-135M-Instruct/resolve/main/SmolLM-135M-Instruct_multi-prefill-seq_q8_ekv1280.task',
     modelType: gemma.ModelType.general,
     category: ModelCategory.other,
+
   );
 
-  /// All available models.
-  static const availableModels = <GemmaModelInfo>[
+  // ---------------------------------------------------------------------------
+  // Per-platform model lists
+  //
+  // Mobile (Android/iOS): all models, supports .task and .litertlm formats.
+  // Desktop (macOS/Linux/Windows): .litertlm only, no multimodal/vision
+  //   models (LiteRT-LM server crashes on vision sections).
+  // ---------------------------------------------------------------------------
+
+  /// Models available on mobile platforms (Android, iOS).
+  static const mobileModels = <GemmaModelInfo>[
     // Gemma
     _gemma4e2b,
     _gemma4e4b,
@@ -370,12 +389,52 @@ class GemmaModelInfo {
     _smolLM,
   ];
 
+  /// Models available on desktop platforms (macOS, Linux, Windows).
+  ///
+  /// Requirements:
+  /// - Must have a `.litertlm` variant (native or via [desktopUrl]).
+  /// - Must NOT be multimodal (LiteRT-LM server crashes on vision sections).
+  static const desktopModels = <GemmaModelInfo>[
+    // Gemma (text-only with .litertlm)
+    _gemma3_1b,
+    _gemma3_270m,
+    // Qwen
+    _qwen3_06b,
+    _qwen25_15b,
+    // DeepSeek
+    _deepseekR1,
+    // Phi
+    _phi4Mini,
+  ];
+
+  /// All known models across all platforms.
+  static const availableModels = <GemmaModelInfo>[
+    _gemma4e2b,
+    _gemma4e4b,
+    _gemma3n2b,
+    _gemma3n4b,
+    _gemma3_1b,
+    _gemma3_270m,
+    _functionGemma270m,
+    _qwen3_06b,
+    _qwen25_15b,
+    _qwen25_05b,
+    _deepseekR1,
+    _phi4Mini,
+    _fastVLM,
+    _smolLM,
+  ];
+
   /// The default bundled model.
   static const defaultModel = _gemma3_1b;
 
-  /// Models compatible with the current platform.
-  static List<GemmaModelInfo> get platformModels =>
-      availableModels.where((m) => m.isCurrentPlatformCompatible).toList();
+  /// Models for the current platform.
+  static List<GemmaModelInfo> get platformModels {
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+      return desktopModels;
+    }
+    return mobileModels;
+  }
 
   /// The smallest model that does not require authentication and is
   /// compatible with the current platform.
@@ -387,10 +446,19 @@ class GemmaModelInfo {
   }
 
   /// Look up a model by its ID or installed filename.
+  /// Searches [platformModels] first, then falls back to [availableModels]
+  /// so installed-but-incompatible models can still be identified.
   static GemmaModelInfo? findById(String id) {
-    for (final model in availableModels) {
+    // Search platform models first for the common case
+    final result = _findInList(id, platformModels);
+    if (result != null) return result;
+    // Fall back to all models (e.g. model installed from another platform)
+    return _findInList(id, availableModels);
+  }
+
+  static GemmaModelInfo? _findInList(String id, List<GemmaModelInfo> models) {
+    for (final model in models) {
       if (model.id == id) return model;
-      // Match desktop filenames (installed filename may differ from ID)
       if (id.contains(model.id) || model.id.contains(id)) return model;
       final urlFilename =
           Uri.parse(model.downloadUrl).pathSegments.lastOrNull ?? '';
@@ -398,6 +466,9 @@ class GemmaModelInfo {
     }
     return null;
   }
+
+  /// Whether this model is in the current platform's model list.
+  bool get isCurrentPlatformCompatible => platformModels.contains(this);
 }
 
 /// The backend to use for inference.

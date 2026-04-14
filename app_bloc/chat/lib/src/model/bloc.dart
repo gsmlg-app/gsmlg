@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:io' show Platform;
 
 import 'package:app_chat/app_chat.dart';
 import 'package:bloc/bloc.dart';
@@ -125,15 +124,19 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         }
 
         final modelInfo = _findModelInfoByInstalledId(modelId);
-        if (modelInfo != null) {
-          debugPrint(
-              '[GemmaModelBloc] Activating: ${modelInfo.displayName} (id: $modelId)');
-          await _repository.activateModel(modelInfo);
-        } else {
+        if (modelInfo == null) {
           debugPrint(
               '[GemmaModelBloc] No matching model info for: $modelId, skipping');
           continue;
         }
+        if (!modelInfo.isCurrentPlatformCompatible) {
+          debugPrint(
+              '[GemmaModelBloc] ${modelInfo.displayName} is not compatible with this platform, skipping');
+          continue;
+        }
+        debugPrint(
+            '[GemmaModelBloc] Activating: ${modelInfo.displayName} (id: $modelId)');
+        await _repository.activateModel(modelInfo);
 
         if (_repository.status == GemmaModelStatus.installed) {
           debugPrint('[GemmaModelBloc] Auto-loading model into memory...');
@@ -386,11 +389,19 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       emit(state.copyWith(selectedModelId: modelId));
 
       final modelInfo = _findModelInfoByInstalledId(modelId);
-      if (modelInfo != null) {
+      if (modelInfo == null) {
         debugPrint(
-            '[GemmaModelBloc] Activating model: ${modelInfo.displayName}');
-        await _repository.activateModel(modelInfo);
+            '[GemmaModelBloc] No matching model info for: $modelId, skipping');
+        continue;
       }
+      if (!modelInfo.isCurrentPlatformCompatible) {
+        debugPrint(
+            '[GemmaModelBloc] ${modelInfo.displayName} is not compatible with this platform, skipping');
+        continue;
+      }
+      debugPrint(
+          '[GemmaModelBloc] Activating model: ${modelInfo.displayName}');
+      await _repository.activateModel(modelInfo);
 
       if (_repository.status == GemmaModelStatus.installed) {
         debugPrint('[GemmaModelBloc] Auto-loading model into memory...');
@@ -516,6 +527,18 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     await _repository.unloadModel();
 
     final modelInfo = _findModelInfoByInstalledId(event.modelId);
+    if (modelInfo != null &&
+        !modelInfo.isCurrentPlatformCompatible) {
+      debugPrint(
+          '[GemmaModelBloc] ${modelInfo.displayName} is not compatible with this platform');
+      emit(state.copyWith(
+        status: GemmaModelStatus.error,
+        errorMessage:
+            '${modelInfo.displayName} is not compatible with this platform.',
+      ));
+      _suppressStatusStream = false;
+      return;
+    }
     if (modelInfo != null) {
       debugPrint(
           '[GemmaModelBloc] Activating selected model: ${modelInfo.displayName}');
@@ -627,17 +650,12 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     GemmaModelInfo? modelInfo, {
     bool thinkingEnabled = false,
   }) async {
-    // Desktop LiteRT-LM server (v0.13.1) does not support vision model
-    // sections yet — the server crashes with "Unknown model type:
-    // tf_lite_end_of_vision" when loading multimodal .litertlm files.
-    // On desktop, reject multimodal models entirely (the crash happens
-    // during model file parsing, not from the enableVision flag).
-    final isDesktop =
-        Platform.isMacOS || Platform.isLinux || Platform.isWindows;
-    if (isDesktop && (modelInfo?.supportsMultimodal ?? false)) {
+    // Platform compatibility is enforced by supportedPlatforms on each model.
+    // Models incompatible with the current platform are filtered out before
+    // reaching this point (_onInitialize, _autoSelectAndLoad, _onSelect).
+    if (modelInfo != null && !modelInfo.isCurrentPlatformCompatible) {
       _repository.setError(
-        '${modelInfo!.displayName} uses vision components not yet '
-        'supported on desktop. Please select a text-only model.',
+        '${modelInfo.displayName} is not compatible with this platform.',
       );
       return;
     }
