@@ -95,6 +95,36 @@ class GemmaModelInfo {
   /// Whether this model supports function/tool calling.
   final bool supportsFunctionCalls;
 
+  // ---------------------------------------------------------------------------
+  // Platform-effective capabilities
+  //
+  // These getters account for platform-specific limitations in LiteRT-LM:
+  //   Desktop: vision broken (hallucinates), function calling NOT supported.
+  //   iOS .litertlm: text only, but iOS also uses .task with full support.
+  // ---------------------------------------------------------------------------
+
+  /// Whether vision/multimodal works on the current platform.
+  /// Desktop LiteRT-LM: vision is broken (model hallucinates).
+  bool get effectiveSupportsMultimodal {
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) return false;
+    return supportsMultimodal;
+  }
+
+  /// Whether audio input works on the current platform.
+  /// Supported on Android and desktop (via LiteRT-LM).
+  bool get effectiveSupportsAudio => supportsAudio;
+
+  /// Whether function calling works on the current platform.
+  /// Desktop LiteRT-LM: function calling is NOT supported.
+  bool get effectiveSupportsFunctionCalls {
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) return false;
+    return supportsFunctionCalls;
+  }
+
+  /// Whether thinking mode works on the current platform.
+  /// Supported on all platforms.
+  bool get effectiveSupportsThinking => supportsThinking;
+
   /// Whether this model is bundled as an app asset.
   bool get isBundled => assetPath != null;
 
@@ -393,9 +423,15 @@ class GemmaModelInfo {
   ///
   /// Requirements:
   /// - Must have a `.litertlm` variant (native or via [desktopUrl]).
-  /// - Must NOT be multimodal (LiteRT-LM server crashes on vision sections).
+  /// - Must NOT contain vision/audio sections — the LiteRT-LM server crashes
+  ///   with "Unknown model type: tf_lite_end_of_vision" when parsing them,
+  ///   even with enableVision=false.
+  ///
+  /// Desktop limitations (handled by effective* getters):
+  /// - Function calling is NOT supported by LiteRT-LM — disabled at runtime.
+  /// - Thinking mode works normally.
   static const desktopModels = <GemmaModelInfo>[
-    // Gemma (text-only with .litertlm)
+    // Gemma 3 text-only
     _gemma3_1b,
     _gemma3_270m,
     // Qwen
@@ -405,6 +441,10 @@ class GemmaModelInfo {
     _deepseekR1,
     // Phi
     _phi4Mini,
+    // Excluded — .litertlm contains vision/audio sections that crash the server:
+    //   _gemma4e2b, _gemma4e4b, _gemma3n2b, _gemma3n4b, _fastVLM
+    // Excluded — no .litertlm variant:
+    //   _functionGemma270m, _qwen25_05b, _smolLM
   ];
 
   /// All known models across all platforms.

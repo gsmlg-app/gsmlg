@@ -564,6 +564,14 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
           errorMessage: _repository.lastError ?? 'Model failed to load.',
         ));
       }
+    } else {
+      debugPrint(
+          '[GemmaModelBloc] Model activation failed, repo status: ${_repository.status}, error: ${_repository.lastError}');
+      emit(state.copyWith(
+        status: GemmaModelStatus.error,
+        errorMessage: _repository.lastError ??
+            'Failed to activate ${modelInfo?.displayName ?? event.modelId}.',
+      ));
     }
     _suppressStatusStream = false;
   }
@@ -667,26 +675,24 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     GemmaModelInfo? modelInfo, {
     bool thinkingEnabled = false,
   }) async {
-    // Platform compatibility is enforced by supportedPlatforms on each model.
-    // Models incompatible with the current platform are filtered out before
-    // reaching this point (_onInitialize, _autoSelectAndLoad, _onSelect).
-    if (modelInfo != null && !modelInfo.isCurrentPlatformCompatible) {
-      _repository.setError(
-        '${modelInfo.displayName} is not compatible with this platform.',
-      );
-      return;
-    }
-
     final enableThinking =
-        thinkingEnabled && (modelInfo?.supportsThinking ?? false);
+        thinkingEnabled && (modelInfo?.effectiveSupportsThinking ?? false);
+
+    debugPrint(
+        '[GemmaModelBloc] _loadModelWithCapabilities: '
+        'model=${modelInfo?.displayName}, '
+        'image=${modelInfo?.effectiveSupportsMultimodal}, '
+        'audio=${modelInfo?.effectiveSupportsAudio}, '
+        'thinking=$enableThinking, '
+        'funcCalls=${modelInfo?.effectiveSupportsFunctionCalls}');
 
     await _repository.loadModel(
       config,
-      supportImage: modelInfo?.supportsMultimodal ?? false,
-      supportAudio: modelInfo?.supportsAudio ?? false,
+      supportImage: modelInfo?.effectiveSupportsMultimodal ?? false,
+      supportAudio: modelInfo?.effectiveSupportsAudio ?? false,
       isThinking: enableThinking,
-      supportsFunctionCalls: modelInfo?.supportsFunctionCalls ?? false,
-      tools: (modelInfo?.supportsFunctionCalls ?? false)
+      supportsFunctionCalls: modelInfo?.effectiveSupportsFunctionCalls ?? false,
+      tools: (modelInfo?.effectiveSupportsFunctionCalls ?? false)
           ? _toolExecutor.toolDefinitions
           : const [],
       nativeModelType: modelInfo?.modelType,

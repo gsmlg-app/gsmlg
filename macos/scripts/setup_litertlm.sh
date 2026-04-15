@@ -67,13 +67,43 @@ fi
 
 # --- JAR ---
 JAR_DEST="$RESOURCES/litertlm-server.jar"
-if [[ ! -f "$JAR_DEST" ]]; then
+JAR_MIN_SIZE=1000000  # Real JAR is ~133 MB; LFS pointer is ~134 bytes
+
+jar_valid=false
+if [[ -f "$JAR_DEST" ]]; then
+    jar_size=$(stat -f%z "$JAR_DEST" 2>/dev/null || echo 0)
+    if [[ "$jar_size" -gt "$JAR_MIN_SIZE" ]]; then
+        jar_valid=true
+    else
+        echo "JAR in bundle is too small (${jar_size} bytes) — likely a Git LFS pointer, replacing..."
+        rm -f "$JAR_DEST"
+    fi
+fi
+
+if [[ "$jar_valid" == false ]]; then
     JAR_SRC="$JAR_CACHE/litertlm-server.jar"
     if [[ -f "$JAR_SRC" ]]; then
-        echo "Copying JAR from cache..."
-        cp "$JAR_SRC" "$JAR_DEST"
-    else
-        echo "warning: litertlm-server.jar not found in cache"
+        jar_src_size=$(stat -f%z "$JAR_SRC" 2>/dev/null || echo 0)
+        if [[ "$jar_src_size" -gt "$JAR_MIN_SIZE" ]]; then
+            echo "Copying JAR from cache..."
+            cp "$JAR_SRC" "$JAR_DEST"
+        else
+            echo "warning: cached JAR is too small (${jar_src_size} bytes), skipping"
+        fi
+    fi
+
+    # Download if still missing
+    if [[ ! -f "$JAR_DEST" ]]; then
+        JAR_VERSION="0.13.1"
+        JAR_URL="https://github.com/DenisovAV/flutter_gemma/releases/download/v${JAR_VERSION}/litertlm-server.jar"
+        echo "Downloading JAR from $JAR_URL..."
+        mkdir -p "$JAR_CACHE"
+        if curl -L -o "$JAR_CACHE/litertlm-server.jar" "$JAR_URL" --fail --retry 3 --progress-bar; then
+            cp "$JAR_CACHE/litertlm-server.jar" "$JAR_DEST"
+            echo "JAR downloaded and installed"
+        else
+            echo "warning: Failed to download litertlm-server.jar"
+        fi
     fi
 else
     echo "JAR already in bundle"

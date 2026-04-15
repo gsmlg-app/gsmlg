@@ -160,10 +160,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         return ChatInputBar(
                           enabled: canSend,
                           isStreaming: chatState.isStreaming,
-                          supportsImage: modelInfo?.supportsMultimodal ?? false,
-                          supportsAudio: modelInfo?.supportsAudio ?? false,
+                          supportsImage: modelInfo?.effectiveSupportsMultimodal ?? false,
+                          supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
                           supportsThinking:
-                              modelInfo?.supportsThinking ?? false,
+                              modelInfo?.effectiveSupportsThinking ?? false,
                           thinkingEnabled: settingsState.thinkingEnabled,
                           selectedModelName: modelInfo?.displayName,
                           onModelTap: () =>

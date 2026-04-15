@@ -110,8 +110,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       return ChatInputBar(
                         enabled: canSend,
                         isStreaming: chatState.isStreaming,
-                        supportsImage: modelInfo?.supportsMultimodal ?? false,
-                        supportsAudio: modelInfo?.supportsAudio ?? false,
+                        supportsImage: modelInfo?.effectiveSupportsMultimodal ?? false,
+                        supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
                         onSend: (message, {imageBytes, audioBytes}) {
                           final settingsState = context
                               .read<ChatSettingsBloc>()
