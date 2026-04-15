@@ -42,6 +42,19 @@ class _ChatScreenState extends State<ChatScreen> {
     context.read<ChatBloc>().add(const ChatLoadHistory());
   }
 
+  /// Extract a short display name from an installed model filename.
+  String _shortModelName(String modelId) {
+    // Strip file extension and common suffixes
+    var name = modelId;
+    for (final ext in ['.litertlm', '.task', '.bin']) {
+      if (name.endsWith(ext)) name = name.substring(0, name.length - ext.length);
+    }
+    // Strip common suffixes like _multi-prefill-seq_q8_ekv4096
+    final suffixIdx = name.indexOf('_multi-prefill');
+    if (suffixIdx > 0) name = name.substring(0, suffixIdx);
+    return name;
+  }
+
   void _startNewConversation() {
     final settingsState = context.read<ChatSettingsBloc>().state;
     context.read<ChatBloc>().add(
@@ -165,7 +178,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           supportsThinking:
                               modelInfo?.effectiveSupportsThinking ?? false,
                           thinkingEnabled: settingsState.thinkingEnabled,
-                          selectedModelName: modelInfo?.displayName,
+                          selectedModelName: modelInfo?.displayName ??
+                              (selectedId != null ? _shortModelName(selectedId) : null),
                           selectedModelId: selectedId,
                           installedModels: modelState.installedModels,
                           onModelSelect: (modelId) {

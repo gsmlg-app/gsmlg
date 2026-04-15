@@ -112,6 +112,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         isStreaming: chatState.isStreaming,
                         supportsImage: modelInfo?.effectiveSupportsMultimodal ?? false,
                         supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
+                        selectedModelName: modelInfo?.displayName,
+                        selectedModelId: selectedId,
+                        installedModels: modelState.installedModels,
+                        onModelSelect: (modelId) {
+                          context.read<GemmaModelBloc>().add(
+                            GemmaModelSelect(modelId: modelId),
+                          );
+                        },
                         onSend: (message, {imageBytes, audioBytes}) {
                           final settingsState = context
                               .read<ChatSettingsBloc>()

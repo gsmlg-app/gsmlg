@@ -712,16 +712,25 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     final enableThinking =
         thinkingEnabled && (modelInfo?.effectiveSupportsThinking ?? false);
 
+    // Cap maxTokens to the model's KV cache size to avoid MediaPipe errors
+    // like "Max number of tokens is larger than the maximum cache size".
+    var effectiveConfig = config;
+    final kvCacheSize = modelInfo?.maxKvCacheSize;
+    if (kvCacheSize != null && config.maxTokens > kvCacheSize) {
+      effectiveConfig = config.copyWith(maxTokens: kvCacheSize);
+    }
+
     debugPrint(
         '[GemmaModelBloc] _loadModelWithCapabilities: '
         'model=${modelInfo?.displayName}, '
         'image=${modelInfo?.effectiveSupportsMultimodal}, '
         'audio=${modelInfo?.effectiveSupportsAudio}, '
         'thinking=$enableThinking, '
-        'funcCalls=${modelInfo?.effectiveSupportsFunctionCalls}');
+        'funcCalls=${modelInfo?.effectiveSupportsFunctionCalls}, '
+        'maxTokens=${effectiveConfig.maxTokens}');
 
     await _repository.loadModel(
-      config,
+      effectiveConfig,
       supportImage: modelInfo?.effectiveSupportsMultimodal ?? false,
       supportAudio: modelInfo?.effectiveSupportsAudio ?? false,
       isThinking: enableThinking,

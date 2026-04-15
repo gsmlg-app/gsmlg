@@ -207,28 +207,35 @@ class ModelStatusBanner extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final modelName = _selectedModelName;
     final errorMessage = state.errorMessage ?? 'An error occurred';
+    // Extract just the first meaningful line from verbose platform exceptions.
+    final shortError = _shortenError(errorMessage);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.error_outline, size: 20, color: colorScheme.error),
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(Icons.error_outline, size: 20, color: colorScheme.error),
+        ),
         const SizedBox(width: 12),
         Expanded(
-          child: SelectableText.rich(
-            TextSpan(
-              children: [
-                if (modelName != null)
-                  TextSpan(
-                    text: '$modelName\n',
-                    style: TextStyle(
-                      color: colorScheme.error,
-                      fontWeight: FontWeight.bold,
-                    ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (modelName != null)
+                Text(
+                  modelName,
+                  style: TextStyle(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.bold,
                   ),
-                TextSpan(
-                  text: errorMessage,
-                  style: TextStyle(color: colorScheme.error),
                 ),
-              ],
-            ),
+              Text(
+                shortError,
+                style: TextStyle(color: colorScheme.error),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
         TextButton(
@@ -245,5 +252,39 @@ class ModelStatusBanner extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Extracts a short, user-friendly message from verbose platform exceptions.
+  static String _shortenError(String error) {
+    // Look for the core MediaPipe error message
+    final cacheMatch = RegExp(
+      r'Max number of tokens is larger than the maximum cache size supported: (\d+) > (\d+)',
+    ).firstMatch(error);
+    if (cacheMatch != null) {
+      return 'Max tokens (${cacheMatch.group(1)}) exceeds model cache size (${cacheMatch.group(2)}). Try restarting the app.';
+    }
+
+    // Strip PlatformException wrapper and stack traces
+    var msg = error;
+    final platformIdx = msg.indexOf('PlatformException(');
+    if (platformIdx >= 0) {
+      // Extract the message between the second comma-separated field
+      final inner = msg.substring(platformIdx);
+      final parts = inner.split(', ');
+      if (parts.length >= 2) {
+        msg = parts[1];
+        // Trim at first stack trace marker
+        final traceIdx = msg.indexOf('=== Source Location Trace');
+        if (traceIdx > 0) msg = msg.substring(0, traceIdx).trim();
+        final stackIdx = msg.indexOf('\n    at ');
+        if (stackIdx > 0) msg = msg.substring(0, stackIdx).trim();
+      }
+    }
+
+    // Cap at a reasonable length
+    if (msg.length > 200) {
+      msg = '${msg.substring(0, 200)}...';
+    }
+    return msg;
   }
 }

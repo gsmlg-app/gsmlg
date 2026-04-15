@@ -155,6 +155,20 @@ class GemmaModelInfo {
     return sizeLabel;
   }
 
+  /// Maximum KV cache size supported by this model on the current platform.
+  ///
+  /// Parsed from the download URL filename (e.g. `ekv1280` → 1280).
+  /// Returns `null` if no explicit cache size is found in the URL, in which
+  /// case the caller should use its own default.
+  int? get maxKvCacheSize {
+    final effectiveUrl = downloadUrl;
+    final match = RegExp(r'ekv(\d+)').firstMatch(effectiveUrl);
+    if (match != null) {
+      return int.tryParse(match.group(1)!);
+    }
+    return null;
+  }
+
   // ---------------------------------------------------------------------------
   // Gemma models
   // ---------------------------------------------------------------------------
