@@ -53,6 +53,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
 
   static const _selectedModelKey = 'gemma_selected_model_id';
   static const _thinkingEnabledKey = 'chat_thinking_enabled';
+  static const _loadingModelKey = 'gemma_loading_model_id';
 
   final GemmaRepository _repository;
   final SharedPreferences _preferences;
@@ -96,6 +97,15 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     final savedId = _preferences.getString(_selectedModelKey);
     debugPrint('[GemmaModelBloc] Persisted selectedModelId: $savedId');
 
+    // Detect crash-on-load: if _loadingModelKey is still set, the previous
+    // load attempt crashed the process. Skip that model this time.
+    final crashedModelId = _preferences.getString(_loadingModelKey);
+    if (crashedModelId != null) {
+      debugPrint(
+          '[GemmaModelBloc] Previous load of $crashedModelId crashed the app, will skip it');
+      await _preferences.remove(_loadingModelKey);
+    }
+
     emit(state.copyWith(
       installedModels: installed,
       selectedModelId: savedId,
@@ -118,6 +128,13 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       var loaded = false;
       for (final modelId in candidates) {
         debugPrint('[GemmaModelBloc] Trying model candidate: $modelId');
+
+        // Skip model that crashed the app on previous launch.
+        if (modelId == crashedModelId) {
+          debugPrint(
+              '[GemmaModelBloc] Skipping $modelId (crashed on previous launch)');
+          continue;
+        }
 
         if (modelId != state.selectedModelId) {
           await _preferences.setString(_selectedModelKey, modelId);
@@ -145,11 +162,20 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
             status: GemmaModelStatus.loading,
             modelType: event.modelType,
           ));
+
+          // Mark which model we're about to load. If the app crashes during
+          // native model loading (e.g. GPU OOM), this key persists and we
+          // skip this model on the next launch.
+          await _preferences.setString(_loadingModelKey, modelId);
+
           await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
               thinkingEnabled:
                   _preferences.getBool(_thinkingEnabledKey) ?? false);
           debugPrint(
               '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
+
+          // Clear the crash-detection key on successful load.
+          await _preferences.remove(_loadingModelKey);
 
           if (_repository.status == GemmaModelStatus.ready) {
             debugPrint('[GemmaModelBloc] Model $modelId loaded successfully');
@@ -549,8 +575,12 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     if (_repository.status == GemmaModelStatus.installed) {
       debugPrint('[GemmaModelBloc] Auto-loading selected model...');
       emit(state.copyWith(status: GemmaModelStatus.loading));
+
+      await _preferences.setString(_loadingModelKey, event.modelId);
       await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
           thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
+      await _preferences.remove(_loadingModelKey);
+
       debugPrint(
           '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
