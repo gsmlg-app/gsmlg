@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, Process;
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
@@ -428,9 +428,22 @@ class GemmaModelInfo {
   /// The default bundled model.
   static const defaultModel = _gemma3_1b;
 
+  /// Whether the current desktop machine has an arm64 CPU.
+  /// LiteRT-LM native libraries are arm64-only; Intel (x86_64) Macs
+  /// cannot run the gRPC inference server.
+  static final bool _isDesktopArm64 = () {
+    try {
+      final result = Process.runSync('uname', ['-m']);
+      return (result.stdout as String).trim() == 'arm64';
+    } catch (_) {
+      return false;
+    }
+  }();
+
   /// Models for the current platform.
   static List<GemmaModelInfo> get platformModels {
     if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+      if (!_isDesktopArm64) return const [];
       return desktopModels;
     }
     return mobileModels;
