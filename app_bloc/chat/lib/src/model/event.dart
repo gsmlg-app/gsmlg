@@ -113,11 +113,22 @@ final class _GemmaModelStatusChanged extends GemmaModelEvent {
   final GemmaModelStatus status;
 }
 
-/// Internal event for download progress updates.
+/// Internal event for download progress updates (legacy shared stream).
 final class _GemmaModelDownloadProgress extends GemmaModelEvent {
   const _GemmaModelDownloadProgress(this.progress);
 
   final DownloadProgress progress;
+}
+
+/// Internal event for per-model download progress.
+final class _GemmaModelPerModelProgress extends GemmaModelEvent {
+  const _GemmaModelPerModelProgress({
+    required this.modelId,
+    required this.percentage,
+  });
+
+  final String modelId;
+  final double percentage;
 }
 
 /// Internal event fired when a single model download completes.

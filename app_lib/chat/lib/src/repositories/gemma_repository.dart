@@ -164,18 +164,22 @@ class GemmaRepository {
   /// [nativeModelType] - The flutter_gemma ModelType for the model.
   /// [url] - The URL to download the model from (e.g., Hugging Face).
   /// [token] - Optional authentication token for the download.
+  /// [onProgress] - Per-download progress callback for parallel downloads.
   Future<void> installModel({
     required gemma.ModelType nativeModelType,
     required String url,
     String? token,
+    void Function(double percentage)? onProgress,
   }) async {
     debugPrint(
         '[GemmaRepo] installModel(nativeModelType=$nativeModelType, url=$url, hasToken=${token != null})');
-    _setStatus(GemmaModelStatus.downloading);
-    _progressController.add(const DownloadProgress(percentage: 0));
 
     try {
-      final filePath = await _downloadFile(url: url, token: token);
+      final filePath = await _downloadFile(
+        url: url,
+        token: token,
+        onProgress: onProgress,
+      );
 
       debugPrint(
           '[GemmaRepo] Installing model from downloaded file: $filePath');
@@ -188,12 +192,11 @@ class GemmaRepository {
       // Do NOT delete the downloaded file — flutter_gemma's fromFile()
       // registers the file path rather than copying it, so the file must
       // remain on disk for loadModel/getActiveModel to find it.
-      _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
       debugPrint('[GemmaRepo] installModel FAILED: $e');
       debugPrint('[GemmaRepo] Error type: ${e.runtimeType}');
       debugPrint('[GemmaRepo] Stack trace: $st');
-      _setError('Failed to install model: $e');
+      rethrow;
     }
   }
 
@@ -201,22 +204,23 @@ class GemmaRepository {
   ///
   /// Downloads using dart:io HttpClient with proxy and HTTP Range requests
   /// so that interrupted downloads can be resumed.
+  /// [onProgress] - Per-download progress callback for parallel downloads.
   Future<void> installModelWithProxy({
     required gemma.ModelType nativeModelType,
     required String url,
     required String proxyUrl,
     String? token,
+    void Function(double percentage)? onProgress,
   }) async {
     debugPrint(
         '[GemmaRepo] installModelWithProxy(nativeModelType=$nativeModelType, url=$url, proxy=$proxyUrl, hasToken=${token != null})');
-    _setStatus(GemmaModelStatus.downloading);
-    _progressController.add(const DownloadProgress(percentage: 0));
 
     try {
       final filePath = await _downloadFile(
         url: url,
         proxyUrl: proxyUrl,
         token: token,
+        onProgress: onProgress,
       );
 
       debugPrint(
@@ -226,13 +230,11 @@ class GemmaRepository {
         fileType: _fileTypeFromPath(url),
       ).fromFile(filePath).install();
       debugPrint('[GemmaRepo] fromFile().install() completed successfully');
-
-      _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
       debugPrint('[GemmaRepo] installModelWithProxy FAILED: $e');
       debugPrint('[GemmaRepo] Error type: ${e.runtimeType}');
       debugPrint('[GemmaRepo] Stack trace: $st');
-      _setError('Failed to install model via proxy: $e');
+      rethrow;
     }
   }
 
@@ -249,6 +251,7 @@ class GemmaRepository {
     required String url,
     String? proxyUrl,
     String? token,
+    void Function(double percentage)? onProgress,
   }) async {
     final docsDir = await getApplicationDocumentsDirectory();
 
@@ -327,6 +330,7 @@ class GemmaRepository {
       // Report initial progress for resumed downloads
       if (received > 0 && totalBytes > 0) {
         final pct = (received / totalBytes * 100).clamp(0.0, 100.0);
+        onProgress?.call(pct);
         _progressController.add(DownloadProgress(percentage: pct));
       }
 
@@ -342,6 +346,7 @@ class GemmaRepository {
                 '[GemmaRepo] Download progress: $percentInt% ($received / $totalBytes bytes)');
             lastLogPercent = percentInt;
           }
+          onProgress?.call(percent);
           _progressController.add(DownloadProgress(percentage: percent));
         }
       }

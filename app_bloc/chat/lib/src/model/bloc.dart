@@ -40,6 +40,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     on<GemmaModelDismissFailure>(_onDismissFailure);
     on<_GemmaModelStatusChanged>(_onStatusChanged);
     on<_GemmaModelDownloadProgress>(_onDownloadProgress);
+    on<_GemmaModelPerModelProgress>(_onPerModelProgress);
     on<_GemmaModelDownloadComplete>(_onDownloadComplete);
 
     _statusSubscription = _repository.statusStream.listen((status) {
@@ -67,10 +68,6 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
   /// Queue of pending download requests when max concurrent is reached.
   final Queue<GemmaModelInstall> _downloadQueue = Queue();
 
-  /// Tracks which model ID the repository is currently downloading for
-  /// progress mapping. Only the actively-downloading model gets progress
-  /// events from the single repository stream.
-  String? _activeRepositoryDownloadModelId;
 
   Future<void> _onInitialize(
     GemmaModelInitialize event,
@@ -262,14 +259,20 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
 
   void _startDownload(GemmaModelInstall event) {
     final modelId = event.modelId ?? event.url;
-    _activeRepositoryDownloadModelId = modelId;
 
     final proxy = state.proxyUrl;
     debugPrint(
         '[GemmaModelBloc] Starting download for $modelId, proxy: $proxy');
 
-    // Run download in a fire-and-forget fashion so multiple can be queued.
-    // The repository streams progress/status that we handle via events.
+    // Per-model progress callback — dispatches events with the correct modelId.
+    void onProgress(double percentage) {
+      add(_GemmaModelPerModelProgress(
+        modelId: modelId,
+        percentage: percentage,
+      ));
+    }
+
+    // Run download in a fire-and-forget fashion so multiple can run in parallel.
     () async {
       String? errorMessage;
       try {
@@ -279,12 +282,14 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
             url: event.url,
             proxyUrl: proxy,
             token: event.token,
+            onProgress: onProgress,
           );
         } else {
           await _repository.installModel(
             nativeModelType: event.nativeModelType,
             url: event.url,
             token: event.token,
+            onProgress: onProgress,
           );
         }
       } catch (e) {
@@ -294,7 +299,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       } finally {
         add(_GemmaModelDownloadComplete(
           modelId: modelId,
-          errorMessage: errorMessage ?? _repository.lastError,
+          errorMessage: errorMessage,
         ));
       }
     }();
@@ -676,21 +681,20 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     _GemmaModelDownloadProgress event,
     Emitter<GemmaModelState> emit,
   ) {
-    final modelId = _activeRepositoryDownloadModelId;
-    if (modelId == null) return;
+    // Legacy handler for the shared progress stream.
+    // Per-model progress is now handled by _onPerModelProgress.
+  }
 
-    final pct = event.progress.percentage.toInt();
-    if (pct % 10 == 0) {
-      debugPrint(
-          '[GemmaModelBloc] Download progress ($modelId): ${event.progress}');
-    }
-
-    // Update progress for the specific model in activeDownloads
+  void _onPerModelProgress(
+    _GemmaModelPerModelProgress event,
+    Emitter<GemmaModelState> emit,
+  ) {
+    // Update progress for the specific model in activeDownloads.
     final updatedDownloads = state.activeDownloads.map((d) {
-      if (d.modelId == modelId) {
+      if (d.modelId == event.modelId) {
         return ModelDownloadProgress(
-          modelId: modelId,
-          progress: event.progress.percentage,
+          modelId: event.modelId,
+          progress: event.percentage,
         );
       }
       return d;
