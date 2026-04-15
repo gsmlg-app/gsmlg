@@ -127,7 +127,22 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           title: Text(displayName),
           description: info != null ? Text(info.description) : null,
           trailing: isSelected
-              ? const Icon(Icons.check)
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Deselect model',
+                      onPressed: () {
+                        context.read<GemmaModelBloc>().add(
+                          const GemmaModelDeselect(),
+                        );
+                      },
+                    ),
+                  ],
+                )
               : IconButton(
                   icon: Icon(
                     Icons.delete_outline,

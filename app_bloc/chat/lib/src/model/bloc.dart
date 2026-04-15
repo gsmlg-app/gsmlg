@@ -35,6 +35,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     on<GemmaModelUnload>(_onUnload);
     on<GemmaModelDelete>(_onDelete);
     on<GemmaModelSelect>(_onSelect);
+    on<GemmaModelDeselect>(_onDeselect);
     on<GemmaModelDeleteById>(_onDeleteById);
     on<GemmaModelDismissFailure>(_onDismissFailure);
     on<_GemmaModelStatusChanged>(_onStatusChanged);
@@ -565,6 +566,22 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       }
     }
     _suppressStatusStream = false;
+  }
+
+  Future<void> _onDeselect(
+    GemmaModelDeselect event,
+    Emitter<GemmaModelState> emit,
+  ) async {
+    debugPrint('[GemmaModelBloc] _onDeselect');
+    await _preferences.remove(_selectedModelKey);
+    await _repository.unloadModel();
+
+    emit(state.copyWith(
+      status: state.installedModels.isNotEmpty
+          ? GemmaModelStatus.installed
+          : GemmaModelStatus.notInstalled,
+      clearSelectedModel: true,
+    ));
   }
 
   Future<void> _onDeleteById(

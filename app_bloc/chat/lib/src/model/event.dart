@@ -87,6 +87,11 @@ final class GemmaModelSelect extends GemmaModelEvent {
   final String modelId;
 }
 
+/// Deselect the current model without deleting it.
+final class GemmaModelDeselect extends GemmaModelEvent {
+  const GemmaModelDeselect();
+}
+
 /// Delete a model by its installed ID string.
 final class GemmaModelDeleteById extends GemmaModelEvent {
   const GemmaModelDeleteById({required this.modelId});

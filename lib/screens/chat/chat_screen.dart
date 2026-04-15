@@ -115,19 +115,27 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             // Chat messages
             Expanded(
-              child: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-                buildWhen: (prev, curr) =>
-                    prev.thinkingEnabled != curr.thinkingEnabled,
-                builder: (context, settingsState) {
-                  return BlocBuilder<ChatBloc, ChatState>(
-                    builder: (context, state) {
-                      if (state.conversation == null) {
-                        return _buildWelcomeView();
-                      }
-                      return ChatMessageList(
-                        messages: state.messages,
-                        isStreaming: state.isStreaming,
-                        showThinking: settingsState.thinkingEnabled,
+              child: BlocBuilder<GemmaModelBloc, GemmaModelState>(
+                buildWhen: (prev, curr) => prev.status != curr.status,
+                builder: (context, modelState) {
+                  if (GemmaModelInfo.platformModels.isEmpty) {
+                    return _buildUnavailableView();
+                  }
+                  return BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+                    buildWhen: (prev, curr) =>
+                        prev.thinkingEnabled != curr.thinkingEnabled,
+                    builder: (context, settingsState) {
+                      return BlocBuilder<ChatBloc, ChatState>(
+                        builder: (context, state) {
+                          if (state.conversation == null) {
+                            return _buildWelcomeView();
+                          }
+                          return ChatMessageList(
+                            messages: state.messages,
+                            isStreaming: state.isStreaming,
+                            showThinking: settingsState.thinkingEnabled,
+                          );
+                        },
                       );
                     },
                   );
@@ -198,6 +206,41 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
                 );
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnavailableView() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.desktop_access_disabled,
+              size: 64,
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'On-device AI is not available on this device',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'On-device models require Apple Silicon (arm64) on macOS.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
             ),
           ],
         ),
