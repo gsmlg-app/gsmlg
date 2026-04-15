@@ -166,6 +166,13 @@ class _ChatScreenState extends State<ChatScreen> {
                               modelInfo?.effectiveSupportsThinking ?? false,
                           thinkingEnabled: settingsState.thinkingEnabled,
                           selectedModelName: modelInfo?.displayName,
+                          selectedModelId: selectedId,
+                          installedModels: modelState.installedModels,
+                          onModelSelect: (modelId) {
+                            context.read<GemmaModelBloc>().add(
+                              GemmaModelSelect(modelId: modelId),
+                            );
+                          },
                           onModelTap: () =>
                               context.goNamed(ChatSettingsScreen.name),
                           onThinkingToggle: (enabled) {

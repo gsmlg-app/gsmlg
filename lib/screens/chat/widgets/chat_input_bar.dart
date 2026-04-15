@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:app_chat/app_chat.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -17,10 +18,13 @@ class ChatInputBar extends StatefulWidget {
     this.supportsThinking = false,
     this.thinkingEnabled = false,
     this.selectedModelName,
+    this.installedModels = const [],
+    this.selectedModelId,
     required this.onSend,
     required this.onStop,
     this.onThinkingToggle,
     this.onModelTap,
+    this.onModelSelect,
   });
 
   final bool enabled;
@@ -30,6 +34,8 @@ class ChatInputBar extends StatefulWidget {
   final bool supportsThinking;
   final bool thinkingEnabled;
   final String? selectedModelName;
+  final List<String> installedModels;
+  final String? selectedModelId;
   final void Function(
     String text, {
     Uint8List? imageBytes,
@@ -38,6 +44,7 @@ class ChatInputBar extends StatefulWidget {
   final VoidCallback onStop;
   final ValueChanged<bool>? onThinkingToggle;
   final VoidCallback? onModelTap;
+  final ValueChanged<String>? onModelSelect;
 
   @override
   State<ChatInputBar> createState() => _ChatInputBarState();
@@ -307,33 +314,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
                         const Spacer(),
                         // Right: model selector + send
                         if (widget.selectedModelName != null)
-                          InkWell(
-                            onTap: widget.onModelTap,
-                            borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    widget.selectedModelName!,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Icon(
-                                    Icons.arrow_drop_down,
-                                    size: 18,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ],
-                              ),
-                            ),
+                          _ModelSelector(
+                            selectedModelName: widget.selectedModelName!,
+                            selectedModelId: widget.selectedModelId,
+                            installedModels: widget.installedModels,
+                            onModelSelect: widget.onModelSelect,
+                            onModelTap: widget.onModelTap,
                           ),
                         const SizedBox(width: 4),
                         widget.isStreaming
@@ -361,5 +347,117 @@ class _ChatInputBarState extends State<ChatInputBar> {
         ),
       ),
     );
+  }
+}
+
+class _ModelSelector extends StatelessWidget {
+  const _ModelSelector({
+    required this.selectedModelName,
+    this.selectedModelId,
+    this.installedModels = const [],
+    this.onModelSelect,
+    this.onModelTap,
+  });
+
+  final String selectedModelName;
+  final String? selectedModelId;
+  final List<String> installedModels;
+  final ValueChanged<String>? onModelSelect;
+  final VoidCallback? onModelTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Build the list of installed platform-compatible models.
+    final compatibleModels = <(String id, GemmaModelInfo info)>[];
+    for (final id in installedModels) {
+      final info = GemmaModelInfo.findById(id);
+      if (info != null && info.isCurrentPlatformCompatible) {
+        compatibleModels.add((id, info));
+      }
+    }
+
+    return InkWell(
+      onTap: compatibleModels.length > 1 && onModelSelect != null
+          ? () => _showModelMenu(context, compatibleModels, colorScheme)
+          : onModelTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                selectedModelName,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showModelMenu(
+    BuildContext context,
+    List<(String id, GemmaModelInfo info)> models,
+    ColorScheme colorScheme,
+  ) {
+    final button = context.findRenderObject() as RenderBox;
+    final overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu<String>(
+      context: context,
+      position: position,
+      items: models.map((entry) {
+        final (id, info) = entry;
+        final isSelected = id == selectedModelId;
+        return PopupMenuItem<String>(
+          value: id,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  info.displayName,
+                  style: TextStyle(
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Icon(Icons.check, size: 18, color: colorScheme.primary),
+            ],
+          ),
+        );
+      }).toList(),
+    ).then((selectedId) {
+      if (selectedId != null && selectedId != selectedModelId) {
+        onModelSelect?.call(selectedId);
+      }
+    });
   }
 }
