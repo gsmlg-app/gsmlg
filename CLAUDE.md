@@ -35,9 +35,6 @@ melos run fix              # dart fix --apply across all packages
 melos run fix-dry-run      # Preview fixes without applying
 melos run validate-dependencies
 
-# Brick testing
-melos run brick-test       # Tests Mason templates
-
 # Run app
 flutter run -d macos       # or chrome, linux
 ```
@@ -80,15 +77,15 @@ Use `<package_name>: any` for workspace packages in pubspec.yaml. Never use path
 
 ### App Initialization Flow
 
-`lib/main.dart` initializes logging, SharedPreferences, AppDatabase, and SecureStorageVaultRepository, then passes them to `MainProvider`.
+`lib/main.dart` initializes logging, SharedPreferences, AppDatabase, and SecureStorageVaultRepository, then assembles the widget tree: `MainProvider` → `MaterialApp` (localization + crash reporting) → `CrashReportingWidget` → `App`. This outer `MaterialApp` provides localization delegates; the inner one in `App` handles routing and theming.
 
 `app_lib/provider/lib/src/main.dart` (`MainProvider`) is the **single source of truth** for all dependency injection. It registers:
 - **Repositories** via `MultiRepositoryProvider`: SharedPreferences, AppDatabase, VaultRepository, GemmaRepository, ChatStorageRepository, ToolExecutor
-- **BLoCs** via `MultiBlocProvider`: all app BLoCs in dependency order (ThemeBloc, AuthBloc, WhoisBloc, WhoisHistoryBloc, BluetoothBloc, CameraBloc, ZoneBloc, RecordBloc, GitHubBloc, VultrBloc, AccountsBloc, ChatSettingsBloc, GemmaModelBloc, ChatBloc, MonitorBloc)
+- **BLoCs** via `MultiBlocProvider`: all app BLoCs in dependency order (DmThemeBloc, AuthBloc, WhoisBloc, WhoisHistoryBloc, BluetoothBloc, CameraBloc, ZoneBloc, RecordBloc, GitHubBloc, VultrBloc, AccountsBloc, ChatSettingsBloc, GemmaModelBloc, ChatBloc, MonitorBloc)
 
 When adding a new BLoC, register it in `MainProvider`, not in `main.dart`.
 
-`lib/app.dart` consumes `ThemeBloc` and creates `MaterialApp.router` with GoRouter.
+`lib/app.dart` consumes `DmThemeBloc` and creates `MaterialApp.router` with GoRouter. Note the **nested MaterialApp** pattern: the outer one in `main.dart` handles localization/crash-reporting, the inner one in `app.dart` handles routing/theming.
 
 ### Routing
 
@@ -172,7 +169,7 @@ Project-specific skills in `.claude/skills/`:
 
 ## CI Workflows
 
-- `ci.yml` — Format check, analyze, test, build (skips for docs/config changes)
-- `brick-test.yml` — Tests Mason bricks (only on brick file changes)
+- `ci.yml` — Format check, analyze, test, build Linux (skips for docs/config changes)
 - `release.yml` — Manual workflow for platform release builds (android, ios, linux, macos)
+- `release-agent.yml` — Manual workflow for monitor agent releases
 - `deploy.yml` — Manual workflow for Play Store/App Store deployment via Fastlane
