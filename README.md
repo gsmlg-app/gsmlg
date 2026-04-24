@@ -86,6 +86,8 @@ This project is organized as a Dart workspace with ~50 packages managed by [Melo
 | `app_api/` | API clients: Route53, CloudFlare DNS, GitHub, Vultr |
 | `app_form/` | Form modules (camera settings) |
 | `app_plugin/` | Native plugins (federated client_info) |
+| `monitor_models/` | Shared models for device monitoring |
+| `monitor_agent/` | Background agent for device monitoring |
 | `third_party/` | Modified third-party packages |
 | `bricks/` | Mason code generation templates |
 
@@ -96,14 +98,18 @@ melos run analyze          # Lint all packages
 melos run format           # Format all packages
 melos run test             # Run all tests
 melos run prepare          # Bootstrap + gen-l10n + build-runner
-melos run brick-test       # Test Mason templates
 ```
 
 ## Documentation
 
+- [Documentation Index](./docs/INDEX.md) - Full index of all docs
 - [Mason Bricks Guide](./docs/BRICKS.md) - Code generation templates
 - [Brick Testing](./docs/BRICK_TESTING.md) - Testing Mason bricks
+- [Testing Guide](./docs/TESTING.md) - Running tests across the monorepo
 - [Form BLoC Guide](./docs/FORM_BLOC.md) - Form validation and submission
+- [Error Handling](./docs/USAGE.md) - Error handling system setup and usage
+- [Logging & Error Architecture](./docs/DOCUMENTATION.md) - Logging and error handler internals
+- [Deployment Setup](./docs/DEPLOYMENT_SETUP.md) - Play Store and App Store deployment configuration
 - [Monitor PRD](./docs/MONITOR_PRD.md) - Monitor module requirements
 - [Monitor Design](./docs/MONITOR_DESIGN.md) - Monitor architecture and protocol
 - [Monitor Implementation](./docs/MONITOR_IMPLEMENTATION.md) - Monitor build guide
