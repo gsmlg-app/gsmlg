@@ -111,21 +111,21 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     ModelConfig currentConfig,
     _RemoteProviderProfile provider,
   ) {
-    final providerConfig = _configForProvider(currentConfig, provider);
-    final selectedModel = _selectedModelFor(provider, currentConfig);
-    final providerModels = _providerModelsFor(providerConfig);
-    final loaded = _loadedModels[provider.id] ?? const <String>[];
-    final visible = _visibleModelsFor(providerConfig);
-    final availableModels = _normalizedModels([
-      ...providerModels,
-      ...loaded,
-      ...visible,
-    ]);
-    final selectedModelId = selectedModel?.trim();
+    final providerBaseConfig = _baseConfigForProvider(currentConfig, provider);
+    final availableModels = _availableModelsFor(provider, providerBaseConfig);
+    final selectedModelId = _effectiveSelectedModelFor(
+      provider,
+      currentConfig,
+      availableModels,
+    );
+    final providerConfig = providerBaseConfig.copyWith(
+      remoteModel: selectedModelId ?? '',
+    );
     final selectedDropdownValue =
         selectedModelId != null && availableModels.contains(selectedModelId)
         ? selectedModelId
         : null;
+    final visible = _visibleModelsFor(providerConfig);
     final models = availableModels.where((model) {
       final normalized = model.trim();
       return normalized.isNotEmpty && normalized != selectedModelId;
@@ -183,7 +183,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
                 isExpanded: true,
                 value: selectedDropdownValue,
                 hint: Text(
-                  selectedModel ?? 'Not selected',
+                  selectedModelId ?? 'Not selected',
                   overflow: TextOverflow.ellipsis,
                 ),
                 items: [
@@ -229,7 +229,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
             SettingsTile.switchTile(
               leading: const Icon(Icons.tune),
               title: Text(model),
-              description: selectedModel != null && model == selectedModel
+              description: selectedModelId != null && model == selectedModelId
                   ? const Text('Selected for this provider')
                   : null,
               initialValue: visible.contains(model),
@@ -254,6 +254,19 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     ModelConfig baseConfig,
     _RemoteProviderProfile provider,
   ) {
+    final config = _baseConfigForProvider(baseConfig, provider);
+    final selectedModel = _effectiveSelectedModelFor(
+      provider,
+      baseConfig,
+      _availableModelsFor(provider, config),
+    );
+    return config.copyWith(remoteModel: selectedModel ?? '');
+  }
+
+  ModelConfig _baseConfigForProvider(
+    ModelConfig baseConfig,
+    _RemoteProviderProfile provider,
+  ) {
     return baseConfig.copyWith(
       inferenceMode: ChatInferenceMode.remote,
       remoteProvider: provider.remoteProvider,
@@ -262,7 +275,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
           : provider.accountId,
       clearRemoteAccount: !provider.useDummyToken && provider.accountId == null,
       remoteBaseUrl: provider.baseUrl,
-      remoteModel: _selectedModelFor(provider, baseConfig) ?? '',
+      remoteModel: '',
     );
   }
 
@@ -285,13 +298,34 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
   ) {
     if (_isActiveProvider(currentConfig, provider)) {
       final model = currentConfig.remoteModel.trim();
-      return model.isEmpty ? null : model;
+      if (model.isNotEmpty) return model;
     }
     final model = context
         .read<SharedPreferences>()
         .getString(_selectedModelKey(provider))
         ?.trim();
     return model == null || model.isEmpty ? null : model;
+  }
+
+  String? _effectiveSelectedModelFor(
+    _RemoteProviderProfile provider,
+    ModelConfig currentConfig,
+    List<String> availableModels,
+  ) {
+    final selected = _selectedModelFor(provider, currentConfig);
+    if (selected != null) return selected;
+    return availableModels.isEmpty ? null : availableModels.first;
+  }
+
+  List<String> _availableModelsFor(
+    _RemoteProviderProfile provider,
+    ModelConfig providerConfig,
+  ) {
+    return _normalizedModels([
+      ..._providerModelsFor(providerConfig),
+      ...(_loadedModels[provider.id] ?? const <String>[]),
+      ..._visibleModelsFor(providerConfig),
+    ]);
   }
 
   List<String> _providerModelsFor(ModelConfig config) {
@@ -342,8 +376,14 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     ModelConfig currentConfig,
     _RemoteProviderProfile provider,
   ) async {
-    final config = _configForProvider(currentConfig, provider);
+    final config = _baseConfigForProvider(currentConfig, provider);
     final remoteRepository = context.read<RemoteLlmRepository>();
+    final preferences = context.read<SharedPreferences>();
+    final chatSettingsBloc = context.read<ChatSettingsBloc>();
+    final shouldUpdateActiveProvider = _isActiveProvider(
+      currentConfig,
+      provider,
+    );
     if (!_canLoadModels(config)) {
       setState(() {
         _loadErrors[provider.id] = 'Select a token or dummy token first.';
@@ -361,6 +401,18 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
       final normalizedModels = _normalizedModels(models);
       await _saveProviderModels(config, normalizedModels);
       await _saveVisibleModels(config, normalizedModels);
+      final selectedModel = _selectedModelFor(provider, currentConfig);
+      if (selectedModel == null && normalizedModels.isNotEmpty) {
+        final defaultModel = normalizedModels.first;
+        await preferences.setString(_selectedModelKey(provider), defaultModel);
+        if (shouldUpdateActiveProvider) {
+          chatSettingsBloc.add(
+            ChatSettingsUpdateConfig(
+              config: config.copyWith(remoteModel: defaultModel),
+            ),
+          );
+        }
+      }
       if (!mounted) return;
       setState(() {
         _loadedModels[provider.id] = normalizedModels;

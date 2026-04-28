@@ -312,6 +312,31 @@ void main() {
       ]);
     });
 
+    testWidgets('defaults selected model dropdown to first available model', (
+      tester,
+    ) async {
+      await preferences.remove('remote_model_provider_selected_openai');
+      chatSettingsBloc = ChatSettingsBloc(
+        repository: ChatStorageRepository(database),
+        preferences: preferences,
+      );
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        vault: vault,
+        chatSettingsBloc: chatSettingsBloc!,
+        accountsBloc: accountsBloc,
+      );
+
+      await tester.pumpAndSettle();
+
+      final dropdown = tester.widget<DropdownButton<String>>(
+        find.byType(DropdownButton<String>),
+      );
+      expect(dropdown.value, 'old-disabled');
+    });
+
     testWidgets('switches active provider before selecting a model', (
       tester,
     ) async {
