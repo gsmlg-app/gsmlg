@@ -140,16 +140,20 @@ class _HomeScreenState extends State<HomeScreen> {
                               ChatSettingsToggleThinking(enabled: enabled),
                             );
                           },
-                          onSend: (message, {imageBytes, audioBytes}) {
-                            context.read<ChatBloc>().add(
-                              ChatSendMessage(
-                                content: message,
-                                systemPrompt: chatState.conversation == null
-                                    ? settingsState.defaultSystemPrompt
-                                    : null,
-                              ),
-                            );
-                          },
+                          onSend:
+                              (message, {imageBytes, audioBytes, attachments}) {
+                                context.read<ChatBloc>().add(
+                                  ChatSendMessage(
+                                    content: message,
+                                    imageBytes: imageBytes,
+                                    audioBytes: audioBytes,
+                                    attachments: attachments ?? const [],
+                                    systemPrompt: chatState.conversation == null
+                                        ? settingsState.defaultSystemPrompt
+                                        : null,
+                                  ),
+                                );
+                              },
                           onStop: () {
                             context.read<ChatBloc>().add(
                               const ChatStopGeneration(),
@@ -195,18 +199,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ChatSettingsToggleThinking(enabled: enabled),
                               );
                             },
-                            onSend: (message, {imageBytes, audioBytes}) {
-                              context.read<ChatBloc>().add(
-                                ChatSendMessage(
-                                  content: message,
-                                  imageBytes: imageBytes,
-                                  audioBytes: audioBytes,
-                                  systemPrompt: chatState.conversation == null
-                                      ? settingsState.defaultSystemPrompt
-                                      : null,
-                                ),
-                              );
-                            },
+                            onSend:
+                                (
+                                  message, {
+                                  imageBytes,
+                                  audioBytes,
+                                  attachments,
+                                }) {
+                                  context.read<ChatBloc>().add(
+                                    ChatSendMessage(
+                                      content: message,
+                                      imageBytes: imageBytes,
+                                      audioBytes: audioBytes,
+                                      attachments: attachments ?? const [],
+                                      systemPrompt:
+                                          chatState.conversation == null
+                                          ? settingsState.defaultSystemPrompt
+                                          : null,
+                                    ),
+                                  );
+                                },
                             onStop: () {
                               context.read<ChatBloc>().add(
                                 const ChatStopGeneration(),

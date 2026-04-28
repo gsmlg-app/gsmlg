@@ -56,34 +56,52 @@ class ChatMessageBubble extends StatelessWidget {
     final blocks = <DmChatBlock>[];
 
     switch (message) {
-      case UserMessage(:final imageBytes, :final audioBytes):
-        final attachments = <DmChatAttachment>[];
+      case UserMessage(
+        :final imageBytes,
+        :final audioBytes,
+        :final attachments,
+      ):
+        final dmAttachments = <DmChatAttachment>[
+          for (final attachment in attachments) _toDmAttachment(attachment),
+        ];
         if (imageBytes != null) {
-          attachments.add(
-            DmChatAttachment(
-              id: '${message.id}:image',
-              name: 'image.png',
-              sizeBytes: imageBytes.length,
-              mimeType: 'image/png',
-              bytes: imageBytes,
-              status: DmChatAttachmentStatus.done,
-            ),
+          final alreadyShown = attachments.any(
+            (attachment) =>
+                attachment.isImage || identical(attachment.bytes, imageBytes),
           );
+          if (!alreadyShown) {
+            dmAttachments.add(
+              DmChatAttachment(
+                id: '${message.id}:image',
+                name: 'image.png',
+                sizeBytes: imageBytes.length,
+                mimeType: 'image/png',
+                bytes: imageBytes,
+                status: DmChatAttachmentStatus.done,
+              ),
+            );
+          }
         }
         if (audioBytes != null) {
-          attachments.add(
-            DmChatAttachment(
-              id: '${message.id}:audio',
-              name: 'audio.wav',
-              sizeBytes: audioBytes.length,
-              mimeType: 'audio/wav',
-              bytes: audioBytes,
-              status: DmChatAttachmentStatus.done,
-            ),
+          final alreadyShown = attachments.any(
+            (attachment) =>
+                attachment.isAudio || identical(attachment.bytes, audioBytes),
           );
+          if (!alreadyShown) {
+            dmAttachments.add(
+              DmChatAttachment(
+                id: '${message.id}:audio',
+                name: 'audio.wav',
+                sizeBytes: audioBytes.length,
+                mimeType: 'audio/wav',
+                bytes: audioBytes,
+                status: DmChatAttachmentStatus.done,
+              ),
+            );
+          }
         }
-        if (attachments.isNotEmpty) {
-          blocks.add(DmChatAttachmentBlock(attachments: attachments));
+        if (dmAttachments.isNotEmpty) {
+          blocks.add(DmChatAttachmentBlock(attachments: dmAttachments));
         }
         if (message.content.isNotEmpty) {
           blocks.add(DmChatTextBlock(text: message.content));
@@ -119,6 +137,17 @@ class ChatMessageBubble extends StatelessWidget {
       blocks.add(const DmChatTextBlock(text: ''));
     }
     return blocks;
+  }
+
+  DmChatAttachment _toDmAttachment(ChatAttachment attachment) {
+    return DmChatAttachment(
+      id: attachment.id,
+      name: attachment.name,
+      sizeBytes: attachment.sizeBytes ?? attachment.bytes?.length,
+      mimeType: attachment.mimeType,
+      bytes: attachment.bytes,
+      status: DmChatAttachmentStatus.done,
+    );
   }
 
   Object _tryParseJson(String content) {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
@@ -102,6 +103,60 @@ void main() {
 
       expect(body!.containsKey('thinking'), isFalse);
       expect(body!.containsKey('reasoning_effort'), isFalse);
+    });
+
+    test('includes text attachments in remote user messages', () async {
+      Map<String, dynamic>? body;
+      final repository = RemoteLlmRepository(
+        vault: _MemoryVaultRepository(),
+        client: MockClient((request) async {
+          body = jsonDecode(request.body) as Map<String, dynamic>;
+          return http.Response(
+            jsonEncode({
+              'choices': [
+                {
+                  'message': {'content': 'ok'},
+                },
+              ],
+            }),
+            200,
+          );
+        }),
+      );
+
+      await repository.generateResponse(
+        [
+          UserMessage(
+            id: 'user',
+            content: 'summarize',
+            conversationId: 'conversation',
+            timestamp: DateTime(2026),
+            attachments: [
+              ChatAttachment(
+                id: 'notes',
+                name: 'notes.txt',
+                sizeBytes: 15,
+                mimeType: 'text/plain',
+                bytes: Uint8List.fromList(utf8.encode('hello from file')),
+              ),
+            ],
+          ),
+        ],
+        const ModelConfig(
+          inferenceMode: ChatInferenceMode.remote,
+          remoteProvider: RemoteLlmProvider.openAiCompatible,
+          remoteAccountId: ModelConfig.dummyRemoteAccountId,
+          remoteBaseUrl: 'http://localhost:11434/v1',
+          remoteModel: 'local-model',
+          remoteStreamingEnabled: false,
+        ),
+      ).toList();
+
+      final messages = body!['messages'] as List<dynamic>;
+      final content = (messages.single as Map<String, dynamic>)['content'];
+      expect(content, contains('summarize'));
+      expect(content, contains('Attached file: notes.txt'));
+      expect(content, contains('hello from file'));
     });
 
     test('parses non-streaming think tags into thinking chunks', () async {

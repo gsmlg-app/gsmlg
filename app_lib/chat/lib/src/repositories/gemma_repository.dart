@@ -635,7 +635,9 @@ class GemmaRepository {
     // Add messages to the chat context
     for (var i = 0; i < chatMessages.length; i++) {
       final message = chatMessages[i];
-      var content = message.content;
+      var content = message is UserMessage
+          ? message.contentWithAttachments()
+          : message.content;
 
       // Prepend system prompt to the first user message
       if (i == 0 && message is UserMessage && systemPrompt != null) {

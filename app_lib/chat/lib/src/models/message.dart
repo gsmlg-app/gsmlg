@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
@@ -30,6 +31,55 @@ sealed class Message extends Equatable {
   String get role;
 }
 
+/// A file attached to a user chat message.
+final class ChatAttachment extends Equatable {
+  const ChatAttachment({
+    required this.id,
+    required this.name,
+    this.sizeBytes,
+    this.mimeType,
+    this.bytes,
+  });
+
+  final String id;
+  final String name;
+  final int? sizeBytes;
+  final String? mimeType;
+  final Uint8List? bytes;
+
+  String get extension => _extensionFor(name, mimeType);
+
+  bool get isImage =>
+      (mimeType?.startsWith('image/') ?? false) || _isImageExtension(extension);
+
+  bool get isAudio =>
+      (mimeType?.startsWith('audio/') ?? false) || _isAudioExtension(extension);
+
+  bool get isText =>
+      (mimeType?.startsWith('text/') ?? false) ||
+      mimeType == 'application/json' ||
+      _isTextExtension(extension);
+
+  @override
+  List<Object?> get props => [id, name, sizeBytes, mimeType, bytes];
+
+  ChatAttachment copyWith({
+    String? id,
+    String? name,
+    int? sizeBytes,
+    String? mimeType,
+    Uint8List? bytes,
+  }) {
+    return ChatAttachment(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      sizeBytes: sizeBytes ?? this.sizeBytes,
+      mimeType: mimeType ?? this.mimeType,
+      bytes: bytes ?? this.bytes,
+    );
+  }
+}
+
 /// A message sent by the user.
 final class UserMessage extends Message {
   const UserMessage({
@@ -39,6 +89,7 @@ final class UserMessage extends Message {
     required super.timestamp,
     this.imageBytes,
     this.audioBytes,
+    this.attachments = const [],
   });
 
   /// Optional image data attached to this message.
@@ -47,17 +98,38 @@ final class UserMessage extends Message {
   /// Optional audio data attached to this message.
   final Uint8List? audioBytes;
 
+  /// Files attached to this message.
+  final List<ChatAttachment> attachments;
+
   /// Whether this message has an image attachment.
   bool get hasImage => imageBytes != null;
 
   /// Whether this message has an audio attachment.
   bool get hasAudio => audioBytes != null;
 
+  /// Whether this message has any file attachments.
+  bool get hasAttachments => attachments.isNotEmpty || hasImage || hasAudio;
+
+  /// Text sent to models, with readable file attachments appended.
+  String contentWithAttachments({int maxInlineFileBytes = 64 * 1024}) {
+    final parts = <String>[
+      if (content.trim().isNotEmpty) content.trim(),
+      for (final attachment in attachments)
+        _attachmentReferenceText(attachment, maxInlineFileBytes),
+    ];
+    return parts.join('\n\n');
+  }
+
   @override
   String get role => 'user';
 
   @override
-  List<Object?> get props => [...super.props, imageBytes, audioBytes];
+  List<Object?> get props => [
+        ...super.props,
+        imageBytes,
+        audioBytes,
+        attachments,
+      ];
 
   UserMessage copyWith({
     String? id,
@@ -66,6 +138,7 @@ final class UserMessage extends Message {
     DateTime? timestamp,
     Uint8List? imageBytes,
     Uint8List? audioBytes,
+    List<ChatAttachment>? attachments,
   }) {
     return UserMessage(
       id: id ?? this.id,
@@ -74,6 +147,7 @@ final class UserMessage extends Message {
       timestamp: timestamp ?? this.timestamp,
       imageBytes: imageBytes ?? this.imageBytes,
       audioBytes: audioBytes ?? this.audioBytes,
+      attachments: attachments ?? this.attachments,
     );
   }
 }
@@ -129,6 +203,114 @@ final class AssistantMessage extends Message {
       thinkingContent: thinkingContent ?? this.thinkingContent,
     );
   }
+}
+
+String _attachmentReferenceText(
+  ChatAttachment attachment,
+  int maxInlineFileBytes,
+) {
+  final buffer = StringBuffer()..writeln('Attached file: ${attachment.name}');
+  final mimeType = attachment.mimeType;
+  if (mimeType != null && mimeType.isNotEmpty) {
+    buffer.writeln('Type: $mimeType');
+  }
+  final size = attachment.sizeBytes ?? attachment.bytes?.length;
+  if (size != null) {
+    buffer.writeln('Size: ${_formatBytes(size)}');
+  }
+
+  final bytes = attachment.bytes;
+  if (bytes == null) {
+    buffer.writeln('Content: [not available]');
+  } else if (attachment.isText && bytes.length <= maxInlineFileBytes) {
+    buffer
+      ..writeln()
+      ..writeln('```')
+      ..writeln(utf8.decode(bytes, allowMalformed: true).trim())
+      ..writeln('```');
+  } else if (attachment.isText) {
+    buffer.writeln('Content: [text file too large to inline]');
+  } else if (!attachment.isText) {
+    buffer.writeln('Content: [binary file omitted]');
+  }
+
+  return buffer.toString().trim();
+}
+
+String _extensionFor(String name, String? mimeType) {
+  final dot = name.lastIndexOf('.');
+  if (dot != -1 && dot < name.length - 1) {
+    return name.substring(dot + 1).toLowerCase();
+  }
+  return switch (mimeType) {
+    'image/png' => 'png',
+    'image/jpeg' => 'jpg',
+    'image/gif' => 'gif',
+    'image/webp' => 'webp',
+    'audio/wav' => 'wav',
+    'audio/mpeg' => 'mp3',
+    'audio/mp4' => 'm4a',
+    'text/plain' => 'txt',
+    'application/json' => 'json',
+    _ => '',
+  };
+}
+
+bool _isImageExtension(String extension) {
+  return const {
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp',
+    'bmp',
+    'heic',
+    'heif',
+  }.contains(extension);
+}
+
+bool _isAudioExtension(String extension) {
+  return const {
+    'aac',
+    'aiff',
+    'flac',
+    'm4a',
+    'mp3',
+    'ogg',
+    'opus',
+    'wav',
+    'webm',
+  }.contains(extension);
+}
+
+bool _isTextExtension(String extension) {
+  return const {
+    'csv',
+    'dart',
+    'diff',
+    'go',
+    'html',
+    'json',
+    'log',
+    'md',
+    'py',
+    'rs',
+    'sql',
+    'swift',
+    'toml',
+    'ts',
+    'tsx',
+    'txt',
+    'yaml',
+    'yml',
+  }.contains(extension);
+}
+
+String _formatBytes(int bytes) {
+  if (bytes < 1024) return '$bytes B';
+  final kb = bytes / 1024;
+  if (kb < 1024) return '${kb.toStringAsFixed(0)} KB';
+  return '${(kb / 1024).toStringAsFixed(1)} MB';
 }
 
 /// A system message that sets context for the conversation.

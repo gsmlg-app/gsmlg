@@ -1,9 +1,9 @@
 import 'dart:io';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
@@ -44,6 +44,7 @@ class ChatInputBar extends StatefulWidget {
     String text, {
     Uint8List? imageBytes,
     Uint8List? audioBytes,
+    List<ChatAttachment>? attachments,
   })
   onSend;
   final VoidCallback onStop;
@@ -57,8 +58,6 @@ class ChatInputBar extends StatefulWidget {
 }
 
 class _ChatInputBarState extends State<ChatInputBar> {
-  static const _maxInlineFileBytes = 64 * 1024;
-
   final _controller = DmMarkdownInputController();
   final _recorder = AudioRecorder();
   final List<DmChatAttachment> _pendingAttachments = [];
@@ -67,15 +66,15 @@ class _ChatInputBarState extends State<ChatInputBar> {
   void _handleSend(String text, List<DmChatAttachment> attachments) {
     if (!widget.enabled || widget.isStreaming) return;
 
-    final parts = <String>[];
     final trimmed = text.trim();
-    if (trimmed.isNotEmpty) parts.add(trimmed);
-
+    final chatAttachments = <ChatAttachment>[];
     Uint8List? imageBytes;
     Uint8List? audioBytes;
     for (final attachment in attachments) {
       final bytes = attachment.bytes;
       if (bytes == null) continue;
+
+      chatAttachments.add(_toChatAttachment(attachment));
 
       final extension = _extensionFor(attachment.name, attachment.mimeType);
       if (imageBytes == null &&
@@ -91,65 +90,81 @@ class _ChatInputBarState extends State<ChatInputBar> {
         audioBytes = bytes;
         continue;
       }
-
-      parts.add(
-        _fileReferenceText(
-          name: attachment.name,
-          extension: extension,
-          size: attachment.sizeBytes ?? bytes.length,
-          bytes: bytes,
-        ),
-      );
     }
 
-    if (parts.isEmpty && imageBytes == null && audioBytes == null) return;
+    if (trimmed.isEmpty && chatAttachments.isEmpty) return;
 
     widget.onSend(
-      parts.join('\n\n'),
+      trimmed,
       imageBytes: imageBytes,
       audioBytes: audioBytes,
+      attachments: chatAttachments,
     );
 
     setState(_pendingAttachments.clear);
   }
 
-  String _fileReferenceText({
-    required String name,
-    required String extension,
-    required int size,
-    required Uint8List bytes,
-  }) {
-    final buffer = StringBuffer()
-      ..writeln()
-      ..writeln('Attached file: $name')
-      ..writeln('Size: ${_formatBytes(size)}');
-
-    if (_isTextExtension(extension) && bytes.length <= _maxInlineFileBytes) {
-      final content = utf8.decode(bytes, allowMalformed: true);
-      buffer
-        ..writeln()
-        ..writeln('```')
-        ..writeln(content.trim())
-        ..writeln('```');
-    }
-
-    return buffer.toString().trim();
-  }
-
-  void _handleAttach(List<DmChatAttachment> attachments) {
-    setState(() {
-      _pendingAttachments.addAll(
-        attachments.map(
-          (attachment) =>
-              attachment.copyWith(status: DmChatAttachmentStatus.done),
-        ),
-      );
-    });
+  ChatAttachment _toChatAttachment(DmChatAttachment attachment) {
+    return ChatAttachment(
+      id: attachment.id,
+      name: attachment.name,
+      sizeBytes: attachment.sizeBytes ?? attachment.bytes?.length,
+      mimeType: attachment.mimeType,
+      bytes: attachment.bytes,
+    );
   }
 
   void _removeAttachment(DmChatAttachment attachment) {
     setState(() {
       _pendingAttachments.removeWhere((item) => item.id == attachment.id);
+    });
+  }
+
+  Future<void> _pickAttachments() async {
+    if (!widget.enabled || widget.isStreaming) return;
+
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      withData: !Platform.isMacOS,
+    );
+    if (result == null) return;
+
+    final picked = <DmChatAttachment>[];
+    for (final file in result.files) {
+      Uint8List? bytes = file.bytes;
+      String? errorMessage;
+      try {
+        if (bytes == null) {
+          final path = file.path;
+          if (path != null) {
+            bytes = await File(path).readAsBytes();
+          }
+        }
+      } catch (_) {
+        errorMessage = 'Unable to read file';
+      }
+
+      picked.add(
+        DmChatAttachment(
+          id:
+              file.identifier ??
+              '${file.name}:${DateTime.now().microsecondsSinceEpoch}',
+          name: file.name,
+          sizeBytes: file.size == 0 ? bytes?.length : file.size,
+          mimeType: _mimeTypeFor(file.name, file.extension),
+          bytes: bytes,
+          status: bytes == null
+              ? DmChatAttachmentStatus.error
+              : DmChatAttachmentStatus.done,
+          errorMessage: bytes == null
+              ? errorMessage ?? 'Unable to read file'
+              : null,
+        ),
+      );
+    }
+
+    setState(() {
+      _pendingAttachments.addAll(picked);
     });
   }
 
@@ -169,6 +184,34 @@ class _ChatInputBarState extends State<ChatInputBar> {
       'text/plain' => 'txt',
       'application/json' => 'json',
       _ => '',
+    };
+  }
+
+  String? _mimeTypeFor(String name, String? extension) {
+    final normalized = (extension ?? _extensionFor(name, null)).toLowerCase();
+    return switch (normalized) {
+      'png' => 'image/png',
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'gif' => 'image/gif',
+      'webp' => 'image/webp',
+      'bmp' => 'image/bmp',
+      'heic' => 'image/heic',
+      'heif' => 'image/heif',
+      'aac' => 'audio/aac',
+      'aiff' => 'audio/aiff',
+      'flac' => 'audio/flac',
+      'm4a' => 'audio/mp4',
+      'mp3' => 'audio/mpeg',
+      'ogg' => 'audio/ogg',
+      'opus' => 'audio/opus',
+      'wav' => 'audio/wav',
+      'webm' => 'audio/webm',
+      'csv' => 'text/csv',
+      'html' => 'text/html',
+      'json' => 'application/json',
+      'log' || 'md' || 'txt' => 'text/plain',
+      'pdf' => 'application/pdf',
+      _ => null,
     };
   }
 
@@ -197,36 +240,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
       'wav',
       'webm',
     }.contains(extension);
-  }
-
-  bool _isTextExtension(String extension) {
-    return const {
-      'csv',
-      'dart',
-      'diff',
-      'go',
-      'html',
-      'json',
-      'log',
-      'md',
-      'py',
-      'rs',
-      'sql',
-      'swift',
-      'toml',
-      'ts',
-      'tsx',
-      'txt',
-      'yaml',
-      'yml',
-    }.contains(extension);
-  }
-
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    final kb = bytes / 1024;
-    if (kb < 1024) return '${kb.toStringAsFixed(0)} KB';
-    return '${(kb / 1024).toStringAsFixed(1)} MB';
   }
 
   Future<void> _toggleRecording() async {
@@ -277,7 +290,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
       controller: _controller,
       onSend: _handleSend,
       onStop: widget.onStop,
-      onAttach: _handleAttach,
       isStreaming: widget.isStreaming,
       pendingAttachments: _pendingAttachments,
       onRemoveAttachment: _removeAttachment,
@@ -300,11 +312,19 @@ class _ChatInputBarState extends State<ChatInputBar> {
               onChanged: widget.onThinkingEffortChanged!,
             )
           else if (widget.onThinkingToggle != null)
-            _ThinkSwitch(
+            _ThinkToggleSelector(
               value: widget.thinkingEnabled,
               enabled: widget.enabled && !widget.isStreaming,
               onChanged: widget.onThinkingToggle!,
             ),
+          IconButton(
+            onPressed: widget.enabled && !widget.isStreaming
+                ? _pickAttachments
+                : null,
+            icon: const Icon(Icons.attach_file, size: 20),
+            tooltip: 'Attach',
+            visualDensity: VisualDensity.compact,
+          ),
           if (widget.supportsAudio)
             IconButton(
               onPressed: widget.enabled && !widget.isStreaming
@@ -347,8 +367,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
   }
 }
 
-class _ThinkSwitch extends StatelessWidget {
-  const _ThinkSwitch({
+class _ThinkToggleSelector extends StatelessWidget {
+  const _ThinkToggleSelector({
     required this.value,
     required this.enabled,
     required this.onChanged,
@@ -361,33 +381,40 @@ class _ThinkSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final activeColor = value
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
 
-    return Tooltip(
-      message: value ? 'Thinking: ON' : 'Thinking: OFF',
+    return PopupMenuButton<bool>(
+      enabled: enabled,
+      tooltip: value ? 'Thinking: On' : 'Thinking: Off',
+      onSelected: onChanged,
+      itemBuilder: (context) => [
+        for (final option in const [false, true])
+          PopupMenuItem(
+            value: option,
+            child: Row(
+              children: [
+                Icon(
+                  option == value
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(option ? 'On' : 'Off'),
+              ],
+            ),
+          ),
+      ],
       child: Semantics(
         label: 'Thinking',
-        toggled: value,
+        button: true,
         child: SizedBox(
           height: 36,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.psychology,
-                size: 18,
-                color: value
-                    ? colorScheme.primary
-                    : colorScheme.onSurfaceVariant,
-              ),
-              Transform.scale(
-                scale: 0.72,
-                child: Switch.adaptive(
-                  value: value,
-                  onChanged: enabled ? onChanged : null,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-              ),
-            ],
+          width: 36,
+          child: Center(
+            child: Icon(Icons.psychology, size: 20, color: activeColor),
           ),
         ),
       ),
@@ -410,10 +437,13 @@ class _ThinkEffortSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final active = value != RemoteThinkingEffort.off;
+    final activeColor = active
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
 
     return PopupMenuButton<RemoteThinkingEffort>(
       enabled: enabled,
-      tooltip: 'Thinking effort: ${value.displayName}',
+      tooltip: 'Thinking: ${value.displayName}',
       onSelected: onChanged,
       itemBuilder: (context) => [
         for (final effort in RemoteThinkingEffort.values)
@@ -438,32 +468,9 @@ class _ThinkEffortSelector extends StatelessWidget {
         label: 'Thinking effort ${value.displayName}',
         child: SizedBox(
           height: 36,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.psychology,
-                size: 18,
-                color: active
-                    ? colorScheme.primary
-                    : colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                value.displayName,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: active
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                ),
-              ),
-              Icon(
-                Icons.arrow_drop_down,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ],
+          width: 36,
+          child: Center(
+            child: Icon(Icons.psychology, size: 20, color: activeColor),
           ),
         ),
       ),

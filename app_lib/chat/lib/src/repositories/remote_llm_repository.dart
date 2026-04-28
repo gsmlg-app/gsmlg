@@ -246,7 +246,10 @@ class RemoteLlmRepository {
           'content': 'Tool result$toolName: ${message.content}',
         });
       } else {
-        result.add({'role': role, 'content': message.content});
+        final content = message is UserMessage
+            ? message.contentWithAttachments()
+            : message.content;
+        result.add({'role': role, 'content': content});
       }
     }
     return result;

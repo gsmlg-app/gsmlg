@@ -25,18 +25,21 @@ final class ChatNewConversation extends ChatEvent {
 /// If no conversation exists, one will be auto-created.
 /// [systemPrompt] is used only when auto-creating the conversation.
 /// [imageBytes] is optional image data for multimodal models.
+/// [attachments] carries files selected from the chat input.
 final class ChatSendMessage extends ChatEvent {
   const ChatSendMessage({
     required this.content,
     this.systemPrompt,
     this.imageBytes,
     this.audioBytes,
+    this.attachments = const [],
   });
 
   final String content;
   final String? systemPrompt;
   final Uint8List? imageBytes;
   final Uint8List? audioBytes;
+  final List<ChatAttachment> attachments;
 }
 
 /// Stop the current response generation.

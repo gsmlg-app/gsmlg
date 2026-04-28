@@ -155,6 +155,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       timestamp: DateTime.now(),
       imageBytes: event.imageBytes,
       audioBytes: event.audioBytes,
+      attachments: event.attachments,
     );
 
     // Add user message to conversation

@@ -27,4 +27,34 @@ void main() {
     expect(find.textContaining('</think>'), findsNothing);
     expect(find.textContaining('final answer'), findsOneWidget);
   });
+
+  testWidgets('renders user file attachments in the sent message bubble', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageBubble(
+            message: UserMessage(
+              id: 'user',
+              content: 'please read this',
+              conversationId: 'conversation',
+              timestamp: DateTime(2026),
+              attachments: const [
+                ChatAttachment(
+                  id: 'file-1',
+                  name: 'notes.txt',
+                  sizeBytes: 16,
+                  mimeType: 'text/plain',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('notes.txt'), findsOneWidget);
+    expect(find.textContaining('please read this'), findsOneWidget);
+  });
 }

@@ -234,12 +234,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   ChatSettingsToggleThinking(enabled: enabled),
                 );
               },
-              onSend: (message, {imageBytes, audioBytes}) {
+              onSend: (message, {imageBytes, audioBytes, attachments}) {
                 _sendMessage(
                   chatState,
                   message,
                   imageBytes: imageBytes,
                   audioBytes: audioBytes,
+                  attachments: attachments ?? const [],
                 );
               },
               onStop: () {
@@ -302,8 +303,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     ChatSettingsToggleThinking(enabled: enabled),
                   );
                 },
-          onSend: (message, {imageBytes, audioBytes}) {
-            _sendMessage(chatState, message);
+          onSend: (message, {imageBytes, audioBytes, attachments}) {
+            _sendMessage(
+              chatState,
+              message,
+              imageBytes: imageBytes,
+              audioBytes: audioBytes,
+              attachments: attachments ?? const [],
+            );
           },
           onStop: () {
             context.read<ChatBloc>().add(const ChatStopGeneration());
@@ -318,6 +325,7 @@ class _ChatScreenState extends State<ChatScreen> {
     String message, {
     Uint8List? imageBytes,
     Uint8List? audioBytes,
+    List<ChatAttachment> attachments = const [],
   }) {
     if (chatState.conversation == null) {
       _startNewConversation();
@@ -327,6 +335,7 @@ class _ChatScreenState extends State<ChatScreen> {
             content: message,
             imageBytes: imageBytes,
             audioBytes: audioBytes,
+            attachments: attachments,
           ),
         );
       });
@@ -336,6 +345,7 @@ class _ChatScreenState extends State<ChatScreen> {
           content: message,
           imageBytes: imageBytes,
           audioBytes: audioBytes,
+          attachments: attachments,
         ),
       );
     }
