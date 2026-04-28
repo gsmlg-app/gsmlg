@@ -89,13 +89,16 @@ class ChatMessageBubble extends StatelessWidget {
           blocks.add(DmChatTextBlock(text: message.content));
         }
       case AssistantMessage(:final thinkingContent):
-        if (showThinking &&
-            thinkingContent != null &&
-            thinkingContent.isNotEmpty) {
-          blocks.add(DmChatThinkingBlock(text: thinkingContent));
+        final taggedContent = _splitTaggedThinking(message.content);
+        final thinkingText = _joinThinking(
+          thinkingContent,
+          taggedContent.thinkingContent,
+        );
+        if (showThinking && thinkingText != null && thinkingText.isNotEmpty) {
+          blocks.add(DmChatThinkingBlock(text: thinkingText));
         }
-        if (message.content.isNotEmpty) {
-          blocks.add(DmChatTextBlock(text: message.content));
+        if (taggedContent.visibleContent.isNotEmpty) {
+          blocks.add(DmChatTextBlock(text: taggedContent.visibleContent));
         } else if (showTypingIndicator) {
           blocks.add(const DmChatTextBlock(text: '...'));
         }
@@ -124,6 +127,57 @@ class ChatMessageBubble extends StatelessWidget {
     } catch (_) {
       return content;
     }
+  }
+
+  _TaggedThinkingContent _splitTaggedThinking(String content) {
+    const startTag = '<think>';
+    const endTag = '</think>';
+    if (!content.contains(startTag)) {
+      return _TaggedThinkingContent(visibleContent: content);
+    }
+
+    final visible = StringBuffer();
+    final thinking = StringBuffer();
+    var index = 0;
+
+    while (index < content.length) {
+      final startIndex = content.indexOf(startTag, index);
+      if (startIndex == -1) {
+        visible.write(content.substring(index));
+        break;
+      }
+
+      visible.write(content.substring(index, startIndex));
+      final thinkingStart = startIndex + startTag.length;
+      final endIndex = content.indexOf(endTag, thinkingStart);
+      if (endIndex == -1) {
+        _writeThinkingPart(thinking, content.substring(thinkingStart));
+        break;
+      }
+
+      _writeThinkingPart(thinking, content.substring(thinkingStart, endIndex));
+      index = endIndex + endTag.length;
+    }
+
+    return _TaggedThinkingContent(
+      visibleContent: visible.toString(),
+      thinkingContent: thinking.toString(),
+    );
+  }
+
+  void _writeThinkingPart(StringBuffer buffer, String text) {
+    if (text.isEmpty) return;
+    if (buffer.isNotEmpty) buffer.write('\n');
+    buffer.write(text);
+  }
+
+  String? _joinThinking(String? structured, String? tagged) {
+    final parts = [
+      if (structured != null && structured.isNotEmpty) structured,
+      if (tagged != null && tagged.isNotEmpty) tagged,
+    ];
+    if (parts.isEmpty) return null;
+    return parts.join('\n');
   }
 
   Widget? _avatar(BuildContext context) {
@@ -160,4 +214,14 @@ class ChatMessageBubble extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TaggedThinkingContent {
+  const _TaggedThinkingContent({
+    required this.visibleContent,
+    this.thinkingContent,
+  });
+
+  final String visibleContent;
+  final String? thinkingContent;
 }

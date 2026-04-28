@@ -30,6 +30,7 @@ class RemoteModelSettingsScreen extends StatefulWidget {
 class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
   static const _providersKey = 'remote_model_provider_profiles';
   static const _selectedModelPrefix = 'remote_model_provider_selected_';
+  static const _providerModelsPrefix = 'remote_provider_models_';
 
   late List<_RemoteProviderProfile> _providers;
   final _loadedModels = <String, List<String>>{};
@@ -112,13 +113,23 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
   ) {
     final providerConfig = _configForProvider(currentConfig, provider);
     final selectedModel = _selectedModelFor(provider, currentConfig);
+    final providerModels = _providerModelsFor(providerConfig);
     final loaded = _loadedModels[provider.id] ?? const <String>[];
     final visible = _visibleModelsFor(providerConfig);
-    final models = {
-      selectedModel,
+    final availableModels = _normalizedModels([
+      ...providerModels,
       ...loaded,
       ...visible,
-    }.where((model) => model.trim().isNotEmpty).toList()..sort();
+    ]);
+    final selectedModelId = selectedModel?.trim();
+    final selectedDropdownValue =
+        selectedModelId != null && availableModels.contains(selectedModelId)
+        ? selectedModelId
+        : null;
+    final models = availableModels.where((model) {
+      final normalized = model.trim();
+      return normalized.isNotEmpty && normalized != selectedModelId;
+    }).toList()..sort();
     final isActive = _isActiveProvider(currentConfig, provider);
     final error = _loadErrors[provider.id];
     final isLoading = _loadingProviderId == provider.id;
@@ -162,11 +173,35 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
           ),
           onPressed: (_) => _showTokenPicker(context, provider),
         ),
-        SettingsTile.navigation(
+        SettingsTile(
           leading: const Icon(Icons.smart_toy),
           title: const Text('Selected Model'),
-          value: Text(selectedModel),
-          onPressed: (_) => _showModelDialog(context, currentConfig, provider),
+          value: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 220),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: selectedDropdownValue,
+                hint: Text(
+                  selectedModel ?? 'Not selected',
+                  overflow: TextOverflow.ellipsis,
+                ),
+                items: [
+                  for (final model in availableModels)
+                    DropdownMenuItem<String>(
+                      value: model,
+                      child: Text(model, overflow: TextOverflow.ellipsis),
+                    ),
+                ],
+                onChanged: availableModels.isEmpty
+                    ? null
+                    : (model) {
+                        if (model == null) return;
+                        _selectProviderModel(currentConfig, provider, model);
+                      },
+              ),
+            ),
+          ),
         ),
         SettingsTile(
           leading: isLoading
@@ -194,12 +229,11 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
             SettingsTile.switchTile(
               leading: const Icon(Icons.tune),
               title: Text(model),
-              description: model == selectedModel
+              description: selectedModel != null && model == selectedModel
                   ? const Text('Selected for this provider')
                   : null,
-              initialValue: visible.contains(model) || model == selectedModel,
+              initialValue: visible.contains(model),
               onToggle: (value) {
-                if (model == selectedModel && !value) return;
                 _setModelVisible(providerConfig, model, value);
               },
             ),
@@ -228,11 +262,15 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
           : provider.accountId,
       clearRemoteAccount: !provider.useDummyToken && provider.accountId == null,
       remoteBaseUrl: provider.baseUrl,
-      remoteModel: _selectedModelFor(provider, baseConfig),
+      remoteModel: _selectedModelFor(provider, baseConfig) ?? '',
     );
   }
 
   bool _isActiveProvider(ModelConfig config, _RemoteProviderProfile provider) {
+    if (config.inferenceMode != ChatInferenceMode.remote ||
+        config.remoteProvider != provider.remoteProvider) {
+      return false;
+    }
     final accountId = provider.useDummyToken
         ? ModelConfig.dummyRemoteAccountId
         : provider.accountId;
@@ -241,17 +279,33 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
             (provider.useDummyToken && config.remoteUsesDummyToken));
   }
 
-  String _selectedModelFor(
+  String? _selectedModelFor(
     _RemoteProviderProfile provider,
     ModelConfig currentConfig,
   ) {
     if (_isActiveProvider(currentConfig, provider)) {
-      return currentConfig.remoteModel;
+      final model = currentConfig.remoteModel.trim();
+      return model.isEmpty ? null : model;
     }
-    return context.read<SharedPreferences>().getString(
-          _selectedModelKey(provider),
+    final model = context
+        .read<SharedPreferences>()
+        .getString(_selectedModelKey(provider))
+        ?.trim();
+    return model == null || model.isEmpty ? null : model;
+  }
+
+  List<String> _providerModelsFor(ModelConfig config) {
+    return context.read<SharedPreferences>().getStringList(
+          _providerModelsKey(config),
         ) ??
-        provider.defaultModel;
+        _visibleModelsFor(config);
+  }
+
+  Future<void> _saveProviderModels(ModelConfig config, List<String> models) {
+    return context.read<SharedPreferences>().setStringList(
+      _providerModelsKey(config),
+      _normalizedModels(models),
+    );
   }
 
   List<String> _visibleModelsFor(ModelConfig config) {
@@ -262,23 +316,26 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
   }
 
   Future<void> _saveVisibleModels(ModelConfig config, List<String> models) {
-    final sorted = models.toSet().toList()..sort();
     return context.read<SharedPreferences>().setStringList(
       config.remoteVisibleModelsKey,
-      sorted,
+      _normalizedModels(models),
     );
   }
 
-  void _setModelVisible(ModelConfig config, String model, bool visible) {
+  Future<void> _setModelVisible(
+    ModelConfig config,
+    String model,
+    bool visible,
+  ) async {
     final next = _visibleModelsFor(config).toSet();
     if (visible) {
       next.add(model);
     } else {
       next.remove(model);
     }
-    final sorted = next.toList()..sort();
+    await _saveVisibleModels(config, next.toList());
+    if (!mounted) return;
     setState(() {});
-    _saveVisibleModels(config, sorted);
   }
 
   Future<void> _loadModelsForProvider(
@@ -286,7 +343,8 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     _RemoteProviderProfile provider,
   ) async {
     final config = _configForProvider(currentConfig, provider);
-    if (!config.isRemoteConfigured) {
+    final remoteRepository = context.read<RemoteLlmRepository>();
+    if (!_canLoadModels(config)) {
       setState(() {
         _loadErrors[provider.id] = 'Select a token or dummy token first.';
       });
@@ -299,18 +357,13 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     });
 
     try {
-      final models = await context.read<RemoteLlmRepository>().listModels(
-        config,
-      );
-      final visible = {
-        ..._visibleModelsFor(config),
-        if (_visibleModelsFor(config).isEmpty) ...models,
-        config.remoteModel,
-      }.where((model) => model.trim().isNotEmpty).toList()..sort();
-      await _saveVisibleModels(config, visible);
+      final models = await remoteRepository.listModels(config);
+      final normalizedModels = _normalizedModels(models);
+      await _saveProviderModels(config, normalizedModels);
+      await _saveVisibleModels(config, normalizedModels);
       if (!mounted) return;
       setState(() {
-        _loadedModels[provider.id] = models;
+        _loadedModels[provider.id] = normalizedModels;
         _loadingProviderId = null;
       });
     } catch (e) {
@@ -320,6 +373,24 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
         _loadingProviderId = null;
       });
     }
+  }
+
+  bool _canLoadModels(ModelConfig config) {
+    return (config.remoteAccountId != null || config.remoteUsesDummyToken) &&
+        config.remoteBaseUrl.trim().isNotEmpty;
+  }
+
+  List<String> _normalizedModels(Iterable<String> models) {
+    final normalized = {
+      for (final model in models)
+        if (model.trim().isNotEmpty) model.trim(),
+    }.toList()..sort();
+    return normalized;
+  }
+
+  String _providerModelsKey(ModelConfig config) {
+    return '$_providerModelsPrefix${config.remoteProvider.name}_'
+        '${config.remoteAccountId ?? 'none'}_${config.remoteBaseUrl.trim()}';
   }
 
   void _activateProvider(
@@ -339,7 +410,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     _RemoteProviderProfile provider,
   ) {
     final controller = TextEditingController(
-      text: _selectedModelFor(provider, currentConfig),
+      text: _selectedModelFor(provider, currentConfig) ?? '',
     );
     showDialog(
       context: context,
@@ -359,32 +430,55 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               final model = controller.text.trim();
               if (model.isEmpty) return;
-              _saveSelectedModel(provider, model);
-              final providerConfig = _configForProvider(
-                currentConfig,
-                provider,
-              ).copyWith(remoteModel: model);
-              final visible = {
-                ..._visibleModelsFor(providerConfig),
-                model,
-              }.toList()..sort();
-              _saveVisibleModels(providerConfig, visible);
-              if (_isActiveProvider(currentConfig, provider)) {
-                context.read<ChatSettingsBloc>().add(
-                  ChatSettingsUpdateConfig(config: providerConfig),
-                );
-              }
-              setState(() {});
-              Navigator.pop(dialogContext);
+              await _selectProviderModel(currentConfig, provider, model);
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
             },
             child: const Text('Save'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _selectProviderModel(
+    ModelConfig currentConfig,
+    _RemoteProviderProfile provider,
+    String model,
+  ) async {
+    final preferences = context.read<SharedPreferences>();
+    final chatSettingsBloc = context.read<ChatSettingsBloc>();
+    final shouldUpdateActiveProvider = _isActiveProvider(
+      currentConfig,
+      provider,
+    );
+    final providerConfig = _configForProvider(
+      currentConfig,
+      provider,
+    ).copyWith(remoteModel: model);
+    final providerModels = {
+      ..._providerModelsFor(providerConfig),
+      model,
+    }.toList()..sort();
+    final visible = {..._visibleModelsFor(providerConfig), model}.toList()
+      ..sort();
+
+    await preferences.setString(_selectedModelKey(provider), model);
+    await preferences.setStringList(
+      _providerModelsKey(providerConfig),
+      _normalizedModels(providerModels),
+    );
+    await preferences.setStringList(
+      providerConfig.remoteVisibleModelsKey,
+      _normalizedModels(visible),
+    );
+    if (!mounted) return;
+    if (shouldUpdateActiveProvider) {
+      chatSettingsBloc.add(ChatSettingsUpdateConfig(config: providerConfig));
+    }
+    setState(() {});
   }
 
   void _showTokenPicker(BuildContext context, _RemoteProviderProfile provider) {
@@ -472,11 +566,27 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     _RemoteProviderProfile? provider,
   }) {
     final isEditing = provider != null;
-    final nameController = TextEditingController(text: provider?.name ?? '');
-    final baseUrlController = TextEditingController(
-      text: provider?.baseUrl ?? 'http://localhost:11434/v1',
+    final presets = _RemoteProviderProfile.presets;
+    var selectedPreset = isEditing
+        ? _matchingPresetFor(provider)
+        : presets.first;
+    final nameController = TextEditingController(
+      text: provider?.name ?? selectedPreset?.name ?? '',
     );
-    var useDummyToken = provider?.useDummyToken ?? true;
+    final baseUrlController = TextEditingController(
+      text:
+          provider?.baseUrl ??
+          selectedPreset?.baseUrl ??
+          'http://localhost:11434/v1',
+    );
+    var remoteProvider =
+        provider?.remoteProvider ??
+        selectedPreset?.remoteProvider ??
+        RemoteLlmProvider.openAiCompatible;
+    var defaultModel =
+        provider?.defaultModel ?? selectedPreset?.defaultModel ?? 'local-model';
+    var useDummyToken =
+        provider?.useDummyToken ?? selectedPreset?.useDummyToken ?? true;
     int? accountId = provider?.accountId;
 
     final accountsState = context.read<AccountsBloc>().state;
@@ -494,6 +604,37 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                DropdownButtonFormField<String>(
+                  initialValue: selectedPreset?.id,
+                  decoration: const InputDecoration(
+                    labelText: 'Provider preset',
+                    border: OutlineInputBorder(),
+                  ),
+                  hint: const Text('Select provider'),
+                  items: [
+                    for (final preset in presets)
+                      DropdownMenuItem(
+                        value: preset.id,
+                        child: Text(preset.name),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    final preset = presets.firstWhere(
+                      (item) => item.id == value,
+                      orElse: () => presets.first,
+                    );
+                    setDialogState(() {
+                      selectedPreset = preset;
+                      nameController.text = preset.name;
+                      baseUrlController.text = preset.baseUrl;
+                      remoteProvider = preset.remoteProvider;
+                      defaultModel = preset.defaultModel;
+                      useDummyToken = preset.useDummyToken;
+                      if (useDummyToken) accountId = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
                 TextField(
                   controller: nameController,
                   decoration: const InputDecoration(
@@ -562,11 +703,9 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
                   baseUrl: baseUrl,
                   accountId: useDummyToken ? null : accountId,
                   useDummyToken: useDummyToken,
-                  isBuiltIn: provider?.isBuiltIn ?? false,
-                  remoteProvider:
-                      provider?.remoteProvider ??
-                      RemoteLlmProvider.openAiCompatible,
-                  defaultModel: provider?.defaultModel ?? 'local-model',
+                  isBuiltIn: false,
+                  remoteProvider: remoteProvider,
+                  defaultModel: defaultModel,
                 );
                 _replaceProvider(next);
                 Navigator.pop(dialogContext);
@@ -577,6 +716,18 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
         ),
       ),
     );
+  }
+
+  _RemoteProviderProfile? _matchingPresetFor(_RemoteProviderProfile? provider) {
+    if (provider == null) return null;
+    for (final preset in _RemoteProviderProfile.presets) {
+      if (preset.remoteProvider == provider.remoteProvider &&
+          preset.baseUrl == provider.baseUrl &&
+          preset.defaultModel == provider.defaultModel) {
+        return preset;
+      }
+    }
+    return null;
   }
 
   String _authLabel(AccountsState state, _RemoteProviderProfile provider) {
@@ -594,16 +745,13 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     final saved = context.read<SharedPreferences>().getStringList(
       _providersKey,
     );
-    if (saved == null || saved.isEmpty) return _RemoteProviderProfile.defaults;
-    final providersById = {
-      for (final provider in _RemoteProviderProfile.defaults)
-        provider.id: provider,
-    };
+    if (saved == null || saved.isEmpty) return const <_RemoteProviderProfile>[];
+    final providers = <_RemoteProviderProfile>[];
     for (final raw in saved) {
       final provider = _RemoteProviderProfile.fromJson(raw);
-      providersById[provider.id] = provider;
+      if (!provider.isBuiltIn) providers.add(provider);
     }
-    return providersById.values.toList();
+    return providers;
   }
 
   Future<void> _saveProviders() {
@@ -641,16 +789,6 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
 
   String _selectedModelKey(_RemoteProviderProfile provider) {
     return '$_selectedModelPrefix${provider.id}';
-  }
-
-  Future<void> _saveSelectedModel(
-    _RemoteProviderProfile provider,
-    String model,
-  ) {
-    return context.read<SharedPreferences>().setString(
-      _selectedModelKey(provider),
-      model,
-    );
   }
 }
 
@@ -740,7 +878,7 @@ class _RemoteProviderProfile {
     return RemoteLlmProvider.openAiCompatible;
   }
 
-  static const defaults = [
+  static const presets = [
     _RemoteProviderProfile(
       id: 'openai',
       name: 'OpenAI',

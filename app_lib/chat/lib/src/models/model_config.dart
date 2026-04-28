@@ -566,6 +566,7 @@ class ModelConfig extends Equatable {
     this.remoteBaseUrl = 'https://api.openai.com/v1',
     this.remoteModel = 'gpt-4.1-mini',
     this.remoteStreamingEnabled = true,
+    this.remoteThinkingEffort = RemoteThinkingEffort.off,
   });
 
   /// Creates a default configuration.
@@ -615,6 +616,9 @@ class ModelConfig extends Equatable {
   /// Whether to request streaming responses from the remote API.
   final bool remoteStreamingEnabled;
 
+  /// Provider-side thinking/reasoning effort for remote APIs that support it.
+  final RemoteThinkingEffort remoteThinkingEffort;
+
   @override
   List<Object?> get props => [
         inferenceMode,
@@ -629,6 +633,7 @@ class ModelConfig extends Equatable {
         remoteBaseUrl,
         remoteModel,
         remoteStreamingEnabled,
+        remoteThinkingEffort,
       ];
 
   /// Returns the model path for the selected model type.
@@ -695,6 +700,7 @@ class ModelConfig extends Equatable {
     String? remoteBaseUrl,
     String? remoteModel,
     bool? remoteStreamingEnabled,
+    RemoteThinkingEffort? remoteThinkingEffort,
   }) {
     return ModelConfig(
       inferenceMode: inferenceMode ?? this.inferenceMode,
@@ -711,6 +717,7 @@ class ModelConfig extends Equatable {
       remoteModel: remoteModel ?? this.remoteModel,
       remoteStreamingEnabled:
           remoteStreamingEnabled ?? this.remoteStreamingEnabled,
+      remoteThinkingEffort: remoteThinkingEffort ?? this.remoteThinkingEffort,
     );
   }
 
@@ -744,9 +751,6 @@ class ModelConfig extends Equatable {
           uri.scheme != 'https' &&
           !(uri.scheme == 'http' && _isLocalhost(uri.host))) {
         errors.add('Remote base URL must use HTTPS');
-      }
-      if (remoteModel.trim().isEmpty) {
-        errors.add('Remote model is required');
       }
     }
 

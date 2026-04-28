@@ -110,6 +110,7 @@ class RemoteLlmRepository {
     }
 
     final toolCallBuffers = <int, _RemoteToolCallBuffer>{};
+    final thinkTagParser = _ThinkTagParser();
     await for (final line in response.stream
         .transform(utf8.decoder)
         .transform(const LineSplitter())) {
@@ -118,6 +119,9 @@ class RemoteLlmRepository {
 
       final data = trimmed.substring(5).trim();
       if (data == '[DONE]') {
+        for (final chunk in thinkTagParser.close()) {
+          yield chunk;
+        }
         final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
         if (toolCall != null) yield toolCall;
         return;
@@ -142,7 +146,9 @@ class RemoteLlmRepository {
 
         final text = _contentString(delta['content']);
         if (text != null && text.isNotEmpty) {
-          yield ChatTextChunk(text);
+          for (final chunk in thinkTagParser.add(text)) {
+            yield chunk;
+          }
         }
 
         final thinking = _stringValue(delta['reasoning_content']) ??
@@ -153,6 +159,9 @@ class RemoteLlmRepository {
       }
 
       if (finishReason == 'tool_calls' || finishReason == 'function_call') {
+        for (final chunk in thinkTagParser.close()) {
+          yield chunk;
+        }
         final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
         if (toolCall != null) yield toolCall;
         return;
@@ -201,6 +210,16 @@ class RemoteLlmRepository {
       'temperature': config.temperature,
       'max_tokens': config.maxTokens,
     };
+    if (config.remoteProvider == RemoteLlmProvider.deepSeek) {
+      final effort = config.remoteThinkingEffort.deepSeekReasoningEffort;
+      body['thinking'] = {
+        'type': effort == null ? 'disabled' : 'enabled',
+      };
+      if (effort != null) {
+        body['reasoning_effort'] = effort;
+        body.remove('temperature');
+      }
+    }
     if (tools.isNotEmpty) {
       body['tools'] = tools;
     }
@@ -268,7 +287,7 @@ class RemoteLlmRepository {
 
     final content = _contentString(message['content']);
     if (content != null && content.isNotEmpty) {
-      chunks.add(ChatTextChunk(content));
+      chunks.addAll(_ThinkTagParser.parse(content));
     }
 
     final buffers = <int, _RemoteToolCallBuffer>{};
@@ -388,6 +407,70 @@ class RemoteLlmRepository {
     if (trimmed.isEmpty) return 'empty response body';
     if (trimmed.length <= 500) return trimmed;
     return '${trimmed.substring(0, 500)}...';
+  }
+}
+
+class _ThinkTagParser {
+  static const _startTag = '<think>';
+  static const _endTag = '</think>';
+
+  var _buffer = '';
+  var _inThinkBlock = false;
+
+  static List<ChatGenerationChunk> parse(String text) {
+    final parser = _ThinkTagParser();
+    return [...parser.add(text), ...parser.close()];
+  }
+
+  List<ChatGenerationChunk> add(String text) {
+    if (text.isEmpty) return const [];
+    _buffer += text;
+    return _drain(complete: false);
+  }
+
+  List<ChatGenerationChunk> close() {
+    return _drain(complete: true);
+  }
+
+  List<ChatGenerationChunk> _drain({required bool complete}) {
+    final chunks = <ChatGenerationChunk>[];
+
+    while (_buffer.isNotEmpty) {
+      final marker = _inThinkBlock ? _endTag : _startTag;
+      final markerIndex = _buffer.indexOf(marker);
+      if (markerIndex != -1) {
+        _emit(chunks, _buffer.substring(0, markerIndex));
+        _buffer = _buffer.substring(markerIndex + marker.length);
+        _inThinkBlock = !_inThinkBlock;
+        continue;
+      }
+
+      final keep = complete ? 0 : _trailingMarkerPrefixLength(_buffer, marker);
+      final emitLength = _buffer.length - keep;
+      if (emitLength > 0) {
+        _emit(chunks, _buffer.substring(0, emitLength));
+        _buffer = _buffer.substring(emitLength);
+      }
+      break;
+    }
+
+    return chunks;
+  }
+
+  int _trailingMarkerPrefixLength(String text, String marker) {
+    final max =
+        text.length < marker.length - 1 ? text.length : marker.length - 1;
+    for (var length = max; length > 0; length -= 1) {
+      if (marker.startsWith(text.substring(text.length - length))) {
+        return length;
+      }
+    }
+    return 0;
+  }
+
+  void _emit(List<ChatGenerationChunk> chunks, String text) {
+    if (text.isEmpty) return;
+    chunks.add(_inThinkBlock ? ChatThinkingChunk(text) : ChatTextChunk(text));
   }
 }
 

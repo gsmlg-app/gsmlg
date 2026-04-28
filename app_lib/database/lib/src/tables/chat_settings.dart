@@ -47,6 +47,10 @@ class ChatSettingsTable extends Table {
   BoolColumn get remoteStreamingEnabled =>
       boolean().withDefault(const Constant(true))();
 
+  /// Remote provider thinking effort: off, high, or max.
+  TextColumn get remoteThinkingEffort =>
+      text().withDefault(const Constant('off'))();
+
   /// Default system prompt for new conversations.
   TextColumn get defaultSystemPrompt => text().nullable()();
 

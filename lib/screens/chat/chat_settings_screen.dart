@@ -74,6 +74,13 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                     title: const Text('Remote LLM'),
                     tiles: [
                       SettingsTile.navigation(
+                        leading: const Icon(Icons.cloud_queue),
+                        title: const Text('Provider'),
+                        value: Text(state.config.remoteProvider.displayName),
+                        onPressed: (_) =>
+                            _showRemoteProviderPicker(context, state.config),
+                      ),
+                      SettingsTile.navigation(
                         leading: const Icon(Icons.account_circle),
                         title: const Text('Account'),
                         value: BlocBuilder<AccountsBloc, AccountsState>(
@@ -263,6 +270,66 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
       ),
     );
     Navigator.pop(sheetContext);
+  }
+
+  void _showRemoteProviderPicker(BuildContext context, ModelConfig config) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final provider in RemoteLlmProvider.values)
+                ListTile(
+                  leading: Radio<RemoteLlmProvider>(
+                    value: provider,
+                    groupValue: config.remoteProvider,
+                    onChanged: (value) =>
+                        _updateRemoteProvider(context, sheetContext, value!),
+                  ),
+                  title: Text(provider.displayName),
+                  subtitle: Text(provider.defaultBaseUrl),
+                  onTap: () =>
+                      _updateRemoteProvider(context, sheetContext, provider),
+                ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _updateRemoteProvider(
+    BuildContext context,
+    BuildContext sheetContext,
+    RemoteLlmProvider provider,
+  ) {
+    final currentConfig = context.read<ChatSettingsBloc>().state.config;
+    context.read<ChatSettingsBloc>().add(
+      ChatSettingsUpdateConfig(
+        config: currentConfig.copyWith(
+          remoteProvider: provider,
+          remoteBaseUrl: provider.defaultBaseUrl,
+          remoteModel: _defaultRemoteModel(provider),
+          remoteThinkingEffort: provider == RemoteLlmProvider.deepSeek
+              ? currentConfig.remoteThinkingEffort
+              : RemoteThinkingEffort.off,
+        ),
+      ),
+    );
+    Navigator.pop(sheetContext);
+  }
+
+  String _defaultRemoteModel(RemoteLlmProvider provider) {
+    return switch (provider) {
+      RemoteLlmProvider.openAiCompatible => 'gpt-4.1-mini',
+      RemoteLlmProvider.openAi => 'gpt-4.1-mini',
+      RemoteLlmProvider.openRouter => 'openai/gpt-4.1-mini',
+      RemoteLlmProvider.groq => 'llama-3.1-8b-instant',
+      RemoteLlmProvider.deepSeek => 'deepseek-chat',
+    };
   }
 
   void _showRemoteAccountPicker(BuildContext context, ModelConfig config) {

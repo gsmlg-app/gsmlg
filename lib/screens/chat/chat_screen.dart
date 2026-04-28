@@ -144,7 +144,9 @@ class _ChatScreenState extends State<ChatScreen> {
               child: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
                 buildWhen: (prev, curr) =>
                     prev.thinkingEnabled != curr.thinkingEnabled ||
-                    prev.config.inferenceMode != curr.config.inferenceMode,
+                    prev.config.inferenceMode != curr.config.inferenceMode ||
+                    prev.config.remoteThinkingEffort !=
+                        curr.config.remoteThinkingEffort,
                 builder: (context, settingsState) {
                   if (settingsState.config.inferenceMode ==
                       ChatInferenceMode.local) {
@@ -184,10 +186,19 @@ class _ChatScreenState extends State<ChatScreen> {
         return ChatMessageList(
           messages: state.messages,
           isStreaming: state.isStreaming,
-          showThinking: settingsState.thinkingEnabled,
+          showThinking: _shouldShowThinking(settingsState),
         );
       },
     );
+  }
+
+  bool _shouldShowThinking(ChatSettingsState settingsState) {
+    final config = settingsState.config;
+    if (config.inferenceMode == ChatInferenceMode.remote &&
+        config.remoteProvider == RemoteLlmProvider.deepSeek) {
+      return config.remoteThinkingEffort != RemoteThinkingEffort.off;
+    }
+    return settingsState.thinkingEnabled;
   }
 
   Widget _buildLocalInputBar(ChatSettingsState settingsState) {
@@ -256,10 +267,14 @@ class _ChatScreenState extends State<ChatScreen> {
         }.where((model) => model.trim().isNotEmpty).toList()..sort();
         final canSend =
             settingsState.config.isRemoteConfigured && chatState.canSendMessage;
+        final isDeepSeek = config.remoteProvider == RemoteLlmProvider.deepSeek;
         return ChatInputBar(
           enabled: canSend,
           isStreaming: chatState.isStreaming,
-          thinkingEnabled: settingsState.thinkingEnabled,
+          thinkingEnabled: isDeepSeek
+              ? config.remoteThinkingEffort != RemoteThinkingEffort.off
+              : settingsState.thinkingEnabled,
+          thinkingEffort: isDeepSeek ? config.remoteThinkingEffort : null,
           selectedModelName: 'Remote: ${config.remoteModel}',
           selectedModelId: config.remoteModel,
           remoteModels: remoteModels,
@@ -271,11 +286,22 @@ class _ChatScreenState extends State<ChatScreen> {
             );
           },
           onModelTap: () => context.goNamed(RemoteModelSettingsScreen.name),
-          onThinkingToggle: (enabled) {
-            context.read<ChatSettingsBloc>().add(
-              ChatSettingsToggleThinking(enabled: enabled),
-            );
-          },
+          onThinkingEffortChanged: isDeepSeek
+              ? (effort) {
+                  context.read<ChatSettingsBloc>().add(
+                    ChatSettingsUpdateConfig(
+                      config: config.copyWith(remoteThinkingEffort: effort),
+                    ),
+                  );
+                }
+              : null,
+          onThinkingToggle: isDeepSeek
+              ? null
+              : (enabled) {
+                  context.read<ChatSettingsBloc>().add(
+                    ChatSettingsToggleThinking(enabled: enabled),
+                  );
+                },
           onSend: (message, {imageBytes, audioBytes}) {
             _sendMessage(chatState, message);
           },

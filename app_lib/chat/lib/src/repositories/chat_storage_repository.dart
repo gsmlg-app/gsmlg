@@ -164,6 +164,9 @@ class ChatStorageRepository {
       remoteBaseUrl: row.remoteBaseUrl,
       remoteModel: row.remoteModel,
       remoteStreamingEnabled: row.remoteStreamingEnabled,
+      remoteThinkingEffort: _parseRemoteThinkingEffort(
+        row.remoteThinkingEffort,
+      ),
     );
   }
 
@@ -185,6 +188,9 @@ class ChatStorageRepository {
             remoteBaseUrl: Value(config.remoteBaseUrl),
             remoteModel: Value(config.remoteModel),
             remoteStreamingEnabled: Value(config.remoteStreamingEnabled),
+            remoteThinkingEffort: Value(
+              _remoteThinkingEffortToString(config.remoteThinkingEffort),
+            ),
           ),
         );
   }
@@ -301,6 +307,22 @@ class ChatStorageRepository {
       RemoteLlmProvider.openRouter => 'openRouter',
       RemoteLlmProvider.groq => 'groq',
       RemoteLlmProvider.deepSeek => 'deepSeek',
+    };
+  }
+
+  RemoteThinkingEffort _parseRemoteThinkingEffort(String value) {
+    return switch (value) {
+      'high' => RemoteThinkingEffort.high,
+      'max' => RemoteThinkingEffort.max,
+      _ => RemoteThinkingEffort.off,
+    };
+  }
+
+  String _remoteThinkingEffortToString(RemoteThinkingEffort effort) {
+    return switch (effort) {
+      RemoteThinkingEffort.off => 'off',
+      RemoteThinkingEffort.high => 'high',
+      RemoteThinkingEffort.max => 'max',
     };
   }
 

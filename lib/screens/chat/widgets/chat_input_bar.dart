@@ -16,6 +16,7 @@ class ChatInputBar extends StatefulWidget {
     this.supportsAudio = false,
     this.supportsThinking = false,
     this.thinkingEnabled = false,
+    this.thinkingEffort,
     this.selectedModelName,
     this.installedModels = const [],
     this.remoteModels = const [],
@@ -23,6 +24,7 @@ class ChatInputBar extends StatefulWidget {
     required this.onSend,
     required this.onStop,
     this.onThinkingToggle,
+    this.onThinkingEffortChanged,
     this.onModelTap,
     this.onModelSelect,
   });
@@ -33,6 +35,7 @@ class ChatInputBar extends StatefulWidget {
   final bool supportsAudio;
   final bool supportsThinking;
   final bool thinkingEnabled;
+  final RemoteThinkingEffort? thinkingEffort;
   final String? selectedModelName;
   final List<String> installedModels;
   final List<String> remoteModels;
@@ -45,6 +48,7 @@ class ChatInputBar extends StatefulWidget {
   onSend;
   final VoidCallback onStop;
   final ValueChanged<bool>? onThinkingToggle;
+  final ValueChanged<RemoteThinkingEffort>? onThinkingEffortChanged;
   final VoidCallback? onModelTap;
   final ValueChanged<String>? onModelSelect;
 
@@ -288,7 +292,14 @@ class _ChatInputBarState extends State<ChatInputBar> {
       leading: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (widget.onThinkingToggle != null)
+          if (widget.thinkingEffort != null &&
+              widget.onThinkingEffortChanged != null)
+            _ThinkEffortSelector(
+              value: widget.thinkingEffort!,
+              enabled: widget.enabled && !widget.isStreaming,
+              onChanged: widget.onThinkingEffortChanged!,
+            )
+          else if (widget.onThinkingToggle != null)
             _ThinkSwitch(
               value: widget.thinkingEnabled,
               enabled: widget.enabled && !widget.isStreaming,
@@ -375,6 +386,82 @@ class _ThinkSwitch extends StatelessWidget {
                   onChanged: enabled ? onChanged : null,
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThinkEffortSelector extends StatelessWidget {
+  const _ThinkEffortSelector({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final RemoteThinkingEffort value;
+  final bool enabled;
+  final ValueChanged<RemoteThinkingEffort> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final active = value != RemoteThinkingEffort.off;
+
+    return PopupMenuButton<RemoteThinkingEffort>(
+      enabled: enabled,
+      tooltip: 'Thinking effort: ${value.displayName}',
+      onSelected: onChanged,
+      itemBuilder: (context) => [
+        for (final effort in RemoteThinkingEffort.values)
+          PopupMenuItem(
+            value: effort,
+            child: Row(
+              children: [
+                Icon(
+                  effort == value
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(effort.displayName),
+              ],
+            ),
+          ),
+      ],
+      child: Semantics(
+        button: true,
+        label: 'Thinking effort ${value.displayName}',
+        child: SizedBox(
+          height: 36,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.psychology,
+                size: 18,
+                color: active
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                value.displayName,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: active
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                ),
+              ),
+              Icon(
+                Icons.arrow_drop_down,
+                size: 16,
+                color: colorScheme.onSurfaceVariant,
               ),
             ],
           ),

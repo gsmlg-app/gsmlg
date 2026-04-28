@@ -27,6 +27,18 @@ enum RemoteLlmProvider {
   deepSeek,
 }
 
+/// Remote provider thinking/reasoning effort.
+enum RemoteThinkingEffort {
+  /// Disable provider-side thinking.
+  off,
+
+  /// Enable thinking with the provider's standard effort.
+  high,
+
+  /// Enable thinking with the provider's highest effort.
+  max,
+}
+
 extension RemoteLlmProviderX on RemoteLlmProvider {
   String get displayName {
     return switch (this) {
@@ -45,6 +57,24 @@ extension RemoteLlmProviderX on RemoteLlmProvider {
       RemoteLlmProvider.openRouter => 'https://openrouter.ai/api/v1',
       RemoteLlmProvider.groq => 'https://api.groq.com/openai/v1',
       RemoteLlmProvider.deepSeek => 'https://api.deepseek.com/v1',
+    };
+  }
+}
+
+extension RemoteThinkingEffortX on RemoteThinkingEffort {
+  String get displayName {
+    return switch (this) {
+      RemoteThinkingEffort.off => 'Off',
+      RemoteThinkingEffort.high => 'High',
+      RemoteThinkingEffort.max => 'Max',
+    };
+  }
+
+  String? get deepSeekReasoningEffort {
+    return switch (this) {
+      RemoteThinkingEffort.off => null,
+      RemoteThinkingEffort.high => 'high',
+      RemoteThinkingEffort.max => 'max',
     };
   }
 }
