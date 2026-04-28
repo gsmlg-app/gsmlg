@@ -14,7 +14,6 @@ dependencies:
   uuid: ^4.3.3
   shared_preferences: any
   app_chat: any
-  flutter_gemma: ^0.13.2
 
 dev_dependencies:
   flutter_test:

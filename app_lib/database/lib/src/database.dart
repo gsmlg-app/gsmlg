@@ -50,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration {
@@ -92,6 +92,19 @@ class AppDatabase extends _$AppDatabase {
         if (from < 9) {
           await m.addColumn(chatMessageTable, chatMessageTable.imageBytes);
           await m.addColumn(chatMessageTable, chatMessageTable.toolName);
+        }
+        if (from < 10) {
+          await m.addColumn(chatSettingsTable, chatSettingsTable.inferenceMode);
+          await m.addColumn(
+              chatSettingsTable, chatSettingsTable.remoteProvider);
+          await m.addColumn(
+              chatSettingsTable, chatSettingsTable.remoteAccountId);
+          await m.addColumn(chatSettingsTable, chatSettingsTable.remoteBaseUrl);
+          await m.addColumn(chatSettingsTable, chatSettingsTable.remoteModel);
+          await m.addColumn(
+            chatSettingsTable,
+            chatSettingsTable.remoteStreamingEnabled,
+          );
         }
       },
     );

@@ -3,6 +3,8 @@ import 'dart:io' show Platform, Process;
 import 'package:equatable/equatable.dart';
 import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 
+import 'inference.dart';
+
 /// Re-export flutter_gemma's ModelType so consumers (BLoC, UI) can pass
 /// the correct native model type without depending on flutter_gemma directly.
 typedef NativeModelType = gemma.ModelType;
@@ -106,7 +108,9 @@ class GemmaModelInfo {
   /// Whether vision/multimodal works on the current platform.
   /// Desktop LiteRT-LM: vision is broken (model hallucinates).
   bool get effectiveSupportsMultimodal {
-    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) return false;
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+      return false;
+    }
     return supportsMultimodal;
   }
 
@@ -117,7 +121,9 @@ class GemmaModelInfo {
   /// Whether function calling works on the current platform.
   /// Desktop LiteRT-LM: function calling is NOT supported.
   bool get effectiveSupportsFunctionCalls {
-    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) return false;
+    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
+      return false;
+    }
     return supportsFunctionCalls;
   }
 
@@ -191,7 +197,6 @@ class GemmaModelInfo {
     url:
         'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
     modelType: gemma.ModelType.gemmaIt,
-
     needsAuth: false,
     supportsMultimodal: true,
     supportsThinking: true,
@@ -206,7 +211,6 @@ class GemmaModelInfo {
     url:
         'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
     modelType: gemma.ModelType.gemmaIt,
-
     needsAuth: false,
     supportsMultimodal: true,
     supportsThinking: true,
@@ -224,7 +228,6 @@ class GemmaModelInfo {
         'https://huggingface.co/google/gemma-3n-E2B-it-litert-lm/resolve/main/gemma-3n-E2B-it-int4.litertlm',
     desktopSizeLabel: '3.7 GB',
     modelType: gemma.ModelType.gemmaIt,
-
     needsAuth: true,
     supportsMultimodal: true,
     supportsFunctionCalls: true,
@@ -241,7 +244,6 @@ class GemmaModelInfo {
         'https://huggingface.co/google/gemma-3n-E4B-it-litert-lm/resolve/main/gemma-3n-E4B-it-int4.litertlm',
     desktopSizeLabel: '4.9 GB',
     modelType: gemma.ModelType.gemmaIt,
-
     needsAuth: true,
     supportsMultimodal: true,
     supportsAudio: true,
@@ -258,7 +260,6 @@ class GemmaModelInfo {
     desktopUrl:
         'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.litertlm',
     modelType: gemma.ModelType.gemmaIt,
-
     needsAuth: true,
   );
 
@@ -273,7 +274,6 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/gemma-3-270m-it/resolve/main/gemma3-270m-it-q8.litertlm',
     desktopSizeLabel: '304 MB',
     modelType: gemma.ModelType.gemmaIt,
-
     needsAuth: true,
   );
 
@@ -285,7 +285,6 @@ class GemmaModelInfo {
     url:
         'https://huggingface.co/sasha-denisov/function-gemma-270M-it/resolve/main/functiongemma-270M-it.task',
     modelType: gemma.ModelType.functionGemma,
-
     supportsFunctionCalls: true,
   );
 
@@ -302,7 +301,6 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B.litertlm',
     modelType: gemma.ModelType.qwen,
     category: ModelCategory.qwen,
-
     supportsFunctionCalls: true,
   );
 
@@ -317,7 +315,6 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm',
     modelType: gemma.ModelType.qwen,
     category: ModelCategory.qwen,
-
     supportsFunctionCalls: true,
   );
 
@@ -330,7 +327,6 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task',
     modelType: gemma.ModelType.qwen,
     category: ModelCategory.qwen,
-
     supportsFunctionCalls: true,
   );
 
@@ -350,7 +346,6 @@ class GemmaModelInfo {
     desktopSizeLabel: '1.8 GB',
     modelType: gemma.ModelType.deepSeek,
     category: ModelCategory.deepSeek,
-
     supportsThinking: true,
   );
 
@@ -369,7 +364,6 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/Phi-4-mini-instruct/resolve/main/Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.litertlm',
     modelType: gemma.ModelType.general,
     category: ModelCategory.phi,
-
     supportsFunctionCalls: true,
   );
 
@@ -386,7 +380,6 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/FastVLM-0.5B/resolve/main/FastVLM-0.5B.litertlm',
     modelType: gemma.ModelType.general,
     category: ModelCategory.other,
-
     supportsMultimodal: true,
   );
 
@@ -399,7 +392,6 @@ class GemmaModelInfo {
         'https://huggingface.co/litert-community/SmolLM-135M-Instruct/resolve/main/SmolLM-135M-Instruct_multi-prefill-seq_q8_ekv1280.task',
     modelType: gemma.ModelType.general,
     category: ModelCategory.other,
-
   );
 
   // ---------------------------------------------------------------------------
@@ -547,19 +539,28 @@ enum GemmaBackend {
   cpu,
 }
 
-/// Configuration for the Gemma model.
+/// Configuration for chat inference.
 class ModelConfig extends Equatable {
   const ModelConfig({
+    this.inferenceMode = ChatInferenceMode.local,
     this.modelType = GemmaModelType.gemma2bIt,
     this.customModelPath,
     this.maxTokens = 2048,
     this.temperature = 0.8,
     this.topK = 40,
     this.backend = GemmaBackend.gpu,
+    this.remoteProvider = RemoteLlmProvider.openAiCompatible,
+    this.remoteAccountId,
+    this.remoteBaseUrl = 'https://api.openai.com/v1',
+    this.remoteModel = 'gpt-4.1-mini',
+    this.remoteStreamingEnabled = true,
   });
 
   /// Creates a default configuration.
   static const ModelConfig defaultConfig = ModelConfig();
+
+  /// Where inference should run.
+  final ChatInferenceMode inferenceMode;
 
   /// The type of model to use.
   final GemmaModelType modelType;
@@ -581,14 +582,35 @@ class ModelConfig extends Equatable {
   /// The backend to use for inference.
   final GemmaBackend backend;
 
+  /// Remote LLM API family.
+  final RemoteLlmProvider remoteProvider;
+
+  /// Service account containing the remote API key.
+  final int? remoteAccountId;
+
+  /// Remote API base URL, for example `https://api.openai.com/v1`.
+  final String remoteBaseUrl;
+
+  /// Remote model identifier.
+  final String remoteModel;
+
+  /// Whether to request streaming responses from the remote API.
+  final bool remoteStreamingEnabled;
+
   @override
   List<Object?> get props => [
+        inferenceMode,
         modelType,
         customModelPath,
         maxTokens,
         temperature,
         topK,
         backend,
+        remoteProvider,
+        remoteAccountId,
+        remoteBaseUrl,
+        remoteModel,
+        remoteStreamingEnabled,
       ];
 
   /// Returns the model path for the selected model type.
@@ -601,6 +623,8 @@ class ModelConfig extends Equatable {
 
   /// Returns a human-readable model name.
   String get modelDisplayName {
+    if (inferenceMode == ChatInferenceMode.remote) return remoteModel;
+
     return switch (modelType) {
       GemmaModelType.gemma2bIt => 'Gemma 2B-IT',
       GemmaModelType.gemma7bIt => 'Gemma 7B-IT',
@@ -608,21 +632,51 @@ class ModelConfig extends Equatable {
     };
   }
 
+  /// Human-readable inference mode label.
+  String get inferenceModeDisplayName {
+    return switch (inferenceMode) {
+      ChatInferenceMode.local => 'Local',
+      ChatInferenceMode.remote => 'Remote',
+    };
+  }
+
+  /// Whether enough non-secret remote settings are present.
+  bool get isRemoteConfigured {
+    return remoteAccountId != null &&
+        remoteBaseUrl.trim().isNotEmpty &&
+        remoteModel.trim().isNotEmpty;
+  }
+
   ModelConfig copyWith({
+    ChatInferenceMode? inferenceMode,
     GemmaModelType? modelType,
     String? customModelPath,
     int? maxTokens,
     double? temperature,
     int? topK,
     GemmaBackend? backend,
+    RemoteLlmProvider? remoteProvider,
+    int? remoteAccountId,
+    bool clearRemoteAccount = false,
+    String? remoteBaseUrl,
+    String? remoteModel,
+    bool? remoteStreamingEnabled,
   }) {
     return ModelConfig(
+      inferenceMode: inferenceMode ?? this.inferenceMode,
       modelType: modelType ?? this.modelType,
       customModelPath: customModelPath ?? this.customModelPath,
       maxTokens: maxTokens ?? this.maxTokens,
       temperature: temperature ?? this.temperature,
       topK: topK ?? this.topK,
       backend: backend ?? this.backend,
+      remoteProvider: remoteProvider ?? this.remoteProvider,
+      remoteAccountId:
+          clearRemoteAccount ? null : (remoteAccountId ?? this.remoteAccountId),
+      remoteBaseUrl: remoteBaseUrl ?? this.remoteBaseUrl,
+      remoteModel: remoteModel ?? this.remoteModel,
+      remoteStreamingEnabled:
+          remoteStreamingEnabled ?? this.remoteStreamingEnabled,
     );
   }
 
@@ -647,9 +701,28 @@ class ModelConfig extends Equatable {
       errors.add('Custom model path is required when using custom model type');
     }
 
+    if (inferenceMode == ChatInferenceMode.remote) {
+      final uri = Uri.tryParse(remoteBaseUrl.trim());
+      if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+        errors.add('Remote base URL must be a valid URL');
+      }
+      if (uri != null &&
+          uri.scheme != 'https' &&
+          !(uri.scheme == 'http' && _isLocalhost(uri.host))) {
+        errors.add('Remote base URL must use HTTPS');
+      }
+      if (remoteModel.trim().isEmpty) {
+        errors.add('Remote model is required');
+      }
+    }
+
     return errors;
   }
 
   /// Returns true if the configuration is valid.
   bool get isValid => validate().isEmpty;
+
+  static bool _isLocalhost(String host) {
+    return host == 'localhost' || host == '127.0.0.1' || host == '::1';
+  }
 }

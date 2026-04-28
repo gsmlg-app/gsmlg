@@ -1,9 +1,12 @@
+// ignore_for_file: deprecated_member_use
+
+import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
+import 'package:app_database/app_database.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
 
@@ -31,28 +34,91 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
             return SettingsList(
               sections: [
                 SettingsSection(
-                  title: const Text('Model'),
+                  title: const Text('Inference'),
                   tiles: [
                     SettingsTile.navigation(
-                      leading: const Icon(Icons.memory),
-                      title: const Text('Model Type'),
-                      value: Text(state.config.modelDisplayName),
+                      leading: const Icon(Icons.hub),
+                      title: const Text('Mode'),
+                      value: Text(state.config.inferenceModeDisplayName),
                       onPressed: (_) =>
-                          _showModelTypePicker(context, state.config),
-                    ),
-                    SettingsTile.navigation(
-                      leading: const Icon(Icons.speed),
-                      title: const Text('Backend'),
-                      value: Text(
-                        state.config.backend == GemmaBackend.gpu
-                            ? 'GPU (Recommended)'
-                            : 'CPU',
-                      ),
-                      onPressed: (_) =>
-                          _showBackendPicker(context, state.config),
+                          _showInferenceModePicker(context, state.config),
                     ),
                   ],
                 ),
+                if (state.config.inferenceMode == ChatInferenceMode.local)
+                  SettingsSection(
+                    title: const Text('Local Model'),
+                    tiles: [
+                      SettingsTile.navigation(
+                        leading: const Icon(Icons.memory),
+                        title: const Text('Model Type'),
+                        value: Text(state.config.modelDisplayName),
+                        onPressed: (_) =>
+                            _showModelTypePicker(context, state.config),
+                      ),
+                      SettingsTile.navigation(
+                        leading: const Icon(Icons.speed),
+                        title: const Text('Backend'),
+                        value: Text(
+                          state.config.backend == GemmaBackend.gpu
+                              ? 'GPU (Recommended)'
+                              : 'CPU',
+                        ),
+                        onPressed: (_) =>
+                            _showBackendPicker(context, state.config),
+                      ),
+                    ],
+                  ),
+                if (state.config.inferenceMode == ChatInferenceMode.remote)
+                  SettingsSection(
+                    title: const Text('Remote LLM'),
+                    tiles: [
+                      SettingsTile.navigation(
+                        leading: const Icon(Icons.account_circle),
+                        title: const Text('Account'),
+                        value: BlocBuilder<AccountsBloc, AccountsState>(
+                          builder: (context, accountsState) {
+                            final account = _selectedRemoteAccount(
+                              accountsState,
+                              state.config.remoteAccountId,
+                            );
+                            return Text(account?.name ?? 'Not selected');
+                          },
+                        ),
+                        onPressed: (_) =>
+                            _showRemoteAccountPicker(context, state.config),
+                      ),
+                      SettingsTile.navigation(
+                        leading: const Icon(Icons.link),
+                        title: const Text('Base URL'),
+                        value: Text(state.config.remoteBaseUrl),
+                        onPressed: (_) =>
+                            _showRemoteBaseUrlDialog(context, state.config),
+                      ),
+                      SettingsTile.navigation(
+                        leading: const Icon(Icons.smart_toy),
+                        title: const Text('Model'),
+                        value: Text(state.config.remoteModel),
+                        onPressed: (_) =>
+                            _showRemoteModelDialog(context, state.config),
+                      ),
+                      SettingsTile.switchTile(
+                        leading: const Icon(Icons.stream),
+                        title: const Text('Streaming'),
+                        description: const Text('Show tokens as they arrive'),
+                        initialValue: state.config.remoteStreamingEnabled,
+                        onToggle: (value) {
+                          context.read<ChatSettingsBloc>().add(
+                            ChatSettingsUpdateConfig(
+                              config: state.config.copyWith(
+                                remoteStreamingEnabled: value,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 SettingsSection(
                   title: const Text('Generation'),
                   tiles: [
@@ -130,6 +196,207 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  ServiceAccountTableData? _selectedRemoteAccount(
+    AccountsState state,
+    int? accountId,
+  ) {
+    if (state is! AccountsLoaded || accountId == null) return null;
+    for (final account in state.accounts) {
+      if (account.id == accountId) return account;
+    }
+    return null;
+  }
+
+  void _showInferenceModePicker(BuildContext context, ModelConfig config) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Radio<ChatInferenceMode>(
+              value: ChatInferenceMode.local,
+              groupValue: config.inferenceMode,
+              onChanged: (v) => _updateInferenceMode(context, sheetContext, v!),
+            ),
+            title: const Text('Local'),
+            subtitle: const Text('Run the model on this device'),
+            onTap: () => _updateInferenceMode(
+              context,
+              sheetContext,
+              ChatInferenceMode.local,
+            ),
+          ),
+          ListTile(
+            leading: Radio<ChatInferenceMode>(
+              value: ChatInferenceMode.remote,
+              groupValue: config.inferenceMode,
+              onChanged: (v) => _updateInferenceMode(context, sheetContext, v!),
+            ),
+            title: const Text('Remote'),
+            subtitle: const Text('Use an OpenAI-compatible API'),
+            onTap: () => _updateInferenceMode(
+              context,
+              sheetContext,
+              ChatInferenceMode.remote,
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  void _updateInferenceMode(
+    BuildContext context,
+    BuildContext sheetContext,
+    ChatInferenceMode mode,
+  ) {
+    final currentConfig = context.read<ChatSettingsBloc>().state.config;
+    context.read<ChatSettingsBloc>().add(
+      ChatSettingsUpdateConfig(
+        config: currentConfig.copyWith(inferenceMode: mode),
+      ),
+    );
+    Navigator.pop(sheetContext);
+  }
+
+  void _showRemoteAccountPicker(BuildContext context, ModelConfig config) {
+    final accountsState = context.read<AccountsBloc>().state;
+    final accounts = accountsState is AccountsLoaded
+        ? accountsState.byProvider(ServiceProvider.openai)
+        : <ServiceAccountTableData>[];
+
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (accounts.isEmpty)
+              const ListTile(
+                leading: Icon(Icons.info_outline),
+                title: Text('No OpenAI-compatible accounts'),
+                subtitle: Text('Add one in Settings > Account'),
+              )
+            else
+              for (final account in accounts)
+                ListTile(
+                  leading: Radio<int>(
+                    value: account.id,
+                    groupValue: config.remoteAccountId,
+                    onChanged: (value) =>
+                        _updateRemoteAccount(context, sheetContext, value),
+                  ),
+                  title: Text(account.name),
+                  subtitle: account.description.isEmpty
+                      ? null
+                      : Text(account.description),
+                  onTap: () =>
+                      _updateRemoteAccount(context, sheetContext, account.id),
+                ),
+            if (config.remoteAccountId != null)
+              ListTile(
+                leading: const Icon(Icons.link_off),
+                title: const Text('Clear Selection'),
+                onTap: () => _updateRemoteAccount(context, sheetContext, null),
+              ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _updateRemoteAccount(
+    BuildContext context,
+    BuildContext sheetContext,
+    int? accountId,
+  ) {
+    final currentConfig = context.read<ChatSettingsBloc>().state.config;
+    context.read<ChatSettingsBloc>().add(
+      ChatSettingsUpdateConfig(
+        config: currentConfig.copyWith(
+          remoteAccountId: accountId,
+          clearRemoteAccount: accountId == null,
+        ),
+      ),
+    );
+    Navigator.pop(sheetContext);
+  }
+
+  void _showRemoteBaseUrlDialog(BuildContext context, ModelConfig config) {
+    final controller = TextEditingController(text: config.remoteBaseUrl);
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remote Base URL'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Base URL',
+            hintText: 'https://api.openai.com/v1',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              context.read<ChatSettingsBloc>().add(
+                ChatSettingsUpdateConfig(
+                  config: config.copyWith(
+                    remoteBaseUrl: controller.text.trim(),
+                  ),
+                ),
+              );
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRemoteModelDialog(BuildContext context, ModelConfig config) {
+    final controller = TextEditingController(text: config.remoteModel);
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Remote Model'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Model',
+            hintText: 'gpt-4.1-mini',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              context.read<ChatSettingsBloc>().add(
+                ChatSettingsUpdateConfig(
+                  config: config.copyWith(remoteModel: controller.text.trim()),
+                ),
+              );
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }

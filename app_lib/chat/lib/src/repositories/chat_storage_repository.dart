@@ -2,6 +2,7 @@ import 'package:app_database/app_database.dart';
 import 'package:drift/drift.dart';
 
 import '../models/conversation.dart';
+import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
 
@@ -151,12 +152,18 @@ class ChatStorageRepository {
     }
 
     return ModelConfig(
+      inferenceMode: _parseInferenceMode(row.inferenceMode),
       modelType: _parseModelType(row.modelType),
       customModelPath: row.customModelPath,
       maxTokens: row.maxTokens,
       temperature: row.temperatureX100 / 100.0,
       topK: row.topK,
       backend: _parseBackend(row.backend),
+      remoteProvider: _parseRemoteProvider(row.remoteProvider),
+      remoteAccountId: row.remoteAccountId,
+      remoteBaseUrl: row.remoteBaseUrl,
+      remoteModel: row.remoteModel,
+      remoteStreamingEnabled: row.remoteStreamingEnabled,
     );
   }
 
@@ -165,12 +172,19 @@ class ChatStorageRepository {
     await _db.into(_db.chatSettingsTable).insertOnConflictUpdate(
           ChatSettingsTableCompanion(
             key: const Value('default'),
+            inferenceMode: Value(_inferenceModeToString(config.inferenceMode)),
             modelType: Value(_modelTypeToString(config.modelType)),
             customModelPath: Value(config.customModelPath),
             maxTokens: Value(config.maxTokens),
             temperatureX100: Value((config.temperature * 100).round()),
             topK: Value(config.topK),
             backend: Value(_backendToString(config.backend)),
+            remoteProvider:
+                Value(_remoteProviderToString(config.remoteProvider)),
+            remoteAccountId: Value(config.remoteAccountId),
+            remoteBaseUrl: Value(config.remoteBaseUrl),
+            remoteModel: Value(config.remoteModel),
+            remoteStreamingEnabled: Value(config.remoteStreamingEnabled),
           ),
         );
   }
@@ -252,6 +266,33 @@ class ChatStorageRepository {
       'gemma7bIt' => GemmaModelType.gemma7bIt,
       'custom' => GemmaModelType.custom,
       _ => GemmaModelType.gemma2bIt,
+    };
+  }
+
+  ChatInferenceMode _parseInferenceMode(String value) {
+    return switch (value) {
+      'remote' => ChatInferenceMode.remote,
+      _ => ChatInferenceMode.local,
+    };
+  }
+
+  String _inferenceModeToString(ChatInferenceMode mode) {
+    return switch (mode) {
+      ChatInferenceMode.local => 'local',
+      ChatInferenceMode.remote => 'remote',
+    };
+  }
+
+  RemoteLlmProvider _parseRemoteProvider(String value) {
+    return switch (value) {
+      'openAiCompatible' => RemoteLlmProvider.openAiCompatible,
+      _ => RemoteLlmProvider.openAiCompatible,
+    };
+  }
+
+  String _remoteProviderToString(RemoteLlmProvider provider) {
+    return switch (provider) {
+      RemoteLlmProvider.openAiCompatible => 'openAiCompatible',
     };
   }
 

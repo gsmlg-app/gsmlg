@@ -2141,6 +2141,14 @@ class $ChatSettingsTableTable extends ChatSettingsTable
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('default'));
+  static const VerificationMeta _inferenceModeMeta =
+      const VerificationMeta('inferenceMode');
+  @override
+  late final GeneratedColumn<String> inferenceMode = GeneratedColumn<String>(
+      'inference_mode', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('local'));
   static const VerificationMeta _modelTypeMeta =
       const VerificationMeta('modelType');
   @override
@@ -2186,6 +2194,46 @@ class $ChatSettingsTableTable extends ChatSettingsTable
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('gpu'));
+  static const VerificationMeta _remoteProviderMeta =
+      const VerificationMeta('remoteProvider');
+  @override
+  late final GeneratedColumn<String> remoteProvider = GeneratedColumn<String>(
+      'remote_provider', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('openAiCompatible'));
+  static const VerificationMeta _remoteAccountIdMeta =
+      const VerificationMeta('remoteAccountId');
+  @override
+  late final GeneratedColumn<int> remoteAccountId = GeneratedColumn<int>(
+      'remote_account_id', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _remoteBaseUrlMeta =
+      const VerificationMeta('remoteBaseUrl');
+  @override
+  late final GeneratedColumn<String> remoteBaseUrl = GeneratedColumn<String>(
+      'remote_base_url', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('https://api.openai.com/v1'));
+  static const VerificationMeta _remoteModelMeta =
+      const VerificationMeta('remoteModel');
+  @override
+  late final GeneratedColumn<String> remoteModel = GeneratedColumn<String>(
+      'remote_model', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('gpt-4.1-mini'));
+  static const VerificationMeta _remoteStreamingEnabledMeta =
+      const VerificationMeta('remoteStreamingEnabled');
+  @override
+  late final GeneratedColumn<bool> remoteStreamingEnabled =
+      GeneratedColumn<bool>('remote_streaming_enabled', aliasedName, false,
+          type: DriftSqlType.bool,
+          requiredDuringInsert: false,
+          defaultConstraints: GeneratedColumn.constraintIsAlways(
+              'CHECK ("remote_streaming_enabled" IN (0, 1))'),
+          defaultValue: const Constant(true));
   static const VerificationMeta _defaultSystemPromptMeta =
       const VerificationMeta('defaultSystemPrompt');
   @override
@@ -2195,12 +2243,18 @@ class $ChatSettingsTableTable extends ChatSettingsTable
   @override
   List<GeneratedColumn> get $columns => [
         key,
+        inferenceMode,
         modelType,
         customModelPath,
         maxTokens,
         temperatureX100,
         topK,
         backend,
+        remoteProvider,
+        remoteAccountId,
+        remoteBaseUrl,
+        remoteModel,
+        remoteStreamingEnabled,
         defaultSystemPrompt
       ];
   @override
@@ -2217,6 +2271,12 @@ class $ChatSettingsTableTable extends ChatSettingsTable
     if (data.containsKey('key')) {
       context.handle(
           _keyMeta, key.isAcceptableOrUnknown(data['key']!, _keyMeta));
+    }
+    if (data.containsKey('inference_mode')) {
+      context.handle(
+          _inferenceModeMeta,
+          inferenceMode.isAcceptableOrUnknown(
+              data['inference_mode']!, _inferenceModeMeta));
     }
     if (data.containsKey('model_type')) {
       context.handle(_modelTypeMeta,
@@ -2246,6 +2306,36 @@ class $ChatSettingsTableTable extends ChatSettingsTable
       context.handle(_backendMeta,
           backend.isAcceptableOrUnknown(data['backend']!, _backendMeta));
     }
+    if (data.containsKey('remote_provider')) {
+      context.handle(
+          _remoteProviderMeta,
+          remoteProvider.isAcceptableOrUnknown(
+              data['remote_provider']!, _remoteProviderMeta));
+    }
+    if (data.containsKey('remote_account_id')) {
+      context.handle(
+          _remoteAccountIdMeta,
+          remoteAccountId.isAcceptableOrUnknown(
+              data['remote_account_id']!, _remoteAccountIdMeta));
+    }
+    if (data.containsKey('remote_base_url')) {
+      context.handle(
+          _remoteBaseUrlMeta,
+          remoteBaseUrl.isAcceptableOrUnknown(
+              data['remote_base_url']!, _remoteBaseUrlMeta));
+    }
+    if (data.containsKey('remote_model')) {
+      context.handle(
+          _remoteModelMeta,
+          remoteModel.isAcceptableOrUnknown(
+              data['remote_model']!, _remoteModelMeta));
+    }
+    if (data.containsKey('remote_streaming_enabled')) {
+      context.handle(
+          _remoteStreamingEnabledMeta,
+          remoteStreamingEnabled.isAcceptableOrUnknown(
+              data['remote_streaming_enabled']!, _remoteStreamingEnabledMeta));
+    }
     if (data.containsKey('default_system_prompt')) {
       context.handle(
           _defaultSystemPromptMeta,
@@ -2263,6 +2353,8 @@ class $ChatSettingsTableTable extends ChatSettingsTable
     return ChatSettingsTableData(
       key: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}key'])!,
+      inferenceMode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}inference_mode'])!,
       modelType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}model_type'])!,
       customModelPath: attachedDatabase.typeMapping.read(
@@ -2275,6 +2367,17 @@ class $ChatSettingsTableTable extends ChatSettingsTable
           .read(DriftSqlType.int, data['${effectivePrefix}top_k'])!,
       backend: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}backend'])!,
+      remoteProvider: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}remote_provider'])!,
+      remoteAccountId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}remote_account_id']),
+      remoteBaseUrl: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}remote_base_url'])!,
+      remoteModel: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}remote_model'])!,
+      remoteStreamingEnabled: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool,
+          data['${effectivePrefix}remote_streaming_enabled'])!,
       defaultSystemPrompt: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}default_system_prompt']),
     );
@@ -2290,6 +2393,9 @@ class ChatSettingsTableData extends DataClass
     implements Insertable<ChatSettingsTableData> {
   /// Singleton key (always 'default').
   final String key;
+
+  /// Inference mode: local or remote.
+  final String inferenceMode;
 
   /// Model type: gemma2bIt, gemma7bIt, or custom.
   final String modelType;
@@ -2309,21 +2415,43 @@ class ChatSettingsTableData extends DataClass
   /// Backend to use: gpu or cpu.
   final String backend;
 
+  /// Remote provider type.
+  final String remoteProvider;
+
+  /// Service account ID containing the remote provider API key.
+  final int? remoteAccountId;
+
+  /// Remote API base URL.
+  final String remoteBaseUrl;
+
+  /// Remote model identifier.
+  final String remoteModel;
+
+  /// Whether remote responses should be streamed.
+  final bool remoteStreamingEnabled;
+
   /// Default system prompt for new conversations.
   final String? defaultSystemPrompt;
   const ChatSettingsTableData(
       {required this.key,
+      required this.inferenceMode,
       required this.modelType,
       this.customModelPath,
       required this.maxTokens,
       required this.temperatureX100,
       required this.topK,
       required this.backend,
+      required this.remoteProvider,
+      this.remoteAccountId,
+      required this.remoteBaseUrl,
+      required this.remoteModel,
+      required this.remoteStreamingEnabled,
       this.defaultSystemPrompt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['key'] = Variable<String>(key);
+    map['inference_mode'] = Variable<String>(inferenceMode);
     map['model_type'] = Variable<String>(modelType);
     if (!nullToAbsent || customModelPath != null) {
       map['custom_model_path'] = Variable<String>(customModelPath);
@@ -2332,6 +2460,13 @@ class ChatSettingsTableData extends DataClass
     map['temperature_x100'] = Variable<int>(temperatureX100);
     map['top_k'] = Variable<int>(topK);
     map['backend'] = Variable<String>(backend);
+    map['remote_provider'] = Variable<String>(remoteProvider);
+    if (!nullToAbsent || remoteAccountId != null) {
+      map['remote_account_id'] = Variable<int>(remoteAccountId);
+    }
+    map['remote_base_url'] = Variable<String>(remoteBaseUrl);
+    map['remote_model'] = Variable<String>(remoteModel);
+    map['remote_streaming_enabled'] = Variable<bool>(remoteStreamingEnabled);
     if (!nullToAbsent || defaultSystemPrompt != null) {
       map['default_system_prompt'] = Variable<String>(defaultSystemPrompt);
     }
@@ -2341,6 +2476,7 @@ class ChatSettingsTableData extends DataClass
   ChatSettingsTableCompanion toCompanion(bool nullToAbsent) {
     return ChatSettingsTableCompanion(
       key: Value(key),
+      inferenceMode: Value(inferenceMode),
       modelType: Value(modelType),
       customModelPath: customModelPath == null && nullToAbsent
           ? const Value.absent()
@@ -2349,6 +2485,13 @@ class ChatSettingsTableData extends DataClass
       temperatureX100: Value(temperatureX100),
       topK: Value(topK),
       backend: Value(backend),
+      remoteProvider: Value(remoteProvider),
+      remoteAccountId: remoteAccountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteAccountId),
+      remoteBaseUrl: Value(remoteBaseUrl),
+      remoteModel: Value(remoteModel),
+      remoteStreamingEnabled: Value(remoteStreamingEnabled),
       defaultSystemPrompt: defaultSystemPrompt == null && nullToAbsent
           ? const Value.absent()
           : Value(defaultSystemPrompt),
@@ -2360,12 +2503,19 @@ class ChatSettingsTableData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ChatSettingsTableData(
       key: serializer.fromJson<String>(json['key']),
+      inferenceMode: serializer.fromJson<String>(json['inferenceMode']),
       modelType: serializer.fromJson<String>(json['modelType']),
       customModelPath: serializer.fromJson<String?>(json['customModelPath']),
       maxTokens: serializer.fromJson<int>(json['maxTokens']),
       temperatureX100: serializer.fromJson<int>(json['temperatureX100']),
       topK: serializer.fromJson<int>(json['topK']),
       backend: serializer.fromJson<String>(json['backend']),
+      remoteProvider: serializer.fromJson<String>(json['remoteProvider']),
+      remoteAccountId: serializer.fromJson<int?>(json['remoteAccountId']),
+      remoteBaseUrl: serializer.fromJson<String>(json['remoteBaseUrl']),
+      remoteModel: serializer.fromJson<String>(json['remoteModel']),
+      remoteStreamingEnabled:
+          serializer.fromJson<bool>(json['remoteStreamingEnabled']),
       defaultSystemPrompt:
           serializer.fromJson<String?>(json['defaultSystemPrompt']),
     );
@@ -2375,27 +2525,40 @@ class ChatSettingsTableData extends DataClass
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'key': serializer.toJson<String>(key),
+      'inferenceMode': serializer.toJson<String>(inferenceMode),
       'modelType': serializer.toJson<String>(modelType),
       'customModelPath': serializer.toJson<String?>(customModelPath),
       'maxTokens': serializer.toJson<int>(maxTokens),
       'temperatureX100': serializer.toJson<int>(temperatureX100),
       'topK': serializer.toJson<int>(topK),
       'backend': serializer.toJson<String>(backend),
+      'remoteProvider': serializer.toJson<String>(remoteProvider),
+      'remoteAccountId': serializer.toJson<int?>(remoteAccountId),
+      'remoteBaseUrl': serializer.toJson<String>(remoteBaseUrl),
+      'remoteModel': serializer.toJson<String>(remoteModel),
+      'remoteStreamingEnabled': serializer.toJson<bool>(remoteStreamingEnabled),
       'defaultSystemPrompt': serializer.toJson<String?>(defaultSystemPrompt),
     };
   }
 
   ChatSettingsTableData copyWith(
           {String? key,
+          String? inferenceMode,
           String? modelType,
           Value<String?> customModelPath = const Value.absent(),
           int? maxTokens,
           int? temperatureX100,
           int? topK,
           String? backend,
+          String? remoteProvider,
+          Value<int?> remoteAccountId = const Value.absent(),
+          String? remoteBaseUrl,
+          String? remoteModel,
+          bool? remoteStreamingEnabled,
           Value<String?> defaultSystemPrompt = const Value.absent()}) =>
       ChatSettingsTableData(
         key: key ?? this.key,
+        inferenceMode: inferenceMode ?? this.inferenceMode,
         modelType: modelType ?? this.modelType,
         customModelPath: customModelPath.present
             ? customModelPath.value
@@ -2404,6 +2567,14 @@ class ChatSettingsTableData extends DataClass
         temperatureX100: temperatureX100 ?? this.temperatureX100,
         topK: topK ?? this.topK,
         backend: backend ?? this.backend,
+        remoteProvider: remoteProvider ?? this.remoteProvider,
+        remoteAccountId: remoteAccountId.present
+            ? remoteAccountId.value
+            : this.remoteAccountId,
+        remoteBaseUrl: remoteBaseUrl ?? this.remoteBaseUrl,
+        remoteModel: remoteModel ?? this.remoteModel,
+        remoteStreamingEnabled:
+            remoteStreamingEnabled ?? this.remoteStreamingEnabled,
         defaultSystemPrompt: defaultSystemPrompt.present
             ? defaultSystemPrompt.value
             : this.defaultSystemPrompt,
@@ -2411,6 +2582,9 @@ class ChatSettingsTableData extends DataClass
   ChatSettingsTableData copyWithCompanion(ChatSettingsTableCompanion data) {
     return ChatSettingsTableData(
       key: data.key.present ? data.key.value : this.key,
+      inferenceMode: data.inferenceMode.present
+          ? data.inferenceMode.value
+          : this.inferenceMode,
       modelType: data.modelType.present ? data.modelType.value : this.modelType,
       customModelPath: data.customModelPath.present
           ? data.customModelPath.value
@@ -2421,6 +2595,20 @@ class ChatSettingsTableData extends DataClass
           : this.temperatureX100,
       topK: data.topK.present ? data.topK.value : this.topK,
       backend: data.backend.present ? data.backend.value : this.backend,
+      remoteProvider: data.remoteProvider.present
+          ? data.remoteProvider.value
+          : this.remoteProvider,
+      remoteAccountId: data.remoteAccountId.present
+          ? data.remoteAccountId.value
+          : this.remoteAccountId,
+      remoteBaseUrl: data.remoteBaseUrl.present
+          ? data.remoteBaseUrl.value
+          : this.remoteBaseUrl,
+      remoteModel:
+          data.remoteModel.present ? data.remoteModel.value : this.remoteModel,
+      remoteStreamingEnabled: data.remoteStreamingEnabled.present
+          ? data.remoteStreamingEnabled.value
+          : this.remoteStreamingEnabled,
       defaultSystemPrompt: data.defaultSystemPrompt.present
           ? data.defaultSystemPrompt.value
           : this.defaultSystemPrompt,
@@ -2431,86 +2619,142 @@ class ChatSettingsTableData extends DataClass
   String toString() {
     return (StringBuffer('ChatSettingsTableData(')
           ..write('key: $key, ')
+          ..write('inferenceMode: $inferenceMode, ')
           ..write('modelType: $modelType, ')
           ..write('customModelPath: $customModelPath, ')
           ..write('maxTokens: $maxTokens, ')
           ..write('temperatureX100: $temperatureX100, ')
           ..write('topK: $topK, ')
           ..write('backend: $backend, ')
+          ..write('remoteProvider: $remoteProvider, ')
+          ..write('remoteAccountId: $remoteAccountId, ')
+          ..write('remoteBaseUrl: $remoteBaseUrl, ')
+          ..write('remoteModel: $remoteModel, ')
+          ..write('remoteStreamingEnabled: $remoteStreamingEnabled, ')
           ..write('defaultSystemPrompt: $defaultSystemPrompt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(key, modelType, customModelPath, maxTokens,
-      temperatureX100, topK, backend, defaultSystemPrompt);
+  int get hashCode => Object.hash(
+      key,
+      inferenceMode,
+      modelType,
+      customModelPath,
+      maxTokens,
+      temperatureX100,
+      topK,
+      backend,
+      remoteProvider,
+      remoteAccountId,
+      remoteBaseUrl,
+      remoteModel,
+      remoteStreamingEnabled,
+      defaultSystemPrompt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ChatSettingsTableData &&
           other.key == this.key &&
+          other.inferenceMode == this.inferenceMode &&
           other.modelType == this.modelType &&
           other.customModelPath == this.customModelPath &&
           other.maxTokens == this.maxTokens &&
           other.temperatureX100 == this.temperatureX100 &&
           other.topK == this.topK &&
           other.backend == this.backend &&
+          other.remoteProvider == this.remoteProvider &&
+          other.remoteAccountId == this.remoteAccountId &&
+          other.remoteBaseUrl == this.remoteBaseUrl &&
+          other.remoteModel == this.remoteModel &&
+          other.remoteStreamingEnabled == this.remoteStreamingEnabled &&
           other.defaultSystemPrompt == this.defaultSystemPrompt);
 }
 
 class ChatSettingsTableCompanion
     extends UpdateCompanion<ChatSettingsTableData> {
   final Value<String> key;
+  final Value<String> inferenceMode;
   final Value<String> modelType;
   final Value<String?> customModelPath;
   final Value<int> maxTokens;
   final Value<int> temperatureX100;
   final Value<int> topK;
   final Value<String> backend;
+  final Value<String> remoteProvider;
+  final Value<int?> remoteAccountId;
+  final Value<String> remoteBaseUrl;
+  final Value<String> remoteModel;
+  final Value<bool> remoteStreamingEnabled;
   final Value<String?> defaultSystemPrompt;
   final Value<int> rowid;
   const ChatSettingsTableCompanion({
     this.key = const Value.absent(),
+    this.inferenceMode = const Value.absent(),
     this.modelType = const Value.absent(),
     this.customModelPath = const Value.absent(),
     this.maxTokens = const Value.absent(),
     this.temperatureX100 = const Value.absent(),
     this.topK = const Value.absent(),
     this.backend = const Value.absent(),
+    this.remoteProvider = const Value.absent(),
+    this.remoteAccountId = const Value.absent(),
+    this.remoteBaseUrl = const Value.absent(),
+    this.remoteModel = const Value.absent(),
+    this.remoteStreamingEnabled = const Value.absent(),
     this.defaultSystemPrompt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChatSettingsTableCompanion.insert({
     this.key = const Value.absent(),
+    this.inferenceMode = const Value.absent(),
     this.modelType = const Value.absent(),
     this.customModelPath = const Value.absent(),
     this.maxTokens = const Value.absent(),
     this.temperatureX100 = const Value.absent(),
     this.topK = const Value.absent(),
     this.backend = const Value.absent(),
+    this.remoteProvider = const Value.absent(),
+    this.remoteAccountId = const Value.absent(),
+    this.remoteBaseUrl = const Value.absent(),
+    this.remoteModel = const Value.absent(),
+    this.remoteStreamingEnabled = const Value.absent(),
     this.defaultSystemPrompt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   static Insertable<ChatSettingsTableData> custom({
     Expression<String>? key,
+    Expression<String>? inferenceMode,
     Expression<String>? modelType,
     Expression<String>? customModelPath,
     Expression<int>? maxTokens,
     Expression<int>? temperatureX100,
     Expression<int>? topK,
     Expression<String>? backend,
+    Expression<String>? remoteProvider,
+    Expression<int>? remoteAccountId,
+    Expression<String>? remoteBaseUrl,
+    Expression<String>? remoteModel,
+    Expression<bool>? remoteStreamingEnabled,
     Expression<String>? defaultSystemPrompt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (key != null) 'key': key,
+      if (inferenceMode != null) 'inference_mode': inferenceMode,
       if (modelType != null) 'model_type': modelType,
       if (customModelPath != null) 'custom_model_path': customModelPath,
       if (maxTokens != null) 'max_tokens': maxTokens,
       if (temperatureX100 != null) 'temperature_x100': temperatureX100,
       if (topK != null) 'top_k': topK,
       if (backend != null) 'backend': backend,
+      if (remoteProvider != null) 'remote_provider': remoteProvider,
+      if (remoteAccountId != null) 'remote_account_id': remoteAccountId,
+      if (remoteBaseUrl != null) 'remote_base_url': remoteBaseUrl,
+      if (remoteModel != null) 'remote_model': remoteModel,
+      if (remoteStreamingEnabled != null)
+        'remote_streaming_enabled': remoteStreamingEnabled,
       if (defaultSystemPrompt != null)
         'default_system_prompt': defaultSystemPrompt,
       if (rowid != null) 'rowid': rowid,
@@ -2519,22 +2763,35 @@ class ChatSettingsTableCompanion
 
   ChatSettingsTableCompanion copyWith(
       {Value<String>? key,
+      Value<String>? inferenceMode,
       Value<String>? modelType,
       Value<String?>? customModelPath,
       Value<int>? maxTokens,
       Value<int>? temperatureX100,
       Value<int>? topK,
       Value<String>? backend,
+      Value<String>? remoteProvider,
+      Value<int?>? remoteAccountId,
+      Value<String>? remoteBaseUrl,
+      Value<String>? remoteModel,
+      Value<bool>? remoteStreamingEnabled,
       Value<String?>? defaultSystemPrompt,
       Value<int>? rowid}) {
     return ChatSettingsTableCompanion(
       key: key ?? this.key,
+      inferenceMode: inferenceMode ?? this.inferenceMode,
       modelType: modelType ?? this.modelType,
       customModelPath: customModelPath ?? this.customModelPath,
       maxTokens: maxTokens ?? this.maxTokens,
       temperatureX100: temperatureX100 ?? this.temperatureX100,
       topK: topK ?? this.topK,
       backend: backend ?? this.backend,
+      remoteProvider: remoteProvider ?? this.remoteProvider,
+      remoteAccountId: remoteAccountId ?? this.remoteAccountId,
+      remoteBaseUrl: remoteBaseUrl ?? this.remoteBaseUrl,
+      remoteModel: remoteModel ?? this.remoteModel,
+      remoteStreamingEnabled:
+          remoteStreamingEnabled ?? this.remoteStreamingEnabled,
       defaultSystemPrompt: defaultSystemPrompt ?? this.defaultSystemPrompt,
       rowid: rowid ?? this.rowid,
     );
@@ -2545,6 +2802,9 @@ class ChatSettingsTableCompanion
     final map = <String, Expression>{};
     if (key.present) {
       map['key'] = Variable<String>(key.value);
+    }
+    if (inferenceMode.present) {
+      map['inference_mode'] = Variable<String>(inferenceMode.value);
     }
     if (modelType.present) {
       map['model_type'] = Variable<String>(modelType.value);
@@ -2564,6 +2824,22 @@ class ChatSettingsTableCompanion
     if (backend.present) {
       map['backend'] = Variable<String>(backend.value);
     }
+    if (remoteProvider.present) {
+      map['remote_provider'] = Variable<String>(remoteProvider.value);
+    }
+    if (remoteAccountId.present) {
+      map['remote_account_id'] = Variable<int>(remoteAccountId.value);
+    }
+    if (remoteBaseUrl.present) {
+      map['remote_base_url'] = Variable<String>(remoteBaseUrl.value);
+    }
+    if (remoteModel.present) {
+      map['remote_model'] = Variable<String>(remoteModel.value);
+    }
+    if (remoteStreamingEnabled.present) {
+      map['remote_streaming_enabled'] =
+          Variable<bool>(remoteStreamingEnabled.value);
+    }
     if (defaultSystemPrompt.present) {
       map['default_system_prompt'] =
           Variable<String>(defaultSystemPrompt.value);
@@ -2578,12 +2854,18 @@ class ChatSettingsTableCompanion
   String toString() {
     return (StringBuffer('ChatSettingsTableCompanion(')
           ..write('key: $key, ')
+          ..write('inferenceMode: $inferenceMode, ')
           ..write('modelType: $modelType, ')
           ..write('customModelPath: $customModelPath, ')
           ..write('maxTokens: $maxTokens, ')
           ..write('temperatureX100: $temperatureX100, ')
           ..write('topK: $topK, ')
           ..write('backend: $backend, ')
+          ..write('remoteProvider: $remoteProvider, ')
+          ..write('remoteAccountId: $remoteAccountId, ')
+          ..write('remoteBaseUrl: $remoteBaseUrl, ')
+          ..write('remoteModel: $remoteModel, ')
+          ..write('remoteStreamingEnabled: $remoteStreamingEnabled, ')
           ..write('defaultSystemPrompt: $defaultSystemPrompt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -4886,24 +5168,36 @@ typedef $$ChatMessageTableTableProcessedTableManager = ProcessedTableManager<
 typedef $$ChatSettingsTableTableCreateCompanionBuilder
     = ChatSettingsTableCompanion Function({
   Value<String> key,
+  Value<String> inferenceMode,
   Value<String> modelType,
   Value<String?> customModelPath,
   Value<int> maxTokens,
   Value<int> temperatureX100,
   Value<int> topK,
   Value<String> backend,
+  Value<String> remoteProvider,
+  Value<int?> remoteAccountId,
+  Value<String> remoteBaseUrl,
+  Value<String> remoteModel,
+  Value<bool> remoteStreamingEnabled,
   Value<String?> defaultSystemPrompt,
   Value<int> rowid,
 });
 typedef $$ChatSettingsTableTableUpdateCompanionBuilder
     = ChatSettingsTableCompanion Function({
   Value<String> key,
+  Value<String> inferenceMode,
   Value<String> modelType,
   Value<String?> customModelPath,
   Value<int> maxTokens,
   Value<int> temperatureX100,
   Value<int> topK,
   Value<String> backend,
+  Value<String> remoteProvider,
+  Value<int?> remoteAccountId,
+  Value<String> remoteBaseUrl,
+  Value<String> remoteModel,
+  Value<bool> remoteStreamingEnabled,
   Value<String?> defaultSystemPrompt,
   Value<int> rowid,
 });
@@ -4919,6 +5213,9 @@ class $$ChatSettingsTableTableFilterComposer
   });
   ColumnFilters<String> get key => $composableBuilder(
       column: $table.key, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get inferenceMode => $composableBuilder(
+      column: $table.inferenceMode, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get modelType => $composableBuilder(
       column: $table.modelType, builder: (column) => ColumnFilters(column));
@@ -4940,6 +5237,24 @@ class $$ChatSettingsTableTableFilterComposer
   ColumnFilters<String> get backend => $composableBuilder(
       column: $table.backend, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get remoteProvider => $composableBuilder(
+      column: $table.remoteProvider,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get remoteAccountId => $composableBuilder(
+      column: $table.remoteAccountId,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remoteBaseUrl => $composableBuilder(
+      column: $table.remoteBaseUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remoteModel => $composableBuilder(
+      column: $table.remoteModel, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get remoteStreamingEnabled => $composableBuilder(
+      column: $table.remoteStreamingEnabled,
+      builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get defaultSystemPrompt => $composableBuilder(
       column: $table.defaultSystemPrompt,
       builder: (column) => ColumnFilters(column));
@@ -4956,6 +5271,10 @@ class $$ChatSettingsTableTableOrderingComposer
   });
   ColumnOrderings<String> get key => $composableBuilder(
       column: $table.key, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get inferenceMode => $composableBuilder(
+      column: $table.inferenceMode,
+      builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get modelType => $composableBuilder(
       column: $table.modelType, builder: (column) => ColumnOrderings(column));
@@ -4977,6 +5296,25 @@ class $$ChatSettingsTableTableOrderingComposer
   ColumnOrderings<String> get backend => $composableBuilder(
       column: $table.backend, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get remoteProvider => $composableBuilder(
+      column: $table.remoteProvider,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get remoteAccountId => $composableBuilder(
+      column: $table.remoteAccountId,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get remoteBaseUrl => $composableBuilder(
+      column: $table.remoteBaseUrl,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get remoteModel => $composableBuilder(
+      column: $table.remoteModel, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get remoteStreamingEnabled => $composableBuilder(
+      column: $table.remoteStreamingEnabled,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get defaultSystemPrompt => $composableBuilder(
       column: $table.defaultSystemPrompt,
       builder: (column) => ColumnOrderings(column));
@@ -4993,6 +5331,9 @@ class $$ChatSettingsTableTableAnnotationComposer
   });
   GeneratedColumn<String> get key =>
       $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get inferenceMode => $composableBuilder(
+      column: $table.inferenceMode, builder: (column) => column);
 
   GeneratedColumn<String> get modelType =>
       $composableBuilder(column: $table.modelType, builder: (column) => column);
@@ -5011,6 +5352,21 @@ class $$ChatSettingsTableTableAnnotationComposer
 
   GeneratedColumn<String> get backend =>
       $composableBuilder(column: $table.backend, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteProvider => $composableBuilder(
+      column: $table.remoteProvider, builder: (column) => column);
+
+  GeneratedColumn<int> get remoteAccountId => $composableBuilder(
+      column: $table.remoteAccountId, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteBaseUrl => $composableBuilder(
+      column: $table.remoteBaseUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteModel => $composableBuilder(
+      column: $table.remoteModel, builder: (column) => column);
+
+  GeneratedColumn<bool> get remoteStreamingEnabled => $composableBuilder(
+      column: $table.remoteStreamingEnabled, builder: (column) => column);
 
   GeneratedColumn<String> get defaultSystemPrompt => $composableBuilder(
       column: $table.defaultSystemPrompt, builder: (column) => column);
@@ -5046,45 +5402,69 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
                   $db: db, $table: table),
           updateCompanionCallback: ({
             Value<String> key = const Value.absent(),
+            Value<String> inferenceMode = const Value.absent(),
             Value<String> modelType = const Value.absent(),
             Value<String?> customModelPath = const Value.absent(),
             Value<int> maxTokens = const Value.absent(),
             Value<int> temperatureX100 = const Value.absent(),
             Value<int> topK = const Value.absent(),
             Value<String> backend = const Value.absent(),
+            Value<String> remoteProvider = const Value.absent(),
+            Value<int?> remoteAccountId = const Value.absent(),
+            Value<String> remoteBaseUrl = const Value.absent(),
+            Value<String> remoteModel = const Value.absent(),
+            Value<bool> remoteStreamingEnabled = const Value.absent(),
             Value<String?> defaultSystemPrompt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChatSettingsTableCompanion(
             key: key,
+            inferenceMode: inferenceMode,
             modelType: modelType,
             customModelPath: customModelPath,
             maxTokens: maxTokens,
             temperatureX100: temperatureX100,
             topK: topK,
             backend: backend,
+            remoteProvider: remoteProvider,
+            remoteAccountId: remoteAccountId,
+            remoteBaseUrl: remoteBaseUrl,
+            remoteModel: remoteModel,
+            remoteStreamingEnabled: remoteStreamingEnabled,
             defaultSystemPrompt: defaultSystemPrompt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
             Value<String> key = const Value.absent(),
+            Value<String> inferenceMode = const Value.absent(),
             Value<String> modelType = const Value.absent(),
             Value<String?> customModelPath = const Value.absent(),
             Value<int> maxTokens = const Value.absent(),
             Value<int> temperatureX100 = const Value.absent(),
             Value<int> topK = const Value.absent(),
             Value<String> backend = const Value.absent(),
+            Value<String> remoteProvider = const Value.absent(),
+            Value<int?> remoteAccountId = const Value.absent(),
+            Value<String> remoteBaseUrl = const Value.absent(),
+            Value<String> remoteModel = const Value.absent(),
+            Value<bool> remoteStreamingEnabled = const Value.absent(),
             Value<String?> defaultSystemPrompt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChatSettingsTableCompanion.insert(
             key: key,
+            inferenceMode: inferenceMode,
             modelType: modelType,
             customModelPath: customModelPath,
             maxTokens: maxTokens,
             temperatureX100: temperatureX100,
             topK: topK,
             backend: backend,
+            remoteProvider: remoteProvider,
+            remoteAccountId: remoteAccountId,
+            remoteBaseUrl: remoteBaseUrl,
+            remoteModel: remoteModel,
+            remoteStreamingEnabled: remoteStreamingEnabled,
             defaultSystemPrompt: defaultSystemPrompt,
             rowid: rowid,
           ),

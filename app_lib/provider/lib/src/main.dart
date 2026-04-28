@@ -41,6 +41,9 @@ class MainProvider extends StatelessWidget {
         RepositoryProvider<GemmaRepository>(
           create: (context) => GemmaRepository(),
         ),
+        RepositoryProvider<RemoteLlmRepository>(
+          create: (context) => RemoteLlmRepository(vault: vault),
+        ),
         RepositoryProvider<ChatStorageRepository>(
           create: (context) => ChatStorageRepository(database),
         ),
@@ -88,6 +91,7 @@ class MainProvider extends StatelessWidget {
           BlocProvider<ChatBloc>(
             create: (context) => ChatBloc(
               gemmaRepository: context.read<GemmaRepository>(),
+              remoteRepository: context.read<RemoteLlmRepository>(),
               storageRepository: context.read<ChatStorageRepository>(),
               toolExecutor: context.read<ToolExecutor>(),
             ),

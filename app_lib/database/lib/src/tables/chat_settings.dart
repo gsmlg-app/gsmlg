@@ -7,6 +7,9 @@ class ChatSettingsTable extends Table {
   /// Singleton key (always 'default').
   TextColumn get key => text().withDefault(const Constant('default'))();
 
+  /// Inference mode: local or remote.
+  TextColumn get inferenceMode => text().withDefault(const Constant('local'))();
+
   /// Model type: gemma2bIt, gemma7bIt, or custom.
   TextColumn get modelType => text().withDefault(const Constant('gemma2bIt'))();
 
@@ -24,6 +27,25 @@ class ChatSettingsTable extends Table {
 
   /// Backend to use: gpu or cpu.
   TextColumn get backend => text().withDefault(const Constant('gpu'))();
+
+  /// Remote provider type.
+  TextColumn get remoteProvider =>
+      text().withDefault(const Constant('openAiCompatible'))();
+
+  /// Service account ID containing the remote provider API key.
+  IntColumn get remoteAccountId => integer().nullable()();
+
+  /// Remote API base URL.
+  TextColumn get remoteBaseUrl =>
+      text().withDefault(const Constant('https://api.openai.com/v1'))();
+
+  /// Remote model identifier.
+  TextColumn get remoteModel =>
+      text().withDefault(const Constant('gpt-4.1-mini'))();
+
+  /// Whether remote responses should be streamed.
+  BoolColumn get remoteStreamingEnabled =>
+      boolean().withDefault(const Constant(true))();
 
   /// Default system prompt for new conversations.
   TextColumn get defaultSystemPrompt => text().nullable()();

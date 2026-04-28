@@ -5,11 +5,10 @@ import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_database/app_database.dart';
 import 'package:app_feedback/app_feedback.dart';
 import 'package:app_locale/app_locale.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
-import 'package:duskmoon_settings/duskmoon_settings.dart';
 
 class AccountScreen extends StatelessWidget {
   static const name = 'Account';
@@ -630,6 +629,7 @@ class AccountScreen extends StatelessWidget {
 
 IconData _providerIcon(ServiceProvider provider) {
   return switch (provider) {
+    ServiceProvider.openai => Icons.auto_awesome,
     ServiceProvider.github => Icons.code,
     ServiceProvider.vultr => Icons.cloud,
     ServiceProvider.aws => Icons.cloud_queue,
@@ -640,6 +640,7 @@ IconData _providerIcon(ServiceProvider provider) {
 
 String _providerLabel(ServiceProvider provider) {
   return switch (provider) {
+    ServiceProvider.openai => 'OpenAI Compatible',
     ServiceProvider.github => 'GitHub',
     ServiceProvider.vultr => 'Vultr',
     ServiceProvider.aws => 'AWS',
@@ -650,6 +651,7 @@ String _providerLabel(ServiceProvider provider) {
 
 String _apiKeyLabel(ServiceProvider provider) {
   return switch (provider) {
+    ServiceProvider.openai => 'API Key',
     ServiceProvider.github => 'Personal Access Token',
     ServiceProvider.vultr => 'API Key',
     ServiceProvider.aws => 'Access Key ID',
@@ -660,6 +662,7 @@ String _apiKeyLabel(ServiceProvider provider) {
 
 String _apiKeyHint(ServiceProvider provider) {
   return switch (provider) {
+    ServiceProvider.openai => 'sk-xxxxxxxxxxxxxxxxxxxx',
     ServiceProvider.github => 'ghp_xxxxxxxxxxxxxxxxxxxx',
     ServiceProvider.vultr => 'Enter your Vultr API key',
     ServiceProvider.aws => 'AKIAIOSFODNN7EXAMPLE',

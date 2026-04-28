@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:app_chat/app_chat.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:uuid/uuid.dart';
 
 part 'event.dart';
@@ -15,9 +14,11 @@ part 'state.dart';
 class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ChatBloc({
     required GemmaRepository gemmaRepository,
+    required RemoteLlmRepository remoteRepository,
     required ChatStorageRepository storageRepository,
     required ToolExecutor toolExecutor,
   })  : _gemmaRepository = gemmaRepository,
+        _remoteRepository = remoteRepository,
         _storageRepository = storageRepository,
         _toolExecutor = toolExecutor,
         super(const ChatState()) {
@@ -37,9 +38,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
   final GemmaRepository _gemmaRepository;
+  final RemoteLlmRepository _remoteRepository;
   final ChatStorageRepository _storageRepository;
   final ToolExecutor _toolExecutor;
-  StreamSubscription<gemma.ModelResponse>? _streamSubscription;
+  StreamSubscription<ChatGenerationChunk>? _streamSubscription;
+  ModelConfig? _activeConfig;
   final _uuid = const Uuid();
 
   Future<void> _onLoadConversation(
@@ -108,10 +111,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     ChatSendMessage event,
     Emitter<ChatState> emit,
   ) async {
-    if (!_gemmaRepository.isReady) {
+    final config = await _storageRepository.loadSettings();
+    final readinessError = await _readinessError(config);
+    if (readinessError != null) {
       emit(state.copyWith(
         status: ChatStatus.error,
-        errorMessage: 'Model is not loaded',
+        errorMessage: readinessError,
       ));
       return;
     }
@@ -183,23 +188,24 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     ));
 
     // Start streaming response
-    _startStreaming(updatedConversation.messages);
+    _startStreaming(updatedConversation.messages, config);
   }
 
-  void _startStreaming(List<Message> messages) {
+  void _startStreaming(List<Message> messages, ModelConfig config) {
+    _activeConfig = config;
     _streamSubscription?.cancel();
-    _streamSubscription = _gemmaRepository.generateResponse(messages).listen(
-      (response) {
-        switch (response) {
-          case gemma.TextResponse(:final token):
-            add(_ChatStreamToken(token));
-          case gemma.FunctionCallResponse(:final name, :final args):
-            add(_ChatFunctionCall(name: name, args: args));
-          case gemma.ParallelFunctionCallResponse():
-            // Handle parallel function calls - emit each individually
-            break;
-          case gemma.ThinkingResponse(:final content):
+    final stream = config.inferenceMode == ChatInferenceMode.remote
+        ? _remoteRepository.generateResponse(messages, config)
+        : _gemmaRepository.generateResponse(messages);
+    _streamSubscription = stream.listen(
+      (chunk) {
+        switch (chunk) {
+          case ChatTextChunk(:final text):
+            add(_ChatStreamToken(text));
+          case ChatThinkingChunk(:final content):
             add(_ChatThinkingToken(content));
+          case ChatFunctionCallChunk(:final name, :final args):
+            add(_ChatFunctionCall(name: name, args: args));
         }
       },
       onDone: () => add(const _ChatStreamComplete()),
@@ -215,7 +221,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await _streamSubscription?.cancel();
     _streamSubscription = null;
 
-    await _gemmaRepository.stopGeneration();
+    final config = _activeConfig ?? await _storageRepository.loadSettings();
+    if (config.inferenceMode == ChatInferenceMode.remote) {
+      await _remoteRepository.stopGeneration();
+    } else {
+      await _gemmaRepository.stopGeneration();
+    }
 
     if (state.conversation != null && state.streamingMessageId != null) {
       // Mark the streaming message as complete
@@ -262,10 +273,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     if (state.conversation == null) return;
-    if (!_gemmaRepository.isReady) {
+    final config = await _storageRepository.loadSettings();
+    final readinessError = await _readinessError(config);
+    if (readinessError != null) {
       emit(state.copyWith(
         status: ChatStatus.error,
-        errorMessage: 'Model is not loaded',
+        errorMessage: readinessError,
       ));
       return;
     }
@@ -302,7 +315,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     ));
 
     // Start streaming response with messages up to (but not including) the new assistant message
-    _startStreaming(updatedMessages);
+    _startStreaming(updatedMessages, config);
   }
 
   Future<void> _onDeleteConversation(
@@ -394,8 +407,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       // Model returned empty response — report error instead of saving blank
       emit(state.copyWith(
         status: ChatStatus.error,
-        errorMessage:
-            'Model generated an empty response. Try switching to CPU '
+        errorMessage: 'Model generated an empty response. Try switching to CPU '
             'backend in settings, or select a different model.',
         clearStreamingMessageId: true,
       ));
@@ -459,7 +471,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     emit(state.copyWith(conversation: updatedConversation));
 
     // Resume generation — feed all messages (including tool response) back
-    _startStreaming(updatedConversation.messages);
+    final config = _activeConfig ?? await _storageRepository.loadSettings();
+    _startStreaming(updatedConversation.messages, config);
   }
 
   void _onStreamError(
@@ -482,9 +495,27 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     return '${trimmed.substring(0, 27)}...';
   }
 
+  Future<String?> _readinessError(ModelConfig config) async {
+    if (config.inferenceMode == ChatInferenceMode.remote) {
+      final errors = config.validate();
+      if (errors.isNotEmpty) return errors.join(', ');
+      if (!config.isRemoteConfigured) {
+        return 'Remote LLM is not configured';
+      }
+      if (!await _remoteRepository.isReady(config)) {
+        return 'The selected remote LLM account is missing an API key.';
+      }
+      return null;
+    }
+
+    if (!_gemmaRepository.isReady) return 'Model is not loaded';
+    return null;
+  }
+
   @override
   Future<void> close() async {
     await _streamSubscription?.cancel();
+    await _remoteRepository.dispose();
     return super.close();
   }
 }

@@ -3,7 +3,6 @@ import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/chat/chat_history_screen.dart';
@@ -76,10 +75,26 @@ class _HomeScreenState extends State<HomeScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              // Model status banner
-              BlocBuilder<GemmaModelBloc, GemmaModelState>(
-                builder: (context, modelState) {
-                  return ModelStatusBanner(state: modelState);
+              BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+                buildWhen: (previous, current) =>
+                    previous.config.inferenceMode !=
+                        current.config.inferenceMode ||
+                    previous.config.remoteAccountId !=
+                        current.config.remoteAccountId ||
+                    previous.config.remoteBaseUrl !=
+                        current.config.remoteBaseUrl ||
+                    previous.config.remoteModel != current.config.remoteModel,
+                builder: (context, settingsState) {
+                  if (settingsState.config.inferenceMode ==
+                      ChatInferenceMode.remote) {
+                    return _buildRemoteStatusBanner(settingsState.config);
+                  }
+
+                  return BlocBuilder<GemmaModelBloc, GemmaModelState>(
+                    builder: (context, modelState) {
+                      return ModelStatusBanner(state: modelState);
+                    },
+                  );
                 },
               ),
               // Chat messages
@@ -96,48 +111,86 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
               ),
-              // Input bar
-              BlocBuilder<GemmaModelBloc, GemmaModelState>(
-                builder: (context, modelState) {
-                  final selectedId = modelState.selectedModelId;
-                  final modelInfo = selectedId != null
-                      ? GemmaModelInfo.findById(selectedId)
-                      : null;
-                  return BlocBuilder<ChatBloc, ChatState>(
-                    builder: (context, chatState) {
-                      final canSend =
-                          modelState.isReady && !chatState.isStreaming;
-                      return ChatInputBar(
-                        enabled: canSend,
-                        isStreaming: chatState.isStreaming,
-                        supportsImage: modelInfo?.effectiveSupportsMultimodal ?? false,
-                        supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
-                        selectedModelName: modelInfo?.displayName,
-                        selectedModelId: selectedId,
-                        installedModels: modelState.installedModels,
-                        onModelSelect: (modelId) {
-                          context.read<GemmaModelBloc>().add(
-                            GemmaModelSelect(modelId: modelId),
-                          );
-                        },
-                        onSend: (message, {imageBytes, audioBytes}) {
-                          final settingsState = context
-                              .read<ChatSettingsBloc>()
-                              .state;
-                          context.read<ChatBloc>().add(
-                            ChatSendMessage(
-                              content: message,
-                              imageBytes: imageBytes,
-                              audioBytes: audioBytes,
-                              systemPrompt: chatState.conversation == null
-                                  ? settingsState.defaultSystemPrompt
-                                  : null,
-                            ),
-                          );
-                        },
-                        onStop: () {
-                          context.read<ChatBloc>().add(
-                            const ChatStopGeneration(),
+              BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+                builder: (context, settingsState) {
+                  if (settingsState.config.inferenceMode ==
+                      ChatInferenceMode.remote) {
+                    return BlocBuilder<ChatBloc, ChatState>(
+                      builder: (context, chatState) {
+                        final canSend =
+                            settingsState.config.isRemoteConfigured &&
+                            chatState.canSendMessage;
+                        return ChatInputBar(
+                          enabled: canSend,
+                          isStreaming: chatState.isStreaming,
+                          selectedModelName:
+                              'Remote: ${settingsState.config.remoteModel}',
+                          onModelTap: () =>
+                              context.goNamed(ChatSettingsScreen.name),
+                          onSend: (message, {imageBytes, audioBytes}) {
+                            context.read<ChatBloc>().add(
+                              ChatSendMessage(
+                                content: message,
+                                systemPrompt: chatState.conversation == null
+                                    ? settingsState.defaultSystemPrompt
+                                    : null,
+                              ),
+                            );
+                          },
+                          onStop: () {
+                            context.read<ChatBloc>().add(
+                              const ChatStopGeneration(),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  }
+
+                  return BlocBuilder<GemmaModelBloc, GemmaModelState>(
+                    builder: (context, modelState) {
+                      final selectedId = modelState.selectedModelId;
+                      final modelInfo = selectedId != null
+                          ? GemmaModelInfo.findById(selectedId)
+                          : null;
+                      return BlocBuilder<ChatBloc, ChatState>(
+                        builder: (context, chatState) {
+                          final canSend =
+                              modelState.isReady && chatState.canSendMessage;
+                          return ChatInputBar(
+                            enabled: canSend,
+                            isStreaming: chatState.isStreaming,
+                            supportsImage:
+                                modelInfo?.effectiveSupportsMultimodal ?? false,
+                            supportsAudio:
+                                modelInfo?.effectiveSupportsAudio ?? false,
+                            selectedModelName: modelInfo?.displayName,
+                            selectedModelId: selectedId,
+                            installedModels: modelState.installedModels,
+                            onModelSelect: (modelId) {
+                              context.read<GemmaModelBloc>().add(
+                                GemmaModelSelect(modelId: modelId),
+                              );
+                            },
+                            onModelTap: () =>
+                                context.goNamed(ChatSettingsScreen.name),
+                            onSend: (message, {imageBytes, audioBytes}) {
+                              context.read<ChatBloc>().add(
+                                ChatSendMessage(
+                                  content: message,
+                                  imageBytes: imageBytes,
+                                  audioBytes: audioBytes,
+                                  systemPrompt: chatState.conversation == null
+                                      ? settingsState.defaultSystemPrompt
+                                      : null,
+                                ),
+                              );
+                            },
+                            onStop: () {
+                              context.read<ChatBloc>().add(
+                                const ChatStopGeneration(),
+                              );
+                            },
                           );
                         },
                       );
@@ -180,6 +233,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 context,
               ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRemoteStatusBanner(ModelConfig config) {
+    if (config.isRemoteConfigured) return const SizedBox.shrink();
+
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: colorScheme.tertiaryContainer,
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_off, size: 20),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text('Remote LLM needs an account, base URL, and model.'),
+          ),
+          TextButton(
+            onPressed: () => context.goNamed(ChatSettingsScreen.name),
+            child: const Text('Settings'),
           ),
         ],
       ),

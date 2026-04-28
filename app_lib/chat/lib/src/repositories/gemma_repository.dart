@@ -7,6 +7,7 @@ import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
 
@@ -607,7 +608,7 @@ class GemmaRepository {
   /// Returns a stream of [gemma.ModelResponse] which can be:
   /// - [gemma.TextResponse] for text tokens
   /// - [gemma.FunctionCallResponse] for tool/function calls
-  Stream<gemma.ModelResponse> generateResponse(List<Message> messages) async* {
+  Stream<ChatGenerationChunk> generateResponse(List<Message> messages) async* {
     if (_chat == null || _model == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
@@ -672,7 +673,16 @@ class GemmaRepository {
     // When false, manually strip <think> blocks (DeepSeek always emits them).
     if (_isThinking) {
       await for (final response in _chat!.generateChatResponseAsync()) {
-        yield response;
+        switch (response) {
+          case gemma.TextResponse(:final token):
+            yield ChatTextChunk(token);
+          case gemma.FunctionCallResponse(:final name, :final args):
+            yield ChatFunctionCallChunk(name: name, args: args);
+          case gemma.ParallelFunctionCallResponse():
+            break;
+          case gemma.ThinkingResponse(:final content):
+            yield ChatThinkingChunk(content);
+        }
       }
     } else {
       // Track whether we're inside a <think> block (reasoning tokens)
@@ -682,10 +692,10 @@ class GemmaRepository {
       await for (final response in _chat!.generateChatResponseAsync()) {
         if (response is gemma.FunctionCallResponse) {
           if (buffer.isNotEmpty && !inThinkBlock) {
-            yield gemma.TextResponse(buffer);
+            yield ChatTextChunk(buffer);
             buffer = '';
           }
-          yield response;
+          yield ChatFunctionCallChunk(name: response.name, args: response.args);
           continue;
         }
 
@@ -706,7 +716,7 @@ class GemmaRepository {
               final startIdx = buffer.indexOf('<think>');
               if (startIdx != -1) {
                 if (startIdx > 0) {
-                  yield gemma.TextResponse(buffer.substring(0, startIdx));
+                  yield ChatTextChunk(buffer.substring(0, startIdx));
                 }
                 buffer = buffer.substring(startIdx + 7);
                 inThinkBlock = true;
@@ -714,12 +724,12 @@ class GemmaRepository {
                 if (buffer.length > 7 && buffer.contains('<')) {
                   final lastLt = buffer.lastIndexOf('<');
                   if (lastLt > buffer.length - 8) {
-                    yield gemma.TextResponse(buffer.substring(0, lastLt));
+                    yield ChatTextChunk(buffer.substring(0, lastLt));
                     buffer = buffer.substring(lastLt);
                     break;
                   }
                 }
-                yield gemma.TextResponse(buffer);
+                yield ChatTextChunk(buffer);
                 buffer = '';
                 break;
               }
@@ -729,7 +739,7 @@ class GemmaRepository {
       }
 
       if (buffer.isNotEmpty && !inThinkBlock) {
-        yield gemma.TextResponse(buffer);
+        yield ChatTextChunk(buffer);
       }
     }
   }
@@ -751,8 +761,8 @@ class GemmaRepository {
     // Collect streaming text response into a single string
     final buffer = StringBuffer();
     await for (final response in generateResponse(messages)) {
-      if (response is gemma.TextResponse) {
-        buffer.write(response.token);
+      if (response is ChatTextChunk) {
+        buffer.write(response.text);
       }
     }
     return buffer.toString();

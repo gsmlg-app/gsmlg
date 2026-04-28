@@ -1,9 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
@@ -47,11 +48,15 @@ class _ChatScreenState extends State<ChatScreen> {
     // Strip file extension and common suffixes
     var name = modelId;
     for (final ext in ['.litertlm', '.task', '.bin']) {
-      if (name.endsWith(ext)) name = name.substring(0, name.length - ext.length);
+      if (name.endsWith(ext)) {
+        name = name.substring(0, name.length - ext.length);
+      }
     }
     // Strip common suffixes like _multi-prefill-seq_q8_ekv4096
     final suffixIdx = name.indexOf('_multi-prefill');
-    if (suffixIdx > 0) name = name.substring(0, suffixIdx);
+    if (suffixIdx > 0) {
+      name = name.substring(0, suffixIdx);
+    }
     return name;
   }
 
@@ -120,116 +125,189 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         body: Column(
           children: [
-            // Model status banner
-            BlocBuilder<GemmaModelBloc, GemmaModelState>(
-              builder: (context, modelState) {
-                return ModelStatusBanner(state: modelState);
-              },
-            ),
-            // Chat messages
-            Expanded(
-              child: BlocBuilder<GemmaModelBloc, GemmaModelState>(
-                buildWhen: (prev, curr) => prev.status != curr.status,
-                builder: (context, modelState) {
-                  if (GemmaModelInfo.platformModels.isEmpty) {
-                    return _buildUnavailableView();
-                  }
-                  return BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-                    buildWhen: (prev, curr) =>
-                        prev.thinkingEnabled != curr.thinkingEnabled,
-                    builder: (context, settingsState) {
-                      return BlocBuilder<ChatBloc, ChatState>(
-                        builder: (context, state) {
-                          if (state.conversation == null) {
-                            return _buildWelcomeView();
-                          }
-                          return ChatMessageList(
-                            messages: state.messages,
-                            isStreaming: state.isStreaming,
-                            showThinking: settingsState.thinkingEnabled,
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            // Input bar
-            BlocBuilder<GemmaModelBloc, GemmaModelState>(
-              builder: (context, modelState) {
-                final selectedId = modelState.selectedModelId;
-                final modelInfo = selectedId != null
-                    ? GemmaModelInfo.findById(selectedId)
-                    : null;
-                return BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-                  buildWhen: (prev, curr) =>
-                      prev.thinkingEnabled != curr.thinkingEnabled,
-                  builder: (context, settingsState) {
-                    return BlocBuilder<ChatBloc, ChatState>(
-                      builder: (context, chatState) {
-                        final canSend =
-                            modelState.isReady && chatState.canSendMessage;
-                        return ChatInputBar(
-                          enabled: canSend,
-                          isStreaming: chatState.isStreaming,
-                          supportsImage: modelInfo?.effectiveSupportsMultimodal ?? false,
-                          supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
-                          supportsThinking:
-                              modelInfo?.effectiveSupportsThinking ?? false,
-                          thinkingEnabled: settingsState.thinkingEnabled,
-                          selectedModelName: modelInfo?.displayName ??
-                              (selectedId != null ? _shortModelName(selectedId) : null),
-                          selectedModelId: selectedId,
-                          installedModels: modelState.installedModels,
-                          onModelSelect: (modelId) {
-                            context.read<GemmaModelBloc>().add(
-                              GemmaModelSelect(modelId: modelId),
-                            );
-                          },
-                          onModelTap: () =>
-                              context.goNamed(ChatSettingsScreen.name),
-                          onThinkingToggle: (enabled) {
-                            context.read<ChatSettingsBloc>().add(
-                              ChatSettingsToggleThinking(enabled: enabled),
-                            );
-                          },
-                          onSend: (message, {imageBytes, audioBytes}) {
-                            if (chatState.conversation == null) {
-                              _startNewConversation();
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                context.read<ChatBloc>().add(
-                                  ChatSendMessage(
-                                    content: message,
-                                    imageBytes: imageBytes,
-                                    audioBytes: audioBytes,
-                                  ),
-                                );
-                              });
-                            } else {
-                              context.read<ChatBloc>().add(
-                                ChatSendMessage(
-                                  content: message,
-                                  imageBytes: imageBytes,
-                                  audioBytes: audioBytes,
-                                ),
-                              );
-                            }
-                          },
-                          onStop: () {
-                            context.read<ChatBloc>().add(
-                              const ChatStopGeneration(),
-                            );
-                          },
-                        );
-                      },
-                    );
+            BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+              builder: (context, settingsState) {
+                if (settingsState.config.inferenceMode ==
+                    ChatInferenceMode.remote) {
+                  return _buildRemoteStatusBanner(settingsState.config);
+                }
+                return BlocBuilder<GemmaModelBloc, GemmaModelState>(
+                  builder: (context, modelState) {
+                    return ModelStatusBanner(state: modelState);
                   },
                 );
               },
             ),
+            Expanded(
+              child: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+                buildWhen: (prev, curr) =>
+                    prev.thinkingEnabled != curr.thinkingEnabled ||
+                    prev.config.inferenceMode != curr.config.inferenceMode,
+                builder: (context, settingsState) {
+                  if (settingsState.config.inferenceMode ==
+                      ChatInferenceMode.local) {
+                    return BlocBuilder<GemmaModelBloc, GemmaModelState>(
+                      buildWhen: (prev, curr) => prev.status != curr.status,
+                      builder: (context, modelState) {
+                        if (GemmaModelInfo.platformModels.isEmpty) {
+                          return _buildUnavailableView();
+                        }
+                        return _buildConversationView(settingsState);
+                      },
+                    );
+                  }
+                  return _buildConversationView(settingsState);
+                },
+              ),
+            ),
+            BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+              builder: (context, settingsState) {
+                if (settingsState.config.inferenceMode ==
+                    ChatInferenceMode.remote) {
+                  return _buildRemoteInputBar(settingsState);
+                }
+                return _buildLocalInputBar(settingsState);
+              },
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildConversationView(ChatSettingsState settingsState) {
+    return BlocBuilder<ChatBloc, ChatState>(
+      builder: (context, state) {
+        if (state.conversation == null) return _buildWelcomeView();
+        return ChatMessageList(
+          messages: state.messages,
+          isStreaming: state.isStreaming,
+          showThinking: settingsState.thinkingEnabled,
+        );
+      },
+    );
+  }
+
+  Widget _buildLocalInputBar(ChatSettingsState settingsState) {
+    return BlocBuilder<GemmaModelBloc, GemmaModelState>(
+      builder: (context, modelState) {
+        final selectedId = modelState.selectedModelId;
+        final modelInfo = selectedId != null
+            ? GemmaModelInfo.findById(selectedId)
+            : null;
+        return BlocBuilder<ChatBloc, ChatState>(
+          builder: (context, chatState) {
+            final canSend = modelState.isReady && chatState.canSendMessage;
+            return ChatInputBar(
+              enabled: canSend,
+              isStreaming: chatState.isStreaming,
+              supportsImage: modelInfo?.effectiveSupportsMultimodal ?? false,
+              supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
+              supportsThinking: modelInfo?.effectiveSupportsThinking ?? false,
+              thinkingEnabled: settingsState.thinkingEnabled,
+              selectedModelName:
+                  modelInfo?.displayName ??
+                  (selectedId != null ? _shortModelName(selectedId) : null),
+              selectedModelId: selectedId,
+              installedModels: modelState.installedModels,
+              onModelSelect: (modelId) {
+                context.read<GemmaModelBloc>().add(
+                  GemmaModelSelect(modelId: modelId),
+                );
+              },
+              onModelTap: () => context.goNamed(ChatSettingsScreen.name),
+              onThinkingToggle: (enabled) {
+                context.read<ChatSettingsBloc>().add(
+                  ChatSettingsToggleThinking(enabled: enabled),
+                );
+              },
+              onSend: (message, {imageBytes, audioBytes}) {
+                _sendMessage(
+                  chatState,
+                  message,
+                  imageBytes: imageBytes,
+                  audioBytes: audioBytes,
+                );
+              },
+              onStop: () {
+                context.read<ChatBloc>().add(const ChatStopGeneration());
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRemoteInputBar(ChatSettingsState settingsState) {
+    return BlocBuilder<ChatBloc, ChatState>(
+      builder: (context, chatState) {
+        final canSend =
+            settingsState.config.isRemoteConfigured && chatState.canSendMessage;
+        return ChatInputBar(
+          enabled: canSend,
+          isStreaming: chatState.isStreaming,
+          selectedModelName: 'Remote: ${settingsState.config.remoteModel}',
+          onModelTap: () => context.goNamed(ChatSettingsScreen.name),
+          onSend: (message, {imageBytes, audioBytes}) {
+            _sendMessage(chatState, message);
+          },
+          onStop: () {
+            context.read<ChatBloc>().add(const ChatStopGeneration());
+          },
+        );
+      },
+    );
+  }
+
+  void _sendMessage(
+    ChatState chatState,
+    String message, {
+    Uint8List? imageBytes,
+    Uint8List? audioBytes,
+  }) {
+    if (chatState.conversation == null) {
+      _startNewConversation();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<ChatBloc>().add(
+          ChatSendMessage(
+            content: message,
+            imageBytes: imageBytes,
+            audioBytes: audioBytes,
+          ),
+        );
+      });
+    } else {
+      context.read<ChatBloc>().add(
+        ChatSendMessage(
+          content: message,
+          imageBytes: imageBytes,
+          audioBytes: audioBytes,
+        ),
+      );
+    }
+  }
+
+  Widget _buildRemoteStatusBanner(ModelConfig config) {
+    if (config.isRemoteConfigured) return const SizedBox.shrink();
+
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: colorScheme.tertiaryContainer,
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_off, size: 20),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text('Remote LLM needs an account, base URL, and model.'),
+          ),
+          TextButton(
+            onPressed: () => context.goNamed(ChatSettingsScreen.name),
+            child: const Text('Settings'),
+          ),
+        ],
       ),
     );
   }
