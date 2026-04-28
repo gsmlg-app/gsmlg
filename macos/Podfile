@@ -46,10 +46,10 @@ post_install do |installer|
   runner_target = main_project.targets.find { |t| t.name == 'Runner' }
 
   if runner_target
-    # Remove any existing LiteRT-LM phase to avoid duplicates on re-install
-    runner_target.build_phases.reject! { |phase|
-      phase.respond_to?(:name) && phase.name == 'LiteRT-LM Desktop Setup'
-    }
+    # Remove any existing LiteRT-LM phase to avoid duplicates on re-install.
+    runner_target.shell_script_build_phases
+      .select { |phase| phase.name == 'LiteRT-LM Desktop Setup' }
+      .each(&:remove_from_project)
 
     # Use our own setup script that correctly handles JRE bundling.
     # The flutter_gemma setup_desktop.sh signs JRE with sandbox entitlements,
@@ -58,6 +58,7 @@ post_install do |installer|
     # Use ${SRCROOT} so the path remains portable across machines.
     script_phase = runner_target.new_shell_script_build_phase('LiteRT-LM Desktop Setup')
     script_phase.shell_path = '/bin/bash'
+    script_phase.always_out_of_date = '1'
     script_phase.shell_script = <<-SCRIPT
 "${SRCROOT}/scripts/setup_litertlm.sh" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app"
     SCRIPT
