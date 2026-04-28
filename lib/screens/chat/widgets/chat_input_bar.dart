@@ -1,11 +1,10 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:record/record.dart';
 
 class ChatInputBar extends StatefulWidget {
@@ -19,6 +18,7 @@ class ChatInputBar extends StatefulWidget {
     this.thinkingEnabled = false,
     this.selectedModelName,
     this.installedModels = const [],
+    this.remoteModels = const [],
     this.selectedModelId,
     required this.onSend,
     required this.onStop,
@@ -35,12 +35,14 @@ class ChatInputBar extends StatefulWidget {
   final bool thinkingEnabled;
   final String? selectedModelName;
   final List<String> installedModels;
+  final List<String> remoteModels;
   final String? selectedModelId;
   final void Function(
     String text, {
     Uint8List? imageBytes,
     Uint8List? audioBytes,
-  }) onSend;
+  })
+  onSend;
   final VoidCallback onStop;
   final ValueChanged<bool>? onThinkingToggle;
   final VoidCallback? onModelTap;
@@ -51,43 +53,176 @@ class ChatInputBar extends StatefulWidget {
 }
 
 class _ChatInputBarState extends State<ChatInputBar> {
+  static const _maxInlineFileBytes = 64 * 1024;
+
   final _controller = DmMarkdownInputController();
   final _recorder = AudioRecorder();
-  Uint8List? _pendingImage;
-  Uint8List? _pendingAudio;
+  final List<DmChatAttachment> _pendingAttachments = [];
   bool _isRecording = false;
 
-  void _handleSend() {
-    final text = _controller.text.trim();
-    if (text.isEmpty && _pendingImage == null && _pendingAudio == null) return;
+  void _handleSend(String text, List<DmChatAttachment> attachments) {
+    if (!widget.enabled || widget.isStreaming) return;
 
-    widget.onSend(text, imageBytes: _pendingImage, audioBytes: _pendingAudio);
-    _controller.clear();
+    final parts = <String>[];
+    final trimmed = text.trim();
+    if (trimmed.isNotEmpty) parts.add(trimmed);
+
+    Uint8List? imageBytes;
+    Uint8List? audioBytes;
+    for (final attachment in attachments) {
+      final bytes = attachment.bytes;
+      if (bytes == null) continue;
+
+      final extension = _extensionFor(attachment.name, attachment.mimeType);
+      if (imageBytes == null &&
+          widget.supportsImage &&
+          _isImageExtension(extension)) {
+        imageBytes = bytes;
+        continue;
+      }
+
+      if (audioBytes == null &&
+          widget.supportsAudio &&
+          _isAudioExtension(extension)) {
+        audioBytes = bytes;
+        continue;
+      }
+
+      parts.add(
+        _fileReferenceText(
+          name: attachment.name,
+          extension: extension,
+          size: attachment.sizeBytes ?? bytes.length,
+          bytes: bytes,
+        ),
+      );
+    }
+
+    if (parts.isEmpty && imageBytes == null && audioBytes == null) return;
+
+    widget.onSend(
+      parts.join('\n\n'),
+      imageBytes: imageBytes,
+      audioBytes: audioBytes,
+    );
+
+    setState(_pendingAttachments.clear);
+  }
+
+  String _fileReferenceText({
+    required String name,
+    required String extension,
+    required int size,
+    required Uint8List bytes,
+  }) {
+    final buffer = StringBuffer()
+      ..writeln()
+      ..writeln('Attached file: $name')
+      ..writeln('Size: ${_formatBytes(size)}');
+
+    if (_isTextExtension(extension) && bytes.length <= _maxInlineFileBytes) {
+      final content = utf8.decode(bytes, allowMalformed: true);
+      buffer
+        ..writeln()
+        ..writeln('```')
+        ..writeln(content.trim())
+        ..writeln('```');
+    }
+
+    return buffer.toString().trim();
+  }
+
+  void _handleAttach(List<DmChatAttachment> attachments) {
     setState(() {
-      _pendingImage = null;
-      _pendingAudio = null;
+      _pendingAttachments.addAll(
+        attachments.map(
+          (attachment) =>
+              attachment.copyWith(status: DmChatAttachmentStatus.done),
+        ),
+      );
     });
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1024,
-      maxHeight: 1024,
-    );
-    if (picked == null) return;
-    final bytes = await picked.readAsBytes();
-    setState(() => _pendingImage = bytes);
+  void _removeAttachment(DmChatAttachment attachment) {
+    setState(() {
+      _pendingAttachments.removeWhere((item) => item.id == attachment.id);
+    });
   }
 
-  Future<void> _pickAudioFile() async {
-    final result = await FilePicker.pickFiles(type: FileType.audio);
-    if (result == null || result.files.isEmpty) return;
-    final path = result.files.single.path;
-    if (path == null) return;
-    final bytes = await File(path).readAsBytes();
-    setState(() => _pendingAudio = bytes);
+  String _extensionFor(String name, String? mimeType) {
+    final dot = name.lastIndexOf('.');
+    if (dot != -1 && dot < name.length - 1) {
+      return name.substring(dot + 1).toLowerCase();
+    }
+    return switch (mimeType) {
+      'image/png' => 'png',
+      'image/jpeg' => 'jpg',
+      'image/gif' => 'gif',
+      'image/webp' => 'webp',
+      'audio/wav' => 'wav',
+      'audio/mpeg' => 'mp3',
+      'audio/mp4' => 'm4a',
+      'text/plain' => 'txt',
+      'application/json' => 'json',
+      _ => '',
+    };
+  }
+
+  bool _isImageExtension(String extension) {
+    return const {
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'webp',
+      'bmp',
+      'heic',
+      'heif',
+    }.contains(extension);
+  }
+
+  bool _isAudioExtension(String extension) {
+    return const {
+      'aac',
+      'aiff',
+      'flac',
+      'm4a',
+      'mp3',
+      'ogg',
+      'opus',
+      'wav',
+      'webm',
+    }.contains(extension);
+  }
+
+  bool _isTextExtension(String extension) {
+    return const {
+      'csv',
+      'dart',
+      'diff',
+      'go',
+      'html',
+      'json',
+      'log',
+      'md',
+      'py',
+      'rs',
+      'sql',
+      'swift',
+      'toml',
+      'ts',
+      'tsx',
+      'txt',
+      'yaml',
+      'yml',
+    }.contains(extension);
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    final kb = bytes / 1024;
+    if (kb < 1024) return '${kb.toStringAsFixed(0)} KB';
+    return '${(kb / 1024).toStringAsFixed(1)} MB';
   }
 
   Future<void> _toggleRecording() async {
@@ -96,7 +231,16 @@ class _ChatInputBarState extends State<ChatInputBar> {
       if (path != null) {
         final bytes = await File(path).readAsBytes();
         setState(() {
-          _pendingAudio = bytes;
+          _pendingAttachments.add(
+            DmChatAttachment(
+              id: 'audio:${DateTime.now().microsecondsSinceEpoch}',
+              name: 'recording.wav',
+              sizeBytes: bytes.length,
+              mimeType: 'audio/wav',
+              bytes: bytes,
+              status: DmChatAttachmentStatus.done,
+            ),
+          );
           _isRecording = false;
         });
         try {
@@ -116,52 +260,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
     }
   }
 
-  void _showAttachmentOptions() {
-    final hasImage = widget.supportsImage;
-    final hasAudio = widget.supportsAudio;
-
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (hasImage)
-              ListTile(
-                leading: const Icon(Icons.image),
-                title: const Text('Image'),
-                subtitle: const Text('Pick from gallery'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _pickImage();
-                },
-              ),
-            if (hasAudio) ...[
-              ListTile(
-                leading: const Icon(Icons.audio_file),
-                title: const Text('Audio File'),
-                subtitle: const Text('Pick an audio file'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _pickAudioFile();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.mic),
-                title: const Text('Record Audio'),
-                subtitle: const Text('Record with microphone'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _toggleRecording();
-                },
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   void dispose() {
     _controller.dispose();
@@ -171,179 +269,115 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final hasAttachments = widget.supportsImage || widget.supportsAudio;
+    final input = DmChatInput(
+      controller: _controller,
+      onSend: _handleSend,
+      onStop: widget.onStop,
+      onAttach: _handleAttach,
+      isStreaming: widget.isStreaming,
+      pendingAttachments: _pendingAttachments,
+      onRemoveAttachment: _removeAttachment,
+      placeholder: _isRecording
+          ? 'Recording...'
+          : widget.enabled
+          ? 'Type a message...'
+          : 'Model not ready',
+      minLines: 1,
+      maxLines: 6,
+      submitShortcut: DmChatSubmitShortcut.cmdEnter,
+      leading: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.onThinkingToggle != null)
+            _ThinkSwitch(
+              value: widget.thinkingEnabled,
+              enabled: widget.enabled && !widget.isStreaming,
+              onChanged: widget.onThinkingToggle!,
+            ),
+          if (widget.supportsAudio)
+            IconButton(
+              onPressed: widget.enabled && !widget.isStreaming
+                  ? _toggleRecording
+                  : null,
+              icon: Icon(
+                _isRecording ? Icons.stop_circle : Icons.mic,
+                size: 20,
+              ),
+              tooltip: _isRecording ? 'Stop recording' : 'Record audio',
+              visualDensity: VisualDensity.compact,
+            ),
+        ],
+      ),
+      trailing: widget.selectedModelName != null
+          ? _ModelSelector(
+              selectedModelName: widget.selectedModelName!,
+              selectedModelId: widget.selectedModelId,
+              installedModels: widget.installedModels,
+              remoteModels: widget.remoteModels,
+              onModelSelect: widget.onModelSelect,
+              onModelTap: widget.onModelTap,
+            )
+          : null,
+    );
 
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Image preview
-            if (_pendingImage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Stack(
-                  alignment: Alignment.topRight,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.memory(
-                        _pendingImage!,
-                        height: 120,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.close,
-                        size: 18,
-                        color: colorScheme.onSurface,
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor:
-                            colorScheme.surface.withValues(alpha: 0.8),
-                        minimumSize: const Size(28, 28),
-                        padding: EdgeInsets.zero,
-                      ),
-                      onPressed: () => setState(() => _pendingImage = null),
-                    ),
-                  ],
+        child: IgnorePointer(
+          ignoring: !widget.enabled && !widget.isStreaming,
+          child: Opacity(
+            opacity: widget.enabled || widget.isStreaming ? 1 : 0.62,
+            child: input,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThinkSwitch extends StatelessWidget {
+  const _ThinkSwitch({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Tooltip(
+      message: value ? 'Thinking: ON' : 'Thinking: OFF',
+      child: Semantics(
+        label: 'Thinking',
+        toggled: value,
+        child: SizedBox(
+          height: 36,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.psychology,
+                size: 18,
+                color: value
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
+              ),
+              Transform.scale(
+                scale: 0.72,
+                child: Switch.adaptive(
+                  value: value,
+                  onChanged: enabled ? onChanged : null,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
-            // Audio preview
-            if (_pendingAudio != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Chip(
-                  avatar: const Icon(Icons.audio_file, size: 18),
-                  label: Text(
-                    'Audio attached (${(_pendingAudio!.length / 1024).toStringAsFixed(0)} KB)',
-                  ),
-                  deleteIcon: const Icon(Icons.close, size: 16),
-                  onDeleted: () => setState(() => _pendingAudio = null),
-                ),
-              ),
-            // Unified card: input + bottom bar
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Text input (no bottom slots — avoids Expanded issue)
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 150),
-                    child: DmMarkdownInput(
-                      controller: _controller,
-                      enabled: widget.enabled && !widget.isStreaming,
-                      showPreview: false,
-                      showLineNumbers: false,
-                      minLines: 1,
-                      maxLines: 6,
-                      decoration: InputDecoration(
-                        hintText: _isRecording
-                            ? 'Recording...'
-                            : widget.enabled
-                                ? 'Type a message...'
-                                : 'Model not ready',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        disabledBorder: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                  // Bottom action bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
-                    ),
-                    child: Row(
-                      children: [
-                        // Left actions
-                        if (hasAttachments)
-                          IconButton(
-                            onPressed: widget.enabled && !widget.isStreaming
-                                ? _showAttachmentOptions
-                                : null,
-                            icon: const Icon(Icons.add, size: 20),
-                            tooltip: 'Attach file',
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        if (widget.supportsAudio)
-                          IconButton(
-                            onPressed: widget.enabled && !widget.isStreaming
-                                ? _toggleRecording
-                                : null,
-                            icon: Icon(
-                              _isRecording ? Icons.stop_circle : Icons.mic,
-                              size: 20,
-                              color: _isRecording ? colorScheme.error : null,
-                            ),
-                            tooltip: _isRecording
-                                ? 'Stop recording'
-                                : 'Record audio',
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        if (widget.supportsThinking)
-                          IconButton(
-                            onPressed: () => widget.onThinkingToggle
-                                ?.call(!widget.thinkingEnabled),
-                            icon: Icon(
-                              Icons.psychology,
-                              size: 20,
-                              color: widget.thinkingEnabled
-                                  ? colorScheme.primary
-                                  : null,
-                            ),
-                            tooltip: widget.thinkingEnabled
-                                ? 'Thinking: ON'
-                                : 'Thinking: OFF',
-                            visualDensity: VisualDensity.compact,
-                          ),
-                        const Spacer(),
-                        // Right: model selector + send
-                        if (widget.selectedModelName != null)
-                          _ModelSelector(
-                            selectedModelName: widget.selectedModelName!,
-                            selectedModelId: widget.selectedModelId,
-                            installedModels: widget.installedModels,
-                            onModelSelect: widget.onModelSelect,
-                            onModelTap: widget.onModelTap,
-                          ),
-                        const SizedBox(width: 4),
-                        widget.isStreaming
-                            ? IconButton.filled(
-                                onPressed: widget.onStop,
-                                icon: const Icon(Icons.stop, size: 20),
-                                tooltip: 'Stop generation',
-                                visualDensity: VisualDensity.compact,
-                              )
-                            : IconButton.filled(
-                                onPressed:
-                                    widget.enabled ? _handleSend : null,
-                                icon:
-                                    const Icon(Icons.arrow_upward, size: 20),
-                                tooltip: 'Send message',
-                                visualDensity: VisualDensity.compact,
-                              ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -355,6 +389,7 @@ class _ModelSelector extends StatelessWidget {
     required this.selectedModelName,
     this.selectedModelId,
     this.installedModels = const [],
+    this.remoteModels = const [],
     this.onModelSelect,
     this.onModelTap,
   });
@@ -362,6 +397,7 @@ class _ModelSelector extends StatelessWidget {
   final String selectedModelName;
   final String? selectedModelId;
   final List<String> installedModels;
+  final List<String> remoteModels;
   final ValueChanged<String>? onModelSelect;
   final VoidCallback? onModelTap;
 
@@ -378,9 +414,15 @@ class _ModelSelector extends StatelessWidget {
       }
     }
 
+    final canSelectLocal = compatibleModels.length > 1 && onModelSelect != null;
+    final remoteOptions = remoteModels.toSet().toList()..sort();
+    final canSelectRemote = remoteOptions.length > 1 && onModelSelect != null;
+
     return InkWell(
-      onTap: compatibleModels.length > 1 && onModelSelect != null
+      onTap: canSelectLocal
           ? () => _showModelMenu(context, compatibleModels, colorScheme)
+          : canSelectRemote
+          ? () => _showRemoteModelMenu(context, remoteOptions, colorScheme)
           : onModelTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
@@ -416,8 +458,7 @@ class _ModelSelector extends StatelessWidget {
     ColorScheme colorScheme,
   ) {
     final button = context.findRenderObject() as RenderBox;
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final position = RelativeRect.fromRect(
       Rect.fromPoints(
         button.localToGlobal(Offset.zero, ancestor: overlay),
@@ -443,8 +484,59 @@ class _ModelSelector extends StatelessWidget {
                 child: Text(
                   info.displayName,
                   style: TextStyle(
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Icon(Icons.check, size: 18, color: colorScheme.primary),
+            ],
+          ),
+        );
+      }).toList(),
+    ).then((selectedId) {
+      if (selectedId != null && selectedId != selectedModelId) {
+        onModelSelect?.call(selectedId);
+      }
+    });
+  }
+
+  void _showRemoteModelMenu(
+    BuildContext context,
+    List<String> models,
+    ColorScheme colorScheme,
+  ) {
+    final button = context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu<String>(
+      context: context,
+      position: position,
+      items: models.map((id) {
+        final isSelected = id == selectedModelId;
+        return PopupMenuItem<String>(
+          value: id,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  id,
+                  style: TextStyle(
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ),

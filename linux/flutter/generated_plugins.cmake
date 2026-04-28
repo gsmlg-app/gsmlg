@@ -4,7 +4,6 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_client_info_linux
-  file_selector_linux
   flutter_gemma
   flutter_secure_storage_linux
   record_linux

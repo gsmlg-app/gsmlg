@@ -12,6 +12,22 @@ class ToolExecutor {
   /// Tool definitions to pass to [InferenceChat].
   List<gemma.Tool> get toolDefinitions => [_whoisTool, _ipGeoTool];
 
+  /// Tool definitions for OpenAI-compatible chat completion APIs.
+  List<Map<String, dynamic>> get openAiToolDefinitions {
+    return toolDefinitions
+        .map(
+          (tool) => {
+            'type': 'function',
+            'function': {
+              'name': tool.name,
+              'description': tool.description,
+              'parameters': tool.parameters,
+            },
+          },
+        )
+        .toList(growable: false);
+  }
+
   static final _whoisTool = gemma.Tool(
     name: 'whois_lookup',
     description: 'Look up WHOIS registration information for a domain name',

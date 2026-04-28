@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
+import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_history_screen.dart';
 import 'chat_settings_screen.dart';
@@ -242,13 +244,38 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildRemoteInputBar(ChatSettingsState settingsState) {
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, chatState) {
+        final config = settingsState.config;
+        final visibleRemoteModels =
+            context.read<SharedPreferences>().getStringList(
+              config.remoteVisibleModelsKey,
+            ) ??
+            const <String>[];
+        final remoteModels = {
+          config.remoteModel,
+          ...visibleRemoteModels,
+        }.where((model) => model.trim().isNotEmpty).toList()..sort();
         final canSend =
             settingsState.config.isRemoteConfigured && chatState.canSendMessage;
         return ChatInputBar(
           enabled: canSend,
           isStreaming: chatState.isStreaming,
-          selectedModelName: 'Remote: ${settingsState.config.remoteModel}',
-          onModelTap: () => context.goNamed(ChatSettingsScreen.name),
+          thinkingEnabled: settingsState.thinkingEnabled,
+          selectedModelName: 'Remote: ${config.remoteModel}',
+          selectedModelId: config.remoteModel,
+          remoteModels: remoteModels,
+          onModelSelect: (modelId) {
+            context.read<ChatSettingsBloc>().add(
+              ChatSettingsUpdateConfig(
+                config: config.copyWith(remoteModel: modelId),
+              ),
+            );
+          },
+          onModelTap: () => context.goNamed(RemoteModelSettingsScreen.name),
+          onThinkingToggle: (enabled) {
+            context.read<ChatSettingsBloc>().add(
+              ChatSettingsToggleThinking(enabled: enabled),
+            );
+          },
           onSend: (message, {imageBytes, audioBytes}) {
             _sendMessage(chatState, message);
           },

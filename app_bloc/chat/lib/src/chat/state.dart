@@ -60,6 +60,7 @@ class ChatState extends Equatable {
 
   /// Whether the chat is ready to send messages.
   bool get canSendMessage =>
+      status == ChatStatus.initial ||
       status == ChatStatus.ready ||
       status == ChatStatus.stopped ||
       status == ChatStatus.error;

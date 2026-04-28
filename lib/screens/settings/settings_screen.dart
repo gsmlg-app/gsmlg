@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
@@ -13,21 +15,36 @@ import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
 import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
+import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:theme_bloc/theme_bloc.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   static const name = 'Settings';
   static const path = '/settings';
 
   const SettingsScreen({super.key});
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ChatSettingsBloc>().add(const ChatSettingsLoad());
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
-      selectedIndex: Destinations.indexOf(const Key(name), context),
+      selectedIndex: Destinations.indexOf(
+        const Key(SettingsScreen.name),
+        context,
+      ),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       destinations: Destinations.navs(context),
       body: (context) {
@@ -71,7 +88,7 @@ class SettingsScreen extends StatelessWidget {
                           tiles: <SettingsTile>[
                             SettingsTile.navigation(
                               leading: const Icon(Icons.smart_toy),
-                              title: const Text('AI Models'),
+                              title: const Text('Local Models'),
                               value: BlocBuilder<GemmaModelBloc, GemmaModelState>(
                                 builder: (context, modelState) {
                                   final selectedId = modelState.selectedModelId;
@@ -93,6 +110,26 @@ class SettingsScreen extends StatelessWidget {
                               ),
                               onPressed: (context) {
                                 context.goNamed(ModelManagementScreen.name);
+                              },
+                            ),
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.cloud_queue),
+                              title: const Text('Remote Models'),
+                              value:
+                                  BlocBuilder<
+                                    ChatSettingsBloc,
+                                    ChatSettingsState
+                                  >(
+                                    builder: (context, settingsState) {
+                                      final config = settingsState.config;
+                                      if (!config.isRemoteConfigured) {
+                                        return const Text('Not configured');
+                                      }
+                                      return Text(config.remoteModel);
+                                    },
+                                  ),
+                              onPressed: (context) {
+                                context.goNamed(RemoteModelSettingsScreen.name);
                               },
                             ),
                           ],

@@ -6,6 +6,7 @@ import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
 import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
+import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 
 GoRoute settingsRoutes() => GoRoute(
@@ -49,6 +50,17 @@ GoRoute settingsRoutes() => GoRoute(
           key: state.pageKey,
           restorationId: state.pageKey.value,
           child: const ModelManagementScreen(),
+        );
+      },
+    ),
+    GoRoute(
+      name: RemoteModelSettingsScreen.name,
+      path: RemoteModelSettingsScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const RemoteModelSettingsScreen(),
         );
       },
     ),

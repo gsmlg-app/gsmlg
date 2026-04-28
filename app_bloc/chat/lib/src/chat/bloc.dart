@@ -194,8 +194,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   void _startStreaming(List<Message> messages, ModelConfig config) {
     _activeConfig = config;
     _streamSubscription?.cancel();
+    var sawFunctionCall = false;
     final stream = config.inferenceMode == ChatInferenceMode.remote
-        ? _remoteRepository.generateResponse(messages, config)
+        ? _remoteRepository.generateResponse(
+            messages,
+            config,
+            tools: _toolExecutor.openAiToolDefinitions,
+          )
         : _gemmaRepository.generateResponse(messages);
     _streamSubscription = stream.listen(
       (chunk) {
@@ -205,10 +210,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           case ChatThinkingChunk(:final content):
             add(_ChatThinkingToken(content));
           case ChatFunctionCallChunk(:final name, :final args):
+            sawFunctionCall = true;
             add(_ChatFunctionCall(name: name, args: args));
         }
       },
-      onDone: () => add(const _ChatStreamComplete()),
+      onDone: () {
+        if (!sawFunctionCall) add(const _ChatStreamComplete());
+      },
       onError: (error) => add(_ChatStreamError(error.toString())),
       cancelOnError: true,
     );

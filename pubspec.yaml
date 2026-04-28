@@ -71,8 +71,8 @@ dependencies:
   flutter_svg: ^2.2.4
   lottie: ^3.3.3
 
-  duskmoon_ui: ^1.5.0
-  duskmoon_adaptive_scaffold: ^1.5.0
+  duskmoon_ui: ^1.6.0
+  duskmoon_adaptive_scaffold: ^1.6.0
   flutter_slidable: ^4.0.0
   intl: any
   flutter_blue_plus: ^2.2.1
@@ -84,7 +84,6 @@ dependencies:
   flutter_gemma: any
   multicast_dns: any
   url_launcher: ^6.3.1
-  image_picker: ^1.1.2
 
   # workspace packages
   cloudflare_dns: any
@@ -116,7 +115,7 @@ dependencies:
   app_data_list: any
   app_world_map: any
   gsmlg_whois: any
-  duskmoon_form: ^1.5.0
+  duskmoon_form: ^1.6.0
   camera_settings_form: any
   ip_db: any
   app_chat: any
@@ -126,9 +125,8 @@ dependencies:
   monitor_agent: any
 
   # data visualization
-  duskmoon_visualization: ^1.5.0
+  duskmoon_visualization: ^1.6.0
   record: ^6.2.0
-  file_picker: ^11.0.2
 
 dev_dependencies:
   flutter_test:
@@ -288,4 +286,3 @@ melos:
         flutter: true
         fileExists: l10n.yaml
       description: Generate localization files from ARB files.
-

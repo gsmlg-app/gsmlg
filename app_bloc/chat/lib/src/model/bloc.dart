@@ -68,7 +68,6 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
   /// Queue of pending download requests when max concurrent is reached.
   final Queue<GemmaModelInstall> _downloadQueue = Queue();
 
-
   Future<void> _onInitialize(
     GemmaModelInitialize event,
     Emitter<GemmaModelState> emit,
@@ -431,8 +430,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
             '[GemmaModelBloc] ${modelInfo.displayName} is not compatible with this platform, skipping');
         continue;
       }
-      debugPrint(
-          '[GemmaModelBloc] Activating model: ${modelInfo.displayName}');
+      debugPrint('[GemmaModelBloc] Activating model: ${modelInfo.displayName}');
       await _repository.activateModel(modelInfo);
 
       if (_repository.status == GemmaModelStatus.installed) {
@@ -559,8 +557,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     await _repository.unloadModel();
 
     final modelInfo = _findModelInfoByInstalledId(event.modelId);
-    if (modelInfo != null &&
-        !modelInfo.isCurrentPlatformCompatible) {
+    if (modelInfo != null && !modelInfo.isCurrentPlatformCompatible) {
       debugPrint(
           '[GemmaModelBloc] ${modelInfo.displayName} is not compatible with this platform');
       emit(state.copyWith(
@@ -719,10 +716,13 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     if (kvCacheSize != null && config.maxTokens > kvCacheSize) {
       effectiveConfig = config.copyWith(maxTokens: kvCacheSize);
     }
+    if (modelInfo?.requiresCpuBackendOnDesktop ?? false) {
+      effectiveConfig = effectiveConfig.copyWith(backend: GemmaBackend.cpu);
+    }
 
-    debugPrint(
-        '[GemmaModelBloc] _loadModelWithCapabilities: '
+    debugPrint('[GemmaModelBloc] _loadModelWithCapabilities: '
         'model=${modelInfo?.displayName}, '
+        'backend=${effectiveConfig.backend}, '
         'image=${modelInfo?.effectiveSupportsMultimodal}, '
         'audio=${modelInfo?.effectiveSupportsAudio}, '
         'thinking=$enableThinking, '

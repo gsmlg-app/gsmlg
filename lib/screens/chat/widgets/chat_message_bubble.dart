@@ -1,10 +1,11 @@
+import 'dart:convert';
+
 import 'package:app_chat/app_chat.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:duskmoon_ui/duskmoon_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-class ChatMessageBubble extends StatefulWidget {
+class ChatMessageBubble extends StatelessWidget {
   const ChatMessageBubble({
     super.key,
     required this.message,
@@ -17,283 +18,137 @@ class ChatMessageBubble extends StatefulWidget {
   final bool showThinking;
 
   @override
-  State<ChatMessageBubble> createState() => _ChatMessageBubbleState();
-}
-
-class _ChatMessageBubbleState extends State<ChatMessageBubble> {
-  bool _thinkingExpanded = false;
-
-  Message get message => widget.message;
-  bool get isUser => message is UserMessage;
-
-  @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: isUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: colorScheme.primaryContainer,
-              child: Icon(
-                Icons.smart_toy,
-                size: 18,
-                color: colorScheme.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: GestureDetector(
-              onLongPress: () => _copyToClipboard(context),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: isUser
-                      ? colorScheme.primary
-                      : colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(16),
-                    topRight: const Radius.circular(16),
-                    bottomLeft: Radius.circular(isUser ? 16 : 4),
-                    bottomRight: Radius.circular(isUser ? 4 : 16),
-                  ),
-                ),
-                child: widget.showTypingIndicator
-                    ? _buildTypingIndicator(context)
-                    : _buildMessageContent(context),
-              ),
-            ),
-          ),
-          if (isUser) ...[
-            const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: colorScheme.secondaryContainer,
-              child: Icon(
-                Icons.person,
-                size: 18,
-                color: colorScheme.onSecondaryContainer,
-              ),
-            ),
-          ],
-        ],
-      ),
+    return GestureDetector(
+      onLongPress: () => _copyToClipboard(context),
+      child: DmChatBubble(message: _toDmMessage(), avatar: _avatar(context)),
     );
   }
 
-  Widget _buildMessageContent(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textColor = isUser ? colorScheme.onPrimary : colorScheme.onSurface;
-
-    // Tool response messages
-    if (message is ToolResponseMessage) {
-      final toolMsg = message as ToolResponseMessage;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.build, size: 14, color: colorScheme.primary),
-              const SizedBox(width: 6),
-              Text(
-                toolMsg.toolName,
-                style: TextStyle(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            toolMsg.content,
-            style: TextStyle(
-              color: colorScheme.onSurface,
-              fontSize: 12,
-              fontFamily: 'monospace',
-            ),
-            maxLines: 8,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      );
-    }
-
-    if (isUser) {
-      final userMsg = message as UserMessage;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (userMsg.hasImage)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.memory(
-                  userMsg.imageBytes!,
-                  width: 200,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          if (userMsg.hasAudio)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.mic, size: 16, color: textColor.withAlpha(180)),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Audio attached',
-                    style: TextStyle(
-                      color: textColor.withAlpha(180),
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (message.content.isNotEmpty) _buildUserMarkdown(context),
-        ],
-      );
-    }
-
-    // Assistant messages — optionally show thinking section
-    final assistantMsg = message as AssistantMessage;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (widget.showThinking && assistantMsg.hasThinking)
-          _buildThinkingSection(context, assistantMsg),
-        if (message.content.isNotEmpty) _buildAssistantMarkdown(context),
-      ],
+  DmChatMessage _toDmMessage() {
+    return DmChatMessage(
+      id: message.id,
+      role: _role(),
+      blocks: _blocks(),
+      status: _status(),
+      createdAt: message.timestamp,
     );
   }
 
-  Widget _buildThinkingSection(
-    BuildContext context,
-    AssistantMessage assistantMsg,
-  ) {
+  DmChatRole _role() {
+    return switch (message) {
+      UserMessage() => DmChatRole.user,
+      AssistantMessage() => DmChatRole.assistant,
+      ToolResponseMessage() => DmChatRole.assistant,
+      SystemMessage() => DmChatRole.system,
+    };
+  }
+
+  DmChatMessageStatus _status() {
+    return switch (message) {
+      AssistantMessage(:final isStreaming) when isStreaming =>
+        DmChatMessageStatus.streaming,
+      _ => DmChatMessageStatus.complete,
+    };
+  }
+
+  List<DmChatBlock> _blocks() {
+    final blocks = <DmChatBlock>[];
+
+    switch (message) {
+      case UserMessage(:final imageBytes, :final audioBytes):
+        final attachments = <DmChatAttachment>[];
+        if (imageBytes != null) {
+          attachments.add(
+            DmChatAttachment(
+              id: '${message.id}:image',
+              name: 'image.png',
+              sizeBytes: imageBytes.length,
+              mimeType: 'image/png',
+              bytes: imageBytes,
+              status: DmChatAttachmentStatus.done,
+            ),
+          );
+        }
+        if (audioBytes != null) {
+          attachments.add(
+            DmChatAttachment(
+              id: '${message.id}:audio',
+              name: 'audio.wav',
+              sizeBytes: audioBytes.length,
+              mimeType: 'audio/wav',
+              bytes: audioBytes,
+              status: DmChatAttachmentStatus.done,
+            ),
+          );
+        }
+        if (attachments.isNotEmpty) {
+          blocks.add(DmChatAttachmentBlock(attachments: attachments));
+        }
+        if (message.content.isNotEmpty) {
+          blocks.add(DmChatTextBlock(text: message.content));
+        }
+      case AssistantMessage(:final thinkingContent):
+        if (showThinking &&
+            thinkingContent != null &&
+            thinkingContent.isNotEmpty) {
+          blocks.add(DmChatThinkingBlock(text: thinkingContent));
+        }
+        if (message.content.isNotEmpty) {
+          blocks.add(DmChatTextBlock(text: message.content));
+        } else if (showTypingIndicator) {
+          blocks.add(const DmChatTextBlock(text: '...'));
+        }
+      case ToolResponseMessage(:final toolName):
+        blocks.add(
+          DmChatToolCallBlock(
+            id: message.id,
+            name: toolName,
+            output: _tryParseJson(message.content),
+            status: DmChatToolCallStatus.done,
+          ),
+        );
+      case SystemMessage():
+        blocks.add(DmChatTextBlock(text: message.content));
+    }
+
+    if (blocks.isEmpty) {
+      blocks.add(const DmChatTextBlock(text: ''));
+    }
+    return blocks;
+  }
+
+  Object _tryParseJson(String content) {
+    try {
+      return jsonDecode(content) as Object;
+    } catch (_) {
+      return content;
+    }
+  }
+
+  Widget? _avatar(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: GestureDetector(
-        onTap: () => setState(() => _thinkingExpanded = !_thinkingExpanded),
-        child: Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.psychology,
-                    size: 16,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    assistantMsg.isStreaming && assistantMsg.content.isEmpty
-                        ? 'Thinking...'
-                        : 'Thinking',
-                    style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    _thinkingExpanded ? Icons.expand_less : Icons.expand_more,
-                    size: 18,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-              if (_thinkingExpanded) ...[
-                const SizedBox(height: 6),
-                Text(
-                  assistantMsg.thinkingContent!,
-                  style: TextStyle(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ],
-          ),
+    return switch (message) {
+      UserMessage() => CircleAvatar(
+        radius: 16,
+        backgroundColor: colorScheme.secondaryContainer,
+        child: Icon(
+          Icons.person,
+          size: 18,
+          color: colorScheme.onSecondaryContainer,
         ),
       ),
-    );
-  }
-
-  Widget _buildUserMarkdown(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final userTheme = theme.copyWith(
-      textTheme: theme.textTheme.apply(
-        bodyColor: colorScheme.onPrimary,
-        displayColor: colorScheme.onPrimary,
+      AssistantMessage() || ToolResponseMessage() => CircleAvatar(
+        radius: 16,
+        backgroundColor: colorScheme.primaryContainer,
+        child: Icon(
+          Icons.smart_toy,
+          size: 18,
+          color: colorScheme.onPrimaryContainer,
+        ),
       ),
-      colorScheme: colorScheme.copyWith(
-        onSurface: colorScheme.onPrimary,
-        onSurfaceVariant: colorScheme.onPrimary.withAlpha(200),
-      ),
-    );
-    return DmMarkdown(
-      data: message.content,
-      selectable: true,
-      shrinkWrap: true,
-      themeData: userTheme,
-      onLinkTap: (url, title) {
-        launchUrl(Uri.parse(url));
-      },
-    );
-  }
-
-  Widget _buildAssistantMarkdown(BuildContext context) {
-    return DmMarkdown(
-      data: message.content,
-      selectable: true,
-      shrinkWrap: true,
-      onLinkTap: (url, title) {
-        launchUrl(Uri.parse(url));
-      },
-    );
-  }
-
-  Widget _buildTypingIndicator(BuildContext context) {
-    return const Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _TypingDot(delay: 0),
-        SizedBox(width: 4),
-        _TypingDot(delay: 200),
-        SizedBox(width: 4),
-        _TypingDot(delay: 400),
-      ],
-    );
+      SystemMessage() => null,
+    };
   }
 
   void _copyToClipboard(BuildContext context) {
@@ -303,66 +158,6 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         content: Text('Message copied to clipboard'),
         duration: Duration(seconds: 2),
       ),
-    );
-  }
-}
-
-class _TypingDot extends StatefulWidget {
-  const _TypingDot({required this.delay});
-
-  final int delay;
-
-  @override
-  State<_TypingDot> createState() => _TypingDotState();
-}
-
-class _TypingDotState extends State<_TypingDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _animation = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
-    Future.delayed(Duration(milliseconds: widget.delay), () {
-      if (mounted) {
-        _controller.repeat(reverse: true);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: 0.3 + (_animation.value * 0.7),
-          child: Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSurface,
-              shape: BoxShape.circle,
-            ),
-          ),
-        );
-      },
     );
   }
 }

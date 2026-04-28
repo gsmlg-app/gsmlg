@@ -13,6 +13,40 @@ enum ChatInferenceMode {
 enum RemoteLlmProvider {
   /// APIs that expose an OpenAI-compatible `/chat/completions` endpoint.
   openAiCompatible,
+
+  /// OpenAI hosted API.
+  openAi,
+
+  /// OpenRouter OpenAI-compatible API.
+  openRouter,
+
+  /// Groq OpenAI-compatible API.
+  groq,
+
+  /// DeepSeek OpenAI-compatible API.
+  deepSeek,
+}
+
+extension RemoteLlmProviderX on RemoteLlmProvider {
+  String get displayName {
+    return switch (this) {
+      RemoteLlmProvider.openAiCompatible => 'OpenAI Compatible',
+      RemoteLlmProvider.openAi => 'OpenAI',
+      RemoteLlmProvider.openRouter => 'OpenRouter',
+      RemoteLlmProvider.groq => 'Groq',
+      RemoteLlmProvider.deepSeek => 'DeepSeek',
+    };
+  }
+
+  String get defaultBaseUrl {
+    return switch (this) {
+      RemoteLlmProvider.openAiCompatible => 'https://api.openai.com/v1',
+      RemoteLlmProvider.openAi => 'https://api.openai.com/v1',
+      RemoteLlmProvider.openRouter => 'https://openrouter.ai/api/v1',
+      RemoteLlmProvider.groq => 'https://api.groq.com/openai/v1',
+      RemoteLlmProvider.deepSeek => 'https://api.deepseek.com/v1',
+    };
+  }
 }
 
 /// App-owned generation stream event.

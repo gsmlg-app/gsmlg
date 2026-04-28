@@ -528,6 +528,18 @@ class GemmaModelInfo {
 
   /// Whether this model is in the current platform's model list.
   bool get isCurrentPlatformCompatible => platformModels.contains(this);
+
+  /// Whether this model should avoid the desktop GPU LiteRT-LM backend.
+  ///
+  /// Phi-4 Mini currently crashes the LiteRT-LM Java process on macOS while
+  /// initializing the WebGPU/Metal delegate. Use CPU for this model so startup
+  /// and manual selection do not take down the app process.
+  bool get requiresCpuBackendOnDesktop {
+    if (!Platform.isMacOS && !Platform.isLinux && !Platform.isWindows) {
+      return false;
+    }
+    return id == _phi4Mini.id;
+  }
 }
 
 /// The backend to use for inference.
@@ -558,6 +570,12 @@ class ModelConfig extends Equatable {
 
   /// Creates a default configuration.
   static const ModelConfig defaultConfig = ModelConfig();
+
+  /// Sentinel account ID meaning "send a dummy bearer token".
+  ///
+  /// Service account IDs are positive auto-increment values, so 0 is reserved
+  /// for local/no-auth OpenAI-compatible APIs such as Ollama and LM Studio.
+  static const int dummyRemoteAccountId = 0;
 
   /// Where inference should run.
   final ChatInferenceMode inferenceMode;
@@ -642,9 +660,25 @@ class ModelConfig extends Equatable {
 
   /// Whether enough non-secret remote settings are present.
   bool get isRemoteConfigured {
-    return remoteAccountId != null &&
+    return (remoteAccountId != null || remoteUsesDummyToken) &&
         remoteBaseUrl.trim().isNotEmpty &&
         remoteModel.trim().isNotEmpty;
+  }
+
+  bool get remoteUsesDummyToken {
+    final host = Uri.tryParse(remoteBaseUrl.trim())?.host.toLowerCase();
+    return remoteAccountId == dummyRemoteAccountId ||
+        (remoteAccountId == null &&
+            (host == 'localhost' ||
+                host == '127.0.0.1' ||
+                host == '0.0.0.0' ||
+                host == '::1'));
+  }
+
+  /// Preference key for the remote models that should appear in model pickers.
+  String get remoteVisibleModelsKey {
+    return 'remote_visible_models_${remoteProvider.name}_'
+        '${remoteAccountId ?? 'none'}_${remoteBaseUrl.trim()}';
   }
 
   ModelConfig copyWith({

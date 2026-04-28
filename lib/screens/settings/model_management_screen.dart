@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
@@ -55,7 +57,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
             builder: (context, state) {
               return CustomScrollView(
                 slivers: <Widget>[
-                  const SliverAppBar(title: Text('AI Models')),
+                  const SliverAppBar(title: Text('Local Models')),
                   SliverFillRemaining(
                     child: SettingsList(
                       sections: [

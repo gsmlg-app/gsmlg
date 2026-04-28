@@ -99,14 +99,21 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               // Chat messages
               Expanded(
-                child: BlocBuilder<ChatBloc, ChatState>(
-                  builder: (context, state) {
-                    if (state.conversation == null) {
-                      return _buildWelcomeView();
-                    }
-                    return ChatMessageList(
-                      messages: state.messages,
-                      isStreaming: state.isStreaming,
+                child: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+                  buildWhen: (previous, current) =>
+                      previous.thinkingEnabled != current.thinkingEnabled,
+                  builder: (context, settingsState) {
+                    return BlocBuilder<ChatBloc, ChatState>(
+                      builder: (context, state) {
+                        if (state.conversation == null) {
+                          return _buildWelcomeView();
+                        }
+                        return ChatMessageList(
+                          messages: state.messages,
+                          isStreaming: state.isStreaming,
+                          showThinking: settingsState.thinkingEnabled,
+                        );
+                      },
                     );
                   },
                 ),
@@ -123,10 +130,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         return ChatInputBar(
                           enabled: canSend,
                           isStreaming: chatState.isStreaming,
+                          thinkingEnabled: settingsState.thinkingEnabled,
                           selectedModelName:
                               'Remote: ${settingsState.config.remoteModel}',
                           onModelTap: () =>
                               context.goNamed(ChatSettingsScreen.name),
+                          onThinkingToggle: (enabled) {
+                            context.read<ChatSettingsBloc>().add(
+                              ChatSettingsToggleThinking(enabled: enabled),
+                            );
+                          },
                           onSend: (message, {imageBytes, audioBytes}) {
                             context.read<ChatBloc>().add(
                               ChatSendMessage(
@@ -164,6 +177,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 modelInfo?.effectiveSupportsMultimodal ?? false,
                             supportsAudio:
                                 modelInfo?.effectiveSupportsAudio ?? false,
+                            supportsThinking:
+                                modelInfo?.effectiveSupportsThinking ?? false,
+                            thinkingEnabled: settingsState.thinkingEnabled,
                             selectedModelName: modelInfo?.displayName,
                             selectedModelId: selectedId,
                             installedModels: modelState.installedModels,
@@ -174,6 +190,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             onModelTap: () =>
                                 context.goNamed(ChatSettingsScreen.name),
+                            onThinkingToggle: (enabled) {
+                              context.read<ChatSettingsBloc>().add(
+                                ChatSettingsToggleThinking(enabled: enabled),
+                              );
+                            },
                             onSend: (message, {imageBytes, audioBytes}) {
                               context.read<ChatBloc>().add(
                                 ChatSendMessage(

@@ -286,6 +286,10 @@ class ChatStorageRepository {
   RemoteLlmProvider _parseRemoteProvider(String value) {
     return switch (value) {
       'openAiCompatible' => RemoteLlmProvider.openAiCompatible,
+      'openAi' => RemoteLlmProvider.openAi,
+      'openRouter' => RemoteLlmProvider.openRouter,
+      'groq' => RemoteLlmProvider.groq,
+      'deepSeek' => RemoteLlmProvider.deepSeek,
       _ => RemoteLlmProvider.openAiCompatible,
     };
   }
@@ -293,6 +297,10 @@ class ChatStorageRepository {
   String _remoteProviderToString(RemoteLlmProvider provider) {
     return switch (provider) {
       RemoteLlmProvider.openAiCompatible => 'openAiCompatible',
+      RemoteLlmProvider.openAi => 'openAi',
+      RemoteLlmProvider.openRouter => 'openRouter',
+      RemoteLlmProvider.groq => 'groq',
+      RemoteLlmProvider.deepSeek => 'deepSeek',
     };
   }
 

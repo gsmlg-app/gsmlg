@@ -25,16 +25,59 @@ class RemoteLlmRepository {
 
   /// Whether the configured account has an API key in secure storage.
   Future<bool> isReady(ModelConfig config) async {
+    if (config.remoteUsesDummyToken && config.remoteBaseUrl.trim().isNotEmpty) {
+      return true;
+    }
     final accountId = config.remoteAccountId;
     if (accountId == null) return false;
     final apiKey = await _vault.read(key: _vaultKey(accountId));
     return apiKey != null && apiKey.trim().isNotEmpty;
   }
 
+  Future<List<String>> listModels(ModelConfig config) async {
+    final apiKey = await _apiKeyFor(config);
+    final response = await _client.get(
+      _modelsUri(config.remoteBaseUrl),
+      headers: {
+        'Authorization': 'Bearer $apiKey',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw RemoteLlmException(
+        'Failed to load models (${response.statusCode}): '
+        '${_shortenErrorBody(response.body)}',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    final rawModels =
+        decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+    if (rawModels is! List) {
+      throw const RemoteLlmException('Models response did not contain a list.');
+    }
+
+    final models = <String>[];
+    for (final item in rawModels) {
+      final id = switch (item) {
+        {'id': final String id} => id,
+        final String id => id,
+        _ => null,
+      };
+      if (id != null && id.trim().isNotEmpty) {
+        models.add(id.trim());
+      }
+    }
+    models.sort();
+    return models;
+  }
+
   Stream<ChatGenerationChunk> generateResponse(
     List<Message> messages,
-    ModelConfig config,
-  ) async* {
+    ModelConfig config, {
+    List<Map<String, dynamic>> tools = const [],
+  }) async* {
     final apiKey = await _apiKeyFor(config);
     final request = http.Request(
       'POST',
@@ -47,7 +90,7 @@ class RemoteLlmRepository {
             ? 'text/event-stream'
             : 'application/json',
       })
-      ..body = jsonEncode(_requestBody(messages, config));
+      ..body = jsonEncode(_requestBody(messages, config, tools: tools));
 
     final response = await _client.send(request);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -60,11 +103,13 @@ class RemoteLlmRepository {
 
     if (!config.remoteStreamingEnabled) {
       final body = await response.stream.bytesToString();
-      final content = _contentFromNonStreamingResponse(body);
-      if (content.isNotEmpty) yield ChatTextChunk(content);
+      for (final chunk in _chunksFromNonStreamingResponse(body)) {
+        yield chunk;
+      }
       return;
     }
 
+    final toolCallBuffers = <int, _RemoteToolCallBuffer>{};
     await for (final line in response.stream
         .transform(utf8.decoder)
         .transform(const LineSplitter())) {
@@ -72,7 +117,11 @@ class RemoteLlmRepository {
       if (trimmed.isEmpty || !trimmed.startsWith('data:')) continue;
 
       final data = trimmed.substring(5).trim();
-      if (data == '[DONE]') return;
+      if (data == '[DONE]') {
+        final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
+        if (toolCall != null) yield toolCall;
+        return;
+      }
 
       final decoded = jsonDecode(data);
       if (decoded is! Map<String, dynamic>) continue;
@@ -82,18 +131,31 @@ class RemoteLlmRepository {
       final first = choices.first;
       if (first is! Map<String, dynamic>) continue;
 
+      final finishReason = _stringValue(first['finish_reason']);
       final delta = first['delta'];
-      if (delta is! Map<String, dynamic>) continue;
+      if (delta is Map<String, dynamic>) {
+        _collectToolCallDeltas(toolCallBuffers, delta['tool_calls']);
+        _collectLegacyFunctionCallDelta(
+          toolCallBuffers,
+          delta['function_call'],
+        );
 
-      final text = _stringValue(delta['content']);
-      if (text != null && text.isNotEmpty) {
-        yield ChatTextChunk(text);
+        final text = _contentString(delta['content']);
+        if (text != null && text.isNotEmpty) {
+          yield ChatTextChunk(text);
+        }
+
+        final thinking = _stringValue(delta['reasoning_content']) ??
+            _stringValue(delta['reasoning']);
+        if (thinking != null && thinking.isNotEmpty) {
+          yield ChatThinkingChunk(thinking);
+        }
       }
 
-      final thinking = _stringValue(delta['reasoning_content']) ??
-          _stringValue(delta['reasoning']);
-      if (thinking != null && thinking.isNotEmpty) {
-        yield ChatThinkingChunk(thinking);
+      if (finishReason == 'tool_calls' || finishReason == 'function_call') {
+        final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
+        if (toolCall != null) yield toolCall;
+        return;
       }
     }
   }
@@ -109,6 +171,10 @@ class RemoteLlmRepository {
   }
 
   Future<String> _apiKeyFor(ModelConfig config) async {
+    if (config.remoteUsesDummyToken) {
+      return 'dummy';
+    }
+
     final accountId = config.remoteAccountId;
     if (accountId == null) {
       throw const RemoteLlmException('Select a remote LLM account first.');
@@ -125,15 +191,20 @@ class RemoteLlmRepository {
 
   Map<String, dynamic> _requestBody(
     List<Message> messages,
-    ModelConfig config,
-  ) {
-    return {
+    ModelConfig config, {
+    List<Map<String, dynamic>> tools = const [],
+  }) {
+    final body = {
       'model': config.remoteModel.trim(),
       'messages': _toRemoteMessages(messages),
       'stream': config.remoteStreamingEnabled,
       'temperature': config.temperature,
       'max_tokens': config.maxTokens,
     };
+    if (tools.isNotEmpty) {
+      body['tools'] = tools;
+    }
+    return body;
   }
 
   List<Map<String, String>> _toRemoteMessages(List<Message> messages) {
@@ -149,9 +220,11 @@ class RemoteLlmRepository {
       };
 
       if (role == 'tool') {
+        final toolName =
+            message is ToolResponseMessage ? ' for ${message.toolName}' : '';
         result.add({
           'role': 'user',
-          'content': 'Tool result: ${message.content}',
+          'content': 'Tool result$toolName: ${message.content}',
         });
       } else {
         result.add({'role': role, 'content': message.content});
@@ -168,16 +241,43 @@ class RemoteLlmRepository {
     return uri.replace(path: normalizedPath);
   }
 
-  String _contentFromNonStreamingResponse(String body) {
+  Uri _modelsUri(String baseUrl) {
+    final uri = Uri.parse(baseUrl.trim());
+    final normalizedPath = uri.path.endsWith('/models')
+        ? uri.path
+        : '${_trimTrailingSlash(uri.path)}/models';
+    return uri.replace(path: normalizedPath);
+  }
+
+  List<ChatGenerationChunk> _chunksFromNonStreamingResponse(String body) {
     final decoded = jsonDecode(body);
-    if (decoded is! Map<String, dynamic>) return '';
+    if (decoded is! Map<String, dynamic>) return const [];
     final choices = decoded['choices'];
-    if (choices is! List || choices.isEmpty) return '';
+    if (choices is! List || choices.isEmpty) return const [];
     final first = choices.first;
-    if (first is! Map<String, dynamic>) return '';
+    if (first is! Map<String, dynamic>) return const [];
     final message = first['message'];
-    if (message is! Map<String, dynamic>) return '';
-    return _stringValue(message['content']) ?? '';
+    if (message is! Map<String, dynamic>) return const [];
+
+    final chunks = <ChatGenerationChunk>[];
+    final thinking = _stringValue(message['reasoning_content']) ??
+        _stringValue(message['reasoning']);
+    if (thinking != null && thinking.isNotEmpty) {
+      chunks.add(ChatThinkingChunk(thinking));
+    }
+
+    final content = _contentString(message['content']);
+    if (content != null && content.isNotEmpty) {
+      chunks.add(ChatTextChunk(content));
+    }
+
+    final buffers = <int, _RemoteToolCallBuffer>{};
+    _collectToolCallDeltas(buffers, message['tool_calls']);
+    _collectLegacyFunctionCallDelta(buffers, message['function_call']);
+    final toolCall = _toolCallChunkFromBuffers(buffers);
+    if (toolCall != null) chunks.add(toolCall);
+
+    return chunks;
   }
 
   String _vaultKey(int id) => '$_accountKeyPrefix$id';
@@ -189,12 +289,111 @@ class RemoteLlmRepository {
 
   String? _stringValue(Object? value) => value is String ? value : null;
 
+  String? _contentString(Object? value) {
+    if (value is String) return value;
+    if (value is! List) return null;
+
+    final buffer = StringBuffer();
+    for (final item in value) {
+      if (item is String) {
+        buffer.write(item);
+      } else if (item is Map<String, dynamic>) {
+        final text = _stringValue(item['text']);
+        if (text != null) buffer.write(text);
+      }
+    }
+    return buffer.toString();
+  }
+
+  void _collectToolCallDeltas(
+    Map<int, _RemoteToolCallBuffer> buffers,
+    Object? rawToolCalls,
+  ) {
+    if (rawToolCalls is! List) return;
+
+    for (var fallbackIndex = 0;
+        fallbackIndex < rawToolCalls.length;
+        fallbackIndex++) {
+      final rawToolCall = rawToolCalls[fallbackIndex];
+      if (rawToolCall is! Map<String, dynamic>) continue;
+
+      final index = _intValue(rawToolCall['index']) ?? fallbackIndex;
+      final buffer = buffers.putIfAbsent(
+        index,
+        _RemoteToolCallBuffer.new,
+      );
+
+      final function = rawToolCall['function'];
+      if (function is! Map<String, dynamic>) continue;
+
+      final name = _stringValue(function['name']);
+      if (name != null && name.isNotEmpty) buffer.name = name;
+
+      final arguments = _stringValue(function['arguments']);
+      if (arguments != null) buffer.arguments.write(arguments);
+    }
+  }
+
+  void _collectLegacyFunctionCallDelta(
+    Map<int, _RemoteToolCallBuffer> buffers,
+    Object? rawFunctionCall,
+  ) {
+    if (rawFunctionCall is! Map<String, dynamic>) return;
+
+    final buffer = buffers.putIfAbsent(0, _RemoteToolCallBuffer.new);
+    final name = _stringValue(rawFunctionCall['name']);
+    if (name != null && name.isNotEmpty) buffer.name = name;
+
+    final arguments = _stringValue(rawFunctionCall['arguments']);
+    if (arguments != null) buffer.arguments.write(arguments);
+  }
+
+  ChatFunctionCallChunk? _toolCallChunkFromBuffers(
+    Map<int, _RemoteToolCallBuffer> buffers,
+  ) {
+    final indexes = buffers.keys.toList()..sort();
+    for (final index in indexes) {
+      final buffer = buffers[index]!;
+      final name = buffer.name?.trim();
+      if (name == null || name.isEmpty) continue;
+      return ChatFunctionCallChunk(
+        name: name,
+        args: _decodeToolArgs(buffer.arguments.toString()),
+      );
+    }
+    return null;
+  }
+
+  Map<String, dynamic> _decodeToolArgs(String arguments) {
+    final trimmed = arguments.trim();
+    if (trimmed.isEmpty) return const {};
+
+    try {
+      final decoded = jsonDecode(trimmed);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return {'value': decoded};
+    } catch (_) {
+      return {'raw': trimmed};
+    }
+  }
+
+  int? _intValue(Object? value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   String _shortenErrorBody(String body) {
     final trimmed = body.trim();
     if (trimmed.isEmpty) return 'empty response body';
     if (trimmed.length <= 500) return trimmed;
     return '${trimmed.substring(0, 500)}...';
   }
+}
+
+class _RemoteToolCallBuffer {
+  String? name;
+  final arguments = StringBuffer();
 }
 
 class RemoteLlmException implements Exception {
