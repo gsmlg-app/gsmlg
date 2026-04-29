@@ -10,18 +10,35 @@ import 'package:ip_db/ip_db.dart';
 import 'package:route53/route53.dart' as r53;
 import 'package:vultr_api/api.dart' as vultr;
 
+typedef RemoteMcpProfilesProvider = List<String> Function();
+
+typedef RemoteMcpToolCaller = Future<Map<String, dynamic>> Function(
+  Map<String, dynamic> server,
+  Map<String, dynamic> tool,
+  Map<String, dynamic> args,
+);
+
 /// Executes tool calls from the LLM and provides tool definitions
 /// for flutter_gemma's function calling support.
 class ToolExecutor {
   ToolExecutor({
     AppDatabase? database,
     VaultRepository? vault,
+    RemoteMcpProfilesProvider? remoteMcpProfilesProvider,
+    RemoteMcpToolCaller? remoteMcpToolCaller,
+    Dio? dio,
   })  : _database = database,
-        _vault = vault;
+        _vault = vault,
+        _remoteMcpProfilesProvider = remoteMcpProfilesProvider,
+        _remoteMcpToolCaller = remoteMcpToolCaller,
+        _dio = dio ?? Dio();
 
   IpDatabase? _ipDatabase;
   final AppDatabase? _database;
   final VaultRepository? _vault;
+  final RemoteMcpProfilesProvider? _remoteMcpProfilesProvider;
+  final RemoteMcpToolCaller? _remoteMcpToolCaller;
+  final Dio _dio;
 
   /// Tool definitions to pass to [InferenceChat].
   List<gemma.Tool> get toolDefinitions => [
@@ -34,6 +51,7 @@ class ToolExecutor {
         _domainDeleteRecordTool,
         _vultrListServersTool,
         _vultrControlServerTool,
+        ..._remoteMcpToolDefinitions,
       ];
 
   /// Tool definitions for OpenAI-compatible chat completion APIs.
@@ -248,8 +266,117 @@ class ToolExecutor {
       'domain_delete_record' => _executeDomainDeleteRecord(args),
       'vultr_list_servers' => _executeVultrListServers(args),
       'vultr_control_server' => _executeVultrControlServer(args),
+      _ when _remoteMcpToolForName(name) != null =>
+        _executeRemoteMcpTool(name, args),
       _ => {'error': 'Unknown tool: $name'},
     };
+  }
+
+  List<gemma.Tool> get _remoteMcpToolDefinitions {
+    return [
+      for (final server in _remoteMcpServers)
+        for (final tool in server.tools)
+          gemma.Tool(
+            name: tool.chatName,
+            description: '${server.name}: ${tool.descriptionOrName}',
+            parameters: tool.parameters,
+          ),
+    ];
+  }
+
+  List<_RemoteMcpServer> get _remoteMcpServers {
+    final provider = _remoteMcpProfilesProvider;
+    if (provider == null) return const [];
+    final servers = <_RemoteMcpServer>[];
+    for (final raw in provider()) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is! Map<String, dynamic>) continue;
+        final server = _RemoteMcpServer.fromJson(decoded);
+        if (server.enabled && server.tools.isNotEmpty) {
+          servers.add(server);
+        }
+      } catch (_) {
+        // Ignore malformed user-saved profiles.
+      }
+    }
+    return servers;
+  }
+
+  _RemoteMcpToolMatch? _remoteMcpToolForName(String name) {
+    for (final server in _remoteMcpServers) {
+      for (final tool in server.tools) {
+        if (tool.chatName == name) {
+          return _RemoteMcpToolMatch(server: server, tool: tool);
+        }
+      }
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>> _executeRemoteMcpTool(
+    String name,
+    Map<String, dynamic> args,
+  ) async {
+    final match = _remoteMcpToolForName(name);
+    if (match == null) return {'error': 'Unknown tool: $name'};
+    final server = match.server;
+    final tool = match.tool;
+    final serverJson = server.toJson();
+    final toolJson = tool.toJson();
+
+    try {
+      final caller = _remoteMcpToolCaller;
+      if (caller != null) {
+        return caller(serverJson, toolJson, args);
+      }
+      if (server.transport != 'http') {
+        return {
+          'error':
+              'Remote MCP ${server.transport.toUpperCase()} execution is not supported yet',
+          'server': server.name,
+          'tool': tool.name,
+        };
+      }
+
+      final headers = <String, dynamic>{};
+      if (server.accountId != null) {
+        headers['Authorization'] =
+            'Bearer ${await _serviceAccountSecret(server.accountId!)}';
+      }
+      final response = await _dio.post<dynamic>(
+        server.url,
+        options: Options(headers: headers.isEmpty ? null : headers),
+        data: {
+          'jsonrpc': '2.0',
+          'id': DateTime.now().microsecondsSinceEpoch,
+          'method': 'tools/call',
+          'params': {
+            'name': tool.name,
+            'arguments': args,
+          },
+        },
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        return {
+          'server': server.name,
+          'tool': tool.name,
+          'response': data,
+        };
+      }
+      return {
+        'server': server.name,
+        'tool': tool.name,
+        'response': data,
+      };
+    } catch (e) {
+      return {
+        'server': server.name,
+        'tool': tool.name,
+        'error': e.toString(),
+      };
+    }
   }
 
   Future<Map<String, dynamic>> _executeWhois(
@@ -768,6 +895,127 @@ class ToolExecutor {
     _ipDatabase?.close();
     _ipDatabase = null;
   }
+}
+
+class _RemoteMcpToolMatch {
+  const _RemoteMcpToolMatch({required this.server, required this.tool});
+
+  final _RemoteMcpServer server;
+  final _RemoteMcpTool tool;
+}
+
+class _RemoteMcpServer {
+  _RemoteMcpServer({
+    required this.id,
+    required this.name,
+    required this.url,
+    required this.transport,
+    required this.enabled,
+    required this.tools,
+    this.accountId,
+  });
+
+  factory _RemoteMcpServer.fromJson(Map<String, dynamic> decoded) {
+    final id = _stringValue(decoded['id']);
+    final rawTools = decoded['tools'] as List<dynamic>? ?? const [];
+    return _RemoteMcpServer(
+      id: id,
+      name: _stringValue(decoded['name'], fallback: id),
+      url: _stringValue(decoded['url']),
+      transport: _stringValue(decoded['transport'], fallback: 'http'),
+      enabled: decoded['enabled'] as bool? ?? true,
+      accountId: _intValue(decoded['accountId']),
+      tools: [
+        for (final rawTool in rawTools)
+          if (rawTool is Map<String, dynamic>)
+            _RemoteMcpTool.fromJson(serverId: id, decoded: rawTool),
+      ],
+    );
+  }
+
+  final String id;
+  final String name;
+  final String url;
+  final String transport;
+  final bool enabled;
+  final int? accountId;
+  final List<_RemoteMcpTool> tools;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'url': url,
+      'transport': transport,
+      'enabled': enabled,
+      'accountId': accountId,
+    };
+  }
+}
+
+class _RemoteMcpTool {
+  _RemoteMcpTool({
+    required this.serverId,
+    required this.name,
+    required this.description,
+    required this.parameters,
+  });
+
+  factory _RemoteMcpTool.fromJson({
+    required String serverId,
+    required Map<String, dynamic> decoded,
+  }) {
+    final schema = decoded['inputSchema'] ?? decoded['parameters'];
+    return _RemoteMcpTool(
+      serverId: serverId,
+      name: _stringValue(decoded['name']),
+      description: _stringValue(decoded['description']),
+      parameters: schema is Map<String, dynamic>
+          ? schema
+          : const {'type': 'object', 'properties': <String, dynamic>{}},
+    );
+  }
+
+  final String serverId;
+  final String name;
+  final String description;
+  final Map<String, dynamic> parameters;
+
+  String get chatName => 'mcp_${_sanitizeIdentifier(serverId)}_'
+      '${_sanitizeIdentifier(name)}';
+
+  String get descriptionOrName => description.isEmpty ? name : description;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'description': description,
+      'parameters': parameters,
+      'chatName': chatName,
+    };
+  }
+}
+
+String _stringValue(Object? value, {String fallback = ''}) {
+  final string = value?.toString().trim();
+  return string == null || string.isEmpty ? fallback : string;
+}
+
+int? _intValue(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+String _sanitizeIdentifier(String value) {
+  final sanitized = value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9_]'), '_')
+      .replaceAll(RegExp(r'_+'), '_')
+      .replaceAll(RegExp(r'^_|_$'), '');
+  return sanitized.isEmpty ? 'tool' : sanitized;
 }
 
 class _DnsRecordInput {

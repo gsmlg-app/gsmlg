@@ -57,6 +57,55 @@ void main() {
       expect(profile['enabled'], isFalse);
     });
 
+    testWidgets('preserves MCP tool schemas when toggling a service', (
+      tester,
+    ) async {
+      await preferences.setStringList('remote_mcp_profiles', [
+        jsonEncode({
+          'id': 'docs',
+          'name': 'Docs MCP',
+          'url': 'https://mcp.example.com/http',
+          'transport': 'http',
+          'enabled': true,
+          'accountId': null,
+          'tools': [
+            {
+              'name': 'search_docs',
+              'description': 'Search documentation',
+              'inputSchema': {
+                'type': 'object',
+                'properties': {
+                  'query': {'type': 'string'},
+                },
+                'required': ['query'],
+              },
+            },
+          ],
+        }),
+      ]);
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        accountsBloc: accountsBloc,
+      );
+
+      await tester.tap(find.byType(Switch).first);
+      await tester.pumpAndSettle();
+
+      final saved = preferences.getStringList('remote_mcp_profiles');
+      final profile = jsonDecode(saved!.single) as Map<String, dynamic>;
+      final tools = profile['tools'] as List<dynamic>;
+      final tool = tools.single as Map<String, dynamic>;
+      expect(tool['inputSchema'], {
+        'type': 'object',
+        'properties': {
+          'query': {'type': 'string'},
+        },
+        'required': ['query'],
+      });
+    });
+
     testWidgets('renders service account auth for an MCP service', (
       tester,
     ) async {

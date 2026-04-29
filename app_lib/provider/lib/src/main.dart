@@ -48,7 +48,13 @@ class MainProvider extends StatelessWidget {
           create: (context) => ChatStorageRepository(database),
         ),
         RepositoryProvider<ToolExecutor>(
-          create: (context) => ToolExecutor(database: database, vault: vault),
+          create: (context) => ToolExecutor(
+            database: database,
+            vault: vault,
+            remoteMcpProfilesProvider: () =>
+                sharedPrefs.getStringList('remote_mcp_profiles') ??
+                const <String>[],
+          ),
         ),
       ],
       child: MultiBlocProvider(

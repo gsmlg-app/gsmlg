@@ -460,19 +460,30 @@ class _RemoteMcpProfile {
 }
 
 class _RemoteMcpTool {
-  const _RemoteMcpTool({required this.name, this.description = ''});
+  const _RemoteMcpTool({
+    required this.name,
+    this.description = '',
+    this.inputSchema,
+  });
 
   factory _RemoteMcpTool.fromJson(Map<String, dynamic> decoded) {
+    final schema = decoded['inputSchema'] ?? decoded['parameters'];
     return _RemoteMcpTool(
       name: decoded['name'] as String? ?? '',
       description: decoded['description'] as String? ?? '',
+      inputSchema: schema is Map<String, dynamic> ? schema : null,
     );
   }
 
   final String name;
   final String description;
+  final Map<String, dynamic>? inputSchema;
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'description': description};
+    return {
+      'name': name,
+      'description': description,
+      if (inputSchema != null) 'inputSchema': inputSchema,
+    };
   }
 }
