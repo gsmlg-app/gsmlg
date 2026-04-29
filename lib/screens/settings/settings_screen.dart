@@ -14,6 +14,7 @@ import 'package:gsmlg/screens/settings/app_settings_screen.dart';
 import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
 import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
+import 'package:gsmlg/screens/settings/local_tools_settings_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
 import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -130,6 +131,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                               onPressed: (context) {
                                 context.goNamed(RemoteModelSettingsScreen.name);
+                              },
+                            ),
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.build_circle_outlined),
+                              title: const Text('Local Tools'),
+                              value: Builder(
+                                builder: (context) {
+                                  final count = context
+                                      .read<ToolExecutor>()
+                                      .toolDefinitions
+                                      .length;
+                                  return Text(
+                                    '$count tool${count == 1 ? '' : 's'} available',
+                                  );
+                                },
+                              ),
+                              onPressed: (context) {
+                                context.goNamed(LocalToolsSettingsScreen.name);
                               },
                             ),
                           ],

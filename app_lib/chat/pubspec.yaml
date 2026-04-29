@@ -14,13 +14,17 @@ dependencies:
   flutter_gemma: ^0.13.2
   equatable: ^2.0.8
   drift: ^2.28.2
+  dio: any
   http: any
   path_provider: ^2.1.5
   path: any
   app_database: any
   app_secure_storage: any
+  cloudflare_dns: any
   gsmlg_whois: any
   ip_db: any
+  route53: any
+  vultr_api: any
 
 dev_dependencies:
   flutter_test:

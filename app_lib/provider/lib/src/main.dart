@@ -47,7 +47,9 @@ class MainProvider extends StatelessWidget {
         RepositoryProvider<ChatStorageRepository>(
           create: (context) => ChatStorageRepository(database),
         ),
-        RepositoryProvider<ToolExecutor>(create: (context) => ToolExecutor()),
+        RepositoryProvider<ToolExecutor>(
+          create: (context) => ToolExecutor(database: database, vault: vault),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
