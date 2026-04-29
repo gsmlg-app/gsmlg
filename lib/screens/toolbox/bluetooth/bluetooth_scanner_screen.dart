@@ -133,8 +133,7 @@ class BluetoothScannerScreen extends StatelessWidget {
                             : 0,
                       );
                       return SliverGrid.extent(
-                        maxCrossAxisExtent:
-                            MediaQuery.of(context).size.width / 360,
+                        maxCrossAxisExtent: 360,
                         mainAxisSpacing: kDefaultGridGap,
                         crossAxisSpacing: kDefaultGridGap,
                         childAspectRatio: 5 / 6,

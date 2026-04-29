@@ -129,6 +129,10 @@ dependencies:
   duskmoon_visualization: ^1.6.0
   record: ^6.2.0
 
+dependency_overrides:
+  flutter_blue_plus_darwin:
+    path: third_party/flutter_blue_plus_darwin
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -166,6 +170,12 @@ flutter_launcher_icons:
     icon_size: 48 # min:48, max:256, default: 48
   macos:
     generate: true
+
+hooks:
+  user_defines:
+    sqlite3:
+      source: system
+      name: sqlite3
 
 melos:
   name: gsmlg
