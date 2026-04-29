@@ -17,9 +17,11 @@ import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:gsmlg/screens/settings/local_tools_settings_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
 import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
+import 'package:gsmlg/screens/settings/remote_tools_settings_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:duskmoon_settings/duskmoon_settings.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:theme_bloc/theme_bloc.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -149,6 +151,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               onPressed: (context) {
                                 context.goNamed(LocalToolsSettingsScreen.name);
+                              },
+                            ),
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.hub_outlined),
+                              title: const Text('Remote Tools'),
+                              value: Builder(
+                                builder: (context) {
+                                  final count =
+                                      context
+                                          .read<SharedPreferences>()
+                                          .getStringList('remote_mcp_profiles')
+                                          ?.length ??
+                                      0;
+                                  return Text(
+                                    '$count service${count == 1 ? '' : 's'} configured',
+                                  );
+                                },
+                              ),
+                              onPressed: (context) {
+                                context.goNamed(RemoteToolsSettingsScreen.name);
                               },
                             ),
                           ],
