@@ -19,10 +19,32 @@ class ChatMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dmMessage = _toDmMessage();
     return GestureDetector(
       onLongPress: () => _copyToClipboard(context),
-      child: DmChatBubble(message: _toDmMessage(), avatar: _avatar(context)),
+      child: DmChatBubble(
+        key: ValueKey(_bubbleRenderKey(dmMessage)),
+        message: dmMessage,
+        avatar: _avatar(context),
+      ),
     );
+  }
+
+  String _bubbleRenderKey(DmChatMessage dmMessage) {
+    final contentLength = message.content.length;
+    final thinkingLength = switch (message) {
+      AssistantMessage(:final thinkingContent) => thinkingContent?.length ?? 0,
+      _ => 0,
+    };
+    return [
+      message.id,
+      dmMessage.status.name,
+      showTypingIndicator,
+      showThinking,
+      contentLength,
+      thinkingLength,
+      dmMessage.blocks.length,
+    ].join(':');
   }
 
   DmChatMessage _toDmMessage() {

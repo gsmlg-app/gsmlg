@@ -15,6 +15,7 @@ workspace:
   - app_lib/logging
   - app_lib/secure_storage
   - app_lib/chat
+  - app_lib/isolate_orchestrator
   - app_bloc/theme
   - app_bloc/auth
   - app_bloc/whois
@@ -111,6 +112,7 @@ dependencies:
   app_adaptive_widgets: any
   app_logging: any
   app_secure_storage: any
+  isolate_orchestrator: any
   app_web_view: any
   app_components: any
   app_data_list: any

@@ -6,6 +6,8 @@ import 'package:cloudflare_dns/cloudflare_dns.dart' as cf;
 import 'package:dio/dio.dart';
 import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:gsmlg_whois/gsmlg_whois.dart';
+import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as html_parser;
 import 'package:ip_db/ip_db.dart';
 import 'package:route53/route53.dart' as r53;
 import 'package:vultr_api/api.dart' as vultr;
@@ -34,6 +36,7 @@ class ToolExecutor {
         _vault = vault,
         _remoteMcpProfilesProvider = remoteMcpProfilesProvider,
         _remoteMcpToolCaller = remoteMcpToolCaller,
+        _dio = dio ?? Dio(),
         _dartMcpToolClient = dartMcpToolClient ?? DartMcpToolClient(dio: dio);
 
   IpDatabase? _ipDatabase;
@@ -41,12 +44,14 @@ class ToolExecutor {
   final VaultRepository? _vault;
   final RemoteMcpProfilesProvider? _remoteMcpProfilesProvider;
   final RemoteMcpToolCaller? _remoteMcpToolCaller;
+  final Dio _dio;
   final DartMcpToolClient _dartMcpToolClient;
 
   /// Tool definitions to pass to [InferenceChat].
   List<gemma.Tool> get toolDefinitions => [
         _whoisTool,
         _ipGeoTool,
+        _webFetchTool,
         _domainListZonesTool,
         _domainListRecordsTool,
         _domainCreateRecordTool,
@@ -100,6 +105,27 @@ class ToolExecutor {
         },
       },
       'required': ['ip'],
+    },
+  );
+
+  static final _webFetchTool = gemma.Tool(
+    name: 'web_fetch',
+    description:
+        'Fetch a public http or https URL and return readable page content',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'url': {
+          'type': 'string',
+          'description': 'The public URL to fetch, e.g. https://example.com',
+        },
+        'max_chars': {
+          'type': 'integer',
+          'description':
+              'Optional maximum number of content characters to return',
+        },
+      },
+      'required': ['url'],
     },
   );
 
@@ -262,6 +288,7 @@ class ToolExecutor {
     return switch (name) {
       'whois_lookup' => _executeWhois(args),
       'ip_geolocation' => _executeIpGeo(args),
+      'web_fetch' => _executeWebFetch(args),
       'domain_list_zones' => _executeDomainListZones(args),
       'domain_list_records' => _executeDomainListRecords(args),
       'domain_create_record' => _executeDomainCreateRecord(args),
@@ -395,6 +422,230 @@ class ToolExecutor {
     } catch (e) {
       return {'error': e.toString()};
     }
+  }
+
+  Future<Map<String, dynamic>> _executeWebFetch(
+    Map<String, dynamic> args,
+  ) async {
+    final originalUrl = _requiredStringArg(args, 'url');
+    final maxChars = (_intArg(args['max_chars']) ?? 20000).clamp(1000, 100000);
+
+    try {
+      var uri = _validateWebFetchUri(Uri.parse(originalUrl));
+      Response<dynamic>? response;
+
+      for (var redirectCount = 0; redirectCount <= 5; redirectCount++) {
+        response = await _dio.getUri<dynamic>(
+          uri,
+          options: Options(
+            followRedirects: false,
+            responseType: ResponseType.plain,
+            receiveTimeout: const Duration(seconds: 20),
+            sendTimeout: const Duration(seconds: 10),
+            headers: const {
+              'Accept':
+                  'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.9',
+              'User-Agent':
+                  'Mozilla/5.0 (compatible; GSMLG-WebFetch/1.0; +https://gsmlg.local)',
+            },
+            validateStatus: (status) =>
+                status != null && status >= 200 && status < 400,
+          ),
+        );
+
+        final statusCode = response.statusCode ?? 0;
+        final location = response.headers.value('location');
+        if (statusCode < 300 || statusCode >= 400 || location == null) {
+          break;
+        }
+
+        uri = _validateWebFetchUri(uri.resolve(location));
+        response = null;
+      }
+
+      if (response == null) {
+        throw Exception('Too many redirects');
+      }
+
+      final statusCode = response.statusCode ?? 0;
+      if (statusCode >= 300 && statusCode < 400) {
+        throw Exception('Too many redirects');
+      }
+
+      final body = response.data?.toString() ?? '';
+      final contentType = response.headers.value('content-type') ?? '';
+      final extracted = _extractWebFetchContent(body, contentType);
+      final truncated = extracted.content.length > maxChars;
+      final content = truncated
+          ? extracted.content.substring(0, maxChars).trimRight()
+          : extracted.content;
+
+      return {
+        'url': originalUrl,
+        'final_url': uri.toString(),
+        'status_code': statusCode,
+        'content_type': contentType,
+        if (extracted.title.isNotEmpty) 'title': extracted.title,
+        if (extracted.description.isNotEmpty)
+          'description': extracted.description,
+        'content': content,
+        'truncated': truncated,
+      };
+    } catch (e) {
+      return {'url': originalUrl, 'error': e.toString()};
+    }
+  }
+
+  Uri _validateWebFetchUri(Uri uri) {
+    if (!uri.hasScheme || !const {'http', 'https'}.contains(uri.scheme)) {
+      throw Exception('web_fetch only supports http and https URLs');
+    }
+    if (uri.host.isEmpty) throw Exception('URL host is required');
+    if (_isPrivateOrInternalHost(uri.host)) {
+      throw Exception('web_fetch cannot access private or internal hosts');
+    }
+    return uri;
+  }
+
+  bool _isPrivateOrInternalHost(String host) {
+    final normalized = host.toLowerCase();
+    if (normalized == 'localhost' ||
+        normalized.endsWith('.localhost') ||
+        normalized.endsWith('.local') ||
+        normalized.endsWith('.internal')) {
+      return true;
+    }
+    if (!normalized.contains('.') && !normalized.contains(':')) return true;
+
+    final ipv4Match = RegExp(r'^(\d{1,3}\.){3}\d{1,3}$').hasMatch(normalized);
+    if (ipv4Match) {
+      final parts = normalized.split('.').map(int.tryParse).toList();
+      if (parts.any((part) => part == null || part < 0 || part > 255)) {
+        return true;
+      }
+      final a = parts[0]!;
+      final b = parts[1]!;
+      return a == 10 ||
+          a == 127 ||
+          (a == 172 && b >= 16 && b <= 31) ||
+          (a == 192 && b == 168) ||
+          (a == 169 && b == 254) ||
+          a == 0;
+    }
+
+    if (normalized == '::1' ||
+        normalized.startsWith('fc') ||
+        normalized.startsWith('fd') ||
+        normalized.startsWith('fe80:')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  _WebFetchContent _extractWebFetchContent(String body, String contentType) {
+    final normalizedContentType = contentType.toLowerCase();
+    final looksLikeHtml = RegExp(
+      r'<\s*(html|head|body|main|article|p|div)\b',
+      caseSensitive: false,
+    ).hasMatch(body);
+    if (!normalizedContentType.contains('html') && !looksLikeHtml) {
+      return _WebFetchContent(content: _normalizeWhitespace(body));
+    }
+
+    final document = html_parser.parse(body);
+    for (final selector in const [
+      'script',
+      'style',
+      'noscript',
+      'svg',
+      'iframe',
+      'nav',
+      'footer',
+      'header',
+    ]) {
+      document
+          .querySelectorAll(selector)
+          .forEach((element) => element.remove());
+    }
+
+    final title = _normalizeWhitespace(
+      document.querySelector('title')?.text ?? '',
+    );
+    final description = _normalizeWhitespace(
+      document
+              .querySelector('meta[name="description"]')
+              ?.attributes['content'] ??
+          '',
+    );
+    final readable = document.querySelector('article') ??
+        document.querySelector('main') ??
+        document.body ??
+        document.documentElement;
+
+    return _WebFetchContent(
+      title: title,
+      description: description,
+      content: _elementToReadableText(readable),
+    );
+  }
+
+  String _elementToReadableText(dom.Element? element) {
+    if (element == null) return '';
+    final buffer = StringBuffer();
+    for (final node in element.nodes) {
+      _appendReadableText(buffer, node);
+    }
+    return _normalizeWhitespace(buffer.toString());
+  }
+
+  void _appendReadableText(StringBuffer buffer, dom.Node node) {
+    if (node is dom.Text) {
+      buffer.write(node.text);
+      buffer.write(' ');
+      return;
+    }
+    if (node is! dom.Element) return;
+
+    final tag = node.localName ?? '';
+    final block = const {
+      'address',
+      'article',
+      'aside',
+      'blockquote',
+      'br',
+      'div',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'li',
+      'main',
+      'ol',
+      'p',
+      'pre',
+      'section',
+      'table',
+      'tr',
+      'ul',
+    }.contains(tag);
+
+    if (block) buffer.write('\n');
+    for (final child in node.nodes) {
+      _appendReadableText(buffer, child);
+    }
+    if (block) buffer.write('\n');
+  }
+
+  String _normalizeWhitespace(String value) {
+    return value
+        .replaceAll(RegExp(r'[ \t\r\f]+'), ' ')
+        .replaceAll(RegExp(r' *\n+ *'), '\n')
+        .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+        .trim();
   }
 
   Future<Map<String, dynamic>> _executeDomainListZones(
@@ -882,6 +1133,18 @@ class _RemoteMcpToolMatch {
 
   final _RemoteMcpServer server;
   final _RemoteMcpTool tool;
+}
+
+class _WebFetchContent {
+  const _WebFetchContent({
+    required this.content,
+    this.title = '',
+    this.description = '',
+  });
+
+  final String title;
+  final String description;
+  final String content;
 }
 
 class _RemoteMcpServer {

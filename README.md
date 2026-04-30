@@ -81,7 +81,7 @@ This project is organized as a Dart workspace with ~50 packages managed by [Melo
 |-----------|---------|
 | `lib/` | Main app entry, routing, and screens |
 | `app_bloc/` | BLoC state management (one package per feature) |
-| `app_lib/` | Core libraries: database, theme, locale, logging, secure storage, chat |
+| `app_lib/` | Core libraries: database, theme, locale, logging, secure storage, chat, isolate orchestration |
 | `app_widget/` | UI components: adaptive scaffold, artwork, feedback, world map |
 | `app_api/` | API clients: Route53, CloudFlare DNS, GitHub, Vultr |
 | `app_form/` | Form modules (camera settings) |
@@ -107,6 +107,7 @@ melos run prepare          # Bootstrap + gen-l10n + build-runner
 - [Brick Testing](./docs/BRICK_TESTING.md) - Testing Mason bricks
 - [Testing Guide](./docs/TESTING.md) - Running tests across the monorepo
 - [Form BLoC Guide](./docs/FORM_BLOC.md) - Form validation and submission
+- [Isolate Orchestrator](./docs/ISOLATE_ORCHESTRATOR.md) - Managed Dart isolate pools for long-running background workers
 - [Error Handling](./docs/USAGE.md) - Error handling system setup and usage
 - [Logging & Error Architecture](./docs/DOCUMENTATION.md) - Logging and error handler internals
 - [Deployment Setup](./docs/DEPLOYMENT_SETUP.md) - Play Store and App Store deployment configuration

@@ -60,7 +60,7 @@ See [BRICKS.md](./docs/BRICKS.md) for complete brick documentation.
 ```
 lib/                        Main app (main.dart, app.dart, router.dart, screens/)
 app_bloc/                   BLoC packages (one per feature domain)
-app_lib/                    Core libraries (database, theme, locale, provider, logging, secure_storage, chat)
+app_lib/                    Core libraries (database, theme, locale, provider, logging, secure_storage, chat, isolate_orchestrator)
 app_widget/                 UI components (adaptive, artwork, feedback, web_view, components, data_list, world_map)
 app_api/                    API clients (route53, cloudflare_dns, github, vultr_api)
 app_form/                   Form modules (camera_settings)

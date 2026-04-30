@@ -24,8 +24,11 @@ class LocalToolsSettingsScreen extends StatelessWidget {
         icon: Icons.search,
         tools: tools
             .where(
-              (tool) =>
-                  const {'whois_lookup', 'ip_geolocation'}.contains(tool.name),
+              (tool) => const {
+                'whois_lookup',
+                'ip_geolocation',
+                'web_fetch',
+              }.contains(tool.name),
             )
             .toList(growable: false),
       ),

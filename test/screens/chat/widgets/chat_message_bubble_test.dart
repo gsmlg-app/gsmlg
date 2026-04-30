@@ -4,6 +4,41 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gsmlg/screens/chat/widgets/chat_message_bubble.dart';
 
 void main() {
+  testWidgets('updates streaming assistant content without build-time errors', (
+    tester,
+  ) async {
+    FlutterErrorDetails? flutterError;
+    final previousOnError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      flutterError = details;
+    };
+    addTearDown(() => FlutterError.onError = previousOnError);
+
+    Widget buildBubble(String content) {
+      return MaterialApp(
+        home: Scaffold(
+          body: ChatMessageBubble(
+            showThinking: true,
+            message: AssistantMessage(
+              id: 'assistant',
+              content: content,
+              conversationId: 'conversation',
+              timestamp: DateTime(2026),
+              isStreaming: true,
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildBubble('<think>planning'));
+    await tester.pumpWidget(buildBubble('<think>planning</think>final'));
+    await tester.pump();
+
+    expect(flutterError, isNull);
+    expect(find.textContaining('final'), findsOneWidget);
+  });
+
   testWidgets('renders tagged thinking content as a thinking block', (
     tester,
   ) async {
