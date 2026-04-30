@@ -13,4 +13,5 @@ export 'src/repositories/chat_storage_repository.dart';
 export 'src/repositories/remote_llm_repository.dart';
 
 // Services
+export 'src/services/dart_mcp_tool_client.dart';
 export 'src/services/tool_executor.dart';

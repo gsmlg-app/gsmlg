@@ -10,6 +10,8 @@ import 'package:ip_db/ip_db.dart';
 import 'package:route53/route53.dart' as r53;
 import 'package:vultr_api/api.dart' as vultr;
 
+import 'dart_mcp_tool_client.dart';
+
 typedef RemoteMcpProfilesProvider = List<String> Function();
 
 typedef RemoteMcpToolCaller = Future<Map<String, dynamic>> Function(
@@ -26,19 +28,20 @@ class ToolExecutor {
     VaultRepository? vault,
     RemoteMcpProfilesProvider? remoteMcpProfilesProvider,
     RemoteMcpToolCaller? remoteMcpToolCaller,
+    DartMcpToolClient? dartMcpToolClient,
     Dio? dio,
   })  : _database = database,
         _vault = vault,
         _remoteMcpProfilesProvider = remoteMcpProfilesProvider,
         _remoteMcpToolCaller = remoteMcpToolCaller,
-        _dio = dio ?? Dio();
+        _dartMcpToolClient = dartMcpToolClient ?? DartMcpToolClient(dio: dio);
 
   IpDatabase? _ipDatabase;
   final AppDatabase? _database;
   final VaultRepository? _vault;
   final RemoteMcpProfilesProvider? _remoteMcpProfilesProvider;
   final RemoteMcpToolCaller? _remoteMcpToolCaller;
-  final Dio _dio;
+  final DartMcpToolClient _dartMcpToolClient;
 
   /// Tool definitions to pass to [InferenceChat].
   List<gemma.Tool> get toolDefinitions => [
@@ -330,45 +333,22 @@ class ToolExecutor {
       if (caller != null) {
         return caller(serverJson, toolJson, args);
       }
-      if (server.transport != 'http') {
-        return {
-          'error':
-              'Remote MCP ${server.transport.toUpperCase()} execution is not supported yet',
-          'server': server.name,
-          'tool': tool.name,
-        };
-      }
-
       final headers = <String, dynamic>{};
       if (server.accountId != null) {
         headers['Authorization'] =
             'Bearer ${await _serviceAccountSecret(server.accountId!)}';
       }
-      final response = await _dio.post<dynamic>(
-        server.url,
-        options: Options(headers: headers.isEmpty ? null : headers),
-        data: {
-          'jsonrpc': '2.0',
-          'id': DateTime.now().microsecondsSinceEpoch,
-          'method': 'tools/call',
-          'params': {
-            'name': tool.name,
-            'arguments': args,
-          },
-        },
-      );
-      final data = response.data;
-      if (data is Map<String, dynamic>) {
-        return {
-          'server': server.name,
-          'tool': tool.name,
-          'response': data,
-        };
-      }
       return {
         'server': server.name,
         'tool': tool.name,
-        'response': data,
+        'response': await _dartMcpToolClient.callHttpTool(
+          config: DartMcpHttpServerConfig(
+            url: server.url,
+            headers: headers.cast<String, String>(),
+          ),
+          name: tool.name,
+          arguments: args,
+        ),
       };
     } catch (e) {
       return {

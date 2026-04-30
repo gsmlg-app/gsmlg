@@ -87,6 +87,21 @@ GoRoute settingsRoutes() => GoRoute(
           child: const RemoteToolsSettingsScreen(),
         );
       },
+      routes: [
+        GoRoute(
+          name: RemoteToolSettingsScreen.name,
+          path: RemoteToolSettingsScreen.path,
+          pageBuilder: (context, state) {
+            return NoTransitionPage<void>(
+              key: state.pageKey,
+              restorationId: state.pageKey.value,
+              child: RemoteToolSettingsScreen(
+                profileId: state.pathParameters['profileId']!,
+              ),
+            );
+          },
+        ),
+      ],
     ),
     GoRoute(
       name: AppearanceSettingsScreen.name,

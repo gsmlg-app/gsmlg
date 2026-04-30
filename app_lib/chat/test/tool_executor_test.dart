@@ -89,6 +89,7 @@ void main() {
             ],
           }),
         ],
+        dartMcpToolClient: _FakeDartMcpToolClient(),
       );
 
       final result = await executor.execute('mcp_docs_search_docs', {
@@ -99,5 +100,50 @@ void main() {
       expect(result['server'], 'Docs MCP');
       expect(result['tool'], 'search_docs');
     });
+
+    test('HTTP MCP tool calls use dart_mcp client', () async {
+      final executor = ToolExecutor(
+        remoteMcpProfilesProvider: () => [
+          jsonEncode({
+            'id': 'local-docs',
+            'name': 'Local Docs MCP',
+            'url': 'https://mcp.example.com/http',
+            'transport': 'http',
+            'enabled': true,
+            'tools': [
+              {'name': 'search_docs'},
+            ],
+          }),
+        ],
+        dartMcpToolClient: _FakeDartMcpToolClient(),
+      );
+
+      final result = await executor.execute('mcp_local_docs_search_docs', {
+        'query': 'flutter',
+      });
+
+      expect(result['server'], 'Local Docs MCP');
+      expect(result['tool'], 'search_docs');
+      expect(result['response'], {
+        'url': 'https://mcp.example.com/http',
+        'tool': 'search_docs',
+        'argumentsPayload': {'query': 'flutter'},
+      });
+    });
   });
+}
+
+class _FakeDartMcpToolClient extends DartMcpToolClient {
+  @override
+  Future<Map<String, dynamic>> callHttpTool({
+    required DartMcpHttpServerConfig config,
+    required String name,
+    required Map<String, dynamic> arguments,
+  }) async {
+    return {
+      'url': config.url,
+      'tool': name,
+      'argumentsPayload': arguments,
+    };
+  }
 }
