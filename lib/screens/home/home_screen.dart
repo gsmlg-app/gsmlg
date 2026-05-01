@@ -131,8 +131,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           enabled: canSend,
                           isStreaming: chatState.isStreaming,
                           thinkingEnabled: settingsState.thinkingEnabled,
-                          selectedModelName:
-                              'Remote: ${settingsState.config.remoteModel}',
+                          selectedAgentName:
+                              settingsState.activeAgent?.name ?? 'Select agent',
+                          selectedAgentId: settingsState.activeAgentId,
+                          agents: settingsState.agents,
+                          onAgentSelect: (agentId) {
+                            context.read<ChatSettingsBloc>().add(
+                              ChatSettingsSelectAgent(id: agentId),
+                            );
+                          },
                           onModelTap: () =>
                               context.goNamed(ChatSettingsScreen.name),
                           onThinkingToggle: (enabled) {
@@ -184,12 +191,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             supportsThinking:
                                 modelInfo?.effectiveSupportsThinking ?? false,
                             thinkingEnabled: settingsState.thinkingEnabled,
-                            selectedModelName: modelInfo?.displayName,
-                            selectedModelId: selectedId,
-                            installedModels: modelState.installedModels,
-                            onModelSelect: (modelId) {
-                              context.read<GemmaModelBloc>().add(
-                                GemmaModelSelect(modelId: modelId),
+                            selectedAgentName:
+                                settingsState.activeAgent?.name ??
+                                'Select agent',
+                            selectedAgentId: settingsState.activeAgentId,
+                            agents: settingsState.agents,
+                            onAgentSelect: (agentId) {
+                              context.read<ChatSettingsBloc>().add(
+                                ChatSettingsSelectAgent(id: agentId),
                               );
                             },
                             onModelTap: () =>

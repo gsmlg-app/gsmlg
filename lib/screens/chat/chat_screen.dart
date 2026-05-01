@@ -8,8 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
-import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'chat_history_screen.dart';
 import 'chat_settings_screen.dart';
@@ -43,23 +41,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Load conversation history
     context.read<ChatBloc>().add(const ChatLoadHistory());
-  }
-
-  /// Extract a short display name from an installed model filename.
-  String _shortModelName(String modelId) {
-    // Strip file extension and common suffixes
-    var name = modelId;
-    for (final ext in ['.litertlm', '.task', '.bin']) {
-      if (name.endsWith(ext)) {
-        name = name.substring(0, name.length - ext.length);
-      }
-    }
-    // Strip common suffixes like _multi-prefill-seq_q8_ekv4096
-    final suffixIdx = name.indexOf('_multi-prefill');
-    if (suffixIdx > 0) {
-      name = name.substring(0, suffixIdx);
-    }
-    return name;
   }
 
   void _startNewConversation() {
@@ -218,14 +199,13 @@ class _ChatScreenState extends State<ChatScreen> {
               supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
               supportsThinking: modelInfo?.effectiveSupportsThinking ?? false,
               thinkingEnabled: settingsState.thinkingEnabled,
-              selectedModelName:
-                  modelInfo?.displayName ??
-                  (selectedId != null ? _shortModelName(selectedId) : null),
-              selectedModelId: selectedId,
-              installedModels: modelState.installedModels,
-              onModelSelect: (modelId) {
-                context.read<GemmaModelBloc>().add(
-                  GemmaModelSelect(modelId: modelId),
+              selectedAgentName:
+                  settingsState.activeAgent?.name ?? 'Select agent',
+              selectedAgentId: settingsState.activeAgentId,
+              agents: settingsState.agents,
+              onAgentSelect: (agentId) {
+                context.read<ChatSettingsBloc>().add(
+                  ChatSettingsSelectAgent(id: agentId),
                 );
               },
               onModelTap: () => context.goNamed(ChatSettingsScreen.name),
@@ -257,15 +237,6 @@ class _ChatScreenState extends State<ChatScreen> {
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, chatState) {
         final config = settingsState.config;
-        final visibleRemoteModels =
-            context.read<SharedPreferences>().getStringList(
-              config.remoteVisibleModelsKey,
-            ) ??
-            const <String>[];
-        final remoteModels = {
-          config.remoteModel,
-          ...visibleRemoteModels,
-        }.where((model) => model.trim().isNotEmpty).toList()..sort();
         final canSend =
             settingsState.config.isRemoteConfigured && chatState.canSendMessage;
         final isDeepSeek = config.remoteProvider == RemoteLlmProvider.deepSeek;
@@ -276,17 +247,15 @@ class _ChatScreenState extends State<ChatScreen> {
               ? config.remoteThinkingEffort != RemoteThinkingEffort.off
               : settingsState.thinkingEnabled,
           thinkingEffort: isDeepSeek ? config.remoteThinkingEffort : null,
-          selectedModelName: 'Remote: ${config.remoteModel}',
-          selectedModelId: config.remoteModel,
-          remoteModels: remoteModels,
-          onModelSelect: (modelId) {
+          selectedAgentName: settingsState.activeAgent?.name ?? 'Select agent',
+          selectedAgentId: settingsState.activeAgentId,
+          agents: settingsState.agents,
+          onAgentSelect: (agentId) {
             context.read<ChatSettingsBloc>().add(
-              ChatSettingsUpdateConfig(
-                config: config.copyWith(remoteModel: modelId),
-              ),
+              ChatSettingsSelectAgent(id: agentId),
             );
           },
-          onModelTap: () => context.goNamed(RemoteModelSettingsScreen.name),
+          onModelTap: () => context.goNamed(ChatSettingsScreen.name),
           onThinkingEffortChanged: isDeepSeek
               ? (effort) {
                   context.read<ChatSettingsBloc>().add(

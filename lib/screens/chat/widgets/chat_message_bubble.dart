@@ -23,28 +23,39 @@ class ChatMessageBubble extends StatelessWidget {
     return GestureDetector(
       onLongPress: () => _copyToClipboard(context),
       child: DmChatBubble(
-        key: ValueKey(_bubbleRenderKey(dmMessage)),
+        key: _bubbleRenderKey(dmMessage),
         message: dmMessage,
         avatar: _avatar(context),
       ),
     );
   }
 
-  String _bubbleRenderKey(DmChatMessage dmMessage) {
+  Key _bubbleRenderKey(DmChatMessage dmMessage) {
+    // WORKAROUND(upstream): duskmoon-dev/flutter-duskmoon-ui#10
+    // DmChatBubble 1.6.0 can notify BubbleStreamScope synchronously from
+    // didUpdateWidget while streaming text updates, which marks the inherited
+    // notifier dirty during build. Remount streaming assistant bubbles to avoid
+    // that dependency update path until the upstream notifier is deferred.
+    if (message is AssistantMessage &&
+        dmMessage.status == DmChatMessageStatus.streaming) {
+      return UniqueKey();
+    }
     final contentLength = message.content.length;
     final thinkingLength = switch (message) {
       AssistantMessage(:final thinkingContent) => thinkingContent?.length ?? 0,
       _ => 0,
     };
-    return [
-      message.id,
-      dmMessage.status.name,
-      showTypingIndicator,
-      showThinking,
-      contentLength,
-      thinkingLength,
-      dmMessage.blocks.length,
-    ].join(':');
+    return ValueKey(
+      [
+        message.id,
+        dmMessage.status.name,
+        showTypingIndicator,
+        showThinking,
+        contentLength,
+        thinkingLength,
+        dmMessage.blocks.length,
+      ].join(':'),
+    );
   }
 
   DmChatMessage _toDmMessage() {

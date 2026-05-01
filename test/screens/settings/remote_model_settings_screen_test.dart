@@ -64,60 +64,62 @@ void main() {
       await preferences.clear();
     });
 
-    testWidgets('load models resets provider models and keeps selection', (
-      tester,
-    ) async {
-      chatSettingsBloc = ChatSettingsBloc(
-        repository: ChatStorageRepository(database),
-        preferences: preferences,
-      );
+    testWidgets(
+      'load models resets provider models without showing selection',
+      (tester) async {
+        chatSettingsBloc = ChatSettingsBloc(
+          repository: ChatStorageRepository(database),
+          preferences: preferences,
+        );
 
-      await tester.pumpWidget(
-        MultiRepositoryProvider(
-          providers: [
-            RepositoryProvider<SharedPreferences>.value(value: preferences),
-            RepositoryProvider<RemoteLlmRepository>(
-              create: (_) => _FakeRemoteLlmRepository(vault: vault),
-            ),
-          ],
-          child: MultiBlocProvider(
+        await tester.pumpWidget(
+          MultiRepositoryProvider(
             providers: [
-              BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc!),
-              BlocProvider<AccountsBloc>.value(value: accountsBloc),
+              RepositoryProvider<SharedPreferences>.value(value: preferences),
+              RepositoryProvider<RemoteLlmRepository>(
+                create: (_) => _FakeRemoteLlmRepository(vault: vault),
+              ),
             ],
-            child: MaterialApp(
-              localizationsDelegates: AppLocale.localizationsDelegates,
-              supportedLocales: AppLocale.supportedLocales,
-              home: const RemoteModelSettingsScreen(),
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc!),
+                BlocProvider<AccountsBloc>.value(value: accountsBloc),
+              ],
+              child: MaterialApp(
+                localizationsDelegates: AppLocale.localizationsDelegates,
+                supportedLocales: AppLocale.supportedLocales,
+                home: const RemoteModelSettingsScreen(),
+              ),
             ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
-      expect(find.text('stale-selected'), findsAtLeastNWidgets(1));
+        await tester.pumpAndSettle();
+        expect(find.text('Selected Model'), findsNothing);
+        expect(find.text('stale-selected'), findsNothing);
 
-      await tester.tap(find.text('Load Models').first);
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Load Models').first);
+        await tester.pumpAndSettle();
 
-      expect(preferences.getStringList(providerModelsKey), [
-        'new-alpha',
-        'new-beta',
-      ]);
-      expect(preferences.getStringList(visibleModelsKey), [
-        'new-alpha',
-        'new-beta',
-      ]);
-      expect(
-        preferences.getString('remote_model_provider_selected_openai'),
-        'stale-selected',
-      );
-      expect(find.text('new-alpha'), findsOneWidget);
-      expect(find.text('new-beta'), findsOneWidget);
-      expect(find.text('old-visible'), findsNothing);
-      expect(find.text('old-disabled'), findsNothing);
-      expect(find.text('stale-selected'), findsAtLeastNWidgets(1));
-    });
+        expect(preferences.getStringList(providerModelsKey), [
+          'new-alpha',
+          'new-beta',
+        ]);
+        expect(preferences.getStringList(visibleModelsKey), [
+          'new-alpha',
+          'new-beta',
+        ]);
+        expect(
+          preferences.getString('remote_model_provider_selected_openai'),
+          'stale-selected',
+        );
+        expect(find.text('new-alpha'), findsOneWidget);
+        expect(find.text('new-beta'), findsOneWidget);
+        expect(find.text('old-visible'), findsNothing);
+        expect(find.text('old-disabled'), findsNothing);
+        expect(find.text('stale-selected'), findsNothing);
+      },
+    );
 
     testWidgets('load models keeps the active chat provider selection', (
       tester,
@@ -163,10 +165,13 @@ void main() {
         tester,
         () =>
             chatSettingsBloc!.state.config == activeConfig &&
-            find.text('Active Provider').evaluate().isNotEmpty,
+            find.text('Team OpenAI').evaluate().isNotEmpty,
       );
       expect(chatSettingsBloc!.state.config, activeConfig);
-      expect(find.text('stale-selected'), findsAtLeastNWidgets(1));
+      expect(find.text('Active Provider'), findsNothing);
+      expect(find.text('Use In Chat'), findsNothing);
+      expect(find.text('Selected Model'), findsNothing);
+      expect(find.text('stale-selected'), findsNothing);
 
       await tester.tap(find.text('Load Models').first);
       await _pumpUntil(
@@ -196,7 +201,7 @@ void main() {
         'stale-selected',
       );
       expect(chatSettingsBloc!.state.config, activeConfig);
-      expect(find.text('stale-selected'), findsAtLeastNWidgets(1));
+      expect(find.text('stale-selected'), findsNothing);
     });
 
     testWidgets(
@@ -234,7 +239,7 @@ void main() {
       },
     );
 
-    testWidgets('does not show selected model in provider model switches', (
+    testWidgets('shows configured models only as visibility switches', (
       tester,
     ) async {
       await preferences.setString(
@@ -256,66 +261,14 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      expect(find.text('Selected Model'), findsNothing);
+      expect(find.byType(DropdownButton<String>), findsNothing);
       expect(find.text('old-disabled'), findsOneWidget);
       expect(find.text('old-visible'), findsOneWidget);
       expect(find.text('Selected for this provider'), findsNothing);
     });
 
-    testWidgets('selects provider model from dropdown', (tester) async {
-      final repository = ChatStorageRepository(database);
-      final activeConfig = ModelConfig(
-        inferenceMode: ChatInferenceMode.remote,
-        remoteProvider: RemoteLlmProvider.openAi,
-        remoteAccountId: ModelConfig.dummyRemoteAccountId,
-        remoteBaseUrl: baseUrl,
-        remoteModel: 'old-visible',
-      );
-      await repository.saveSettings(activeConfig);
-      chatSettingsBloc = ChatSettingsBloc(
-        repository: repository,
-        preferences: preferences,
-      );
-
-      await _pumpScreen(
-        tester,
-        preferences: preferences,
-        vault: vault,
-        chatSettingsBloc: chatSettingsBloc!,
-        accountsBloc: accountsBloc,
-      );
-
-      await _pumpUntil(
-        tester,
-        () =>
-            chatSettingsBloc!.state.config == activeConfig &&
-            find.byType(DropdownButton<String>).evaluate().isNotEmpty,
-      );
-
-      await tester.tap(find.byType(DropdownButton<String>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('old-disabled').last);
-      await tester.pumpAndSettle();
-
-      await _pumpUntil(
-        tester,
-        () => chatSettingsBloc!.state.config.remoteModel == 'old-disabled',
-      );
-
-      expect(
-        preferences.getString('remote_model_provider_selected_openai'),
-        'old-disabled',
-      );
-      expect(chatSettingsBloc!.state.config.remoteModel, 'old-disabled');
-      expect(preferences.getStringList(visibleModelsKey), [
-        'old-disabled',
-        'old-visible',
-      ]);
-    });
-
-    testWidgets('defaults selected model dropdown to first available model', (
-      tester,
-    ) async {
-      await preferences.remove('remote_model_provider_selected_openai');
+    testWidgets('does not expose chat activation controls', (tester) async {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
@@ -331,74 +284,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final dropdown = tester.widget<DropdownButton<String>>(
-        find.byType(DropdownButton<String>),
-      );
-      expect(dropdown.value, 'old-disabled');
-    });
-
-    testWidgets('switches active provider before selecting a model', (
-      tester,
-    ) async {
-      await preferences.setStringList('remote_model_provider_profiles', [
-        jsonEncode({
-          'id': 'deepseek',
-          'name': 'Team DeepSeek',
-          'baseUrl': 'https://api.deepseek.com/v1',
-          'defaultModel': 'deepseek-chat',
-          'accountId': null,
-          'useDummyToken': true,
-          'isBuiltIn': false,
-          'remoteProvider': 'deepSeek',
-        }),
-      ]);
-      final repository = ChatStorageRepository(database);
-      final activeConfig = ModelConfig(
-        inferenceMode: ChatInferenceMode.remote,
-        remoteProvider: RemoteLlmProvider.openAi,
-        remoteAccountId: ModelConfig.dummyRemoteAccountId,
-        remoteBaseUrl: baseUrl,
-        remoteModel: 'old-visible',
-      );
-      await repository.saveSettings(activeConfig);
-      chatSettingsBloc = ChatSettingsBloc(
-        repository: repository,
-        preferences: preferences,
-      );
-
-      await _pumpScreen(
-        tester,
-        preferences: preferences,
-        vault: vault,
-        chatSettingsBloc: chatSettingsBloc!,
-        accountsBloc: accountsBloc,
-      );
-
-      await _pumpUntil(
-        tester,
-        () =>
-            chatSettingsBloc!.state.config == activeConfig &&
-            find.text('Team DeepSeek').evaluate().isNotEmpty,
-      );
-
-      await tester.tap(find.text('Use In Chat').last);
-      await _pumpUntil(
-        tester,
-        () =>
-            chatSettingsBloc!.state.config.remoteProvider ==
-            RemoteLlmProvider.deepSeek,
-      );
-
-      expect(chatSettingsBloc!.state.status, ChatSettingsStatus.loaded);
-      expect(
-        chatSettingsBloc!.state.config.remoteProvider,
-        RemoteLlmProvider.deepSeek,
-      );
-      expect(
-        chatSettingsBloc!.state.config.remoteBaseUrl,
-        'https://api.deepseek.com/v1',
-      );
-      expect(chatSettingsBloc!.state.config.remoteModel, isEmpty);
+      expect(find.text('Use In Chat'), findsNothing);
+      expect(find.text('Active Provider'), findsNothing);
+      expect(find.byIcon(Icons.play_circle_outline), findsNothing);
+      expect(find.byIcon(Icons.radio_button_checked), findsNothing);
     });
 
     testWidgets('shows only user-added providers', (tester) async {

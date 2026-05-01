@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
+import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -21,12 +22,16 @@ class ChatInputBar extends StatefulWidget {
     this.installedModels = const [],
     this.remoteModels = const [],
     this.selectedModelId,
+    this.selectedAgentName,
+    this.selectedAgentId,
+    this.agents = const [],
     required this.onSend,
     required this.onStop,
     this.onThinkingToggle,
     this.onThinkingEffortChanged,
     this.onModelTap,
     this.onModelSelect,
+    this.onAgentSelect,
   });
 
   final bool enabled;
@@ -40,6 +45,9 @@ class ChatInputBar extends StatefulWidget {
   final List<String> installedModels;
   final List<String> remoteModels;
   final String? selectedModelId;
+  final String? selectedAgentName;
+  final String? selectedAgentId;
+  final List<ChatAgent> agents;
   final void Function(
     String text, {
     Uint8List? imageBytes,
@@ -52,6 +60,7 @@ class ChatInputBar extends StatefulWidget {
   final ValueChanged<RemoteThinkingEffort>? onThinkingEffortChanged;
   final VoidCallback? onModelTap;
   final ValueChanged<String>? onModelSelect;
+  final ValueChanged<String>? onAgentSelect;
 
   @override
   State<ChatInputBar> createState() => _ChatInputBarState();
@@ -339,7 +348,15 @@ class _ChatInputBarState extends State<ChatInputBar> {
             ),
         ],
       ),
-      trailing: widget.selectedModelName != null
+      trailing: widget.selectedAgentName != null
+          ? _AgentSelector(
+              selectedAgentName: widget.selectedAgentName!,
+              selectedAgentId: widget.selectedAgentId,
+              agents: widget.agents,
+              onAgentSelect: widget.onAgentSelect,
+              onAgentTap: widget.onModelTap,
+            )
+          : widget.selectedModelName != null
           ? _ModelSelector(
               selectedModelName: widget.selectedModelName!,
               selectedModelId: widget.selectedModelId,
@@ -475,6 +492,105 @@ class _ThinkEffortSelector extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _AgentSelector extends StatelessWidget {
+  const _AgentSelector({
+    required this.selectedAgentName,
+    this.selectedAgentId,
+    this.agents = const [],
+    this.onAgentSelect,
+    this.onAgentTap,
+  });
+
+  final String selectedAgentName;
+  final String? selectedAgentId;
+  final List<ChatAgent> agents;
+  final ValueChanged<String>? onAgentSelect;
+  final VoidCallback? onAgentTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final canSelect = agents.isNotEmpty && onAgentSelect != null;
+
+    return InkWell(
+      onTap: canSelect
+          ? () => _showAgentMenu(context, colorScheme)
+          : onAgentTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                selectedAgentName,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAgentMenu(BuildContext context, ColorScheme colorScheme) {
+    final button = context.findRenderObject() as RenderBox;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(Offset.zero, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero),
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu<String>(
+      context: context,
+      position: position,
+      items: agents.map((agent) {
+        final isSelected = agent.id == selectedAgentId;
+        return PopupMenuItem<String>(
+          value: agent.id,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  agent.name,
+                  style: TextStyle(
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Icon(Icons.check, size: 18, color: colorScheme.primary),
+            ],
+          ),
+        );
+      }).toList(),
+    ).then((selectedId) {
+      if (selectedId != null && selectedId != selectedAgentId) {
+        onAgentSelect?.call(selectedId);
+      }
+    });
   }
 }
 

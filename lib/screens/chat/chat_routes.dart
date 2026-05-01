@@ -35,6 +35,21 @@ GoRoute chatRoutes() => GoRoute(
           child: const ChatSettingsScreen(),
         );
       },
+      routes: [
+        GoRoute(
+          name: ChatAgentSettingsScreen.name,
+          path: ChatAgentSettingsScreen.path,
+          pageBuilder: (context, state) {
+            return NoTransitionPage<void>(
+              key: state.pageKey,
+              restorationId: state.pageKey.value,
+              child: ChatAgentSettingsScreen(
+                agentId: state.pathParameters['agentId']!,
+              ),
+            );
+          },
+        ),
+      ],
     ),
   ],
 );

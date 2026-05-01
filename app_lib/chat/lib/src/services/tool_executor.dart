@@ -52,6 +52,7 @@ class ToolExecutor {
         _whoisTool,
         _ipGeoTool,
         _webFetchTool,
+        _webSearchTool,
         _domainListZonesTool,
         _domainListRecordsTool,
         _domainCreateRecordTool,
@@ -126,6 +127,26 @@ class ToolExecutor {
         },
       },
       'required': ['url'],
+    },
+  );
+
+  static final _webSearchTool = gemma.Tool(
+    name: 'web_search',
+    description: 'Search the web with Ollama web search and return results',
+    parameters: {
+      'type': 'object',
+      'properties': {
+        'query': {
+          'type': 'string',
+          'description': 'The web search query',
+        },
+        'max_results': {
+          'type': 'integer',
+          'description':
+              'Optional maximum number of results to return, from 1 to 10',
+        },
+      },
+      'required': ['query'],
     },
   );
 
@@ -289,6 +310,7 @@ class ToolExecutor {
       'whois_lookup' => _executeWhois(args),
       'ip_geolocation' => _executeIpGeo(args),
       'web_fetch' => _executeWebFetch(args),
+      'web_search' => _executeWebSearch(args),
       'domain_list_zones' => _executeDomainListZones(args),
       'domain_list_records' => _executeDomainListRecords(args),
       'domain_create_record' => _executeDomainCreateRecord(args),
@@ -495,6 +517,67 @@ class ToolExecutor {
     } catch (e) {
       return {'url': originalUrl, 'error': e.toString()};
     }
+  }
+
+  Future<Map<String, dynamic>> _executeWebSearch(
+    Map<String, dynamic> args,
+  ) async {
+    final query = _requiredStringArg(args, 'query').trim();
+    final maxResults = (_intArg(args['max_results']) ?? 5).clamp(1, 10);
+
+    try {
+      final apiKey = await _ollamaApiKey();
+      final response = await _dio.postUri<dynamic>(
+        Uri.parse('https://ollama.com/api/web_search'),
+        data: {
+          'query': query,
+          'max_results': maxResults,
+        },
+        options: Options(
+          responseType: ResponseType.json,
+          receiveTimeout: const Duration(seconds: 20),
+          sendTimeout: const Duration(seconds: 10),
+          headers: {
+            'Authorization': 'Bearer $apiKey',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) =>
+              status != null && status >= 200 && status < 300,
+        ),
+      );
+
+      final decoded = switch (response.data) {
+        final String body => jsonDecode(body),
+        final Object? data => data,
+      };
+      if (decoded is! Map<String, dynamic>) {
+        throw Exception('Ollama web search response was not an object');
+      }
+      final rawResults = decoded['results'];
+      if (rawResults is! List<dynamic>) {
+        throw Exception('Ollama web search response did not contain results');
+      }
+
+      return {
+        'query': query,
+        'max_results': maxResults,
+        'results': rawResults
+            .whereType<Map<String, dynamic>>()
+            .map(_ollamaSearchResultToJson)
+            .toList(growable: false),
+      };
+    } catch (e) {
+      return {'query': query, 'error': e.toString()};
+    }
+  }
+
+  Map<String, dynamic> _ollamaSearchResultToJson(Map<String, dynamic> item) {
+    return {
+      'title': item['title']?.toString() ?? '',
+      'url': item['url']?.toString() ?? '',
+      'content': item['content']?.toString() ?? '',
+    };
   }
 
   Uri _validateWebFetchUri(Uri uri) {
@@ -902,6 +985,17 @@ class ToolExecutor {
       throw Exception('No credentials found for service account $accountId');
     }
     return secret;
+  }
+
+  Future<String> _ollamaApiKey() async {
+    final database = _requireDatabase();
+    final query = database.select(database.serviceAccountTable)
+      ..where((t) => t.provider.equals(ServiceProvider.ollama.name));
+    final accounts = await query.get();
+    if (accounts.isEmpty) {
+      throw Exception('No Ollama service account configured');
+    }
+    return _serviceAccountSecret(accounts.first.id);
   }
 
   Future<List<Map<String, dynamic>>> _listDomainRecords(

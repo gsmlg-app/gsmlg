@@ -1,23 +1,113 @@
 // ignore_for_file: deprecated_member_use
 
-import 'package:accounts_bloc/accounts_bloc.dart';
+import 'dart:convert';
+
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
-import 'package:app_database/app_database.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ChatSettingsScreen extends StatefulWidget {
   static const name = 'ChatSettings';
   static const path = 'settings';
 
-  const ChatSettingsScreen({super.key});
+  const ChatSettingsScreen({super.key, this.agentId});
+
+  final String? agentId;
 
   @override
   State<ChatSettingsScreen> createState() => _ChatSettingsScreenState();
+}
+
+class ChatAgentSettingsScreen extends StatelessWidget {
+  static const name = 'ChatAgentSettings';
+  static const path = 'agent/:agentId';
+
+  const ChatAgentSettingsScreen({required this.agentId, super.key});
+
+  final String agentId;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChatSettingsScreen(agentId: agentId);
+  }
+}
+
+class _ConfiguredModel {
+  const _ConfiguredModel({
+    required this.title,
+    required this.icon,
+    required this.config,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final IconData icon;
+  final ModelConfig config;
+}
+
+class _RemoteProviderConfig {
+  const _RemoteProviderConfig({
+    required this.id,
+    required this.name,
+    required this.baseUrl,
+    required this.defaultModel,
+    required this.remoteProvider,
+    this.accountId,
+    this.useDummyToken = false,
+  });
+
+  factory _RemoteProviderConfig.fromMap(Map<String, Object?> map) {
+    return _RemoteProviderConfig(
+      id: map['id'] as String,
+      name: map['name'] as String,
+      baseUrl: map['baseUrl'] as String,
+      defaultModel: map['defaultModel'] as String? ?? 'local-model',
+      remoteProvider: _parseProvider(map['remoteProvider'] as String?),
+      accountId: map['accountId'] as int?,
+      useDummyToken:
+          map['useDummyToken'] as bool? ?? map['isLocal'] as bool? ?? false,
+    );
+  }
+
+  static _RemoteProviderConfig? fromJson(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, Object?>) return null;
+      return _RemoteProviderConfig.fromMap(decoded);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  final String id;
+  final String name;
+  final String baseUrl;
+  final String defaultModel;
+  final RemoteLlmProvider remoteProvider;
+  final int? accountId;
+  final bool useDummyToken;
+
+  bool get isLocal {
+    final host = Uri.tryParse(baseUrl)?.host.toLowerCase();
+    return host == 'localhost' ||
+        host == '127.0.0.1' ||
+        host == '0.0.0.0' ||
+        host == '::1';
+  }
+
+  static RemoteLlmProvider _parseProvider(String? value) {
+    for (final provider in RemoteLlmProvider.values) {
+      if (provider.name == value) return provider;
+    }
+    return RemoteLlmProvider.openAiCompatible;
+  }
 }
 
 class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
@@ -28,177 +118,175 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
-        appBar: DmAppBar(title: const Text('Chat Settings')),
+        appBar: DmAppBar(
+          title: Text(
+            widget.agentId == null ? 'Chat Settings' : 'Agent Settings',
+          ),
+        ),
         body: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
           builder: (context, state) {
-            return SettingsList(
-              sections: [
-                SettingsSection(
-                  title: const Text('Inference'),
-                  tiles: [
-                    SettingsTile.navigation(
-                      leading: const Icon(Icons.hub),
-                      title: const Text('Mode'),
-                      value: Text(state.config.inferenceModeDisplayName),
-                      onPressed: (_) =>
-                          _showInferenceModePicker(context, state.config),
+            final agentId = widget.agentId;
+            if (agentId != null) {
+              final agent = _agentById(state, agentId);
+              if (agent == null) {
+                return SettingsList(
+                  sections: [
+                    SettingsSection(
+                      title: const Text('Chat Agent'),
+                      tiles: [
+                        SettingsTile(
+                          leading: const Icon(Icons.info_outline),
+                          title: const Text('Agent not found'),
+                        ),
+                      ],
                     ),
                   ],
-                ),
-                if (state.config.inferenceMode == ChatInferenceMode.local)
+                );
+              }
+              if (state.activeAgentId != agent.id) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!context.mounted) return;
+                  context.read<ChatSettingsBloc>().add(
+                    ChatSettingsSelectAgent(id: agent.id),
+                  );
+                });
+                return const Center(child: CircularProgressIndicator());
+              }
+            }
+
+            return SettingsList(
+              sections: [
+                if (widget.agentId == null)
                   SettingsSection(
-                    title: const Text('Local Model'),
+                    title: const Text('Chat Agents'),
                     tiles: [
                       SettingsTile.navigation(
-                        leading: const Icon(Icons.memory),
-                        title: const Text('Model Type'),
-                        value: Text(state.config.modelDisplayName),
-                        onPressed: (_) =>
-                            _showModelTypePicker(context, state.config),
-                      ),
-                      SettingsTile.navigation(
-                        leading: const Icon(Icons.speed),
-                        title: const Text('Backend'),
-                        value: Text(
-                          state.config.backend == GemmaBackend.gpu
-                              ? 'GPU (Recommended)'
-                              : 'CPU',
+                        leading: const Icon(Icons.person_add_alt_1),
+                        title: const Text('Add Agent'),
+                        description: const Text(
+                          'Create a reusable assistant profile',
                         ),
-                        onPressed: (_) =>
-                            _showBackendPicker(context, state.config),
+                        onPressed: (_) => _createAgent(context),
                       ),
+                      if (state.agents.isEmpty)
+                        SettingsTile(
+                          leading: const Icon(Icons.info_outline),
+                          title: const Text('No agents yet'),
+                          description: const Text(
+                            'Add an agent to configure a chat assistant.',
+                          ),
+                        )
+                      else
+                        ...state.agents.map(
+                          (agent) => SettingsTile.navigation(
+                            leading: Icon(
+                              state.activeAgentId == agent.id
+                                  ? Icons.radio_button_checked
+                                  : Icons.radio_button_unchecked,
+                            ),
+                            title: Text(agent.name),
+                            description: Text(_settingsSummary(agent)),
+                            onPressed: (_) {
+                              context.read<ChatSettingsBloc>().add(
+                                ChatSettingsSelectAgent(id: agent.id),
+                              );
+                              context.goNamed(
+                                ChatAgentSettingsScreen.name,
+                                pathParameters: {'agentId': agent.id},
+                              );
+                            },
+                          ),
+                        ),
                     ],
                   ),
-                if (state.config.inferenceMode == ChatInferenceMode.remote)
+                if (widget.agentId != null)
                   SettingsSection(
-                    title: const Text('Remote LLM'),
+                    title: const Text('Agent'),
                     tiles: [
                       SettingsTile.navigation(
-                        leading: const Icon(Icons.cloud_queue),
-                        title: const Text('Provider'),
-                        value: Text(state.config.remoteProvider.displayName),
+                        leading: const Icon(Icons.badge_outlined),
+                        title: const Text('Name'),
+                        value: Text(state.activeAgent?.name ?? 'Agent'),
                         onPressed: (_) =>
-                            _showRemoteProviderPicker(context, state.config),
+                            _showAgentDialog(context, agent: state.activeAgent),
                       ),
-                      SettingsTile.navigation(
-                        leading: const Icon(Icons.account_circle),
-                        title: const Text('Account'),
-                        value: BlocBuilder<AccountsBloc, AccountsState>(
-                          builder: (context, accountsState) {
-                            final account = _selectedRemoteAccount(
-                              accountsState,
-                              state.config.remoteAccountId,
-                            );
-                            return Text(account?.name ?? 'Not selected');
-                          },
+                      if (state.activeAgent != null)
+                        SettingsTile(
+                          leading: const Icon(Icons.delete_outline),
+                          title: const Text('Remove Agent'),
+                          onPressed: (_) =>
+                              _confirmDeleteAgent(context, state.activeAgent!),
                         ),
-                        onPressed: (_) =>
-                            _showRemoteAccountPicker(context, state.config),
-                      ),
-                      SettingsTile.navigation(
-                        leading: const Icon(Icons.link),
-                        title: const Text('Base URL'),
-                        value: Text(state.config.remoteBaseUrl),
-                        onPressed: (_) =>
-                            _showRemoteBaseUrlDialog(context, state.config),
-                      ),
                       SettingsTile.navigation(
                         leading: const Icon(Icons.smart_toy),
                         title: const Text('Model'),
-                        value: Text(state.config.remoteModel),
-                        onPressed: (_) =>
-                            _showRemoteModelDialog(context, state.config),
+                        value: Text(_modelLabel(state.config)),
+                        onPressed: (_) => _showModelPicker(context),
                       ),
+                    ],
+                  ),
+                if (widget.agentId != null)
+                  SettingsSection(
+                    title: const Text('Generation'),
+                    tiles: [
+                      SettingsTile.navigation(
+                        leading: const Icon(Icons.thermostat),
+                        title: const Text('Temperature'),
+                        value: Text(
+                          state.config.temperature.toStringAsFixed(2),
+                        ),
+                        description: const Text('Higher = more creative'),
+                        onPressed: (_) =>
+                            _showTemperatureDialog(context, state.config),
+                      ),
+                      SettingsTile.navigation(
+                        leading: const Icon(Icons.filter_list),
+                        title: const Text('Top-K'),
+                        value: Text('${state.config.topK}'),
+                        description: const Text('Sampling diversity'),
+                        onPressed: (_) =>
+                            _showTopKDialog(context, state.config),
+                      ),
+                    ],
+                  ),
+                if (widget.agentId != null)
+                  SettingsSection(
+                    title: const Text('System Prompt'),
+                    tiles: [
+                      SettingsTile.navigation(
+                        leading: const Icon(Icons.edit_note),
+                        title: const Text('Default System Prompt'),
+                        value: Text(
+                          state.defaultSystemPrompt?.isNotEmpty == true
+                              ? '${state.defaultSystemPrompt!.substring(0, state.defaultSystemPrompt!.length.clamp(0, 30))}...'
+                              : 'Not set',
+                        ),
+                        onPressed: (_) => _showSystemPromptDialog(
+                          context,
+                          state.defaultSystemPrompt,
+                        ),
+                      ),
+                    ],
+                  ),
+                if (widget.agentId != null)
+                  SettingsSection(
+                    title: const Text('Advanced'),
+                    tiles: [
                       SettingsTile.switchTile(
-                        leading: const Icon(Icons.stream),
-                        title: const Text('Streaming'),
-                        description: const Text('Show tokens as they arrive'),
-                        initialValue: state.config.remoteStreamingEnabled,
+                        leading: const Icon(Icons.psychology),
+                        title: const Text('Show Thinking Process'),
+                        description: const Text(
+                          'Display chain-of-thought reasoning from the model',
+                        ),
+                        initialValue: state.thinkingEnabled,
                         onToggle: (value) {
                           context.read<ChatSettingsBloc>().add(
-                            ChatSettingsUpdateConfig(
-                              config: state.config.copyWith(
-                                remoteStreamingEnabled: value,
-                              ),
-                            ),
+                            ChatSettingsToggleThinking(enabled: value),
                           );
                         },
                       ),
                     ],
                   ),
-                SettingsSection(
-                  title: const Text('Generation'),
-                  tiles: [
-                    SettingsTile.navigation(
-                      leading: const Icon(Icons.format_list_numbered),
-                      title: const Text('Max Tokens'),
-                      value: Text('${state.config.maxTokens}'),
-                      onPressed: (_) =>
-                          _showMaxTokensDialog(context, state.config),
-                    ),
-                    SettingsTile.navigation(
-                      leading: const Icon(Icons.thermostat),
-                      title: const Text('Temperature'),
-                      value: Text(state.config.temperature.toStringAsFixed(2)),
-                      description: const Text('Higher = more creative'),
-                      onPressed: (_) =>
-                          _showTemperatureDialog(context, state.config),
-                    ),
-                    SettingsTile.navigation(
-                      leading: const Icon(Icons.filter_list),
-                      title: const Text('Top-K'),
-                      value: Text('${state.config.topK}'),
-                      description: const Text('Sampling diversity'),
-                      onPressed: (_) => _showTopKDialog(context, state.config),
-                    ),
-                  ],
-                ),
-                SettingsSection(
-                  title: const Text('System Prompt'),
-                  tiles: [
-                    SettingsTile.navigation(
-                      leading: const Icon(Icons.edit_note),
-                      title: const Text('Default System Prompt'),
-                      value: Text(
-                        state.defaultSystemPrompt?.isNotEmpty == true
-                            ? '${state.defaultSystemPrompt!.substring(0, state.defaultSystemPrompt!.length.clamp(0, 30))}...'
-                            : 'Not set',
-                      ),
-                      onPressed: (_) => _showSystemPromptDialog(
-                        context,
-                        state.defaultSystemPrompt,
-                      ),
-                    ),
-                  ],
-                ),
-                SettingsSection(
-                  title: const Text('Advanced'),
-                  tiles: [
-                    SettingsTile.switchTile(
-                      leading: const Icon(Icons.psychology),
-                      title: const Text('Show Thinking Process'),
-                      description: const Text(
-                        'Display chain-of-thought reasoning from the model',
-                      ),
-                      initialValue: state.thinkingEnabled,
-                      onToggle: (value) {
-                        context.read<ChatSettingsBloc>().add(
-                          ChatSettingsToggleThinking(enabled: value),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-                SettingsSection(
-                  title: const Text('Actions'),
-                  tiles: [
-                    SettingsTile(
-                      leading: const Icon(Icons.restore),
-                      title: const Text('Reset to Defaults'),
-                      onPressed: (_) => _confirmReset(context),
-                    ),
-                  ],
-                ),
               ],
             );
           },
@@ -207,207 +295,223 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     );
   }
 
-  ServiceAccountTableData? _selectedRemoteAccount(
-    AccountsState state,
-    int? accountId,
-  ) {
-    if (state is! AccountsLoaded || accountId == null) return null;
-    for (final account in state.accounts) {
-      if (account.id == accountId) return account;
+  ChatAgent? _agentById(ChatSettingsState state, String id) {
+    for (final agent in state.agents) {
+      if (agent.id == id) return agent;
     }
     return null;
   }
 
-  void _showInferenceModePicker(BuildContext context, ModelConfig config) {
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Radio<ChatInferenceMode>(
-              value: ChatInferenceMode.local,
-              groupValue: config.inferenceMode,
-              onChanged: (v) => _updateInferenceMode(context, sheetContext, v!),
-            ),
-            title: const Text('Local'),
-            subtitle: const Text('Run the model on this device'),
-            onTap: () => _updateInferenceMode(
-              context,
-              sheetContext,
-              ChatInferenceMode.local,
-            ),
-          ),
-          ListTile(
-            leading: Radio<ChatInferenceMode>(
-              value: ChatInferenceMode.remote,
-              groupValue: config.inferenceMode,
-              onChanged: (v) => _updateInferenceMode(context, sheetContext, v!),
-            ),
-            title: const Text('Remote'),
-            subtitle: const Text('Use an OpenAI-compatible API'),
-            onTap: () => _updateInferenceMode(
-              context,
-              sheetContext,
-              ChatInferenceMode.remote,
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  void _updateInferenceMode(
-    BuildContext context,
-    BuildContext sheetContext,
-    ChatInferenceMode mode,
-  ) {
-    final currentConfig = context.read<ChatSettingsBloc>().state.config;
+  void _createAgent(BuildContext context) {
+    final id = 'agent-${DateTime.now().microsecondsSinceEpoch}';
     context.read<ChatSettingsBloc>().add(
-      ChatSettingsUpdateConfig(
-        config: currentConfig.copyWith(inferenceMode: mode),
+      ChatSettingsSaveAgent(
+        id: id,
+        name: 'New Agent',
+        systemPrompt: '',
+        config: _defaultAgentConfig(context),
+        thinkingEnabled: false,
       ),
     );
-    Navigator.pop(sheetContext);
-  }
-
-  void _showRemoteProviderPicker(BuildContext context, ModelConfig config) {
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final provider in RemoteLlmProvider.values)
-                ListTile(
-                  leading: Radio<RemoteLlmProvider>(
-                    value: provider,
-                    groupValue: config.remoteProvider,
-                    onChanged: (value) =>
-                        _updateRemoteProvider(context, sheetContext, value!),
-                  ),
-                  title: Text(provider.displayName),
-                  subtitle: Text(provider.defaultBaseUrl),
-                  onTap: () =>
-                      _updateRemoteProvider(context, sheetContext, provider),
-                ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
-      ),
+    context.goNamed(
+      ChatAgentSettingsScreen.name,
+      pathParameters: {'agentId': id},
     );
   }
 
-  void _updateRemoteProvider(
-    BuildContext context,
-    BuildContext sheetContext,
-    RemoteLlmProvider provider,
-  ) {
-    final currentConfig = context.read<ChatSettingsBloc>().state.config;
-    context.read<ChatSettingsBloc>().add(
-      ChatSettingsUpdateConfig(
-        config: currentConfig.copyWith(
-          remoteProvider: provider,
-          remoteBaseUrl: provider.defaultBaseUrl,
-          remoteModel: _defaultRemoteModel(provider),
-          remoteThinkingEffort: provider == RemoteLlmProvider.deepSeek
-              ? currentConfig.remoteThinkingEffort
-              : RemoteThinkingEffort.off,
-        ),
-      ),
-    );
-    Navigator.pop(sheetContext);
+  String _settingsSummary(ChatAgent agent) {
+    final config = agent.config;
+    return _modelLabel(config);
   }
 
-  String _defaultRemoteModel(RemoteLlmProvider provider) {
-    return switch (provider) {
-      RemoteLlmProvider.openAiCompatible => 'gpt-4.1-mini',
-      RemoteLlmProvider.openAi => 'gpt-4.1-mini',
-      RemoteLlmProvider.openRouter => 'openai/gpt-4.1-mini',
-      RemoteLlmProvider.groq => 'llama-3.1-8b-instant',
-      RemoteLlmProvider.deepSeek => 'deepseek-chat',
+  ModelConfig _defaultAgentConfig(BuildContext context) {
+    final choices = _configuredModels(context);
+    if (choices.isNotEmpty) return choices.first.config;
+    return context.read<ChatSettingsBloc>().state.config;
+  }
+
+  String _modelLabel(ModelConfig config) {
+    return switch (config.inferenceMode) {
+      ChatInferenceMode.local => config.modelDisplayName,
+      ChatInferenceMode.remote =>
+        '${config.remoteProvider.displayName} · ${config.remoteModel}',
     };
   }
 
-  void _showRemoteAccountPicker(BuildContext context, ModelConfig config) {
-    final accountsState = context.read<AccountsBloc>().state;
-    final accounts = accountsState is AccountsLoaded
-        ? accountsState.byProvider(ServiceProvider.openai)
-        : <ServiceAccountTableData>[];
-
-    showModalBottomSheet(
+  void _showModelPicker(BuildContext context) {
+    final choices = _configuredModels(context);
+    showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (accounts.isEmpty)
-              const ListTile(
+        child: choices.isEmpty
+            ? const ListTile(
                 leading: Icon(Icons.info_outline),
-                title: Text('No OpenAI-compatible accounts'),
-                subtitle: Text('Add one in Settings > Account'),
+                title: Text('No configured models'),
+                subtitle: Text('Configure local or remote models in Settings.'),
               )
-            else
-              for (final account in accounts)
-                ListTile(
-                  leading: Radio<int>(
-                    value: account.id,
-                    groupValue: config.remoteAccountId,
-                    onChanged: (value) =>
-                        _updateRemoteAccount(context, sheetContext, value),
-                  ),
-                  title: Text(account.name),
-                  subtitle: account.description.isEmpty
-                      ? null
-                      : Text(account.description),
-                  onTap: () =>
-                      _updateRemoteAccount(context, sheetContext, account.id),
+            : SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final choice in choices)
+                      ListTile(
+                        leading: Icon(choice.icon),
+                        title: Text(choice.title),
+                        subtitle: choice.subtitle == null
+                            ? null
+                            : Text(choice.subtitle!),
+                        onTap: () {
+                          context.read<ChatSettingsBloc>().add(
+                            ChatSettingsUpdateConfig(config: choice.config),
+                          );
+                          Navigator.pop(sheetContext);
+                        },
+                      ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
-            if (config.remoteAccountId != null)
-              ListTile(
-                leading: const Icon(Icons.link_off),
-                title: const Text('Clear Selection'),
-                onTap: () => _updateRemoteAccount(context, sheetContext, null),
               ),
-            const SizedBox(height: 16),
-          ],
-        ),
       ),
     );
   }
 
-  void _updateRemoteAccount(
-    BuildContext context,
-    BuildContext sheetContext,
-    int? accountId,
-  ) {
+  List<_ConfiguredModel> _configuredModels(BuildContext context) {
+    return [
+      ..._configuredLocalModels(context),
+      ..._configuredRemoteModels(context),
+    ];
+  }
+
+  List<_ConfiguredModel> _configuredLocalModels(BuildContext context) {
+    final GemmaModelState state;
+    try {
+      state = context.read<GemmaModelBloc>().state;
+    } catch (_) {
+      return const <_ConfiguredModel>[];
+    }
+    final selectedId = state.selectedModelId;
+    if (selectedId == null || selectedId.trim().isEmpty) {
+      return const <_ConfiguredModel>[];
+    }
+    final info = GemmaModelInfo.findById(selectedId);
+    final config = ModelConfig.defaultConfig.copyWith(
+      inferenceMode: ChatInferenceMode.local,
+    );
+    return [
+      _ConfiguredModel(
+        title: info?.displayName ?? selectedId,
+        subtitle: 'Local model',
+        icon: Icons.memory,
+        config: config,
+      ),
+    ];
+  }
+
+  List<_ConfiguredModel> _configuredRemoteModels(BuildContext context) {
+    final preferences = context.read<SharedPreferences>();
+    final providers =
+        preferences.getStringList('remote_model_provider_profiles') ??
+        const <String>[];
+    final choices = <_ConfiguredModel>[];
+
+    for (final raw in providers) {
+      final provider = _RemoteProviderConfig.fromJson(raw);
+      if (provider == null) continue;
+      final config = _remoteConfigForProvider(preferences, provider);
+      final models = _remoteModelsFor(preferences, config);
+      final selectedModel = preferences.getString(
+        'remote_model_provider_selected_${provider.id}',
+      );
+      final effectiveModels = {
+        if (selectedModel != null && selectedModel.trim().isNotEmpty)
+          selectedModel.trim(),
+        ...models,
+        if (provider.defaultModel.trim().isNotEmpty)
+          provider.defaultModel.trim(),
+      };
+
+      for (final model in effectiveModels) {
+        choices.add(
+          _ConfiguredModel(
+            title: model,
+            subtitle: provider.name,
+            icon: provider.isLocal ? Icons.dns : Icons.cloud_queue,
+            config: config.copyWith(remoteModel: model),
+          ),
+        );
+      }
+    }
+
     final currentConfig = context.read<ChatSettingsBloc>().state.config;
-    context.read<ChatSettingsBloc>().add(
-      ChatSettingsUpdateConfig(
-        config: currentConfig.copyWith(
-          remoteAccountId: accountId,
-          clearRemoteAccount: accountId == null,
+    if (currentConfig.inferenceMode == ChatInferenceMode.remote &&
+        currentConfig.remoteModel.trim().isNotEmpty &&
+        choices.every((choice) => choice.config != currentConfig)) {
+      choices.add(
+        _ConfiguredModel(
+          title: currentConfig.remoteModel,
+          subtitle: currentConfig.remoteProvider.displayName,
+          icon: Icons.cloud_queue,
+          config: currentConfig,
         ),
-      ),
-    );
-    Navigator.pop(sheetContext);
+      );
+    }
+
+    return choices;
   }
 
-  void _showRemoteBaseUrlDialog(BuildContext context, ModelConfig config) {
-    final controller = TextEditingController(text: config.remoteBaseUrl);
-    showDialog(
+  ModelConfig _remoteConfigForProvider(
+    SharedPreferences preferences,
+    _RemoteProviderConfig provider,
+  ) {
+    return ModelConfig.defaultConfig.copyWith(
+      inferenceMode: ChatInferenceMode.remote,
+      remoteProvider: provider.remoteProvider,
+      remoteAccountId: provider.useDummyToken
+          ? ModelConfig.dummyRemoteAccountId
+          : provider.accountId,
+      clearRemoteAccount: !provider.useDummyToken && provider.accountId == null,
+      remoteBaseUrl: provider.baseUrl,
+      remoteModel: provider.defaultModel,
+    );
+  }
+
+  List<String> _remoteModelsFor(
+    SharedPreferences preferences,
+    ModelConfig config,
+  ) {
+    final providerModelsKey =
+        'remote_provider_models_${config.remoteProvider.name}_'
+        '${config.remoteAccountId ?? 'none'}_${config.remoteBaseUrl.trim()}';
+    final models = {
+      ...(preferences.getStringList(providerModelsKey) ?? const <String>[]),
+      ...(preferences.getStringList(config.remoteVisibleModelsKey) ??
+          const <String>[]),
+    }.where((model) => model.trim().isNotEmpty).map((model) => model.trim());
+    return models.toList()..sort();
+  }
+
+  void _showAgentDialog(BuildContext context, {ChatAgent? agent}) {
+    final nameController = TextEditingController(text: agent?.name);
+
+    showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Remote Base URL'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Base URL',
-            hintText: 'https://api.openai.com/v1',
-            border: OutlineInputBorder(),
+        title: Text(agent == null ? 'Add Agent' : 'Edit Agent'),
+        content: SizedBox(
+          width: 520,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Agent name',
+                  hintText: 'Research assistant',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
@@ -418,10 +522,10 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
           FilledButton(
             onPressed: () {
               context.read<ChatSettingsBloc>().add(
-                ChatSettingsUpdateConfig(
-                  config: config.copyWith(
-                    remoteBaseUrl: controller.text.trim(),
-                  ),
+                ChatSettingsSaveAgent(
+                  id: agent?.id,
+                  name: nameController.text,
+                  systemPrompt: agent?.systemPrompt ?? '',
                 ),
               );
               Navigator.pop(dialogContext);
@@ -433,20 +537,12 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     );
   }
 
-  void _showRemoteModelDialog(BuildContext context, ModelConfig config) {
-    final controller = TextEditingController(text: config.remoteModel);
-    showDialog(
+  void _confirmDeleteAgent(BuildContext context, ChatAgent agent) {
+    showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Remote Model'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Model',
-            hintText: 'gpt-4.1-mini',
-            border: OutlineInputBorder(),
-          ),
-        ),
+        title: const Text('Remove Agent?'),
+        content: Text('Remove "${agent.name}" from chat agents?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -455,151 +551,14 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
           FilledButton(
             onPressed: () {
               context.read<ChatSettingsBloc>().add(
-                ChatSettingsUpdateConfig(
-                  config: config.copyWith(remoteModel: controller.text.trim()),
-                ),
+                ChatSettingsDeleteAgent(id: agent.id),
               );
               Navigator.pop(dialogContext);
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showModelTypePicker(BuildContext context, ModelConfig config) {
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Radio<GemmaModelType>(
-              value: GemmaModelType.gemma2bIt,
-              groupValue: config.modelType,
-              onChanged: (v) => _updateModelType(context, sheetContext, v!),
-            ),
-            title: const Text('Gemma 2B-IT'),
-            subtitle: const Text('Recommended for most devices'),
-            onTap: () => _updateModelType(
-              context,
-              sheetContext,
-              GemmaModelType.gemma2bIt,
-            ),
-          ),
-          ListTile(
-            leading: Radio<GemmaModelType>(
-              value: GemmaModelType.gemma7bIt,
-              groupValue: config.modelType,
-              onChanged: (v) => _updateModelType(context, sheetContext, v!),
-            ),
-            title: const Text('Gemma 7B-IT'),
-            subtitle: const Text('Better quality, requires more RAM'),
-            onTap: () => _updateModelType(
-              context,
-              sheetContext,
-              GemmaModelType.gemma7bIt,
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  void _updateModelType(
-    BuildContext context,
-    BuildContext sheetContext,
-    GemmaModelType type,
-  ) {
-    final currentConfig = context.read<ChatSettingsBloc>().state.config;
-    context.read<ChatSettingsBloc>().add(
-      ChatSettingsUpdateConfig(config: currentConfig.copyWith(modelType: type)),
-    );
-    Navigator.pop(sheetContext);
-  }
-
-  void _showBackendPicker(BuildContext context, ModelConfig config) {
-    showModalBottomSheet(
-      context: context,
-      builder: (sheetContext) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: Radio<GemmaBackend>(
-              value: GemmaBackend.gpu,
-              groupValue: config.backend,
-              onChanged: (v) => _updateBackend(context, sheetContext, v!),
-            ),
-            title: const Text('GPU'),
-            subtitle: const Text('Faster, recommended'),
-            onTap: () =>
-                _updateBackend(context, sheetContext, GemmaBackend.gpu),
-          ),
-          ListTile(
-            leading: Radio<GemmaBackend>(
-              value: GemmaBackend.cpu,
-              groupValue: config.backend,
-              onChanged: (v) => _updateBackend(context, sheetContext, v!),
-            ),
-            title: const Text('CPU'),
-            subtitle: const Text('Fallback if GPU not available'),
-            onTap: () =>
-                _updateBackend(context, sheetContext, GemmaBackend.cpu),
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-
-  void _updateBackend(
-    BuildContext context,
-    BuildContext sheetContext,
-    GemmaBackend backend,
-  ) {
-    final currentConfig = context.read<ChatSettingsBloc>().state.config;
-    context.read<ChatSettingsBloc>().add(
-      ChatSettingsUpdateConfig(
-        config: currentConfig.copyWith(backend: backend),
-      ),
-    );
-    Navigator.pop(sheetContext);
-  }
-
-  void _showMaxTokensDialog(BuildContext context, ModelConfig config) {
-    final controller = TextEditingController(text: '${config.maxTokens}');
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Max Tokens'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Maximum tokens (1-8192)',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = int.tryParse(controller.text);
-              if (value != null && value >= 1 && value <= 8192) {
-                context.read<ChatSettingsBloc>().add(
-                  ChatSettingsUpdateConfig(
-                    config: config.copyWith(maxTokens: value),
-                  ),
-                );
+              if (widget.agentId != null && GoRouter.maybeOf(context) != null) {
+                context.goNamed(ChatSettingsScreen.name);
               }
-              Navigator.pop(dialogContext);
             },
-            child: const Text('Save'),
+            child: const Text('Remove'),
           ),
         ],
       ),
@@ -729,31 +688,6 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
               Navigator.pop(dialogContext);
             },
             child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmReset(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Reset Settings?'),
-        content: const Text(
-          'This will reset all chat settings to their default values.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              context.read<ChatSettingsBloc>().add(const ChatSettingsReset());
-              Navigator.pop(dialogContext);
-            },
-            child: const Text('Reset'),
           ),
         ],
       ),

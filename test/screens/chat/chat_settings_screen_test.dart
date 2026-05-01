@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
@@ -33,18 +35,167 @@ void main() {
       await preferences.clear();
     });
 
-    testWidgets('changes the active remote LLM provider', (tester) async {
+    testWidgets('selects a configured remote model for an agent', (
+      tester,
+    ) async {
       final repository = ChatStorageRepository(database);
-      await repository.saveSettings(
-        const ModelConfig(
-          inferenceMode: ChatInferenceMode.remote,
-          remoteProvider: RemoteLlmProvider.openAi,
-          remoteAccountId: ModelConfig.dummyRemoteAccountId,
-          remoteBaseUrl: 'https://api.openai.com/v1',
-          remoteModel: 'gpt-4.1-mini',
-          remoteThinkingEffort: RemoteThinkingEffort.max,
-        ),
+      const baseUrl = 'https://api.minimax.com/v1';
+      await preferences.setStringList('remote_model_provider_profiles', [
+        jsonEncode({
+          'id': 'minimax',
+          'name': 'MiniMax',
+          'baseUrl': baseUrl,
+          'defaultModel': 'MiniMax-M2.7',
+          'useDummyToken': true,
+          'remoteProvider': RemoteLlmProvider.openAiCompatible.name,
+        }),
+      ]);
+      await preferences.setString(
+        'remote_model_provider_selected_minimax',
+        'MiniMax-M2.7',
       );
+      await preferences.setStringList(
+        'remote_provider_models_openAiCompatible_0_$baseUrl',
+        ['MiniMax-M2.7'],
+      );
+
+      chatSettingsBloc =
+          ChatSettingsBloc(repository: repository, preferences: preferences)
+            ..add(const ChatSettingsLoad())
+            ..add(
+              const ChatSettingsSaveAgent(
+                id: 'agent-1',
+                name: 'Remote agent',
+                systemPrompt: '',
+                config: ModelConfig.defaultConfig,
+              ),
+            );
+
+      await _pumpScreen(
+        tester,
+        chatSettingsBloc: chatSettingsBloc,
+        accountsBloc: accountsBloc,
+        preferences: preferences,
+        agentId: 'agent-1',
+      );
+
+      await _pumpUntil(
+        tester,
+        () =>
+            chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
+            find.text('Model').evaluate().isNotEmpty,
+      );
+
+      await tester.tap(find.text('Model'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('MiniMax-M2.7').last);
+      await tester.pumpAndSettle();
+
+      await _pumpUntil(
+        tester,
+        () =>
+            chatSettingsBloc.state.config.remoteProvider ==
+            RemoteLlmProvider.openAiCompatible,
+      );
+
+      expect(
+        chatSettingsBloc.state.config.remoteProvider,
+        RemoteLlmProvider.openAiCompatible,
+      );
+      expect(chatSettingsBloc.state.config.remoteBaseUrl, baseUrl);
+      expect(chatSettingsBloc.state.config.remoteModel, 'MiniMax-M2.7');
+    });
+
+    testWidgets('lists agents without per-agent settings', (tester) async {
+      final repository = ChatStorageRepository(database);
+      chatSettingsBloc =
+          ChatSettingsBloc(repository: repository, preferences: preferences)
+            ..add(const ChatSettingsLoad())
+            ..add(
+              const ChatSettingsSaveAgent(
+                id: 'agent-1',
+                name: 'Code reviewer',
+                systemPrompt: 'Review code for correctness and missing tests.',
+                config: ModelConfig(inferenceMode: ChatInferenceMode.remote),
+              ),
+            );
+
+      await _pumpScreen(
+        tester,
+        chatSettingsBloc: chatSettingsBloc,
+        accountsBloc: accountsBloc,
+        preferences: preferences,
+      );
+
+      await _pumpUntil(
+        tester,
+        () =>
+            chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
+            find.text('Add Agent').evaluate().isNotEmpty,
+      );
+
+      expect(find.text('Code reviewer'), findsOneWidget);
+      expect(find.text('Provider'), findsNothing);
+      expect(find.text('Max Tokens'), findsNothing);
+      expect(find.text('Default System Prompt'), findsNothing);
+    });
+
+    testWidgets('edits and removes an agent from agent settings', (
+      tester,
+    ) async {
+      final repository = ChatStorageRepository(database);
+      chatSettingsBloc =
+          ChatSettingsBloc(repository: repository, preferences: preferences)
+            ..add(const ChatSettingsLoad())
+            ..add(
+              const ChatSettingsSaveAgent(
+                id: 'agent-1',
+                name: 'Code reviewer',
+                systemPrompt: 'Review code for correctness and missing tests.',
+                config: ModelConfig(inferenceMode: ChatInferenceMode.remote),
+              ),
+            );
+
+      await _pumpScreen(
+        tester,
+        chatSettingsBloc: chatSettingsBloc,
+        accountsBloc: accountsBloc,
+        preferences: preferences,
+        agentId: 'agent-1',
+      );
+      await _pumpUntil(tester, () => find.text('Name').evaluate().isNotEmpty);
+
+      await tester.tap(find.text('Name'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Agent name'),
+        'Bug finder',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(chatSettingsBloc.state.agents.single.name, 'Bug finder');
+      expect(chatSettingsBloc.state.activeAgent?.name, 'Bug finder');
+
+      await _pumpUntil(
+        tester,
+        () => find
+            .text('Remove Agent', skipOffstage: false)
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(find.text('Remove Agent', skipOffstage: false), findsOneWidget);
+
+      chatSettingsBloc.add(const ChatSettingsDeleteAgent(id: 'agent-1'));
+      await _pumpUntil(tester, () => chatSettingsBloc.state.agents.isEmpty);
+
+      expect(chatSettingsBloc.state.agents, isEmpty);
+      expect(chatSettingsBloc.state.activeAgent, isNull);
+      expect(chatSettingsBloc.state.defaultSystemPrompt, isNull);
+    });
+
+    testWidgets('keeps sampling settings per chat agent', (tester) async {
+      final repository = ChatStorageRepository(database);
       chatSettingsBloc = ChatSettingsBloc(
         repository: repository,
         preferences: preferences,
@@ -54,43 +205,76 @@ void main() {
         tester,
         chatSettingsBloc: chatSettingsBloc,
         accountsBloc: accountsBloc,
+        preferences: preferences,
       );
-
       await _pumpUntil(
         tester,
         () =>
             chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
-            find.text('Provider').evaluate().isNotEmpty,
+            find.text('Add Agent').evaluate().isNotEmpty,
       );
 
-      expect(find.text('OpenAI'), findsOneWidget);
-
-      await tester.tap(find.text('Provider'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('DeepSeek').last);
-      await tester.pumpAndSettle();
-
+      chatSettingsBloc.add(
+        const ChatSettingsSaveAgent(
+          name: 'Reviewer',
+          systemPrompt: 'Review code.',
+        ),
+      );
       await _pumpUntil(
         tester,
-        () =>
-            chatSettingsBloc.state.config.remoteProvider ==
-            RemoteLlmProvider.deepSeek,
+        () => chatSettingsBloc.state.activeAgent?.name == 'Reviewer',
+      );
+      chatSettingsBloc.add(
+        ChatSettingsUpdateConfig(
+          config: chatSettingsBloc.state.config.copyWith(temperature: 0.2),
+        ),
+      );
+      await _pumpUntil(
+        tester,
+        () => chatSettingsBloc.state.config.temperature == 0.2,
       );
 
-      expect(
-        chatSettingsBloc.state.config.remoteProvider,
-        RemoteLlmProvider.deepSeek,
+      chatSettingsBloc.add(
+        const ChatSettingsSaveAgent(
+          name: 'Writer',
+          systemPrompt: 'Write docs.',
+        ),
       );
-      expect(
-        chatSettingsBloc.state.config.remoteBaseUrl,
-        'https://api.deepseek.com/v1',
+      await _pumpUntil(
+        tester,
+        () => chatSettingsBloc.state.activeAgent?.name == 'Writer',
       );
-      expect(chatSettingsBloc.state.config.remoteModel, 'deepseek-chat');
-      expect(
-        chatSettingsBloc.state.config.remoteThinkingEffort,
-        RemoteThinkingEffort.max,
+      chatSettingsBloc.add(
+        ChatSettingsUpdateConfig(
+          config: chatSettingsBloc.state.config.copyWith(temperature: 1.2),
+        ),
       );
-      expect(find.text('DeepSeek'), findsOneWidget);
+      await _pumpUntil(
+        tester,
+        () => chatSettingsBloc.state.config.temperature == 1.2,
+      );
+
+      final reviewerId = chatSettingsBloc.state.agents
+          .singleWhere((agent) => agent.name == 'Reviewer')
+          .id;
+      chatSettingsBloc.add(ChatSettingsSelectAgent(id: reviewerId));
+      await _pumpUntil(
+        tester,
+        () => chatSettingsBloc.state.activeAgent?.name == 'Reviewer',
+      );
+      expect(chatSettingsBloc.state.activeAgent?.name, 'Reviewer');
+      expect(chatSettingsBloc.state.config.temperature, 0.2);
+
+      final writerId = chatSettingsBloc.state.agents
+          .singleWhere((agent) => agent.name == 'Writer')
+          .id;
+      chatSettingsBloc.add(ChatSettingsSelectAgent(id: writerId));
+      await _pumpUntil(
+        tester,
+        () => chatSettingsBloc.state.activeAgent?.name == 'Writer',
+      );
+      expect(chatSettingsBloc.state.activeAgent?.name, 'Writer');
+      expect(chatSettingsBloc.state.config.temperature, 1.2);
     });
   });
 }
@@ -99,6 +283,8 @@ Future<void> _pumpScreen(
   WidgetTester tester, {
   required ChatSettingsBloc chatSettingsBloc,
   required AccountsBloc accountsBloc,
+  required SharedPreferences preferences,
+  String? agentId,
 }) {
   return tester.pumpWidget(
     MultiBlocProvider(
@@ -109,7 +295,10 @@ Future<void> _pumpScreen(
       child: MaterialApp(
         localizationsDelegates: AppLocale.localizationsDelegates,
         supportedLocales: AppLocale.supportedLocales,
-        home: const ChatSettingsScreen(),
+        home: RepositoryProvider<SharedPreferences>.value(
+          value: preferences,
+          child: ChatSettingsScreen(agentId: agentId),
+        ),
       ),
     ),
   );

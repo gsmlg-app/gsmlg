@@ -24,6 +24,37 @@ final class ChatSettingsUpdateSystemPrompt extends ChatSettingsEvent {
   final String? prompt;
 }
 
+/// Add or update a chat agent profile.
+final class ChatSettingsSaveAgent extends ChatSettingsEvent {
+  const ChatSettingsSaveAgent({
+    this.id,
+    required this.name,
+    required this.systemPrompt,
+    this.config,
+    this.thinkingEnabled,
+  });
+
+  final String? id;
+  final String name;
+  final String systemPrompt;
+  final ModelConfig? config;
+  final bool? thinkingEnabled;
+}
+
+/// Delete a chat agent profile.
+final class ChatSettingsDeleteAgent extends ChatSettingsEvent {
+  const ChatSettingsDeleteAgent({required this.id});
+
+  final String id;
+}
+
+/// Select the active chat agent profile.
+final class ChatSettingsSelectAgent extends ChatSettingsEvent {
+  const ChatSettingsSelectAgent({required this.id});
+
+  final String id;
+}
+
 /// Toggle thinking/chain-of-thought display.
 final class ChatSettingsToggleThinking extends ChatSettingsEvent {
   const ChatSettingsToggleThinking({required this.enabled});

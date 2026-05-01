@@ -208,7 +208,6 @@ class RemoteLlmRepository {
       'messages': _toRemoteMessages(messages),
       'stream': config.remoteStreamingEnabled,
       'temperature': config.temperature,
-      'max_tokens': config.maxTokens,
     };
     if (config.remoteProvider == RemoteLlmProvider.deepSeek) {
       final effort = config.remoteThinkingEffort.deepSeekReasoningEffort;

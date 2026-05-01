@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:app_chat/app_chat.dart';
+import 'package:app_database/app_database.dart';
+import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -137,6 +139,105 @@ void main() {
     });
   });
 
+  group('ToolExecutor web_search', () {
+    test('adds web_search to chat tool definitions', () {
+      final executor = ToolExecutor();
+
+      final tools = executor.openAiToolDefinitions;
+      final functions = tools
+          .map((tool) => tool['function'] as Map<String, dynamic>)
+          .toList();
+
+      final webSearch = functions.firstWhere(
+        (function) => function['name'] == 'web_search',
+      );
+      expect(webSearch['description'], contains('Search the web'));
+      expect(webSearch['parameters'], {
+        'type': 'object',
+        'properties': {
+          'query': {
+            'type': 'string',
+            'description': 'The web search query',
+          },
+          'max_results': {
+            'type': 'integer',
+            'description':
+                'Optional maximum number of results to return, from 1 to 10',
+          },
+        },
+        'required': ['query'],
+      });
+    });
+
+    test('uses the configured Ollama API key for web search', () async {
+      final database = AppDatabase.forTesting();
+      final vault = _MemoryVaultRepository();
+      addTearDown(database.close);
+      final accountId =
+          await database.into(database.serviceAccountTable).insert(
+                ServiceAccountTableCompanion.insert(
+                  provider: ServiceProvider.values.byName('ollama'),
+                  name: 'Ollama',
+                ),
+              );
+      await vault.write(key: 'service_account_$accountId', value: 'ollama-key');
+      final requests = <_HttpRequest>[];
+      final executor = ToolExecutor(
+        database: database,
+        vault: vault,
+        dio: _dioWithResponses({
+          'https://ollama.com/api/web_search': _HttpResponse(
+            body: jsonEncode({
+              'results': [
+                {
+                  'title': 'Ollama',
+                  'url': 'https://ollama.com/',
+                  'content': 'Cloud models are now available.',
+                },
+              ],
+            }),
+            headers: {
+              'content-type': ['application/json'],
+            },
+          ),
+        }, requests: requests),
+      );
+
+      final result = await executor.execute('web_search', {
+        'query': 'what is ollama?',
+        'max_results': 20,
+      });
+
+      expect(result['query'], 'what is ollama?');
+      expect(result['max_results'], 10);
+      expect(result['results'], [
+        {
+          'title': 'Ollama',
+          'url': 'https://ollama.com/',
+          'content': 'Cloud models are now available.',
+        },
+      ]);
+      expect(requests.single.headers['authorization'], 'Bearer ollama-key');
+      expect(jsonDecode(requests.single.body), {
+        'query': 'what is ollama?',
+        'max_results': 10,
+      });
+    });
+
+    test('reports missing Ollama API key', () async {
+      final executor = ToolExecutor(
+        database: AppDatabase.forTesting(),
+        vault: _MemoryVaultRepository(),
+      );
+
+      final result = await executor.execute('web_search', {
+        'query': 'what is ollama?',
+      });
+
+      expect(result['error'], contains('No Ollama service account configured'));
+    });
+  });
+
   group('ToolExecutor remote MCP tools', () {
     test('adds enabled remote MCP tools to chat tool definitions', () {
       final executor = ToolExecutor(
@@ -266,10 +367,27 @@ void main() {
   });
 }
 
-Dio _dioWithResponses(Map<String, _HttpResponse> responses) {
+Dio _dioWithResponses(
+  Map<String, _HttpResponse> responses, {
+  List<_HttpRequest>? requests,
+}) {
   final dio = Dio();
-  dio.httpClientAdapter = _FakeHttpClientAdapter(responses);
+  dio.httpClientAdapter = _FakeHttpClientAdapter(responses, requests);
   return dio;
+}
+
+class _HttpRequest {
+  const _HttpRequest({
+    required this.method,
+    required this.url,
+    required this.headers,
+    required this.body,
+  });
+
+  final String method;
+  final String url;
+  final Map<String, dynamic> headers;
+  final String body;
 }
 
 class _HttpResponse {
@@ -285,9 +403,10 @@ class _HttpResponse {
 }
 
 class _FakeHttpClientAdapter implements HttpClientAdapter {
-  _FakeHttpClientAdapter(this.responses);
+  _FakeHttpClientAdapter(this.responses, this.requests);
 
   final Map<String, _HttpResponse> responses;
+  final List<_HttpRequest>? requests;
 
   @override
   Future<ResponseBody> fetch(
@@ -295,6 +414,23 @@ class _FakeHttpClientAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    final bodyBytes = <int>[];
+    if (requestStream != null) {
+      await for (final chunk in requestStream) {
+        bodyBytes.addAll(chunk);
+      }
+    }
+    requests?.add(
+      _HttpRequest(
+        method: options.method,
+        url: options.uri.toString(),
+        headers: {
+          for (final entry in options.headers.entries)
+            entry.key.toLowerCase(): entry.value,
+        },
+        body: utf8.decode(bodyBytes),
+      ),
+    );
     final response = responses[options.uri.toString()];
     if (response == null) {
       return ResponseBody.fromString(
@@ -314,6 +450,40 @@ class _FakeHttpClientAdapter implements HttpClientAdapter {
 
   @override
   void close({bool force = false}) {}
+}
+
+class _MemoryVaultRepository implements VaultRepository {
+  final _values = <String, String>{};
+
+  @override
+  Future<bool> containsKey({required String key}) async {
+    return _values.containsKey(key);
+  }
+
+  @override
+  Future<void> delete({required String key}) async {
+    _values.remove(key);
+  }
+
+  @override
+  Future<void> deleteAll() async {
+    _values.clear();
+  }
+
+  @override
+  Future<String?> read({required String key}) async {
+    return _values[key];
+  }
+
+  @override
+  Future<Map<String, String>> readAll() async {
+    return Map.unmodifiable(_values);
+  }
+
+  @override
+  Future<void> write({required String key, required String value}) async {
+    _values[key] = value;
+  }
 }
 
 class _FakeDartMcpToolClient extends DartMcpToolClient {

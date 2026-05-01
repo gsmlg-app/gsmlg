@@ -28,6 +28,7 @@ class LocalToolsSettingsScreen extends StatelessWidget {
                 'whois_lookup',
                 'ip_geolocation',
                 'web_fetch',
+                'web_search',
               }.contains(tool.name),
             )
             .toList(growable: false),
