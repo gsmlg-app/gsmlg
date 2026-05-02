@@ -8,7 +8,7 @@ import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
 
-/// Repository for OpenAI-compatible remote LLM chat completion APIs.
+/// Repository for remote LLM APIs.
 class RemoteLlmRepository {
   RemoteLlmRepository({
     required VaultRepository vault,
@@ -78,10 +78,13 @@ class RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
   }) async* {
+    final usesResponsesApi = config.remoteProvider == RemoteLlmProvider.openAi;
     final apiKey = await _apiKeyFor(config);
     final request = http.Request(
       'POST',
-      _chatCompletionsUri(config.remoteBaseUrl),
+      usesResponsesApi
+          ? _responsesUri(config.remoteBaseUrl)
+          : _chatCompletionsUri(config.remoteBaseUrl),
     )
       ..headers.addAll({
         'Authorization': 'Bearer $apiKey',
@@ -90,7 +93,11 @@ class RemoteLlmRepository {
             ? 'text/event-stream'
             : 'application/json',
       })
-      ..body = jsonEncode(_requestBody(messages, config, tools: tools));
+      ..body = jsonEncode(
+        usesResponsesApi
+            ? _responsesRequestBody(messages, config, tools: tools)
+            : _chatCompletionsRequestBody(messages, config, tools: tools),
+      );
 
     final response = await _client.send(request);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -103,9 +110,17 @@ class RemoteLlmRepository {
 
     if (!config.remoteStreamingEnabled) {
       final body = await response.stream.bytesToString();
-      for (final chunk in _chunksFromNonStreamingResponse(body)) {
+      final chunks = usesResponsesApi
+          ? _chunksFromResponsesResponse(body)
+          : _chunksFromNonStreamingResponse(body);
+      for (final chunk in chunks) {
         yield chunk;
       }
+      return;
+    }
+
+    if (usesResponsesApi) {
+      yield* _chunksFromStreamingResponses(response.stream);
       return;
     }
 
@@ -198,7 +213,7 @@ class RemoteLlmRepository {
     return apiKey.trim();
   }
 
-  Map<String, dynamic> _requestBody(
+  Map<String, dynamic> _chatCompletionsRequestBody(
     List<Message> messages,
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
@@ -221,6 +236,24 @@ class RemoteLlmRepository {
     }
     if (tools.isNotEmpty) {
       body['tools'] = tools;
+    }
+    return body;
+  }
+
+  Map<String, dynamic> _responsesRequestBody(
+    List<Message> messages,
+    ModelConfig config, {
+    List<Map<String, dynamic>> tools = const [],
+  }) {
+    final body = {
+      'model': config.remoteModel.trim(),
+      'input': _toRemoteMessages(messages),
+      'stream': config.remoteStreamingEnabled,
+      'temperature': config.temperature,
+      'store': false,
+    };
+    if (tools.isNotEmpty) {
+      body['tools'] = _toResponsesTools(tools);
     }
     return body;
   }
@@ -254,11 +287,43 @@ class RemoteLlmRepository {
     return result;
   }
 
+  List<Map<String, dynamic>> _toResponsesTools(
+    List<Map<String, dynamic>> tools,
+  ) {
+    final responsesTools = <Map<String, dynamic>>[];
+    for (final tool in tools) {
+      final function = tool['function'];
+      if (tool['type'] != 'function' || function is! Map<String, dynamic>) {
+        responsesTools.add(tool);
+        continue;
+      }
+
+      responsesTools.add({
+        'type': 'function',
+        'name': function['name'],
+        if (function['description'] != null)
+          'description': function['description'],
+        if (function['parameters'] != null)
+          'parameters': function['parameters'],
+        'strict': function['strict'] ?? tool['strict'] ?? false,
+      });
+    }
+    return responsesTools;
+  }
+
   Uri _chatCompletionsUri(String baseUrl) {
     final uri = Uri.parse(baseUrl.trim());
     final normalizedPath = uri.path.endsWith('/chat/completions')
         ? uri.path
         : '${_trimTrailingSlash(uri.path)}/chat/completions';
+    return uri.replace(path: normalizedPath);
+  }
+
+  Uri _responsesUri(String baseUrl) {
+    final uri = Uri.parse(baseUrl.trim());
+    final normalizedPath = uri.path.endsWith('/responses')
+        ? uri.path
+        : '${_trimTrailingSlash(uri.path)}/responses';
     return uri.replace(path: normalizedPath);
   }
 
@@ -299,6 +364,157 @@ class RemoteLlmRepository {
     if (toolCall != null) chunks.add(toolCall);
 
     return chunks;
+  }
+
+  List<ChatGenerationChunk> _chunksFromResponsesResponse(String body) {
+    final decoded = jsonDecode(body);
+    if (decoded is! Map<String, dynamic>) return const [];
+
+    final error = decoded['error'];
+    if (error is Map<String, dynamic>) {
+      final message = _stringValue(error['message']);
+      if (message != null && message.isNotEmpty) {
+        throw RemoteLlmException(message);
+      }
+    }
+
+    final chunks = <ChatGenerationChunk>[];
+    final output = decoded['output'];
+    if (output is List) {
+      for (final item in output) {
+        if (item is! Map<String, dynamic>) continue;
+        switch (_stringValue(item['type'])) {
+          case 'message':
+            final content = _contentString(item['content']);
+            if (content != null && content.isNotEmpty) {
+              chunks.addAll(_ThinkTagParser.parse(content));
+            }
+          case 'function_call':
+            final toolCall = _toolCallChunkFromResponsesItem(item);
+            if (toolCall != null) chunks.add(toolCall);
+          case 'reasoning':
+            final summary = _contentString(item['summary']);
+            if (summary != null && summary.isNotEmpty) {
+              chunks.add(ChatThinkingChunk(summary));
+            }
+        }
+      }
+    }
+
+    if (chunks.isEmpty) {
+      final outputText = _stringValue(decoded['output_text']);
+      if (outputText != null && outputText.isNotEmpty) {
+        chunks.addAll(_ThinkTagParser.parse(outputText));
+      }
+    }
+
+    return chunks;
+  }
+
+  Stream<ChatGenerationChunk> _chunksFromStreamingResponses(
+    Stream<List<int>> stream,
+  ) async* {
+    final toolCallBuffers = <int, _RemoteToolCallBuffer>{};
+    final thinkTagParser = _ThinkTagParser();
+
+    await for (final line
+        in stream.transform(utf8.decoder).transform(const LineSplitter())) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty || !trimmed.startsWith('data:')) continue;
+
+      final data = trimmed.substring(5).trim();
+      if (data == '[DONE]') {
+        for (final chunk in thinkTagParser.close()) {
+          yield chunk;
+        }
+        final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
+        if (toolCall != null) yield toolCall;
+        return;
+      }
+
+      final decoded = jsonDecode(data);
+      if (decoded is! Map<String, dynamic>) continue;
+
+      switch (_stringValue(decoded['type'])) {
+        case 'response.output_text.delta':
+          final text = _stringValue(decoded['delta']);
+          if (text != null && text.isNotEmpty) {
+            for (final chunk in thinkTagParser.add(text)) {
+              yield chunk;
+            }
+          }
+        case 'response.reasoning_summary_text.delta':
+          final thinking = _stringValue(decoded['delta']);
+          if (thinking != null && thinking.isNotEmpty) {
+            yield ChatThinkingChunk(thinking);
+          }
+        case 'response.output_item.added':
+        case 'response.output_item.done':
+          final item = decoded['item'];
+          if (item is Map<String, dynamic>) {
+            _collectResponsesToolCallItem(
+              toolCallBuffers,
+              item,
+              outputIndex: _intValue(decoded['output_index']),
+            );
+          }
+        case 'response.function_call_arguments.delta':
+          final index = _intValue(decoded['output_index']) ?? 0;
+          final buffer = toolCallBuffers.putIfAbsent(
+            index,
+            _RemoteToolCallBuffer.new,
+          );
+          final delta = _stringValue(decoded['delta']);
+          if (delta != null) buffer.arguments.write(delta);
+        case 'response.function_call_arguments.done':
+          final index = _intValue(decoded['output_index']) ?? 0;
+          final buffer = toolCallBuffers.putIfAbsent(
+            index,
+            _RemoteToolCallBuffer.new,
+          );
+          final name = _stringValue(decoded['name']);
+          if (name != null && name.isNotEmpty) buffer.name = name;
+          final arguments = _stringValue(decoded['arguments']);
+          if (arguments != null) {
+            buffer.arguments
+              ..clear()
+              ..write(arguments);
+          }
+        case 'response.completed':
+          for (final chunk in thinkTagParser.close()) {
+            yield chunk;
+          }
+          final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
+          if (toolCall != null) yield toolCall;
+          return;
+        case 'response.failed':
+          final response = decoded['response'];
+          final error = response is Map<String, dynamic>
+              ? response['error']
+              : decoded['error'];
+          if (error is Map<String, dynamic>) {
+            final message = _stringValue(error['message']);
+            if (message != null && message.isNotEmpty) {
+              throw RemoteLlmException(message);
+            }
+          }
+          throw const RemoteLlmException('OpenAI Responses request failed.');
+        case 'error':
+          final message = _stringValue(decoded['message']) ??
+              _stringValue(decoded['error']);
+          throw RemoteLlmException(
+            message == null || message.isEmpty
+                ? 'OpenAI Responses stream failed.'
+                : message,
+          );
+      }
+    }
+
+    for (final chunk in thinkTagParser.close()) {
+      yield chunk;
+    }
+    final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
+    if (toolCall != null) yield toolCall;
   }
 
   String _vaultKey(int id) => '$_accountKeyPrefix$id';
@@ -383,6 +599,39 @@ class RemoteLlmRepository {
       );
     }
     return null;
+  }
+
+  ChatFunctionCallChunk? _toolCallChunkFromResponsesItem(
+    Map<String, dynamic> item,
+  ) {
+    final name = _stringValue(item['name'])?.trim();
+    if (name == null || name.isEmpty) return null;
+
+    return ChatFunctionCallChunk(
+      name: name,
+      args: _decodeToolArgs(_stringValue(item['arguments']) ?? ''),
+    );
+  }
+
+  void _collectResponsesToolCallItem(
+    Map<int, _RemoteToolCallBuffer> buffers,
+    Map<String, dynamic> item, {
+    int? outputIndex,
+  }) {
+    if (_stringValue(item['type']) != 'function_call') return;
+
+    final index = outputIndex ?? 0;
+    final buffer = buffers.putIfAbsent(index, _RemoteToolCallBuffer.new);
+
+    final name = _stringValue(item['name']);
+    if (name != null && name.isNotEmpty) buffer.name = name;
+
+    final arguments = _stringValue(item['arguments']);
+    if (arguments != null && arguments.isNotEmpty) {
+      buffer.arguments
+        ..clear()
+        ..write(arguments);
+    }
   }
 
   Map<String, dynamic> _decodeToolArgs(String arguments) {
