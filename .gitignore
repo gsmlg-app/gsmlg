@@ -50,6 +50,9 @@ app.*.map.json
 /.mason
 mason-lock.json
 
+# Graphify
+graphify-out/
+
 /.devenv*
 /local.properties
 /.template-sync

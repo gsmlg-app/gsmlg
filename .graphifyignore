@@ -1,0 +1,7 @@
+# Generated API clients
+app_api/
+
+# Graphify generated outputs
+graphify-out/*
+!graphify-out/memory/
+!graphify-out/memory/**
