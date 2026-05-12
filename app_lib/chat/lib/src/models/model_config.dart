@@ -134,9 +134,28 @@ class GemmaModelInfo {
   /// Whether this model is bundled as an app asset.
   bool get isBundled => assetPath != null;
 
-  /// Whether this model uses the LiteRT-LM format (`.litertlm`), which is
-  /// required on desktop platforms (macOS, Linux, Windows).
+  /// Whether this model uses the LiteRT-LM format (`.litertlm`).
   bool get isLiteRtLm => url.endsWith('.litertlm');
+
+  /// Whether this model uses the GGUF format for llama.cpp.
+  bool get isGguf => downloadUrl.endsWith('.gguf');
+
+  /// Whether this model downloads from Hugging Face.
+  bool get isHuggingFaceDownload {
+    return Uri.parse(downloadUrl).host.toLowerCase() == 'huggingface.co';
+  }
+
+  /// Filename from the current platform's download URL.
+  String get downloadFileName => Uri.parse(downloadUrl).pathSegments.last;
+
+  /// Hugging Face `org/repo` path for app-managed model cache layout.
+  String? get huggingFaceRepoPath {
+    final uri = Uri.parse(downloadUrl);
+    if (uri.host != 'huggingface.co' || uri.pathSegments.length < 2) {
+      return null;
+    }
+    return '${uri.pathSegments[0]}/${uri.pathSegments[1]}';
+  }
 
   /// Whether a `.litertlm` variant is available (either natively or via
   /// [desktopUrl]).
@@ -184,37 +203,32 @@ class GemmaModelInfo {
   //   _mobileOnly       = {android, ios}
   //   _allNativePlatforms = {android, ios, macos, linux, windows}
   //
-  // Desktop (LiteRT-LM gRPC server) requires .litertlm format and does NOT
-  // support vision/multimodal model sections — the server crashes with
-  // "Unknown model type: tf_lite_end_of_vision".
+  // Desktop uses GGUF through lib_llama_cpp when available, and falls back to
+  // LiteRT-LM for older model entries that still only publish that format.
   // ---------------------------------------------------------------------------
 
   static const _gemma4e2b = GemmaModelInfo(
     id: 'gemma-4-E2B-it',
     displayName: 'Gemma 4 E2B IT',
-    description: 'Next-gen multimodal + function calls + thinking, 2.4B params',
-    sizeLabel: '2.4 GB',
+    description: 'Local GGUF text model, 2B effective params',
+    sizeLabel: '4.6 GB',
     url:
-        'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+        'https://huggingface.co/ggml-org/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q8_0.gguf',
     modelType: gemma.ModelType.gemmaIt,
     needsAuth: false,
-    supportsMultimodal: true,
     supportsThinking: true,
-    supportsFunctionCalls: true,
   );
 
   static const _gemma4e4b = GemmaModelInfo(
     id: 'gemma-4-E4B-it',
     displayName: 'Gemma 4 E4B IT',
-    description: 'Next-gen multimodal + function calls + thinking, 4.3B params',
-    sizeLabel: '4.3 GB',
+    description: 'Default local GGUF text model, Q4_K_M',
+    sizeLabel: '5.0 GB',
     url:
-        'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
+        'https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf',
     modelType: gemma.ModelType.gemmaIt,
     needsAuth: false,
-    supportsMultimodal: true,
     supportsThinking: true,
-    supportsFunctionCalls: true,
   );
 
   static const _gemma3n2b = GemmaModelInfo(
@@ -405,8 +419,8 @@ class GemmaModelInfo {
   /// Models available on mobile platforms (Android, iOS).
   static const mobileModels = <GemmaModelInfo>[
     // Gemma
-    _gemma4e2b,
     _gemma4e4b,
+    _gemma4e2b,
     _gemma3n2b,
     _gemma3n4b,
     _gemma3_1b,
@@ -426,17 +440,10 @@ class GemmaModelInfo {
   ];
 
   /// Models available on desktop platforms (macOS, Linux, Windows).
-  ///
-  /// Requirements:
-  /// - Must have a `.litertlm` variant (native or via [desktopUrl]).
-  /// - Must NOT contain vision/audio sections — the LiteRT-LM server crashes
-  ///   with "Unknown model type: tf_lite_end_of_vision" when parsing them,
-  ///   even with enableVision=false.
-  ///
-  /// Desktop limitations (handled by effective* getters):
-  /// - Function calling is NOT supported by LiteRT-LM — disabled at runtime.
-  /// - Thinking mode works normally.
   static const desktopModels = <GemmaModelInfo>[
+    // Gemma 4 GGUF through lib_llama_cpp
+    _gemma4e4b,
+    _gemma4e2b,
     // Gemma 3 text-only
     _gemma3_1b,
     _gemma3_270m,
@@ -448,7 +455,7 @@ class GemmaModelInfo {
     // Phi
     _phi4Mini,
     // Excluded — .litertlm contains vision/audio sections that crash the server:
-    //   _gemma4e2b, _gemma4e4b, _gemma3n2b, _gemma3n4b, _fastVLM
+    //   _gemma3n2b, _gemma3n4b, _fastVLM
     // Excluded — no .litertlm variant:
     //   _functionGemma270m, _qwen25_05b, _smolLM
   ];
@@ -471,8 +478,8 @@ class GemmaModelInfo {
     _smolLM,
   ];
 
-  /// The default bundled model.
-  static const defaultModel = _gemma3_1b;
+  /// The default local model.
+  static const defaultModel = _gemma4e4b;
 
   /// Whether the current desktop machine has an arm64 CPU.
   /// LiteRT-LM native libraries are arm64-only; Intel (x86_64) Macs
@@ -495,10 +502,12 @@ class GemmaModelInfo {
     return mobileModels;
   }
 
-  /// The smallest model that does not require authentication and is
-  /// compatible with the current platform.
+  /// The default free model that is compatible with the current platform.
   /// Used for auto-download when no models are installed.
   static GemmaModelInfo? get smallestFreeModel {
+    if (!defaultModel.needsAuth && defaultModel.isCurrentPlatformCompatible) {
+      return defaultModel;
+    }
     final candidates = platformModels.where((m) => !m.needsAuth).toList();
     if (candidates.isEmpty) return null;
     return candidates.first;

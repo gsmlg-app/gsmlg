@@ -418,30 +418,40 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           assetPath: model.assetPath!,
         ),
       );
-    } else if (model.needsAuth) {
-      _installWithHuggingFaceToken(context, model);
-    } else {
-      context.read<GemmaModelBloc>().add(
-        GemmaModelInstall(
-          nativeModelType: model.modelType,
-          url: model.downloadUrl,
-          modelId: model.id,
-        ),
+    } else if (model.isHuggingFaceDownload) {
+      _installWithHuggingFaceToken(
+        context,
+        model,
+        tokenRequired: model.needsAuth,
       );
+    } else {
+      _installFromNetwork(context, model);
     }
   }
 
   Future<void> _installWithHuggingFaceToken(
     BuildContext context,
-    GemmaModelInfo model,
-  ) async {
+    GemmaModelInfo model, {
+    required bool tokenRequired,
+  }) async {
     final accountsState = context.read<AccountsBloc>().state;
-    if (accountsState is! AccountsLoaded) return;
+    if (accountsState is! AccountsLoaded) {
+      if (tokenRequired) {
+        _showNoHuggingFaceAccountDialog(context);
+      } else {
+        _installFromNetwork(context, model);
+      }
+      return;
+    }
 
     final hfAccounts = accountsState.byProvider(ServiceProvider.huggingface);
 
     if (hfAccounts.isEmpty) {
-      _showNoHuggingFaceAccountDialog(context);
+      if (tokenRequired) {
+        _showNoHuggingFaceAccountDialog(context);
+      } else {
+        _installFromNetwork(context, model);
+      }
       return;
     }
 
@@ -450,20 +460,33 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     final token = await context.read<AccountsBloc>().getApiKey(account.id);
 
     if (token == null || token.isEmpty) {
-      if (context.mounted) _showNoHuggingFaceAccountDialog(context);
+      if (!context.mounted) return;
+      if (tokenRequired) {
+        _showNoHuggingFaceAccountDialog(context);
+      } else {
+        _installFromNetwork(context, model);
+      }
       return;
     }
 
     if (context.mounted) {
-      context.read<GemmaModelBloc>().add(
-        GemmaModelInstall(
-          nativeModelType: model.modelType,
-          url: model.downloadUrl,
-          modelId: model.id,
-          token: token,
-        ),
-      );
+      _installFromNetwork(context, model, token: token);
     }
+  }
+
+  void _installFromNetwork(
+    BuildContext context,
+    GemmaModelInfo model, {
+    String? token,
+  }) {
+    context.read<GemmaModelBloc>().add(
+      GemmaModelInstall(
+        nativeModelType: model.modelType,
+        url: model.downloadUrl,
+        modelId: model.id,
+        token: token,
+      ),
+    );
   }
 
   void _showNoHuggingFaceAccountDialog(BuildContext context) {

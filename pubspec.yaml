@@ -5,7 +5,7 @@ publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.8.0 <4.0.0"
+  sdk: ">=3.11.5 <4.0.0"
 
 workspace:
   - app_lib/database
@@ -84,6 +84,7 @@ dependencies:
   crypto: any
   dio: any
   flutter_gemma: any
+  lib_llama_cpp: any
   multicast_dns: any
   url_launcher: ^6.3.1
 

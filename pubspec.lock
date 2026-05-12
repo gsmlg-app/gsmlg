@@ -1020,6 +1020,70 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  lib_llama_cpp:
+    dependency: "direct main"
+    description:
+      name: lib_llama_cpp
+      sha256: "1772337754b4b1603afefed38a1066449ab192c09f2161310ed8320111d3df22"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
+  lib_llama_cpp_android:
+    dependency: transitive
+    description:
+      name: lib_llama_cpp_android
+      sha256: "4453acd4c74f070c7318c1479fe379c28948d8d7e66140c2ae5172eebd528ded"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
+  lib_llama_cpp_ffi:
+    dependency: transitive
+    description:
+      name: lib_llama_cpp_ffi
+      sha256: fc3fc181a4f3d5262bcc60973aa18450a128b43bacd6fa38e60305a3cf4c07db
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
+  lib_llama_cpp_ios:
+    dependency: transitive
+    description:
+      name: lib_llama_cpp_ios
+      sha256: "9f3ea388a11e0f3193bcbeb8adba6b8c7695008444955d9fae0e41cfc3da7297"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
+  lib_llama_cpp_linux:
+    dependency: transitive
+    description:
+      name: lib_llama_cpp_linux
+      sha256: "09d46b60a92995de6222010302e465b2dcb2cd46cdfcae8e558a1938106d0585"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
+  lib_llama_cpp_macos:
+    dependency: transitive
+    description:
+      name: lib_llama_cpp_macos
+      sha256: "776e9081a7d9e8f92eecb8fe44b43d1c13b1fb99c528f3c917939414deb3a6e2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
+  lib_llama_cpp_platform_interface:
+    dependency: transitive
+    description:
+      name: lib_llama_cpp_platform_interface
+      sha256: "0889f3beb2e15229b5d087501711cd6525690cb2fec5f7fab42651d47e4f1008"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
+  lib_llama_cpp_windows:
+    dependency: transitive
+    description:
+      name: lib_llama_cpp_windows
+      sha256: "56e55289d51735b1ce1735b43918a088ca2fb7b21270779003afca6b4e5fd078"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.2"
   lint:
     dependency: transitive
     description:
@@ -1986,5 +2050,5 @@ packages:
     source: hosted
     version: "2.2.4"
 sdks:
-  dart: ">=3.10.7 <4.0.0"
-  flutter: ">=3.38.4"
+  dart: ">=3.11.5 <4.0.0"
+  flutter: ">=3.41.0"

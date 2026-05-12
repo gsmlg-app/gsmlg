@@ -14,6 +14,8 @@ PODS:
     - Flutter
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
+  - lib_llama_cpp_macos (0.1.0):
+    - FlutterMacOS
   - record_macos (1.2.0):
     - FlutterMacOS
   - shared_preferences_foundation (0.0.1):
@@ -33,6 +35,7 @@ DEPENDENCIES:
   - flutter_gemma (from `Flutter/ephemeral/.symlinks/plugins/flutter_gemma/macos`)
   - flutter_secure_storage_darwin (from `Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
   - FlutterMacOS (from `Flutter/ephemeral`)
+  - lib_llama_cpp_macos (from `Flutter/ephemeral/.symlinks/plugins/lib_llama_cpp_macos/macos`)
   - record_macos (from `Flutter/ephemeral/.symlinks/plugins/record_macos/macos`)
   - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
   - url_launcher_macos (from `Flutter/ephemeral/.symlinks/plugins/url_launcher_macos/macos`)
@@ -53,6 +56,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_darwin/darwin
   FlutterMacOS:
     :path: Flutter/ephemeral
+  lib_llama_cpp_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/lib_llama_cpp_macos/macos
   record_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/record_macos/macos
   shared_preferences_foundation:
@@ -70,6 +75,7 @@ SPEC CHECKSUMS:
   flutter_gemma: 775b3683116a44786fff00d641ddbd774a531686
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
+  lib_llama_cpp_macos: 99732dd4b9f8247428949be1b9150e27e39c7aa3
   record_macos: 7f227161b93c49e7e34fe681c5891c8622c8cc8b
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   url_launcher_macos: f87a979182d112f911de6820aefddaf56ee9fbfd
