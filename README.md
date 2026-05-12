@@ -106,6 +106,7 @@ melos run prepare          # Bootstrap + gen-l10n + build-runner
 - [Mason Bricks Guide](./docs/BRICKS.md) - Code generation templates
 - [Brick Testing](./docs/BRICK_TESTING.md) - Testing Mason bricks
 - [Testing Guide](./docs/TESTING.md) - Running tests across the monorepo
+- [Local Models](./docs/LOCAL_MODELS.md) - Download preset GGUF models from Hugging Face
 - [Form BLoC Guide](./docs/FORM_BLOC.md) - Form validation and submission
 - [Isolate Orchestrator](./docs/ISOLATE_ORCHESTRATOR.md) - Managed Dart isolate pools for long-running background workers
 - [Error Handling](./docs/USAGE.md) - Error handling system setup and usage

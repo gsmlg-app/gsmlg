@@ -7,6 +7,7 @@
 | [BRICKS.md](BRICKS.md) | Mason bricks guide -- code generation templates for screens, BLoCs, widgets, plugins, and more |
 | [BRICK_TESTING.md](BRICK_TESTING.md) | How brick-generated code is tested |
 | [TESTING.md](TESTING.md) | Running tests across the monorepo |
+| [LOCAL_MODELS.md](LOCAL_MODELS.md) | Downloading preset GGUF local models from Hugging Face |
 | [DOCUMENTATION.md](DOCUMENTATION.md) | Error handling and logging system architecture |
 | [USAGE.md](USAGE.md) | Error handling system setup and usage |
 | [FORM_BLOC.md](FORM_BLOC.md) | Form management with DuskMoon Form and BLoC |
