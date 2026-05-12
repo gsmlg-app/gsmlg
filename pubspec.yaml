@@ -83,7 +83,6 @@ dependencies:
 
   crypto: any
   dio: any
-  flutter_gemma: any
   lib_llama_cpp: any
   multicast_dns: any
   url_launcher: ^6.3.1

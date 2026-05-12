@@ -4,7 +4,6 @@ import 'package:app_database/app_database.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:cloudflare_dns/cloudflare_dns.dart' as cf;
 import 'package:dio/dio.dart';
-import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:gsmlg_whois/gsmlg_whois.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
@@ -16,14 +15,27 @@ import 'dart_mcp_tool_client.dart';
 
 typedef RemoteMcpProfilesProvider = List<String> Function();
 
-typedef RemoteMcpToolCaller = Future<Map<String, dynamic>> Function(
-  Map<String, dynamic> server,
-  Map<String, dynamic> tool,
-  Map<String, dynamic> args,
-);
+typedef RemoteMcpToolCaller =
+    Future<Map<String, dynamic>> Function(
+      Map<String, dynamic> server,
+      Map<String, dynamic> tool,
+      Map<String, dynamic> args,
+    );
 
-/// Executes tool calls from the LLM and provides tool definitions
-/// for flutter_gemma's function calling support.
+/// App-owned tool definition used by local and remote chat providers.
+final class ChatToolDefinition {
+  const ChatToolDefinition({
+    required this.name,
+    required this.description,
+    required this.parameters,
+  });
+
+  final String name;
+  final String description;
+  final Map<String, dynamic> parameters;
+}
+
+/// Executes tool calls from the LLM and provides tool definitions.
 class ToolExecutor {
   ToolExecutor({
     AppDatabase? database,
@@ -32,12 +44,12 @@ class ToolExecutor {
     RemoteMcpToolCaller? remoteMcpToolCaller,
     DartMcpToolClient? dartMcpToolClient,
     Dio? dio,
-  })  : _database = database,
-        _vault = vault,
-        _remoteMcpProfilesProvider = remoteMcpProfilesProvider,
-        _remoteMcpToolCaller = remoteMcpToolCaller,
-        _dio = dio ?? Dio(),
-        _dartMcpToolClient = dartMcpToolClient ?? DartMcpToolClient(dio: dio);
+  }) : _database = database,
+       _vault = vault,
+       _remoteMcpProfilesProvider = remoteMcpProfilesProvider,
+       _remoteMcpToolCaller = remoteMcpToolCaller,
+       _dio = dio ?? Dio(),
+       _dartMcpToolClient = dartMcpToolClient ?? DartMcpToolClient(dio: dio);
 
   IpDatabase? _ipDatabase;
   final AppDatabase? _database;
@@ -47,21 +59,21 @@ class ToolExecutor {
   final Dio _dio;
   final DartMcpToolClient _dartMcpToolClient;
 
-  /// Tool definitions to pass to [InferenceChat].
-  List<gemma.Tool> get toolDefinitions => [
-        _whoisTool,
-        _ipGeoTool,
-        _webFetchTool,
-        _webSearchTool,
-        _domainListZonesTool,
-        _domainListRecordsTool,
-        _domainCreateRecordTool,
-        _domainUpdateRecordTool,
-        _domainDeleteRecordTool,
-        _vultrListServersTool,
-        _vultrControlServerTool,
-        ..._remoteMcpToolDefinitions,
-      ];
+  /// Tool definitions available to chat providers.
+  List<ChatToolDefinition> get toolDefinitions => [
+    _whoisTool,
+    _ipGeoTool,
+    _webFetchTool,
+    _webSearchTool,
+    _domainListZonesTool,
+    _domainListRecordsTool,
+    _domainCreateRecordTool,
+    _domainUpdateRecordTool,
+    _domainDeleteRecordTool,
+    _vultrListServersTool,
+    _vultrControlServerTool,
+    ..._remoteMcpToolDefinitions,
+  ];
 
   /// Tool definitions for OpenAI-compatible chat completion APIs.
   List<Map<String, dynamic>> get openAiToolDefinitions {
@@ -79,7 +91,7 @@ class ToolExecutor {
         .toList(growable: false);
   }
 
-  static final _whoisTool = gemma.Tool(
+  static final _whoisTool = ChatToolDefinition(
     name: 'whois_lookup',
     description: 'Look up WHOIS registration information for a domain name',
     parameters: {
@@ -94,7 +106,7 @@ class ToolExecutor {
     },
   );
 
-  static final _ipGeoTool = gemma.Tool(
+  static final _ipGeoTool = ChatToolDefinition(
     name: 'ip_geolocation',
     description: 'Look up geographic location for an IP address',
     parameters: {
@@ -109,7 +121,7 @@ class ToolExecutor {
     },
   );
 
-  static final _webFetchTool = gemma.Tool(
+  static final _webFetchTool = ChatToolDefinition(
     name: 'web_fetch',
     description:
         'Fetch a public http or https URL and return readable page content',
@@ -130,16 +142,13 @@ class ToolExecutor {
     },
   );
 
-  static final _webSearchTool = gemma.Tool(
+  static final _webSearchTool = ChatToolDefinition(
     name: 'web_search',
     description: 'Search the web with Ollama web search and return results',
     parameters: {
       'type': 'object',
       'properties': {
-        'query': {
-          'type': 'string',
-          'description': 'The web search query',
-        },
+        'query': {'type': 'string', 'description': 'The web search query'},
         'max_results': {
           'type': 'integer',
           'description':
@@ -150,13 +159,10 @@ class ToolExecutor {
     },
   );
 
-  static final _domainListZonesTool = gemma.Tool(
+  static final _domainListZonesTool = ChatToolDefinition(
     name: 'domain_list_zones',
     description: 'List DNS zones configured in this app',
-    parameters: {
-      'type': 'object',
-      'properties': {},
-    },
+    parameters: {'type': 'object', 'properties': {}},
   );
 
   static final _zoneSelectorProperties = {
@@ -164,10 +170,7 @@ class ToolExecutor {
       'type': 'integer',
       'description': 'The local zone ID from domain_list_zones',
     },
-    'zone_id': {
-      'type': 'string',
-      'description': 'The provider zone ID',
-    },
+    'zone_id': {'type': 'string', 'description': 'The provider zone ID'},
     'zone_name': {
       'type': 'string',
       'description': 'The DNS zone name, e.g. example.com',
@@ -193,76 +196,58 @@ class ToolExecutor {
       'type': 'string',
       'description': 'DNS record type, e.g. A, AAAA, CNAME, TXT, MX',
     },
-    'content': {
-      'type': 'string',
-      'description': 'DNS record value',
-    },
+    'content': {'type': 'string', 'description': 'DNS record value'},
     'ttl': {
       'type': 'integer',
       'description': 'Record TTL in seconds. Cloudflare supports 1 for auto',
     },
-    'proxied': {
-      'type': 'boolean',
-      'description': 'Cloudflare proxy setting',
-    },
+    'proxied': {'type': 'boolean', 'description': 'Cloudflare proxy setting'},
     'comment': {
       'type': 'string',
       'description': 'Optional Cloudflare record comment',
     },
   };
 
-  static final _domainListRecordsTool = gemma.Tool(
+  static final _domainListRecordsTool = ChatToolDefinition(
     name: 'domain_list_records',
     description: 'List DNS records for a configured Route53 or Cloudflare zone',
-    parameters: {
-      'type': 'object',
-      'properties': _zoneSelectorProperties,
-    },
+    parameters: {'type': 'object', 'properties': _zoneSelectorProperties},
   );
 
-  static final _domainCreateRecordTool = gemma.Tool(
+  static final _domainCreateRecordTool = ChatToolDefinition(
     name: 'domain_create_record',
     description:
         'Create a DNS record in a configured Route53 or Cloudflare zone',
     parameters: {
       'type': 'object',
-      'properties': {
-        ..._zoneSelectorProperties,
-        ..._recordProperties,
-      },
+      'properties': {..._zoneSelectorProperties, ..._recordProperties},
       'required': ['name', 'type', 'content'],
     },
   );
 
-  static final _domainUpdateRecordTool = gemma.Tool(
+  static final _domainUpdateRecordTool = ChatToolDefinition(
     name: 'domain_update_record',
     description:
         'Update or upsert a DNS record in a configured Route53 or Cloudflare zone',
     parameters: {
       'type': 'object',
-      'properties': {
-        ..._zoneSelectorProperties,
-        ..._recordProperties,
-      },
+      'properties': {..._zoneSelectorProperties, ..._recordProperties},
       'required': ['name', 'type', 'content'],
     },
   );
 
-  static final _domainDeleteRecordTool = gemma.Tool(
+  static final _domainDeleteRecordTool = ChatToolDefinition(
     name: 'domain_delete_record',
     description:
         'Delete a DNS record from a configured Route53 or Cloudflare zone',
     parameters: {
       'type': 'object',
-      'properties': {
-        ..._zoneSelectorProperties,
-        ..._recordProperties,
-      },
+      'properties': {..._zoneSelectorProperties, ..._recordProperties},
       'required': ['name', 'type', 'content'],
     },
   );
 
-  static final _vultrListServersTool = gemma.Tool(
+  static final _vultrListServersTool = ChatToolDefinition(
     name: 'vultr_list_servers',
     description:
         'List Vultr server instances for one account or all configured Vultr accounts',
@@ -277,7 +262,7 @@ class ToolExecutor {
     },
   );
 
-  static final _vultrControlServerTool = gemma.Tool(
+  static final _vultrControlServerTool = ChatToolDefinition(
     name: 'vultr_control_server',
     description: 'Start, stop, or reboot a Vultr server instance',
     parameters: {
@@ -287,10 +272,7 @@ class ToolExecutor {
           'type': 'integer',
           'description': 'Local Vultr service account ID',
         },
-        'instance_id': {
-          'type': 'string',
-          'description': 'Vultr instance ID',
-        },
+        'instance_id': {'type': 'string', 'description': 'Vultr instance ID'},
         'action': {
           'type': 'string',
           'enum': ['start', 'stop', 'reboot'],
@@ -318,17 +300,19 @@ class ToolExecutor {
       'domain_delete_record' => _executeDomainDeleteRecord(args),
       'vultr_list_servers' => _executeVultrListServers(args),
       'vultr_control_server' => _executeVultrControlServer(args),
-      _ when _remoteMcpToolForName(name) != null =>
-        _executeRemoteMcpTool(name, args),
+      _ when _remoteMcpToolForName(name) != null => _executeRemoteMcpTool(
+        name,
+        args,
+      ),
       _ => {'error': 'Unknown tool: $name'},
     };
   }
 
-  List<gemma.Tool> get _remoteMcpToolDefinitions {
+  List<ChatToolDefinition> get _remoteMcpToolDefinitions {
     return [
       for (final server in _remoteMcpServers)
         for (final tool in server.tools)
-          gemma.Tool(
+          ChatToolDefinition(
             name: tool.chatName,
             description: '${server.name}: ${tool.descriptionOrName}',
             parameters: tool.parameters,
@@ -400,17 +384,11 @@ class ToolExecutor {
         ),
       };
     } catch (e) {
-      return {
-        'server': server.name,
-        'tool': tool.name,
-        'error': e.toString(),
-      };
+      return {'server': server.name, 'tool': tool.name, 'error': e.toString()};
     }
   }
 
-  Future<Map<String, dynamic>> _executeWhois(
-    Map<String, dynamic> args,
-  ) async {
+  Future<Map<String, dynamic>> _executeWhois(Map<String, dynamic> args) async {
     final domain = args['domain'] as String? ?? '';
     try {
       final results = await Whois.queryList(domain);
@@ -420,9 +398,7 @@ class ToolExecutor {
     }
   }
 
-  Future<Map<String, dynamic>> _executeIpGeo(
-    Map<String, dynamic> args,
-  ) async {
+  Future<Map<String, dynamic>> _executeIpGeo(Map<String, dynamic> args) async {
     final ip = args['ip'] as String? ?? '';
     try {
       _ipDatabase ??= IpDatabase();
@@ -529,10 +505,7 @@ class ToolExecutor {
       final apiKey = await _ollamaApiKey();
       final response = await _dio.postUri<dynamic>(
         Uri.parse('https://ollama.com/api/web_search'),
-        data: {
-          'query': query,
-          'max_results': maxResults,
-        },
+        data: {'query': query, 'max_results': maxResults},
         options: Options(
           responseType: ResponseType.json,
           receiveTimeout: const Duration(seconds: 20),
@@ -662,7 +635,8 @@ class ToolExecutor {
               ?.attributes['content'] ??
           '',
     );
-    final readable = document.querySelector('article') ??
+    final readable =
+        document.querySelector('article') ??
         document.querySelector('main') ??
         document.body ??
         document.documentElement;
@@ -737,9 +711,7 @@ class ToolExecutor {
     try {
       final database = _requireDatabase();
       final zones = await database.select(database.dnsZoneTable).get();
-      return {
-        'zones': zones.map(_zoneToJson).toList(growable: false),
-      };
+      return {'zones': zones.map(_zoneToJson).toList(growable: false)};
     } catch (e) {
       return {'error': e.toString()};
     }
@@ -874,8 +846,9 @@ class ToolExecutor {
     Map<String, dynamic> args,
   ) async {
     try {
-      final accounts =
-          await _vultrAccounts(accountId: _intArg(args['account_id']));
+      final accounts = await _vultrAccounts(
+        accountId: _intArg(args['account_id']),
+      );
       final results = <Map<String, dynamic>>[];
       for (final account in accounts) {
         final api = await _vultrInstancesApi(account.id);
@@ -979,8 +952,9 @@ class ToolExecutor {
   }
 
   Future<String> _serviceAccountSecret(int accountId) async {
-    final secret =
-        await _requireVault().read(key: 'service_account_$accountId');
+    final secret = await _requireVault().read(
+      key: 'service_account_$accountId',
+    );
     if (secret == null || secret.isEmpty) {
       throw Exception('No credentials found for service account $accountId');
     }
@@ -1004,19 +978,22 @@ class ToolExecutor {
     switch (zone.provider) {
       case DnsProvider.route53:
         final client = await _route53Client(zone);
-        final response = await client.resourceRecordSets
-            .listResourceRecordSets(hostedZoneId: zone.zoneId);
-        return response.resourceRecordSets.expand((rrset) {
-          final records = rrset.resourceRecords ?? <r53.ResourceRecord>[];
-          return records.map(
-            (rr) => {
-              'name': rrset.name,
-              'type': rrset.type.toString(),
-              'content': rr.value,
-              'ttl': rrset.ttl ?? 300,
-            },
-          );
-        }).toList(growable: false);
+        final response = await client.resourceRecordSets.listResourceRecordSets(
+          hostedZoneId: zone.zoneId,
+        );
+        return response.resourceRecordSets
+            .expand((rrset) {
+              final records = rrset.resourceRecords ?? <r53.ResourceRecord>[];
+              return records.map(
+                (rr) => {
+                  'name': rrset.name,
+                  'type': rrset.type.toString(),
+                  'content': rr.value,
+                  'ttl': rrset.ttl ?? 300,
+                },
+              );
+            })
+            .toList(growable: false);
       case DnsProvider.cloudflare:
         final client = await _cloudflareClient(zone);
         final response = await client.dnsRecords.listDnsRecords(
@@ -1092,9 +1069,7 @@ class ToolExecutor {
                 name: record.name,
                 type: _route53RecordType(record.type),
                 ttl: record.ttl,
-                resourceRecords: [
-                  r53.ResourceRecord(value: record.content),
-                ],
+                resourceRecords: [r53.ResourceRecord(value: record.content)],
               ),
             ),
           ],
@@ -1318,7 +1293,8 @@ class _RemoteMcpTool {
   final String description;
   final Map<String, dynamic> parameters;
 
-  String get chatName => 'mcp_${_sanitizeIdentifier(serverId)}_'
+  String get chatName =>
+      'mcp_${_sanitizeIdentifier(serverId)}_'
       '${_sanitizeIdentifier(name)}';
 
   String get descriptionOrName => description.isEmpty ? name : description;
@@ -1375,12 +1351,12 @@ class _DnsRecordInput {
   final String? comment;
 
   Map<String, dynamic> toJson() => {
-        if (id != null) 'id': id,
-        'name': name,
-        'type': type,
-        'content': content,
-        'ttl': ttl,
-        if (proxied != null) 'proxied': proxied,
-        if (comment != null) 'comment': comment,
-      };
+    if (id != null) 'id': id,
+    'name': name,
+    'type': type,
+    'content': content,
+    'ttl': ttl,
+    if (proxied != null) 'proxied': proxied,
+    if (comment != null) 'comment': comment,
+  };
 }

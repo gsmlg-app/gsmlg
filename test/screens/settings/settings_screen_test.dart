@@ -37,7 +37,6 @@ void main() {
       gemmaModelBloc = GemmaModelBloc(
         repository: GemmaRepository(),
         preferences: sharedPreferences,
-        toolExecutor: toolExecutor,
       );
     });
 

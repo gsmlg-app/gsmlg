@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 /// Where chat inference should run.
 enum ChatInferenceMode {
-  /// Use an on-device model through flutter_gemma.
+  /// Use an on-device model through lib_llama_cpp.
   local,
 
   /// Use a remote LLM API.
@@ -112,10 +112,7 @@ final class ChatThinkingChunk extends ChatGenerationChunk {
 
 /// A model-requested tool call.
 final class ChatFunctionCallChunk extends ChatGenerationChunk {
-  const ChatFunctionCallChunk({
-    required this.name,
-    required this.args,
-  });
+  const ChatFunctionCallChunk({required this.name, required this.args});
 
   final String name;
   final Map<String, dynamic> args;

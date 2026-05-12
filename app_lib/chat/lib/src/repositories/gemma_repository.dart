@@ -3,10 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:lib_llama_cpp/lib_llama_cpp.dart' as llama;
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import '../models/inference.dart';
 import '../models/message.dart';
@@ -50,18 +49,12 @@ class DownloadProgress {
   String toString() => 'DownloadProgress(${percentage.toStringAsFixed(1)}%)';
 }
 
-/// Repository for interacting with the Gemma model.
-///
-/// Wraps the flutter_gemma package to provide a simplified API
-/// for model management and text generation.
+/// Repository for app-managed GGUF models and local llama.cpp generation.
 class GemmaRepository {
   GemmaRepository();
 
-  gemma.InferenceModel? _model;
-  gemma.InferenceChat? _chat;
   String? _llamaModelPath;
   ModelConfig? _llamaConfig;
-  bool _isThinking = false;
 
   /// Current status of the model.
   GemmaModelStatus get status => _status;
@@ -86,88 +79,26 @@ class GemmaRepository {
   /// Stream of download progress updates.
   Stream<DownloadProgress> get progressStream => _progressController.stream;
 
-  /// Gets the model ID for a given model type.
-  String _getModelId(GemmaModelType modelType) {
-    final id = switch (modelType) {
-      GemmaModelType.gemma2bIt => 'gemma-2b-it',
-      GemmaModelType.gemma7bIt => 'gemma-7b-it',
-      GemmaModelType.custom => 'custom-model',
-    };
-    debugPrint('[GemmaRepo] _getModelId($modelType) => $id');
-    return id;
-  }
-
-  /// Checks if a model is installed.
-  Future<bool> checkModelInstalled(GemmaModelType modelType) async {
-    debugPrint('[GemmaRepo] checkModelInstalled($modelType)');
-    _setStatus(GemmaModelStatus.checking);
-
-    try {
-      final modelId = _getModelId(modelType);
-      debugPrint('[GemmaRepo] Checking isModelInstalled for id=$modelId');
-      final isInstalled = await gemma.FlutterGemma.isModelInstalled(modelId);
-      debugPrint('[GemmaRepo] isModelInstalled($modelId) => $isInstalled');
-
-      _setStatus(
-        isInstalled
-            ? GemmaModelStatus.installed
-            : GemmaModelStatus.notInstalled,
-      );
-      return isInstalled;
-    } catch (e, st) {
-      debugPrint('[GemmaRepo] checkModelInstalled FAILED: $e');
-      debugPrint('[GemmaRepo] Stack trace: $st');
-      _setError('Failed to check model installation: $e');
-      return false;
-    }
-  }
-
-  /// Determines the [gemma.ModelFileType] from a URL or file path.
-  ///
-  /// `.litertlm` files use [gemma.ModelFileType.litertlm] (LiteRT-LM SDK
-  /// handles chat templates on desktop). `.task` files use
-  /// [gemma.ModelFileType.task] (MediaPipe handles templates). All other
-  /// extensions default to [gemma.ModelFileType.binary].
-  static gemma.ModelFileType _fileTypeFromPath(String path) {
-    if (path.endsWith('.litertlm')) return gemma.ModelFileType.litertlm;
-    if (path.endsWith('.task')) return gemma.ModelFileType.task;
-    return gemma.ModelFileType.binary;
-  }
-
   static bool _isGgufPath(String path) => path.endsWith('.gguf');
 
-  /// Activates an already-installed model so [getActiveModel] can find it.
-  ///
-  /// GGUF models are activated by remembering the app-managed file path.
-  /// flutter_gemma models still need its idempotent install flow because that
-  /// package keeps the active model registry in memory.
+  /// Activates an already-installed GGUF model so [loadModel] can use it.
   Future<void> activateModel(GemmaModelInfo info) async {
-    debugPrint(
-      '[GemmaRepo] activateModel(${info.id}, modelType=${info.modelType})',
-    );
+    debugPrint('[GemmaRepo] activateModel(${info.id})');
     try {
-      if (info.isGguf) {
-        final filePath = await modelFilePath(info);
-        if (!File(filePath).existsSync()) {
-          _llamaModelPath = null;
-          _setStatus(GemmaModelStatus.notInstalled);
-          return;
-        }
-        _llamaModelPath = filePath;
-        debugPrint('[GemmaRepo] activateModel using GGUF file: $filePath');
-        _setStatus(GemmaModelStatus.installed);
+      if (!info.isGguf) {
+        _setError('Only GGUF models are supported for local inference.');
         return;
       }
 
-      final downloadUrl = info.downloadUrl;
-      final builder = gemma.FlutterGemma.installModel(
-        modelType: info.modelType,
-        fileType: _fileTypeFromPath(downloadUrl),
-      );
-      // fromNetwork detects the model is already installed and skips download,
-      // but still calls setActiveModel internally.
-      await builder.fromNetwork(downloadUrl).install();
-      debugPrint('[GemmaRepo] activateModel completed for ${info.id}');
+      final filePath = await modelFilePath(info);
+      if (!File(filePath).existsSync()) {
+        _llamaModelPath = null;
+        _setStatus(GemmaModelStatus.notInstalled);
+        return;
+      }
+
+      _llamaModelPath = filePath;
+      debugPrint('[GemmaRepo] activateModel using GGUF file: $filePath');
       _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
       debugPrint('[GemmaRepo] activateModel FAILED: $e');
@@ -176,23 +107,16 @@ class GemmaRepository {
     }
   }
 
-  /// Installs a model from the network with resume support.
-  ///
-  /// Downloads using dart:io HttpClient with HTTP Range requests so that
-  /// interrupted downloads can be resumed from where they left off.
-  /// [nativeModelType] - The flutter_gemma ModelType for the model.
-  /// [url] - The URL to download the model from (e.g., Hugging Face).
-  /// [token] - Optional authentication token for the download.
-  /// [onProgress] - Per-download progress callback for parallel downloads.
+  /// Installs a GGUF model from the network with resume support.
   Future<void> installModel({
-    required gemma.ModelType nativeModelType,
     required String url,
     String? token,
     void Function(double percentage)? onProgress,
   }) async {
-    debugPrint(
-      '[GemmaRepo] installModel(nativeModelType=$nativeModelType, url=$url, hasToken=${token != null})',
-    );
+    debugPrint('[GemmaRepo] installModel(url=$url, hasToken=${token != null})');
+    if (!_isGgufPath(url)) {
+      throw ArgumentError.value(url, 'url', 'Only GGUF models are supported.');
+    }
 
     try {
       final filePath = await _downloadFile(
@@ -200,25 +124,8 @@ class GemmaRepository {
         token: token,
         onProgress: onProgress,
       );
-
-      if (_isGgufPath(url)) {
-        debugPrint('[GemmaRepo] GGUF download ready at: $filePath');
-        _setStatus(GemmaModelStatus.installed);
-        return;
-      }
-
-      debugPrint(
-        '[GemmaRepo] Installing model from downloaded file: $filePath',
-      );
-      await gemma.FlutterGemma.installModel(
-        modelType: nativeModelType,
-        fileType: _fileTypeFromPath(url),
-      ).fromFile(filePath).install();
-      debugPrint('[GemmaRepo] fromFile().install() completed successfully');
-
-      // Do NOT delete the downloaded file — flutter_gemma's fromFile()
-      // registers the file path rather than copying it, so the file must
-      // remain on disk for loadModel/getActiveModel to find it.
+      debugPrint('[GemmaRepo] GGUF download ready at: $filePath');
+      _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
       debugPrint('[GemmaRepo] installModel FAILED: $e');
       debugPrint('[GemmaRepo] Error type: ${e.runtimeType}');
@@ -227,21 +134,19 @@ class GemmaRepository {
     }
   }
 
-  /// Installs a model from the network via a proxy with resume support.
-  ///
-  /// Downloads using dart:io HttpClient with proxy and HTTP Range requests
-  /// so that interrupted downloads can be resumed.
-  /// [onProgress] - Per-download progress callback for parallel downloads.
+  /// Installs a GGUF model from the network via a proxy with resume support.
   Future<void> installModelWithProxy({
-    required gemma.ModelType nativeModelType,
     required String url,
     required String proxyUrl,
     String? token,
     void Function(double percentage)? onProgress,
   }) async {
     debugPrint(
-      '[GemmaRepo] installModelWithProxy(nativeModelType=$nativeModelType, url=$url, proxy=$proxyUrl, hasToken=${token != null})',
+      '[GemmaRepo] installModelWithProxy(url=$url, proxy=$proxyUrl, hasToken=${token != null})',
     );
+    if (!_isGgufPath(url)) {
+      throw ArgumentError.value(url, 'url', 'Only GGUF models are supported.');
+    }
 
     try {
       final filePath = await _downloadFile(
@@ -250,21 +155,8 @@ class GemmaRepository {
         token: token,
         onProgress: onProgress,
       );
-
-      if (_isGgufPath(url)) {
-        debugPrint('[GemmaRepo] GGUF download ready at: $filePath');
-        _setStatus(GemmaModelStatus.installed);
-        return;
-      }
-
-      debugPrint(
-        '[GemmaRepo] Installing model from downloaded file: $filePath',
-      );
-      await gemma.FlutterGemma.installModel(
-        modelType: nativeModelType,
-        fileType: _fileTypeFromPath(url),
-      ).fromFile(filePath).install();
-      debugPrint('[GemmaRepo] fromFile().install() completed successfully');
+      debugPrint('[GemmaRepo] GGUF download ready at: $filePath');
+      _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
       debugPrint('[GemmaRepo] installModelWithProxy FAILED: $e');
       debugPrint('[GemmaRepo] Error type: ${e.runtimeType}');
@@ -277,12 +169,6 @@ class GemmaRepository {
   ///
   /// GGUF files are downloaded into the app cache under
   /// `lib_llama_cpp/models/<org>/<repo>/` because the app owns those files.
-  ///
-  /// Legacy flutter_gemma files still download to
-  /// [getApplicationDocumentsDirectory] because flutter_gemma validates model
-  /// files at that location via its model file system manager.
-  ///
-  /// Returns the absolute path to the completed download.
   Future<String> _downloadFile({
     required String url,
     String? proxyUrl,
@@ -303,7 +189,6 @@ class GemmaRepository {
 
     final client = HttpClient();
     try {
-      // Configure proxy if provided
       if (proxyUrl != null) {
         final proxyUri = Uri.parse(proxyUrl);
         final proxyHost = proxyUri.host;
@@ -335,8 +220,6 @@ class GemmaRepository {
       IOSink sink;
 
       if (response.statusCode == 206) {
-        // Partial Content — server supports resume.
-        // Content-Length in a 206 is the *remaining* bytes.
         totalBytes = existingBytes + response.contentLength;
         received = existingBytes;
         sink = file.openWrite(mode: FileMode.append);
@@ -344,19 +227,16 @@ class GemmaRepository {
           '[GemmaRepo] Resuming download: $existingBytes / $totalBytes bytes',
         );
       } else if (response.statusCode == 200) {
-        // Full content — server ignored Range or doesn't support it.
         totalBytes = response.contentLength;
         received = 0;
-        sink = file.openWrite(); // overwrite
+        sink = file.openWrite();
         debugPrint(
           '[GemmaRepo] Starting fresh download (totalBytes=$totalBytes)',
         );
       } else if (response.statusCode == 416) {
-        // Range Not Satisfiable — the file may already be complete.
-        // Drain response and return the existing file.
         await response.drain<void>();
         debugPrint(
-          '[GemmaRepo] 416 Range Not Satisfiable — file may be complete ($existingBytes bytes)',
+          '[GemmaRepo] 416 Range Not Satisfiable; keeping existing file ($existingBytes bytes)',
         );
         return filePath;
       } else {
@@ -367,7 +247,6 @@ class GemmaRepository {
         );
       }
 
-      // Report initial progress for resumed downloads
       if (received > 0 && totalBytes > 0) {
         final pct = (received / totalBytes * 100).clamp(0.0, 100.0);
         onProgress?.call(pct);
@@ -419,24 +298,18 @@ class GemmaRepository {
   }
 
   Future<String> _downloadFilePathForUrl(String url) async {
+    final cacheDir = await getApplicationCacheDirectory();
     final fileName = Uri.parse(url).pathSegments.last;
-
-    if (_isGgufPath(url)) {
-      final cacheDir = await getApplicationCacheDirectory();
-      final repoPath = _huggingFaceRepoPath(url);
-      final pathSegments = repoPath == null
-          ? <String>[cacheDir.path, 'lib_llama_cpp', 'models']
-          : <String>[
-              cacheDir.path,
-              'lib_llama_cpp',
-              'models',
-              ...repoPath.split('/'),
-            ];
-      return p.joinAll([...pathSegments, fileName]);
-    }
-
-    final docsDir = await getApplicationDocumentsDirectory();
-    return p.join(docsDir.path, fileName);
+    final repoPath = _huggingFaceRepoPath(url);
+    final pathSegments = repoPath == null
+        ? <String>[cacheDir.path, 'lib_llama_cpp', 'models']
+        : <String>[
+            cacheDir.path,
+            'lib_llama_cpp',
+            'models',
+            ...repoPath.split('/'),
+          ];
+    return p.joinAll([...pathSegments, fileName]);
   }
 
   String? _huggingFaceRepoPath(String url) {
@@ -447,124 +320,10 @@ class GemmaRepository {
     return '${uri.pathSegments[0]}/${uri.pathSegments[1]}';
   }
 
-  /// Installs a model from a Flutter asset.
-  ///
-  /// On macOS the native `large_file_handler` channel is not available, so we
-  /// resolve the asset inside the app bundle and install via [fromFile] instead.
-  Future<void> installModelFromAsset({
-    required gemma.ModelType modelType,
-    required String assetPath,
-  }) async {
-    debugPrint(
-      '[GemmaRepo] installModelFromAsset(modelType=$modelType, assetPath=$assetPath)',
-    );
-    _setStatus(GemmaModelStatus.downloading);
-
-    try {
-      if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-        // Desktop platforms: large_file_handler has no implementation, so
-        // resolve the asset from the app bundle and use fromFile().
-        final resolvedPath = _resolveBundledAssetPath(assetPath);
-        debugPrint(
-          '[GemmaRepo] Desktop platform, resolved asset path: $resolvedPath',
-        );
-        if (resolvedPath != null && File(resolvedPath).existsSync()) {
-          debugPrint(
-            '[GemmaRepo] Asset file found (${File(resolvedPath).lengthSync()} bytes), installing via fromFile...',
-          );
-          await gemma.FlutterGemma.installModel(
-            modelType: modelType,
-            fileType: _fileTypeFromPath(resolvedPath),
-          ).fromFile(resolvedPath).install();
-          debugPrint(
-            '[GemmaRepo] fromFile().install() completed successfully (desktop asset fallback)',
-          );
-        } else {
-          debugPrint('[GemmaRepo] Asset file NOT found at: $resolvedPath');
-          throw Exception(
-            'Bundled asset not found at resolved path: $resolvedPath',
-          );
-        }
-      } else {
-        // Mobile platforms: use native fromAsset() via large_file_handler.
-        debugPrint(
-          '[GemmaRepo] Mobile platform, using fromAsset($assetPath)...',
-        );
-        await gemma.FlutterGemma.installModel(
-          modelType: modelType,
-          fileType: _fileTypeFromPath(assetPath),
-        ).fromAsset(assetPath).install();
-        debugPrint('[GemmaRepo] fromAsset().install() completed successfully');
-      }
-
-      _setStatus(GemmaModelStatus.installed);
-    } catch (e, st) {
-      debugPrint('[GemmaRepo] installModelFromAsset FAILED: $e');
-      debugPrint('[GemmaRepo] Error type: ${e.runtimeType}');
-      debugPrint('[GemmaRepo] Stack trace: $st');
-      _setError('Failed to install model from asset: $e');
-    }
-  }
-
-  /// Resolves a Flutter asset path to an absolute file system path.
-  ///
-  /// On macOS assets live inside the app bundle at:
-  ///   `<Bundle>/Contents/Frameworks/App.framework/Resources/flutter_assets/<assetPath>`
-  /// On Linux they are at:
-  ///   `<exe_dir>/data/flutter_assets/<assetPath>`
-  /// On Windows:
-  ///   `<exe_dir>/data/flutter_assets/<assetPath>`
-  String? _resolveBundledAssetPath(String assetPath) {
-    if (Platform.isMacOS) {
-      final executable = Platform.resolvedExecutable;
-      final bundlePath = p.dirname(p.dirname(executable));
-      return p.join(
-        bundlePath,
-        'Frameworks',
-        'App.framework',
-        'Resources',
-        'flutter_assets',
-        assetPath,
-      );
-    }
-    if (Platform.isLinux || Platform.isWindows) {
-      final exeDir = p.dirname(Platform.resolvedExecutable);
-      return p.join(exeDir, 'data', 'flutter_assets', assetPath);
-    }
-    return null;
-  }
-
-  /// Installs a model from a local file path.
-  Future<void> installModelFromFile({
-    required gemma.ModelType nativeModelType,
-    required String filePath,
-  }) async {
-    debugPrint(
-      '[GemmaRepo] installModelFromFile(nativeModelType=$nativeModelType, filePath=$filePath)',
-    );
-    _setStatus(GemmaModelStatus.downloading);
-
-    try {
-      debugPrint('[GemmaRepo] Creating install builder fromFile($filePath)...');
-      await gemma.FlutterGemma.installModel(
-        modelType: nativeModelType,
-        fileType: _fileTypeFromPath(filePath),
-      ).fromFile(filePath).install();
-      debugPrint('[GemmaRepo] fromFile().install() completed successfully');
-
-      _setStatus(GemmaModelStatus.installed);
-    } catch (e, st) {
-      debugPrint('[GemmaRepo] installModelFromFile FAILED: $e');
-      debugPrint('[GemmaRepo] Error type: ${e.runtimeType}');
-      debugPrint('[GemmaRepo] Stack trace: $st');
-      _setError('Failed to install model from file: $e');
-    }
-  }
-
-  /// Lists all installed model IDs.
+  /// Lists all installed app-managed GGUF model IDs.
   Future<List<String>> listInstalledModels() async {
     debugPrint('[GemmaRepo] listInstalledModels()');
-    final installed = <String>{};
+    final installed = <String>[];
 
     for (final model in GemmaModelInfo.availableModels.where((m) => m.isGguf)) {
       final filePath = await modelFilePath(model);
@@ -574,152 +333,69 @@ class GemmaRepository {
       }
     }
 
-    try {
-      final models = await gemma.FlutterGemma.listInstalledModels();
-      installed.addAll(models);
-      debugPrint(
-        '[GemmaRepo] listInstalledModels => $installed (${installed.length} models)',
-      );
-      return installed.toList();
-    } catch (e, st) {
-      debugPrint('[GemmaRepo] listInstalledModels FAILED: $e');
-      debugPrint('[GemmaRepo] Stack trace: $st');
-      if (installed.isNotEmpty) {
-        return installed.toList();
-      }
-      _setError('Failed to list installed models: $e');
-      return const [];
-    }
+    debugPrint(
+      '[GemmaRepo] listInstalledModels => $installed (${installed.length} models)',
+    );
+    return installed;
   }
 
-  /// Loads the model into memory with the given configuration.
-  ///
-  /// When [supportImage] is true, the model is configured for multimodal input.
-  /// When [supportsFunctionCalls] is true and [tools] are provided, the model
-  /// is configured for function/tool calling.
+  /// Loads the selected GGUF model into memory with the given configuration.
   Future<void> loadModel(
     ModelConfig config, {
     bool supportImage = false,
     bool supportAudio = false,
     bool isThinking = false,
     bool supportsFunctionCalls = false,
-    List<gemma.Tool> tools = const [],
-    gemma.ModelType? nativeModelType,
   }) async {
     final llamaModelPath = _llamaModelPath;
-
-    // Unload existing model if any
     await unloadModel();
-
-    _isThinking = isThinking;
     _setStatus(GemmaModelStatus.loading);
 
     try {
-      if (llamaModelPath != null) {
-        final file = File(llamaModelPath);
-        if (!file.existsSync()) {
-          _setStatus(GemmaModelStatus.notInstalled);
-          return;
-        }
-        _llamaModelPath = llamaModelPath;
-        _llamaConfig = config;
-        _setStatus(GemmaModelStatus.ready);
+      if (llamaModelPath == null) {
+        _setStatus(GemmaModelStatus.notInstalled);
         return;
       }
 
-      _model = await gemma.FlutterGemma.getActiveModel(
-        maxTokens: config.maxTokens,
-        preferredBackend: _toGemmaBackend(config.backend),
-        supportImage: supportImage,
-        supportAudio: supportAudio,
-      );
+      final file = File(llamaModelPath);
+      if (!file.existsSync()) {
+        _setStatus(GemmaModelStatus.notInstalled);
+        return;
+      }
 
-      _chat = await _model!.createChat(
-        temperature: config.temperature,
-        topK: config.topK,
-        supportImage: supportImage,
-        supportAudio: supportAudio,
-        isThinking: isThinking,
-        supportsFunctionCalls: supportsFunctionCalls,
-        tools: tools,
-        modelType: nativeModelType,
-      );
+      _llamaModelPath = llamaModelPath;
+      _llamaConfig = config;
       _setStatus(GemmaModelStatus.ready);
     } catch (e) {
       debugPrint('[GemmaRepo] loadModel FAILED: $e');
-      final msg = e.toString();
-      // If the model file is missing/corrupted despite being in the registry,
-      // clean up the stale entry and report as not installed.
-      if (msg.contains('no longer installed') ||
-          msg.contains('validation failed')) {
-        debugPrint(
-          '[GemmaRepo] Model file missing on disk, cleaning stale registry entry',
-        );
-        _setStatus(GemmaModelStatus.notInstalled);
-      } else {
-        _setError('Failed to load model: $e');
-      }
+      _setError('Failed to load model: $e');
     }
   }
 
-  /// Unloads the model from memory.
+  /// Unloads the active model selection.
   Future<void> unloadModel() async {
-    if (_llamaModelPath != null) {
-      _llamaModelPath = null;
-      _llamaConfig = null;
-    }
-
-    if (_chat != null) {
-      // Chat doesn't have a close method, but we can clear it
-      _chat = null;
-    }
-
-    if (_model != null) {
-      await _model!.close();
-      _model = null;
-    }
+    _llamaModelPath = null;
+    _llamaConfig = null;
 
     if (_status == GemmaModelStatus.ready) {
       _setStatus(GemmaModelStatus.installed);
     }
   }
 
-  /// Deletes the installed model.
-  Future<void> deleteModel(GemmaModelType modelType) async {
-    await unloadModel();
-
-    try {
-      final modelId = _getModelId(modelType);
-      await gemma.FlutterGemma.uninstallModel(modelId);
-      _setStatus(GemmaModelStatus.notInstalled);
-    } catch (e) {
-      _setError('Failed to delete model: $e');
-    }
-  }
-
   /// Deletes a model by its installed ID string.
-  ///
-  /// Also removes the downloaded model file from disk if it exists
-  /// in the managed download directory.
   Future<void> deleteModelById(String modelId) async {
     debugPrint('[GemmaRepo] deleteModelById($modelId)');
     await unloadModel();
 
     try {
       final info = GemmaModelInfo.findById(modelId);
-      if (info?.isGguf ?? false) {
-        _cleanupDownloadFile(await modelFilePath(info!));
-        debugPrint('[GemmaRepo] deleteModelById removed GGUF for $modelId');
-        _setStatus(GemmaModelStatus.notInstalled);
+      if (info == null) {
+        _setError('Unknown model: $modelId');
         return;
       }
 
-      await gemma.FlutterGemma.uninstallModel(modelId);
-      debugPrint('[GemmaRepo] deleteModelById completed for $modelId');
-
-      // Clean up the downloaded file if it exists in our download directory.
-      _cleanupDownloadFile(await _downloadFilePath(modelId));
-
+      _cleanupDownloadFile(await modelFilePath(info));
+      debugPrint('[GemmaRepo] deleteModelById removed GGUF for $modelId');
       _setStatus(GemmaModelStatus.notInstalled);
     } catch (e, st) {
       debugPrint('[GemmaRepo] deleteModelById FAILED: $e');
@@ -728,160 +404,12 @@ class GemmaRepository {
     }
   }
 
-  /// Returns the expected download file path for a given model filename.
-  Future<String> _downloadFilePath(String fileName) async {
-    final info = GemmaModelInfo.findById(fileName);
-    if (info?.isGguf ?? false) {
-      return modelFilePath(info!);
-    }
-    final docsDir = await getApplicationDocumentsDirectory();
-    final modelFileName = info?.downloadFileName ?? fileName;
-    return p.join(docsDir.path, modelFileName);
-  }
-
   /// Generates a response for a list of messages.
-  ///
-  /// Returns a stream of [gemma.ModelResponse] which can be:
-  /// - [gemma.TextResponse] for text tokens
-  /// - [gemma.FunctionCallResponse] for tool/function calls
   Stream<ChatGenerationChunk> generateResponse(List<Message> messages) async* {
-    if (_llamaModelPath != null) {
-      yield* _generateLlamaResponse(messages);
-      return;
-    }
-
-    if (_chat == null || _model == null) {
+    if (_llamaModelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
-
-    // Clear existing chat history
-    await _chat!.clearHistory();
-
-    // Filter out the empty streaming assistant placeholder and system messages.
-    // System messages are prepended to the first user message as context since
-    // the InferenceChat API only supports user/model roles.
-    String? systemPrompt;
-    final chatMessages = <Message>[];
-    for (final message in messages) {
-      if (message is SystemMessage) {
-        systemPrompt = message.content;
-      } else if (message is AssistantMessage && message.isStreaming) {
-        // Skip the empty placeholder we're about to generate into
-        continue;
-      } else {
-        chatMessages.add(message);
-      }
-    }
-
-    // Add messages to the chat context
-    for (var i = 0; i < chatMessages.length; i++) {
-      final message = chatMessages[i];
-      var content = message is UserMessage
-          ? message.contentWithAttachments()
-          : message.content;
-
-      // Prepend system prompt to the first user message
-      if (i == 0 && message is UserMessage && systemPrompt != null) {
-        content = '$systemPrompt\n\n$content';
-      }
-
-      final gemmaMessage = switch (message) {
-        UserMessage(:final audioBytes) when audioBytes != null =>
-          gemma.Message.withAudio(
-            text: content,
-            audioBytes: audioBytes,
-            isUser: true,
-          ),
-        UserMessage(:final imageBytes) when imageBytes != null =>
-          gemma.Message.withImage(
-            text: content,
-            imageBytes: imageBytes,
-            isUser: true,
-          ),
-        ToolResponseMessage(:final toolName) => gemma.Message.toolResponse(
-          toolName: toolName,
-          response: _tryParseJson(content),
-        ),
-        _ => gemma.Message.text(text: content, isUser: message is UserMessage),
-      };
-
-      await _chat!.addQueryChunk(gemmaMessage);
-    }
-
-    // When _isThinking is true, flutter_gemma's ModelThinkingFilter handles
-    // <think> separation and emits ThinkingResponse objects — pass through.
-    // When false, manually strip <think> blocks (DeepSeek always emits them).
-    if (_isThinking) {
-      await for (final response in _chat!.generateChatResponseAsync()) {
-        switch (response) {
-          case gemma.TextResponse(:final token):
-            yield ChatTextChunk(token);
-          case gemma.FunctionCallResponse(:final name, :final args):
-            yield ChatFunctionCallChunk(name: name, args: args);
-          case gemma.ParallelFunctionCallResponse():
-            break;
-          case gemma.ThinkingResponse(:final content):
-            yield ChatThinkingChunk(content);
-        }
-      }
-    } else {
-      // Track whether we're inside a <think> block (reasoning tokens)
-      var inThinkBlock = false;
-      var buffer = '';
-
-      await for (final response in _chat!.generateChatResponseAsync()) {
-        if (response is gemma.FunctionCallResponse) {
-          if (buffer.isNotEmpty && !inThinkBlock) {
-            yield ChatTextChunk(buffer);
-            buffer = '';
-          }
-          yield ChatFunctionCallChunk(name: response.name, args: response.args);
-          continue;
-        }
-
-        if (response is gemma.TextResponse && response.token.isNotEmpty) {
-          buffer += response.token;
-
-          while (buffer.isNotEmpty) {
-            if (inThinkBlock) {
-              final endIdx = buffer.indexOf('</think>');
-              if (endIdx != -1) {
-                buffer = buffer.substring(endIdx + 8);
-                inThinkBlock = false;
-              } else {
-                buffer = '';
-                break;
-              }
-            } else {
-              final startIdx = buffer.indexOf('<think>');
-              if (startIdx != -1) {
-                if (startIdx > 0) {
-                  yield ChatTextChunk(buffer.substring(0, startIdx));
-                }
-                buffer = buffer.substring(startIdx + 7);
-                inThinkBlock = true;
-              } else {
-                if (buffer.length > 7 && buffer.contains('<')) {
-                  final lastLt = buffer.lastIndexOf('<');
-                  if (lastLt > buffer.length - 8) {
-                    yield ChatTextChunk(buffer.substring(0, lastLt));
-                    buffer = buffer.substring(lastLt);
-                    break;
-                  }
-                }
-                yield ChatTextChunk(buffer);
-                buffer = '';
-                break;
-              }
-            }
-          }
-        }
-      }
-
-      if (buffer.isNotEmpty && !inThinkBlock) {
-        yield ChatTextChunk(buffer);
-      }
-    }
+    yield* _generateLlamaResponse(messages);
   }
 
   Stream<ChatGenerationChunk> _generateLlamaResponse(
@@ -966,21 +494,12 @@ class GemmaRepository {
     return prompt.toString();
   }
 
-  Map<String, dynamic> _tryParseJson(String content) {
-    try {
-      final decoded = jsonDecode(content);
-      if (decoded is Map<String, dynamic>) return decoded;
-    } catch (_) {}
-    return {'result': content};
-  }
-
   /// Generates a complete response without streaming.
   Future<String> generateResponseSync(List<Message> messages) async {
-    if (_llamaModelPath == null && (_chat == null || _model == null)) {
+    if (_llamaModelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
 
-    // Collect streaming text response into a single string
     final buffer = StringBuffer();
     await for (final response in generateResponse(messages)) {
       if (response is ChatTextChunk) {
@@ -991,11 +510,7 @@ class GemmaRepository {
   }
 
   /// Stops the current generation.
-  Future<void> stopGeneration() async {
-    if (_chat != null) {
-      await _chat!.stopGeneration();
-    }
-  }
+  Future<void> stopGeneration() async {}
 
   /// Disposes all resources.
   Future<void> dispose() async {
@@ -1014,8 +529,7 @@ class GemmaRepository {
   /// Sets an error state with the given message.
   ///
   /// Exposed for the BLoC layer to report platform-level incompatibilities
-  /// (e.g. desktop server not supporting vision models) without attempting
-  /// a load that would crash the native process.
+  /// without attempting a load that would crash the native process.
   void setError(String message) => _setError(message);
 
   void _setError(String message) {
@@ -1023,12 +537,5 @@ class GemmaRepository {
     _status = GemmaModelStatus.error;
     _lastError = message;
     _statusController.add(GemmaModelStatus.error);
-  }
-
-  gemma.PreferredBackend _toGemmaBackend(GemmaBackend backend) {
-    return switch (backend) {
-      GemmaBackend.gpu => gemma.PreferredBackend.gpu,
-      GemmaBackend.cpu => gemma.PreferredBackend.cpu,
-    };
   }
 }

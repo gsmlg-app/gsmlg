@@ -9,7 +9,6 @@ import app_client_info_macos
 import camera_macos
 import file_picker
 import flutter_blue_plus_darwin
-import flutter_gemma
 import flutter_secure_storage_darwin
 import record_macos
 import shared_preferences_foundation
@@ -21,7 +20,6 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   CameraMacosPlugin.register(with: registry.registrar(forPlugin: "CameraMacosPlugin"))
   FilePickerPlugin.register(with: registry.registrar(forPlugin: "FilePickerPlugin"))
   FlutterBluePlusPlugin.register(with: registry.registrar(forPlugin: "FlutterBluePlusPlugin"))
-  FlutterGemmaPlugin.register(with: registry.registrar(forPlugin: "FlutterGemmaPlugin"))
   FlutterSecureStorageDarwinPlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStorageDarwinPlugin"))
   RecordMacOsPlugin.register(with: registry.registrar(forPlugin: "RecordMacOsPlugin"))
   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))

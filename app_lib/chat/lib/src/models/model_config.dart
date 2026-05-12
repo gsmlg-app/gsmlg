@@ -1,13 +1,6 @@
-import 'dart:io' show Platform, Process;
-
 import 'package:equatable/equatable.dart';
-import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 
 import 'inference.dart';
-
-/// Re-export flutter_gemma's ModelType so consumers (BLoC, UI) can pass
-/// the correct native model type without depending on flutter_gemma directly.
-typedef NativeModelType = gemma.ModelType;
 
 /// The type of Gemma model to use.
 enum GemmaModelType {
@@ -22,13 +15,7 @@ enum GemmaModelType {
 }
 
 /// Category grouping for model display.
-enum ModelCategory {
-  gemma,
-  qwen,
-  deepSeek,
-  phi,
-  other,
-}
+enum ModelCategory { gemma, qwen, deepSeek, phi, other }
 
 /// Information about an available on-device model.
 class GemmaModelInfo {
@@ -38,11 +25,7 @@ class GemmaModelInfo {
     required this.description,
     required this.sizeLabel,
     required this.url,
-    required this.modelType,
     this.category = ModelCategory.gemma,
-    this.assetPath,
-    this.desktopUrl,
-    this.desktopSizeLabel,
     this.needsAuth = false,
     this.supportsMultimodal = false,
     this.supportsAudio = false,
@@ -53,7 +36,7 @@ class GemmaModelInfo {
   /// Unique identifier, e.g. 'gemma3-1b-int4'.
   final String id;
 
-  /// Human-readable name, e.g. 'Gemma 3 1B-IT INT4'.
+  /// Human-readable name, e.g. 'Gemma 4 E4B IT'.
   final String displayName;
 
   /// Short description of the model.
@@ -65,20 +48,6 @@ class GemmaModelInfo {
   /// HuggingFace download URL.
   final String url;
 
-  /// Flutter asset path if bundled with the app (null = download only).
-  final String? assetPath;
-
-  /// Optional `.litertlm` download URL for desktop platforms.
-  /// When provided, desktop platforms use this URL instead of [url].
-  final String? desktopUrl;
-
-  /// Approximate download size on desktop (when [desktopUrl] differs from
-  /// [url]). Falls back to [sizeLabel] if null.
-  final String? desktopSizeLabel;
-
-  /// The model type for flutter_gemma.
-  final gemma.ModelType modelType;
-
   /// Category for grouping in UI.
   final ModelCategory category;
 
@@ -88,7 +57,7 @@ class GemmaModelInfo {
   /// Whether this model supports multimodal (image) input.
   final bool supportsMultimodal;
 
-  /// Whether this model supports audio input (e.g. Gemma 3n E4B).
+  /// Whether this model supports audio input.
   final bool supportsAudio;
 
   /// Whether this model supports thinking/chain-of-thought reasoning.
@@ -97,45 +66,17 @@ class GemmaModelInfo {
   /// Whether this model supports function/tool calling.
   final bool supportsFunctionCalls;
 
-  // ---------------------------------------------------------------------------
-  // Platform-effective capabilities
-  //
-  // These getters account for platform-specific limitations in LiteRT-LM:
-  //   Desktop: vision broken (hallucinates), function calling NOT supported.
-  //   iOS .litertlm: text only, but iOS also uses .task with full support.
-  // ---------------------------------------------------------------------------
-
   /// Whether vision/multimodal works on the current platform.
-  /// Desktop LiteRT-LM: vision is broken (model hallucinates).
-  bool get effectiveSupportsMultimodal {
-    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-      return false;
-    }
-    return supportsMultimodal;
-  }
+  bool get effectiveSupportsMultimodal => supportsMultimodal;
 
   /// Whether audio input works on the current platform.
-  /// Supported on Android and desktop (via LiteRT-LM).
   bool get effectiveSupportsAudio => supportsAudio;
 
   /// Whether function calling works on the current platform.
-  /// Desktop LiteRT-LM: function calling is NOT supported.
-  bool get effectiveSupportsFunctionCalls {
-    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-      return false;
-    }
-    return supportsFunctionCalls;
-  }
+  bool get effectiveSupportsFunctionCalls => supportsFunctionCalls;
 
   /// Whether thinking mode works on the current platform.
-  /// Supported on all platforms.
   bool get effectiveSupportsThinking => supportsThinking;
-
-  /// Whether this model is bundled as an app asset.
-  bool get isBundled => assetPath != null;
-
-  /// Whether this model uses the LiteRT-LM format (`.litertlm`).
-  bool get isLiteRtLm => url.endsWith('.litertlm');
 
   /// Whether this model uses the GGUF format for llama.cpp.
   bool get isGguf => downloadUrl.endsWith('.gguf');
@@ -157,28 +98,25 @@ class GemmaModelInfo {
     return '${uri.pathSegments[0]}/${uri.pathSegments[1]}';
   }
 
-  /// Whether a `.litertlm` variant is available (either natively or via
-  /// [desktopUrl]).
-  bool get hasLiteRtLm => isLiteRtLm || desktopUrl != null;
-
-  /// The download URL appropriate for the current platform.
-  ///
-  /// On desktop, returns [desktopUrl] if available, otherwise [url].
-  /// On mobile, always returns [url].
-  String get downloadUrl {
-    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-      return desktopUrl ?? url;
-    }
-    return url;
+  /// Human-readable source name for the preset download URL.
+  String get downloadSourceName {
+    final host = Uri.tryParse(downloadUrl)?.host.toLowerCase() ?? '';
+    if (host == 'huggingface.co') return 'Hugging Face';
+    return host.isEmpty ? 'Preset URL' : host;
   }
 
-  /// The size label appropriate for the current platform.
-  String get effectiveSizeLabel {
-    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-      return desktopSizeLabel ?? sizeLabel;
-    }
-    return sizeLabel;
+  /// Human-readable source label, usually the Hugging Face `org/repo` path.
+  String get downloadSourceLabel {
+    return huggingFaceRepoPath ??
+        Uri.tryParse(downloadUrl)?.host ??
+        'Preset URL';
   }
+
+  /// The download URL for this model.
+  String get downloadUrl => url;
+
+  /// The size label for this model.
+  String get effectiveSizeLabel => sizeLabel;
 
   /// Maximum KV cache size supported by this model on the current platform.
   ///
@@ -198,15 +136,6 @@ class GemmaModelInfo {
   // Gemma models
   // ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // Platform support:
-  //   _mobileOnly       = {android, ios}
-  //   _allNativePlatforms = {android, ios, macos, linux, windows}
-  //
-  // Desktop uses GGUF through lib_llama_cpp when available, and falls back to
-  // LiteRT-LM for older model entries that still only publish that format.
-  // ---------------------------------------------------------------------------
-
   static const _gemma4e2b = GemmaModelInfo(
     id: 'gemma-4-E2B-it',
     displayName: 'Gemma 4 E2B IT',
@@ -214,7 +143,6 @@ class GemmaModelInfo {
     sizeLabel: '4.6 GB',
     url:
         'https://huggingface.co/ggml-org/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q8_0.gguf',
-    modelType: gemma.ModelType.gemmaIt,
     needsAuth: false,
     supportsThinking: true,
   );
@@ -226,281 +154,31 @@ class GemmaModelInfo {
     sizeLabel: '5.0 GB',
     url:
         'https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf',
-    modelType: gemma.ModelType.gemmaIt,
     needsAuth: false,
     supportsThinking: true,
-  );
-
-  static const _gemma3n2b = GemmaModelInfo(
-    id: 'gemma-3n-E2B-it-int4',
-    displayName: 'Gemma 3n E2B IT',
-    description: 'Multimodal + function calls, 2B params',
-    sizeLabel: '3.1 GB',
-    url:
-        'https://huggingface.co/google/gemma-3n-E2B-it-litert-preview/resolve/main/gemma-3n-E2B-it-int4.task',
-    desktopUrl:
-        'https://huggingface.co/google/gemma-3n-E2B-it-litert-lm/resolve/main/gemma-3n-E2B-it-int4.litertlm',
-    desktopSizeLabel: '3.7 GB',
-    modelType: gemma.ModelType.gemmaIt,
-    needsAuth: true,
-    supportsMultimodal: true,
-    supportsFunctionCalls: true,
-  );
-
-  static const _gemma3n4b = GemmaModelInfo(
-    id: 'gemma-3n-E4B-it-int4',
-    displayName: 'Gemma 3n E4B IT',
-    description: 'Multimodal + audio + function calls, 4B params',
-    sizeLabel: '6.5 GB',
-    url:
-        'https://huggingface.co/google/gemma-3n-E4B-it-litert-preview/resolve/main/gemma-3n-E4B-it-int4.task',
-    desktopUrl:
-        'https://huggingface.co/google/gemma-3n-E4B-it-litert-lm/resolve/main/gemma-3n-E4B-it-int4.litertlm',
-    desktopSizeLabel: '4.9 GB',
-    modelType: gemma.ModelType.gemmaIt,
-    needsAuth: true,
-    supportsMultimodal: true,
-    supportsAudio: true,
-    supportsFunctionCalls: true,
-  );
-
-  static const _gemma3_1b = GemmaModelInfo(
-    id: 'gemma3-1b-it-int4',
-    displayName: 'Gemma 3 1B IT',
-    description: 'Best balance of quality and size',
-    sizeLabel: '529 MB',
-    url:
-        'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task',
-    desktopUrl:
-        'https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.litertlm',
-    modelType: gemma.ModelType.gemmaIt,
-    needsAuth: true,
-  );
-
-  static const _gemma3_270m = GemmaModelInfo(
-    id: 'gemma3-270m-it-q8',
-    displayName: 'Gemma 3 270M IT',
-    description: 'Ultra-compact text-only model',
-    sizeLabel: '270 MB',
-    url:
-        'https://huggingface.co/litert-community/gemma-3-270m-it/resolve/main/gemma3-270m-it-q8.task',
-    desktopUrl:
-        'https://huggingface.co/litert-community/gemma-3-270m-it/resolve/main/gemma3-270m-it-q8.litertlm',
-    desktopSizeLabel: '304 MB',
-    modelType: gemma.ModelType.gemmaIt,
-    needsAuth: true,
-  );
-
-  static const _functionGemma270m = GemmaModelInfo(
-    id: 'functiongemma-270M-it',
-    displayName: 'FunctionGemma 270M IT',
-    description: 'Tool/function calling specialist',
-    sizeLabel: '284 MB',
-    url:
-        'https://huggingface.co/sasha-denisov/function-gemma-270M-it/resolve/main/functiongemma-270M-it.task',
-    modelType: gemma.ModelType.functionGemma,
-    supportsFunctionCalls: true,
-  );
-
-  // ---------------------------------------------------------------------------
-  // Qwen models
-  // ---------------------------------------------------------------------------
-
-  static const _qwen3_06b = GemmaModelInfo(
-    id: 'Qwen3-0.6B',
-    displayName: 'Qwen3 0.6B',
-    description: 'Function calls, LiteRT-LM format',
-    sizeLabel: '586 MB',
-    url:
-        'https://huggingface.co/litert-community/Qwen3-0.6B/resolve/main/Qwen3-0.6B.litertlm',
-    modelType: gemma.ModelType.qwen,
-    category: ModelCategory.qwen,
-    supportsFunctionCalls: true,
-  );
-
-  static const _qwen25_15b = GemmaModelInfo(
-    id: 'Qwen2.5-1.5B-Instruct',
-    displayName: 'Qwen 2.5 1.5B Instruct',
-    description: 'Function calls, high quality',
-    sizeLabel: '1.6 GB',
-    url:
-        'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv1280.task',
-    desktopUrl:
-        'https://huggingface.co/litert-community/Qwen2.5-1.5B-Instruct/resolve/main/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm',
-    modelType: gemma.ModelType.qwen,
-    category: ModelCategory.qwen,
-    supportsFunctionCalls: true,
-  );
-
-  static const _qwen25_05b = GemmaModelInfo(
-    id: 'Qwen2.5-0.5B-Instruct',
-    displayName: 'Qwen 2.5 0.5B Instruct',
-    description: 'Compact, function calls',
-    sizeLabel: '500 MB',
-    url:
-        'https://huggingface.co/litert-community/Qwen2.5-0.5B-Instruct/resolve/main/Qwen2.5-0.5B-Instruct_multi-prefill-seq_q8_ekv1280.task',
-    modelType: gemma.ModelType.qwen,
-    category: ModelCategory.qwen,
-    supportsFunctionCalls: true,
-  );
-
-  // ---------------------------------------------------------------------------
-  // DeepSeek
-  // ---------------------------------------------------------------------------
-
-  static const _deepseekR1 = GemmaModelInfo(
-    id: 'deepseek_q8_ekv1280',
-    displayName: 'DeepSeek R1 Distill Qwen 1.5B',
-    description: 'Chain-of-thought reasoning model',
-    sizeLabel: '1.7 GB',
-    url:
-        'https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B/resolve/main/deepseek_q8_ekv1280.task',
-    desktopUrl:
-        'https://huggingface.co/litert-community/DeepSeek-R1-Distill-Qwen-1.5B/resolve/main/DeepSeek-R1-Distill-Qwen-1.5B_multi-prefill-seq_q8_ekv4096.litertlm',
-    desktopSizeLabel: '1.8 GB',
-    modelType: gemma.ModelType.deepSeek,
-    category: ModelCategory.deepSeek,
-    supportsThinking: true,
-  );
-
-  // ---------------------------------------------------------------------------
-  // Phi
-  // ---------------------------------------------------------------------------
-
-  static const _phi4Mini = GemmaModelInfo(
-    id: 'Phi-4-mini-instruct',
-    displayName: 'Phi-4 Mini Instruct',
-    description: 'Microsoft, function calls, 3.8B params',
-    sizeLabel: '3.9 GB',
-    url:
-        'https://huggingface.co/litert-community/Phi-4-mini-instruct/resolve/main/Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.task',
-    desktopUrl:
-        'https://huggingface.co/litert-community/Phi-4-mini-instruct/resolve/main/Phi-4-mini-instruct_multi-prefill-seq_q8_ekv4096.litertlm',
-    modelType: gemma.ModelType.general,
-    category: ModelCategory.phi,
-    supportsFunctionCalls: true,
-  );
-
-  // ---------------------------------------------------------------------------
-  // Other models
-  // ---------------------------------------------------------------------------
-
-  static const _fastVLM = GemmaModelInfo(
-    id: 'FastVLM-0.5B',
-    displayName: 'FastVLM 0.5B (Vision)',
-    description: 'Vision-language model, image understanding',
-    sizeLabel: '500 MB',
-    url:
-        'https://huggingface.co/litert-community/FastVLM-0.5B/resolve/main/FastVLM-0.5B.litertlm',
-    modelType: gemma.ModelType.general,
-    category: ModelCategory.other,
-    supportsMultimodal: true,
-  );
-
-  static const _smolLM = GemmaModelInfo(
-    id: 'SmolLM-135M-Instruct',
-    displayName: 'SmolLM 135M Instruct',
-    description: 'Ultra-small, fastest inference',
-    sizeLabel: '135 MB',
-    url:
-        'https://huggingface.co/litert-community/SmolLM-135M-Instruct/resolve/main/SmolLM-135M-Instruct_multi-prefill-seq_q8_ekv1280.task',
-    modelType: gemma.ModelType.general,
-    category: ModelCategory.other,
   );
 
   // ---------------------------------------------------------------------------
   // Per-platform model lists
   //
-  // Mobile (Android/iOS): all models, supports .task and .litertlm formats.
-  // Desktop (macOS/Linux/Windows): .litertlm only, no multimodal/vision
-  //   models (LiteRT-LM server crashes on vision sections).
+  // The local catalog is GGUF-only. Model files are downloaded and owned by the
+  // app, then loaded through lib_llama_cpp on all native platforms.
   // ---------------------------------------------------------------------------
 
   /// Models available on mobile platforms (Android, iOS).
-  static const mobileModels = <GemmaModelInfo>[
-    // Gemma
-    _gemma4e4b,
-    _gemma4e2b,
-    _gemma3n2b,
-    _gemma3n4b,
-    _gemma3_1b,
-    _gemma3_270m,
-    _functionGemma270m,
-    // Qwen
-    _qwen3_06b,
-    _qwen25_15b,
-    _qwen25_05b,
-    // DeepSeek
-    _deepseekR1,
-    // Phi
-    _phi4Mini,
-    // Other
-    _fastVLM,
-    _smolLM,
-  ];
+  static const mobileModels = <GemmaModelInfo>[_gemma4e4b, _gemma4e2b];
 
   /// Models available on desktop platforms (macOS, Linux, Windows).
-  static const desktopModels = <GemmaModelInfo>[
-    // Gemma 4 GGUF through lib_llama_cpp
-    _gemma4e4b,
-    _gemma4e2b,
-    // Gemma 3 text-only
-    _gemma3_1b,
-    _gemma3_270m,
-    // Qwen
-    _qwen3_06b,
-    _qwen25_15b,
-    // DeepSeek
-    _deepseekR1,
-    // Phi
-    _phi4Mini,
-    // Excluded — .litertlm contains vision/audio sections that crash the server:
-    //   _gemma3n2b, _gemma3n4b, _fastVLM
-    // Excluded — no .litertlm variant:
-    //   _functionGemma270m, _qwen25_05b, _smolLM
-  ];
+  static const desktopModels = <GemmaModelInfo>[_gemma4e4b, _gemma4e2b];
 
   /// All known models across all platforms.
-  static const availableModels = <GemmaModelInfo>[
-    _gemma4e2b,
-    _gemma4e4b,
-    _gemma3n2b,
-    _gemma3n4b,
-    _gemma3_1b,
-    _gemma3_270m,
-    _functionGemma270m,
-    _qwen3_06b,
-    _qwen25_15b,
-    _qwen25_05b,
-    _deepseekR1,
-    _phi4Mini,
-    _fastVLM,
-    _smolLM,
-  ];
+  static const availableModels = <GemmaModelInfo>[_gemma4e4b, _gemma4e2b];
 
   /// The default local model.
   static const defaultModel = _gemma4e4b;
 
-  /// Whether the current desktop machine has an arm64 CPU.
-  /// LiteRT-LM native libraries are arm64-only; Intel (x86_64) Macs
-  /// cannot run the gRPC inference server.
-  static final bool _isDesktopArm64 = () {
-    try {
-      final result = Process.runSync('uname', ['-m']);
-      return (result.stdout as String).trim() == 'arm64';
-    } catch (_) {
-      return false;
-    }
-  }();
-
   /// Models for the current platform.
-  static List<GemmaModelInfo> get platformModels {
-    if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {
-      if (!_isDesktopArm64) return const [];
-      return desktopModels;
-    }
-    return mobileModels;
-  }
+  static List<GemmaModelInfo> get platformModels => availableModels;
 
   /// The default free model that is compatible with the current platform.
   /// Used for auto-download when no models are installed.
@@ -538,17 +216,8 @@ class GemmaModelInfo {
   /// Whether this model is in the current platform's model list.
   bool get isCurrentPlatformCompatible => platformModels.contains(this);
 
-  /// Whether this model should avoid the desktop GPU LiteRT-LM backend.
-  ///
-  /// Phi-4 Mini currently crashes the LiteRT-LM Java process on macOS while
-  /// initializing the WebGPU/Metal delegate. Use CPU for this model so startup
-  /// and manual selection do not take down the app process.
-  bool get requiresCpuBackendOnDesktop {
-    if (!Platform.isMacOS && !Platform.isLinux && !Platform.isWindows) {
-      return false;
-    }
-    return id == _phi4Mini.id;
-  }
+  /// Whether this model should avoid the GPU backend.
+  bool get requiresCpuBackendOnDesktop => false;
 }
 
 /// The backend to use for inference.
@@ -630,20 +299,20 @@ class ModelConfig extends Equatable {
 
   @override
   List<Object?> get props => [
-        inferenceMode,
-        modelType,
-        customModelPath,
-        maxTokens,
-        temperature,
-        topK,
-        backend,
-        remoteProvider,
-        remoteAccountId,
-        remoteBaseUrl,
-        remoteModel,
-        remoteStreamingEnabled,
-        remoteThinkingEffort,
-      ];
+    inferenceMode,
+    modelType,
+    customModelPath,
+    maxTokens,
+    temperature,
+    topK,
+    backend,
+    remoteProvider,
+    remoteAccountId,
+    remoteBaseUrl,
+    remoteModel,
+    remoteStreamingEnabled,
+    remoteThinkingEffort,
+  ];
 
   /// Returns the model path for the selected model type.
   String? get effectiveModelPath {
@@ -720,8 +389,9 @@ class ModelConfig extends Equatable {
       topK: topK ?? this.topK,
       backend: backend ?? this.backend,
       remoteProvider: remoteProvider ?? this.remoteProvider,
-      remoteAccountId:
-          clearRemoteAccount ? null : (remoteAccountId ?? this.remoteAccountId),
+      remoteAccountId: clearRemoteAccount
+          ? null
+          : (remoteAccountId ?? this.remoteAccountId),
       remoteBaseUrl: remoteBaseUrl ?? this.remoteBaseUrl,
       remoteModel: remoteModel ?? this.remoteModel,
       remoteStreamingEnabled:

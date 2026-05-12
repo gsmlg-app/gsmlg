@@ -6,7 +6,6 @@ import 'package:app_logging/app_logging.dart';
 import 'package:app_provider/app_provider.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,13 +33,6 @@ void main(List<String> args) async {
     logFile.writeAsString(log, mode: FileMode.append);
   });
   logger.i('App started');
-
-  // Initialize FlutterGemma (may not be available on all platforms)
-  try {
-    await gemma.FlutterGemma.initialize();
-  } catch (e) {
-    logger.w('FlutterGemma initialization failed: $e');
-  }
 
   final sharedPrefs = await SharedPreferences.getInstance();
   final database = AppDatabase();

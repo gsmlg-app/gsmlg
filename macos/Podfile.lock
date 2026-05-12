@@ -8,8 +8,6 @@ PODS:
   - flutter_blue_plus_darwin (0.0.2):
     - Flutter
     - FlutterMacOS
-  - flutter_gemma (0.12.8):
-    - FlutterMacOS
   - flutter_secure_storage_darwin (10.0.0):
     - Flutter
     - FlutterMacOS
@@ -32,7 +30,6 @@ DEPENDENCIES:
   - camera_macos (from `Flutter/ephemeral/.symlinks/plugins/camera_macos/macos`)
   - file_picker (from `Flutter/ephemeral/.symlinks/plugins/file_picker/macos`)
   - flutter_blue_plus_darwin (from `Flutter/ephemeral/.symlinks/plugins/flutter_blue_plus_darwin/darwin`)
-  - flutter_gemma (from `Flutter/ephemeral/.symlinks/plugins/flutter_gemma/macos`)
   - flutter_secure_storage_darwin (from `Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_darwin/darwin`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - lib_llama_cpp_macos (from `Flutter/ephemeral/.symlinks/plugins/lib_llama_cpp_macos/macos`)
@@ -50,8 +47,6 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/file_picker/macos
   flutter_blue_plus_darwin:
     :path: Flutter/ephemeral/.symlinks/plugins/flutter_blue_plus_darwin/darwin
-  flutter_gemma:
-    :path: Flutter/ephemeral/.symlinks/plugins/flutter_gemma/macos
   flutter_secure_storage_darwin:
     :path: Flutter/ephemeral/.symlinks/plugins/flutter_secure_storage_darwin/darwin
   FlutterMacOS:
@@ -72,7 +67,6 @@ SPEC CHECKSUMS:
   camera_macos: 9fd766915a6c236c8b3fd902f7ccd215636cd07a
   file_picker: 7584aae6fa07a041af2b36a2655122d42f578c1a
   flutter_blue_plus_darwin: 20a08bfeaa0f7804d524858d3d8744bcc1b6dbc3
-  flutter_gemma: 775b3683116a44786fff00d641ddbd774a531686
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   lib_llama_cpp_macos: 99732dd4b9f8247428949be1b9150e27e39c7aa3
@@ -81,6 +75,6 @@ SPEC CHECKSUMS:
   url_launcher_macos: f87a979182d112f911de6820aefddaf56ee9fbfd
   webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
-PODFILE CHECKSUM: 79c619423c43a106e7b624be79d0a69cd9bea325
+PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
 
 COCOAPODS: 1.16.2

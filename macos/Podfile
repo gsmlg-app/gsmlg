@@ -39,33 +39,4 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_macos_build_settings(target)
   end
-
-  # Add LiteRT-LM desktop setup script phase to the main Runner target.
-  # Must use the main project (Runner.xcodeproj), not the Pods project.
-  main_project = installer.aggregate_targets.first.user_project
-  runner_target = main_project.targets.find { |t| t.name == 'Runner' }
-
-  if runner_target
-    # Keep the existing phase when present so pod install does not generate a
-    # fresh Xcode object UUID on every machine.
-    matching_phases = runner_target.shell_script_build_phases
-      .select { |phase| phase.name == 'LiteRT-LM Desktop Setup' }
-
-    script_phase = matching_phases.first
-    matching_phases.drop(1).each(&:remove_from_project)
-
-    # Use our own setup script that correctly handles JRE bundling.
-    # The flutter_gemma setup_desktop.sh signs JRE with sandbox entitlements,
-    # but Xcode's implicit code-signing then corrupts the binary (SIGBUS).
-    # Our script copies the JRE from cache on every build to work around this.
-    # Use ${SRCROOT} so the path remains portable across machines.
-    script_phase ||= runner_target.new_shell_script_build_phase('LiteRT-LM Desktop Setup')
-    script_phase.shell_path = '/bin/bash'
-    script_phase.always_out_of_date = '1'
-    script_phase.shell_script = <<-SCRIPT
-"${SRCROOT}/scripts/setup_litertlm.sh" "${BUILT_PRODUCTS_DIR}/${PRODUCT_NAME}.app"
-    SCRIPT
-
-    main_project.save
-  end
 end

@@ -5,7 +5,6 @@ import 'package:app_chat/app_chat.dart';
 import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_gemma/flutter_gemma.dart' as gemma;
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 
@@ -140,5 +139,5 @@ class _ToolGroup {
 
   final String title;
   final IconData icon;
-  final List<gemma.Tool> tools;
+  final List<ChatToolDefinition> tools;
 }

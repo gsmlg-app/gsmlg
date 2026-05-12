@@ -11,7 +11,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_gemma: ^0.13.2
   lib_llama_cpp: ^0.3.2
   equatable: ^2.0.8
   drift: ^2.28.2
@@ -31,6 +30,7 @@ dependencies:
   stream_channel: ^2.1.4
 
 dev_dependencies:
+  test: ^1.30.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0

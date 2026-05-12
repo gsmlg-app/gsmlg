@@ -12,24 +12,14 @@ final class GemmaModelInitialize extends GemmaModelEvent {
   final GemmaModelType modelType;
 }
 
-/// Check if a model is installed.
-final class GemmaModelCheckInstallation extends GemmaModelEvent {
-  const GemmaModelCheckInstallation({required this.modelType});
-
-  final GemmaModelType modelType;
-}
-
 /// Install a model from a network URL.
 final class GemmaModelInstall extends GemmaModelEvent {
   const GemmaModelInstall({
-    required this.nativeModelType,
     required this.url,
     this.modelId,
     this.token,
   });
 
-  /// The flutter_gemma native model type.
-  final NativeModelType nativeModelType;
   final String url;
 
   /// Catalog model ID for tracking which model is downloading.
@@ -49,17 +39,6 @@ final class GemmaModelUnload extends GemmaModelEvent {
   const GemmaModelUnload();
 }
 
-/// Install a model from a bundled Flutter asset.
-final class GemmaModelInstallFromAsset extends GemmaModelEvent {
-  const GemmaModelInstallFromAsset({
-    required this.modelId,
-    required this.assetPath,
-  });
-
-  final String modelId;
-  final String assetPath;
-}
-
 /// Refresh the list of installed models.
 final class GemmaModelListInstalled extends GemmaModelEvent {
   const GemmaModelListInstalled();
@@ -71,13 +50,6 @@ final class GemmaModelSetProxy extends GemmaModelEvent {
 
   /// Proxy URL (null to clear).
   final String? proxyUrl;
-}
-
-/// Delete the installed model.
-final class GemmaModelDelete extends GemmaModelEvent {
-  const GemmaModelDelete({required this.modelType});
-
-  final GemmaModelType modelType;
 }
 
 /// Select a model, persist the selection, and activate + auto-load it.

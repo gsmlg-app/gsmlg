@@ -1,5 +1,5 @@
-import 'package:app_chat/app_chat.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:app_chat/src/models/model_config.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('Gemma 4 GGUF catalog', () {
@@ -40,6 +40,32 @@ void main() {
     test('makes Gemma 4 E4B the default local model', () {
       expect(GemmaModelInfo.defaultModel.id, 'gemma-4-E4B-it');
       expect(GemmaModelInfo.smallestFreeModel?.id, 'gemma-4-E4B-it');
+    });
+
+    test('exposes only GGUF local models', () {
+      expect(GemmaModelInfo.availableModels, isNotEmpty);
+      expect(GemmaModelInfo.availableModels.map((model) => model.id).toList(), [
+        'gemma-4-E4B-it',
+        'gemma-4-E2B-it',
+      ]);
+      expect(
+        GemmaModelInfo.availableModels.every((model) => model.isGguf),
+        isTrue,
+      );
+      expect(
+        GemmaModelInfo.platformModels.every((model) => model.isGguf),
+        isTrue,
+      );
+    });
+
+    test('describes preset Hugging Face download source', () {
+      final e4b = GemmaModelInfo.findById('gemma-4-E4B-it')!;
+      final e2b = GemmaModelInfo.findById('gemma-4-E2B-it')!;
+
+      expect(e4b.downloadSourceName, 'Hugging Face');
+      expect(e4b.downloadSourceLabel, 'ggml-org/gemma-4-E4B-it-GGUF');
+      expect(e2b.downloadSourceName, 'Hugging Face');
+      expect(e2b.downloadSourceLabel, 'ggml-org/gemma-4-E2B-it-GGUF');
     });
   });
 }

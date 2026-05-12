@@ -66,7 +66,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                           _buildDownloadingSection(context, state),
                         if (state.failedDownloads.isNotEmpty)
                           _buildFailedSection(context, state),
-                        ..._buildAvailableSections(context, state),
+                        _buildPresetDownloadSection(context, state),
                         _buildProxySection(context, state),
                       ],
                     ),
@@ -103,12 +103,12 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
     if (installedIds.isEmpty) {
       return SettingsSection(
-        title: const Text('Available Models'),
+        title: const Text('Downloaded Models'),
         tiles: [
           SettingsTile(
             title: const Text('No models downloaded'),
             description: const Text(
-              'Download a model below to start chatting.',
+              'Download a preset Hugging Face GGUF model below.',
             ),
             leading: const Icon(Icons.info_outline),
           ),
@@ -162,7 +162,10 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
       );
     }
 
-    return SettingsSection(title: const Text('Available Models'), tiles: tiles);
+    return SettingsSection(
+      title: const Text('Downloaded Models'),
+      tiles: tiles,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -273,45 +276,36 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }
 
   // ---------------------------------------------------------------------------
-  // Available Models (grouped by category)
+  // Preset downloads
   // ---------------------------------------------------------------------------
 
-  String _categoryTitle(ModelCategory category) {
-    return switch (category) {
-      ModelCategory.gemma => 'Gemma Models',
-      ModelCategory.qwen => 'Qwen Models',
-      ModelCategory.deepSeek => 'DeepSeek Models',
-      ModelCategory.phi => 'Phi Models',
-      ModelCategory.other => 'Other Models',
-    };
-  }
-
-  List<SettingsSection> _buildAvailableSections(
+  SettingsSection _buildPresetDownloadSection(
     BuildContext context,
     GemmaModelState state,
   ) {
-    final sections = <SettingsSection>[];
+    final models = GemmaModelInfo.platformModels
+        .where((m) => !state.isModelDownloading(m.id))
+        .toList(growable: false);
 
-    for (final category in ModelCategory.values) {
-      final models = GemmaModelInfo.platformModels
-          .where((m) => m.category == category)
-          .where((m) => !state.isModelDownloading(m.id))
-          .toList();
-
-      if (models.isEmpty) continue;
-
-      final tiles = <SettingsTile>[];
-      for (final model in models) {
-        final installed = _isInstalled(model, state.installedModels);
-        tiles.add(
+    return SettingsSection(
+      title: const Text('Preset Hugging Face GGUF Models'),
+      tiles: [
+        for (final model in models)
           SettingsTile(
-            leading: Icon(_categoryIcon(category)),
-            title: Text(model.displayName),
-            description: Text(model.description),
+            leading: const Icon(Icons.cloud_download_outlined),
+            title: Text(
+              model == GemmaModelInfo.defaultModel
+                  ? '${model.displayName} (Default)'
+                  : model.displayName,
+            ),
+            description: Text(
+              '${model.description}\n'
+              '${model.downloadSourceName}: ${model.downloadSourceLabel}',
+            ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (installed)
+                if (_isInstalled(model, state.installedModels))
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: Icon(
@@ -323,18 +317,21 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 Text(model.effectiveSizeLabel),
               ],
             ),
-            onPressed: (_) =>
-                _showDownloadConfirmDialog(context, model, installed),
+            onPressed: (_) => _showDownloadConfirmDialog(
+              context,
+              model,
+              _isInstalled(model, state.installedModels),
+            ),
           ),
-        );
-      }
+      ],
+    );
+  }
 
-      sections.add(
-        SettingsSection(title: Text(_categoryTitle(category)), tiles: tiles),
-      );
+  String _downloadDialogNote(GemmaModelInfo model) {
+    if (model.isHuggingFaceDownload) {
+      return 'Uses your configured Hugging Face token when available.';
     }
-
-    return sections;
+    return 'Uses the preset download URL bundled with the app.';
   }
 
   bool _isInstalled(GemmaModelInfo model, List<String> installedIds) {
@@ -369,10 +366,23 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 Text(model.description),
                 const SizedBox(height: 8),
                 Text('Size: ${model.effectiveSizeLabel}'),
+                const SizedBox(height: 8),
+                const Text('Format: GGUF'),
+                const SizedBox(height: 8),
+                Text('Source: ${model.downloadSourceName}'),
+                const SizedBox(height: 8),
+                Text('Repository: ${model.downloadSourceLabel}'),
+                const SizedBox(height: 8),
+                Text('File: ${model.downloadFileName}'),
+                const SizedBox(height: 8),
+                Text(
+                  _downloadDialogNote(model),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 if (model.needsAuth) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Requires HuggingFace authentication.',
+                    'Requires Hugging Face authentication.',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.tertiary,
                       fontSize: 12,
@@ -402,7 +412,11 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 Navigator.pop(dialogContext);
                 _installModel(context, model);
               },
-              child: Text(isInstalled ? 'Re-download' : 'Download'),
+              child: Text(
+                isInstalled
+                    ? 'Re-download from Hugging Face'
+                    : 'Download from Hugging Face',
+              ),
             ),
           ],
         );
@@ -411,14 +425,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }
 
   void _installModel(BuildContext context, GemmaModelInfo model) {
-    if (model.isBundled) {
-      context.read<GemmaModelBloc>().add(
-        GemmaModelInstallFromAsset(
-          modelId: model.id,
-          assetPath: model.assetPath!,
-        ),
-      );
-    } else if (model.isHuggingFaceDownload) {
+    if (model.isHuggingFaceDownload) {
       _installWithHuggingFaceToken(
         context,
         model,
@@ -481,7 +488,6 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }) {
     context.read<GemmaModelBloc>().add(
       GemmaModelInstall(
-        nativeModelType: model.modelType,
         url: model.downloadUrl,
         modelId: model.id,
         token: token,
@@ -494,12 +500,12 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('HuggingFace Account Required'),
+          title: const Text('Hugging Face Account Required'),
           content: const SizedBox(
             width: 400,
             child: Text(
-              'This model requires a HuggingFace access token. '
-              'Please add a HuggingFace account in Settings > Accounts first.\n\n'
+              'This model requires a Hugging Face access token. '
+              'Please add a Hugging Face account in Settings > Accounts first.\n\n'
               'You can create a token at huggingface.co/settings/tokens.',
             ),
           ),
