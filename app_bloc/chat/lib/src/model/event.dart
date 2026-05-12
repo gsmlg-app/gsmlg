@@ -96,11 +96,11 @@ final class _GemmaModelDownloadProgress extends GemmaModelEvent {
 final class _GemmaModelPerModelProgress extends GemmaModelEvent {
   const _GemmaModelPerModelProgress({
     required this.modelId,
-    required this.percentage,
+    required this.progress,
   });
 
   final String modelId;
-  final double percentage;
+  final DownloadProgress progress;
 }
 
 /// Internal event fired when a single model download completes.

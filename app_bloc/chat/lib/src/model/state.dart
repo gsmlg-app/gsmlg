@@ -5,6 +5,9 @@ class ModelDownloadProgress extends Equatable {
   const ModelDownloadProgress({
     required this.modelId,
     this.progress = 0,
+    this.receivedBytes,
+    this.totalBytes,
+    this.bytesPerSecond,
   });
 
   final String modelId;
@@ -12,8 +15,23 @@ class ModelDownloadProgress extends Equatable {
   /// Download progress percentage (0-100).
   final double progress;
 
+  /// Bytes downloaded so far.
+  final int? receivedBytes;
+
+  /// Expected completed file size, when known.
+  final int? totalBytes;
+
+  /// Current download speed in bytes per second.
+  final double? bytesPerSecond;
+
   @override
-  List<Object?> get props => [modelId, progress];
+  List<Object?> get props => [
+        modelId,
+        progress,
+        receivedBytes,
+        totalBytes,
+        bytesPerSecond,
+      ];
 }
 
 /// Info about a failed download.

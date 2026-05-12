@@ -248,10 +248,10 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         '[GemmaModelBloc] Starting download for $modelId, proxy: $proxy');
 
     // Per-model progress callback — dispatches events with the correct modelId.
-    void onProgress(double percentage) {
+    void onProgress(DownloadProgress progress) {
       add(_GemmaModelPerModelProgress(
         modelId: modelId,
-        percentage: percentage,
+        progress: progress,
       ));
     }
 
@@ -539,7 +539,10 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       if (d.modelId == event.modelId) {
         return ModelDownloadProgress(
           modelId: event.modelId,
-          progress: event.percentage,
+          progress: event.progress.percentage,
+          receivedBytes: event.progress.receivedBytes,
+          totalBytes: event.progress.totalBytes,
+          bytesPerSecond: event.progress.bytesPerSecond,
         );
       }
       return d;

@@ -4,8 +4,8 @@ GSMLG's first local-LLM release supports two preset GGUF models:
 
 | Model | Hugging Face repository | File | Notes |
 |-------|-------------------------|------|-------|
-| Gemma 4 E4B IT | `ggml-org/gemma-4-E4B-it-GGUF` | `gemma-4-E4B-it-Q4_K_M.gguf` | Default local model |
-| Gemma 4 E2B IT | `ggml-org/gemma-4-E2B-it-GGUF` | `gemma-4-E2B-it-Q8_0.gguf` | Smaller preset model |
+| Gemma 4 E4B IT | `ggml-org/gemma-4-E4B-it-GGUF` | `gemma-4-E4B-it-Q4_K_M.gguf` | Default 4-bit local model |
+| Gemma 4 E2B IT | `dahus/gemma-4-e2b-it-Q4_K_M-GGUF` | `gemma-4-e2b-Q4_K_M.gguf` | Smaller 4-bit preset model |
 
 The app downloads these files from Hugging Face and stores them in its
 app-managed cache under:
@@ -78,12 +78,12 @@ hf download \
 Download the E2B model:
 
 ```sh
-mkdir -p "$GSMLG_APP_CACHE/lib_llama_cpp/models/ggml-org/gemma-4-E2B-it-GGUF"
+mkdir -p "$GSMLG_APP_CACHE/lib_llama_cpp/models/dahus/gemma-4-e2b-it-Q4_K_M-GGUF"
 
 hf download \
-  ggml-org/gemma-4-E2B-it-GGUF \
-  gemma-4-E2B-it-Q8_0.gguf \
-  --local-dir "$GSMLG_APP_CACHE/lib_llama_cpp/models/ggml-org/gemma-4-E2B-it-GGUF"
+  dahus/gemma-4-e2b-it-Q4_K_M-GGUF \
+  gemma-4-e2b-Q4_K_M.gguf \
+  --local-dir "$GSMLG_APP_CACHE/lib_llama_cpp/models/dahus/gemma-4-e2b-it-Q4_K_M-GGUF"
 ```
 
 After downloading, restart GSMLG or reopen `Settings > Local Models`. The app
@@ -92,7 +92,7 @@ non-empty.
 
 ## Notes
 
-- The local model catalog is intentionally GGUF-only for this release.
+- The local model catalog is intentionally 4-bit GGUF-only for this release.
 - Multimodal, audio, and function-calling local models are deferred.
 - The Hugging Face CLI command is `hf`; older installations may also provide
   `huggingface-cli`, but new docs and examples should use `hf`.

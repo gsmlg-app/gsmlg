@@ -61,12 +61,11 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                   SliverFillRemaining(
                     child: SettingsList(
                       sections: [
+                        _buildPresetDownloadSection(context, state),
                         _buildDownloadedSection(context, state),
-                        if (state.isDownloading)
-                          _buildDownloadingSection(context, state),
+                        _buildDownloadingSection(context, state),
                         if (state.failedDownloads.isNotEmpty)
                           _buildFailedSection(context, state),
-                        _buildPresetDownloadSection(context, state),
                         _buildProxySection(context, state),
                       ],
                     ),
@@ -108,7 +107,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           SettingsTile(
             title: const Text('No models downloaded'),
             description: const Text(
-              'Download a preset Hugging Face GGUF model below.',
+              'Download one of the preset 4-bit Gemma 4 GGUF models.',
             ),
             leading: const Icon(Icons.info_outline),
           ),
@@ -127,7 +126,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         SettingsTile(
           leading: Icon(_categoryIcon(category)),
           title: Text(displayName),
-          description: info != null ? Text(info.description) : null,
+          description: info != null
+              ? Text('${info.description}\n${info.quantizationLabel} GGUF')
+              : null,
           trailing: isSelected
               ? Row(
                   mainAxisSize: MainAxisSize.min,
@@ -176,27 +177,56 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     BuildContext context,
     GemmaModelState state,
   ) {
+    if (state.activeDownloads.isEmpty) {
+      return SettingsSection(
+        title: const Text('Downloading Models'),
+        tiles: [
+          SettingsTile(
+            title: const Text('No active downloads'),
+            description: const Text(
+              'Download speed and progress appear here while models download.',
+            ),
+            leading: const Icon(Icons.downloading_outlined),
+          ),
+        ],
+      );
+    }
+
     final tiles = <SettingsTile>[];
 
     for (final download in state.activeDownloads) {
       final info = GemmaModelInfo.findById(download.modelId);
       final displayName = info?.displayName ?? download.modelId;
       final category = info?.category ?? ModelCategory.other;
+      final progressValue = download.progress > 0
+          ? (download.progress / 100).clamp(0.0, 1.0)
+          : null;
 
       tiles.add(
         SettingsTile(
           leading: Icon(_categoryIcon(category)),
           title: Text(displayName),
-          description: info != null ? Text(info.description) : null,
+          description: Text(
+            [
+              if (info != null) info.description,
+              _downloadTransferLabel(download),
+            ].join('\n'),
+          ),
           trailing: SizedBox(
-            width: 80,
+            width: 120,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                LinearProgressIndicator(value: download.progress / 100),
+                LinearProgressIndicator(value: progressValue),
                 const SizedBox(height: 4),
                 Text(
                   '${download.progress.toStringAsFixed(0)}%',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                Text(
+                  _downloadSpeedLabel(download),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -207,7 +237,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     }
 
     return SettingsSection(
-      title: Text('Downloading (${state.activeDownloads.length}/3)'),
+      title: Text('Downloading Models (${state.activeDownloads.length}/3)'),
       tiles: tiles,
     );
   }
@@ -284,12 +314,25 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     GemmaModelState state,
   ) {
     final models = GemmaModelInfo.platformModels
-        .where((m) => !state.isModelDownloading(m.id))
+        .where(
+          (model) =>
+              model.isFourBitGguf &&
+              !state.isModelDownloading(model.id) &&
+              !_isInstalled(model, state.installedModels),
+        )
         .toList(growable: false);
 
     return SettingsSection(
-      title: const Text('Preset Hugging Face GGUF Models'),
+      title: const Text('Available to Download'),
       tiles: [
+        if (models.isEmpty)
+          SettingsTile(
+            leading: const Icon(Icons.check_circle_outline),
+            title: const Text('No models available to download'),
+            description: const Text(
+              'Gemma 4 E4B and E2B are already downloaded or downloading.',
+            ),
+          ),
         for (final model in models)
           SettingsTile(
             leading: const Icon(Icons.cloud_download_outlined),
@@ -300,28 +343,11 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
             ),
             description: Text(
               '${model.description}\n'
+              '${model.quantizationLabel} GGUF from '
               '${model.downloadSourceName}: ${model.downloadSourceLabel}',
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_isInstalled(model, state.installedModels))
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Icon(
-                      Icons.check_circle,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                Text(model.effectiveSizeLabel),
-              ],
-            ),
-            onPressed: (_) => _showDownloadConfirmDialog(
-              context,
-              model,
-              _isInstalled(model, state.installedModels),
-            ),
+            trailing: Text(model.effectiveSizeLabel),
+            onPressed: (_) => _showDownloadConfirmDialog(context, model, false),
           ),
       ],
     );
@@ -338,6 +364,36 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     return installedIds.any(
       (id) => id == model.id || id.contains(model.id) || model.id.contains(id),
     );
+  }
+
+  String _downloadTransferLabel(ModelDownloadProgress download) {
+    final received = download.receivedBytes;
+    final total = download.totalBytes;
+    if (received != null && total != null && total > 0) {
+      return '${_formatBytes(received)} / ${_formatBytes(total)}';
+    }
+    if (received != null && received > 0) {
+      return _formatBytes(received);
+    }
+    return 'Starting download';
+  }
+
+  String _downloadSpeedLabel(ModelDownloadProgress download) {
+    final speed = download.bytesPerSecond;
+    if (speed == null || speed <= 0) return '--/s';
+    return '${_formatBytes(speed.round())}/s';
+  }
+
+  String _formatBytes(int bytes) {
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var value = bytes.toDouble();
+    var unitIndex = 0;
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex += 1;
+    }
+    final digits = value >= 10 || unitIndex == 0 ? 0 : 1;
+    return '${value.toStringAsFixed(digits)} ${units[unitIndex]}';
   }
 
   void _showDownloadConfirmDialog(
@@ -367,7 +423,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 const SizedBox(height: 8),
                 Text('Size: ${model.effectiveSizeLabel}'),
                 const SizedBox(height: 8),
-                const Text('Format: GGUF'),
+                Text('Format: ${model.quantizationLabel} GGUF'),
                 const SizedBox(height: 8),
                 Text('Source: ${model.downloadSourceName}'),
                 const SizedBox(height: 8),

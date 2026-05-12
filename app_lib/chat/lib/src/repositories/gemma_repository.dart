@@ -40,13 +40,33 @@ enum GemmaModelStatus {
 
 /// Progress information for model downloads.
 class DownloadProgress {
-  const DownloadProgress({required this.percentage});
+  const DownloadProgress({
+    required this.percentage,
+    this.receivedBytes,
+    this.totalBytes,
+    this.bytesPerSecond,
+  });
 
   /// Download progress as a percentage (0-100).
   final double percentage;
 
+  /// Bytes present in the destination file after this update.
+  final int? receivedBytes;
+
+  /// Total bytes expected for the completed file, when the server reports it.
+  final int? totalBytes;
+
+  /// Current average download speed for this request.
+  final double? bytesPerSecond;
+
   @override
-  String toString() => 'DownloadProgress(${percentage.toStringAsFixed(1)}%)';
+  String toString() {
+    return 'DownloadProgress('
+        '${percentage.toStringAsFixed(1)}%, '
+        'received=$receivedBytes, '
+        'total=$totalBytes, '
+        'speed=$bytesPerSecond)';
+  }
 }
 
 /// Repository for app-managed GGUF models and local llama.cpp generation.
@@ -111,7 +131,7 @@ class GemmaRepository {
   Future<void> installModel({
     required String url,
     String? token,
-    void Function(double percentage)? onProgress,
+    void Function(DownloadProgress progress)? onProgress,
   }) async {
     debugPrint('[GemmaRepo] installModel(url=$url, hasToken=${token != null})');
     if (!_isGgufPath(url)) {
@@ -139,7 +159,7 @@ class GemmaRepository {
     required String url,
     required String proxyUrl,
     String? token,
-    void Function(double percentage)? onProgress,
+    void Function(DownloadProgress progress)? onProgress,
   }) async {
     debugPrint(
       '[GemmaRepo] installModelWithProxy(url=$url, proxy=$proxyUrl, hasToken=${token != null})',
@@ -173,7 +193,7 @@ class GemmaRepository {
     required String url,
     String? proxyUrl,
     String? token,
-    void Function(double percentage)? onProgress,
+    void Function(DownloadProgress progress)? onProgress,
   }) async {
     final filePath = await _downloadFilePathForUrl(url);
     final file = File(filePath);
@@ -220,7 +240,9 @@ class GemmaRepository {
       IOSink sink;
 
       if (response.statusCode == 206) {
-        totalBytes = existingBytes + response.contentLength;
+        totalBytes = response.contentLength > 0
+            ? existingBytes + response.contentLength
+            : -1;
         received = existingBytes;
         sink = file.openWrite(mode: FileMode.append);
         debugPrint(
@@ -247,10 +269,32 @@ class GemmaRepository {
         );
       }
 
-      if (received > 0 && totalBytes > 0) {
-        final pct = (received / totalBytes * 100).clamp(0.0, 100.0);
-        onProgress?.call(pct);
-        _progressController.add(DownloadProgress(percentage: pct));
+      final stopwatch = Stopwatch()..start();
+
+      void emitProgress() {
+        final pct = totalBytes > 0
+            ? (received / totalBytes * 100).clamp(0.0, 100.0)
+            : 0.0;
+        final elapsedSeconds = stopwatch.elapsedMicroseconds / 1000000;
+        final bytesDownloadedThisRequest = (received - existingBytes).clamp(
+          0,
+          received,
+        );
+        final bytesPerSecond = elapsedSeconds > 0
+            ? bytesDownloadedThisRequest / elapsedSeconds
+            : null;
+        final progress = DownloadProgress(
+          percentage: pct,
+          receivedBytes: received,
+          totalBytes: totalBytes > 0 ? totalBytes : null,
+          bytesPerSecond: bytesPerSecond,
+        );
+        onProgress?.call(progress);
+        _progressController.add(progress);
+      }
+
+      if (received > 0) {
+        emitProgress();
       }
 
       var lastLogPercent = -1;
@@ -266,9 +310,8 @@ class GemmaRepository {
             );
             lastLogPercent = percentInt;
           }
-          onProgress?.call(percent);
-          _progressController.add(DownloadProgress(percentage: percent));
         }
+        emitProgress();
       }
       await sink.close();
 

@@ -24,6 +24,7 @@ class GemmaModelInfo {
     required this.displayName,
     required this.description,
     required this.sizeLabel,
+    required this.quantizationLabel,
     required this.url,
     this.category = ModelCategory.gemma,
     this.needsAuth = false,
@@ -44,6 +45,9 @@ class GemmaModelInfo {
 
   /// Approximate download size, e.g. '529 MB'.
   final String sizeLabel;
+
+  /// GGUF quantization label, e.g. 'Q4_K_M'.
+  final String quantizationLabel;
 
   /// HuggingFace download URL.
   final String url;
@@ -80,6 +84,9 @@ class GemmaModelInfo {
 
   /// Whether this model uses the GGUF format for llama.cpp.
   bool get isGguf => downloadUrl.endsWith('.gguf');
+
+  /// Whether this preset is a 4-bit GGUF model.
+  bool get isFourBitGguf => isGguf && quantizationLabel.startsWith('Q4');
 
   /// Whether this model downloads from Hugging Face.
   bool get isHuggingFaceDownload {
@@ -139,10 +146,11 @@ class GemmaModelInfo {
   static const _gemma4e2b = GemmaModelInfo(
     id: 'gemma-4-E2B-it',
     displayName: 'Gemma 4 E2B IT',
-    description: 'Local GGUF text model, 2B effective params',
-    sizeLabel: '4.6 GB',
+    description: 'Local GGUF text model, Q4_K_M',
+    sizeLabel: '3.43 GB',
+    quantizationLabel: 'Q4_K_M',
     url:
-        'https://huggingface.co/ggml-org/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q8_0.gguf',
+        'https://huggingface.co/dahus/gemma-4-e2b-it-Q4_K_M-GGUF/resolve/main/gemma-4-e2b-Q4_K_M.gguf',
     needsAuth: false,
     supportsThinking: true,
   );
@@ -151,7 +159,8 @@ class GemmaModelInfo {
     id: 'gemma-4-E4B-it',
     displayName: 'Gemma 4 E4B IT',
     description: 'Default local GGUF text model, Q4_K_M',
-    sizeLabel: '5.0 GB',
+    sizeLabel: '5.34 GB',
+    quantizationLabel: 'Q4_K_M',
     url:
         'https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf',
     needsAuth: false,

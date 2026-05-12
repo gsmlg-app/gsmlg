@@ -14,7 +14,9 @@ void main() {
         e4b!.downloadUrl,
         'https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf',
       );
-      expect(e4b.effectiveSizeLabel, '5.0 GB');
+      expect(e4b.effectiveSizeLabel, '5.34 GB');
+      expect(e4b.quantizationLabel, 'Q4_K_M');
+      expect(e4b.isFourBitGguf, isTrue);
       expect(e4b.isGguf, isTrue);
       expect(e4b.isHuggingFaceDownload, isTrue);
       expect(e4b.huggingFaceRepoPath, 'ggml-org/gemma-4-E4B-it-GGUF');
@@ -25,13 +27,15 @@ void main() {
 
       expect(
         e2b!.downloadUrl,
-        'https://huggingface.co/ggml-org/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q8_0.gguf',
+        'https://huggingface.co/dahus/gemma-4-e2b-it-Q4_K_M-GGUF/resolve/main/gemma-4-e2b-Q4_K_M.gguf',
       );
-      expect(e2b.effectiveSizeLabel, '4.6 GB');
+      expect(e2b.effectiveSizeLabel, '3.43 GB');
+      expect(e2b.quantizationLabel, 'Q4_K_M');
+      expect(e2b.isFourBitGguf, isTrue);
       expect(e2b.isGguf, isTrue);
       expect(e2b.isHuggingFaceDownload, isTrue);
-      expect(e2b.huggingFaceRepoPath, 'ggml-org/gemma-4-E2B-it-GGUF');
-      expect(e2b.downloadFileName, 'gemma-4-E2B-it-Q8_0.gguf');
+      expect(e2b.huggingFaceRepoPath, 'dahus/gemma-4-e2b-it-Q4_K_M-GGUF');
+      expect(e2b.downloadFileName, 'gemma-4-e2b-Q4_K_M.gguf');
       expect(e2b.supportsMultimodal, isFalse);
       expect(e2b.supportsAudio, isFalse);
       expect(e2b.supportsFunctionCalls, isFalse);
@@ -53,6 +57,10 @@ void main() {
         isTrue,
       );
       expect(
+        GemmaModelInfo.availableModels.every((model) => model.isFourBitGguf),
+        isTrue,
+      );
+      expect(
         GemmaModelInfo.platformModels.every((model) => model.isGguf),
         isTrue,
       );
@@ -65,7 +73,7 @@ void main() {
       expect(e4b.downloadSourceName, 'Hugging Face');
       expect(e4b.downloadSourceLabel, 'ggml-org/gemma-4-E4B-it-GGUF');
       expect(e2b.downloadSourceName, 'Hugging Face');
-      expect(e2b.downloadSourceLabel, 'ggml-org/gemma-4-E2B-it-GGUF');
+      expect(e2b.downloadSourceLabel, 'dahus/gemma-4-e2b-it-Q4_K_M-GGUF');
     });
   });
 }
