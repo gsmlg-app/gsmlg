@@ -125,11 +125,11 @@ final class UserMessage extends Message {
 
   @override
   List<Object?> get props => [
-        ...super.props,
-        imageBytes,
-        audioBytes,
-        attachments,
-      ];
+    ...super.props,
+    imageBytes,
+    audioBytes,
+    attachments,
+  ];
 
   UserMessage copyWith({
     String? id,
@@ -162,6 +162,7 @@ final class AssistantMessage extends Message {
     this.isStreaming = false,
     this.tokenCount,
     this.thinkingContent,
+    this.responseInfo,
   });
 
   /// Whether the message is currently being streamed.
@@ -173,6 +174,9 @@ final class AssistantMessage extends Message {
   /// Chain-of-thought reasoning content from the model's thinking process.
   final String? thinkingContent;
 
+  /// Generation metrics for this response, when available.
+  final ChatResponseInfo? responseInfo;
+
   /// Whether this message has thinking/reasoning content.
   bool get hasThinking =>
       thinkingContent != null && thinkingContent!.isNotEmpty;
@@ -181,8 +185,13 @@ final class AssistantMessage extends Message {
   String get role => 'assistant';
 
   @override
-  List<Object?> get props =>
-      [...super.props, isStreaming, tokenCount, thinkingContent];
+  List<Object?> get props => [
+    ...super.props,
+    isStreaming,
+    tokenCount,
+    thinkingContent,
+    responseInfo,
+  ];
 
   AssistantMessage copyWith({
     String? id,
@@ -192,6 +201,7 @@ final class AssistantMessage extends Message {
     bool? isStreaming,
     int? tokenCount,
     String? thinkingContent,
+    ChatResponseInfo? responseInfo,
   }) {
     return AssistantMessage(
       id: id ?? this.id,
@@ -201,8 +211,47 @@ final class AssistantMessage extends Message {
       isStreaming: isStreaming ?? this.isStreaming,
       tokenCount: tokenCount ?? this.tokenCount,
       thinkingContent: thinkingContent ?? this.thinkingContent,
+      responseInfo: responseInfo ?? this.responseInfo,
     );
   }
+}
+
+/// Runtime metrics captured for an assistant response.
+final class ChatResponseInfo extends Equatable {
+  const ChatResponseInfo({
+    required this.outputTokens,
+    required this.duration,
+    this.contextTokens,
+    this.maxOutputTokens,
+  });
+
+  /// Generated output token count. This is estimated when provider usage data
+  /// is not available.
+  final int outputTokens;
+
+  /// Approximate input context size in tokens.
+  final int? contextTokens;
+
+  /// Configured maximum output tokens for the request.
+  final int? maxOutputTokens;
+
+  /// Wall-clock generation duration.
+  final Duration duration;
+
+  /// Output throughput in tokens per second.
+  double get tokensPerSecond {
+    final millis = duration.inMilliseconds;
+    if (millis <= 0) return 0;
+    return outputTokens / (millis / 1000);
+  }
+
+  @override
+  List<Object?> get props => [
+    outputTokens,
+    contextTokens,
+    maxOutputTokens,
+    duration,
+  ];
 }
 
 String _attachmentReferenceText(

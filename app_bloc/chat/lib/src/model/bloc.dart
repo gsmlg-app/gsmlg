@@ -25,6 +25,8 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         )) {
     on<GemmaModelInitialize>(_onInitialize);
     on<GemmaModelInstall>(_onInstall);
+    on<GemmaModelPauseDownload>(_onPauseDownload);
+    on<GemmaModelCancelDownload>(_onCancelDownload);
     on<GemmaModelListInstalled>(_onListInstalled);
     on<GemmaModelSetProxy>(_onSetProxy);
     on<GemmaModelLoad>(_onLoad);
@@ -228,11 +230,14 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       ...state.activeDownloads,
       ModelDownloadProgress(modelId: modelId),
     ];
+    final updatedPaused =
+        state.pausedDownloads.where((d) => d.modelId != modelId).toList();
     final updatedFailed =
         state.failedDownloads.where((f) => f.modelId != modelId).toList();
     emit(state.copyWith(
       status: GemmaModelStatus.downloading,
       activeDownloads: updatedDownloads,
+      pausedDownloads: updatedPaused,
       failedDownloads: updatedFailed,
     ));
 
@@ -258,6 +263,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     // Run download in a fire-and-forget fashion so multiple can run in parallel.
     () async {
       String? errorMessage;
+      var result = _ModelDownloadResult.completed;
       try {
         if (proxy != null && proxy.isNotEmpty) {
           await _repository.installModelWithProxy(
@@ -273,30 +279,82 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
             onProgress: onProgress,
           );
         }
+      } on ModelDownloadPausedException {
+        result = _ModelDownloadResult.paused;
+        debugPrint('[GemmaModelBloc] Download paused for $modelId');
+      } on ModelDownloadCanceledException {
+        result = _ModelDownloadResult.canceled;
+        debugPrint('[GemmaModelBloc] Download canceled for $modelId');
       } catch (e) {
+        result = _ModelDownloadResult.failed;
         errorMessage = e.toString();
         debugPrint(
             '[GemmaModelBloc] Download failed for $modelId: $errorMessage');
       } finally {
         add(_GemmaModelDownloadComplete(
           modelId: modelId,
+          result: result,
           errorMessage: errorMessage,
         ));
       }
     }();
   }
 
+  Future<void> _onPauseDownload(
+    GemmaModelPauseDownload event,
+    Emitter<GemmaModelState> emit,
+  ) async {
+    debugPrint('[GemmaModelBloc] _onPauseDownload(modelId=${event.modelId})');
+    await _repository.pauseModelDownload(event.url);
+  }
+
+  Future<void> _onCancelDownload(
+    GemmaModelCancelDownload event,
+    Emitter<GemmaModelState> emit,
+  ) async {
+    debugPrint('[GemmaModelBloc] _onCancelDownload(modelId=${event.modelId})');
+
+    final isActive = state.isModelDownloading(event.modelId);
+    if (isActive) {
+      await _repository.cancelModelDownload(event.url);
+      return;
+    }
+
+    await _repository.deleteDownloadForUrl(event.url);
+    final updatedPaused =
+        state.pausedDownloads.where((d) => d.modelId != event.modelId).toList();
+    final updatedFailed =
+        state.failedDownloads.where((f) => f.modelId != event.modelId).toList();
+    emit(state.copyWith(
+      pausedDownloads: updatedPaused,
+      failedDownloads: updatedFailed,
+      status: state.activeDownloads.isEmpty && state.installedModels.isEmpty
+          ? GemmaModelStatus.notInstalled
+          : null,
+    ));
+  }
+
   Future<void> _onDownloadComplete(
     _GemmaModelDownloadComplete event,
     Emitter<GemmaModelState> emit,
   ) async {
-    final hasFailed = event.errorMessage != null;
+    final hasFailed = event.result == _ModelDownloadResult.failed;
     debugPrint(
-        '[GemmaModelBloc] Download complete: ${event.modelId}, failed=$hasFailed');
+        '[GemmaModelBloc] Download complete: ${event.modelId}, result=${event.result}');
+
+    final activeDownload = state.activeDownloads
+        .where((d) => d.modelId == event.modelId)
+        .firstOrNull;
 
     // Remove from active downloads
     final updatedDownloads =
         state.activeDownloads.where((d) => d.modelId != event.modelId).toList();
+
+    final updatedPaused = [
+      ...state.pausedDownloads.where((d) => d.modelId != event.modelId),
+      if (event.result == _ModelDownloadResult.paused)
+        activeDownload ?? ModelDownloadProgress(modelId: event.modelId),
+    ];
 
     // Track failed download (replace existing entry for same model)
     final updatedFailed = [
@@ -315,6 +373,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     emit(state.copyWith(
       installedModels: installed,
       activeDownloads: updatedDownloads,
+      pausedDownloads: updatedPaused,
       failedDownloads: updatedFailed,
       status: updatedDownloads.isEmpty &&
               state.status == GemmaModelStatus.downloading

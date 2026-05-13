@@ -58,6 +58,7 @@ class GemmaModelState extends Equatable {
     this.proxyUrl,
     this.selectedModelId,
     this.activeDownloads = const [],
+    this.pausedDownloads = const [],
     this.failedDownloads = const [],
   });
 
@@ -82,6 +83,9 @@ class GemmaModelState extends Equatable {
   /// Currently active downloads (max 3 concurrent).
   final List<ModelDownloadProgress> activeDownloads;
 
+  /// Paused downloads with partial files that can be resumed.
+  final List<ModelDownloadProgress> pausedDownloads;
+
   /// Downloads that failed with their error messages.
   final List<FailedDownload> failedDownloads;
 
@@ -94,6 +98,7 @@ class GemmaModelState extends Equatable {
         proxyUrl,
         selectedModelId,
         activeDownloads,
+        pausedDownloads,
         failedDownloads,
       ];
 
@@ -128,6 +133,10 @@ class GemmaModelState extends Equatable {
   bool isModelDownloading(String modelId) =>
       activeDownloads.any((d) => d.modelId == modelId);
 
+  /// Check if a specific model download is paused.
+  bool isModelPaused(String modelId) =>
+      pausedDownloads.any((d) => d.modelId == modelId);
+
   /// Get download progress for a specific model.
   double? downloadProgressFor(String modelId) {
     final match = activeDownloads.where((d) => d.modelId == modelId);
@@ -144,6 +153,7 @@ class GemmaModelState extends Equatable {
     String? selectedModelId,
     bool clearSelectedModel = false,
     List<ModelDownloadProgress>? activeDownloads,
+    List<ModelDownloadProgress>? pausedDownloads,
     List<FailedDownload>? failedDownloads,
   }) {
     return GemmaModelState(
@@ -155,6 +165,7 @@ class GemmaModelState extends Equatable {
       selectedModelId:
           clearSelectedModel ? null : (selectedModelId ?? this.selectedModelId),
       activeDownloads: activeDownloads ?? this.activeDownloads,
+      pausedDownloads: pausedDownloads ?? this.pausedDownloads,
       failedDownloads: failedDownloads ?? this.failedDownloads,
     );
   }

@@ -19,6 +19,7 @@ void main() {
     late _MemoryVaultRepository vault;
     late AccountsBloc accountsBloc;
     late ChatSettingsBloc chatSettingsBloc;
+    GemmaModelBloc? gemmaModelBloc;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -30,6 +31,7 @@ void main() {
 
     tearDown(() async {
       await chatSettingsBloc.close();
+      await gemmaModelBloc?.close();
       await accountsBloc.close();
       await database.close();
       await preferences.clear();
@@ -104,6 +106,48 @@ void main() {
       );
       expect(chatSettingsBloc.state.config.remoteBaseUrl, baseUrl);
       expect(chatSettingsBloc.state.config.remoteModel, 'MiniMax-M2.7');
+    });
+
+    testWidgets('shows the selected local model in agent settings', (
+      tester,
+    ) async {
+      await preferences.setString('gemma_selected_model_id', 'gemma-4-E4B-it');
+      gemmaModelBloc = GemmaModelBloc(
+        repository: GemmaRepository(),
+        preferences: preferences,
+      );
+
+      final repository = ChatStorageRepository(database);
+      chatSettingsBloc =
+          ChatSettingsBloc(repository: repository, preferences: preferences)
+            ..add(const ChatSettingsLoad())
+            ..add(
+              const ChatSettingsSaveAgent(
+                id: 'agent-1',
+                name: 'Local agent',
+                systemPrompt: '',
+                config: ModelConfig(inferenceMode: ChatInferenceMode.local),
+              ),
+            );
+
+      await _pumpScreen(
+        tester,
+        chatSettingsBloc: chatSettingsBloc,
+        accountsBloc: accountsBloc,
+        preferences: preferences,
+        gemmaModelBloc: gemmaModelBloc,
+        agentId: 'agent-1',
+      );
+
+      await _pumpUntil(
+        tester,
+        () =>
+            chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
+            find.text('Model').evaluate().isNotEmpty,
+      );
+
+      expect(find.text('Gemma 4 E4B IT'), findsOneWidget);
+      expect(find.text('Gemma 2B-IT'), findsNothing);
     });
 
     testWidgets('lists agents without per-agent settings', (tester) async {
@@ -284,22 +328,31 @@ Future<void> _pumpScreen(
   required ChatSettingsBloc chatSettingsBloc,
   required AccountsBloc accountsBloc,
   required SharedPreferences preferences,
+  GemmaModelBloc? gemmaModelBloc,
   String? agentId,
 }) {
+  Widget child = MaterialApp(
+    localizationsDelegates: AppLocale.localizationsDelegates,
+    supportedLocales: AppLocale.supportedLocales,
+    home: RepositoryProvider<SharedPreferences>.value(
+      value: preferences,
+      child: ChatSettingsScreen(agentId: agentId),
+    ),
+  );
+  if (gemmaModelBloc != null) {
+    child = BlocProvider<GemmaModelBloc>.value(
+      value: gemmaModelBloc,
+      child: child,
+    );
+  }
+
   return tester.pumpWidget(
     MultiBlocProvider(
       providers: [
         BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc),
         BlocProvider<AccountsBloc>.value(value: accountsBloc),
       ],
-      child: MaterialApp(
-        localizationsDelegates: AppLocale.localizationsDelegates,
-        supportedLocales: AppLocale.supportedLocales,
-        home: RepositoryProvider<SharedPreferences>.value(
-          value: preferences,
-          child: ChatSettingsScreen(agentId: agentId),
-        ),
-      ),
+      child: child,
     ),
   );
 }

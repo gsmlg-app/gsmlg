@@ -18,18 +18,18 @@ class ChatStorageRepository {
 
   /// Loads all conversations ordered by most recently updated.
   Future<List<Conversation>> loadConversations() async {
-    final rows = await (_db.select(_db.chatConversationTable)
-          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
-        .get();
+    final rows = await (_db.select(
+      _db.chatConversationTable,
+    )..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).get();
 
     return rows.map(_conversationFromRow).toList();
   }
 
   /// Loads a single conversation by ID, including all its messages.
   Future<Conversation?> loadConversation(String id) async {
-    final row = await (_db.select(_db.chatConversationTable)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.chatConversationTable,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
 
     if (row == null) return null;
 
@@ -39,7 +39,9 @@ class ChatStorageRepository {
 
   /// Saves a new conversation or updates an existing one.
   Future<void> saveConversation(Conversation conversation) async {
-    await _db.into(_db.chatConversationTable).insertOnConflictUpdate(
+    await _db
+        .into(_db.chatConversationTable)
+        .insertOnConflictUpdate(
           ChatConversationTableCompanion(
             id: Value(conversation.id),
             title: Value(conversation.title),
@@ -52,20 +54,24 @@ class ChatStorageRepository {
 
   /// Updates only the conversation title.
   Future<void> updateConversationTitle(String id, String title) async {
-    await (_db.update(_db.chatConversationTable)..where((t) => t.id.equals(id)))
-        .write(ChatConversationTableCompanion(
-      title: Value(title),
-      updatedAt: Value(DateTime.now()),
-    ));
+    await (_db.update(
+      _db.chatConversationTable,
+    )..where((t) => t.id.equals(id))).write(
+      ChatConversationTableCompanion(
+        title: Value(title),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
   }
 
   /// Deletes a conversation and all its messages.
   Future<void> deleteConversation(String id) async {
-    await (_db.delete(_db.chatMessageTable)
-          ..where((t) => t.conversationId.equals(id)))
-        .go();
-    await (_db.delete(_db.chatConversationTable)..where((t) => t.id.equals(id)))
-        .go();
+    await (_db.delete(
+      _db.chatMessageTable,
+    )..where((t) => t.conversationId.equals(id))).go();
+    await (_db.delete(
+      _db.chatConversationTable,
+    )..where((t) => t.id.equals(id))).go();
   }
 
   /// Deletes all conversations and messages.
@@ -80,10 +86,11 @@ class ChatStorageRepository {
 
   /// Loads all messages for a conversation ordered by timestamp.
   Future<List<Message>> loadMessages(String conversationId) async {
-    final rows = await (_db.select(_db.chatMessageTable)
-          ..where((t) => t.conversationId.equals(conversationId))
-          ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]))
-        .get();
+    final rows =
+        await (_db.select(_db.chatMessageTable)
+              ..where((t) => t.conversationId.equals(conversationId))
+              ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]))
+            .get();
 
     return rows.map(_messageFromRow).toList();
   }
@@ -91,31 +98,41 @@ class ChatStorageRepository {
   /// Saves a new message or updates an existing one.
   Future<void> saveMessage(Message message) async {
     int? tokenCount;
+    ChatResponseInfo? responseInfo;
     if (message is AssistantMessage) {
       tokenCount = message.tokenCount;
+      responseInfo = message.responseInfo;
     }
 
-    await _db.into(_db.chatMessageTable).insertOnConflictUpdate(
+    await _db
+        .into(_db.chatMessageTable)
+        .insertOnConflictUpdate(
           ChatMessageTableCompanion(
             id: Value(message.id),
             conversationId: Value(message.conversationId),
             role: Value(message.role),
             content: Value(message.content),
             tokenCount: Value(tokenCount),
-            imageBytes:
-                Value(message is UserMessage ? message.imageBytes : null),
-            toolName:
-                Value(message is ToolResponseMessage ? message.toolName : null),
+            responseOutputTokens: Value(responseInfo?.outputTokens),
+            responseContextTokens: Value(responseInfo?.contextTokens),
+            responseMaxOutputTokens: Value(responseInfo?.maxOutputTokens),
+            responseDurationMs: Value(responseInfo?.duration.inMilliseconds),
+            imageBytes: Value(
+              message is UserMessage ? message.imageBytes : null,
+            ),
+            toolName: Value(
+              message is ToolResponseMessage ? message.toolName : null,
+            ),
             timestamp: Value(message.timestamp),
           ),
         );
 
     // Update conversation's updatedAt
-    await (_db.update(_db.chatConversationTable)
-          ..where((t) => t.id.equals(message.conversationId)))
-        .write(ChatConversationTableCompanion(
-      updatedAt: Value(DateTime.now()),
-    ));
+    await (_db.update(
+      _db.chatConversationTable,
+    )..where((t) => t.id.equals(message.conversationId))).write(
+      ChatConversationTableCompanion(updatedAt: Value(DateTime.now())),
+    );
   }
 
   /// Updates the content of an existing message.
@@ -126,15 +143,16 @@ class ChatStorageRepository {
 
   /// Deletes a message by ID.
   Future<void> deleteMessage(String id) async {
-    await (_db.delete(_db.chatMessageTable)..where((t) => t.id.equals(id)))
-        .go();
+    await (_db.delete(
+      _db.chatMessageTable,
+    )..where((t) => t.id.equals(id))).go();
   }
 
   /// Deletes all messages in a conversation.
   Future<void> clearConversationMessages(String conversationId) async {
-    await (_db.delete(_db.chatMessageTable)
-          ..where((t) => t.conversationId.equals(conversationId)))
-        .go();
+    await (_db.delete(
+      _db.chatMessageTable,
+    )..where((t) => t.conversationId.equals(conversationId))).go();
   }
 
   // ==========================================================================
@@ -143,9 +161,9 @@ class ChatStorageRepository {
 
   /// Loads the model configuration from the database.
   Future<ModelConfig> loadSettings() async {
-    final row = await (_db.select(_db.chatSettingsTable)
-          ..where((t) => t.key.equals('default')))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.chatSettingsTable,
+    )..where((t) => t.key.equals('default'))).getSingleOrNull();
 
     if (row == null) {
       return ModelConfig.defaultConfig;
@@ -172,7 +190,9 @@ class ChatStorageRepository {
 
   /// Saves the model configuration to the database.
   Future<void> saveSettings(ModelConfig config) async {
-    await _db.into(_db.chatSettingsTable).insertOnConflictUpdate(
+    await _db
+        .into(_db.chatSettingsTable)
+        .insertOnConflictUpdate(
           ChatSettingsTableCompanion(
             key: const Value('default'),
             inferenceMode: Value(_inferenceModeToString(config.inferenceMode)),
@@ -182,8 +202,9 @@ class ChatStorageRepository {
             temperatureX100: Value((config.temperature * 100).round()),
             topK: Value(config.topK),
             backend: Value(_backendToString(config.backend)),
-            remoteProvider:
-                Value(_remoteProviderToString(config.remoteProvider)),
+            remoteProvider: Value(
+              _remoteProviderToString(config.remoteProvider),
+            ),
             remoteAccountId: Value(config.remoteAccountId),
             remoteBaseUrl: Value(config.remoteBaseUrl),
             remoteModel: Value(config.remoteModel),
@@ -197,16 +218,18 @@ class ChatStorageRepository {
 
   /// Loads the default system prompt from settings.
   Future<String?> loadDefaultSystemPrompt() async {
-    final row = await (_db.select(_db.chatSettingsTable)
-          ..where((t) => t.key.equals('default')))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.chatSettingsTable,
+    )..where((t) => t.key.equals('default'))).getSingleOrNull();
 
     return row?.defaultSystemPrompt;
   }
 
   /// Saves the default system prompt to settings.
   Future<void> saveDefaultSystemPrompt(String? prompt) async {
-    await _db.into(_db.chatSettingsTable).insertOnConflictUpdate(
+    await _db
+        .into(_db.chatSettingsTable)
+        .insertOnConflictUpdate(
           ChatSettingsTableCompanion(
             key: const Value('default'),
             defaultSystemPrompt: Value(prompt),
@@ -231,39 +254,53 @@ class ChatStorageRepository {
   Message _messageFromRow(ChatMessageTableData row) {
     return switch (row.role) {
       'user' => UserMessage(
-          id: row.id,
-          content: row.content,
-          conversationId: row.conversationId,
-          timestamp: row.timestamp,
-          imageBytes: row.imageBytes,
-        ),
+        id: row.id,
+        content: row.content,
+        conversationId: row.conversationId,
+        timestamp: row.timestamp,
+        imageBytes: row.imageBytes,
+      ),
       'assistant' => AssistantMessage(
-          id: row.id,
-          content: row.content,
-          conversationId: row.conversationId,
-          timestamp: row.timestamp,
-          tokenCount: row.tokenCount,
-        ),
+        id: row.id,
+        content: row.content,
+        conversationId: row.conversationId,
+        timestamp: row.timestamp,
+        tokenCount: row.tokenCount,
+        responseInfo: _responseInfoFromRow(row),
+      ),
       'system' => SystemMessage(
-          id: row.id,
-          content: row.content,
-          conversationId: row.conversationId,
-          timestamp: row.timestamp,
-        ),
+        id: row.id,
+        content: row.content,
+        conversationId: row.conversationId,
+        timestamp: row.timestamp,
+      ),
       'tool_response' => ToolResponseMessage(
-          id: row.id,
-          content: row.content,
-          conversationId: row.conversationId,
-          timestamp: row.timestamp,
-          toolName: row.toolName ?? 'unknown',
-        ),
+        id: row.id,
+        content: row.content,
+        conversationId: row.conversationId,
+        timestamp: row.timestamp,
+        toolName: row.toolName ?? 'unknown',
+      ),
       _ => UserMessage(
-          id: row.id,
-          content: row.content,
-          conversationId: row.conversationId,
-          timestamp: row.timestamp,
-        ),
+        id: row.id,
+        content: row.content,
+        conversationId: row.conversationId,
+        timestamp: row.timestamp,
+      ),
     };
+  }
+
+  ChatResponseInfo? _responseInfoFromRow(ChatMessageTableData row) {
+    final outputTokens = row.responseOutputTokens;
+    final durationMs = row.responseDurationMs;
+    if (outputTokens == null || durationMs == null) return null;
+
+    return ChatResponseInfo(
+      outputTokens: outputTokens,
+      contextTokens: row.responseContextTokens,
+      maxOutputTokens: row.responseMaxOutputTokens,
+      duration: Duration(milliseconds: durationMs),
+    );
   }
 
   GemmaModelType _parseModelType(String value) {

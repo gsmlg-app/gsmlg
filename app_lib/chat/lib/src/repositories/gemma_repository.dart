@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
+import 'llama_request_adapter.dart';
 
 /// Status of the model lifecycle.
 enum GemmaModelStatus {
@@ -69,12 +70,34 @@ class DownloadProgress {
   }
 }
 
+/// Thrown when a model download is paused and can be resumed later.
+class ModelDownloadPausedException implements Exception {
+  const ModelDownloadPausedException();
+
+  @override
+  String toString() => 'Model download paused';
+}
+
+/// Thrown when a model download is canceled and its partial file is removed.
+class ModelDownloadCanceledException implements Exception {
+  const ModelDownloadCanceledException();
+
+  @override
+  String toString() => 'Model download canceled';
+}
+
 /// Repository for app-managed GGUF models and local llama.cpp generation.
 class GemmaRepository {
-  GemmaRepository();
+  GemmaRepository({
+    llama.LlamaEngine llamaEngine = const llama.LibLlamaCpp(),
+    String? initialModelPath,
+  }) : _llamaEngine = llamaEngine,
+       _llamaModelPath = initialModelPath;
 
+  final llama.LlamaEngine _llamaEngine;
   String? _llamaModelPath;
   ModelConfig? _llamaConfig;
+  final _activeDownloads = <String, _DownloadControl>{};
 
   /// Current status of the model.
   GemmaModelStatus get status => _status;
@@ -185,6 +208,28 @@ class GemmaRepository {
     }
   }
 
+  /// Pauses an active download while preserving its partial file for resume.
+  Future<void> pauseModelDownload(String url) async {
+    debugPrint('[GemmaRepo] pauseModelDownload(url=$url)');
+    _activeDownloads[url]?.pause();
+  }
+
+  /// Cancels an active download and removes its partial file.
+  Future<void> cancelModelDownload(String url) async {
+    debugPrint('[GemmaRepo] cancelModelDownload(url=$url)');
+    final control = _activeDownloads[url];
+    if (control == null) {
+      await deleteDownloadForUrl(url);
+      return;
+    }
+    control.cancel();
+  }
+
+  /// Deletes the partial or completed download file for a preset URL.
+  Future<void> deleteDownloadForUrl(String url) async {
+    _cleanupDownloadFile(await _downloadFilePathForUrl(url));
+  }
+
   /// Downloads a file with HTTP Range resume support.
   ///
   /// GGUF files are downloaded into the app cache under
@@ -208,6 +253,21 @@ class GemmaRepository {
     }
 
     final client = HttpClient();
+    final control = _DownloadControl(client);
+    _activeDownloads[url] = control;
+    IOSink? sink;
+    var deletePartial = false;
+
+    void throwIfInterrupted() {
+      if (control.isCanceled) {
+        deletePartial = true;
+        throw const ModelDownloadCanceledException();
+      }
+      if (control.isPaused) {
+        throw const ModelDownloadPausedException();
+      }
+    }
+
     try {
       if (proxyUrl != null) {
         final proxyUri = Uri.parse(proxyUrl);
@@ -234,10 +294,10 @@ class GemmaRepository {
 
       final response = await request.close();
       debugPrint('[GemmaRepo] Response status: ${response.statusCode}');
+      throwIfInterrupted();
 
       int totalBytes;
       int received;
-      IOSink sink;
 
       if (response.statusCode == 206) {
         totalBytes = response.contentLength > 0
@@ -299,6 +359,7 @@ class GemmaRepository {
 
       var lastLogPercent = -1;
       await for (final chunk in response) {
+        throwIfInterrupted();
         sink.add(chunk);
         received += chunk.length;
         if (totalBytes > 0) {
@@ -312,13 +373,40 @@ class GemmaRepository {
           }
         }
         emitProgress();
+        throwIfInterrupted();
       }
       await sink.close();
+      sink = null;
 
       final fileSize = file.lengthSync();
       debugPrint('[GemmaRepo] Download complete: $filePath ($fileSize bytes)');
       return filePath;
+    } on ModelDownloadCanceledException {
+      deletePartial = true;
+      rethrow;
+    } on ModelDownloadPausedException {
+      rethrow;
+    } catch (e) {
+      if (control.isCanceled) {
+        deletePartial = true;
+        throw const ModelDownloadCanceledException();
+      }
+      if (control.isPaused) {
+        throw const ModelDownloadPausedException();
+      }
+      rethrow;
     } finally {
+      if (sink != null) {
+        try {
+          await sink.close();
+        } catch (_) {
+          // Closing after a forced HttpClient shutdown can surface stream errors.
+        }
+      }
+      if (deletePartial) {
+        _cleanupDownloadFile(filePath);
+      }
+      _activeDownloads.remove(url);
       client.close();
       debugPrint('[GemmaRepo] HttpClient closed');
     }
@@ -448,30 +536,34 @@ class GemmaRepository {
   }
 
   /// Generates a response for a list of messages.
-  Stream<ChatGenerationChunk> generateResponse(List<Message> messages) async* {
+  Stream<ChatGenerationChunk> generateResponse(
+    List<Message> messages, {
+    List<Map<String, dynamic>> tools = const [],
+  }) async* {
     if (_llamaModelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
-    yield* _generateLlamaResponse(messages);
+    yield* _generateLlamaResponse(messages, tools: tools);
   }
 
   Stream<ChatGenerationChunk> _generateLlamaResponse(
-    List<Message> messages,
-  ) async* {
+    List<Message> messages, {
+    required List<Map<String, dynamic>> tools,
+  }) async* {
     final modelPath = _llamaModelPath;
     if (modelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
 
     final config = _llamaConfig ?? ModelConfig.defaultConfig;
-    final prompt = _buildGemmaPrompt(messages);
     final commands = Stream<llama.LlamaCommand>.fromIterable([
       llama.LlamaLoadModelCommand(
         modelPath: modelPath,
         gpuLayerCount: config.backend == GemmaBackend.gpu ? 99 : 0,
       ),
-      llama.LlamaGenerateCommand(
-        prompt: prompt,
+      buildLlamaGenerateCommand(
+        messages: messages,
+        tools: tools,
         maxTokens: config.maxTokens,
         temperature: config.temperature,
         stop: const ['<end_of_turn>', '<start_of_turn>'],
@@ -479,12 +571,15 @@ class GemmaRepository {
       const llama.LlamaDisposeCommand(),
     ]);
 
-    await for (final response in const llama.LibLlamaCpp().transform(
-      commands,
-    )) {
+    await for (final response in _llamaEngine.transform(commands)) {
       switch (response) {
         case llama.LlamaTokenResponse(:final text):
           yield ChatTextChunk(text);
+        case llama.LlamaToolCallResponse(:final toolCall):
+          yield ChatFunctionCallChunk(
+            name: toolCall.name,
+            args: _decodeToolArgs(toolCall.arguments),
+          );
         case llama.LlamaErrorResponse(:final message):
           _setError(message);
           throw StateError(message);
@@ -496,55 +591,17 @@ class GemmaRepository {
     }
   }
 
-  String _buildGemmaPrompt(List<Message> messages) {
-    String? systemPrompt;
-    final chatMessages = <Message>[];
-    for (final message in messages) {
-      if (message is SystemMessage) {
-        systemPrompt = message.content;
-      } else if (message is AssistantMessage && message.isStreaming) {
-        continue;
-      } else {
-        chatMessages.add(message);
-      }
-    }
-
-    final prompt = StringBuffer();
-    for (var i = 0; i < chatMessages.length; i += 1) {
-      final message = chatMessages[i];
-      var content = switch (message) {
-        final UserMessage user => user.contentWithAttachments(),
-        ToolResponseMessage(:final toolName, :final content) =>
-          'Tool response from $toolName:\n$content',
-        _ => message.content,
-      };
-
-      if (i == 0 && message is UserMessage && systemPrompt != null) {
-        content = '$systemPrompt\n\n$content';
-      }
-
-      final role = message is AssistantMessage ? 'model' : 'user';
-      if (content.trim().isEmpty) continue;
-      prompt
-        ..write('<start_of_turn>')
-        ..write(role)
-        ..write('\n')
-        ..write(content.trim())
-        ..writeln('<end_of_turn>');
-    }
-
-    prompt.write('<start_of_turn>model\n');
-    return prompt.toString();
-  }
-
   /// Generates a complete response without streaming.
-  Future<String> generateResponseSync(List<Message> messages) async {
+  Future<String> generateResponseSync(
+    List<Message> messages, {
+    List<Map<String, dynamic>> tools = const [],
+  }) async {
     if (_llamaModelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
 
     final buffer = StringBuffer();
-    await for (final response in generateResponse(messages)) {
+    await for (final response in generateResponse(messages, tools: tools)) {
       if (response is ChatTextChunk) {
         buffer.write(response.text);
       }
@@ -580,5 +637,36 @@ class GemmaRepository {
     _status = GemmaModelStatus.error;
     _lastError = message;
     _statusController.add(GemmaModelStatus.error);
+  }
+
+  Map<String, dynamic> _decodeToolArgs(String arguments) {
+    final trimmed = arguments.trim();
+    if (trimmed.isEmpty) return const {};
+
+    try {
+      final decoded = jsonDecode(trimmed);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return {'value': decoded};
+    } catch (_) {
+      return {'raw': trimmed};
+    }
+  }
+}
+
+class _DownloadControl {
+  _DownloadControl(this._client);
+
+  final HttpClient _client;
+  var isPaused = false;
+  var isCanceled = false;
+
+  void pause() {
+    isPaused = true;
+    _client.close(force: true);
+  }
+
+  void cancel() {
+    isCanceled = true;
+    _client.close(force: true);
   }
 }

@@ -28,10 +28,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<ChatStopGeneration>(_onStopGeneration);
     on<ChatClearConversation>(_onClearConversation);
     on<ChatRegenerateResponse>(_onRegenerateResponse);
+    on<ChatEditUserMessage>(_onEditUserMessage);
     on<ChatDeleteConversation>(_onDeleteConversation);
     on<ChatLoadHistory>(_onLoadHistory);
     on<_ChatStreamToken>(_onStreamToken);
     on<_ChatThinkingToken>(_onThinkingToken);
+    on<_ChatResponseMetricsTick>(_onResponseMetricsTick);
     on<_ChatStreamComplete>(_onStreamComplete);
     on<_ChatStreamError>(_onStreamError);
     on<_ChatFunctionCall>(_onFunctionCall);
@@ -42,7 +44,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatStorageRepository _storageRepository;
   final ToolExecutor _toolExecutor;
   StreamSubscription<ChatGenerationChunk>? _streamSubscription;
+  Conversation? _streamingConversation;
+  String? _streamingMessageId;
+  Timer? _responseMetricsTimer;
   ModelConfig? _activeConfig;
+  DateTime? _responseStartedAt;
+  int? _responseContextTokens;
+  int? _responseMaxOutputTokens;
   final _uuid = const Uuid();
 
   Future<void> _onLoadConversation(
@@ -55,8 +63,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       final conversation = await _storageRepository.loadConversation(event.id);
       if (conversation != null) {
         emit(state.copyWith(
-          status: ChatStatus.ready,
-          conversation: conversation,
+          status: _statusForVisibleConversation(),
+          conversation: _conversationForDisplay(conversation),
+          streamingMessageId: _streamingMessageId,
         ));
       } else {
         emit(state.copyWith(
@@ -102,8 +111,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
 
     emit(state.copyWith(
-      status: ChatStatus.ready,
+      status: _statusForVisibleConversation(),
       conversation: updatedConversation,
+      streamingMessageId: _streamingMessageId,
     ));
   }
 
@@ -181,14 +191,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     );
 
     updatedConversation = updatedConversation.addMessage(assistantMessage);
+    _streamingConversation = updatedConversation;
+    _streamingMessageId = assistantMessage.id;
 
     emit(state.copyWith(
       status: ChatStatus.streaming,
       conversation: updatedConversation,
-      streamingMessageId: assistantMessage.id,
+      streamingMessageId: _streamingMessageId,
     ));
 
     // Start streaming response
+    _beginResponseMetrics(updatedConversation.messages, config);
     _startStreaming(updatedConversation.messages, config);
   }
 
@@ -196,13 +209,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     _activeConfig = config;
     _streamSubscription?.cancel();
     var sawFunctionCall = false;
+    final tools = _toolExecutor.openAiToolDefinitions;
     final stream = config.inferenceMode == ChatInferenceMode.remote
         ? _remoteRepository.generateResponse(
             messages,
             config,
-            tools: _toolExecutor.openAiToolDefinitions,
+            tools: tools,
           )
-        : _gemmaRepository.generateResponse(messages);
+        : _gemmaRepository.generateResponse(messages, tools: tools);
     _streamSubscription = stream.listen(
       (chunk) {
         switch (chunk) {
@@ -237,24 +251,41 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       await _gemmaRepository.stopGeneration();
     }
 
-    if (state.conversation != null && state.streamingMessageId != null) {
+    final streamingConversation = _streamingConversation;
+    final streamingMessageId = _streamingMessageId;
+    if (streamingConversation != null && streamingMessageId != null) {
       // Mark the streaming message as complete
-      final messages = state.conversation!.messages.map((m) {
-        if (m.id == state.streamingMessageId && m is AssistantMessage) {
-          final updated = m.copyWith(isStreaming: false);
-          // Save the partial message
-          _storageRepository.saveMessage(updated);
+      AssistantMessage? messageToSave;
+      final messages = streamingConversation.messages.map((m) {
+        if (m.id == streamingMessageId && m is AssistantMessage) {
+          final updated = _completeAssistantMessage(m);
+          messageToSave = updated;
           return updated;
         }
         return m;
       }).toList();
+      final stoppedConversation = streamingConversation.copyWith(
+        messages: messages,
+        updatedAt: DateTime.now(),
+      );
+      _streamingConversation = stoppedConversation;
+      final savedMessage = messageToSave;
+      if (savedMessage != null) {
+        await _storageRepository.saveMessage(savedMessage);
+      }
 
+      final visibleConversation =
+          state.conversation?.id == stoppedConversation.id
+              ? stoppedConversation
+              : state.conversation;
+      _clearActiveStream();
       emit(state.copyWith(
         status: ChatStatus.stopped,
-        conversation: state.conversation!.copyWith(messages: messages),
+        conversation: visibleConversation,
         clearStreamingMessageId: true,
       ));
     }
+    _clearResponseMetrics();
   }
 
   Future<void> _onClearConversation(
@@ -295,36 +326,66 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final messages = state.conversation!.messages;
     if (messages.isEmpty) return;
 
-    // Find and remove the last assistant message
-    final lastAssistantIndex =
-        messages.lastIndexWhere((m) => m is AssistantMessage);
-    if (lastAssistantIndex == -1) return;
+    final assistantIndex = event.messageId == null
+        ? messages.lastIndexWhere((m) => m is AssistantMessage)
+        : messages.indexWhere(
+            (m) => m.id == event.messageId && m is AssistantMessage,
+          );
+    if (assistantIndex == -1) return;
 
-    final lastAssistant = messages[lastAssistantIndex];
-    await _storageRepository.deleteMessage(lastAssistant.id);
-
-    final updatedMessages = List<Message>.from(messages)
-      ..removeAt(lastAssistantIndex);
-
-    // Create new streaming assistant message
-    final newAssistantMessage = AssistantMessage(
-      id: _uuid.v4(),
-      content: '',
-      conversationId: state.conversation!.id,
-      timestamp: DateTime.now(),
-      isStreaming: true,
+    await _restartFromPrefix(
+      retainedMessages: messages.sublist(0, assistantIndex),
+      deleteMessages: messages.sublist(assistantIndex),
+      config: config,
+      emit: emit,
     );
+  }
 
-    final finalMessages = [...updatedMessages, newAssistantMessage];
+  Future<void> _onEditUserMessage(
+    ChatEditUserMessage event,
+    Emitter<ChatState> emit,
+  ) async {
+    if (state.conversation == null) return;
+    final content = event.content.trim();
+    if (content.isEmpty) return;
 
-    emit(state.copyWith(
-      status: ChatStatus.streaming,
-      conversation: state.conversation!.copyWith(messages: finalMessages),
-      streamingMessageId: newAssistantMessage.id,
-    ));
+    final config = await _storageRepository.loadSettings();
+    final readinessError = await _readinessError(config);
+    if (readinessError != null) {
+      emit(state.copyWith(
+        status: ChatStatus.error,
+        errorMessage: readinessError,
+      ));
+      return;
+    }
 
-    // Start streaming response with messages up to (but not including) the new assistant message
-    _startStreaming(updatedMessages, config);
+    final messages = state.conversation!.messages;
+    final userIndex = messages.indexWhere(
+      (m) => m.id == event.messageId && m is UserMessage,
+    );
+    if (userIndex == -1) return;
+
+    final userMessage = messages[userIndex] as UserMessage;
+    final updatedUserMessage = userMessage.copyWith(content: content);
+    await _storageRepository.saveMessage(updatedUserMessage);
+
+    final retainedMessages = [
+      ...messages.sublist(0, userIndex),
+      updatedUserMessage,
+    ];
+    var title = state.conversation!.title;
+    final firstUserIndex = messages.indexWhere((m) => m is UserMessage);
+    if (firstUserIndex == userIndex) {
+      title = _generateTitle(content);
+    }
+
+    await _restartFromPrefix(
+      retainedMessages: retainedMessages,
+      deleteMessages: messages.sublist(userIndex + 1),
+      config: config,
+      emit: emit,
+      title: title,
+    );
   }
 
   Future<void> _onDeleteConversation(
@@ -357,42 +418,90 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  Future<void> _restartFromPrefix({
+    required List<Message> retainedMessages,
+    required List<Message> deleteMessages,
+    required ModelConfig config,
+    required Emitter<ChatState> emit,
+    String? title,
+  }) async {
+    final conversation = state.conversation;
+    if (conversation == null) return;
+
+    await _streamSubscription?.cancel();
+    _streamSubscription = null;
+
+    for (final message in deleteMessages) {
+      await _storageRepository.deleteMessage(message.id);
+    }
+
+    final trimmedConversation = conversation.copyWith(
+      title: title,
+      messages: retainedMessages,
+      updatedAt: DateTime.now(),
+    );
+    await _storageRepository.saveConversation(trimmedConversation);
+
+    final newAssistantMessage = AssistantMessage(
+      id: _uuid.v4(),
+      content: '',
+      conversationId: conversation.id,
+      timestamp: DateTime.now(),
+      isStreaming: true,
+    );
+    final streamingConversation = trimmedConversation.copyWith(
+      messages: [...retainedMessages, newAssistantMessage],
+    );
+    _streamingConversation = streamingConversation;
+    _streamingMessageId = newAssistantMessage.id;
+
+    emit(state.copyWith(
+      status: ChatStatus.streaming,
+      conversation: streamingConversation,
+      streamingMessageId: _streamingMessageId,
+      clearErrorMessage: true,
+    ));
+
+    _beginResponseMetrics(retainedMessages, config);
+    _startStreaming(retainedMessages, config);
+  }
+
   void _onStreamToken(
     _ChatStreamToken event,
     Emitter<ChatState> emit,
   ) {
-    if (state.conversation == null || state.streamingMessageId == null) return;
-
-    final messages = state.conversation!.messages.map((m) {
-      if (m.id == state.streamingMessageId && m is AssistantMessage) {
-        return m.copyWith(content: m.content + event.token);
-      }
-      return m;
-    }).toList();
-
-    emit(state.copyWith(
-      conversation: state.conversation!.copyWith(messages: messages),
-    ));
+    final didUpdate = _updateStreamingAssistant(
+      (message) => _withResponseInfo(
+        message.copyWith(content: message.content + event.token),
+      ),
+    );
+    if (!didUpdate) return;
+    _emitStreamingConversationIfVisible(emit);
   }
 
   void _onThinkingToken(
     _ChatThinkingToken event,
     Emitter<ChatState> emit,
   ) {
-    if (state.conversation == null || state.streamingMessageId == null) return;
+    final didUpdate = _updateStreamingAssistant(
+      (message) => _withResponseInfo(
+        message.copyWith(
+          thinkingContent: (message.thinkingContent ?? '') + event.content,
+        ),
+      ),
+    );
+    if (!didUpdate) return;
+    _emitStreamingConversationIfVisible(emit);
+  }
 
-    final messages = state.conversation!.messages.map((m) {
-      if (m.id == state.streamingMessageId && m is AssistantMessage) {
-        return m.copyWith(
-          thinkingContent: (m.thinkingContent ?? '') + event.content,
-        );
-      }
-      return m;
-    }).toList();
-
-    emit(state.copyWith(
-      conversation: state.conversation!.copyWith(messages: messages),
-    ));
+  void _onResponseMetricsTick(
+    _ChatResponseMetricsTick event,
+    Emitter<ChatState> emit,
+  ) {
+    if (_responseStartedAt == null) return;
+    final didUpdate = _updateStreamingAssistant(_withResponseInfo);
+    if (!didUpdate) return;
+    _emitStreamingConversationIfVisible(emit);
   }
 
   Future<void> _onStreamComplete(
@@ -401,12 +510,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   ) async {
     _streamSubscription = null;
 
-    if (state.conversation == null || state.streamingMessageId == null) return;
+    final streamingConversation = _streamingConversation;
+    final streamingMessageId = _streamingMessageId;
+    if (streamingConversation == null || streamingMessageId == null) return;
 
     // Check if the assistant message is empty (0 tokens generated)
-    final streamingMsg = state.conversation!.messages
+    final streamingMsg = streamingConversation.messages
         .whereType<AssistantMessage>()
-        .where((m) => m.id == state.streamingMessageId)
+        .where((m) => m.id == streamingMessageId)
         .firstOrNull;
     final hasContent = streamingMsg != null &&
         (streamingMsg.content.trim().isNotEmpty ||
@@ -420,24 +531,41 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             'backend in settings, or select a different model.',
         clearStreamingMessageId: true,
       ));
+      _clearActiveStream();
+      _clearResponseMetrics();
       return;
     }
 
-    final messages = state.conversation!.messages.map((m) {
-      if (m.id == state.streamingMessageId && m is AssistantMessage) {
-        final completed = m.copyWith(isStreaming: false);
-        // Save the completed message
-        _storageRepository.saveMessage(completed);
+    AssistantMessage? messageToSave;
+    final messages = streamingConversation.messages.map((m) {
+      if (m.id == streamingMessageId && m is AssistantMessage) {
+        final completed = _completeAssistantMessage(m);
+        messageToSave = completed;
         return completed;
       }
       return m;
     }).toList();
+    final completedConversation = streamingConversation.copyWith(
+      messages: messages,
+      updatedAt: DateTime.now(),
+    );
+    _streamingConversation = completedConversation;
+    final savedMessage = messageToSave;
+    if (savedMessage != null) {
+      await _storageRepository.saveMessage(savedMessage);
+    }
 
+    final visibleConversation =
+        state.conversation?.id == completedConversation.id
+            ? completedConversation
+            : state.conversation;
+    _clearActiveStream();
     emit(state.copyWith(
       status: ChatStatus.ready,
-      conversation: state.conversation!.copyWith(messages: messages),
+      conversation: visibleConversation,
       clearStreamingMessageId: true,
     ));
+    _clearResponseMetrics();
   }
 
   Future<void> _onFunctionCall(
@@ -448,7 +576,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await _streamSubscription?.cancel();
     _streamSubscription = null;
 
-    if (state.conversation == null || state.streamingMessageId == null) return;
+    final streamingConversation = _streamingConversation;
+    final streamingMessageId = _streamingMessageId;
+    if (streamingConversation == null || streamingMessageId == null) return;
 
     // Execute the tool
     final result = await _toolExecutor.execute(event.name, event.args);
@@ -458,26 +588,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       id: _uuid.v4(),
       toolName: event.name,
       content: jsonEncode(result),
-      conversationId: state.conversation!.id,
+      conversationId: streamingConversation.id,
       timestamp: DateTime.now(),
     );
 
     // Add tool response to conversation
-    var updatedConversation = state.conversation!.addMessage(toolMsg);
+    final updatedConversation = streamingConversation.addMessage(toolMsg);
     await _storageRepository.saveMessage(toolMsg);
 
-    // Update the streaming assistant message to show tool was called
-    final messages = updatedConversation.messages.map((m) {
-      if (m.id == state.streamingMessageId && m is AssistantMessage) {
-        return m.copyWith(
-          content: '${m.content}\n\n> **${event.name}** executed\n\n',
-        );
-      }
-      return m;
-    }).toList();
-    updatedConversation = updatedConversation.copyWith(messages: messages);
+    _streamingConversation = updatedConversation;
 
-    emit(state.copyWith(conversation: updatedConversation));
+    _emitStreamingConversationIfVisible(emit);
 
     // Resume generation — feed all messages (including tool response) back
     final config = _activeConfig ?? await _storageRepository.loadSettings();
@@ -495,6 +616,128 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       errorMessage: event.error,
       clearStreamingMessageId: true,
     ));
+    _clearActiveStream();
+    _clearResponseMetrics();
+  }
+
+  ChatStatus _statusForVisibleConversation() {
+    return _streamingConversation == null
+        ? ChatStatus.ready
+        : ChatStatus.streaming;
+  }
+
+  Conversation _conversationForDisplay(Conversation conversation) {
+    final streamingConversation = _streamingConversation;
+    if (streamingConversation != null &&
+        streamingConversation.id == conversation.id) {
+      return streamingConversation;
+    }
+    return conversation;
+  }
+
+  bool _updateStreamingAssistant(
+    AssistantMessage Function(AssistantMessage message) update,
+  ) {
+    final streamingConversation = _streamingConversation;
+    final streamingMessageId = _streamingMessageId;
+    if (streamingConversation == null || streamingMessageId == null) {
+      return false;
+    }
+
+    var didUpdate = false;
+    final messages = streamingConversation.messages.map((message) {
+      if (message.id == streamingMessageId && message is AssistantMessage) {
+        didUpdate = true;
+        return update(message);
+      }
+      return message;
+    }).toList();
+
+    if (!didUpdate) return false;
+    _streamingConversation = streamingConversation.copyWith(messages: messages);
+    return true;
+  }
+
+  void _emitStreamingConversationIfVisible(Emitter<ChatState> emit) {
+    final streamingConversation = _streamingConversation;
+    if (streamingConversation == null) return;
+
+    emit(
+      state.copyWith(
+        status: ChatStatus.streaming,
+        conversation: state.conversation?.id == streamingConversation.id
+            ? streamingConversation
+            : state.conversation,
+        streamingMessageId: _streamingMessageId,
+      ),
+    );
+  }
+
+  void _clearActiveStream() {
+    _streamingConversation = null;
+    _streamingMessageId = null;
+  }
+
+  void _beginResponseMetrics(
+      List<Message> contextMessages, ModelConfig config) {
+    _responseMetricsTimer?.cancel();
+    _responseStartedAt = DateTime.now();
+    _responseContextTokens = _estimateContextTokens(contextMessages);
+    _responseMaxOutputTokens = config.maxTokens;
+    _responseMetricsTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!isClosed) add(const _ChatResponseMetricsTick());
+    });
+  }
+
+  AssistantMessage _completeAssistantMessage(AssistantMessage message) {
+    return _withResponseInfo(message).copyWith(isStreaming: false);
+  }
+
+  AssistantMessage _withResponseInfo(AssistantMessage message) {
+    final responseText = [
+      message.content,
+      if (message.thinkingContent != null) message.thinkingContent!,
+    ].where((part) => part.trim().isNotEmpty).join('\n');
+    final outputTokens = _estimateTokenCount(responseText);
+    final startedAt = _responseStartedAt ?? message.timestamp;
+    final responseInfo = ChatResponseInfo(
+      outputTokens: outputTokens,
+      contextTokens: _responseContextTokens,
+      maxOutputTokens: _responseMaxOutputTokens,
+      duration: DateTime.now().difference(startedAt),
+    );
+
+    return message.copyWith(
+        tokenCount: outputTokens, responseInfo: responseInfo);
+  }
+
+  void _clearResponseMetrics() {
+    _responseMetricsTimer?.cancel();
+    _responseMetricsTimer = null;
+    _responseStartedAt = null;
+    _responseContextTokens = null;
+    _responseMaxOutputTokens = null;
+  }
+
+  int _estimateContextTokens(List<Message> messages) {
+    var total = 0;
+    for (final message in messages) {
+      if (message is AssistantMessage && message.isStreaming) continue;
+      final content = switch (message) {
+        final UserMessage user => user.contentWithAttachments(),
+        final ToolResponseMessage tool =>
+          'Tool response from ${tool.toolName}:\n${tool.content}',
+        _ => message.content,
+      };
+      total += _estimateTokenCount(content);
+    }
+    return total;
+  }
+
+  int _estimateTokenCount(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return 0;
+    return (trimmed.length / 4).ceil();
   }
 
   String _generateTitle(String firstMessage) {
@@ -524,6 +767,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   @override
   Future<void> close() async {
     await _streamSubscription?.cancel();
+    _responseMetricsTimer?.cancel();
     await _remoteRepository.dispose();
     return super.close();
   }

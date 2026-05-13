@@ -54,7 +54,21 @@ final class ChatClearConversation extends ChatEvent {
 
 /// Regenerate the last assistant response.
 final class ChatRegenerateResponse extends ChatEvent {
-  const ChatRegenerateResponse();
+  const ChatRegenerateResponse({this.messageId});
+
+  /// Assistant message ID to regenerate. Defaults to the last assistant reply.
+  final String? messageId;
+}
+
+/// Edit a user message and regenerate from that point.
+final class ChatEditUserMessage extends ChatEvent {
+  const ChatEditUserMessage({
+    required this.messageId,
+    required this.content,
+  });
+
+  final String messageId;
+  final String content;
 }
 
 /// Delete a conversation by ID.
@@ -81,6 +95,11 @@ final class _ChatThinkingToken extends ChatEvent {
   const _ChatThinkingToken(this.content);
 
   final String content;
+}
+
+/// Internal event for refreshing live response metrics while streaming.
+final class _ChatResponseMetricsTick extends ChatEvent {
+  const _ChatResponseMetricsTick();
 }
 
 /// Internal event for stream completion.

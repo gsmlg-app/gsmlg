@@ -1705,6 +1705,30 @@ class $ChatMessageTableTable extends ChatMessageTable
   late final GeneratedColumn<int> tokenCount = GeneratedColumn<int>(
       'token_count', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _responseOutputTokensMeta =
+      const VerificationMeta('responseOutputTokens');
+  @override
+  late final GeneratedColumn<int> responseOutputTokens = GeneratedColumn<int>(
+      'response_output_tokens', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _responseContextTokensMeta =
+      const VerificationMeta('responseContextTokens');
+  @override
+  late final GeneratedColumn<int> responseContextTokens = GeneratedColumn<int>(
+      'response_context_tokens', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _responseMaxOutputTokensMeta =
+      const VerificationMeta('responseMaxOutputTokens');
+  @override
+  late final GeneratedColumn<int> responseMaxOutputTokens =
+      GeneratedColumn<int>('response_max_output_tokens', aliasedName, true,
+          type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _responseDurationMsMeta =
+      const VerificationMeta('responseDurationMs');
+  @override
+  late final GeneratedColumn<int> responseDurationMs = GeneratedColumn<int>(
+      'response_duration_ms', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _imageBytesMeta =
       const VerificationMeta('imageBytes');
   @override
@@ -1732,6 +1756,10 @@ class $ChatMessageTableTable extends ChatMessageTable
         role,
         content,
         tokenCount,
+        responseOutputTokens,
+        responseContextTokens,
+        responseMaxOutputTokens,
+        responseDurationMs,
         imageBytes,
         toolName,
         timestamp
@@ -1778,6 +1806,31 @@ class $ChatMessageTableTable extends ChatMessageTable
           tokenCount.isAcceptableOrUnknown(
               data['token_count']!, _tokenCountMeta));
     }
+    if (data.containsKey('response_output_tokens')) {
+      context.handle(
+          _responseOutputTokensMeta,
+          responseOutputTokens.isAcceptableOrUnknown(
+              data['response_output_tokens']!, _responseOutputTokensMeta));
+    }
+    if (data.containsKey('response_context_tokens')) {
+      context.handle(
+          _responseContextTokensMeta,
+          responseContextTokens.isAcceptableOrUnknown(
+              data['response_context_tokens']!, _responseContextTokensMeta));
+    }
+    if (data.containsKey('response_max_output_tokens')) {
+      context.handle(
+          _responseMaxOutputTokensMeta,
+          responseMaxOutputTokens.isAcceptableOrUnknown(
+              data['response_max_output_tokens']!,
+              _responseMaxOutputTokensMeta));
+    }
+    if (data.containsKey('response_duration_ms')) {
+      context.handle(
+          _responseDurationMsMeta,
+          responseDurationMs.isAcceptableOrUnknown(
+              data['response_duration_ms']!, _responseDurationMsMeta));
+    }
     if (data.containsKey('image_bytes')) {
       context.handle(
           _imageBytesMeta,
@@ -1811,6 +1864,15 @@ class $ChatMessageTableTable extends ChatMessageTable
           .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
       tokenCount: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}token_count']),
+      responseOutputTokens: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}response_output_tokens']),
+      responseContextTokens: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}response_context_tokens']),
+      responseMaxOutputTokens: attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}response_max_output_tokens']),
+      responseDurationMs: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}response_duration_ms']),
       imageBytes: attachedDatabase.typeMapping
           .read(DriftSqlType.blob, data['${effectivePrefix}image_bytes']),
       toolName: attachedDatabase.typeMapping
@@ -1843,6 +1905,18 @@ class ChatMessageTableData extends DataClass
   /// Number of tokens in the message (null if not computed).
   final int? tokenCount;
 
+  /// Generated output token count for assistant responses.
+  final int? responseOutputTokens;
+
+  /// Approximate input context size in tokens for assistant responses.
+  final int? responseContextTokens;
+
+  /// Configured maximum output tokens for assistant responses.
+  final int? responseMaxOutputTokens;
+
+  /// Wall-clock generation duration in milliseconds for assistant responses.
+  final int? responseDurationMs;
+
   /// Image data for multimodal user messages (null for text-only).
   final Uint8List? imageBytes;
 
@@ -1857,6 +1931,10 @@ class ChatMessageTableData extends DataClass
       required this.role,
       required this.content,
       this.tokenCount,
+      this.responseOutputTokens,
+      this.responseContextTokens,
+      this.responseMaxOutputTokens,
+      this.responseDurationMs,
       this.imageBytes,
       this.toolName,
       required this.timestamp});
@@ -1869,6 +1947,19 @@ class ChatMessageTableData extends DataClass
     map['content'] = Variable<String>(content);
     if (!nullToAbsent || tokenCount != null) {
       map['token_count'] = Variable<int>(tokenCount);
+    }
+    if (!nullToAbsent || responseOutputTokens != null) {
+      map['response_output_tokens'] = Variable<int>(responseOutputTokens);
+    }
+    if (!nullToAbsent || responseContextTokens != null) {
+      map['response_context_tokens'] = Variable<int>(responseContextTokens);
+    }
+    if (!nullToAbsent || responseMaxOutputTokens != null) {
+      map['response_max_output_tokens'] =
+          Variable<int>(responseMaxOutputTokens);
+    }
+    if (!nullToAbsent || responseDurationMs != null) {
+      map['response_duration_ms'] = Variable<int>(responseDurationMs);
     }
     if (!nullToAbsent || imageBytes != null) {
       map['image_bytes'] = Variable<Uint8List>(imageBytes);
@@ -1889,6 +1980,18 @@ class ChatMessageTableData extends DataClass
       tokenCount: tokenCount == null && nullToAbsent
           ? const Value.absent()
           : Value(tokenCount),
+      responseOutputTokens: responseOutputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(responseOutputTokens),
+      responseContextTokens: responseContextTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(responseContextTokens),
+      responseMaxOutputTokens: responseMaxOutputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(responseMaxOutputTokens),
+      responseDurationMs: responseDurationMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(responseDurationMs),
       imageBytes: imageBytes == null && nullToAbsent
           ? const Value.absent()
           : Value(imageBytes),
@@ -1908,6 +2011,13 @@ class ChatMessageTableData extends DataClass
       role: serializer.fromJson<String>(json['role']),
       content: serializer.fromJson<String>(json['content']),
       tokenCount: serializer.fromJson<int?>(json['tokenCount']),
+      responseOutputTokens:
+          serializer.fromJson<int?>(json['responseOutputTokens']),
+      responseContextTokens:
+          serializer.fromJson<int?>(json['responseContextTokens']),
+      responseMaxOutputTokens:
+          serializer.fromJson<int?>(json['responseMaxOutputTokens']),
+      responseDurationMs: serializer.fromJson<int?>(json['responseDurationMs']),
       imageBytes: serializer.fromJson<Uint8List?>(json['imageBytes']),
       toolName: serializer.fromJson<String?>(json['toolName']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
@@ -1922,6 +2032,11 @@ class ChatMessageTableData extends DataClass
       'role': serializer.toJson<String>(role),
       'content': serializer.toJson<String>(content),
       'tokenCount': serializer.toJson<int?>(tokenCount),
+      'responseOutputTokens': serializer.toJson<int?>(responseOutputTokens),
+      'responseContextTokens': serializer.toJson<int?>(responseContextTokens),
+      'responseMaxOutputTokens':
+          serializer.toJson<int?>(responseMaxOutputTokens),
+      'responseDurationMs': serializer.toJson<int?>(responseDurationMs),
       'imageBytes': serializer.toJson<Uint8List?>(imageBytes),
       'toolName': serializer.toJson<String?>(toolName),
       'timestamp': serializer.toJson<DateTime>(timestamp),
@@ -1934,6 +2049,10 @@ class ChatMessageTableData extends DataClass
           String? role,
           String? content,
           Value<int?> tokenCount = const Value.absent(),
+          Value<int?> responseOutputTokens = const Value.absent(),
+          Value<int?> responseContextTokens = const Value.absent(),
+          Value<int?> responseMaxOutputTokens = const Value.absent(),
+          Value<int?> responseDurationMs = const Value.absent(),
           Value<Uint8List?> imageBytes = const Value.absent(),
           Value<String?> toolName = const Value.absent(),
           DateTime? timestamp}) =>
@@ -1943,6 +2062,18 @@ class ChatMessageTableData extends DataClass
         role: role ?? this.role,
         content: content ?? this.content,
         tokenCount: tokenCount.present ? tokenCount.value : this.tokenCount,
+        responseOutputTokens: responseOutputTokens.present
+            ? responseOutputTokens.value
+            : this.responseOutputTokens,
+        responseContextTokens: responseContextTokens.present
+            ? responseContextTokens.value
+            : this.responseContextTokens,
+        responseMaxOutputTokens: responseMaxOutputTokens.present
+            ? responseMaxOutputTokens.value
+            : this.responseMaxOutputTokens,
+        responseDurationMs: responseDurationMs.present
+            ? responseDurationMs.value
+            : this.responseDurationMs,
         imageBytes: imageBytes.present ? imageBytes.value : this.imageBytes,
         toolName: toolName.present ? toolName.value : this.toolName,
         timestamp: timestamp ?? this.timestamp,
@@ -1957,6 +2088,18 @@ class ChatMessageTableData extends DataClass
       content: data.content.present ? data.content.value : this.content,
       tokenCount:
           data.tokenCount.present ? data.tokenCount.value : this.tokenCount,
+      responseOutputTokens: data.responseOutputTokens.present
+          ? data.responseOutputTokens.value
+          : this.responseOutputTokens,
+      responseContextTokens: data.responseContextTokens.present
+          ? data.responseContextTokens.value
+          : this.responseContextTokens,
+      responseMaxOutputTokens: data.responseMaxOutputTokens.present
+          ? data.responseMaxOutputTokens.value
+          : this.responseMaxOutputTokens,
+      responseDurationMs: data.responseDurationMs.present
+          ? data.responseDurationMs.value
+          : this.responseDurationMs,
       imageBytes:
           data.imageBytes.present ? data.imageBytes.value : this.imageBytes,
       toolName: data.toolName.present ? data.toolName.value : this.toolName,
@@ -1972,6 +2115,10 @@ class ChatMessageTableData extends DataClass
           ..write('role: $role, ')
           ..write('content: $content, ')
           ..write('tokenCount: $tokenCount, ')
+          ..write('responseOutputTokens: $responseOutputTokens, ')
+          ..write('responseContextTokens: $responseContextTokens, ')
+          ..write('responseMaxOutputTokens: $responseMaxOutputTokens, ')
+          ..write('responseDurationMs: $responseDurationMs, ')
           ..write('imageBytes: $imageBytes, ')
           ..write('toolName: $toolName, ')
           ..write('timestamp: $timestamp')
@@ -1980,8 +2127,19 @@ class ChatMessageTableData extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(id, conversationId, role, content, tokenCount,
-      $driftBlobEquality.hash(imageBytes), toolName, timestamp);
+  int get hashCode => Object.hash(
+      id,
+      conversationId,
+      role,
+      content,
+      tokenCount,
+      responseOutputTokens,
+      responseContextTokens,
+      responseMaxOutputTokens,
+      responseDurationMs,
+      $driftBlobEquality.hash(imageBytes),
+      toolName,
+      timestamp);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1991,6 +2149,10 @@ class ChatMessageTableData extends DataClass
           other.role == this.role &&
           other.content == this.content &&
           other.tokenCount == this.tokenCount &&
+          other.responseOutputTokens == this.responseOutputTokens &&
+          other.responseContextTokens == this.responseContextTokens &&
+          other.responseMaxOutputTokens == this.responseMaxOutputTokens &&
+          other.responseDurationMs == this.responseDurationMs &&
           $driftBlobEquality.equals(other.imageBytes, this.imageBytes) &&
           other.toolName == this.toolName &&
           other.timestamp == this.timestamp);
@@ -2002,6 +2164,10 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
   final Value<String> role;
   final Value<String> content;
   final Value<int?> tokenCount;
+  final Value<int?> responseOutputTokens;
+  final Value<int?> responseContextTokens;
+  final Value<int?> responseMaxOutputTokens;
+  final Value<int?> responseDurationMs;
   final Value<Uint8List?> imageBytes;
   final Value<String?> toolName;
   final Value<DateTime> timestamp;
@@ -2012,6 +2178,10 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     this.role = const Value.absent(),
     this.content = const Value.absent(),
     this.tokenCount = const Value.absent(),
+    this.responseOutputTokens = const Value.absent(),
+    this.responseContextTokens = const Value.absent(),
+    this.responseMaxOutputTokens = const Value.absent(),
+    this.responseDurationMs = const Value.absent(),
     this.imageBytes = const Value.absent(),
     this.toolName = const Value.absent(),
     this.timestamp = const Value.absent(),
@@ -2023,6 +2193,10 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     required String role,
     required String content,
     this.tokenCount = const Value.absent(),
+    this.responseOutputTokens = const Value.absent(),
+    this.responseContextTokens = const Value.absent(),
+    this.responseMaxOutputTokens = const Value.absent(),
+    this.responseDurationMs = const Value.absent(),
     this.imageBytes = const Value.absent(),
     this.toolName = const Value.absent(),
     this.timestamp = const Value.absent(),
@@ -2037,6 +2211,10 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     Expression<String>? role,
     Expression<String>? content,
     Expression<int>? tokenCount,
+    Expression<int>? responseOutputTokens,
+    Expression<int>? responseContextTokens,
+    Expression<int>? responseMaxOutputTokens,
+    Expression<int>? responseDurationMs,
     Expression<Uint8List>? imageBytes,
     Expression<String>? toolName,
     Expression<DateTime>? timestamp,
@@ -2048,6 +2226,14 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       if (role != null) 'role': role,
       if (content != null) 'content': content,
       if (tokenCount != null) 'token_count': tokenCount,
+      if (responseOutputTokens != null)
+        'response_output_tokens': responseOutputTokens,
+      if (responseContextTokens != null)
+        'response_context_tokens': responseContextTokens,
+      if (responseMaxOutputTokens != null)
+        'response_max_output_tokens': responseMaxOutputTokens,
+      if (responseDurationMs != null)
+        'response_duration_ms': responseDurationMs,
       if (imageBytes != null) 'image_bytes': imageBytes,
       if (toolName != null) 'tool_name': toolName,
       if (timestamp != null) 'timestamp': timestamp,
@@ -2061,6 +2247,10 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       Value<String>? role,
       Value<String>? content,
       Value<int?>? tokenCount,
+      Value<int?>? responseOutputTokens,
+      Value<int?>? responseContextTokens,
+      Value<int?>? responseMaxOutputTokens,
+      Value<int?>? responseDurationMs,
       Value<Uint8List?>? imageBytes,
       Value<String?>? toolName,
       Value<DateTime>? timestamp,
@@ -2071,6 +2261,12 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       role: role ?? this.role,
       content: content ?? this.content,
       tokenCount: tokenCount ?? this.tokenCount,
+      responseOutputTokens: responseOutputTokens ?? this.responseOutputTokens,
+      responseContextTokens:
+          responseContextTokens ?? this.responseContextTokens,
+      responseMaxOutputTokens:
+          responseMaxOutputTokens ?? this.responseMaxOutputTokens,
+      responseDurationMs: responseDurationMs ?? this.responseDurationMs,
       imageBytes: imageBytes ?? this.imageBytes,
       toolName: toolName ?? this.toolName,
       timestamp: timestamp ?? this.timestamp,
@@ -2096,6 +2292,20 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     if (tokenCount.present) {
       map['token_count'] = Variable<int>(tokenCount.value);
     }
+    if (responseOutputTokens.present) {
+      map['response_output_tokens'] = Variable<int>(responseOutputTokens.value);
+    }
+    if (responseContextTokens.present) {
+      map['response_context_tokens'] =
+          Variable<int>(responseContextTokens.value);
+    }
+    if (responseMaxOutputTokens.present) {
+      map['response_max_output_tokens'] =
+          Variable<int>(responseMaxOutputTokens.value);
+    }
+    if (responseDurationMs.present) {
+      map['response_duration_ms'] = Variable<int>(responseDurationMs.value);
+    }
     if (imageBytes.present) {
       map['image_bytes'] = Variable<Uint8List>(imageBytes.value);
     }
@@ -2119,6 +2329,10 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
           ..write('role: $role, ')
           ..write('content: $content, ')
           ..write('tokenCount: $tokenCount, ')
+          ..write('responseOutputTokens: $responseOutputTokens, ')
+          ..write('responseContextTokens: $responseContextTokens, ')
+          ..write('responseMaxOutputTokens: $responseMaxOutputTokens, ')
+          ..write('responseDurationMs: $responseDurationMs, ')
           ..write('imageBytes: $imageBytes, ')
           ..write('toolName: $toolName, ')
           ..write('timestamp: $timestamp, ')
@@ -4893,6 +5107,10 @@ typedef $$ChatMessageTableTableCreateCompanionBuilder
   required String role,
   required String content,
   Value<int?> tokenCount,
+  Value<int?> responseOutputTokens,
+  Value<int?> responseContextTokens,
+  Value<int?> responseMaxOutputTokens,
+  Value<int?> responseDurationMs,
   Value<Uint8List?> imageBytes,
   Value<String?> toolName,
   Value<DateTime> timestamp,
@@ -4905,6 +5123,10 @@ typedef $$ChatMessageTableTableUpdateCompanionBuilder
   Value<String> role,
   Value<String> content,
   Value<int?> tokenCount,
+  Value<int?> responseOutputTokens,
+  Value<int?> responseContextTokens,
+  Value<int?> responseMaxOutputTokens,
+  Value<int?> responseDurationMs,
   Value<Uint8List?> imageBytes,
   Value<String?> toolName,
   Value<DateTime> timestamp,
@@ -4953,6 +5175,22 @@ class $$ChatMessageTableTableFilterComposer
 
   ColumnFilters<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get responseOutputTokens => $composableBuilder(
+      column: $table.responseOutputTokens,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get responseContextTokens => $composableBuilder(
+      column: $table.responseContextTokens,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get responseMaxOutputTokens => $composableBuilder(
+      column: $table.responseMaxOutputTokens,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get responseDurationMs => $composableBuilder(
+      column: $table.responseDurationMs,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<Uint8List> get imageBytes => $composableBuilder(
       column: $table.imageBytes, builder: (column) => ColumnFilters(column));
@@ -5006,6 +5244,22 @@ class $$ChatMessageTableTableOrderingComposer
   ColumnOrderings<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get responseOutputTokens => $composableBuilder(
+      column: $table.responseOutputTokens,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get responseContextTokens => $composableBuilder(
+      column: $table.responseContextTokens,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get responseMaxOutputTokens => $composableBuilder(
+      column: $table.responseMaxOutputTokens,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get responseDurationMs => $composableBuilder(
+      column: $table.responseDurationMs,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<Uint8List> get imageBytes => $composableBuilder(
       column: $table.imageBytes, builder: (column) => ColumnOrderings(column));
 
@@ -5057,6 +5311,18 @@ class $$ChatMessageTableTableAnnotationComposer
 
   GeneratedColumn<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => column);
+
+  GeneratedColumn<int> get responseOutputTokens => $composableBuilder(
+      column: $table.responseOutputTokens, builder: (column) => column);
+
+  GeneratedColumn<int> get responseContextTokens => $composableBuilder(
+      column: $table.responseContextTokens, builder: (column) => column);
+
+  GeneratedColumn<int> get responseMaxOutputTokens => $composableBuilder(
+      column: $table.responseMaxOutputTokens, builder: (column) => column);
+
+  GeneratedColumn<int> get responseDurationMs => $composableBuilder(
+      column: $table.responseDurationMs, builder: (column) => column);
 
   GeneratedColumn<Uint8List> get imageBytes => $composableBuilder(
       column: $table.imageBytes, builder: (column) => column);
@@ -5118,6 +5384,10 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             Value<String> role = const Value.absent(),
             Value<String> content = const Value.absent(),
             Value<int?> tokenCount = const Value.absent(),
+            Value<int?> responseOutputTokens = const Value.absent(),
+            Value<int?> responseContextTokens = const Value.absent(),
+            Value<int?> responseMaxOutputTokens = const Value.absent(),
+            Value<int?> responseDurationMs = const Value.absent(),
             Value<Uint8List?> imageBytes = const Value.absent(),
             Value<String?> toolName = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
@@ -5129,6 +5399,10 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             role: role,
             content: content,
             tokenCount: tokenCount,
+            responseOutputTokens: responseOutputTokens,
+            responseContextTokens: responseContextTokens,
+            responseMaxOutputTokens: responseMaxOutputTokens,
+            responseDurationMs: responseDurationMs,
             imageBytes: imageBytes,
             toolName: toolName,
             timestamp: timestamp,
@@ -5140,6 +5414,10 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             required String role,
             required String content,
             Value<int?> tokenCount = const Value.absent(),
+            Value<int?> responseOutputTokens = const Value.absent(),
+            Value<int?> responseContextTokens = const Value.absent(),
+            Value<int?> responseMaxOutputTokens = const Value.absent(),
+            Value<int?> responseDurationMs = const Value.absent(),
             Value<Uint8List?> imageBytes = const Value.absent(),
             Value<String?> toolName = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
@@ -5151,6 +5429,10 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             role: role,
             content: content,
             tokenCount: tokenCount,
+            responseOutputTokens: responseOutputTokens,
+            responseContextTokens: responseContextTokens,
+            responseMaxOutputTokens: responseMaxOutputTokens,
+            responseDurationMs: responseDurationMs,
             imageBytes: imageBytes,
             toolName: toolName,
             timestamp: timestamp,

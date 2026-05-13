@@ -27,6 +27,28 @@ final class GemmaModelInstall extends GemmaModelEvent {
   final String? token;
 }
 
+/// Pause an active model download and keep the partial file for resume.
+final class GemmaModelPauseDownload extends GemmaModelEvent {
+  const GemmaModelPauseDownload({
+    required this.url,
+    required this.modelId,
+  });
+
+  final String url;
+  final String modelId;
+}
+
+/// Cancel an active or paused model download and delete the partial file.
+final class GemmaModelCancelDownload extends GemmaModelEvent {
+  const GemmaModelCancelDownload({
+    required this.url,
+    required this.modelId,
+  });
+
+  final String url;
+  final String modelId;
+}
+
 /// Load the model into memory with configuration.
 final class GemmaModelLoad extends GemmaModelEvent {
   const GemmaModelLoad({required this.config});
@@ -107,11 +129,15 @@ final class _GemmaModelPerModelProgress extends GemmaModelEvent {
 final class _GemmaModelDownloadComplete extends GemmaModelEvent {
   const _GemmaModelDownloadComplete({
     required this.modelId,
+    this.result = _ModelDownloadResult.completed,
     this.errorMessage,
   });
 
   final String modelId;
+  final _ModelDownloadResult result;
 
   /// Non-null when the download failed.
   final String? errorMessage;
 }
+
+enum _ModelDownloadResult { completed, failed, paused, canceled }

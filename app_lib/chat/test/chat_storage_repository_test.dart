@@ -3,6 +3,38 @@ import 'package:app_database/app_database.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('persists assistant response info with chat messages', () async {
+    final database = AppDatabase.forTesting();
+    addTearDown(database.close);
+
+    final repository = ChatStorageRepository(database);
+    await repository.saveConversation(
+      Conversation.create(id: 'conversation-1'),
+    );
+
+    const responseInfo = ChatResponseInfo(
+      outputTokens: 42,
+      contextTokens: 512,
+      maxOutputTokens: 2048,
+      duration: Duration(milliseconds: 2000),
+    );
+    final message = AssistantMessage(
+      id: 'message-1',
+      content: 'done',
+      conversationId: 'conversation-1',
+      timestamp: DateTime(2026, 5, 13, 10),
+      tokenCount: 42,
+      responseInfo: responseInfo,
+    );
+
+    await repository.saveMessage(message);
+
+    final messages = await repository.loadMessages('conversation-1');
+    final restored = messages.single as AssistantMessage;
+    expect(restored.responseInfo, responseInfo);
+    expect(restored.responseInfo?.tokensPerSecond, 21);
+  });
+
   test('persists remote thinking effort with chat settings', () async {
     final database = AppDatabase.forTesting();
     addTearDown(database.close);

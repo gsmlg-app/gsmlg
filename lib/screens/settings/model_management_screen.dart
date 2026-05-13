@@ -64,6 +64,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                         _buildPresetDownloadSection(context, state),
                         _buildDownloadedSection(context, state),
                         _buildDownloadingSection(context, state),
+                        if (state.pausedDownloads.isNotEmpty)
+                          _buildPausedSection(context, state),
                         if (state.failedDownloads.isNotEmpty)
                           _buildFailedSection(context, state),
                         _buildProxySection(context, state),
@@ -213,21 +215,46 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
             ].join('\n'),
           ),
           trailing: SizedBox(
-            width: 120,
-            child: Column(
+            width: 220,
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                LinearProgressIndicator(value: progressValue),
-                const SizedBox(height: 4),
-                Text(
-                  '${download.progress.toStringAsFixed(0)}%',
-                  style: Theme.of(context).textTheme.bodySmall,
+                SizedBox(
+                  width: 112,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      LinearProgressIndicator(value: progressValue),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${download.progress.toStringAsFixed(0)}%',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      Text(
+                        _downloadSpeedLabel(download),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
                 ),
-                Text(
-                  _downloadSpeedLabel(download),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
+                IconButton(
+                  icon: const Icon(Icons.pause),
+                  tooltip: 'Pause download',
+                  onPressed: info == null
+                      ? null
+                      : () => _pauseDownload(context, info),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  tooltip: 'Cancel download',
+                  onPressed: info == null
+                      ? null
+                      : () => _cancelDownload(context, info),
                 ),
               ],
             ),
@@ -238,6 +265,63 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
     return SettingsSection(
       title: Text('Downloading Models (${state.activeDownloads.length}/3)'),
+      tiles: tiles,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Paused Downloads
+  // ---------------------------------------------------------------------------
+
+  SettingsSection _buildPausedSection(
+    BuildContext context,
+    GemmaModelState state,
+  ) {
+    final tiles = <SettingsTile>[];
+
+    for (final download in state.pausedDownloads) {
+      final info = GemmaModelInfo.findById(download.modelId);
+      final displayName = info?.displayName ?? download.modelId;
+      final category = info?.category ?? ModelCategory.other;
+
+      tiles.add(
+        SettingsTile(
+          leading: Icon(_categoryIcon(category)),
+          title: Text(displayName),
+          description: Text(
+            [
+              if (info != null) info.description,
+              _downloadTransferLabel(download),
+            ].join('\n'),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.play_arrow),
+                tooltip: 'Resume download',
+                onPressed: info == null
+                    ? null
+                    : () => _installModel(context, info),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.delete_outline,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                tooltip: 'Cancel download',
+                onPressed: info == null
+                    ? null
+                    : () => _cancelDownload(context, info),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SettingsSection(
+      title: Text('Paused Downloads (${state.pausedDownloads.length})'),
       tiles: tiles,
     );
   }
@@ -318,6 +402,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           (model) =>
               model.isFourBitGguf &&
               !state.isModelDownloading(model.id) &&
+              !state.isModelPaused(model.id) &&
               !_isInstalled(model, state.installedModels),
         )
         .toList(growable: false);
@@ -548,6 +633,18 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         modelId: model.id,
         token: token,
       ),
+    );
+  }
+
+  void _pauseDownload(BuildContext context, GemmaModelInfo model) {
+    context.read<GemmaModelBloc>().add(
+      GemmaModelPauseDownload(url: model.downloadUrl, modelId: model.id),
+    );
+  }
+
+  void _cancelDownload(BuildContext context, GemmaModelInfo model) {
+    context.read<GemmaModelBloc>().add(
+      GemmaModelCancelDownload(url: model.downloadUrl, modelId: model.id),
     );
   }
 

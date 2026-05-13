@@ -20,6 +20,18 @@ class ChatMessageTable extends Table {
   /// Number of tokens in the message (null if not computed).
   IntColumn get tokenCount => integer().nullable()();
 
+  /// Generated output token count for assistant responses.
+  IntColumn get responseOutputTokens => integer().nullable()();
+
+  /// Approximate input context size in tokens for assistant responses.
+  IntColumn get responseContextTokens => integer().nullable()();
+
+  /// Configured maximum output tokens for assistant responses.
+  IntColumn get responseMaxOutputTokens => integer().nullable()();
+
+  /// Wall-clock generation duration in milliseconds for assistant responses.
+  IntColumn get responseDurationMs => integer().nullable()();
+
   /// Image data for multimodal user messages (null for text-only).
   BlobColumn get imageBytes => blob().nullable()();
 

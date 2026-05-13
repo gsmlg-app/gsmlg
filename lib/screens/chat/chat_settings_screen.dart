@@ -125,6 +125,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
         ),
         body: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
           builder: (context, state) {
+            final localModelState = _watchLocalModelState(context);
             final agentId = widget.agentId;
             if (agentId != null) {
               final agent = _agentById(state, agentId);
@@ -185,7 +186,12 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                                   : Icons.radio_button_unchecked,
                             ),
                             title: Text(agent.name),
-                            description: Text(_settingsSummary(agent)),
+                            description: Text(
+                              _settingsSummary(
+                                agent,
+                                localModelState: localModelState,
+                              ),
+                            ),
                             onPressed: (_) {
                               context.read<ChatSettingsBloc>().add(
                                 ChatSettingsSelectAgent(id: agent.id),
@@ -220,7 +226,12 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                       SettingsTile.navigation(
                         leading: const Icon(Icons.smart_toy),
                         title: const Text('Model'),
-                        value: Text(_modelLabel(state.config)),
+                        value: Text(
+                          _modelLabel(
+                            state.config,
+                            localModelState: localModelState,
+                          ),
+                        ),
                         onPressed: (_) => _showModelPicker(context),
                       ),
                     ],
@@ -302,6 +313,14 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     return null;
   }
 
+  GemmaModelState? _watchLocalModelState(BuildContext context) {
+    try {
+      return context.watch<GemmaModelBloc>().state;
+    } catch (_) {
+      return null;
+    }
+  }
+
   void _createAgent(BuildContext context) {
     final id = 'agent-${DateTime.now().microsecondsSinceEpoch}';
     context.read<ChatSettingsBloc>().add(
@@ -319,9 +338,9 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     );
   }
 
-  String _settingsSummary(ChatAgent agent) {
+  String _settingsSummary(ChatAgent agent, {GemmaModelState? localModelState}) {
     final config = agent.config;
-    return _modelLabel(config);
+    return _modelLabel(config, localModelState: localModelState);
   }
 
   ModelConfig _defaultAgentConfig(BuildContext context) {
@@ -330,12 +349,19 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     return context.read<ChatSettingsBloc>().state.config;
   }
 
-  String _modelLabel(ModelConfig config) {
+  String _modelLabel(ModelConfig config, {GemmaModelState? localModelState}) {
     return switch (config.inferenceMode) {
-      ChatInferenceMode.local => config.modelDisplayName,
+      ChatInferenceMode.local =>
+        _localModelLabel(localModelState) ?? config.modelDisplayName,
       ChatInferenceMode.remote =>
         '${config.remoteProvider.displayName} · ${config.remoteModel}',
     };
+  }
+
+  String? _localModelLabel(GemmaModelState? state) {
+    final selectedId = state?.selectedModelId;
+    if (selectedId == null || selectedId.trim().isEmpty) return null;
+    return GemmaModelInfo.findById(selectedId)?.displayName ?? selectedId;
   }
 
   void _showModelPicker(BuildContext context) {

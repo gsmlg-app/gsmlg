@@ -168,6 +168,16 @@ class _ChatScreenState extends State<ChatScreen> {
           messages: state.messages,
           isStreaming: state.isStreaming,
           showThinking: _shouldShowThinking(settingsState),
+          onEditUserMessage: (message, content) {
+            context.read<ChatBloc>().add(
+              ChatEditUserMessage(messageId: message.id, content: content),
+            );
+          },
+          onRegenerateResponse: (message) {
+            context.read<ChatBloc>().add(
+              ChatRegenerateResponse(messageId: message.id),
+            );
+          },
         );
       },
     );
