@@ -94,6 +94,13 @@ void main() {
       expect(e4b.supportsMultimodal, isFalse);
       expect(e4b.supportsAudio, isFalse);
       expect(e4b.supportsFunctionCalls, isFalse);
+      expect(e4b.memoryRequirement, GemmaModelMemoryRequirement.large);
+      expect(e4b.requiresLargeMemory, isTrue);
+      expect(
+        e4b.memoryRequirementLabel,
+        'Large memory: 24 GB+ RAM recommended',
+      );
+      expect(e4b.localInferenceBlockReason, contains('large-memory model'));
 
       expect(
         e2b!.downloadUrl,
@@ -109,18 +116,21 @@ void main() {
       expect(e2b.supportsMultimodal, isFalse);
       expect(e2b.supportsAudio, isFalse);
       expect(e2b.supportsFunctionCalls, isFalse);
+      expect(e2b.memoryRequirement, GemmaModelMemoryRequirement.standard);
+      expect(e2b.requiresLargeMemory, isFalse);
+      expect(e2b.localInferenceBlockReason, isNull);
     });
 
-    test('makes Gemma 4 E4B the default local model', () {
-      expect(GemmaModelInfo.defaultModel.id, 'gemma-4-E4B-it');
-      expect(GemmaModelInfo.smallestFreeModel?.id, 'gemma-4-E4B-it');
+    test('uses Gemma 4 E2B as the safe default local model', () {
+      expect(GemmaModelInfo.defaultModel.id, 'gemma-4-E2B-it');
+      expect(GemmaModelInfo.smallestFreeModel?.id, 'gemma-4-E2B-it');
     });
 
     test('exposes only GGUF local models', () {
       expect(GemmaModelInfo.availableModels, isNotEmpty);
       expect(GemmaModelInfo.availableModels.map((model) => model.id).toList(), [
-        'gemma-4-E4B-it',
         'gemma-4-E2B-it',
+        'gemma-4-E4B-it',
       ]);
       expect(
         GemmaModelInfo.availableModels.every((model) => model.isGguf),

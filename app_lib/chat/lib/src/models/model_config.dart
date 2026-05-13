@@ -19,6 +19,25 @@ enum GemmaModelType {
 /// Category grouping for model display.
 enum ModelCategory { gemma, qwen, deepSeek, phi, other }
 
+/// Runtime memory class for a local model preset.
+enum GemmaModelMemoryRequirement {
+  /// Normal model size for the app's local inference path.
+  standard,
+
+  /// Large model that should not be auto-loaded without an explicit support
+  /// path because the OS can terminate the app before Dart can catch an error.
+  large,
+}
+
+extension GemmaModelMemoryRequirementDisplay on GemmaModelMemoryRequirement {
+  String get displayName {
+    return switch (this) {
+      GemmaModelMemoryRequirement.standard => 'Standard memory',
+      GemmaModelMemoryRequirement.large => 'Large memory',
+    };
+  }
+}
+
 /// Information about an available on-device model.
 class GemmaModelInfo {
   const GemmaModelInfo({
@@ -34,6 +53,8 @@ class GemmaModelInfo {
     this.supportsAudio = false,
     this.supportsThinking = false,
     this.supportsFunctionCalls = false,
+    this.memoryRequirement = GemmaModelMemoryRequirement.standard,
+    this.minimumMemoryLabel,
   });
 
   /// Unique identifier, e.g. 'gemma3-1b-int4'.
@@ -72,6 +93,12 @@ class GemmaModelInfo {
   /// Whether this model supports function/tool calling.
   final bool supportsFunctionCalls;
 
+  /// Runtime memory class for this model.
+  final GemmaModelMemoryRequirement memoryRequirement;
+
+  /// Human-readable minimum memory guidance for large local models.
+  final String? minimumMemoryLabel;
+
   /// Whether vision/multimodal works on the current platform.
   bool get effectiveSupportsMultimodal => supportsMultimodal;
 
@@ -89,6 +116,32 @@ class GemmaModelInfo {
 
   /// Whether this preset is a 4-bit GGUF model.
   bool get isFourBitGguf => isGguf && quantizationLabel.startsWith('Q4');
+
+  /// Whether this model is known to need a large runtime memory budget.
+  bool get requiresLargeMemory {
+    return memoryRequirement == GemmaModelMemoryRequirement.large;
+  }
+
+  /// Whether the app should avoid starting local inference for this model.
+  bool get shouldAvoidAutomaticLocalInference => requiresLargeMemory;
+
+  /// Warning shown before the app attempts to run a large local model.
+  String? get localInferenceBlockReason {
+    if (!shouldAvoidAutomaticLocalInference) return null;
+    final memory = minimumMemoryLabel ?? memoryRequirement.displayName;
+    return '$displayName is marked as a large-memory model ($memory). '
+        'To avoid the operating system terminating the app during native '
+        'llama.cpp execution, select Gemma 4 E2B or another smaller model.';
+  }
+
+  /// Human-readable memory label for settings UI.
+  String get memoryRequirementLabel {
+    final minimum = minimumMemoryLabel;
+    if (minimum == null || minimum.isEmpty) {
+      return memoryRequirement.displayName;
+    }
+    return '${memoryRequirement.displayName}: $minimum';
+  }
 
   /// Whether this model downloads from Hugging Face.
   bool get isHuggingFaceDownload {
@@ -148,7 +201,7 @@ class GemmaModelInfo {
   static const _gemma4e2b = GemmaModelInfo(
     id: 'gemma-4-E2B-it',
     displayName: 'Gemma 4 E2B IT',
-    description: 'Local GGUF text model, Q4_K_M',
+    description: 'Default local GGUF text model, Q4_K_M',
     sizeLabel: '3.43 GB',
     quantizationLabel: 'Q4_K_M',
     url:
@@ -160,13 +213,15 @@ class GemmaModelInfo {
   static const _gemma4e4b = GemmaModelInfo(
     id: 'gemma-4-E4B-it',
     displayName: 'Gemma 4 E4B IT',
-    description: 'Default local GGUF text model, Q4_K_M',
+    description: 'Large-memory local GGUF text model, Q4_K_M',
     sizeLabel: '5.34 GB',
     quantizationLabel: 'Q4_K_M',
     url:
         'https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf',
     needsAuth: false,
     supportsThinking: true,
+    memoryRequirement: GemmaModelMemoryRequirement.large,
+    minimumMemoryLabel: '24 GB+ RAM recommended',
   );
 
   // ---------------------------------------------------------------------------
@@ -177,16 +232,16 @@ class GemmaModelInfo {
   // ---------------------------------------------------------------------------
 
   /// Models available on mobile platforms (Android, iOS).
-  static const mobileModels = <GemmaModelInfo>[_gemma4e4b, _gemma4e2b];
+  static const mobileModels = <GemmaModelInfo>[_gemma4e2b, _gemma4e4b];
 
   /// Models available on desktop platforms (macOS, Linux, Windows).
-  static const desktopModels = <GemmaModelInfo>[_gemma4e4b, _gemma4e2b];
+  static const desktopModels = <GemmaModelInfo>[_gemma4e2b, _gemma4e4b];
 
   /// All known models across all platforms.
-  static const availableModels = <GemmaModelInfo>[_gemma4e4b, _gemma4e2b];
+  static const availableModels = <GemmaModelInfo>[_gemma4e2b, _gemma4e4b];
 
   /// The default local model.
-  static const defaultModel = _gemma4e4b;
+  static const defaultModel = _gemma4e2b;
 
   /// Models for the current platform.
   static List<GemmaModelInfo> get platformModels => availableModels;
@@ -194,10 +249,14 @@ class GemmaModelInfo {
   /// The default free model that is compatible with the current platform.
   /// Used for auto-download when no models are installed.
   static GemmaModelInfo? get smallestFreeModel {
-    if (!defaultModel.needsAuth && defaultModel.isCurrentPlatformCompatible) {
+    if (!defaultModel.needsAuth &&
+        defaultModel.isCurrentPlatformCompatible &&
+        !defaultModel.shouldAvoidAutomaticLocalInference) {
       return defaultModel;
     }
-    final candidates = platformModels.where((m) => !m.needsAuth).toList();
+    final candidates = platformModels
+        .where((m) => !m.needsAuth && !m.shouldAvoidAutomaticLocalInference)
+        .toList();
     if (candidates.isEmpty) return null;
     return candidates.first;
   }

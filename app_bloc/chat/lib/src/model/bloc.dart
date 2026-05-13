@@ -129,11 +129,6 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
           continue;
         }
 
-        if (modelId != state.selectedModelId) {
-          await _preferences.setString(_selectedModelKey, modelId);
-          emit(state.copyWith(selectedModelId: modelId));
-        }
-
         final modelInfo = _findModelInfoByInstalledId(modelId);
         if (modelInfo == null) {
           debugPrint(
@@ -145,6 +140,23 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
               '[GemmaModelBloc] ${modelInfo.displayName} is not compatible with this platform, skipping');
           continue;
         }
+        final blockReason = _localInferenceBlockReason(modelInfo);
+        if (blockReason != null) {
+          debugPrint(
+              '[GemmaModelBloc] Skipping ${modelInfo.displayName}: $blockReason');
+          if (modelId == savedId) {
+            await _preferences.remove(_selectedModelKey);
+            emit(state.copyWith(clearSelectedModel: true));
+          }
+          _repository.setError(blockReason);
+          continue;
+        }
+
+        if (modelId != state.selectedModelId) {
+          await _preferences.setString(_selectedModelKey, modelId);
+          emit(state.copyWith(selectedModelId: modelId));
+        }
+
         debugPrint(
             '[GemmaModelBloc] Activating: ${modelInfo.displayName} (id: $modelId)');
         await _repository.activateModel(modelInfo);
@@ -458,10 +470,21 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     Emitter<GemmaModelState> emit,
   ) async {
     debugPrint('[GemmaModelBloc] _onLoad(config=${event.config})');
-    emit(state.copyWith(status: GemmaModelStatus.loading));
     final modelInfo = state.selectedModelId != null
         ? _findModelInfoByInstalledId(state.selectedModelId!)
         : null;
+    final blockReason = _localInferenceBlockReason(modelInfo);
+    if (blockReason != null) {
+      debugPrint('[GemmaModelBloc] Refusing to load model: $blockReason');
+      _repository.setError(blockReason);
+      emit(state.copyWith(
+        status: GemmaModelStatus.error,
+        errorMessage: blockReason,
+      ));
+      return;
+    }
+
+    emit(state.copyWith(status: GemmaModelStatus.loading));
     await _loadModelWithCapabilities(event.config, modelInfo,
         thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
     debugPrint(
@@ -494,15 +517,6 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     debugPrint('[GemmaModelBloc] _onSelect(modelId=${event.modelId})');
     _suppressStatusStream = true;
 
-    await _preferences.setString(_selectedModelKey, event.modelId);
-    // Emit loading immediately so the UI shows the model switch transition.
-    emit(state.copyWith(
-      selectedModelId: event.modelId,
-      status: GemmaModelStatus.loading,
-    ));
-
-    await _repository.unloadModel();
-
     final modelInfo = _findModelInfoByInstalledId(event.modelId);
     if (modelInfo != null && !modelInfo.isCurrentPlatformCompatible) {
       debugPrint(
@@ -515,6 +529,31 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       _suppressStatusStream = false;
       return;
     }
+    final blockReason = _localInferenceBlockReason(modelInfo);
+    if (blockReason != null) {
+      debugPrint('[GemmaModelBloc] Refusing to select model: $blockReason');
+      if (state.selectedModelId == event.modelId) {
+        await _preferences.remove(_selectedModelKey);
+      }
+      _repository.setError(blockReason);
+      emit(state.copyWith(
+        status: GemmaModelStatus.error,
+        errorMessage: blockReason,
+        clearSelectedModel: state.selectedModelId == event.modelId,
+      ));
+      _suppressStatusStream = false;
+      return;
+    }
+
+    await _preferences.setString(_selectedModelKey, event.modelId);
+    // Emit loading immediately so the UI shows the model switch transition.
+    emit(state.copyWith(
+      selectedModelId: event.modelId,
+      status: GemmaModelStatus.loading,
+    ));
+
+    await _repository.unloadModel();
+
     if (modelInfo != null) {
       debugPrint(
           '[GemmaModelBloc] Activating selected model: ${modelInfo.displayName}');
@@ -659,6 +698,13 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     GemmaModelInfo? modelInfo, {
     bool thinkingEnabled = false,
   }) async {
+    final blockReason = _localInferenceBlockReason(modelInfo);
+    if (blockReason != null) {
+      debugPrint('[GemmaModelBloc] Blocked local model load: $blockReason');
+      _repository.setError(blockReason);
+      return;
+    }
+
     final enableThinking =
         thinkingEnabled && (modelInfo?.effectiveSupportsThinking ?? false);
 
@@ -689,6 +735,10 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       isThinking: enableThinking,
       supportsFunctionCalls: modelInfo?.effectiveSupportsFunctionCalls ?? false,
     );
+  }
+
+  String? _localInferenceBlockReason(GemmaModelInfo? modelInfo) {
+    return modelInfo?.localInferenceBlockReason;
   }
 
   GemmaModelInfo? _findModelInfoByInstalledId(String installedId) {

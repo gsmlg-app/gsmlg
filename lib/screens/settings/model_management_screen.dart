@@ -136,7 +136,11 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           leading: Icon(_categoryIcon(category)),
           title: Text(displayName),
           description: info != null
-              ? Text('${info.description}\n${info.quantizationLabel} GGUF')
+              ? Text(
+                  '${info.description}\n'
+                  '${info.quantizationLabel} GGUF\n'
+                  '${info.memoryRequirementLabel}',
+                )
               : null,
           trailing: isSelected
               ? Row(
@@ -164,6 +168,11 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                       _showDeleteDialog(context, modelId, displayName),
                 ),
           onPressed: (_) {
+            final blockReason = info?.localInferenceBlockReason;
+            if (blockReason != null) {
+              _showImportMessage(context, blockReason);
+              return;
+            }
             context.read<GemmaModelBloc>().add(
               GemmaModelSelect(modelId: modelId),
             );
@@ -436,7 +445,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
             description: Text(
               '${model.description}\n'
               '${model.quantizationLabel} GGUF from '
-              '${model.downloadSourceName}: ${model.downloadSourceLabel}',
+              '${model.downloadSourceName}: ${model.downloadSourceLabel}\n'
+              '${model.memoryRequirementLabel}',
             ),
             trailing: Text(model.effectiveSizeLabel),
             onPressed: (_) => _showDownloadConfirmDialog(context, model, false),
@@ -516,6 +526,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 Text('Size: ${model.effectiveSizeLabel}'),
                 const SizedBox(height: 8),
                 Text('Format: ${model.quantizationLabel} GGUF'),
+                const SizedBox(height: 8),
+                Text('Memory: ${model.memoryRequirementLabel}'),
                 const SizedBox(height: 8),
                 Text('Source: ${model.downloadSourceName}'),
                 const SizedBox(height: 8),

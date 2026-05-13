@@ -69,7 +69,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Gemma 4 E4B IT (Default)'));
+      await tester.tap(find.text('Gemma 4 E2B IT (Default)'));
       await tester.pumpAndSettle();
 
       expect(find.text('Download Model'), findsOneWidget);
@@ -101,7 +101,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Gemma 4 E4B IT (Default)'));
+      await tester.tap(find.text('Gemma 4 E2B IT (Default)'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Add Local GGUF File'));
       await tester.pump();

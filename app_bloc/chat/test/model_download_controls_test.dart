@@ -163,10 +163,44 @@ void main() {
       expect(bloc.state.installedModels, [_e2bModelId]);
       expect(bloc.state.status, GemmaModelStatus.installed);
     });
+
+    test('refuses to select a large-memory model before activating it',
+        () async {
+      bloc.add(const GemmaModelSelect(modelId: _e4bModelId));
+      await _flushBloc();
+
+      expect(repository.activatedModels, isEmpty);
+      expect(repository.unloadCount, 0);
+      expect(repository.loadCount, 0);
+      expect(preferences.getString('gemma_selected_model_id'), isNull);
+      expect(bloc.state.selectedModelId, isNull);
+      expect(bloc.state.status, GemmaModelStatus.error);
+      expect(bloc.state.errorMessage, contains('large-memory model'));
+    });
+
+    test('skips a persisted large-memory model on startup', () async {
+      await bloc.close();
+      await preferences.setString('gemma_selected_model_id', _e4bModelId);
+      repository = _FakeGemmaRepository()
+        ..installedModelsAfterImport = const [_e4bModelId];
+      bloc = GemmaModelBloc(repository: repository, preferences: preferences);
+
+      bloc.add(const GemmaModelInitialize());
+      await _flushBloc();
+
+      expect(repository.activatedModels, isEmpty);
+      expect(repository.loadCount, 0);
+      expect(preferences.getString('gemma_selected_model_id'), isNull);
+      expect(bloc.state.selectedModelId, isNull);
+      expect(bloc.state.installedModels, [_e4bModelId]);
+      expect(bloc.state.status, GemmaModelStatus.error);
+      expect(bloc.state.errorMessage, contains('large-memory model'));
+    });
   });
 }
 
 const _e2bModelId = 'gemma-4-E2B-it';
+const _e4bModelId = 'gemma-4-E4B-it';
 const _e2bUrl =
     'https://huggingface.co/dahus/gemma-4-e2b-it-Q4_K_M-GGUF/resolve/main/gemma-4-e2b-Q4_K_M.gguf';
 
@@ -182,6 +216,9 @@ class _FakeGemmaRepository extends GemmaRepository {
   final canceledUrls = <String>[];
   final deletedUrls = <String>[];
   final importedFiles = <(String, String)>[];
+  final activatedModels = <String>[];
+  int unloadCount = 0;
+  int loadCount = 0;
   List<String> installedModelsAfterImport = const [];
   final _progressCallbacks = <String, void Function(DownloadProgress)>{};
   final _installCompleters = <String, Queue<Completer<void>>>{};
@@ -239,6 +276,27 @@ class _FakeGemmaRepository extends GemmaRepository {
   @override
   Future<List<String>> listInstalledModels() async =>
       installedModelsAfterImport;
+
+  @override
+  Future<void> activateModel(GemmaModelInfo info) async {
+    activatedModels.add(info.id);
+  }
+
+  @override
+  Future<void> unloadModel() async {
+    unloadCount += 1;
+  }
+
+  @override
+  Future<void> loadModel(
+    ModelConfig config, {
+    bool supportImage = false,
+    bool supportAudio = false,
+    bool isThinking = false,
+    bool supportsFunctionCalls = false,
+  }) async {
+    loadCount += 1;
+  }
 
   void sendProgress(String url, DownloadProgress progress) {
     _progressCallbacks[url]?.call(progress);

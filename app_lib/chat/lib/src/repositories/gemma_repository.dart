@@ -98,6 +98,7 @@ class GemmaRepository {
 
   final llama.LlamaEngine _llamaEngine;
   String? _llamaModelPath;
+  GemmaModelInfo? _llamaModelInfo;
   ModelConfig? _llamaConfig;
   final _activeDownloads = <String, _DownloadControl>{};
 
@@ -138,11 +139,13 @@ class GemmaRepository {
       final filePath = await modelFilePath(info);
       if (!File(filePath).existsSync()) {
         _llamaModelPath = null;
+        _llamaModelInfo = null;
         _setStatus(GemmaModelStatus.notInstalled);
         return;
       }
 
       _llamaModelPath = filePath;
+      _llamaModelInfo = info;
       debugPrint('[GemmaRepo] activateModel using GGUF file: $filePath');
       _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
@@ -233,36 +236,125 @@ class GemmaRepository {
       );
     }
 
+    File? stagedImport;
+    File? backupDestination;
     try {
       final source = File(sourcePath);
       if (!source.existsSync() || source.lengthSync() <= 0) {
         throw FileSystemException('Selected model file is missing', sourcePath);
       }
+      final sourceLength = source.lengthSync();
 
       final destinationPath = await modelFilePath(info);
       final destination = File(destinationPath);
       destination.parent.createSync(recursive: true);
 
       if (!p.equals(source.absolute.path, destination.absolute.path)) {
-        await source.copy(destinationPath);
+        stagedImport = await _stageImportedModelFile(
+          source: source,
+          destinationPath: destinationPath,
+          expectedBytes: sourceLength,
+        );
+        backupDestination = await _replaceModelFile(
+          stagedImport: stagedImport,
+          destination: destination,
+        );
       }
 
       final imported = File(destinationPath);
-      if (!imported.existsSync() || imported.lengthSync() <= 0) {
+      if (!imported.existsSync() || imported.lengthSync() != sourceLength) {
         throw FileSystemException(
-          'Imported model file is missing',
+          'Imported model file is incomplete',
           destinationPath,
         );
       }
 
+      _deleteFileIfExists(backupDestination);
       debugPrint('[GemmaRepo] Imported GGUF model to: $destinationPath');
       _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
+      _deleteFileIfExists(stagedImport);
+      if (backupDestination != null && backupDestination.existsSync()) {
+        try {
+          final destination = File(await modelFilePath(info));
+          _deleteFileIfExists(destination);
+          await backupDestination.rename(destination.path);
+        } catch (_) {
+          // Best effort restore; the original error below is more useful.
+        }
+      }
       debugPrint('[GemmaRepo] importModelFromFile FAILED: $e');
       debugPrint('[GemmaRepo] Stack trace: $st');
       _setError('Failed to import model: $e');
       rethrow;
     }
+  }
+
+  Future<File> _stageImportedModelFile({
+    required File source,
+    required String destinationPath,
+    required int expectedBytes,
+  }) async {
+    final staged = File('$destinationPath.importing');
+    _deleteFileIfExists(staged);
+
+    File result;
+    if (await _isFilePickerCacheFile(source.absolute.path)) {
+      try {
+        result = await source.rename(staged.path);
+      } catch (_) {
+        result = await source.copy(staged.path);
+      }
+    } else {
+      result = await source.copy(staged.path);
+    }
+
+    if (!result.existsSync() || result.lengthSync() != expectedBytes) {
+      throw FileSystemException(
+        'Imported model copy is incomplete',
+        result.path,
+      );
+    }
+    return result;
+  }
+
+  Future<File?> _replaceModelFile({
+    required File stagedImport,
+    required File destination,
+  }) async {
+    File? backup;
+    if (destination.existsSync()) {
+      backup = File('${destination.path}.backup');
+      _deleteFileIfExists(backup);
+      backup = await destination.rename(backup.path);
+    }
+
+    try {
+      await stagedImport.rename(destination.path);
+      return backup;
+    } catch (_) {
+      if (backup != null && backup.existsSync()) {
+        await backup.rename(destination.path);
+      }
+      rethrow;
+    }
+  }
+
+  Future<bool> _isFilePickerCacheFile(String sourcePath) async {
+    final cacheDir = await getApplicationCacheDirectory();
+    final filePickerCache = p.normalize(p.join(cacheDir.path, 'file_picker'));
+    final normalizedSource = p.normalize(sourcePath);
+    return p.equals(filePickerCache, normalizedSource) ||
+        p.isWithin(filePickerCache, normalizedSource);
+  }
+
+  void _deleteFileIfExists(File? file) {
+    if (file == null) return;
+    try {
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
+    } catch (_) {}
   }
 
   /// Pauses an active download while preserving its partial file for resume.
@@ -536,6 +628,7 @@ class GemmaRepository {
     bool supportsFunctionCalls = false,
   }) async {
     final llamaModelPath = _llamaModelPath;
+    final llamaModelInfo = _llamaModelInfo;
     await unloadModel();
     _setStatus(GemmaModelStatus.loading);
 
@@ -552,6 +645,7 @@ class GemmaRepository {
       }
 
       _llamaModelPath = llamaModelPath;
+      _llamaModelInfo = llamaModelInfo;
       _llamaConfig = config;
       _setStatus(GemmaModelStatus.ready);
     } catch (e) {
@@ -563,6 +657,7 @@ class GemmaRepository {
   /// Unloads the active model selection.
   Future<void> unloadModel() async {
     _llamaModelPath = null;
+    _llamaModelInfo = null;
     _llamaConfig = null;
 
     if (_status == GemmaModelStatus.ready) {
@@ -600,6 +695,11 @@ class GemmaRepository {
   }) async* {
     if (_llamaModelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
+    }
+    final blockReason = _llamaModelInfo?.localInferenceBlockReason;
+    if (blockReason != null) {
+      _setError(blockReason);
+      throw StateError(blockReason);
     }
     yield* _generateLlamaResponse(messages, tools: tools, config: config);
   }
