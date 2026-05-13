@@ -11,7 +11,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  lib_llama_cpp: ^0.3.2
+  # TODO(upstream): gsmlg-app/lib_llama_cpp#6 - remove once Apple podspecs publish as 0.5.0.
+  # WORKAROUND(upstream): gsmlg-app/lib_llama_cpp#6 - pub resolves 0.5.0 while CocoaPods locks podspec 0.4.0.
+  lib_llama_cpp: ^0.5.0
   equatable: ^2.0.8
   drift: ^2.28.2
   dio: any
