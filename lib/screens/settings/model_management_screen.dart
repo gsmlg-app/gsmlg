@@ -7,6 +7,7 @@ import 'package:app_database/app_database.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
@@ -548,6 +549,14 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
+            TextButton.icon(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _pickLocalModelFile(context, model);
+              },
+              icon: const Icon(Icons.folder_open),
+              label: const Text('Add Local GGUF File'),
+            ),
             FilledButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
@@ -563,6 +572,45 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         );
       },
     );
+  }
+
+  Future<void> _pickLocalModelFile(
+    BuildContext context,
+    GemmaModelInfo model,
+  ) async {
+    final result = await FilePicker.platform.pickFiles(
+      dialogTitle: 'Select ${model.downloadFileName}',
+      type: FileType.custom,
+      allowedExtensions: const ['gguf'],
+      allowMultiple: false,
+      withData: false,
+    );
+    if (!context.mounted || result == null || result.files.isEmpty) return;
+
+    final file = result.files.single;
+    final filePath = file.path;
+    if (filePath == null || filePath.isEmpty) {
+      _showImportMessage(context, 'Selected file has no readable path.');
+      return;
+    }
+    if (!_isGgufFile(file.name) && !_isGgufFile(filePath)) {
+      _showImportMessage(context, 'Selected file is not a GGUF model.');
+      return;
+    }
+
+    context.read<GemmaModelBloc>().add(
+      GemmaModelImportFromFile(modelId: model.id, filePath: filePath),
+    );
+  }
+
+  bool _isGgufFile(String path) {
+    return path.toLowerCase().endsWith('.gguf');
+  }
+
+  void _showImportMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _installModel(BuildContext context, GemmaModelInfo model) {

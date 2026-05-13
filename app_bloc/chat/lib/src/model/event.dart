@@ -27,6 +27,17 @@ final class GemmaModelInstall extends GemmaModelEvent {
   final String? token;
 }
 
+/// Import a model file that the user already downloaded.
+final class GemmaModelImportFromFile extends GemmaModelEvent {
+  const GemmaModelImportFromFile({
+    required this.modelId,
+    required this.filePath,
+  });
+
+  final String modelId;
+  final String filePath;
+}
+
 /// Pause an active model download and keep the partial file for resume.
 final class GemmaModelPauseDownload extends GemmaModelEvent {
   const GemmaModelPauseDownload({

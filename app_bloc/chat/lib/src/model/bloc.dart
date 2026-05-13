@@ -25,6 +25,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         )) {
     on<GemmaModelInitialize>(_onInitialize);
     on<GemmaModelInstall>(_onInstall);
+    on<GemmaModelImportFromFile>(_onImportFromFile);
     on<GemmaModelPauseDownload>(_onPauseDownload);
     on<GemmaModelCancelDownload>(_onCancelDownload);
     on<GemmaModelListInstalled>(_onListInstalled);
@@ -298,6 +299,43 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         ));
       }
     }();
+  }
+
+  Future<void> _onImportFromFile(
+    GemmaModelImportFromFile event,
+    Emitter<GemmaModelState> emit,
+  ) async {
+    debugPrint('[GemmaModelBloc] _onImportFromFile(modelId=${event.modelId})');
+    final info = GemmaModelInfo.findById(event.modelId);
+    if (info == null) {
+      emit(state.copyWith(
+        status: GemmaModelStatus.error,
+        errorMessage: 'Unknown model: ${event.modelId}',
+      ));
+      return;
+    }
+
+    emit(state.copyWith(status: GemmaModelStatus.checking));
+
+    try {
+      await _repository.importModelFromFile(
+        info: info,
+        sourcePath: event.filePath,
+      );
+      final installed = await _repository.listInstalledModels();
+      emit(state.copyWith(
+        status: installed.isEmpty
+            ? GemmaModelStatus.notInstalled
+            : GemmaModelStatus.installed,
+        installedModels: installed,
+      ));
+    } catch (e) {
+      debugPrint('[GemmaModelBloc] Import failed for ${event.modelId}: $e');
+      emit(state.copyWith(
+        status: GemmaModelStatus.error,
+        errorMessage: e.toString(),
+      ));
+    }
   }
 
   Future<void> _onPauseDownload(

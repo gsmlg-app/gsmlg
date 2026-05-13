@@ -122,7 +122,7 @@ class GemmaRepository {
   /// Stream of download progress updates.
   Stream<DownloadProgress> get progressStream => _progressController.stream;
 
-  static bool _isGgufPath(String path) => path.endsWith('.gguf');
+  static bool _isGgufPath(String path) => path.toLowerCase().endsWith('.gguf');
 
   /// Activates an already-installed GGUF model so [loadModel] can use it.
   Future<void> activateModel(GemmaModelInfo info) async {
@@ -204,6 +204,61 @@ class GemmaRepository {
       debugPrint('[GemmaRepo] installModelWithProxy FAILED: $e');
       debugPrint('[GemmaRepo] Error type: ${e.runtimeType}');
       debugPrint('[GemmaRepo] Stack trace: $st');
+      rethrow;
+    }
+  }
+
+  /// Imports a user-selected GGUF file into the app-managed model cache.
+  Future<void> importModelFromFile({
+    required GemmaModelInfo info,
+    required String sourcePath,
+  }) async {
+    debugPrint(
+      '[GemmaRepo] importModelFromFile(model=${info.id}, source=$sourcePath)',
+    );
+    if (!info.isGguf) {
+      throw ArgumentError.value(
+        info.id,
+        'info',
+        'Only GGUF models are supported.',
+      );
+    }
+    if (!_isGgufPath(sourcePath)) {
+      throw ArgumentError.value(
+        sourcePath,
+        'sourcePath',
+        'Only .gguf files are supported.',
+      );
+    }
+
+    try {
+      final source = File(sourcePath);
+      if (!source.existsSync() || source.lengthSync() <= 0) {
+        throw FileSystemException('Selected model file is missing', sourcePath);
+      }
+
+      final destinationPath = await modelFilePath(info);
+      final destination = File(destinationPath);
+      destination.parent.createSync(recursive: true);
+
+      if (!p.equals(source.absolute.path, destination.absolute.path)) {
+        await source.copy(destinationPath);
+      }
+
+      final imported = File(destinationPath);
+      if (!imported.existsSync() || imported.lengthSync() <= 0) {
+        throw FileSystemException(
+          'Imported model file is missing',
+          destinationPath,
+        );
+      }
+
+      debugPrint('[GemmaRepo] Imported GGUF model to: $destinationPath');
+      _setStatus(GemmaModelStatus.installed);
+    } catch (e, st) {
+      debugPrint('[GemmaRepo] importModelFromFile FAILED: $e');
+      debugPrint('[GemmaRepo] Stack trace: $st');
+      _setError('Failed to import model: $e');
       rethrow;
     }
   }

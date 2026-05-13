@@ -144,6 +144,25 @@ void main() {
       expect(bloc.state.pausedDownloads, isEmpty);
       expect(bloc.state.failedDownloads, isEmpty);
     });
+
+    test('imports a picked local model and refreshes installed models',
+        () async {
+      repository.installedModelsAfterImport = const [_e2bModelId];
+
+      bloc.add(
+        const GemmaModelImportFromFile(
+          modelId: _e2bModelId,
+          filePath: '/downloads/gemma-4-e2b-Q4_K_M.gguf',
+        ),
+      );
+      await _flushBloc();
+
+      expect(repository.importedFiles, [
+        (_e2bModelId, '/downloads/gemma-4-e2b-Q4_K_M.gguf'),
+      ]);
+      expect(bloc.state.installedModels, [_e2bModelId]);
+      expect(bloc.state.status, GemmaModelStatus.installed);
+    });
   });
 }
 
@@ -162,6 +181,8 @@ class _FakeGemmaRepository extends GemmaRepository {
   final pausedUrls = <String>[];
   final canceledUrls = <String>[];
   final deletedUrls = <String>[];
+  final importedFiles = <(String, String)>[];
+  List<String> installedModelsAfterImport = const [];
   final _progressCallbacks = <String, void Function(DownloadProgress)>{};
   final _installCompleters = <String, Queue<Completer<void>>>{};
 
@@ -191,9 +212,6 @@ class _FakeGemmaRepository extends GemmaRepository {
   }
 
   @override
-  Future<List<String>> listInstalledModels() async => const [];
-
-  @override
   Future<void> pauseModelDownload(String url) async {
     pausedUrls.add(url);
     _completeCurrent(url, const ModelDownloadPausedException());
@@ -209,6 +227,18 @@ class _FakeGemmaRepository extends GemmaRepository {
   Future<void> deleteDownloadForUrl(String url) async {
     deletedUrls.add(url);
   }
+
+  @override
+  Future<void> importModelFromFile({
+    required GemmaModelInfo info,
+    required String sourcePath,
+  }) async {
+    importedFiles.add((info.id, sourcePath));
+  }
+
+  @override
+  Future<List<String>> listInstalledModels() async =>
+      installedModelsAfterImport;
 
   void sendProgress(String url, DownloadProgress progress) {
     _progressCallbacks[url]?.call(progress);
