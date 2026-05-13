@@ -15,6 +15,7 @@ void main() {
     late SharedPreferences preferences;
     late AccountsBloc accountsBloc;
     late GemmaModelBloc gemmaModelBloc;
+    late ChatSettingsBloc chatSettingsBloc;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -28,9 +29,14 @@ void main() {
         repository: _FakeGemmaRepository(),
         preferences: preferences,
       );
+      chatSettingsBloc = ChatSettingsBloc(
+        repository: ChatStorageRepository(database),
+        preferences: preferences,
+      );
     });
 
     tearDown(() async {
+      await chatSettingsBloc.close();
       await gemmaModelBloc.close();
       await accountsBloc.close();
       await database.close();
@@ -49,6 +55,7 @@ void main() {
             providers: [
               BlocProvider<AccountsBloc>.value(value: accountsBloc),
               BlocProvider<GemmaModelBloc>.value(value: gemmaModelBloc),
+              BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc),
             ],
             child: const MaterialApp(home: ModelManagementScreen()),
           ),
@@ -62,6 +69,58 @@ void main() {
       expect(find.text('Download Model'), findsOneWidget);
       expect(find.text('Add Local GGUF File'), findsOneWidget);
       expect(find.text('Download from Hugging Face'), findsOneWidget);
+    });
+
+    testWidgets('local model settings can select llama.cpp backend', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MultiRepositoryProvider(
+          providers: [
+            RepositoryProvider<SharedPreferences>.value(value: preferences),
+          ],
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AccountsBloc>.value(value: accountsBloc),
+              BlocProvider<GemmaModelBloc>.value(value: gemmaModelBloc),
+              BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc),
+            ],
+            child: const MaterialApp(home: ModelManagementScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Backend'), 200);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Inference Settings'), findsOneWidget);
+      expect(find.text('Backend'), findsOneWidget);
+      expect(find.text('Metal'), findsOneWidget);
+
+      await tester.tap(find.text('Backend'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(RadioListTile<GemmaBackend>, 'CPU'),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(RadioListTile<GemmaBackend>, 'Metal'),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(RadioListTile<GemmaBackend>, 'CUDA'),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(RadioListTile<GemmaBackend>, 'Vulkan'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.widgetWithText(RadioListTile<GemmaBackend>, 'CPU'));
+      await tester.pumpAndSettle();
+
+      expect(chatSettingsBloc.state.config.backend, GemmaBackend.cpu);
     });
   });
 }

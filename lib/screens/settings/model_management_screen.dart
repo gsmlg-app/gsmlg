@@ -56,24 +56,29 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         return SafeArea(
           child: BlocBuilder<GemmaModelBloc, GemmaModelState>(
             builder: (context, state) {
-              return CustomScrollView(
-                slivers: <Widget>[
-                  const SliverAppBar(title: Text('Local Models')),
-                  SliverFillRemaining(
-                    child: SettingsList(
-                      sections: [
-                        _buildPresetDownloadSection(context, state),
-                        _buildDownloadedSection(context, state),
-                        _buildDownloadingSection(context, state),
-                        if (state.pausedDownloads.isNotEmpty)
-                          _buildPausedSection(context, state),
-                        if (state.failedDownloads.isNotEmpty)
-                          _buildFailedSection(context, state),
-                        _buildProxySection(context, state),
-                      ],
-                    ),
-                  ),
-                ],
+              return BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+                builder: (context, settingsState) {
+                  return CustomScrollView(
+                    slivers: <Widget>[
+                      const SliverAppBar(title: Text('Local Models')),
+                      SliverFillRemaining(
+                        child: SettingsList(
+                          sections: [
+                            _buildPresetDownloadSection(context, state),
+                            _buildDownloadedSection(context, state),
+                            _buildDownloadingSection(context, state),
+                            if (state.pausedDownloads.isNotEmpty)
+                              _buildPausedSection(context, state),
+                            if (state.failedDownloads.isNotEmpty)
+                              _buildFailedSection(context, state),
+                            _buildBackendSection(context, settingsState.config),
+                            _buildProxySection(context, state),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -726,6 +731,80 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         );
       },
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Inference Settings
+  // ---------------------------------------------------------------------------
+
+  SettingsSection _buildBackendSection(
+    BuildContext context,
+    ModelConfig config,
+  ) {
+    return SettingsSection(
+      title: const Text('Inference Settings'),
+      tiles: [
+        SettingsTile(
+          leading: const Icon(Icons.memory),
+          title: const Text('Backend'),
+          description: Text(_backendDescription(config.backend)),
+          trailing: Text(config.backend.displayName),
+          onPressed: (_) => _showBackendDialog(context, config),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showBackendDialog(BuildContext context, ModelConfig config) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Backend'),
+          content: SizedBox(
+            width: 420,
+            child: RadioGroup<GemmaBackend>(
+              groupValue: config.backend,
+              onChanged: (value) {
+                if (value == null) return;
+                context.read<ChatSettingsBloc>().add(
+                  ChatSettingsUpdateConfig(
+                    config: config.copyWith(backend: value),
+                  ),
+                );
+                Navigator.pop(dialogContext);
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final backend in GemmaBackend.values)
+                    RadioListTile<GemmaBackend>(
+                      title: Text(backend.displayName),
+                      subtitle: Text(_backendDescription(backend)),
+                      value: backend,
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _backendDescription(GemmaBackend backend) {
+    return switch (backend) {
+      GemmaBackend.cpu => 'CPU-only inference.',
+      GemmaBackend.metal => 'Apple Metal acceleration.',
+      GemmaBackend.cuda => 'NVIDIA CUDA acceleration.',
+      GemmaBackend.vulkan => 'Vulkan acceleration.',
+    };
   }
 
   // ---------------------------------------------------------------------------

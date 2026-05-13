@@ -2,6 +2,22 @@ import 'package:app_chat/src/models/model_config.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('GemmaBackend', () {
+    test('exposes selectable llama.cpp backends', () {
+      expect(GemmaBackend.values, [
+        GemmaBackend.cpu,
+        GemmaBackend.metal,
+        GemmaBackend.cuda,
+        GemmaBackend.vulkan,
+      ]);
+      expect(ModelConfig.defaultConfig.backend, GemmaBackend.metal);
+      expect(GemmaBackend.cpu.displayName, 'CPU');
+      expect(GemmaBackend.metal.displayName, 'Metal');
+      expect(GemmaBackend.cuda.displayName, 'CUDA');
+      expect(GemmaBackend.vulkan.displayName, 'Vulkan');
+    });
+  });
+
   group('Gemma 4 GGUF catalog', () {
     test('uses Hugging Face GGUF downloads for E4B and E2B', () {
       final e4b = GemmaModelInfo.findById('gemma-4-E4B-it');

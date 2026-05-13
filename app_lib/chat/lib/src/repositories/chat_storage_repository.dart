@@ -373,16 +373,15 @@ class ChatStorageRepository {
 
   GemmaBackend _parseBackend(String value) {
     return switch (value) {
-      'gpu' => GemmaBackend.gpu,
       'cpu' => GemmaBackend.cpu,
-      _ => GemmaBackend.gpu,
+      'metal' || 'gpu' => GemmaBackend.metal,
+      'cuda' => GemmaBackend.cuda,
+      'vulkan' => GemmaBackend.vulkan,
+      _ => ModelConfig.defaultConfig.backend,
     };
   }
 
   String _backendToString(GemmaBackend backend) {
-    return switch (backend) {
-      GemmaBackend.gpu => 'gpu',
-      GemmaBackend.cpu => 'cpu',
-    };
+    return backend.name;
   }
 }

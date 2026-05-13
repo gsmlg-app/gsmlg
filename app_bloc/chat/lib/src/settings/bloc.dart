@@ -364,11 +364,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       temperature: (json['temperature'] as num?)?.toDouble() ??
           ModelConfig.defaultConfig.temperature,
       topK: json['topK'] as int? ?? ModelConfig.defaultConfig.topK,
-      backend: _enumFromName(
-        GemmaBackend.values,
-        json['backend'],
-        ModelConfig.defaultConfig.backend,
-      ),
+      backend: _backendFromName(json['backend']),
       remoteProvider: _enumFromName(
         RemoteLlmProvider.values,
         json['remoteProvider'],
@@ -413,5 +409,14 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       if (value.name == name) return value;
     }
     return fallback;
+  }
+
+  GemmaBackend _backendFromName(Object? name) {
+    if (name == 'gpu') return GemmaBackend.metal;
+    return _enumFromName(
+      GemmaBackend.values,
+      name,
+      ModelConfig.defaultConfig.backend,
+    );
   }
 }

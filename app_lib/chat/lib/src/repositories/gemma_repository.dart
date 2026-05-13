@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:lib_llama_cpp/lib_llama_cpp.dart' as llama;
+import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart'
+    as llama_platform;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -614,7 +616,7 @@ class GemmaRepository {
     final commands = Stream<llama.LlamaCommand>.fromIterable([
       llama.LlamaLoadModelCommand(
         modelPath: modelPath,
-        gpuLayerCount: config.backend == GemmaBackend.gpu ? 99 : 0,
+        gpuLayerCount: config.backend.usesGpuLayers ? 99 : 0,
       ),
       buildLlamaGenerateCommand(
         messages: messages,
@@ -626,7 +628,10 @@ class GemmaRepository {
       const llama.LlamaDisposeCommand(),
     ]);
 
-    await for (final response in _llamaEngine.transform(commands)) {
+    await for (final response in _llamaEngine.transform(
+      commands,
+      libraryRequest: _libraryRequestForBackend(config.backend),
+    )) {
       switch (response) {
         case llama.LlamaTokenResponse(:final text):
           yield ChatTextChunk(text);
@@ -705,6 +710,22 @@ class GemmaRepository {
     } catch (_) {
       return {'raw': trimmed};
     }
+  }
+
+  llama_platform.LlamaCppLibraryRequest _libraryRequestForBackend(
+    GemmaBackend backend,
+  ) {
+    return llama_platform.LlamaCppLibraryRequest(
+      requiredCapabilities: {
+        switch (backend) {
+          GemmaBackend.cpu => llama_platform.LlamaCppLibraryCapability.cpu,
+          GemmaBackend.metal => llama_platform.LlamaCppLibraryCapability.metal,
+          GemmaBackend.cuda => llama_platform.LlamaCppLibraryCapability.cuda,
+          GemmaBackend.vulkan =>
+            llama_platform.LlamaCppLibraryCapability.vulkan,
+        },
+      },
+    );
   }
 }
 

@@ -1,5 +1,6 @@
 import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
+import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -52,5 +53,35 @@ void main() {
     await repository.saveSettings(config);
 
     expect(await repository.loadSettings(), config);
+  });
+
+  test('persists llama.cpp backend with chat settings', () async {
+    final database = AppDatabase.forTesting();
+    addTearDown(database.close);
+
+    final repository = ChatStorageRepository(database);
+    const config = ModelConfig(backend: GemmaBackend.vulkan);
+
+    await repository.saveSettings(config);
+
+    expect((await repository.loadSettings()).backend, GemmaBackend.vulkan);
+  });
+
+  test('maps legacy gpu backend setting to Metal', () async {
+    final database = AppDatabase.forTesting();
+    addTearDown(database.close);
+
+    await database
+        .into(database.chatSettingsTable)
+        .insert(
+          const ChatSettingsTableCompanion(
+            key: Value('default'),
+            backend: Value('gpu'),
+          ),
+        );
+
+    final repository = ChatStorageRepository(database);
+
+    expect((await repository.loadSettings()).backend, GemmaBackend.metal);
   });
 }

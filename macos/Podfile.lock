@@ -12,7 +12,7 @@ PODS:
     - Flutter
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
-  - lib_llama_cpp_macos (0.4.0):
+  - lib_llama_cpp_macos (0.5.1):
     - FlutterMacOS
   - record_macos (1.2.0):
     - FlutterMacOS
@@ -69,7 +69,7 @@ SPEC CHECKSUMS:
   flutter_blue_plus_darwin: 20a08bfeaa0f7804d524858d3d8744bcc1b6dbc3
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  lib_llama_cpp_macos: 378d25937470023e285ddb8e7ce4bcc185d73094
+  lib_llama_cpp_macos: 404e4b86c0dad44edfdde92d39e20eadd500ef48
   record_macos: 7f227161b93c49e7e34fe681c5891c8622c8cc8b
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   url_launcher_macos: f87a979182d112f911de6820aefddaf56ee9fbfd

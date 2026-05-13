@@ -231,11 +231,30 @@ class GemmaModelInfo {
 
 /// The backend to use for inference.
 enum GemmaBackend {
-  /// GPU acceleration (recommended for performance).
-  gpu,
-
   /// CPU-only inference (fallback).
   cpu,
+
+  /// Metal acceleration on Apple platforms.
+  metal,
+
+  /// CUDA acceleration on supported NVIDIA platforms.
+  cuda,
+
+  /// Vulkan acceleration on supported platforms.
+  vulkan,
+}
+
+extension GemmaBackendDisplay on GemmaBackend {
+  String get displayName {
+    return switch (this) {
+      GemmaBackend.cpu => 'CPU',
+      GemmaBackend.metal => 'Metal',
+      GemmaBackend.cuda => 'CUDA',
+      GemmaBackend.vulkan => 'Vulkan',
+    };
+  }
+
+  bool get usesGpuLayers => this != GemmaBackend.cpu;
 }
 
 /// Configuration for chat inference.
@@ -247,7 +266,7 @@ class ModelConfig extends Equatable {
     this.maxTokens = 2048,
     this.temperature = 0.8,
     this.topK = 40,
-    this.backend = GemmaBackend.gpu,
+    this.backend = GemmaBackend.metal,
     this.remoteProvider = RemoteLlmProvider.openAiCompatible,
     this.remoteAccountId,
     this.remoteBaseUrl = 'https://api.openai.com/v1',
