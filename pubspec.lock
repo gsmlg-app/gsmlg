@@ -968,66 +968,66 @@ packages:
     dependency: "direct main"
     description:
       name: lib_llama_cpp
-      sha256: "8532c17dddae6d76a43a67f544ddd45a7163e3a12ea4a93a1a78444b3f286fd0"
+      sha256: "30e9c827be97e8f2b9bc20db709baf8eb968ac94d0a3268af057d8b520d35d3b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.5.1"
   lib_llama_cpp_android:
     dependency: transitive
     description:
       name: lib_llama_cpp_android
-      sha256: f4860ff0f9a90b653ac93ef377f45fa783c8473c4ba614c130cb2e3a7d66d9e7
+      sha256: "7ae4e597376ae04a72506d57794b3d3fb5baebf7c4e15418ac50216ffe661a2c"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.5.1"
   lib_llama_cpp_ffi:
     dependency: transitive
     description:
       name: lib_llama_cpp_ffi
-      sha256: "025fae23e0c0d0dc99755539af65b6830f162407c0e5ff1eaa1a0b72d9d9a2b0"
+      sha256: df81c50dac681a00bbcc4be1db964b702e3f944ca0fe003101da1a2942526c33
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.5.1"
   lib_llama_cpp_ios:
     dependency: transitive
     description:
       name: lib_llama_cpp_ios
-      sha256: "7e727926c890bdd46b3e36e01f126e02e80c88a025ac9ee6ac95d1ec7044f5f7"
+      sha256: "65f7430e918caacff1f87e11ad06ca08a875c9072c873a03f77022a2ab0dfb45"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.5.1"
   lib_llama_cpp_linux:
     dependency: transitive
     description:
       name: lib_llama_cpp_linux
-      sha256: "06893c410793649b6e41772272fd678203e289ae6e804c851fd7658ea4dab7c3"
+      sha256: "18944419f4068836a34efdb84898684170523dd0e91726b0d178b011ee659083"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.5.1"
   lib_llama_cpp_macos:
     dependency: transitive
     description:
       name: lib_llama_cpp_macos
-      sha256: "10b01715b099aba138ef8045926c11b3114248cb557a9edf18a156dbb25002c5"
+      sha256: "368717236b070d6c5796d86955bea8ad2a70e8b94f51195ecf77deb8aaea5a6b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.5.1"
   lib_llama_cpp_platform_interface:
     dependency: transitive
     description:
       name: lib_llama_cpp_platform_interface
-      sha256: e76656a222299c3c0ea3d20da3980cf7f171f2cce3cd54b5443061f5a88b7dff
+      sha256: "39802ca9219a3cb38b2313fc90ea9008e3afe2a28d6d33a6a1780ea7b448b3ca"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.5.1"
   lib_llama_cpp_windows:
     dependency: transitive
     description:
       name: lib_llama_cpp_windows
-      sha256: b2fdd511804c15f3f9b6dde92364763a37ba2fc70e76db8c7be90ae44c694581
+      sha256: "7afd9efc9484ce1ec5b86632470f8a916230154e092543742a389def3f3586c6"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.0"
+    version: "0.5.1"
   lint:
     dependency: transitive
     description:
