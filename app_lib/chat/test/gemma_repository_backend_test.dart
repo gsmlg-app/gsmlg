@@ -67,6 +67,31 @@ void main() {
       expect(loadCommand.gpuLayerCount, testCase.gpuLayerCount);
     }
   });
+
+  test(
+    'local generation uses the current config over the loaded config',
+    () async {
+      final engine = _CapturingLlamaEngine();
+      final repository = await _repositoryWithEngine(engine);
+
+      await repository.loadModel(
+        const ModelConfig(backend: GemmaBackend.metal),
+      );
+      await repository.generateResponse([
+        _userMessage(),
+      ], config: const ModelConfig(backend: GemmaBackend.cpu)).toList();
+
+      final request = engine.libraryRequest;
+      expect(request, isNotNull);
+      expect(request!.requiredCapabilities, {
+        llama_platform.LlamaCppLibraryCapability.cpu,
+      });
+      final loadCommand = engine.commands
+          .whereType<llama.LlamaLoadModelCommand>()
+          .single;
+      expect(loadCommand.gpuLayerCount, 0);
+    },
+  );
 }
 
 class _BackendCase {
@@ -93,4 +118,30 @@ class _CapturingLlamaEngine implements llama.LlamaEngine {
     yield const llama.LlamaTokenResponse(text: 'ok', index: 0);
     yield const llama.LlamaDoneResponse();
   }
+}
+
+Future<GemmaRepository> _repositoryWithEngine(llama.LlamaEngine engine) async {
+  final tempDir = await Directory.systemTemp.createTemp('gsmlg_llama_');
+  final modelFile = File('${tempDir.path}/model.gguf')
+    ..writeAsStringSync('model');
+  final repository = GemmaRepository(
+    llamaEngine: engine,
+    initialModelPath: modelFile.path,
+  );
+  addTearDown(() async {
+    await repository.dispose();
+    if (await tempDir.exists()) {
+      await tempDir.delete(recursive: true);
+    }
+  });
+  return repository;
+}
+
+UserMessage _userMessage() {
+  return UserMessage(
+    id: 'user',
+    content: 'Hello',
+    conversationId: 'conversation',
+    timestamp: DateTime(2026),
+  );
 }

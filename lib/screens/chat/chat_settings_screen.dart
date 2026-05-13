@@ -420,7 +420,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
       return const <_ConfiguredModel>[];
     }
     final info = GemmaModelInfo.findById(selectedId);
-    final config = ModelConfig.defaultConfig.copyWith(
+    final config = ModelConfig.platformDefaultConfig.copyWith(
       inferenceMode: ChatInferenceMode.local,
     );
     return [

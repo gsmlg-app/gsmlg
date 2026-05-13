@@ -596,33 +596,37 @@ class GemmaRepository {
   Stream<ChatGenerationChunk> generateResponse(
     List<Message> messages, {
     List<Map<String, dynamic>> tools = const [],
+    ModelConfig? config,
   }) async* {
     if (_llamaModelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
-    yield* _generateLlamaResponse(messages, tools: tools);
+    yield* _generateLlamaResponse(messages, tools: tools, config: config);
   }
 
   Stream<ChatGenerationChunk> _generateLlamaResponse(
     List<Message> messages, {
     required List<Map<String, dynamic>> tools,
+    ModelConfig? config,
   }) async* {
     final modelPath = _llamaModelPath;
     if (modelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
 
-    final config = _llamaConfig ?? ModelConfig.defaultConfig;
+    final effectiveConfig =
+        (config ?? _llamaConfig ?? ModelConfig.platformDefaultConfig)
+            .withSupportedBackendForCurrentPlatform();
     final commands = Stream<llama.LlamaCommand>.fromIterable([
       llama.LlamaLoadModelCommand(
         modelPath: modelPath,
-        gpuLayerCount: config.backend.usesGpuLayers ? 99 : 0,
+        gpuLayerCount: effectiveConfig.backend.usesGpuLayers ? 99 : 0,
       ),
       buildLlamaGenerateCommand(
         messages: messages,
         tools: tools,
-        maxTokens: config.maxTokens,
-        temperature: config.temperature,
+        maxTokens: effectiveConfig.maxTokens,
+        temperature: effectiveConfig.temperature,
         stop: const ['<end_of_turn>', '<start_of_turn>'],
       ),
       const llama.LlamaDisposeCommand(),
@@ -630,7 +634,7 @@ class GemmaRepository {
 
     await for (final response in _llamaEngine.transform(
       commands,
-      libraryRequest: _libraryRequestForBackend(config.backend),
+      libraryRequest: _libraryRequestForBackend(effectiveConfig.backend),
     )) {
       switch (response) {
         case llama.LlamaTokenResponse(:final text):
@@ -655,13 +659,18 @@ class GemmaRepository {
   Future<String> generateResponseSync(
     List<Message> messages, {
     List<Map<String, dynamic>> tools = const [],
+    ModelConfig? config,
   }) async {
     if (_llamaModelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
 
     final buffer = StringBuffer();
-    await for (final response in generateResponse(messages, tools: tools)) {
+    await for (final response in generateResponse(
+      messages,
+      tools: tools,
+      config: config,
+    )) {
       if (response is ChatTextChunk) {
         buffer.write(response.text);
       }

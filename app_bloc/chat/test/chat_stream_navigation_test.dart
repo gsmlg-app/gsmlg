@@ -51,6 +51,30 @@ void main() {
     expect(conversationB?.messages, isEmpty);
     expect(bloc.state.conversation?.id, 'conversation-b');
   });
+
+  test('passes current local model config to Gemma generation', () async {
+    final gemmaRepository = _FakeGemmaRepository();
+    final storageRepository = _FakeChatStorageRepository();
+    await storageRepository.saveSettings(
+      const ModelConfig(backend: GemmaBackend.cpu),
+    );
+    final bloc = ChatBloc(
+      gemmaRepository: gemmaRepository,
+      remoteRepository: _FakeRemoteLlmRepository(),
+      storageRepository: storageRepository,
+      toolExecutor: ToolExecutor(),
+    );
+    addTearDown(bloc.close);
+    addTearDown(gemmaRepository.dispose);
+
+    bloc.add(const ChatSendMessage(content: 'use cpu'));
+    await _flushBloc();
+
+    expect(gemmaRepository.lastConfig?.backend, GemmaBackend.cpu);
+
+    await gemmaRepository.complete();
+    await _flushBloc();
+  });
 }
 
 Conversation _conversation(String id) {
@@ -70,6 +94,7 @@ Future<void> _flushBloc() async {
 
 class _FakeGemmaRepository extends GemmaRepository {
   final _controller = StreamController<ChatGenerationChunk>();
+  ModelConfig? lastConfig;
 
   @override
   bool get isReady => true;
@@ -78,7 +103,9 @@ class _FakeGemmaRepository extends GemmaRepository {
   Stream<ChatGenerationChunk> generateResponse(
     List<Message> messages, {
     List<Map<String, dynamic>> tools = const [],
+    ModelConfig? config,
   }) {
+    lastConfig = config;
     return _controller.stream;
   }
 

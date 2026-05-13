@@ -216,7 +216,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             config,
             tools: tools,
           )
-        : _gemmaRepository.generateResponse(messages, tools: tools);
+        : _gemmaRepository.generateResponse(
+            messages,
+            tools: tools,
+            config: config,
+          );
     _streamSubscription = stream.listen(
       (chunk) {
         switch (chunk) {

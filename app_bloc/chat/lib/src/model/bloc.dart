@@ -161,9 +161,11 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
           // skip this model on the next launch.
           await _preferences.setString(_loadingModelKey, modelId);
 
-          await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
-              thinkingEnabled:
-                  _preferences.getBool(_thinkingEnabledKey) ?? false);
+          await _loadModelWithCapabilities(
+            ModelConfig.platformDefaultConfig,
+            modelInfo,
+            thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false,
+          );
           debugPrint(
               '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
 
@@ -524,8 +526,11 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       emit(state.copyWith(status: GemmaModelStatus.loading));
 
       await _preferences.setString(_loadingModelKey, event.modelId);
-      await _loadModelWithCapabilities(ModelConfig.defaultConfig, modelInfo,
-          thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false);
+      await _loadModelWithCapabilities(
+        ModelConfig.platformDefaultConfig,
+        modelInfo,
+        thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false,
+      );
       await _preferences.remove(_loadingModelKey);
 
       debugPrint(
@@ -659,10 +664,10 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
 
     // Cap maxTokens to the model's KV cache size to avoid MediaPipe errors
     // like "Max number of tokens is larger than the maximum cache size".
-    var effectiveConfig = config;
+    var effectiveConfig = config.withSupportedBackendForCurrentPlatform();
     final kvCacheSize = modelInfo?.maxKvCacheSize;
     if (kvCacheSize != null && config.maxTokens > kvCacheSize) {
-      effectiveConfig = config.copyWith(maxTokens: kvCacheSize);
+      effectiveConfig = effectiveConfig.copyWith(maxTokens: kvCacheSize);
     }
     if (modelInfo?.requiresCpuBackendOnDesktop ?? false) {
       effectiveConfig = effectiveConfig.copyWith(backend: GemmaBackend.cpu);

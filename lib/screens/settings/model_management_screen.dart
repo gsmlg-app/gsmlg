@@ -5,6 +5,7 @@ import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
 import 'package:chat_bloc/chat_bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -583,10 +584,11 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     BuildContext context,
     GemmaModelInfo model,
   ) async {
+    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
     final result = await FilePicker.platform.pickFiles(
       dialogTitle: 'Select ${model.downloadFileName}',
-      type: FileType.custom,
-      allowedExtensions: const ['gguf'],
+      type: isAndroid ? FileType.any : FileType.custom,
+      allowedExtensions: isAndroid ? null : const ['gguf'],
       allowMultiple: false,
       withData: false,
     );
@@ -741,21 +743,24 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     BuildContext context,
     ModelConfig config,
   ) {
+    final effectiveConfig = config.withSupportedBackendForCurrentPlatform();
     return SettingsSection(
       title: const Text('Inference Settings'),
       tiles: [
         SettingsTile(
           leading: const Icon(Icons.memory),
           title: const Text('Backend'),
-          description: Text(_backendDescription(config.backend)),
-          trailing: Text(config.backend.displayName),
-          onPressed: (_) => _showBackendDialog(context, config),
+          description: Text(_backendDescription(effectiveConfig.backend)),
+          trailing: Text(effectiveConfig.backend.displayName),
+          onPressed: (_) => _showBackendDialog(context, effectiveConfig),
         ),
       ],
     );
   }
 
   Future<void> _showBackendDialog(BuildContext context, ModelConfig config) {
+    final supportedBackends = supportedGemmaBackendsForCurrentPlatform();
+    final effectiveConfig = config.withSupportedBackendForCurrentPlatform();
     return showDialog<void>(
       context: context,
       builder: (dialogContext) {
@@ -764,12 +769,12 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           content: SizedBox(
             width: 420,
             child: RadioGroup<GemmaBackend>(
-              groupValue: config.backend,
+              groupValue: effectiveConfig.backend,
               onChanged: (value) {
                 if (value == null) return;
                 context.read<ChatSettingsBloc>().add(
                   ChatSettingsUpdateConfig(
-                    config: config.copyWith(backend: value),
+                    config: effectiveConfig.copyWith(backend: value),
                   ),
                 );
                 Navigator.pop(dialogContext);
@@ -777,7 +782,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  for (final backend in GemmaBackend.values)
+                  for (final backend in supportedBackends)
                     RadioListTile<GemmaBackend>(
                       title: Text(backend.displayName),
                       subtitle: Text(_backendDescription(backend)),

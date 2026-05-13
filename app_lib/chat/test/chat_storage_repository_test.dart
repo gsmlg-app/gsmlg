@@ -60,11 +60,12 @@ void main() {
     addTearDown(database.close);
 
     final repository = ChatStorageRepository(database);
-    const config = ModelConfig(backend: GemmaBackend.vulkan);
+    final backend = supportedGemmaBackendsForCurrentPlatform().last;
+    final config = ModelConfig(backend: backend);
 
     await repository.saveSettings(config);
 
-    expect((await repository.loadSettings()).backend, GemmaBackend.vulkan);
+    expect((await repository.loadSettings()).backend, backend);
   });
 
   test('maps legacy gpu backend setting to Metal', () async {
@@ -82,6 +83,9 @@ void main() {
 
     final repository = ChatStorageRepository(database);
 
-    expect((await repository.loadSettings()).backend, GemmaBackend.metal);
+    expect(
+      (await repository.loadSettings()).backend,
+      defaultGemmaBackendForCurrentPlatform(),
+    );
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:equatable/equatable.dart';
 
 import 'inference.dart';
@@ -244,6 +246,39 @@ enum GemmaBackend {
   vulkan,
 }
 
+/// Backends supported by the current platform.
+List<GemmaBackend> supportedGemmaBackendsForCurrentPlatform() {
+  return supportedGemmaBackendsForOperatingSystem(Platform.operatingSystem);
+}
+
+/// Backends supported by a Dart [Platform.operatingSystem] value.
+List<GemmaBackend> supportedGemmaBackendsForOperatingSystem(
+  String operatingSystem,
+) {
+  return switch (operatingSystem.toLowerCase()) {
+    'macos' || 'ios' => const [GemmaBackend.cpu, GemmaBackend.metal],
+    'linux' || 'windows' => const [
+      GemmaBackend.cpu,
+      GemmaBackend.cuda,
+      GemmaBackend.vulkan,
+    ],
+    'android' => const [GemmaBackend.cpu, GemmaBackend.vulkan],
+    _ => const [GemmaBackend.cpu],
+  };
+}
+
+/// Default backend for the current platform.
+GemmaBackend defaultGemmaBackendForCurrentPlatform() {
+  return defaultGemmaBackendForOperatingSystem(Platform.operatingSystem);
+}
+
+/// Default backend for a Dart [Platform.operatingSystem] value.
+GemmaBackend defaultGemmaBackendForOperatingSystem(String operatingSystem) {
+  final supported = supportedGemmaBackendsForOperatingSystem(operatingSystem);
+  if (supported.contains(GemmaBackend.metal)) return GemmaBackend.metal;
+  return GemmaBackend.cpu;
+}
+
 extension GemmaBackendDisplay on GemmaBackend {
   String get displayName {
     return switch (this) {
@@ -255,6 +290,16 @@ extension GemmaBackendDisplay on GemmaBackend {
   }
 
   bool get usesGpuLayers => this != GemmaBackend.cpu;
+
+  bool get isSupportedOnCurrentPlatform {
+    return isSupportedOnOperatingSystem(Platform.operatingSystem);
+  }
+
+  bool isSupportedOnOperatingSystem(String operatingSystem) {
+    return supportedGemmaBackendsForOperatingSystem(
+      operatingSystem,
+    ).contains(this);
+  }
 }
 
 /// Configuration for chat inference.
@@ -266,7 +311,7 @@ class ModelConfig extends Equatable {
     this.maxTokens = 2048,
     this.temperature = 0.8,
     this.topK = 40,
-    this.backend = GemmaBackend.metal,
+    this.backend = GemmaBackend.cpu,
     this.remoteProvider = RemoteLlmProvider.openAiCompatible,
     this.remoteAccountId,
     this.remoteBaseUrl = 'https://api.openai.com/v1',
@@ -277,6 +322,11 @@ class ModelConfig extends Equatable {
 
   /// Creates a default configuration.
   static const ModelConfig defaultConfig = ModelConfig();
+
+  /// Creates a default configuration with the current platform's backend.
+  static ModelConfig get platformDefaultConfig {
+    return defaultConfig.withSupportedBackendForCurrentPlatform();
+  }
 
   /// Sentinel account ID meaning "send a dummy bearer token".
   ///
@@ -428,6 +478,21 @@ class ModelConfig extends Equatable {
     );
   }
 
+  /// Returns this config with an unsupported backend replaced by the platform
+  /// default for [operatingSystem].
+  ModelConfig withSupportedBackendForOperatingSystem(String operatingSystem) {
+    if (backend.isSupportedOnOperatingSystem(operatingSystem)) return this;
+    return copyWith(
+      backend: defaultGemmaBackendForOperatingSystem(operatingSystem),
+    );
+  }
+
+  /// Returns this config with an unsupported backend replaced by the current
+  /// platform default.
+  ModelConfig withSupportedBackendForCurrentPlatform() {
+    return withSupportedBackendForOperatingSystem(Platform.operatingSystem);
+  }
+
   /// Validates the configuration and returns errors if any.
   List<String> validate() {
     final errors = <String>[];
@@ -442,6 +507,13 @@ class ModelConfig extends Equatable {
 
     if (topK < 1 || topK > 100) {
       errors.add('Top-K must be between 1 and 100');
+    }
+
+    if (!backend.isSupportedOnCurrentPlatform) {
+      errors.add(
+        '${backend.displayName} backend is not supported on '
+        '${Platform.operatingSystem}',
+      );
     }
 
     if (modelType == GemmaModelType.custom &&

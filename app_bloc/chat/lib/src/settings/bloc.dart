@@ -190,12 +190,13 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
 
     await _preferences.remove(_activeAgentIdKey);
     await _preferences.setBool(_thinkingEnabledKey, false);
-    await _repository.saveSettings(ModelConfig.defaultConfig);
+    final defaultConfig = ModelConfig.platformDefaultConfig;
+    await _repository.saveSettings(defaultConfig);
     await _repository.saveDefaultSystemPrompt(null);
     emit(state.copyWith(
       status: ChatSettingsStatus.loaded,
       agents: agents,
-      config: ModelConfig.defaultConfig,
+      config: defaultConfig,
       clearActiveAgent: true,
       clearSystemPrompt: true,
       thinkingEnabled: false,
@@ -245,12 +246,13 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     Emitter<ChatSettingsState> emit,
   ) async {
     try {
-      await _repository.saveSettings(ModelConfig.defaultConfig);
+      final defaultConfig = ModelConfig.platformDefaultConfig;
+      await _repository.saveSettings(defaultConfig);
       await _repository.saveDefaultSystemPrompt(null);
       await _preferences.setBool(_thinkingEnabledKey, false);
       final agents = _replaceActiveAgent(
         (agent) => agent.copyWith(
-          config: ModelConfig.defaultConfig,
+          config: defaultConfig,
           clearSystemPrompt: true,
           thinkingEnabled: false,
         ),
@@ -259,7 +261,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
 
       emit(state.copyWith(
         status: ChatSettingsStatus.loaded,
-        config: ModelConfig.defaultConfig,
+        config: defaultConfig,
         agents: agents,
         clearSystemPrompt: true,
         thinkingEnabled: false,
@@ -346,7 +348,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
   }
 
   ModelConfig _configFromJson(Map<String, Object?>? json) {
-    if (json == null) return ModelConfig.defaultConfig;
+    if (json == null) return ModelConfig.platformDefaultConfig;
     return ModelConfig(
       inferenceMode: _enumFromName(
         ChatInferenceMode.values,
@@ -382,7 +384,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
         json['remoteThinkingEffort'],
         ModelConfig.defaultConfig.remoteThinkingEffort,
       ),
-    );
+    ).withSupportedBackendForCurrentPlatform();
   }
 
   Map<String, Object?> _configToJson(ModelConfig config) {
@@ -412,11 +414,11 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
   }
 
   GemmaBackend _backendFromName(Object? name) {
-    if (name == 'gpu') return GemmaBackend.metal;
+    if (name == 'gpu') return defaultGemmaBackendForCurrentPlatform();
     return _enumFromName(
       GemmaBackend.values,
       name,
-      ModelConfig.defaultConfig.backend,
+      defaultGemmaBackendForCurrentPlatform(),
     );
   }
 }

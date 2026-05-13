@@ -166,7 +166,7 @@ class ChatStorageRepository {
     )..where((t) => t.key.equals('default'))).getSingleOrNull();
 
     if (row == null) {
-      return ModelConfig.defaultConfig;
+      return ModelConfig.platformDefaultConfig;
     }
 
     return ModelConfig(
@@ -185,7 +185,7 @@ class ChatStorageRepository {
       remoteThinkingEffort: _parseRemoteThinkingEffort(
         row.remoteThinkingEffort,
       ),
-    );
+    ).withSupportedBackendForCurrentPlatform();
   }
 
   /// Saves the model configuration to the database.
@@ -372,13 +372,16 @@ class ChatStorageRepository {
   }
 
   GemmaBackend _parseBackend(String value) {
-    return switch (value) {
+    final backend = switch (value) {
       'cpu' => GemmaBackend.cpu,
       'metal' || 'gpu' => GemmaBackend.metal,
       'cuda' => GemmaBackend.cuda,
       'vulkan' => GemmaBackend.vulkan,
-      _ => ModelConfig.defaultConfig.backend,
+      _ => defaultGemmaBackendForCurrentPlatform(),
     };
+    return backend.isSupportedOnCurrentPlatform
+        ? backend
+        : defaultGemmaBackendForCurrentPlatform();
   }
 
   String _backendToString(GemmaBackend backend) {

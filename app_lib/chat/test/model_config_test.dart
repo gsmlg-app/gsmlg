@@ -10,11 +10,65 @@ void main() {
         GemmaBackend.cuda,
         GemmaBackend.vulkan,
       ]);
-      expect(ModelConfig.defaultConfig.backend, GemmaBackend.metal);
+      expect(ModelConfig.defaultConfig.backend, GemmaBackend.cpu);
+      expect(
+        defaultGemmaBackendForOperatingSystem('macos'),
+        GemmaBackend.metal,
+      );
+      expect(defaultGemmaBackendForOperatingSystem('linux'), GemmaBackend.cpu);
       expect(GemmaBackend.cpu.displayName, 'CPU');
       expect(GemmaBackend.metal.displayName, 'Metal');
       expect(GemmaBackend.cuda.displayName, 'CUDA');
       expect(GemmaBackend.vulkan.displayName, 'Vulkan');
+    });
+
+    test('filters selectable backends by operating system', () {
+      expect(supportedGemmaBackendsForOperatingSystem('macos'), [
+        GemmaBackend.cpu,
+        GemmaBackend.metal,
+      ]);
+      expect(supportedGemmaBackendsForOperatingSystem('ios'), [
+        GemmaBackend.cpu,
+        GemmaBackend.metal,
+      ]);
+      expect(supportedGemmaBackendsForOperatingSystem('linux'), [
+        GemmaBackend.cpu,
+        GemmaBackend.cuda,
+        GemmaBackend.vulkan,
+      ]);
+      expect(supportedGemmaBackendsForOperatingSystem('windows'), [
+        GemmaBackend.cpu,
+        GemmaBackend.cuda,
+        GemmaBackend.vulkan,
+      ]);
+      expect(supportedGemmaBackendsForOperatingSystem('android'), [
+        GemmaBackend.cpu,
+        GemmaBackend.vulkan,
+      ]);
+      expect(supportedGemmaBackendsForOperatingSystem('fuchsia'), [
+        GemmaBackend.cpu,
+      ]);
+    });
+
+    test('normalizes unsupported backends to the platform default', () {
+      expect(
+        const ModelConfig(
+          backend: GemmaBackend.metal,
+        ).withSupportedBackendForOperatingSystem('linux').backend,
+        GemmaBackend.cpu,
+      );
+      expect(
+        const ModelConfig(
+          backend: GemmaBackend.vulkan,
+        ).withSupportedBackendForOperatingSystem('macos').backend,
+        GemmaBackend.metal,
+      );
+      expect(
+        const ModelConfig(
+          backend: GemmaBackend.cuda,
+        ).withSupportedBackendForOperatingSystem('windows').backend,
+        GemmaBackend.cuda,
+      );
     });
   });
 
