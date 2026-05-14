@@ -562,9 +562,10 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
                       if (value == null) return;
                       setDialogState(() {
                         remoteApiType = value;
-                        if (value == RemoteLlmApiType.anthropicMessages) {
-                          remoteProvider = RemoteLlmProvider.anthropic;
-                        }
+                        remoteProvider = _providerForApiType(
+                          value,
+                          currentProvider: remoteProvider,
+                        );
                         accountId = null;
                       });
                     },
@@ -684,6 +685,20 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     return apiType == RemoteLlmApiType.anthropicMessages
         ? ServiceProvider.anthropic
         : ServiceProvider.openai;
+  }
+
+  RemoteLlmProvider _providerForApiType(
+    RemoteLlmApiType apiType, {
+    required RemoteLlmProvider currentProvider,
+  }) {
+    return switch (apiType) {
+      RemoteLlmApiType.openAiResponses => RemoteLlmProvider.openAi,
+      RemoteLlmApiType.anthropicMessages => RemoteLlmProvider.anthropic,
+      RemoteLlmApiType.openAiChatCompletions =>
+        currentProvider == RemoteLlmProvider.anthropic
+            ? RemoteLlmProvider.openAiCompatible
+            : currentProvider,
+    };
   }
 
   List<_RemoteProviderProfile> _loadProviders() {

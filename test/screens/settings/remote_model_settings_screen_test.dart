@@ -407,6 +407,54 @@ void main() {
       expect(provider['useDummyToken'], isTrue);
     });
 
+    testWidgets('saves manually selected OpenAI Responses API type', (
+      tester,
+    ) async {
+      await preferences.setStringList('remote_model_provider_profiles', []);
+      chatSettingsBloc = ChatSettingsBloc(
+        repository: ChatStorageRepository(database),
+        preferences: preferences,
+      );
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        vault: vault,
+        chatSettingsBloc: chatSettingsBloc!,
+        accountsBloc: accountsBloc,
+      );
+
+      await tester.tap(find.byTooltip('Add provider'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Anthropic').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byType(DropdownButtonFormField<RemoteLlmApiType>).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('OpenAI Chat Completions'), findsOneWidget);
+      expect(find.text('OpenAI Responses'), findsAtLeastNWidgets(1));
+      expect(find.text('Anthropic Messages'), findsAtLeastNWidgets(1));
+      await tester.tap(find.text('OpenAI Responses').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Use dummy token'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
+
+      final saved = preferences.getStringList('remote_model_provider_profiles');
+      expect(saved, hasLength(1));
+      final provider = jsonDecode(saved!.single) as Map<String, dynamic>;
+      expect(provider['remoteProvider'], 'openAi');
+      expect(provider['remoteApiType'], 'openAiResponses');
+      expect(provider['useDummyToken'], isTrue);
+    });
+
     testWidgets('changes an existing provider preset', (tester) async {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
