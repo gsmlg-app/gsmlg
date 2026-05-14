@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:lib_llama_cpp/lib_llama_cpp.dart' as llama;
 
 import '../models/message.dart';
@@ -8,11 +10,15 @@ llama.LlamaCommand buildLlamaGenerateCommand({
   required int maxTokens,
   required double temperature,
   required List<String> stop,
+  bool useStreamingToolPrompt = false,
 }) {
   final llamaTools = llamaToolsFromOpenAiTools(tools);
-  if (llamaTools.isEmpty) {
+  if (llamaTools.isEmpty || useStreamingToolPrompt) {
     return llama.LlamaGenerateCommand(
-      prompt: buildGemmaPrompt(messages),
+      prompt: buildGemmaPrompt(
+        messages,
+        tools: useStreamingToolPrompt ? llamaTools : const [],
+      ),
       maxTokens: maxTokens,
       temperature: temperature,
       stop: stop,
@@ -28,7 +34,10 @@ llama.LlamaCommand buildLlamaGenerateCommand({
   );
 }
 
-String buildGemmaPrompt(List<Message> messages) {
+String buildGemmaPrompt(
+  List<Message> messages, {
+  List<llama.LlamaTool> tools = const [],
+}) {
   String? systemPrompt;
   final chatMessages = <Message>[];
   for (final message in messages) {
@@ -41,6 +50,7 @@ String buildGemmaPrompt(List<Message> messages) {
     }
   }
 
+  final toolInstructions = _buildGemmaToolInstructions(tools);
   final prompt = StringBuffer();
   for (var i = 0; i < chatMessages.length; i += 1) {
     final message = chatMessages[i];
@@ -51,22 +61,59 @@ String buildGemmaPrompt(List<Message> messages) {
       _ => message.content,
     };
 
-    if (i == 0 && message is UserMessage && systemPrompt != null) {
-      content = '$systemPrompt\n\n$content';
+    if (i == 0 && message is UserMessage) {
+      final prefixes = [
+        if (systemPrompt != null && systemPrompt.trim().isNotEmpty)
+          systemPrompt.trim(),
+        if (toolInstructions.isNotEmpty) toolInstructions,
+      ];
+      if (prefixes.isNotEmpty) {
+        content = '${prefixes.join('\n\n')}\n\n$content';
+      }
     }
 
     final role = message is AssistantMessage ? 'model' : 'user';
     if (content.trim().isEmpty) continue;
     prompt
-      ..write('<start_of_turn>')
+      ..write('<|turn>')
       ..write(role)
       ..write('\n')
       ..write(content.trim())
-      ..writeln('<end_of_turn>');
+      ..writeln('<turn|>');
   }
 
-  prompt.write('<start_of_turn>model\n');
+  prompt.write('<|turn>model\n');
   return prompt.toString();
+}
+
+String _buildGemmaToolInstructions(List<llama.LlamaTool> tools) {
+  if (tools.isEmpty) return '';
+
+  final buffer = StringBuffer()
+    ..writeln('You can call tools when needed.')
+    ..writeln('To call a tool, respond with exactly one call in this format:')
+    ..writeln('<|tool_call>call:tool_name{"arg":"value"}<tool_call>')
+    ..writeln('Do not add prose around a tool call.')
+    ..writeln('Available tools:');
+
+  for (final tool in tools) {
+    buffer
+      ..write('- ')
+      ..write(tool.name);
+    if (tool.description.isNotEmpty) {
+      buffer
+        ..write(': ')
+        ..write(tool.description);
+    }
+    buffer.writeln();
+    if (tool.parameters.isNotEmpty) {
+      buffer
+        ..write('  parameters: ')
+        ..writeln(jsonEncode(tool.parameters));
+    }
+  }
+
+  return buffer.toString().trimRight();
 }
 
 List<llama.LlamaMessage> llamaMessagesFromChatMessages(List<Message> messages) {

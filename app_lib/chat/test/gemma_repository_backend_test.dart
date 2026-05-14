@@ -103,6 +103,73 @@ void main() {
       expect(loadCommand.gpuLayerCount, 0);
     },
   );
+
+  test('local generation uses a streaming prompt path with tools', () async {
+    final engine = _CapturingLlamaEngine(
+      responses: const [
+        llama.LlamaTokenResponse(text: '<|tool_', index: 0),
+        llama.LlamaTokenResponse(
+          text: 'call>call:domain_list_zones{}<tool_call>',
+          index: 1,
+        ),
+        llama.LlamaDoneResponse(),
+      ],
+    );
+    final repository = await _repositoryWithEngine(engine);
+
+    await repository.loadModel(const ModelConfig(backend: GemmaBackend.metal));
+    final chunks = await repository
+        .generateResponse(
+          [_userMessage()],
+          tools: const [
+            {
+              'type': 'function',
+              'function': {
+                'name': 'domain_list_zones',
+                'description': 'List configured DNS zones',
+                'parameters': {'type': 'object', 'properties': {}},
+              },
+            },
+          ],
+        )
+        .toList();
+
+    expect(chunks, [
+      const ChatFunctionCallChunk(name: 'domain_list_zones', args: {}),
+    ]);
+    expect(
+      engine.commands.whereType<llama.LlamaGenerateMessagesCommand>(),
+      isEmpty,
+    );
+    final generateCommand = engine.commands
+        .whereType<llama.LlamaGenerateCommand>()
+        .single;
+    expect(generateCommand.prompt, contains('<|turn>user'));
+    expect(generateCommand.prompt, contains('domain_list_zones'));
+  });
+
+  test('local generation parses Gemma thinking tags', () async {
+    final engine = _CapturingLlamaEngine(
+      responses: const [
+        llama.LlamaTokenResponse(text: '<|think|>plan', index: 0),
+        llama.LlamaTokenResponse(text: 'ning</think>final answer', index: 1),
+        llama.LlamaDoneResponse(),
+      ],
+    );
+    final repository = await _repositoryWithEngine(engine);
+
+    await repository.loadModel(const ModelConfig(backend: GemmaBackend.metal));
+    final chunks = await repository.generateResponse([_userMessage()]).toList();
+
+    expect(
+      chunks
+          .whereType<ChatThinkingChunk>()
+          .map((chunk) => chunk.content)
+          .join(),
+      'planning',
+    );
+    expect(chunks.whereType<ChatTextChunk>().single.text, 'final answer');
+  });
 }
 
 class _BackendCase {
@@ -123,6 +190,14 @@ llama_platform.LlamaCppLibraryCapability _capabilityForBackend(
 }
 
 class _CapturingLlamaEngine implements llama.LlamaEngine {
+  _CapturingLlamaEngine({
+    this.responses = const [
+      llama.LlamaTokenResponse(text: 'ok', index: 0),
+      llama.LlamaDoneResponse(),
+    ],
+  });
+
+  final List<llama.LlamaResponse> responses;
   llama_platform.LlamaCppLibraryRequest? libraryRequest;
   List<llama.LlamaCommand> commands = const [];
 
@@ -135,8 +210,7 @@ class _CapturingLlamaEngine implements llama.LlamaEngine {
   }) async* {
     this.libraryRequest = libraryRequest;
     this.commands = await commands.toList();
-    yield const llama.LlamaTokenResponse(text: 'ok', index: 0);
-    yield const llama.LlamaDoneResponse();
+    yield* Stream<llama.LlamaResponse>.fromIterable(responses);
   }
 }
 

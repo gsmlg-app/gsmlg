@@ -105,7 +105,7 @@ void main() {
     await _flushBloc();
   });
 
-  test('omits local tools so llama.cpp text responses stream', () async {
+  test('passes local tools for Gemma prompt-side tool parsing', () async {
     final gemmaRepository = _FakeGemmaRepository();
     final storageRepository = _FakeChatStorageRepository();
     final bloc = ChatBloc(
@@ -124,7 +124,14 @@ void main() {
     bloc.add(const ChatSendMessage(content: 'stream locally'));
     await streaming;
 
-    expect(gemmaRepository.lastTools, isEmpty);
+    expect(gemmaRepository.lastTools, isNotEmpty);
+    expect(
+      gemmaRepository.lastTools.map((tool) {
+        final function = tool['function'];
+        return function is Map<String, dynamic> ? function['name'] : null;
+      }),
+      contains('domain_list_zones'),
+    );
 
     await gemmaRepository.complete();
     await _flushBloc();

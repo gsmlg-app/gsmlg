@@ -721,21 +721,28 @@ class GemmaRepository {
     final effectiveConfig =
         (config ?? _llamaConfig ?? ModelConfig.platformDefaultConfig)
             .withSupportedBackendForCurrentPlatform();
+    final usesPromptSideTools = tools.isNotEmpty;
     final commands = Stream<llama.LlamaCommand>.fromIterable([
       llama.LlamaLoadModelCommand(
         modelPath: modelPath,
         contextSize: _llamaContextSizeFor(effectiveConfig),
         gpuLayerCount: effectiveConfig.backend.usesGpuLayers ? 99 : 0,
       ),
+      // WORKAROUND(upstream): gsmlg-app/lib_llama_cpp#20 - tool-aware
+      // LlamaGenerateMessagesCommand currently buffers text until parsing
+      // finishes. Keep the streaming raw prompt path and parse Gemma markers
+      // in this repository instead.
       buildLlamaGenerateCommand(
         messages: messages,
         tools: tools,
         maxTokens: effectiveConfig.maxTokens,
         temperature: effectiveConfig.temperature,
-        stop: const ['<end_of_turn>', '<start_of_turn>'],
+        stop: const ['<turn|>', '<end_of_turn>', '<start_of_turn>'],
+        useStreamingToolPrompt: usesPromptSideTools,
       ),
       const llama.LlamaDisposeCommand(),
     ]);
+    final streamParser = _Gemma4StreamParser();
 
     await for (final response in _llamaEngine.transform(
       commands,
@@ -743,8 +750,13 @@ class GemmaRepository {
     )) {
       switch (response) {
         case llama.LlamaTokenResponse(:final text):
-          yield ChatTextChunk(text);
+          for (final chunk in streamParser.add(text)) {
+            yield chunk;
+          }
         case llama.LlamaToolCallResponse(:final toolCall):
+          for (final chunk in streamParser.close()) {
+            yield chunk;
+          }
           yield ChatFunctionCallChunk(
             name: toolCall.name,
             args: _decodeToolArgs(toolCall.arguments),
@@ -757,6 +769,10 @@ class GemmaRepository {
             llama.LlamaDoneResponse():
           break;
       }
+    }
+
+    for (final chunk in streamParser.close()) {
+      yield chunk;
     }
   }
 
@@ -848,6 +864,244 @@ class GemmaRepository {
       },
     );
   }
+}
+
+class _Gemma4StreamParser {
+  static const _thinkStartTags = ['<think>', '<|think|>'];
+  static const _thinkEndTags = ['</think>', '<|/think|>', '<think|>'];
+  static const _toolStartTags = ['<|tool_call>', '<|tool_call|>'];
+  static const _toolEndTags = ['<tool_call>', '</tool_call>', '<|/tool_call|>'];
+
+  String _buffer = '';
+  var _inThinking = false;
+
+  List<ChatGenerationChunk> add(String text) {
+    if (text.isEmpty) return const [];
+    _buffer += text;
+    return _drain(complete: false);
+  }
+
+  List<ChatGenerationChunk> close() {
+    return _drain(complete: true);
+  }
+
+  List<ChatGenerationChunk> _drain({required bool complete}) {
+    final chunks = <ChatGenerationChunk>[];
+
+    while (_buffer.isNotEmpty) {
+      if (_inThinking) {
+        if (!_drainThinking(chunks, complete: complete)) break;
+        continue;
+      }
+
+      final thinkStart = _findFirst(_buffer, _thinkStartTags);
+      final toolStart = _findFirst(_buffer, _toolStartTags);
+      final next = _earlier(thinkStart, toolStart);
+
+      if (next == null) {
+        final keep = complete
+            ? 0
+            : _trailingMarkerPrefixLength(_buffer, [
+                ..._thinkStartTags,
+                ..._toolStartTags,
+              ]);
+        _emitText(chunks, _buffer.substring(0, _buffer.length - keep));
+        _buffer = _buffer.substring(_buffer.length - keep);
+        break;
+      }
+
+      _emitText(chunks, _buffer.substring(0, next.index));
+      _buffer = _buffer.substring(next.index + next.marker.length);
+
+      if (_thinkStartTags.contains(next.marker)) {
+        _inThinking = true;
+        continue;
+      }
+
+      if (!_drainToolCall(chunks, next.marker, complete: complete)) break;
+    }
+
+    return chunks;
+  }
+
+  bool _drainThinking(
+    List<ChatGenerationChunk> chunks, {
+    required bool complete,
+  }) {
+    final end = _findFirst(_buffer, _thinkEndTags);
+    if (end == null) {
+      final keep = complete
+          ? 0
+          : _trailingMarkerPrefixLength(_buffer, _thinkEndTags);
+      _emitThinking(chunks, _buffer.substring(0, _buffer.length - keep));
+      _buffer = _buffer.substring(_buffer.length - keep);
+      return false;
+    }
+
+    _emitThinking(chunks, _buffer.substring(0, end.index));
+    _buffer = _buffer.substring(end.index + end.marker.length);
+    _inThinking = false;
+    return true;
+  }
+
+  bool _drainToolCall(
+    List<ChatGenerationChunk> chunks,
+    String startMarker, {
+    required bool complete,
+  }) {
+    final end = _findFirst(_buffer, _toolEndTags);
+    if (end == null) {
+      if (!complete) {
+        _buffer = '$startMarker$_buffer';
+        return false;
+      }
+      final parsed = _parseToolCall(_buffer);
+      if (parsed == null) {
+        _emitText(chunks, '$startMarker$_buffer');
+      } else {
+        chunks.add(parsed);
+      }
+      _buffer = '';
+      return false;
+    }
+
+    final body = _buffer.substring(0, end.index);
+    final parsed = _parseToolCall(body);
+    if (parsed == null) {
+      _emitText(chunks, '$startMarker$body${end.marker}');
+    } else {
+      chunks.add(parsed);
+    }
+    _buffer = _buffer.substring(end.index + end.marker.length);
+    return true;
+  }
+
+  ChatFunctionCallChunk? _parseToolCall(String body) {
+    var text = body.trim();
+    if (text.startsWith('call:')) {
+      text = text.substring('call:'.length).trim();
+    }
+
+    if (text.startsWith('{')) {
+      return _parseJsonToolCall(text);
+    }
+
+    final match = RegExp(
+      r'^([A-Za-z_][A-Za-z0-9_.-]*)\s*(.*)$',
+      dotAll: true,
+    ).firstMatch(text);
+    if (match == null) return null;
+
+    final name = match.group(1)!.trim();
+    var arguments = match.group(2)!.trim();
+    if (arguments.startsWith('(') && arguments.endsWith(')')) {
+      arguments = arguments.substring(1, arguments.length - 1).trim();
+    }
+
+    return ChatFunctionCallChunk(
+      name: name,
+      args: _decodeGemmaToolArgs(arguments),
+    );
+  }
+
+  ChatFunctionCallChunk? _parseJsonToolCall(String text) {
+    try {
+      final decoded = jsonDecode(text);
+      if (decoded is! Map) return null;
+      final function = decoded['function'];
+      final source = function is Map ? function : decoded;
+      final rawName = source['name'] ?? source['tool_name'];
+      final name = rawName is String ? rawName.trim() : '';
+      if (name.isEmpty) return null;
+      return ChatFunctionCallChunk(
+        name: name,
+        args: _decodeGemmaToolArgs(source['arguments'] ?? source['args']),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Map<String, dynamic> _decodeGemmaToolArgs(Object? arguments) {
+    if (arguments == null) return const {};
+    if (arguments is Map) {
+      return {
+        for (final entry in arguments.entries)
+          if (entry.key != null) entry.key.toString(): entry.value,
+      };
+    }
+
+    final text = arguments.toString().trim();
+    if (text.isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(text);
+      if (decoded is Map) {
+        return {
+          for (final entry in decoded.entries)
+            if (entry.key != null) entry.key.toString(): entry.value,
+        };
+      }
+      return {'value': decoded};
+    } catch (_) {
+      return {'raw': text};
+    }
+  }
+
+  _Marker? _findFirst(String text, List<String> markers) {
+    _Marker? result;
+    for (final marker in markers) {
+      final index = text.indexOf(marker);
+      if (index == -1) continue;
+      if (result == null ||
+          index < result.index ||
+          (index == result.index && marker.length > result.marker.length)) {
+        result = _Marker(index: index, marker: marker);
+      }
+    }
+    return result;
+  }
+
+  _Marker? _earlier(_Marker? first, _Marker? second) {
+    if (first == null) return second;
+    if (second == null) return first;
+    if (first.index != second.index) {
+      return first.index < second.index ? first : second;
+    }
+    return first.marker.length >= second.marker.length ? first : second;
+  }
+
+  int _trailingMarkerPrefixLength(String text, List<String> markers) {
+    var keep = 0;
+    for (final marker in markers) {
+      final max = text.length < marker.length - 1
+          ? text.length
+          : marker.length - 1;
+      for (var length = max; length > keep; length -= 1) {
+        if (marker.startsWith(text.substring(text.length - length))) {
+          keep = length;
+          break;
+        }
+      }
+    }
+    return keep;
+  }
+
+  void _emitText(List<ChatGenerationChunk> chunks, String text) {
+    if (text.isEmpty) return;
+    chunks.add(ChatTextChunk(text));
+  }
+
+  void _emitThinking(List<ChatGenerationChunk> chunks, String text) {
+    if (text.isEmpty) return;
+    chunks.add(ChatThinkingChunk(text));
+  }
+}
+
+class _Marker {
+  const _Marker({required this.index, required this.marker});
+
+  final int index;
+  final String marker;
 }
 
 class _DownloadControl {
