@@ -7,7 +7,7 @@ import 'vault_repository.dart';
 /// This implementation provides secure storage using platform-native
 /// mechanisms:
 /// - iOS/macOS: Keychain Services
-/// - Android: EncryptedSharedPreferences with AES encryption
+/// - Android: platform-native encrypted storage
 /// - Linux: libsecret
 /// - Windows: Windows Credential Manager
 /// - Web: Uses encrypted local storage (less secure than native platforms)
@@ -19,7 +19,6 @@ class SecureStorageVaultRepository implements VaultRepository {
   static FlutterSecureStorage _createDefaultStorage() {
     return const FlutterSecureStorage(
       aOptions: AndroidOptions(
-        encryptedSharedPreferences: true,
         sharedPreferencesName: 'gsmlg_secure_prefs',
         preferencesKeyPrefix: 'gsmlg_',
       ),

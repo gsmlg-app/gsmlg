@@ -5,52 +5,77 @@ import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('keeps streaming tokens attached to their original conversation',
-      () async {
-    final gemmaRepository = _FakeGemmaRepository();
-    final storageRepository = _FakeChatStorageRepository();
-    final bloc = ChatBloc(
-      gemmaRepository: gemmaRepository,
-      remoteRepository: _FakeRemoteLlmRepository(),
-      storageRepository: storageRepository,
-      toolExecutor: ToolExecutor(),
-    );
-    addTearDown(bloc.close);
-    addTearDown(gemmaRepository.dispose);
+  test(
+    'keeps streaming tokens attached to their original conversation',
+    () async {
+      final gemmaRepository = _FakeGemmaRepository();
+      final storageRepository = _FakeChatStorageRepository();
+      final bloc = ChatBloc(
+        gemmaRepository: gemmaRepository,
+        remoteRepository: _FakeRemoteLlmRepository(),
+        storageRepository: storageRepository,
+        toolExecutor: ToolExecutor(),
+      );
+      addTearDown(bloc.close);
+      addTearDown(gemmaRepository.dispose);
 
-    await storageRepository.saveConversation(_conversation('conversation-a'));
-    await storageRepository.saveConversation(_conversation('conversation-b'));
+      await storageRepository.saveConversation(_conversation('conversation-a'));
+      await storageRepository.saveConversation(_conversation('conversation-b'));
 
-    bloc.add(const ChatLoadConversation(id: 'conversation-a'));
-    await _flushBloc();
-    bloc.add(const ChatSendMessage(content: 'write something'));
-    await _flushBloc();
+      final loadedConversationA = _waitForState(
+        bloc,
+        (state) => state.conversation?.id == 'conversation-a',
+      );
+      bloc.add(const ChatLoadConversation(id: 'conversation-a'));
+      await loadedConversationA;
 
-    bloc.add(const ChatLoadConversation(id: 'conversation-b'));
-    await _flushBloc();
-    expect(bloc.state.conversation?.id, 'conversation-b');
+      final streamingConversationA = _waitForState(
+        bloc,
+        (state) =>
+            state.status == ChatStatus.streaming &&
+            state.conversation?.id == 'conversation-a',
+      );
+      bloc.add(const ChatSendMessage(content: 'write something'));
+      await streamingConversationA;
 
-    gemmaRepository.emitText('generated for a');
-    await _flushBloc();
+      final loadedConversationB = _waitForState(
+        bloc,
+        (state) => state.conversation?.id == 'conversation-b',
+      );
+      bloc.add(const ChatLoadConversation(id: 'conversation-b'));
+      await loadedConversationB;
+      expect(bloc.state.conversation?.id, 'conversation-b');
 
-    expect(bloc.state.conversation?.id, 'conversation-b');
-    expect(bloc.state.conversation?.messages, isEmpty);
+      gemmaRepository.emitText('generated for a');
+      await _flushBloc();
 
-    await gemmaRepository.complete();
-    await _flushBloc();
+      expect(bloc.state.conversation?.id, 'conversation-b');
+      expect(bloc.state.conversation?.messages, isEmpty);
 
-    final conversationA =
-        await storageRepository.loadConversation('conversation-a');
-    final conversationB =
-        await storageRepository.loadConversation('conversation-b');
-    final assistant =
-        conversationA!.messages.whereType<AssistantMessage>().single;
+      final completedStream = _waitForState(
+        bloc,
+        (state) =>
+            state.status == ChatStatus.ready &&
+            state.streamingMessageId == null,
+      );
+      await gemmaRepository.complete();
+      await completedStream;
 
-    expect(assistant.content, 'generated for a');
-    expect(assistant.isStreaming, isFalse);
-    expect(conversationB?.messages, isEmpty);
-    expect(bloc.state.conversation?.id, 'conversation-b');
-  });
+      final conversationA = await storageRepository.loadConversation(
+        'conversation-a',
+      );
+      final conversationB = await storageRepository.loadConversation(
+        'conversation-b',
+      );
+      final assistant =
+          conversationA!.messages.whereType<AssistantMessage>().single;
+
+      expect(assistant.content, 'generated for a');
+      expect(assistant.isStreaming, isFalse);
+      expect(conversationB?.messages, isEmpty);
+      expect(bloc.state.conversation?.id, 'conversation-b');
+    },
+  );
 
   test('passes current local model config to Gemma generation', () async {
     final gemmaRepository = _FakeGemmaRepository();
@@ -67,8 +92,12 @@ void main() {
     addTearDown(bloc.close);
     addTearDown(gemmaRepository.dispose);
 
+    final streaming = _waitForState(
+      bloc,
+      (state) => state.status == ChatStatus.streaming,
+    );
     bloc.add(const ChatSendMessage(content: 'use cpu'));
-    await _flushBloc();
+    await streaming;
 
     expect(gemmaRepository.lastConfig?.backend, GemmaBackend.cpu);
 
@@ -98,11 +127,19 @@ void main() {
     addTearDown(gemmaRepository.dispose);
     addTearDown(remoteRepository.dispose);
 
+    final streaming = _waitForState(
+      bloc,
+      (state) => state.status == ChatStatus.streaming,
+    );
     bloc.add(const ChatSendMessage(content: 'hello'));
-    await _flushBloc();
+    await streaming;
 
+    final failed = _waitForState(
+      bloc,
+      (state) => state.status == ChatStatus.error,
+    );
     remoteRepository.emitError(const RemoteLlmException('bad api key'));
-    await _flushBloc();
+    await failed;
 
     expect(bloc.state.status, ChatStatus.error);
     expect(bloc.state.errorMessage, 'bad api key');
@@ -138,8 +175,15 @@ Future<void> _flushBloc() async {
   await Future<void>.delayed(Duration.zero);
 }
 
+Future<ChatState> _waitForState(
+  ChatBloc bloc,
+  bool Function(ChatState state) matches,
+) {
+  return bloc.stream.firstWhere(matches).timeout(const Duration(seconds: 5));
+}
+
 class _FakeGemmaRepository extends GemmaRepository {
-  final _controller = StreamController<ChatGenerationChunk>();
+  final _controller = StreamController<ChatGenerationChunk>.broadcast();
   ModelConfig? lastConfig;
 
   @override
@@ -172,7 +216,7 @@ class _FakeGemmaRepository extends GemmaRepository {
 }
 
 class _FakeRemoteLlmRepository implements RemoteLlmRepository {
-  final _controller = StreamController<ChatGenerationChunk>();
+  final _controller = StreamController<ChatGenerationChunk>.broadcast();
 
   @override
   Future<bool> isReady(ModelConfig config) async => true;
@@ -275,8 +319,9 @@ class _FakeChatStorageRepository implements ChatStorageRepository {
       final message = messages[index];
       messages[index] = switch (message) {
         final UserMessage user => user.copyWith(content: content),
-        final AssistantMessage assistant =>
-          assistant.copyWith(content: content),
+        final AssistantMessage assistant => assistant.copyWith(
+            content: content,
+          ),
         final SystemMessage system => system.copyWith(content: content),
         final ToolResponseMessage tool => tool.copyWith(content: content),
       };

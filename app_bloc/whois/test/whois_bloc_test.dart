@@ -29,17 +29,13 @@ void main() {
       expect: () => [isA<WhoisInitial>()],
     );
 
-    blocTest<WhoisBloc, WhoisState>(
-      'emits WhoisLoading when WhoisLookup is added',
-      build: () => WhoisBloc(database),
-      act: (bloc) => bloc.add(const WhoisLookup('example.com')),
-      wait: const Duration(milliseconds: 100),
-      expect: () => [isA<WhoisLoading>()],
-      verify: (_) {
-        // The test will timeout before completing the network request,
-        // so we just verify that WhoisLoading was emitted.
-      },
-    );
+    test('emits WhoisLoading when WhoisLookup is added', () async {
+      final firstState = bloc.stream.first;
+
+      bloc.add(const WhoisLookup('example.com'));
+
+      expect(await firstState, isA<WhoisLoading>());
+    });
 
     group('WhoisState', () {
       test('WhoisInitial props are empty', () {
@@ -58,7 +54,7 @@ void main() {
         expect(state.data, ['result1', 'result2']);
         expect(state.props, [
           'example.com',
-          ['result1', 'result2']
+          ['result1', 'result2'],
         ]);
       });
 

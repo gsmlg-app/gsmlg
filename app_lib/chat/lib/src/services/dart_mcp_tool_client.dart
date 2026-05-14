@@ -22,10 +22,7 @@ class DartMcpStdioServerConfig {
 }
 
 class DartMcpHttpServerConfig {
-  const DartMcpHttpServerConfig({
-    required this.url,
-    this.headers = const {},
-  });
+  const DartMcpHttpServerConfig({required this.url, this.headers = const {}});
 
   final String url;
   final Map<String, String> headers;
@@ -36,10 +33,10 @@ class DartMcpToolClient {
     String clientName = 'GSMLG',
     String clientVersion = '1.0.0',
     Dio? dio,
-  })  : _client = mcp.MCPClient(
-          mcp.Implementation(name: clientName, version: clientVersion),
-        ),
-        _dio = dio ?? Dio();
+  }) : _client = mcp.MCPClient(
+         mcp.Implementation(name: clientName, version: clientVersion),
+       ),
+       _dio = dio ?? Dio();
 
   final mcp.MCPClient _client;
   final Dio _dio;
@@ -49,9 +46,7 @@ class DartMcpToolClient {
   ) {
     return _withInitializedServer(config, (server) async {
       final result = await server.listTools(mcp.ListToolsRequest());
-      return [
-        for (final tool in result.tools) _toolToJson(tool),
-      ];
+      return [for (final tool in result.tools) _toolToJson(tool)];
     });
   }
 
@@ -60,9 +55,7 @@ class DartMcpToolClient {
   ) {
     return _withInitializedChannel(_httpChannel(config), (server) async {
       final result = await server.listTools(mcp.ListToolsRequest());
-      return [
-        for (final tool in result.tools) _toolToJson(tool),
-      ];
+      return [for (final tool in result.tools) _toolToJson(tool)];
     });
   }
 
@@ -239,10 +232,7 @@ class DartMcpToolClient {
   Map<String, dynamic> _contentToJson(mcp.Content content) {
     final raw = _mapFrom(content);
     if (content.isText) {
-      return {
-        ...raw,
-        'text': (content as mcp.TextContent).text,
-      };
+      return {...raw, 'text': (content as mcp.TextContent).text};
     }
     return raw;
   }
