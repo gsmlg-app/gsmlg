@@ -75,6 +75,52 @@ void main() {
     await gemmaRepository.complete();
     await _flushBloc();
   });
+
+  test('shows remote API stream errors as assistant messages', () async {
+    final gemmaRepository = _FakeGemmaRepository();
+    final remoteRepository = _FakeRemoteLlmRepository();
+    final storageRepository = _FakeChatStorageRepository();
+    await storageRepository.saveSettings(
+      const ModelConfig(
+        inferenceMode: ChatInferenceMode.remote,
+        remoteAccountId: ModelConfig.dummyRemoteAccountId,
+        remoteBaseUrl: 'https://api.example.test/v1',
+        remoteModel: 'remote-model',
+      ),
+    );
+    final bloc = ChatBloc(
+      gemmaRepository: gemmaRepository,
+      remoteRepository: remoteRepository,
+      storageRepository: storageRepository,
+      toolExecutor: ToolExecutor(),
+    );
+    addTearDown(bloc.close);
+    addTearDown(gemmaRepository.dispose);
+    addTearDown(remoteRepository.dispose);
+
+    bloc.add(const ChatSendMessage(content: 'hello'));
+    await _flushBloc();
+
+    remoteRepository.emitError(const RemoteLlmException('bad api key'));
+    await _flushBloc();
+
+    expect(bloc.state.status, ChatStatus.error);
+    expect(bloc.state.errorMessage, 'bad api key');
+
+    final messages = bloc.state.messages;
+    expect(messages.whereType<UserMessage>().single.content, 'hello');
+    final assistant = messages.whereType<AssistantMessage>().single;
+    expect(assistant.content, contains('bad api key'));
+    expect(assistant.isStreaming, isFalse);
+
+    final storedConversation = await storageRepository.loadConversation(
+      assistant.conversationId,
+    );
+    final storedAssistant =
+        storedConversation!.messages.whereType<AssistantMessage>().single;
+    expect(storedAssistant.content, contains('bad api key'));
+    expect(storedAssistant.isStreaming, isFalse);
+  });
 }
 
 Conversation _conversation(String id) {
@@ -126,6 +172,8 @@ class _FakeGemmaRepository extends GemmaRepository {
 }
 
 class _FakeRemoteLlmRepository implements RemoteLlmRepository {
+  final _controller = StreamController<ChatGenerationChunk>();
+
   @override
   Future<bool> isReady(ModelConfig config) async => true;
 
@@ -138,14 +186,22 @@ class _FakeRemoteLlmRepository implements RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
   }) {
-    return const Stream.empty();
+    return _controller.stream;
+  }
+
+  void emitError(Object error) {
+    _controller.addError(error);
   }
 
   @override
   Future<void> stopGeneration() async {}
 
   @override
-  Future<void> dispose() async {}
+  Future<void> dispose() async {
+    if (!_controller.isClosed) {
+      await _controller.close();
+    }
+  }
 }
 
 class _FakeChatStorageRepository implements ChatStorageRepository {

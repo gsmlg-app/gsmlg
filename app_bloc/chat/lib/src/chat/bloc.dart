@@ -7,6 +7,8 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:uuid/uuid.dart';
 
+import 'stream_error_message.dart';
+
 part 'event.dart';
 part 'state.dart';
 
@@ -609,15 +611,41 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     _startStreaming(updatedConversation.messages, config);
   }
 
-  void _onStreamError(
+  Future<void> _onStreamError(
     _ChatStreamError event,
     Emitter<ChatState> emit,
-  ) {
+  ) async {
     _streamSubscription = null;
+    final streamingConversation = _streamingConversation;
+    final streamingMessageId = _streamingMessageId;
+    Conversation? failedConversation;
+
+    if (streamingConversation != null && streamingMessageId != null) {
+      final result = markStreamingAssistantError(
+        conversation: streamingConversation,
+        streamingMessageId: streamingMessageId,
+        error: event.error,
+        isRemote: _activeConfig?.inferenceMode == ChatInferenceMode.remote,
+        now: DateTime.now(),
+        responseInfo: _responseInfoForText(event.error),
+      );
+      failedConversation = result.conversation;
+      final messageToSave = result.messageToSave;
+      if (messageToSave != null) {
+        await _storageRepository.saveMessage(messageToSave);
+        await _storageRepository.saveConversation(failedConversation);
+      }
+    }
+
+    final visibleConversation = failedConversation != null &&
+            state.conversation?.id == failedConversation.id
+        ? failedConversation
+        : state.conversation;
 
     emit(state.copyWith(
       status: ChatStatus.error,
       errorMessage: event.error,
+      conversation: visibleConversation,
       clearStreamingMessageId: true,
     ));
     _clearActiveStream();
@@ -695,6 +723,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   AssistantMessage _completeAssistantMessage(AssistantMessage message) {
     return _withResponseInfo(message).copyWith(isStreaming: false);
+  }
+
+  ChatResponseInfo _responseInfoForText(String text) {
+    final outputTokens = _estimateTokenCount(text);
+    final startedAt = _responseStartedAt ?? DateTime.now();
+    return ChatResponseInfo(
+      outputTokens: outputTokens,
+      contextTokens: _responseContextTokens,
+      maxOutputTokens: _responseMaxOutputTokens,
+      duration: DateTime.now().difference(startedAt),
+    );
   }
 
   AssistantMessage _withResponseInfo(AssistantMessage message) {
