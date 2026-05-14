@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:lib_llama_cpp/lib_llama_cpp.dart' as llama;
@@ -13,6 +14,9 @@ import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
 import 'llama_request_adapter.dart';
+
+const _defaultLlamaContextSize = 4096;
+const _llamaContextPromptReserve = 1024;
 
 /// Status of the model lifecycle.
 enum GemmaModelStatus {
@@ -720,6 +724,7 @@ class GemmaRepository {
     final commands = Stream<llama.LlamaCommand>.fromIterable([
       llama.LlamaLoadModelCommand(
         modelPath: modelPath,
+        contextSize: _llamaContextSizeFor(effectiveConfig),
         gpuLayerCount: effectiveConfig.backend.usesGpuLayers ? 99 : 0,
       ),
       buildLlamaGenerateCommand(
@@ -753,6 +758,13 @@ class GemmaRepository {
           break;
       }
     }
+  }
+
+  int _llamaContextSizeFor(ModelConfig config) {
+    return math.max(
+      _defaultLlamaContextSize,
+      config.maxTokens + _llamaContextPromptReserve,
+    );
   }
 
   /// Generates a complete response without streaming.

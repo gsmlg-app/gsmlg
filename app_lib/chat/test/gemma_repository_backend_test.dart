@@ -53,12 +53,31 @@ void main() {
       final loadCommand = engine.commands
           .whereType<llama.LlamaLoadModelCommand>()
           .single;
+      expect(loadCommand.contextSize, 4096);
       expect(
         loadCommand.gpuLayerCount,
         effectiveBackend.usesGpuLayers ? 99 : 0,
       );
     }
   });
+
+  test(
+    'local generation sizes context from configured output tokens',
+    () async {
+      final engine = _CapturingLlamaEngine();
+      final repository = await _repositoryWithEngine(engine);
+
+      await repository.loadModel(
+        const ModelConfig(maxTokens: 8192, backend: GemmaBackend.metal),
+      );
+      await repository.generateResponse([_userMessage()]).toList();
+
+      final loadCommand = engine.commands
+          .whereType<llama.LlamaLoadModelCommand>()
+          .single;
+      expect(loadCommand.contextSize, 9216);
+    },
+  );
 
   test(
     'local generation uses the current config over the loaded config',
