@@ -90,48 +90,84 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(dnsZoneTable);
         }
         if (from < 9) {
-          await m.addColumn(chatMessageTable, chatMessageTable.imageBytes);
-          await m.addColumn(chatMessageTable, chatMessageTable.toolName);
+          await _addColumnIfMissing(
+            m,
+            chatMessageTable,
+            chatMessageTable.imageBytes,
+          );
+          await _addColumnIfMissing(
+            m,
+            chatMessageTable,
+            chatMessageTable.toolName,
+          );
         }
         if (from < 10) {
-          await m.addColumn(chatSettingsTable, chatSettingsTable.inferenceMode);
-          await m.addColumn(
-              chatSettingsTable, chatSettingsTable.remoteProvider);
-          await m.addColumn(
-              chatSettingsTable, chatSettingsTable.remoteAccountId);
-          await m.addColumn(chatSettingsTable, chatSettingsTable.remoteBaseUrl);
-          await m.addColumn(chatSettingsTable, chatSettingsTable.remoteModel);
-          await m.addColumn(
+          await _addColumnIfMissing(
+            m,
+            chatSettingsTable,
+            chatSettingsTable.inferenceMode,
+          );
+          await _addColumnIfMissing(
+            m,
+            chatSettingsTable,
+            chatSettingsTable.remoteProvider,
+          );
+          await _addColumnIfMissing(
+            m,
+            chatSettingsTable,
+            chatSettingsTable.remoteAccountId,
+          );
+          await _addColumnIfMissing(
+            m,
+            chatSettingsTable,
+            chatSettingsTable.remoteBaseUrl,
+          );
+          await _addColumnIfMissing(
+            m,
+            chatSettingsTable,
+            chatSettingsTable.remoteModel,
+          );
+          await _addColumnIfMissing(
+            m,
             chatSettingsTable,
             chatSettingsTable.remoteStreamingEnabled,
           );
         }
         if (from < 11) {
-          await m.addColumn(
+          await _addColumnIfMissing(
+            m,
             chatSettingsTable,
             chatSettingsTable.remoteThinkingEffort,
           );
         }
         if (from < 12) {
-          await m.addColumn(
+          await _addColumnIfMissing(
+            m,
             chatMessageTable,
             chatMessageTable.responseOutputTokens,
           );
-          await m.addColumn(
+          await _addColumnIfMissing(
+            m,
             chatMessageTable,
             chatMessageTable.responseContextTokens,
           );
-          await m.addColumn(
+          await _addColumnIfMissing(
+            m,
             chatMessageTable,
             chatMessageTable.responseMaxOutputTokens,
           );
-          await m.addColumn(
+          await _addColumnIfMissing(
+            m,
             chatMessageTable,
             chatMessageTable.responseDurationMs,
           );
         }
         if (from < 13) {
-          await m.addColumn(chatSettingsTable, chatSettingsTable.remoteApiType);
+          await _addColumnIfMissing(
+            m,
+            chatSettingsTable,
+            chatSettingsTable.remoteApiType,
+          );
           await customStatement(
             "UPDATE chat_settings_table SET remote_api_type = "
             "CASE WHEN remote_provider = 'openAi' THEN 'openAiResponses' "
@@ -140,6 +176,24 @@ class AppDatabase extends _$AppDatabase {
         }
       },
     );
+  }
+
+  Future<void> _addColumnIfMissing(
+    Migrator migrator,
+    TableInfo table,
+    GeneratedColumn column,
+  ) async {
+    final existing = await customSelect(
+      'SELECT name FROM pragma_table_info(?) WHERE name = ? LIMIT 1',
+      variables: [
+        Variable.withString(table.actualTableName),
+        Variable.withString(column.name),
+      ],
+    ).getSingleOrNull();
+
+    if (existing == null) {
+      await migrator.addColumn(table, column);
+    }
   }
 
   // ---------------------------------------------------------------------------
