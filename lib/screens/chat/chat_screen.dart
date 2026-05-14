@@ -102,7 +102,7 @@ class _ChatScreenState extends State<ChatScreen> {
             IconButton(
               icon: const Icon(Icons.settings),
               tooltip: 'Settings',
-              onPressed: () => context.goNamed(ChatSettingsScreen.name),
+              onPressed: () => context.goNamed(ChatAgentsSettingsScreen.name),
             ),
           ],
         ),
@@ -218,7 +218,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ChatSettingsSelectAgent(id: agentId),
                 );
               },
-              onModelTap: () => context.goNamed(ChatSettingsScreen.name),
+              onModelTap: () => context.goNamed(ChatAgentsSettingsScreen.name),
               onThinkingToggle: (enabled) {
                 context.read<ChatSettingsBloc>().add(
                   ChatSettingsToggleThinking(enabled: enabled),
@@ -265,7 +265,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ChatSettingsSelectAgent(id: agentId),
             );
           },
-          onModelTap: () => context.goNamed(ChatSettingsScreen.name),
+          onModelTap: () => context.goNamed(ChatAgentsSettingsScreen.name),
           onThinkingEffortChanged: isDeepSeek
               ? (effort) {
                   context.read<ChatSettingsBloc>().add(
@@ -346,7 +346,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Text('Remote LLM needs an account, base URL, and model.'),
           ),
           TextButton(
-            onPressed: () => context.goNamed(ChatSettingsScreen.name),
+            onPressed: () => context.goNamed(ChatAgentsSettingsScreen.name),
             child: const Text('Settings'),
           ),
         ],

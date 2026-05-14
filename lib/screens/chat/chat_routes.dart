@@ -1,7 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/screens/chat/chat_history_screen.dart';
 import 'package:gsmlg/screens/chat/chat_screen.dart';
-import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
 
 GoRoute chatRoutes() => GoRoute(
   name: ChatScreen.name,
@@ -24,32 +23,6 @@ GoRoute chatRoutes() => GoRoute(
           child: const ChatHistoryScreen(),
         );
       },
-    ),
-    GoRoute(
-      name: ChatSettingsScreen.name,
-      path: ChatSettingsScreen.path,
-      pageBuilder: (context, state) {
-        return NoTransitionPage<void>(
-          key: state.pageKey,
-          restorationId: state.pageKey.value,
-          child: const ChatSettingsScreen(),
-        );
-      },
-      routes: [
-        GoRoute(
-          name: ChatAgentSettingsScreen.name,
-          path: ChatAgentSettingsScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: ChatAgentSettingsScreen(
-                agentId: state.pathParameters['agentId']!,
-              ),
-            );
-          },
-        ),
-      ],
     ),
   ],
 );

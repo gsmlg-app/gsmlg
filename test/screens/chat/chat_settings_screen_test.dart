@@ -13,7 +13,7 @@ import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  group('ChatSettingsScreen', () {
+  group('ChatAgentsSettingsScreen', () {
     late AppDatabase database;
     late SharedPreferences preferences;
     late _MemoryVaultRepository vault;
@@ -119,9 +119,9 @@ void main() {
     ) async {
       await preferences.setString('gemma_selected_model_id', 'gemma-4-E4B-it');
       gemmaModelBloc = GemmaModelBloc(
-        repository: GemmaRepository(),
+        repository: _InstalledModelsGemmaRepository(['gemma-4-E4B-it']),
         preferences: preferences,
-      );
+      )..add(const GemmaModelListInstalled());
 
       final repository = ChatStorageRepository(database);
       chatSettingsBloc =
@@ -149,6 +149,7 @@ void main() {
         tester,
         () =>
             chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
+            gemmaModelBloc!.state.installedModels.isNotEmpty &&
             find.text('Model').evaluate().isNotEmpty,
       );
 
@@ -200,6 +201,121 @@ void main() {
 
       expect(find.text('Gemma 4 E2B IT'), findsOneWidget);
       expect(find.text('No configured models'), findsNothing);
+    });
+
+    testWidgets('removes missing local models from the agent model picker', (
+      tester,
+    ) async {
+      await preferences.setString('gemma_selected_model_id', 'gemma-4-E4B-it');
+      gemmaModelBloc = GemmaModelBloc(
+        repository: _InstalledModelsGemmaRepository(['gemma-4-E2B-it']),
+        preferences: preferences,
+      )..add(const GemmaModelListInstalled());
+
+      final repository = ChatStorageRepository(database);
+      chatSettingsBloc =
+          ChatSettingsBloc(repository: repository, preferences: preferences)
+            ..add(const ChatSettingsLoad())
+            ..add(
+              const ChatSettingsSaveAgent(
+                id: 'agent-1',
+                name: 'Local agent',
+                systemPrompt: '',
+                config: ModelConfig(inferenceMode: ChatInferenceMode.local),
+              ),
+            );
+
+      await _pumpScreen(
+        tester,
+        chatSettingsBloc: chatSettingsBloc,
+        accountsBloc: accountsBloc,
+        preferences: preferences,
+        gemmaModelBloc: gemmaModelBloc,
+        agentId: 'agent-1',
+      );
+
+      await _pumpUntil(
+        tester,
+        () =>
+            chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
+            gemmaModelBloc!.state.installedModels.isNotEmpty &&
+            find.text('Model').evaluate().isNotEmpty,
+      );
+
+      await tester.tap(find.text('Model'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.widgetWithText(ListTile, 'Gemma 4 E2B IT'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Gemma 4 E4B IT'), findsNothing);
+    });
+
+    testWidgets('removes missing remote models from the agent model picker', (
+      tester,
+    ) async {
+      final repository = ChatStorageRepository(database);
+      const baseUrl = 'https://api.minimax.com/v1';
+      await preferences.setStringList('remote_model_provider_profiles', [
+        jsonEncode({
+          'id': 'minimax',
+          'name': 'MiniMax',
+          'baseUrl': baseUrl,
+          'defaultModel': 'Old-M2',
+          'useDummyToken': true,
+          'remoteProvider': RemoteLlmProvider.openAiCompatible.name,
+          'remoteApiType': RemoteLlmApiType.openAiChatCompletions.name,
+        }),
+      ]);
+      await preferences.setString(
+        'remote_model_provider_selected_minimax',
+        'Old-M2',
+      );
+      await preferences.setStringList(
+        'remote_provider_models_openAiCompatible_openAiChatCompletions_0_'
+        '$baseUrl',
+        ['New-M2'],
+      );
+
+      chatSettingsBloc =
+          ChatSettingsBloc(repository: repository, preferences: preferences)
+            ..add(const ChatSettingsLoad())
+            ..add(
+              ChatSettingsSaveAgent(
+                id: 'agent-1',
+                name: 'Remote agent',
+                systemPrompt: '',
+                config: ModelConfig.defaultConfig.copyWith(
+                  inferenceMode: ChatInferenceMode.remote,
+                  remoteProvider: RemoteLlmProvider.openAiCompatible,
+                  remoteApiType: RemoteLlmApiType.openAiChatCompletions,
+                  remoteAccountId: ModelConfig.dummyRemoteAccountId,
+                  remoteBaseUrl: baseUrl,
+                  remoteModel: 'Old-M2',
+                ),
+              ),
+            );
+
+      await _pumpScreen(
+        tester,
+        chatSettingsBloc: chatSettingsBloc,
+        accountsBloc: accountsBloc,
+        preferences: preferences,
+        agentId: 'agent-1',
+      );
+
+      await _pumpUntil(
+        tester,
+        () =>
+            chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
+            find.text('Model').evaluate().isNotEmpty,
+      );
+
+      await tester.tap(find.text('Model'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.widgetWithText(ListTile, 'New-M2'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Old-M2'), findsNothing);
     });
 
     testWidgets('lists agents without per-agent settings', (tester) async {
@@ -388,7 +504,7 @@ Future<void> _pumpScreen(
     supportedLocales: AppLocale.supportedLocales,
     home: RepositoryProvider<SharedPreferences>.value(
       value: preferences,
-      child: ChatSettingsScreen(agentId: agentId),
+      child: ChatAgentsSettingsScreen(agentId: agentId),
     ),
   );
   if (gemmaModelBloc != null) {

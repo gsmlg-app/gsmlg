@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
 import 'package:gsmlg/screens/settings/app_settings_screen.dart';
@@ -54,6 +55,32 @@ GoRoute settingsRoutes() => GoRoute(
           child: const ModelManagementScreen(),
         );
       },
+    ),
+    GoRoute(
+      name: ChatAgentsSettingsScreen.name,
+      path: ChatAgentsSettingsScreen.path,
+      pageBuilder: (context, state) {
+        return NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const ChatAgentsSettingsScreen(),
+        );
+      },
+      routes: [
+        GoRoute(
+          name: ChatAgentSettingsScreen.name,
+          path: ChatAgentSettingsScreen.path,
+          pageBuilder: (context, state) {
+            return NoTransitionPage<void>(
+              key: state.pageKey,
+              restorationId: state.pageKey.value,
+              child: ChatAgentSettingsScreen(
+                agentId: state.pathParameters['agentId']!,
+              ),
+            );
+          },
+        ),
+      ],
     ),
     GoRoute(
       name: RemoteModelSettingsScreen.name,

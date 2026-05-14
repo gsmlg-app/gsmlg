@@ -178,7 +178,11 @@ class ModelStatusBanner extends StatelessWidget {
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Text('Loading $modelName...')),
+        _buildLoadingLabel(
+          context,
+          modelName: modelName,
+          memoryLabel: info?.memoryRequirementLabel,
+        ),
       ],
     );
   }
@@ -198,8 +202,32 @@ class ModelStatusBanner extends StatelessWidget {
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
         const SizedBox(width: 12),
-        Text('Loading $modelName...'),
+        _buildLoadingLabel(
+          context,
+          modelName: modelName,
+          memoryLabel: info?.memoryRequirementLabel,
+        ),
       ],
+    );
+  }
+
+  Widget _buildLoadingLabel(
+    BuildContext context, {
+    required String modelName,
+    required String? memoryLabel,
+  }) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Loading $modelName...'),
+          if (memoryLabel != null) ...[
+            const SizedBox(height: 2),
+            Text(memoryLabel, style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ],
+      ),
     );
   }
 
@@ -239,7 +267,7 @@ class ModelStatusBanner extends StatelessWidget {
           ),
         ),
         TextButton(
-          onPressed: () => context.goNamed(ChatSettingsScreen.name),
+          onPressed: () => context.goNamed(ChatAgentsSettingsScreen.name),
           child: const Text('Change'),
         ),
         TextButton(

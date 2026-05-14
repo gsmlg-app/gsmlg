@@ -8,20 +8,20 @@ import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
-import 'package:gsmlg/screens/home/home_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ChatSettingsScreen extends StatefulWidget {
-  static const name = 'ChatSettings';
-  static const path = 'settings';
+class ChatAgentsSettingsScreen extends StatefulWidget {
+  static const name = 'ChatAgentsSettings';
+  static const path = 'agents';
 
-  const ChatSettingsScreen({super.key, this.agentId});
+  const ChatAgentsSettingsScreen({super.key, this.agentId});
 
   final String? agentId;
 
   @override
-  State<ChatSettingsScreen> createState() => _ChatSettingsScreenState();
+  State<ChatAgentsSettingsScreen> createState() =>
+      _ChatAgentsSettingsScreenState();
 }
 
 class ChatAgentSettingsScreen extends StatelessWidget {
@@ -34,7 +34,7 @@ class ChatAgentSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChatSettingsScreen(agentId: agentId);
+    return ChatAgentsSettingsScreen(agentId: agentId);
   }
 }
 
@@ -129,18 +129,27 @@ class _RemoteProviderConfig {
   }
 }
 
-class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
+class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    try {
+      context.read<GemmaModelBloc>().add(const GemmaModelListInstalled());
+    } catch (_) {
+      // Some widget tests and route previews mount this screen without local
+      // model management providers.
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
-      selectedIndex: Destinations.indexOf(const Key(HomeScreen.name), context),
+      selectedIndex: Destinations.indexOf(const Key('Settings'), context),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
         appBar: DmAppBar(
-          title: Text(
-            widget.agentId == null ? 'Chat Settings' : 'Agent Settings',
-          ),
+          title: Text(widget.agentId == null ? 'Agents' : 'Agent Settings'),
         ),
         body: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
           builder: (context, state) {
@@ -381,6 +390,9 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
   String? _localModelLabel(GemmaModelState? state) {
     final selectedId = state?.selectedModelId;
     if (selectedId == null || selectedId.trim().isEmpty) return null;
+    final installedModels = state?.installedModels ?? const <String>[];
+    final exists = installedModels.any((modelId) => modelId == selectedId);
+    if (!exists) return null;
     return GemmaModelInfo.findById(selectedId)?.displayName ?? selectedId;
   }
 
@@ -450,9 +462,6 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     }
 
     final selectedId = state.selectedModelId?.trim();
-    if (selectedId != null && selectedId.isNotEmpty) {
-      modelIds.add(selectedId);
-    }
 
     if (modelIds.isEmpty) {
       return const <_ConfiguredModel>[];
@@ -486,16 +495,12 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
       if (provider == null) continue;
       final config = _remoteConfigForProvider(preferences, provider);
       final models = _remoteModelsFor(preferences, config);
-      final selectedModel = preferences.getString(
-        'remote_model_provider_selected_${provider.id}',
-      );
-      final effectiveModels = {
-        if (selectedModel != null && selectedModel.trim().isNotEmpty)
-          selectedModel.trim(),
-        ...models,
-        if (provider.defaultModel.trim().isNotEmpty)
-          provider.defaultModel.trim(),
-      };
+      final effectiveModels = models.isNotEmpty
+          ? models.toSet()
+          : {
+              if (provider.defaultModel.trim().isNotEmpty)
+                provider.defaultModel.trim(),
+            };
 
       for (final model in effectiveModels) {
         choices.add(
@@ -507,20 +512,6 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
           ),
         );
       }
-    }
-
-    final currentConfig = context.read<ChatSettingsBloc>().state.config;
-    if (currentConfig.inferenceMode == ChatInferenceMode.remote &&
-        currentConfig.remoteModel.trim().isNotEmpty &&
-        choices.every((choice) => choice.config != currentConfig)) {
-      choices.add(
-        _ConfiguredModel(
-          title: currentConfig.remoteModel,
-          subtitle: currentConfig.remoteProvider.displayName,
-          icon: Icons.cloud_queue,
-          config: currentConfig,
-        ),
-      );
     }
 
     return choices;
@@ -624,7 +615,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
               );
               Navigator.pop(dialogContext);
               if (widget.agentId != null && GoRouter.maybeOf(context) != null) {
-                context.goNamed(ChatSettingsScreen.name);
+                context.goNamed(ChatAgentsSettingsScreen.name);
               }
             },
             child: const Text('Remove'),

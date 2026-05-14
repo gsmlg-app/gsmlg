@@ -86,6 +86,8 @@ void main() {
       );
 
       expect(find.text('AI Models'), findsOneWidget);
+      expect(find.text('Agents'), findsOneWidget);
+      expect(find.text('0 agents configured'), findsOneWidget);
       expect(find.text('Remote Tools'), findsOneWidget);
       expect(find.byIcon(Icons.hub_outlined), findsOneWidget);
       expect(find.text('1 service configured'), findsOneWidget);

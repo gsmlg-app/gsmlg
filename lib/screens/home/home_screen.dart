@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               icon: const Icon(Icons.settings),
               tooltip: 'Settings',
-              onPressed: () => context.goNamed(ChatSettingsScreen.name),
+              onPressed: () => context.goNamed(ChatAgentsSettingsScreen.name),
             ),
           ],
         ),
@@ -141,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           },
                           onModelTap: () =>
-                              context.goNamed(ChatSettingsScreen.name),
+                              context.goNamed(ChatAgentsSettingsScreen.name),
                           onThinkingToggle: (enabled) {
                             context.read<ChatSettingsBloc>().add(
                               ChatSettingsToggleThinking(enabled: enabled),
@@ -202,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                             onModelTap: () =>
-                                context.goNamed(ChatSettingsScreen.name),
+                                context.goNamed(ChatAgentsSettingsScreen.name),
                             onThinkingToggle: (enabled) {
                               context.read<ChatSettingsBloc>().add(
                                 ChatSettingsToggleThinking(enabled: enabled),
@@ -297,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text('Remote LLM needs an account, base URL, and model.'),
           ),
           TextButton(
-            onPressed: () => context.goNamed(ChatSettingsScreen.name),
+            onPressed: () => context.goNamed(ChatAgentsSettingsScreen.name),
             child: const Text('Settings'),
           ),
         ],

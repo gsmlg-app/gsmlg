@@ -8,6 +8,7 @@ import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/destination.dart';
+import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
 import 'package:gsmlg/screens/settings/app_settings_screen.dart';
@@ -133,6 +134,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                               onPressed: (context) {
                                 context.goNamed(RemoteModelSettingsScreen.name);
+                              },
+                            ),
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.people_alt_outlined),
+                              title: const Text('Agents'),
+                              value:
+                                  BlocBuilder<
+                                    ChatSettingsBloc,
+                                    ChatSettingsState
+                                  >(
+                                    builder: (context, settingsState) {
+                                      final count = settingsState.agents.length;
+                                      return Text(
+                                        '$count agent${count == 1 ? '' : 's'} configured',
+                                      );
+                                    },
+                                  ),
+                              onPressed: (context) {
+                                context.goNamed(ChatAgentsSettingsScreen.name);
                               },
                             ),
                             SettingsTile.navigation(
