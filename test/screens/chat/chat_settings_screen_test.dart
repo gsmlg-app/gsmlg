@@ -156,6 +156,52 @@ void main() {
       expect(find.text('Gemma 2B-IT'), findsNothing);
     });
 
+    testWidgets('lists installed local models in the agent model picker', (
+      tester,
+    ) async {
+      gemmaModelBloc = GemmaModelBloc(
+        repository: _InstalledModelsGemmaRepository(['gemma-4-E2B-it']),
+        preferences: preferences,
+      )..add(const GemmaModelListInstalled());
+
+      final repository = ChatStorageRepository(database);
+      chatSettingsBloc =
+          ChatSettingsBloc(repository: repository, preferences: preferences)
+            ..add(const ChatSettingsLoad())
+            ..add(
+              const ChatSettingsSaveAgent(
+                id: 'agent-1',
+                name: 'Local agent',
+                systemPrompt: '',
+                config: ModelConfig(inferenceMode: ChatInferenceMode.local),
+              ),
+            );
+
+      await _pumpScreen(
+        tester,
+        chatSettingsBloc: chatSettingsBloc,
+        accountsBloc: accountsBloc,
+        preferences: preferences,
+        gemmaModelBloc: gemmaModelBloc,
+        agentId: 'agent-1',
+      );
+
+      await _pumpUntil(
+        tester,
+        () =>
+            chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
+            gemmaModelBloc!.state.installedModels.isNotEmpty &&
+            find.text('Model').evaluate().isNotEmpty,
+      );
+
+      await tester.tap(find.text('Model'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.text('Gemma 4 E2B IT'), findsOneWidget);
+      expect(find.text('No configured models'), findsNothing);
+    });
+
     testWidgets('lists agents without per-agent settings', (tester) async {
       final repository = ChatStorageRepository(database);
       chatSettingsBloc =
@@ -367,6 +413,15 @@ Future<void> _pumpUntil(WidgetTester tester, bool Function() done) async {
   for (var i = 0; i < 50 && !done(); i += 1) {
     await tester.pump(const Duration(milliseconds: 20));
   }
+}
+
+class _InstalledModelsGemmaRepository extends GemmaRepository {
+  _InstalledModelsGemmaRepository(this.models);
+
+  final List<String> models;
+
+  @override
+  Future<List<String>> listInstalledModels() async => models;
 }
 
 class _MemoryVaultRepository implements VaultRepository {

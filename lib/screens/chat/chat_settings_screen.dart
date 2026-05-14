@@ -44,12 +44,14 @@ class _ConfiguredModel {
     required this.icon,
     required this.config,
     this.subtitle,
+    this.localModelId,
   });
 
   final String title;
   final String? subtitle;
   final IconData icon;
   final ModelConfig config;
+  final String? localModelId;
 }
 
 class _RemoteProviderConfig {
@@ -405,6 +407,12 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
                             ? null
                             : Text(choice.subtitle!),
                         onTap: () {
+                          final localModelId = choice.localModelId;
+                          if (localModelId != null) {
+                            context.read<GemmaModelBloc>().add(
+                              GemmaModelSelect(modelId: localModelId),
+                            );
+                          }
                           context.read<ChatSettingsBloc>().add(
                             ChatSettingsUpdateConfig(config: choice.config),
                           );
@@ -433,21 +441,36 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     } catch (_) {
       return const <_ConfiguredModel>[];
     }
-    final selectedId = state.selectedModelId;
-    if (selectedId == null || selectedId.trim().isEmpty) {
+    final modelIds = <String>{};
+    for (final installedId in state.installedModels) {
+      final normalized = installedId.trim();
+      if (normalized.isNotEmpty) {
+        modelIds.add(normalized);
+      }
+    }
+
+    final selectedId = state.selectedModelId?.trim();
+    if (selectedId != null && selectedId.isNotEmpty) {
+      modelIds.add(selectedId);
+    }
+
+    if (modelIds.isEmpty) {
       return const <_ConfiguredModel>[];
     }
-    final info = GemmaModelInfo.findById(selectedId);
     final config = ModelConfig.platformDefaultConfig.copyWith(
       inferenceMode: ChatInferenceMode.local,
     );
     return [
-      _ConfiguredModel(
-        title: info?.displayName ?? selectedId,
-        subtitle: 'Local model',
-        icon: Icons.memory,
-        config: config,
-      ),
+      for (final modelId in modelIds)
+        _ConfiguredModel(
+          title: GemmaModelInfo.findById(modelId)?.displayName ?? modelId,
+          subtitle: modelId == selectedId
+              ? 'Local model · Selected'
+              : 'Local model',
+          icon: Icons.memory,
+          config: config,
+          localModelId: modelId,
+        ),
     ];
   }
 
