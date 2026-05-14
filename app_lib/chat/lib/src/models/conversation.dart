@@ -48,16 +48,26 @@ class Conversation extends Equatable {
   final String? systemPrompt;
 
   @override
-  List<Object?> get props =>
-      [id, title, createdAt, updatedAt, messages, systemPrompt];
+  List<Object?> get props => [
+    id,
+    title,
+    createdAt,
+    updatedAt,
+    messages,
+    systemPrompt,
+  ];
 
   /// Returns the last message in the conversation, if any.
   Message? get lastMessage => messages.isNotEmpty ? messages.last : null;
 
   /// Returns user, assistant, and tool response messages (excludes system).
   List<Message> get chatMessages => messages
-      .where((m) =>
-          m is UserMessage || m is AssistantMessage || m is ToolResponseMessage)
+      .where(
+        (m) =>
+            m is UserMessage ||
+            m is AssistantMessage ||
+            m is ToolResponseMessage,
+      )
       .toList();
 
   Conversation copyWith({

@@ -8,28 +8,12 @@ import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interfac
 import 'package:test/test.dart';
 
 void main() {
-  test('local generation requests the selected llama.cpp backend', () async {
+  test('local generation requests a supported llama.cpp backend', () async {
     final cases = [
-      _BackendCase(
-        GemmaBackend.cpu,
-        llama_platform.LlamaCppLibraryCapability.cpu,
-        0,
-      ),
-      _BackendCase(
-        GemmaBackend.metal,
-        llama_platform.LlamaCppLibraryCapability.metal,
-        99,
-      ),
-      _BackendCase(
-        GemmaBackend.cuda,
-        llama_platform.LlamaCppLibraryCapability.cuda,
-        99,
-      ),
-      _BackendCase(
-        GemmaBackend.vulkan,
-        llama_platform.LlamaCppLibraryCapability.vulkan,
-        99,
-      ),
+      _BackendCase(GemmaBackend.cpu),
+      _BackendCase(GemmaBackend.metal),
+      _BackendCase(GemmaBackend.cuda),
+      _BackendCase(GemmaBackend.vulkan),
     ];
 
     for (final testCase in cases) {
@@ -58,13 +42,21 @@ void main() {
         ),
       ]).toList();
 
+      final effectiveBackend = ModelConfig(
+        backend: testCase.backend,
+      ).withSupportedBackendForCurrentPlatform().backend;
       final request = engine.libraryRequest;
       expect(request, isNotNull);
-      expect(request!.requiredCapabilities, {testCase.capability});
+      expect(request!.requiredCapabilities, {
+        _capabilityForBackend(effectiveBackend),
+      });
       final loadCommand = engine.commands
           .whereType<llama.LlamaLoadModelCommand>()
           .single;
-      expect(loadCommand.gpuLayerCount, testCase.gpuLayerCount);
+      expect(
+        loadCommand.gpuLayerCount,
+        effectiveBackend.usesGpuLayers ? 99 : 0,
+      );
     }
   });
 
@@ -95,11 +87,20 @@ void main() {
 }
 
 class _BackendCase {
-  const _BackendCase(this.backend, this.capability, this.gpuLayerCount);
+  const _BackendCase(this.backend);
 
   final GemmaBackend backend;
-  final llama_platform.LlamaCppLibraryCapability capability;
-  final int gpuLayerCount;
+}
+
+llama_platform.LlamaCppLibraryCapability _capabilityForBackend(
+  GemmaBackend backend,
+) {
+  return switch (backend) {
+    GemmaBackend.cpu => llama_platform.LlamaCppLibraryCapability.cpu,
+    GemmaBackend.metal => llama_platform.LlamaCppLibraryCapability.metal,
+    GemmaBackend.cuda => llama_platform.LlamaCppLibraryCapability.cuda,
+    GemmaBackend.vulkan => llama_platform.LlamaCppLibraryCapability.vulkan,
+  };
 }
 
 class _CapturingLlamaEngine implements llama.LlamaEngine {
