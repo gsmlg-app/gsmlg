@@ -93,43 +93,13 @@ List<llama.LlamaMessage> llamaMessagesFromChatMessages(List<Message> messages) {
 List<llama.LlamaTool> llamaToolsFromOpenAiTools(
   List<Map<String, dynamic>> tools,
 ) {
-  // WORKAROUND(upstream): gsmlg-app/lib_llama_cpp#5 - convert the app's
-  // OpenAI-shaped tool JSON into lib_llama_cpp's typed tool API.
   final result = <llama.LlamaTool>[];
   for (final tool in tools) {
-    final llamaTool = _llamaToolFromOpenAiTool(tool);
-    if (llamaTool != null) result.add(llamaTool);
+    try {
+      result.add(llama.LlamaTool.fromJson(tool));
+    } on ArgumentError {
+      continue;
+    }
   }
   return result;
-}
-
-llama.LlamaTool? _llamaToolFromOpenAiTool(Map<String, dynamic> tool) {
-  final function = tool['function'];
-  if (tool['type'] == 'function' && function is Map<String, dynamic>) {
-    final name = _stringValue(function['name']);
-    if (name.isEmpty) return null;
-    return llama.LlamaTool(
-      name: name,
-      description: _stringValue(function['description']),
-      parameters: _objectMap(function['parameters']),
-    );
-  }
-
-  final name = _stringValue(tool['name']);
-  if (name.isEmpty) return null;
-  return llama.LlamaTool(
-    name: name,
-    description: _stringValue(tool['description']),
-    parameters: _objectMap(tool['parameters']),
-  );
-}
-
-String _stringValue(Object? value) => value?.toString().trim() ?? '';
-
-Map<String, Object?> _objectMap(Object? value) {
-  if (value is! Map) return const {};
-  return {
-    for (final entry in value.entries)
-      if (entry.key != null) entry.key.toString(): entry.value,
-  };
 }
