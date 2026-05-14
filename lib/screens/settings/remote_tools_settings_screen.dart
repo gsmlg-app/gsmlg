@@ -938,6 +938,7 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
 String _providerLabel(ServiceProvider provider) {
   return switch (provider) {
     ServiceProvider.openai => 'OpenAI',
+    ServiceProvider.anthropic => 'Anthropic',
     ServiceProvider.ollama => 'Ollama',
     ServiceProvider.github => 'GitHub',
     ServiceProvider.vultr => 'Vultr',
@@ -950,6 +951,7 @@ String _providerLabel(ServiceProvider provider) {
 String _secretLabel(ServiceProvider provider) {
   return switch (provider) {
     ServiceProvider.openai => 'API Key',
+    ServiceProvider.anthropic => 'API Key',
     ServiceProvider.ollama => 'API Key',
     ServiceProvider.github => 'Personal Access Token',
     ServiceProvider.vultr => 'API Key',
@@ -962,6 +964,7 @@ String _secretLabel(ServiceProvider provider) {
 String _secretHint(ServiceProvider provider) {
   return switch (provider) {
     ServiceProvider.openai => 'sk-...',
+    ServiceProvider.anthropic => 'sk-ant-...',
     ServiceProvider.ollama => 'Ollama API key',
     ServiceProvider.github => 'ghp_...',
     ServiceProvider.vultr => 'Vultr API key',

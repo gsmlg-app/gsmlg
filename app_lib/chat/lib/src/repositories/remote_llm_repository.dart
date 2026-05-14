@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:app_secure_storage/app_secure_storage.dart';
+import 'package:anthropic_compatible/anthropic_compatible.dart' as anthropic;
+import 'package:app_secure_storage/vault_repository.dart';
 import 'package:http/http.dart' as http;
+import 'package:openai_compatible/openai_compatible.dart' as openai;
 
 import '../models/inference.dart';
 import '../models/message.dart';
@@ -10,12 +12,10 @@ import '../models/model_config.dart';
 
 /// Repository for remote LLM APIs.
 class RemoteLlmRepository {
-  RemoteLlmRepository({
-    required VaultRepository vault,
-    http.Client? client,
-  })  : _vault = vault,
-        _client = client ?? http.Client(),
-        _ownsClient = client == null;
+  RemoteLlmRepository({required VaultRepository vault, http.Client? client})
+    : _vault = vault,
+      _client = client ?? http.Client(),
+      _ownsClient = client == null;
 
   final VaultRepository _vault;
   http.Client _client;
@@ -36,12 +36,12 @@ class RemoteLlmRepository {
 
   Future<List<String>> listModels(ModelConfig config) async {
     final apiKey = await _apiKeyFor(config);
+    final headers = config.remoteApiType == RemoteLlmApiType.anthropicMessages
+        ? anthropic.AnthropicMessagesApi.headers(apiKey: apiKey, stream: false)
+        : {'Authorization': 'Bearer $apiKey', 'Accept': 'application/json'};
     final response = await _client.get(
       _modelsUri(config.remoteBaseUrl),
-      headers: {
-        'Authorization': 'Bearer $apiKey',
-        'Accept': 'application/json',
-      },
+      headers: headers,
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -52,8 +52,9 @@ class RemoteLlmRepository {
     }
 
     final decoded = jsonDecode(response.body);
-    final rawModels =
-        decoded is Map<String, dynamic> ? decoded['data'] : decoded;
+    final rawModels = decoded is Map<String, dynamic>
+        ? decoded['data']
+        : decoded;
     if (rawModels is! List) {
       throw const RemoteLlmException('Models response did not contain a list.');
     }
@@ -78,26 +79,11 @@ class RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
   }) async* {
-    final usesResponsesApi = config.remoteProvider == RemoteLlmProvider.openAi;
+    final apiType = config.remoteApiType;
     final apiKey = await _apiKeyFor(config);
-    final request = http.Request(
-      'POST',
-      usesResponsesApi
-          ? _responsesUri(config.remoteBaseUrl)
-          : _chatCompletionsUri(config.remoteBaseUrl),
-    )
-      ..headers.addAll({
-        'Authorization': 'Bearer $apiKey',
-        'Content-Type': 'application/json; charset=utf-8',
-        'Accept': config.remoteStreamingEnabled
-            ? 'text/event-stream'
-            : 'application/json',
-      })
-      ..body = jsonEncode(
-        usesResponsesApi
-            ? _responsesRequestBody(messages, config, tools: tools)
-            : _chatCompletionsRequestBody(messages, config, tools: tools),
-      );
+    final request = http.Request('POST', _generationUri(config))
+      ..headers.addAll(_generationHeaders(config, apiKey))
+      ..body = jsonEncode(_requestBody(messages, config, tools: tools));
 
     final response = await _client.send(request);
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -110,25 +96,37 @@ class RemoteLlmRepository {
 
     if (!config.remoteStreamingEnabled) {
       final body = await response.stream.bytesToString();
-      final chunks = usesResponsesApi
-          ? _chunksFromResponsesResponse(body)
-          : _chunksFromNonStreamingResponse(body);
+      final chunks = switch (apiType) {
+        RemoteLlmApiType.openAiChatCompletions =>
+          _chunksFromNonStreamingResponse(body),
+        RemoteLlmApiType.openAiResponses => _chunksFromResponsesResponse(body),
+        RemoteLlmApiType.anthropicMessages => _chunksFromAnthropicResponse(
+          body,
+        ),
+      };
       for (final chunk in chunks) {
         yield chunk;
       }
       return;
     }
 
-    if (usesResponsesApi) {
-      yield* _chunksFromStreamingResponses(response.stream);
-      return;
+    switch (apiType) {
+      case RemoteLlmApiType.openAiResponses:
+        yield* _chunksFromStreamingResponses(response.stream);
+        return;
+      case RemoteLlmApiType.anthropicMessages:
+        yield* _chunksFromStreamingAnthropic(response.stream);
+        return;
+      case RemoteLlmApiType.openAiChatCompletions:
+        break;
     }
 
     final toolCallBuffers = <int, _RemoteToolCallBuffer>{};
     final thinkTagParser = _ThinkTagParser();
-    await for (final line in response.stream
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())) {
+    await for (final line
+        in response.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
       final trimmed = line.trim();
       if (trimmed.isEmpty || !trimmed.startsWith('data:')) continue;
 
@@ -166,7 +164,8 @@ class RemoteLlmRepository {
           }
         }
 
-        final thinking = _stringValue(delta['reasoning_content']) ??
+        final thinking =
+            _stringValue(delta['reasoning_content']) ??
             _stringValue(delta['reasoning']);
         if (thinking != null && thinking.isNotEmpty) {
           yield ChatThinkingChunk(thinking);
@@ -213,31 +212,83 @@ class RemoteLlmRepository {
     return apiKey.trim();
   }
 
+  Uri _generationUri(ModelConfig config) {
+    final baseUrl = Uri.parse(config.remoteBaseUrl.trim());
+    return switch (config.remoteApiType) {
+      RemoteLlmApiType.openAiChatCompletions =>
+        openai.OpenAiCompatibleApiType.chatCompletions.endpoint(baseUrl),
+      RemoteLlmApiType.openAiResponses =>
+        openai.OpenAiCompatibleApiType.responses.endpoint(baseUrl),
+      RemoteLlmApiType.anthropicMessages =>
+        anthropic.AnthropicMessagesApi.endpoint(baseUrl),
+    };
+  }
+
+  Map<String, String> _generationHeaders(ModelConfig config, String apiKey) {
+    if (config.remoteApiType == RemoteLlmApiType.anthropicMessages) {
+      return anthropic.AnthropicMessagesApi.headers(
+        apiKey: apiKey,
+        stream: config.remoteStreamingEnabled,
+      );
+    }
+    return {
+      'Authorization': 'Bearer $apiKey',
+      'Content-Type': 'application/json; charset=utf-8',
+      'Accept': config.remoteStreamingEnabled
+          ? 'text/event-stream'
+          : 'application/json',
+    };
+  }
+
+  Map<String, dynamic> _requestBody(
+    List<Message> messages,
+    ModelConfig config, {
+    List<Map<String, dynamic>> tools = const [],
+  }) {
+    return switch (config.remoteApiType) {
+      RemoteLlmApiType.openAiChatCompletions => _chatCompletionsRequestBody(
+        messages,
+        config,
+        tools: tools,
+      ),
+      RemoteLlmApiType.openAiResponses => _responsesRequestBody(
+        messages,
+        config,
+        tools: tools,
+      ),
+      RemoteLlmApiType.anthropicMessages => _anthropicMessagesRequestBody(
+        messages,
+        config,
+        tools: tools,
+      ),
+    };
+  }
+
   Map<String, dynamic> _chatCompletionsRequestBody(
     List<Message> messages,
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
   }) {
-    final body = {
-      'model': config.remoteModel.trim(),
-      'messages': _toRemoteMessages(messages),
-      'stream': config.remoteStreamingEnabled,
-      'temperature': config.temperature,
-    };
+    final extra = <String, dynamic>{};
     if (config.remoteProvider == RemoteLlmProvider.deepSeek) {
       final effort = config.remoteThinkingEffort.deepSeekReasoningEffort;
-      body['thinking'] = {
-        'type': effort == null ? 'disabled' : 'enabled',
-      };
+      extra['thinking'] = {'type': effort == null ? 'disabled' : 'enabled'};
       if (effort != null) {
-        body['reasoning_effort'] = effort;
-        body.remove('temperature');
+        extra['reasoning_effort'] = effort;
       }
     }
-    if (tools.isNotEmpty) {
-      body['tools'] = tools;
+    final request = openai.OpenAiChatCompletionsRequest(
+      model: config.remoteModel.trim(),
+      messages: _toOpenAiMessages(messages),
+      stream: config.remoteStreamingEnabled,
+      temperature: config.temperature,
+      tools: tools,
+      extra: extra,
+    ).toJson();
+    if (extra.containsKey('reasoning_effort')) {
+      request.remove('temperature');
     }
-    return body;
+    return request;
   }
 
   Map<String, dynamic> _responsesRequestBody(
@@ -245,21 +296,35 @@ class RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
   }) {
-    final body = {
-      'model': config.remoteModel.trim(),
-      'input': _toRemoteMessages(messages),
-      'stream': config.remoteStreamingEnabled,
-      'temperature': config.temperature,
-      'store': false,
-    };
-    if (tools.isNotEmpty) {
-      body['tools'] = _toResponsesTools(tools);
-    }
-    return body;
+    return openai.OpenAiResponsesRequest(
+      model: config.remoteModel.trim(),
+      input: _toOpenAiMessages(messages),
+      stream: config.remoteStreamingEnabled,
+      temperature: config.temperature,
+      store: false,
+      tools: openai.OpenAiResponsesTool.fromChatCompletionsTools(tools),
+    ).toJson();
   }
 
-  List<Map<String, String>> _toRemoteMessages(List<Message> messages) {
-    final result = <Map<String, String>>[];
+  Map<String, dynamic> _anthropicMessagesRequestBody(
+    List<Message> messages,
+    ModelConfig config, {
+    List<Map<String, dynamic>> tools = const [],
+  }) {
+    final payload = _toAnthropicMessages(messages);
+    return anthropic.AnthropicMessagesRequest(
+      model: config.remoteModel.trim(),
+      maxTokens: config.maxTokens,
+      messages: payload.messages,
+      stream: config.remoteStreamingEnabled,
+      temperature: config.temperature,
+      system: payload.system,
+      tools: anthropic.AnthropicTool.fromOpenAiTools(tools),
+    ).toJson();
+  }
+
+  List<openai.OpenAiMessage> _toOpenAiMessages(List<Message> messages) {
+    final result = <openai.OpenAiMessage>[];
     for (final message in messages) {
       if (message is AssistantMessage && message.isStreaming) continue;
 
@@ -271,60 +336,62 @@ class RemoteLlmRepository {
       };
 
       if (role == 'tool') {
-        final toolName =
-            message is ToolResponseMessage ? ' for ${message.toolName}' : '';
-        result.add({
-          'role': 'user',
-          'content': 'Tool result$toolName: ${message.content}',
-        });
+        final toolName = message is ToolResponseMessage
+            ? ' for ${message.toolName}'
+            : '';
+        result.add(
+          openai.OpenAiMessage(
+            role: 'user',
+            content: 'Tool result$toolName: ${message.content}',
+          ),
+        );
       } else {
         final content = message is UserMessage
             ? message.contentWithAttachments()
             : message.content;
-        result.add({'role': role, 'content': content});
+        result.add(openai.OpenAiMessage(role: role, content: content));
       }
     }
     return result;
   }
 
-  List<Map<String, dynamic>> _toResponsesTools(
-    List<Map<String, dynamic>> tools,
-  ) {
-    final responsesTools = <Map<String, dynamic>>[];
-    for (final tool in tools) {
-      final function = tool['function'];
-      if (tool['type'] != 'function' || function is! Map<String, dynamic>) {
-        responsesTools.add(tool);
-        continue;
+  _AnthropicMessagePayload _toAnthropicMessages(List<Message> messages) {
+    final system = StringBuffer();
+    final result = <anthropic.AnthropicMessage>[];
+    for (final message in messages) {
+      if (message is AssistantMessage && message.isStreaming) continue;
+      switch (message) {
+        case SystemMessage():
+          if (system.isNotEmpty) system.write('\n\n');
+          system.write(message.content);
+        case UserMessage():
+          result.add(
+            anthropic.AnthropicMessage(
+              role: 'user',
+              content: message.contentWithAttachments(),
+            ),
+          );
+        case AssistantMessage():
+          result.add(
+            anthropic.AnthropicMessage(
+              role: 'assistant',
+              content: message.content,
+            ),
+          );
+        case ToolResponseMessage():
+          result.add(
+            anthropic.AnthropicMessage(
+              role: 'user',
+              content:
+                  'Tool result for ${message.toolName}: ${message.content}',
+            ),
+          );
       }
-
-      responsesTools.add({
-        'type': 'function',
-        'name': function['name'],
-        if (function['description'] != null)
-          'description': function['description'],
-        if (function['parameters'] != null)
-          'parameters': function['parameters'],
-        'strict': function['strict'] ?? tool['strict'] ?? false,
-      });
     }
-    return responsesTools;
-  }
-
-  Uri _chatCompletionsUri(String baseUrl) {
-    final uri = Uri.parse(baseUrl.trim());
-    final normalizedPath = uri.path.endsWith('/chat/completions')
-        ? uri.path
-        : '${_trimTrailingSlash(uri.path)}/chat/completions';
-    return uri.replace(path: normalizedPath);
-  }
-
-  Uri _responsesUri(String baseUrl) {
-    final uri = Uri.parse(baseUrl.trim());
-    final normalizedPath = uri.path.endsWith('/responses')
-        ? uri.path
-        : '${_trimTrailingSlash(uri.path)}/responses';
-    return uri.replace(path: normalizedPath);
+    return _AnthropicMessagePayload(
+      system: system.isEmpty ? null : system.toString(),
+      messages: result,
+    );
   }
 
   Uri _modelsUri(String baseUrl) {
@@ -346,7 +413,8 @@ class RemoteLlmRepository {
     if (message is! Map<String, dynamic>) return const [];
 
     final chunks = <ChatGenerationChunk>[];
-    final thinking = _stringValue(message['reasoning_content']) ??
+    final thinking =
+        _stringValue(message['reasoning_content']) ??
         _stringValue(message['reasoning']);
     if (thinking != null && thinking.isNotEmpty) {
       chunks.add(ChatThinkingChunk(thinking));
@@ -405,6 +473,52 @@ class RemoteLlmRepository {
       final outputText = _stringValue(decoded['output_text']);
       if (outputText != null && outputText.isNotEmpty) {
         chunks.addAll(_ThinkTagParser.parse(outputText));
+      }
+    }
+
+    return chunks;
+  }
+
+  List<ChatGenerationChunk> _chunksFromAnthropicResponse(String body) {
+    final decoded = jsonDecode(body);
+    if (decoded is! Map<String, dynamic>) return const [];
+
+    final error = decoded['error'];
+    if (error is Map<String, dynamic>) {
+      final message = _stringValue(error['message']);
+      if (message != null && message.isNotEmpty) {
+        throw RemoteLlmException(message);
+      }
+    }
+
+    final chunks = <ChatGenerationChunk>[];
+    final content = decoded['content'];
+    if (content is! List) return chunks;
+
+    for (final item in content) {
+      if (item is! Map<String, dynamic>) continue;
+      switch (_stringValue(item['type'])) {
+        case 'text':
+          final text = _stringValue(item['text']);
+          if (text != null && text.isNotEmpty) {
+            chunks.addAll(_ThinkTagParser.parse(text));
+          }
+        case 'thinking':
+          final thinking =
+              _stringValue(item['thinking']) ?? _stringValue(item['text']);
+          if (thinking != null && thinking.isNotEmpty) {
+            chunks.add(ChatThinkingChunk(thinking));
+          }
+        case 'tool_use':
+          final name = _stringValue(item['name'])?.trim();
+          if (name == null || name.isEmpty) continue;
+          final input = item['input'];
+          chunks.add(
+            ChatFunctionCallChunk(
+              name: name,
+              args: input is Map<String, dynamic> ? input : const {},
+            ),
+          );
       }
     }
 
@@ -500,7 +614,8 @@ class RemoteLlmRepository {
           }
           throw const RemoteLlmException('OpenAI Responses request failed.');
         case 'error':
-          final message = _stringValue(decoded['message']) ??
+          final message =
+              _stringValue(decoded['message']) ??
               _stringValue(decoded['error']);
           throw RemoteLlmException(
             message == null || message.isEmpty
@@ -514,6 +629,101 @@ class RemoteLlmRepository {
       yield chunk;
     }
     final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
+    if (toolCall != null) yield toolCall;
+  }
+
+  Stream<ChatGenerationChunk> _chunksFromStreamingAnthropic(
+    Stream<List<int>> stream,
+  ) async* {
+    final toolCallBuffers = <int, _AnthropicToolCallBuffer>{};
+    final thinkTagParser = _ThinkTagParser();
+
+    await for (final line
+        in stream.transform(utf8.decoder).transform(const LineSplitter())) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty || !trimmed.startsWith('data:')) continue;
+
+      final data = trimmed.substring(5).trim();
+      if (data == '[DONE]') {
+        for (final chunk in thinkTagParser.close()) {
+          yield chunk;
+        }
+        final toolCall = _toolCallChunkFromAnthropicBuffers(toolCallBuffers);
+        if (toolCall != null) yield toolCall;
+        return;
+      }
+
+      final decoded = jsonDecode(data);
+      if (decoded is! Map<String, dynamic>) continue;
+
+      switch (_stringValue(decoded['type'])) {
+        case 'content_block_start':
+          final contentBlock = decoded['content_block'];
+          if (contentBlock is Map<String, dynamic> &&
+              _stringValue(contentBlock['type']) == 'tool_use') {
+            final index = _intValue(decoded['index']) ?? 0;
+            final buffer = toolCallBuffers.putIfAbsent(
+              index,
+              _AnthropicToolCallBuffer.new,
+            );
+            final name = _stringValue(contentBlock['name']);
+            if (name != null && name.isNotEmpty) buffer.name = name;
+            final input = contentBlock['input'];
+            if (input is Map<String, dynamic> && input.isNotEmpty) {
+              buffer.arguments
+                ..clear()
+                ..write(jsonEncode(input));
+            }
+          }
+        case 'content_block_delta':
+          final delta = decoded['delta'];
+          if (delta is! Map<String, dynamic>) continue;
+          switch (_stringValue(delta['type'])) {
+            case 'text_delta':
+              final text = _stringValue(delta['text']);
+              if (text != null && text.isNotEmpty) {
+                for (final chunk in thinkTagParser.add(text)) {
+                  yield chunk;
+                }
+              }
+            case 'thinking_delta':
+              final thinking = _stringValue(delta['thinking']);
+              if (thinking != null && thinking.isNotEmpty) {
+                yield ChatThinkingChunk(thinking);
+              }
+            case 'input_json_delta':
+              final index = _intValue(decoded['index']) ?? 0;
+              final buffer = toolCallBuffers.putIfAbsent(
+                index,
+                _AnthropicToolCallBuffer.new,
+              );
+              final partialJson = _stringValue(delta['partial_json']);
+              if (partialJson != null) buffer.arguments.write(partialJson);
+          }
+        case 'message_stop':
+          for (final chunk in thinkTagParser.close()) {
+            yield chunk;
+          }
+          final toolCall = _toolCallChunkFromAnthropicBuffers(toolCallBuffers);
+          if (toolCall != null) yield toolCall;
+          return;
+        case 'error':
+          final error = decoded['error'];
+          final message = error is Map<String, dynamic>
+              ? _stringValue(error['message'])
+              : _stringValue(decoded['message']);
+          throw RemoteLlmException(
+            message == null || message.isEmpty
+                ? 'Anthropic Messages stream failed.'
+                : message,
+          );
+      }
+    }
+
+    for (final chunk in thinkTagParser.close()) {
+      yield chunk;
+    }
+    final toolCall = _toolCallChunkFromAnthropicBuffers(toolCallBuffers);
     if (toolCall != null) yield toolCall;
   }
 
@@ -548,17 +758,16 @@ class RemoteLlmRepository {
   ) {
     if (rawToolCalls is! List) return;
 
-    for (var fallbackIndex = 0;
-        fallbackIndex < rawToolCalls.length;
-        fallbackIndex++) {
+    for (
+      var fallbackIndex = 0;
+      fallbackIndex < rawToolCalls.length;
+      fallbackIndex++
+    ) {
       final rawToolCall = rawToolCalls[fallbackIndex];
       if (rawToolCall is! Map<String, dynamic>) continue;
 
       final index = _intValue(rawToolCall['index']) ?? fallbackIndex;
-      final buffer = buffers.putIfAbsent(
-        index,
-        _RemoteToolCallBuffer.new,
-      );
+      final buffer = buffers.putIfAbsent(index, _RemoteToolCallBuffer.new);
 
       final function = rawToolCall['function'];
       if (function is! Map<String, dynamic>) continue;
@@ -611,6 +820,22 @@ class RemoteLlmRepository {
       name: name,
       args: _decodeToolArgs(_stringValue(item['arguments']) ?? ''),
     );
+  }
+
+  ChatFunctionCallChunk? _toolCallChunkFromAnthropicBuffers(
+    Map<int, _AnthropicToolCallBuffer> buffers,
+  ) {
+    final indexes = buffers.keys.toList()..sort();
+    for (final index in indexes) {
+      final buffer = buffers[index]!;
+      final name = buffer.name?.trim();
+      if (name == null || name.isEmpty) continue;
+      return ChatFunctionCallChunk(
+        name: name,
+        args: _decodeToolArgs(buffer.arguments.toString()),
+      );
+    }
+    return null;
   }
 
   void _collectResponsesToolCallItem(
@@ -709,8 +934,9 @@ class _ThinkTagParser {
   }
 
   int _trailingMarkerPrefixLength(String text, String marker) {
-    final max =
-        text.length < marker.length - 1 ? text.length : marker.length - 1;
+    final max = text.length < marker.length - 1
+        ? text.length
+        : marker.length - 1;
     for (var length = max; length > 0; length -= 1) {
       if (marker.startsWith(text.substring(text.length - length))) {
         return length;
@@ -728,6 +954,21 @@ class _ThinkTagParser {
 class _RemoteToolCallBuffer {
   String? name;
   final arguments = StringBuffer();
+}
+
+class _AnthropicToolCallBuffer {
+  String? name;
+  final arguments = StringBuffer();
+}
+
+class _AnthropicMessagePayload {
+  const _AnthropicMessagePayload({
+    required this.system,
+    required this.messages,
+  });
+
+  final String? system;
+  final List<anthropic.AnthropicMessage> messages;
 }
 
 class RemoteLlmException implements Exception {

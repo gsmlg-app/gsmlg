@@ -136,6 +136,12 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
           onPressed: (_) => _showProviderDialog(context, provider: provider),
         ),
         SettingsTile.navigation(
+          leading: const Icon(Icons.api),
+          title: const Text('API type'),
+          value: Text(provider.remoteApiType.displayName),
+          onPressed: (_) => _showProviderDialog(context, provider: provider),
+        ),
+        SettingsTile.navigation(
           leading: const Icon(Icons.key),
           title: const Text('Token'),
           value: BlocBuilder<AccountsBloc, AccountsState>(
@@ -194,6 +200,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     return baseConfig.copyWith(
       inferenceMode: ChatInferenceMode.remote,
       remoteProvider: provider.remoteProvider,
+      remoteApiType: provider.remoteApiType,
       remoteAccountId: provider.useDummyToken
           ? ModelConfig.dummyRemoteAccountId
           : provider.accountId,
@@ -310,7 +317,8 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
 
   String _providerModelsKey(ModelConfig config) {
     return '$_providerModelsPrefix${config.remoteProvider.name}_'
-        '${config.remoteAccountId ?? 'none'}_${config.remoteBaseUrl.trim()}';
+        '${config.remoteApiType.name}_${config.remoteAccountId ?? 'none'}_'
+        '${config.remoteBaseUrl.trim()}';
   }
 
   void _showModelDialog(
@@ -372,7 +380,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
   void _showTokenPicker(BuildContext context, _RemoteProviderProfile provider) {
     final accountsState = context.read<AccountsBloc>().state;
     final accounts = accountsState is AccountsLoaded
-        ? accountsState.byProvider(ServiceProvider.openai)
+        ? accountsState.byProvider(provider.accountProvider)
         : <ServiceAccountTableData>[];
 
     showModalBottomSheet(
@@ -471,6 +479,10 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
         provider?.remoteProvider ??
         selectedPreset?.remoteProvider ??
         RemoteLlmProvider.openAiCompatible;
+    var remoteApiType =
+        provider?.remoteApiType ??
+        selectedPreset?.remoteApiType ??
+        remoteProvider.defaultApiType;
     var defaultModel =
         provider?.defaultModel ?? selectedPreset?.defaultModel ?? 'local-model';
     var useDummyToken =
@@ -478,130 +490,168 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     int? accountId = provider?.accountId;
 
     final accountsState = context.read<AccountsBloc>().state;
-    final accounts = accountsState is AccountsLoaded
-        ? accountsState.byProvider(ServiceProvider.openai)
-        : <ServiceAccountTableData>[];
+    final List<ServiceAccountTableData> allAccounts =
+        accountsState is AccountsLoaded
+        ? accountsState.accounts
+        : const <ServiceAccountTableData>[];
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(isEditing ? 'Edit Provider' : 'Add Provider'),
-          content: SizedBox(
-            width: 420,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  initialValue: selectedPreset?.id,
-                  decoration: const InputDecoration(
-                    labelText: 'Provider preset',
-                    border: OutlineInputBorder(),
-                  ),
-                  hint: const Text('Select provider'),
-                  items: [
-                    for (final preset in presets)
-                      DropdownMenuItem(
-                        value: preset.id,
-                        child: Text(preset.name),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    final preset = presets.firstWhere(
-                      (item) => item.id == value,
-                      orElse: () => presets.first,
-                    );
-                    setDialogState(() {
-                      selectedPreset = preset;
-                      nameController.text = preset.name;
-                      baseUrlController.text = preset.baseUrl;
-                      remoteProvider = preset.remoteProvider;
-                      defaultModel = preset.defaultModel;
-                      useDummyToken = preset.useDummyToken;
-                      if (useDummyToken) accountId = null;
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    hintText: 'Ollama, LM Studio, Work OpenAI',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: baseUrlController,
-                  decoration: const InputDecoration(
-                    labelText: 'Base URL',
-                    hintText: 'http://localhost:11434/v1',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SwitchListTile(
-                  value: useDummyToken,
-                  title: const Text('Use dummy token'),
-                  subtitle: const Text('Default for local LLM APIs'),
-                  onChanged: (value) => setDialogState(() {
-                    useDummyToken = value;
-                    if (value) accountId = null;
-                  }),
-                ),
-                if (!useDummyToken)
-                  DropdownButtonFormField<int>(
-                    initialValue: accountId,
+        builder: (context, setDialogState) {
+          final accounts = allAccounts
+              .where(
+                (account) =>
+                    account.provider ==
+                    _accountProviderForApiType(remoteApiType),
+              )
+              .toList(growable: false);
+          return AlertDialog(
+            title: Text(isEditing ? 'Edit Provider' : 'Add Provider'),
+            content: SizedBox(
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedPreset?.id,
                     decoration: const InputDecoration(
-                      labelText: 'Token account',
+                      labelText: 'Provider preset',
+                      border: OutlineInputBorder(),
+                    ),
+                    hint: const Text('Select provider'),
+                    items: [
+                      for (final preset in presets)
+                        DropdownMenuItem(
+                          value: preset.id,
+                          child: Text(preset.name),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      final preset = presets.firstWhere(
+                        (item) => item.id == value,
+                        orElse: () => presets.first,
+                      );
+                      setDialogState(() {
+                        selectedPreset = preset;
+                        nameController.text = preset.name;
+                        baseUrlController.text = preset.baseUrl;
+                        remoteProvider = preset.remoteProvider;
+                        remoteApiType = preset.remoteApiType;
+                        defaultModel = preset.defaultModel;
+                        useDummyToken = preset.useDummyToken;
+                        if (useDummyToken) accountId = null;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<RemoteLlmApiType>(
+                    initialValue: remoteApiType,
+                    decoration: const InputDecoration(
+                      labelText: 'API type',
                       border: OutlineInputBorder(),
                     ),
                     items: [
-                      for (final account in accounts)
+                      for (final apiType in RemoteLlmApiType.values)
                         DropdownMenuItem(
-                          value: account.id,
-                          child: Text(account.name),
+                          value: apiType,
+                          child: Text(apiType.displayName),
                         ),
                     ],
-                    onChanged: (value) =>
-                        setDialogState(() => accountId = value),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() {
+                        remoteApiType = value;
+                        if (value == RemoteLlmApiType.anthropicMessages) {
+                          remoteProvider = RemoteLlmProvider.anthropic;
+                        }
+                        accountId = null;
+                      });
+                    },
                   ),
-              ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Name',
+                      hintText: 'Ollama, LM Studio, Work OpenAI',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: baseUrlController,
+                    decoration: const InputDecoration(
+                      labelText: 'Base URL',
+                      hintText: 'http://localhost:11434/v1',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    value: useDummyToken,
+                    title: const Text('Use dummy token'),
+                    subtitle: const Text('Default for local LLM APIs'),
+                    onChanged: (value) => setDialogState(() {
+                      useDummyToken = value;
+                      if (value) accountId = null;
+                    }),
+                  ),
+                  if (!useDummyToken)
+                    DropdownButtonFormField<int>(
+                      initialValue: accountId,
+                      decoration: const InputDecoration(
+                        labelText: 'Token account',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        for (final account in accounts)
+                          DropdownMenuItem(
+                            value: account.id,
+                            child: Text(account.name),
+                          ),
+                      ],
+                      onChanged: (value) =>
+                          setDialogState(() => accountId = value),
+                    ),
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final baseUrl = baseUrlController.text.trim();
-                if (baseUrl.isEmpty || (!useDummyToken && accountId == null)) {
-                  return;
-                }
-                final next = _RemoteProviderProfile(
-                  id:
-                      provider?.id ??
-                      DateTime.now().microsecondsSinceEpoch.toString(),
-                  name: nameController.text.trim().isEmpty
-                      ? baseUrl
-                      : nameController.text.trim(),
-                  baseUrl: baseUrl,
-                  accountId: useDummyToken ? null : accountId,
-                  useDummyToken: useDummyToken,
-                  isBuiltIn: false,
-                  remoteProvider: remoteProvider,
-                  defaultModel: defaultModel,
-                );
-                _replaceProvider(next);
-                Navigator.pop(dialogContext);
-              },
-              child: Text(isEditing ? 'Save' : 'Add'),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final baseUrl = baseUrlController.text.trim();
+                  if (baseUrl.isEmpty ||
+                      (!useDummyToken && accountId == null)) {
+                    return;
+                  }
+                  final next = _RemoteProviderProfile(
+                    id:
+                        provider?.id ??
+                        DateTime.now().microsecondsSinceEpoch.toString(),
+                    name: nameController.text.trim().isEmpty
+                        ? baseUrl
+                        : nameController.text.trim(),
+                    baseUrl: baseUrl,
+                    accountId: useDummyToken ? null : accountId,
+                    useDummyToken: useDummyToken,
+                    isBuiltIn: false,
+                    remoteProvider: remoteProvider,
+                    remoteApiType: remoteApiType,
+                    defaultModel: defaultModel,
+                  );
+                  _replaceProvider(next);
+                  Navigator.pop(dialogContext);
+                },
+                child: Text(isEditing ? 'Save' : 'Add'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -610,6 +660,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     if (provider == null) return null;
     for (final preset in _RemoteProviderProfile.presets) {
       if (preset.remoteProvider == provider.remoteProvider &&
+          preset.remoteApiType == provider.remoteApiType &&
           preset.baseUrl == provider.baseUrl &&
           preset.defaultModel == provider.defaultModel) {
         return preset;
@@ -627,6 +678,12 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
       if (account.id == provider.accountId) return account.name;
     }
     return 'Missing account';
+  }
+
+  ServiceProvider _accountProviderForApiType(RemoteLlmApiType apiType) {
+    return apiType == RemoteLlmApiType.anthropicMessages
+        ? ServiceProvider.anthropic
+        : ServiceProvider.openai;
   }
 
   List<_RemoteProviderProfile> _loadProviders() {
@@ -677,7 +734,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
 }
 
 class _RemoteProviderProfile {
-  const _RemoteProviderProfile({
+  _RemoteProviderProfile({
     required this.id,
     required this.name,
     required this.baseUrl,
@@ -686,10 +743,12 @@ class _RemoteProviderProfile {
     this.useDummyToken = false,
     this.isBuiltIn = false,
     this.remoteProvider = RemoteLlmProvider.openAiCompatible,
-  });
+    RemoteLlmApiType? remoteApiType,
+  }) : remoteApiType = remoteApiType ?? remoteProvider.defaultApiType;
 
   factory _RemoteProviderProfile.fromJson(String raw) {
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final remoteProvider = _parseProvider(decoded['remoteProvider'] as String?);
     return _RemoteProviderProfile(
       id: decoded['id'] as String,
       name: decoded['name'] as String,
@@ -701,7 +760,11 @@ class _RemoteProviderProfile {
           decoded['isLocal'] as bool? ??
           false,
       isBuiltIn: decoded['isBuiltIn'] as bool? ?? false,
-      remoteProvider: _parseProvider(decoded['remoteProvider'] as String?),
+      remoteProvider: remoteProvider,
+      remoteApiType: _parseApiType(
+        decoded['remoteApiType'] as String?,
+        remoteProvider,
+      ),
     );
   }
 
@@ -713,6 +776,13 @@ class _RemoteProviderProfile {
   final bool useDummyToken;
   final bool isBuiltIn;
   final RemoteLlmProvider remoteProvider;
+  final RemoteLlmApiType remoteApiType;
+
+  ServiceProvider get accountProvider {
+    return remoteApiType == RemoteLlmApiType.anthropicMessages
+        ? ServiceProvider.anthropic
+        : ServiceProvider.openai;
+  }
 
   bool get isLocal {
     final host = Uri.tryParse(baseUrl)?.host.toLowerCase();
@@ -739,6 +809,7 @@ class _RemoteProviderProfile {
       useDummyToken: useDummyToken ?? this.useDummyToken,
       isBuiltIn: isBuiltIn,
       remoteProvider: remoteProvider,
+      remoteApiType: remoteApiType,
     );
   }
 
@@ -752,6 +823,7 @@ class _RemoteProviderProfile {
       'useDummyToken': useDummyToken,
       'isBuiltIn': isBuiltIn,
       'remoteProvider': remoteProvider.name,
+      'remoteApiType': remoteApiType.name,
     });
   }
 
@@ -762,7 +834,17 @@ class _RemoteProviderProfile {
     return RemoteLlmProvider.openAiCompatible;
   }
 
-  static const presets = [
+  static RemoteLlmApiType _parseApiType(
+    String? value,
+    RemoteLlmProvider remoteProvider,
+  ) {
+    for (final apiType in RemoteLlmApiType.values) {
+      if (apiType.name == value) return apiType;
+    }
+    return remoteProvider.defaultApiType;
+  }
+
+  static final presets = [
     _RemoteProviderProfile(
       id: 'openai',
       name: 'OpenAI',
@@ -770,6 +852,16 @@ class _RemoteProviderProfile {
       defaultModel: 'gpt-4.1-mini',
       isBuiltIn: true,
       remoteProvider: RemoteLlmProvider.openAi,
+      remoteApiType: RemoteLlmApiType.openAiResponses,
+    ),
+    _RemoteProviderProfile(
+      id: 'anthropic',
+      name: 'Anthropic',
+      baseUrl: 'https://api.anthropic.com/v1',
+      defaultModel: 'claude-sonnet-4-5',
+      isBuiltIn: true,
+      remoteProvider: RemoteLlmProvider.anthropic,
+      remoteApiType: RemoteLlmApiType.anthropicMessages,
     ),
     _RemoteProviderProfile(
       id: 'openrouter',
@@ -778,6 +870,7 @@ class _RemoteProviderProfile {
       defaultModel: 'openai/gpt-4.1-mini',
       isBuiltIn: true,
       remoteProvider: RemoteLlmProvider.openRouter,
+      remoteApiType: RemoteLlmApiType.openAiChatCompletions,
     ),
     _RemoteProviderProfile(
       id: 'groq',
@@ -786,6 +879,7 @@ class _RemoteProviderProfile {
       defaultModel: 'llama-3.1-8b-instant',
       isBuiltIn: true,
       remoteProvider: RemoteLlmProvider.groq,
+      remoteApiType: RemoteLlmApiType.openAiChatCompletions,
     ),
     _RemoteProviderProfile(
       id: 'deepseek',
@@ -794,6 +888,7 @@ class _RemoteProviderProfile {
       defaultModel: 'deepseek-chat',
       isBuiltIn: true,
       remoteProvider: RemoteLlmProvider.deepSeek,
+      remoteApiType: RemoteLlmApiType.openAiChatCompletions,
     ),
     _RemoteProviderProfile(
       id: 'ollama',
@@ -802,6 +897,7 @@ class _RemoteProviderProfile {
       defaultModel: 'llama3.2',
       useDummyToken: true,
       isBuiltIn: true,
+      remoteApiType: RemoteLlmApiType.openAiChatCompletions,
     ),
     _RemoteProviderProfile(
       id: 'lmstudio',
@@ -810,6 +906,7 @@ class _RemoteProviderProfile {
       defaultModel: 'local-model',
       useDummyToken: true,
       isBuiltIn: true,
+      remoteApiType: RemoteLlmApiType.openAiChatCompletions,
     ),
   ];
 }

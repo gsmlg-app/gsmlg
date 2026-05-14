@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 /// Service provider type enumeration.
 enum ServiceProvider {
   openai,
+  anthropic,
   ollama,
   github,
   vultr,

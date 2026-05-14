@@ -178,6 +178,10 @@ class ChatStorageRepository {
       topK: row.topK,
       backend: _parseBackend(row.backend),
       remoteProvider: _parseRemoteProvider(row.remoteProvider),
+      remoteApiType: _parseRemoteApiType(
+        row.remoteApiType,
+        providerName: row.remoteProvider,
+      ),
       remoteAccountId: row.remoteAccountId,
       remoteBaseUrl: row.remoteBaseUrl,
       remoteModel: row.remoteModel,
@@ -205,6 +209,7 @@ class ChatStorageRepository {
             remoteProvider: Value(
               _remoteProviderToString(config.remoteProvider),
             ),
+            remoteApiType: Value(_remoteApiTypeToString(config.remoteApiType)),
             remoteAccountId: Value(config.remoteAccountId),
             remoteBaseUrl: Value(config.remoteBaseUrl),
             remoteModel: Value(config.remoteModel),
@@ -330,6 +335,7 @@ class ChatStorageRepository {
     return switch (value) {
       'openAiCompatible' => RemoteLlmProvider.openAiCompatible,
       'openAi' => RemoteLlmProvider.openAi,
+      'anthropic' => RemoteLlmProvider.anthropic,
       'openRouter' => RemoteLlmProvider.openRouter,
       'groq' => RemoteLlmProvider.groq,
       'deepSeek' => RemoteLlmProvider.deepSeek,
@@ -341,9 +347,30 @@ class ChatStorageRepository {
     return switch (provider) {
       RemoteLlmProvider.openAiCompatible => 'openAiCompatible',
       RemoteLlmProvider.openAi => 'openAi',
+      RemoteLlmProvider.anthropic => 'anthropic',
       RemoteLlmProvider.openRouter => 'openRouter',
       RemoteLlmProvider.groq => 'groq',
       RemoteLlmProvider.deepSeek => 'deepSeek',
+    };
+  }
+
+  RemoteLlmApiType _parseRemoteApiType(
+    String value, {
+    required String providerName,
+  }) {
+    return switch (value) {
+      'openAiChatCompletions' => RemoteLlmApiType.openAiChatCompletions,
+      'openAiResponses' => RemoteLlmApiType.openAiResponses,
+      'anthropicMessages' => RemoteLlmApiType.anthropicMessages,
+      _ => _parseRemoteProvider(providerName).defaultApiType,
+    };
+  }
+
+  String _remoteApiTypeToString(RemoteLlmApiType apiType) {
+    return switch (apiType) {
+      RemoteLlmApiType.openAiChatCompletions => 'openAiChatCompletions',
+      RemoteLlmApiType.openAiResponses => 'openAiResponses',
+      RemoteLlmApiType.anthropicMessages => 'anthropicMessages',
     };
   }
 

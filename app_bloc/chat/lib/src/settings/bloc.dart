@@ -372,6 +372,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
         json['remoteProvider'],
         ModelConfig.defaultConfig.remoteProvider,
       ),
+      remoteApiType: _remoteApiTypeFromJson(json),
       remoteAccountId: json['remoteAccountId'] as int?,
       remoteBaseUrl: json['remoteBaseUrl'] as String? ??
           ModelConfig.defaultConfig.remoteBaseUrl,
@@ -397,6 +398,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       'topK': config.topK,
       'backend': config.backend.name,
       'remoteProvider': config.remoteProvider.name,
+      'remoteApiType': config.remoteApiType.name,
       'remoteAccountId': config.remoteAccountId,
       'remoteBaseUrl': config.remoteBaseUrl,
       'remoteModel': config.remoteModel,
@@ -411,6 +413,22 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       if (value.name == name) return value;
     }
     return fallback;
+  }
+
+  RemoteLlmApiType _remoteApiTypeFromJson(Map<String, Object?> json) {
+    final apiType = _enumFromName(
+      RemoteLlmApiType.values,
+      json['remoteApiType'],
+      RemoteLlmApiType.openAiChatCompletions,
+    );
+    if (json['remoteApiType'] is String) return apiType;
+
+    final provider = _enumFromName(
+      RemoteLlmProvider.values,
+      json['remoteProvider'],
+      ModelConfig.defaultConfig.remoteProvider,
+    );
+    return provider.defaultApiType;
   }
 
   GemmaBackend _backendFromName(Object? name) {

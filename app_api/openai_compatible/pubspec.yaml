@@ -1,0 +1,11 @@
+name: openai_compatible
+version: 0.1.0
+description: Request helpers for OpenAI-compatible Chat Completions and Responses APIs
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.11.5 <4.0.0"
+
+dev_dependencies:
+  test: ^1.30.0

@@ -36,24 +36,28 @@ void main() {
     expect(restored.responseInfo?.tokensPerSecond, 21);
   });
 
-  test('persists remote thinking effort with chat settings', () async {
-    final database = AppDatabase.forTesting();
-    addTearDown(database.close);
+  test(
+    'persists remote API type and thinking effort with chat settings',
+    () async {
+      final database = AppDatabase.forTesting();
+      addTearDown(database.close);
 
-    final repository = ChatStorageRepository(database);
-    const config = ModelConfig(
-      inferenceMode: ChatInferenceMode.remote,
-      remoteProvider: RemoteLlmProvider.deepSeek,
-      remoteAccountId: ModelConfig.dummyRemoteAccountId,
-      remoteBaseUrl: 'https://api.deepseek.com/v1',
-      remoteModel: 'deepseek-v4-pro',
-      remoteThinkingEffort: RemoteThinkingEffort.max,
-    );
+      final repository = ChatStorageRepository(database);
+      const config = ModelConfig(
+        inferenceMode: ChatInferenceMode.remote,
+        remoteProvider: RemoteLlmProvider.deepSeek,
+        remoteApiType: RemoteLlmApiType.anthropicMessages,
+        remoteAccountId: ModelConfig.dummyRemoteAccountId,
+        remoteBaseUrl: 'https://api.deepseek.com/v1',
+        remoteModel: 'deepseek-v4-pro',
+        remoteThinkingEffort: RemoteThinkingEffort.max,
+      );
 
-    await repository.saveSettings(config);
+      await repository.saveSettings(config);
 
-    expect(await repository.loadSettings(), config);
-  });
+      expect(await repository.loadSettings(), config);
+    },
+  );
 
   test('persists llama.cpp backend with chat settings', () async {
     final database = AppDatabase.forTesting();

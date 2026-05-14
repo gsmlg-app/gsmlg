@@ -50,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration {
@@ -128,6 +128,14 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(
             chatMessageTable,
             chatMessageTable.responseDurationMs,
+          );
+        }
+        if (from < 13) {
+          await m.addColumn(chatSettingsTable, chatSettingsTable.remoteApiType);
+          await customStatement(
+            "UPDATE chat_settings_table SET remote_api_type = "
+            "CASE WHEN remote_provider = 'openAi' THEN 'openAiResponses' "
+            "ELSE 'openAiChatCompletions' END",
           );
         }
       },

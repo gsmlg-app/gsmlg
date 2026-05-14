@@ -59,17 +59,23 @@ class _RemoteProviderConfig {
     required this.baseUrl,
     required this.defaultModel,
     required this.remoteProvider,
+    required this.remoteApiType,
     this.accountId,
     this.useDummyToken = false,
   });
 
   factory _RemoteProviderConfig.fromMap(Map<String, Object?> map) {
+    final remoteProvider = _parseProvider(map['remoteProvider'] as String?);
     return _RemoteProviderConfig(
       id: map['id'] as String,
       name: map['name'] as String,
       baseUrl: map['baseUrl'] as String,
       defaultModel: map['defaultModel'] as String? ?? 'local-model',
-      remoteProvider: _parseProvider(map['remoteProvider'] as String?),
+      remoteProvider: remoteProvider,
+      remoteApiType: _parseApiType(
+        map['remoteApiType'] as String?,
+        remoteProvider,
+      ),
       accountId: map['accountId'] as int?,
       useDummyToken:
           map['useDummyToken'] as bool? ?? map['isLocal'] as bool? ?? false,
@@ -91,6 +97,7 @@ class _RemoteProviderConfig {
   final String baseUrl;
   final String defaultModel;
   final RemoteLlmProvider remoteProvider;
+  final RemoteLlmApiType remoteApiType;
   final int? accountId;
   final bool useDummyToken;
 
@@ -107,6 +114,16 @@ class _RemoteProviderConfig {
       if (provider.name == value) return provider;
     }
     return RemoteLlmProvider.openAiCompatible;
+  }
+
+  static RemoteLlmApiType _parseApiType(
+    String? value,
+    RemoteLlmProvider remoteProvider,
+  ) {
+    for (final apiType in RemoteLlmApiType.values) {
+      if (apiType.name == value) return apiType;
+    }
+    return remoteProvider.defaultApiType;
   }
 }
 
@@ -354,7 +371,8 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
       ChatInferenceMode.local =>
         _localModelLabel(localModelState) ?? config.modelDisplayName,
       ChatInferenceMode.remote =>
-        '${config.remoteProvider.displayName} · ${config.remoteModel}',
+        '${config.remoteProvider.displayName} · '
+            '${config.remoteApiType.displayName} · ${config.remoteModel}',
     };
   }
 
@@ -492,6 +510,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     return ModelConfig.defaultConfig.copyWith(
       inferenceMode: ChatInferenceMode.remote,
       remoteProvider: provider.remoteProvider,
+      remoteApiType: provider.remoteApiType,
       remoteAccountId: provider.useDummyToken
           ? ModelConfig.dummyRemoteAccountId
           : provider.accountId,
@@ -507,7 +526,8 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
   ) {
     final providerModelsKey =
         'remote_provider_models_${config.remoteProvider.name}_'
-        '${config.remoteAccountId ?? 'none'}_${config.remoteBaseUrl.trim()}';
+        '${config.remoteApiType.name}_${config.remoteAccountId ?? 'none'}_'
+        '${config.remoteBaseUrl.trim()}';
     final models = {
       ...(preferences.getStringList(providerModelsKey) ?? const <String>[]),
       ...(preferences.getStringList(config.remoteVisibleModelsKey) ??

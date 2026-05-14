@@ -17,6 +17,9 @@ enum RemoteLlmProvider {
   /// OpenAI hosted API.
   openAi,
 
+  /// Anthropic hosted or compatible API.
+  anthropic,
+
   /// OpenRouter OpenAI-compatible API.
   openRouter,
 
@@ -25,6 +28,18 @@ enum RemoteLlmProvider {
 
   /// DeepSeek OpenAI-compatible API.
   deepSeek,
+}
+
+/// Remote LLM wire protocol.
+enum RemoteLlmApiType {
+  /// OpenAI-compatible `POST /chat/completions`.
+  openAiChatCompletions,
+
+  /// OpenAI `POST /responses`.
+  openAiResponses,
+
+  /// Anthropic-compatible `POST /messages`.
+  anthropicMessages,
 }
 
 /// Remote provider thinking/reasoning effort.
@@ -44,6 +59,7 @@ extension RemoteLlmProviderX on RemoteLlmProvider {
     return switch (this) {
       RemoteLlmProvider.openAiCompatible => 'OpenAI Compatible',
       RemoteLlmProvider.openAi => 'OpenAI',
+      RemoteLlmProvider.anthropic => 'Anthropic',
       RemoteLlmProvider.openRouter => 'OpenRouter',
       RemoteLlmProvider.groq => 'Groq',
       RemoteLlmProvider.deepSeek => 'DeepSeek',
@@ -54,9 +70,31 @@ extension RemoteLlmProviderX on RemoteLlmProvider {
     return switch (this) {
       RemoteLlmProvider.openAiCompatible => 'https://api.openai.com/v1',
       RemoteLlmProvider.openAi => 'https://api.openai.com/v1',
+      RemoteLlmProvider.anthropic => 'https://api.anthropic.com/v1',
       RemoteLlmProvider.openRouter => 'https://openrouter.ai/api/v1',
       RemoteLlmProvider.groq => 'https://api.groq.com/openai/v1',
       RemoteLlmProvider.deepSeek => 'https://api.deepseek.com/v1',
+    };
+  }
+
+  RemoteLlmApiType get defaultApiType {
+    return switch (this) {
+      RemoteLlmProvider.openAi => RemoteLlmApiType.openAiResponses,
+      RemoteLlmProvider.anthropic => RemoteLlmApiType.anthropicMessages,
+      RemoteLlmProvider.openAiCompatible ||
+      RemoteLlmProvider.openRouter ||
+      RemoteLlmProvider.groq ||
+      RemoteLlmProvider.deepSeek => RemoteLlmApiType.openAiChatCompletions,
+    };
+  }
+}
+
+extension RemoteLlmApiTypeX on RemoteLlmApiType {
+  String get displayName {
+    return switch (this) {
+      RemoteLlmApiType.openAiChatCompletions => 'OpenAI Chat Completions',
+      RemoteLlmApiType.openAiResponses => 'OpenAI Responses',
+      RemoteLlmApiType.anthropicMessages => 'Anthropic Messages',
     };
   }
 }

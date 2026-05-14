@@ -46,6 +46,8 @@ workspace:
   - app_api/cloudflare_dns
   - app_api/github
   - app_api/vultr_api
+  - app_api/openai_compatible
+  - app_api/anthropic_compatible
   - third_party/gsmlg_whois
   - app_form/camera_settings
   - app_lib/ip_db
@@ -92,6 +94,8 @@ dependencies:
   route53: any
   github_api: any
   vultr_api: any
+  openai_compatible: any
+  anthropic_compatible: any
   app_database: any
   app_theme: any
   app_locale: any

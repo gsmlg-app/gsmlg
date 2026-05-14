@@ -372,12 +372,19 @@ class ModelConfig extends Equatable {
     this.topK = 40,
     this.backend = GemmaBackend.cpu,
     this.remoteProvider = RemoteLlmProvider.openAiCompatible,
+    RemoteLlmApiType? remoteApiType,
     this.remoteAccountId,
     this.remoteBaseUrl = 'https://api.openai.com/v1',
     this.remoteModel = 'gpt-4.1-mini',
     this.remoteStreamingEnabled = true,
     this.remoteThinkingEffort = RemoteThinkingEffort.off,
-  });
+  }) : remoteApiType =
+           remoteApiType ??
+           (remoteProvider == RemoteLlmProvider.openAi
+               ? RemoteLlmApiType.openAiResponses
+               : remoteProvider == RemoteLlmProvider.anthropic
+               ? RemoteLlmApiType.anthropicMessages
+               : RemoteLlmApiType.openAiChatCompletions);
 
   /// Creates a default configuration.
   static const ModelConfig defaultConfig = ModelConfig();
@@ -419,6 +426,9 @@ class ModelConfig extends Equatable {
   /// Remote LLM API family.
   final RemoteLlmProvider remoteProvider;
 
+  /// Remote LLM wire protocol.
+  final RemoteLlmApiType remoteApiType;
+
   /// Service account containing the remote API key.
   final int? remoteAccountId;
 
@@ -444,6 +454,7 @@ class ModelConfig extends Equatable {
     topK,
     backend,
     remoteProvider,
+    remoteApiType,
     remoteAccountId,
     remoteBaseUrl,
     remoteModel,
@@ -497,7 +508,7 @@ class ModelConfig extends Equatable {
 
   /// Preference key for the remote models that should appear in model pickers.
   String get remoteVisibleModelsKey {
-    return 'remote_visible_models_${remoteProvider.name}_'
+    return 'remote_visible_models_${remoteProvider.name}_${remoteApiType.name}_'
         '${remoteAccountId ?? 'none'}_${remoteBaseUrl.trim()}';
   }
 
@@ -510,6 +521,7 @@ class ModelConfig extends Equatable {
     int? topK,
     GemmaBackend? backend,
     RemoteLlmProvider? remoteProvider,
+    RemoteLlmApiType? remoteApiType,
     int? remoteAccountId,
     bool clearRemoteAccount = false,
     String? remoteBaseUrl,
@@ -526,6 +538,7 @@ class ModelConfig extends Equatable {
       topK: topK ?? this.topK,
       backend: backend ?? this.backend,
       remoteProvider: remoteProvider ?? this.remoteProvider,
+      remoteApiType: remoteApiType ?? this.remoteApiType,
       remoteAccountId: clearRemoteAccount
           ? null
           : (remoteAccountId ?? this.remoteAccountId),

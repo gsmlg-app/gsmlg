@@ -1,0 +1,17 @@
+openapi: 3.1.0
+info:
+  title: Anthropic Compatible API
+  version: "0.1.0"
+paths:
+  /messages:
+    post:
+      summary: Create a message
+      responses:
+        "200":
+          description: Message response
+  /models:
+    get:
+      summary: List models
+      responses:
+        "200":
+          description: Models response

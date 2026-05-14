@@ -2416,6 +2416,14 @@ class $ChatSettingsTableTable extends ChatSettingsTable
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('openAiCompatible'));
+  static const VerificationMeta _remoteApiTypeMeta =
+      const VerificationMeta('remoteApiType');
+  @override
+  late final GeneratedColumn<String> remoteApiType = GeneratedColumn<String>(
+      'remote_api_type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('openAiChatCompletions'));
   static const VerificationMeta _remoteAccountIdMeta =
       const VerificationMeta('remoteAccountId');
   @override
@@ -2473,6 +2481,7 @@ class $ChatSettingsTableTable extends ChatSettingsTable
         topK,
         backend,
         remoteProvider,
+        remoteApiType,
         remoteAccountId,
         remoteBaseUrl,
         remoteModel,
@@ -2534,6 +2543,12 @@ class $ChatSettingsTableTable extends ChatSettingsTable
           _remoteProviderMeta,
           remoteProvider.isAcceptableOrUnknown(
               data['remote_provider']!, _remoteProviderMeta));
+    }
+    if (data.containsKey('remote_api_type')) {
+      context.handle(
+          _remoteApiTypeMeta,
+          remoteApiType.isAcceptableOrUnknown(
+              data['remote_api_type']!, _remoteApiTypeMeta));
     }
     if (data.containsKey('remote_account_id')) {
       context.handle(
@@ -2598,6 +2613,8 @@ class $ChatSettingsTableTable extends ChatSettingsTable
           .read(DriftSqlType.string, data['${effectivePrefix}backend'])!,
       remoteProvider: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}remote_provider'])!,
+      remoteApiType: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}remote_api_type'])!,
       remoteAccountId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}remote_account_id']),
       remoteBaseUrl: attachedDatabase.typeMapping.read(
@@ -2650,6 +2667,9 @@ class ChatSettingsTableData extends DataClass
   /// Remote provider type.
   final String remoteProvider;
 
+  /// Remote API protocol type.
+  final String remoteApiType;
+
   /// Service account ID containing the remote provider API key.
   final int? remoteAccountId;
 
@@ -2677,6 +2697,7 @@ class ChatSettingsTableData extends DataClass
       required this.topK,
       required this.backend,
       required this.remoteProvider,
+      required this.remoteApiType,
       this.remoteAccountId,
       required this.remoteBaseUrl,
       required this.remoteModel,
@@ -2697,6 +2718,7 @@ class ChatSettingsTableData extends DataClass
     map['top_k'] = Variable<int>(topK);
     map['backend'] = Variable<String>(backend);
     map['remote_provider'] = Variable<String>(remoteProvider);
+    map['remote_api_type'] = Variable<String>(remoteApiType);
     if (!nullToAbsent || remoteAccountId != null) {
       map['remote_account_id'] = Variable<int>(remoteAccountId);
     }
@@ -2723,6 +2745,7 @@ class ChatSettingsTableData extends DataClass
       topK: Value(topK),
       backend: Value(backend),
       remoteProvider: Value(remoteProvider),
+      remoteApiType: Value(remoteApiType),
       remoteAccountId: remoteAccountId == null && nullToAbsent
           ? const Value.absent()
           : Value(remoteAccountId),
@@ -2749,6 +2772,7 @@ class ChatSettingsTableData extends DataClass
       topK: serializer.fromJson<int>(json['topK']),
       backend: serializer.fromJson<String>(json['backend']),
       remoteProvider: serializer.fromJson<String>(json['remoteProvider']),
+      remoteApiType: serializer.fromJson<String>(json['remoteApiType']),
       remoteAccountId: serializer.fromJson<int?>(json['remoteAccountId']),
       remoteBaseUrl: serializer.fromJson<String>(json['remoteBaseUrl']),
       remoteModel: serializer.fromJson<String>(json['remoteModel']),
@@ -2773,6 +2797,7 @@ class ChatSettingsTableData extends DataClass
       'topK': serializer.toJson<int>(topK),
       'backend': serializer.toJson<String>(backend),
       'remoteProvider': serializer.toJson<String>(remoteProvider),
+      'remoteApiType': serializer.toJson<String>(remoteApiType),
       'remoteAccountId': serializer.toJson<int?>(remoteAccountId),
       'remoteBaseUrl': serializer.toJson<String>(remoteBaseUrl),
       'remoteModel': serializer.toJson<String>(remoteModel),
@@ -2792,6 +2817,7 @@ class ChatSettingsTableData extends DataClass
           int? topK,
           String? backend,
           String? remoteProvider,
+          String? remoteApiType,
           Value<int?> remoteAccountId = const Value.absent(),
           String? remoteBaseUrl,
           String? remoteModel,
@@ -2810,6 +2836,7 @@ class ChatSettingsTableData extends DataClass
         topK: topK ?? this.topK,
         backend: backend ?? this.backend,
         remoteProvider: remoteProvider ?? this.remoteProvider,
+        remoteApiType: remoteApiType ?? this.remoteApiType,
         remoteAccountId: remoteAccountId.present
             ? remoteAccountId.value
             : this.remoteAccountId,
@@ -2841,6 +2868,9 @@ class ChatSettingsTableData extends DataClass
       remoteProvider: data.remoteProvider.present
           ? data.remoteProvider.value
           : this.remoteProvider,
+      remoteApiType: data.remoteApiType.present
+          ? data.remoteApiType.value
+          : this.remoteApiType,
       remoteAccountId: data.remoteAccountId.present
           ? data.remoteAccountId.value
           : this.remoteAccountId,
@@ -2873,6 +2903,7 @@ class ChatSettingsTableData extends DataClass
           ..write('topK: $topK, ')
           ..write('backend: $backend, ')
           ..write('remoteProvider: $remoteProvider, ')
+          ..write('remoteApiType: $remoteApiType, ')
           ..write('remoteAccountId: $remoteAccountId, ')
           ..write('remoteBaseUrl: $remoteBaseUrl, ')
           ..write('remoteModel: $remoteModel, ')
@@ -2894,6 +2925,7 @@ class ChatSettingsTableData extends DataClass
       topK,
       backend,
       remoteProvider,
+      remoteApiType,
       remoteAccountId,
       remoteBaseUrl,
       remoteModel,
@@ -2913,6 +2945,7 @@ class ChatSettingsTableData extends DataClass
           other.topK == this.topK &&
           other.backend == this.backend &&
           other.remoteProvider == this.remoteProvider &&
+          other.remoteApiType == this.remoteApiType &&
           other.remoteAccountId == this.remoteAccountId &&
           other.remoteBaseUrl == this.remoteBaseUrl &&
           other.remoteModel == this.remoteModel &&
@@ -2932,6 +2965,7 @@ class ChatSettingsTableCompanion
   final Value<int> topK;
   final Value<String> backend;
   final Value<String> remoteProvider;
+  final Value<String> remoteApiType;
   final Value<int?> remoteAccountId;
   final Value<String> remoteBaseUrl;
   final Value<String> remoteModel;
@@ -2949,6 +2983,7 @@ class ChatSettingsTableCompanion
     this.topK = const Value.absent(),
     this.backend = const Value.absent(),
     this.remoteProvider = const Value.absent(),
+    this.remoteApiType = const Value.absent(),
     this.remoteAccountId = const Value.absent(),
     this.remoteBaseUrl = const Value.absent(),
     this.remoteModel = const Value.absent(),
@@ -2967,6 +3002,7 @@ class ChatSettingsTableCompanion
     this.topK = const Value.absent(),
     this.backend = const Value.absent(),
     this.remoteProvider = const Value.absent(),
+    this.remoteApiType = const Value.absent(),
     this.remoteAccountId = const Value.absent(),
     this.remoteBaseUrl = const Value.absent(),
     this.remoteModel = const Value.absent(),
@@ -2985,6 +3021,7 @@ class ChatSettingsTableCompanion
     Expression<int>? topK,
     Expression<String>? backend,
     Expression<String>? remoteProvider,
+    Expression<String>? remoteApiType,
     Expression<int>? remoteAccountId,
     Expression<String>? remoteBaseUrl,
     Expression<String>? remoteModel,
@@ -3003,6 +3040,7 @@ class ChatSettingsTableCompanion
       if (topK != null) 'top_k': topK,
       if (backend != null) 'backend': backend,
       if (remoteProvider != null) 'remote_provider': remoteProvider,
+      if (remoteApiType != null) 'remote_api_type': remoteApiType,
       if (remoteAccountId != null) 'remote_account_id': remoteAccountId,
       if (remoteBaseUrl != null) 'remote_base_url': remoteBaseUrl,
       if (remoteModel != null) 'remote_model': remoteModel,
@@ -3026,6 +3064,7 @@ class ChatSettingsTableCompanion
       Value<int>? topK,
       Value<String>? backend,
       Value<String>? remoteProvider,
+      Value<String>? remoteApiType,
       Value<int?>? remoteAccountId,
       Value<String>? remoteBaseUrl,
       Value<String>? remoteModel,
@@ -3043,6 +3082,7 @@ class ChatSettingsTableCompanion
       topK: topK ?? this.topK,
       backend: backend ?? this.backend,
       remoteProvider: remoteProvider ?? this.remoteProvider,
+      remoteApiType: remoteApiType ?? this.remoteApiType,
       remoteAccountId: remoteAccountId ?? this.remoteAccountId,
       remoteBaseUrl: remoteBaseUrl ?? this.remoteBaseUrl,
       remoteModel: remoteModel ?? this.remoteModel,
@@ -3084,6 +3124,9 @@ class ChatSettingsTableCompanion
     if (remoteProvider.present) {
       map['remote_provider'] = Variable<String>(remoteProvider.value);
     }
+    if (remoteApiType.present) {
+      map['remote_api_type'] = Variable<String>(remoteApiType.value);
+    }
     if (remoteAccountId.present) {
       map['remote_account_id'] = Variable<int>(remoteAccountId.value);
     }
@@ -3123,6 +3166,7 @@ class ChatSettingsTableCompanion
           ..write('topK: $topK, ')
           ..write('backend: $backend, ')
           ..write('remoteProvider: $remoteProvider, ')
+          ..write('remoteApiType: $remoteApiType, ')
           ..write('remoteAccountId: $remoteAccountId, ')
           ..write('remoteBaseUrl: $remoteBaseUrl, ')
           ..write('remoteModel: $remoteModel, ')
@@ -5506,6 +5550,7 @@ typedef $$ChatSettingsTableTableCreateCompanionBuilder
   Value<int> topK,
   Value<String> backend,
   Value<String> remoteProvider,
+  Value<String> remoteApiType,
   Value<int?> remoteAccountId,
   Value<String> remoteBaseUrl,
   Value<String> remoteModel,
@@ -5525,6 +5570,7 @@ typedef $$ChatSettingsTableTableUpdateCompanionBuilder
   Value<int> topK,
   Value<String> backend,
   Value<String> remoteProvider,
+  Value<String> remoteApiType,
   Value<int?> remoteAccountId,
   Value<String> remoteBaseUrl,
   Value<String> remoteModel,
@@ -5572,6 +5618,9 @@ class $$ChatSettingsTableTableFilterComposer
   ColumnFilters<String> get remoteProvider => $composableBuilder(
       column: $table.remoteProvider,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remoteApiType => $composableBuilder(
+      column: $table.remoteApiType, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get remoteAccountId => $composableBuilder(
       column: $table.remoteAccountId,
@@ -5636,6 +5685,10 @@ class $$ChatSettingsTableTableOrderingComposer
       column: $table.remoteProvider,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get remoteApiType => $composableBuilder(
+      column: $table.remoteApiType,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get remoteAccountId => $composableBuilder(
       column: $table.remoteAccountId,
       builder: (column) => ColumnOrderings(column));
@@ -5696,6 +5749,9 @@ class $$ChatSettingsTableTableAnnotationComposer
   GeneratedColumn<String> get remoteProvider => $composableBuilder(
       column: $table.remoteProvider, builder: (column) => column);
 
+  GeneratedColumn<String> get remoteApiType => $composableBuilder(
+      column: $table.remoteApiType, builder: (column) => column);
+
   GeneratedColumn<int> get remoteAccountId => $composableBuilder(
       column: $table.remoteAccountId, builder: (column) => column);
 
@@ -5753,6 +5809,7 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             Value<int> topK = const Value.absent(),
             Value<String> backend = const Value.absent(),
             Value<String> remoteProvider = const Value.absent(),
+            Value<String> remoteApiType = const Value.absent(),
             Value<int?> remoteAccountId = const Value.absent(),
             Value<String> remoteBaseUrl = const Value.absent(),
             Value<String> remoteModel = const Value.absent(),
@@ -5771,6 +5828,7 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             topK: topK,
             backend: backend,
             remoteProvider: remoteProvider,
+            remoteApiType: remoteApiType,
             remoteAccountId: remoteAccountId,
             remoteBaseUrl: remoteBaseUrl,
             remoteModel: remoteModel,
@@ -5789,6 +5847,7 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             Value<int> topK = const Value.absent(),
             Value<String> backend = const Value.absent(),
             Value<String> remoteProvider = const Value.absent(),
+            Value<String> remoteApiType = const Value.absent(),
             Value<int?> remoteAccountId = const Value.absent(),
             Value<String> remoteBaseUrl = const Value.absent(),
             Value<String> remoteModel = const Value.absent(),
@@ -5807,6 +5866,7 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             topK: topK,
             backend: backend,
             remoteProvider: remoteProvider,
+            remoteApiType: remoteApiType,
             remoteAccountId: remoteAccountId,
             remoteBaseUrl: remoteBaseUrl,
             remoteModel: remoteModel,

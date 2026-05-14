@@ -29,8 +29,10 @@ void main() {
       database = AppDatabase.forTesting();
       vault = _MemoryVaultRepository();
       baseUrl = 'http://localhost:11434/v1';
-      providerModelsKey = 'remote_provider_models_openAi_0_$baseUrl';
-      visibleModelsKey = 'remote_visible_models_openAi_0_$baseUrl';
+      providerModelsKey =
+          'remote_provider_models_openAi_openAiResponses_0_$baseUrl';
+      visibleModelsKey =
+          'remote_visible_models_openAi_openAiResponses_0_$baseUrl';
 
       await preferences.setStringList('remote_model_provider_profiles', [
         jsonEncode({
@@ -42,6 +44,7 @@ void main() {
           'useDummyToken': true,
           'isBuiltIn': false,
           'remoteProvider': 'openAi',
+          'remoteApiType': 'openAiResponses',
         }),
       ]);
       await preferences.setString(
@@ -354,8 +357,54 @@ void main() {
       expect(provider['useDummyToken'], isTrue);
       expect(provider['isBuiltIn'], isFalse);
       expect(provider['remoteProvider'], 'openAiCompatible');
+      expect(provider['remoteApiType'], 'openAiChatCompletions');
       expect(find.text('Ollama'), findsOneWidget);
       expect(find.text('Delete Ollama'), findsOneWidget);
+    });
+
+    testWidgets('saves selected Anthropic Messages API type', (tester) async {
+      await preferences.setStringList('remote_model_provider_profiles', []);
+      chatSettingsBloc = ChatSettingsBloc(
+        repository: ChatStorageRepository(database),
+        preferences: preferences,
+      );
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        vault: vault,
+        chatSettingsBloc: chatSettingsBloc!,
+        accountsBloc: accountsBloc,
+      );
+
+      await tester.tap(find.byTooltip('Add provider'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Anthropic').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Anthropic Messages'), findsAtLeastNWidgets(1));
+      expect(
+        find.text('https://api.anthropic.com/v1'),
+        findsAtLeastNWidgets(1),
+      );
+
+      await tester.tap(find.text('Use dummy token'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
+
+      final saved = preferences.getStringList('remote_model_provider_profiles');
+      expect(saved, hasLength(1));
+      final provider = jsonDecode(saved!.single) as Map<String, dynamic>;
+      expect(provider['name'], 'Anthropic');
+      expect(provider['baseUrl'], 'https://api.anthropic.com/v1');
+      expect(provider['defaultModel'], 'claude-sonnet-4-5');
+      expect(provider['remoteProvider'], 'anthropic');
+      expect(provider['remoteApiType'], 'anthropicMessages');
+      expect(provider['useDummyToken'], isTrue);
     });
 
     testWidgets('changes an existing provider preset', (tester) async {

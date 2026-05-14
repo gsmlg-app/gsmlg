@@ -27,6 +27,8 @@ dependencies:
   ip_db: any
   route53: any
   vultr_api: any
+  openai_compatible: any
+  anthropic_compatible: any
   dart_mcp: ^0.5.1
   stream_channel: ^2.1.4
 

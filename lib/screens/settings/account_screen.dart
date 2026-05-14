@@ -630,6 +630,7 @@ class AccountScreen extends StatelessWidget {
 IconData _providerIcon(ServiceProvider provider) {
   return switch (provider) {
     ServiceProvider.openai => Icons.auto_awesome,
+    ServiceProvider.anthropic => Icons.psychology,
     ServiceProvider.ollama => Icons.travel_explore,
     ServiceProvider.github => Icons.code,
     ServiceProvider.vultr => Icons.cloud,
@@ -642,6 +643,7 @@ IconData _providerIcon(ServiceProvider provider) {
 String _providerLabel(ServiceProvider provider) {
   return switch (provider) {
     ServiceProvider.openai => 'OpenAI Compatible',
+    ServiceProvider.anthropic => 'Anthropic',
     ServiceProvider.ollama => 'Ollama',
     ServiceProvider.github => 'GitHub',
     ServiceProvider.vultr => 'Vultr',
@@ -654,6 +656,7 @@ String _providerLabel(ServiceProvider provider) {
 String _apiKeyLabel(ServiceProvider provider) {
   return switch (provider) {
     ServiceProvider.openai => 'API Key',
+    ServiceProvider.anthropic => 'API Key',
     ServiceProvider.ollama => 'API Key',
     ServiceProvider.github => 'Personal Access Token',
     ServiceProvider.vultr => 'API Key',
@@ -666,6 +669,7 @@ String _apiKeyLabel(ServiceProvider provider) {
 String _apiKeyHint(ServiceProvider provider) {
   return switch (provider) {
     ServiceProvider.openai => 'sk-xxxxxxxxxxxxxxxxxxxx',
+    ServiceProvider.anthropic => 'sk-ant-xxxxxxxxxxxxxxxxxxxx',
     ServiceProvider.ollama => 'Enter your Ollama API key',
     ServiceProvider.github => 'ghp_xxxxxxxxxxxxxxxxxxxx',
     ServiceProvider.vultr => 'Enter your Vultr API key',

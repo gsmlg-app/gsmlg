@@ -32,6 +32,10 @@ class ChatSettingsTable extends Table {
   TextColumn get remoteProvider =>
       text().withDefault(const Constant('openAiCompatible'))();
 
+  /// Remote API protocol type.
+  TextColumn get remoteApiType =>
+      text().withDefault(const Constant('openAiChatCompletions'))();
+
   /// Service account ID containing the remote provider API key.
   IntColumn get remoteAccountId => integer().nullable()();
 

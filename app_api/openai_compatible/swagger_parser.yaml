@@ -1,0 +1,15 @@
+swagger_parser:
+  schema_path: ./openapi.yaml
+  output_directory: lib/src/generated
+  name: "openai_compatible"
+  language: dart
+  json_serializer: json_serializable
+  default_content_type: "application/json"
+  root_client: true
+  root_client_name: "OpenAiCompatibleApi"
+  export_file: true
+  put_in_folder: false
+  put_clients_in_folder: false
+  merge_clients: false
+  client_postfix: Client
+  use_freezed3: true

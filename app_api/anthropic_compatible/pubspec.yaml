@@ -1,0 +1,11 @@
+name: anthropic_compatible
+version: 0.1.0
+description: Request helpers for Anthropic-compatible Messages APIs
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.11.5 <4.0.0"
+
+dev_dependencies:
+  test: ^1.30.0

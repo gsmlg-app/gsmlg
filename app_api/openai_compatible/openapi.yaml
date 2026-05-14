@@ -1,0 +1,17 @@
+openapi: 3.1.0
+info:
+  title: OpenAI Compatible API
+  version: "0.1.0"
+paths:
+  /chat/completions:
+    post:
+      summary: Create a chat completion
+      responses:
+        "200":
+          description: Chat completion response
+  /responses:
+    post:
+      summary: Create a response
+      responses:
+        "200":
+          description: Response object

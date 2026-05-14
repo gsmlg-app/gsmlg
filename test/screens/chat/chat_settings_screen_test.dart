@@ -50,6 +50,7 @@ void main() {
           'defaultModel': 'MiniMax-M2.7',
           'useDummyToken': true,
           'remoteProvider': RemoteLlmProvider.openAiCompatible.name,
+          'remoteApiType': RemoteLlmApiType.openAiChatCompletions.name,
         }),
       ]);
       await preferences.setString(
@@ -57,7 +58,8 @@ void main() {
         'MiniMax-M2.7',
       );
       await preferences.setStringList(
-        'remote_provider_models_openAiCompatible_0_$baseUrl',
+        'remote_provider_models_openAiCompatible_openAiChatCompletions_0_'
+        '$baseUrl',
         ['MiniMax-M2.7'],
       );
 
@@ -103,6 +105,10 @@ void main() {
       expect(
         chatSettingsBloc.state.config.remoteProvider,
         RemoteLlmProvider.openAiCompatible,
+      );
+      expect(
+        chatSettingsBloc.state.config.remoteApiType,
+        RemoteLlmApiType.openAiChatCompletions,
       );
       expect(chatSettingsBloc.state.config.remoteBaseUrl, baseUrl);
       expect(chatSettingsBloc.state.config.remoteModel, 'MiniMax-M2.7');
