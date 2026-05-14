@@ -450,6 +450,16 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
     debugPrint('[GemmaModelBloc] _onListInstalled');
     final installed = await _repository.listInstalledModels();
     debugPrint('[GemmaModelBloc] Listed installed models: $installed');
+    final selectedModelId = state.selectedModelId;
+    if (selectedModelId != null &&
+        !_installedModelsContain(installed, selectedModelId)) {
+      await _preferences.remove(_selectedModelKey);
+      emit(state.copyWith(
+        installedModels: installed,
+        clearSelectedModel: true,
+      ));
+      return;
+    }
     emit(state.copyWith(installedModels: installed));
   }
 
@@ -739,6 +749,18 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
 
   String? _localInferenceBlockReason(GemmaModelInfo? modelInfo) {
     return modelInfo?.localInferenceBlockReason;
+  }
+
+  bool _installedModelsContain(List<String> installedIds, String modelId) {
+    final normalizedModelId = modelId.trim();
+    if (normalizedModelId.isEmpty) return false;
+    return installedIds.any((installedId) {
+      final normalizedInstalledId = installedId.trim();
+      if (normalizedInstalledId.isEmpty) return false;
+      return normalizedInstalledId == normalizedModelId ||
+          normalizedInstalledId.contains(normalizedModelId) ||
+          normalizedModelId.contains(normalizedInstalledId);
+    });
   }
 
   GemmaModelInfo? _findModelInfoByInstalledId(String installedId) {

@@ -164,21 +164,36 @@ void main() {
       expect(bloc.state.status, GemmaModelStatus.installed);
     });
 
-    test('refuses to select a large-memory model before activating it',
+    test('removes a selected local model that is no longer installed',
         () async {
+      await bloc.close();
+      await preferences.setString('gemma_selected_model_id', _e4bModelId);
+      repository = _FakeGemmaRepository()
+        ..installedModelsAfterImport = const [_e2bModelId];
+      bloc = GemmaModelBloc(repository: repository, preferences: preferences);
+
+      bloc.add(const GemmaModelListInstalled());
+      await _flushBloc();
+
+      expect(preferences.getString('gemma_selected_model_id'), isNull);
+      expect(bloc.state.selectedModelId, isNull);
+      expect(bloc.state.installedModels, [_e2bModelId]);
+    });
+
+    test('selects Gemma 4 E4B without a large-memory block', () async {
       bloc.add(const GemmaModelSelect(modelId: _e4bModelId));
       await _flushBloc();
 
-      expect(repository.activatedModels, isEmpty);
-      expect(repository.unloadCount, 0);
-      expect(repository.loadCount, 0);
-      expect(preferences.getString('gemma_selected_model_id'), isNull);
-      expect(bloc.state.selectedModelId, isNull);
-      expect(bloc.state.status, GemmaModelStatus.error);
-      expect(bloc.state.errorMessage, contains('large-memory model'));
+      expect(repository.activatedModels, [_e4bModelId]);
+      expect(repository.unloadCount, 1);
+      expect(repository.loadCount, 1);
+      expect(preferences.getString('gemma_selected_model_id'), _e4bModelId);
+      expect(bloc.state.selectedModelId, _e4bModelId);
+      expect(bloc.state.status, GemmaModelStatus.ready);
+      expect(bloc.state.errorMessage, isNull);
     });
 
-    test('skips a persisted large-memory model on startup', () async {
+    test('loads a persisted Gemma 4 E4B model on startup', () async {
       await bloc.close();
       await preferences.setString('gemma_selected_model_id', _e4bModelId);
       repository = _FakeGemmaRepository()
@@ -188,13 +203,13 @@ void main() {
       bloc.add(const GemmaModelInitialize());
       await _flushBloc();
 
-      expect(repository.activatedModels, isEmpty);
-      expect(repository.loadCount, 0);
-      expect(preferences.getString('gemma_selected_model_id'), isNull);
-      expect(bloc.state.selectedModelId, isNull);
+      expect(repository.activatedModels, [_e4bModelId]);
+      expect(repository.loadCount, 1);
+      expect(preferences.getString('gemma_selected_model_id'), _e4bModelId);
+      expect(bloc.state.selectedModelId, _e4bModelId);
       expect(bloc.state.installedModels, [_e4bModelId]);
-      expect(bloc.state.status, GemmaModelStatus.error);
-      expect(bloc.state.errorMessage, contains('large-memory model'));
+      expect(bloc.state.status, GemmaModelStatus.ready);
+      expect(bloc.state.errorMessage, isNull);
     });
   });
 }
@@ -219,9 +234,13 @@ class _FakeGemmaRepository extends GemmaRepository {
   final activatedModels = <String>[];
   int unloadCount = 0;
   int loadCount = 0;
+  GemmaModelStatus repoStatus = GemmaModelStatus.initial;
   List<String> installedModelsAfterImport = const [];
   final _progressCallbacks = <String, void Function(DownloadProgress)>{};
   final _installCompleters = <String, Queue<Completer<void>>>{};
+
+  @override
+  GemmaModelStatus get status => repoStatus;
 
   @override
   Future<void> installModel({
@@ -280,11 +299,15 @@ class _FakeGemmaRepository extends GemmaRepository {
   @override
   Future<void> activateModel(GemmaModelInfo info) async {
     activatedModels.add(info.id);
+    repoStatus = GemmaModelStatus.installed;
   }
 
   @override
   Future<void> unloadModel() async {
     unloadCount += 1;
+    if (repoStatus == GemmaModelStatus.ready) {
+      repoStatus = GemmaModelStatus.installed;
+    }
   }
 
   @override
@@ -296,6 +319,7 @@ class _FakeGemmaRepository extends GemmaRepository {
     bool supportsFunctionCalls = false,
   }) async {
     loadCount += 1;
+    repoStatus = GemmaModelStatus.ready;
   }
 
   void sendProgress(String url, DownloadProgress progress) {

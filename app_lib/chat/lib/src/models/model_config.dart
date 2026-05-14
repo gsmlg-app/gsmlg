@@ -134,13 +134,14 @@ class GemmaModelInfo {
         'llama.cpp execution, select Gemma 4 E2B or another smaller model.';
   }
 
-  /// Human-readable memory label for settings UI.
+  /// Human-readable runtime memory note for settings UI.
   String get memoryRequirementLabel {
     final minimum = minimumMemoryLabel;
+    const baseLabel = 'Uses system memory while loaded';
     if (minimum == null || minimum.isEmpty) {
-      return memoryRequirement.displayName;
+      return baseLabel;
     }
-    return '${memoryRequirement.displayName}: $minimum';
+    return '$baseLabel: $minimum';
   }
 
   /// Whether this model downloads from Hugging Face.
@@ -213,15 +214,13 @@ class GemmaModelInfo {
   static const _gemma4e4b = GemmaModelInfo(
     id: 'gemma-4-E4B-it',
     displayName: 'Gemma 4 E4B IT',
-    description: 'Large-memory local GGUF text model, Q4_K_M',
+    description: 'Local GGUF text model, Q4_K_M',
     sizeLabel: '5.34 GB',
     quantizationLabel: 'Q4_K_M',
     url:
         'https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf',
     needsAuth: false,
     supportsThinking: true,
-    memoryRequirement: GemmaModelMemoryRequirement.large,
-    minimumMemoryLabel: '24 GB+ RAM recommended',
   );
 
   // ---------------------------------------------------------------------------
