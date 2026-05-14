@@ -19,9 +19,6 @@ llama.LlamaCommand buildLlamaGenerateCommand({
     );
   }
 
-  // TODO(upstream): gsmlg-app/lib_llama_cpp#13 - Gemma4 structured tools
-  // enter lazy grammar trigger mode on Metal instead of producing usable tool
-  // calls. Keep this path explicit so the dependency fix can land here.
   return llama.LlamaGenerateMessagesCommand(
     messages: llamaMessagesFromChatMessages(messages),
     maxTokens: maxTokens,
