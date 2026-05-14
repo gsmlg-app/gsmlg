@@ -211,7 +211,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     _activeConfig = config;
     _streamSubscription?.cancel();
     var sawFunctionCall = false;
-    final tools = _toolExecutor.openAiToolDefinitions;
+    // WORKAROUND(upstream): gsmlg-app/lib_llama_cpp#20 - tool-aware local
+    // generation buffers plain text until parsing finishes, so local chat uses
+    // the raw prompt path to keep assistant text streaming.
+    final tools = config.inferenceMode == ChatInferenceMode.remote
+        ? _toolExecutor.openAiToolDefinitions
+        : const <Map<String, dynamic>>[];
     final stream = config.inferenceMode == ChatInferenceMode.remote
         ? _remoteRepository.generateResponse(
             messages,

@@ -105,6 +105,31 @@ void main() {
     await _flushBloc();
   });
 
+  test('omits local tools so llama.cpp text responses stream', () async {
+    final gemmaRepository = _FakeGemmaRepository();
+    final storageRepository = _FakeChatStorageRepository();
+    final bloc = ChatBloc(
+      gemmaRepository: gemmaRepository,
+      remoteRepository: _FakeRemoteLlmRepository(),
+      storageRepository: storageRepository,
+      toolExecutor: ToolExecutor(),
+    );
+    addTearDown(bloc.close);
+    addTearDown(gemmaRepository.dispose);
+
+    final streaming = _waitForState(
+      bloc,
+      (state) => state.status == ChatStatus.streaming,
+    );
+    bloc.add(const ChatSendMessage(content: 'stream locally'));
+    await streaming;
+
+    expect(gemmaRepository.lastTools, isEmpty);
+
+    await gemmaRepository.complete();
+    await _flushBloc();
+  });
+
   test('shows remote API stream errors as assistant messages', () async {
     final gemmaRepository = _FakeGemmaRepository();
     final remoteRepository = _FakeRemoteLlmRepository();
@@ -185,6 +210,7 @@ Future<ChatState> _waitForState(
 class _FakeGemmaRepository extends GemmaRepository {
   final _controller = StreamController<ChatGenerationChunk>.broadcast();
   ModelConfig? lastConfig;
+  List<Map<String, dynamic>> lastTools = const [];
 
   @override
   bool get isReady => true;
@@ -196,6 +222,7 @@ class _FakeGemmaRepository extends GemmaRepository {
     ModelConfig? config,
   }) {
     lastConfig = config;
+    lastTools = tools;
     return _controller.stream;
   }
 
