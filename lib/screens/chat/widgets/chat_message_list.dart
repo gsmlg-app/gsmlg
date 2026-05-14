@@ -6,6 +6,7 @@ import 'chat_message_bubble.dart';
 
 const chatMessageGap = 12.0;
 const chatMessageActionGap = 4.0;
+const _bottomFollowTolerance = 24.0;
 
 class ChatMessageList extends StatefulWidget {
   const ChatMessageList({
@@ -33,11 +34,17 @@ class _ChatMessageListState extends State<ChatMessageList> {
   @override
   void didUpdateWidget(ChatMessageList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Auto-scroll to bottom when new messages arrive
-    if (widget.messages.length != oldWidget.messages.length ||
-        widget.isStreaming) {
+    final messagesChanged = widget.messages.length != oldWidget.messages.length;
+    final shouldFollowStreaming = widget.isStreaming && _isNearBottom();
+    if ((messagesChanged && !widget.isStreaming) || shouldFollowStreaming) {
       _scrollToBottom();
     }
+  }
+
+  bool _isNearBottom() {
+    if (!_scrollController.hasClients) return true;
+    final position = _scrollController.position;
+    return position.maxScrollExtent - position.pixels <= _bottomFollowTolerance;
   }
 
   void _scrollToBottom() {
@@ -153,46 +160,71 @@ class _ChatMessageListState extends State<ChatMessageList> {
     BuildContext context,
     UserMessage message,
   ) async {
-    final controller = TextEditingController(text: message.content);
     final editedContent = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Edit Message'),
-          content: SizedBox(
-            width: 420,
-            child: TextField(
-              controller: controller,
-              minLines: 3,
-              maxLines: 8,
-              autofocus: true,
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final content = controller.text.trim();
-                if (content.isNotEmpty) {
-                  Navigator.pop(dialogContext, content);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => _EditMessageDialog(initialContent: message.content),
     );
-    controller.dispose();
 
     if (editedContent == null || editedContent == message.content.trim()) {
       return;
     }
     widget.onEditUserMessage?.call(message, editedContent);
+  }
+}
+
+class _EditMessageDialog extends StatefulWidget {
+  const _EditMessageDialog({required this.initialContent});
+
+  final String initialContent;
+
+  @override
+  State<_EditMessageDialog> createState() => _EditMessageDialogState();
+}
+
+class _EditMessageDialogState extends State<_EditMessageDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialContent);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final content = _controller.text.trim();
+    if (content.isNotEmpty) {
+      Navigator.pop(context, content);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Message'),
+      content: SizedBox(
+        width: 420,
+        child: TextField(
+          controller: _controller,
+          minLines: 3,
+          maxLines: 8,
+          autofocus: true,
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _save, child: const Text('Save')),
+      ],
+    );
   }
 }
 

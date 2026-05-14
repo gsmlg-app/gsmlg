@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gsmlg/screens/chat/widgets/chat_message_list.dart';
 
 void main() {
+  final timestamp = DateTime(2026);
+
   testWidgets('renders a gap between visible chat messages', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -196,4 +198,120 @@ void main() {
 
     expect(find.text('12.0 t/s'), findsOneWidget);
   });
+
+  testWidgets('does not follow streaming output after the user scrolls up', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _chatMessageListApp(
+        isStreaming: true,
+        messages: _streamingMessages(
+          timestamp: timestamp,
+          assistantContent: 'Initial streaming response.',
+        ),
+      ),
+    );
+
+    final position = _chatMessageListPosition(tester);
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+    position.jumpTo(position.maxScrollExtent - 160);
+    await tester.pump();
+
+    final scrolledUpOffset = position.pixels;
+
+    await tester.pumpWidget(
+      _chatMessageListApp(
+        isStreaming: true,
+        messages: _streamingMessages(
+          timestamp: timestamp,
+          assistantContent:
+              'Initial streaming response.\n\n${List.filled(8, 'New generated text.').join('\n')}',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(position.pixels, scrolledUpOffset);
+    expect(position.pixels, lessThan(position.maxScrollExtent));
+  });
+
+  testWidgets('follows streaming output after the user scrolls back to bottom', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _chatMessageListApp(
+        isStreaming: true,
+        messages: _streamingMessages(
+          timestamp: timestamp,
+          assistantContent: 'Initial streaming response.',
+        ),
+      ),
+    );
+
+    final position = _chatMessageListPosition(tester);
+    position.jumpTo(position.maxScrollExtent);
+    await tester.pump();
+
+    await tester.pumpWidget(
+      _chatMessageListApp(
+        isStreaming: true,
+        messages: _streamingMessages(
+          timestamp: timestamp,
+          assistantContent:
+              'Initial streaming response.\n\n${List.filled(8, 'New generated text.').join('\n')}',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(position.pixels, position.maxScrollExtent);
+  });
+}
+
+Widget _chatMessageListApp({
+  required List<Message> messages,
+  required bool isStreaming,
+}) {
+  return MaterialApp(
+    home: Scaffold(
+      body: SizedBox(
+        height: 420,
+        child: ChatMessageList(messages: messages, isStreaming: isStreaming),
+      ),
+    ),
+  );
+}
+
+List<Message> _streamingMessages({
+  required DateTime timestamp,
+  required String assistantContent,
+}) {
+  return [
+    for (var index = 0; index < 16; index++)
+      UserMessage(
+        id: 'user-$index',
+        content: 'Earlier message $index\nwith enough text to take space.',
+        conversationId: 'conversation',
+        timestamp: timestamp,
+      ),
+    AssistantMessage(
+      id: 'assistant-streaming',
+      content: assistantContent,
+      conversationId: 'conversation',
+      timestamp: timestamp,
+      isStreaming: true,
+    ),
+  ];
+}
+
+ScrollPosition _chatMessageListPosition(WidgetTester tester) {
+  final states = tester.stateList<ScrollableState>(
+    find.byWidgetPredicate(
+      (widget) => widget is Scrollable && widget.controller != null,
+    ),
+  );
+  return states
+      .singleWhere((state) => state.position.maxScrollExtent > 0)
+      .position;
 }
