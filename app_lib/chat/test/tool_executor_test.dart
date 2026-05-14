@@ -60,7 +60,7 @@ void main() {
               </html>
             ''',
             headers: {
-              'content-type': ['text/html; charset=utf-8']
+              'content-type': ['text/html; charset=utf-8'],
             },
           ),
         }),
@@ -123,7 +123,7 @@ void main() {
           'https://example.com/long': _HttpResponse(
             body: 'a' * 1200,
             headers: {
-              'content-type': ['text/plain']
+              'content-type': ['text/plain'],
             },
           ),
         }),
@@ -155,10 +155,7 @@ void main() {
       expect(webSearch['parameters'], {
         'type': 'object',
         'properties': {
-          'query': {
-            'type': 'string',
-            'description': 'The web search query',
-          },
+          'query': {'type': 'string', 'description': 'The web search query'},
           'max_results': {
             'type': 'integer',
             'description':
@@ -173,13 +170,14 @@ void main() {
       final database = AppDatabase.forTesting();
       final vault = _MemoryVaultRepository();
       addTearDown(database.close);
-      final accountId =
-          await database.into(database.serviceAccountTable).insert(
-                ServiceAccountTableCompanion.insert(
-                  provider: ServiceProvider.values.byName('ollama'),
-                  name: 'Ollama',
-                ),
-              );
+      final accountId = await database
+          .into(database.serviceAccountTable)
+          .insert(
+            ServiceAccountTableCompanion.insert(
+              provider: ServiceProvider.values.byName('ollama'),
+              name: 'Ollama',
+            ),
+          );
       await vault.write(key: 'service_account_$accountId', value: 'ollama-key');
       final requests = <_HttpRequest>[];
       final executor = ToolExecutor(
@@ -493,10 +491,6 @@ class _FakeDartMcpToolClient extends DartMcpToolClient {
     required String name,
     required Map<String, dynamic> arguments,
   }) async {
-    return {
-      'url': config.url,
-      'tool': name,
-      'argumentsPayload': arguments,
-    };
+    return {'url': config.url, 'tool': name, 'argumentsPayload': arguments};
   }
 }
