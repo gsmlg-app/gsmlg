@@ -4,7 +4,9 @@ import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/add_host_dialog.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/cert_mismatch_dialog.dart';
@@ -27,6 +29,7 @@ class MonitorScreen extends StatefulWidget {
 class _MonitorScreenState extends State<MonitorScreen> {
   String? _selectedHostId;
   bool _isScanning = false;
+  bool _isPinned = false;
 
   @override
   void initState() {
@@ -34,6 +37,28 @@ class _MonitorScreenState extends State<MonitorScreen> {
     // Auto-trigger mDNS discovery on screen open
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startDiscovery();
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_isPinned) {
+      WakelockPlus.disable();
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
+    super.dispose();
+  }
+
+  void _togglePin() {
+    setState(() {
+      _isPinned = !_isPinned;
+      if (_isPinned) {
+        WakelockPlus.enable();
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      } else {
+        WakelockPlus.disable();
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      }
     });
   }
 
@@ -251,6 +276,20 @@ class _MonitorScreenState extends State<MonitorScreen> {
             tooltip: 'Back to host list',
             onPressed: () => setState(() => _selectedHostId = null),
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Ping agent',
+              onPressed: () => context.read<MonitorBloc>().add(
+                    MonitorPingHost(hostId: host.id),
+                  ),
+            ),
+            IconButton(
+              icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
+              tooltip: _isPinned ? 'Unpin' : 'Pin fullscreen',
+              onPressed: _togglePin,
+            ),
+          ],
         ),
         Expanded(child: _buildMetricsContent(context, host)),
       ],
@@ -260,7 +299,23 @@ class _MonitorScreenState extends State<MonitorScreen> {
   Widget _buildMetricsDetail(BuildContext context, MonitorHost host) {
     return Column(
       children: [
-        DmAppBar(title: Text(host.displayName)),
+        DmAppBar(
+          title: Text(host.displayName),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Ping agent',
+              onPressed: () => context.read<MonitorBloc>().add(
+                    MonitorPingHost(hostId: host.id),
+                  ),
+            ),
+            IconButton(
+              icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
+              tooltip: _isPinned ? 'Unpin' : 'Pin fullscreen',
+              onPressed: _togglePin,
+            ),
+          ],
+        ),
         Expanded(child: _buildMetricsContent(context, host)),
       ],
     );

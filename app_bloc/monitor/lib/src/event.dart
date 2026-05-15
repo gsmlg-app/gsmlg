@@ -46,6 +46,11 @@ final class MonitorSetInterval extends MonitorEvent {
   final int seconds;
 }
 
+final class MonitorPingHost extends MonitorEvent {
+  const MonitorPingHost({required this.hostId});
+  final String hostId;
+}
+
 // Internal events
 final class _MonitorMetricsReceived extends MonitorEvent {
   const _MonitorMetricsReceived({required this.hostId, required this.metrics});

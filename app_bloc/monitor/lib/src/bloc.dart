@@ -31,6 +31,7 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     on<_MonitorHostDiscovered>(_onHostDiscovered);
     on<_MonitorCertificateReceived>(_onCertificateReceived);
     on<MonitorSetInterval>(_onSetInterval);
+    on<MonitorPingHost>(_onPingHost);
   }
 
   final MonitorRepository _repository;
@@ -282,10 +283,12 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     // Update history ring buffers
     var cpuHistory = host.cpuHistory;
     var memoryHistory = host.memoryHistory;
-    var rxHistory = Map<String, RingBuffer<double>>.from(host.rxHistory);
-    var txHistory = Map<String, RingBuffer<double>>.from(host.txHistory);
-    var readHistory = Map<String, RingBuffer<double>>.from(host.readHistory);
-    var writeHistory = Map<String, RingBuffer<double>>.from(host.writeHistory);
+    
+    // Use current interfaces/disks to prune history and avoid memory growth
+    final rxHistory = <String, RingBuffer<double>>{};
+    final txHistory = <String, RingBuffer<double>>{};
+    final readHistory = <String, RingBuffer<double>>{};
+    final writeHistory = <String, RingBuffer<double>>{};
 
     if (m.cpu != null) {
       cpuHistory = cpuHistory.add(m.cpu!.usagePercent);
@@ -293,25 +296,21 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     if (m.memory != null) {
       memoryHistory = memoryHistory.add(m.memory!.usagePercent);
     }
+
     for (final net in m.networks) {
-      rxHistory[net.interface_] =
-          (rxHistory[net.interface_] ?? RingBuffer<double>()).add(
-            net.rxBytesPerSec.toDouble(),
-          );
-      txHistory[net.interface_] =
-          (txHistory[net.interface_] ?? RingBuffer<double>()).add(
-            net.txBytesPerSec.toDouble(),
-          );
+      final iface = net.interface_;
+      rxHistory[iface] = (host.rxHistory[iface] ?? RingBuffer<double>())
+          .add(net.rxBytesPerSec.toDouble());
+      txHistory[iface] = (host.txHistory[iface] ?? RingBuffer<double>())
+          .add(net.txBytesPerSec.toDouble());
     }
+
     for (final disk in m.disks) {
-      readHistory[disk.device] =
-          (readHistory[disk.device] ?? RingBuffer<double>()).add(
-            disk.readBytesPerSec.toDouble(),
-          );
-      writeHistory[disk.device] =
-          (writeHistory[disk.device] ?? RingBuffer<double>()).add(
-            disk.writeBytesPerSec.toDouble(),
-          );
+      final dev = disk.device;
+      readHistory[dev] = (host.readHistory[dev] ?? RingBuffer<double>())
+          .add(disk.readBytesPerSec.toDouble());
+      writeHistory[dev] = (host.writeHistory[dev] ?? RingBuffer<double>())
+          .add(disk.writeBytesPerSec.toDouble());
     }
 
     hosts[event.hostId] = host.copyWith(
@@ -360,6 +359,10 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
       hosts[event.hostId] = host.copyWith(interval: event.seconds);
       emit(MonitorLoaded(hosts: hosts));
     }
+  }
+
+  void _onPingHost(MonitorPingHost event, Emitter<MonitorState> emit) {
+    _repository.sendPing(event.hostId);
   }
 
   /// Returns true if [version] is older than [minVersion] using semver comparison.
