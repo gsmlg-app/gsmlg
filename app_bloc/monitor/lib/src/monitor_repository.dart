@@ -139,9 +139,7 @@ class MonitorRepository {
         WebSocketChannel channel;
 
         if (useTls) {
-          // Create HttpClient that accepts self-signed certs
           String? receivedFingerprint;
-
           final httpClient = HttpClient()
             ..badCertificateCallback =
                 (X509Certificate cert, String host, int port) {
@@ -156,52 +154,61 @@ class MonitorRepository {
                   return receivedFingerprint == pinnedFingerprint;
                 };
 
-          final ws = await WebSocket.connect(
-            uri.toString(),
-            customClient: httpClient,
-          );
-          channel = IOWebSocketChannel(ws);
+          try {
+            final ws = await WebSocket.connect(
+              uri.toString(),
+              customClient: httpClient,
+            ).timeout(const Duration(seconds: 10));
+            channel = IOWebSocketChannel(ws);
 
-          if (receivedFingerprint != null) {
-            if (pinnedFingerprint == null) {
-              // New host -- emit certificate for user verification
-              yield MonitorCertificateReceived(receivedFingerprint!);
-            } else if (receivedFingerprint != pinnedFingerprint) {
-              // Mismatch -- this shouldn't happen since badCertificateCallback
-              // would have rejected, but just in case
-              yield const MonitorConnectionStatusChanged(
-                ConnectionStatus.error,
-                'Certificate fingerprint mismatch',
-              );
-              return;
+            if (receivedFingerprint != null) {
+              if (pinnedFingerprint == null) {
+                // New host -- emit certificate for user verification
+                yield MonitorCertificateReceived(receivedFingerprint!);
+              } else if (receivedFingerprint != pinnedFingerprint) {
+                // Mismatch
+                yield const MonitorConnectionStatusChanged(
+                  ConnectionStatus.error,
+                  'Certificate fingerprint mismatch',
+                );
+                return;
+              }
             }
+          } finally {
+            // HttpClient is only needed for the initial handshake/upgrade
+            httpClient.close();
           }
         } else {
           channel = WebSocketChannel.connect(uri);
-          await channel.ready;
+          await channel.ready.timeout(const Duration(seconds: 10));
         }
 
-        _channels[hostId] = channel;
-        yield const MonitorConnectionStatusChanged(ConnectionStatus.connected);
+        try {
+          _channels[hostId] = channel;
+          yield const MonitorConnectionStatusChanged(
+            ConnectionStatus.connected,
+          );
 
-        await for (final data in channel.stream) {
-          try {
-            final json = jsonDecode(data as String) as Map<String, dynamic>;
-            final message = MonitorMessage.fromJson(json);
-            yield MonitorMessageReceived(message);
-          } catch (_) {
-            // Skip malformed messages
+          await for (final data in channel.stream) {
+            try {
+              final json = jsonDecode(data as String) as Map<String, dynamic>;
+              final message = MonitorMessage.fromJson(json);
+              yield MonitorMessageReceived(message);
+            } catch (_) {
+              // Skip malformed messages
+            }
           }
+        } finally {
+          _channels.remove(hostId);
+          await channel.sink.close();
         }
 
         // Stream ended normally = disconnected, reset delay for next retry
         delay = const Duration(seconds: 1);
-        _channels.remove(hostId);
         yield const MonitorConnectionStatusChanged(
           ConnectionStatus.disconnected,
         );
       } catch (e) {
-        _channels.remove(hostId);
         yield MonitorConnectionStatusChanged(ConnectionStatus.error, e);
       }
 

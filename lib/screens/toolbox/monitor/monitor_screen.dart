@@ -340,16 +340,12 @@ class _MonitorScreenState extends State<MonitorScreen> {
 
     return MetricsDashboard(
       host: host,
-      cpuHistory: host.cpuHistory.items,
-      memoryHistory: host.memoryHistory.items,
-      rxHistory: {for (final e in host.rxHistory.entries) e.key: e.value.items},
-      txHistory: {for (final e in host.txHistory.entries) e.key: e.value.items},
-      readHistory: {
-        for (final e in host.readHistory.entries) e.key: e.value.items,
-      },
-      writeHistory: {
-        for (final e in host.writeHistory.entries) e.key: e.value.items,
-      },
+      cpuHistory: host.cpuHistory,
+      memoryHistory: host.memoryHistory,
+      rxHistory: host.rxHistory,
+      txHistory: host.txHistory,
+      readHistory: host.readHistory,
+      writeHistory: host.writeHistory,
     );
   }
 

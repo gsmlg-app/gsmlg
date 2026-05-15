@@ -13,8 +13,8 @@ class NetworkChart extends StatelessWidget {
   });
 
   final List<NetworkMetrics> networks;
-  final Map<String, List<double>> rxHistory;
-  final Map<String, List<double>> txHistory;
+  final Map<String, RingBuffer<double>> rxHistory;
+  final Map<String, RingBuffer<double>> txHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -52,16 +52,16 @@ class NetworkChart extends StatelessWidget {
               ),
               if (rxHistory[net.interface_] != null)
                 SparklineChart(
-                  values: rxHistory[net.interface_]!,
-                  maxValue: _maxRate(rxHistory[net.interface_]!),
+                  values: rxHistory[net.interface_]!.items,
+                  maxValue: _maxRate(rxHistory[net.interface_]!.items),
                   color: dmColors.info,
                   label: 'RX',
                   height: 40,
                 ),
               if (txHistory[net.interface_] != null)
                 SparklineChart(
-                  values: txHistory[net.interface_]!,
-                  maxValue: _maxRate(txHistory[net.interface_]!),
+                  values: txHistory[net.interface_]!.items,
+                  maxValue: _maxRate(txHistory[net.interface_]!.items),
                   color: colorScheme.tertiary,
                   label: 'TX',
                   height: 40,

@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 
 @immutable
-class RingBuffer<T> extends Equatable {
+class RingBuffer<T> {
   RingBuffer({this.capacity = 60}) : _items = ListQueue<T>(capacity);
 
   final int capacity;
@@ -26,7 +26,4 @@ class RingBuffer<T> extends Equatable {
     buf._items.addLast(item);
     return buf;
   }
-
-  @override
-  List<Object?> get props => [capacity, _items.toList()];
 }

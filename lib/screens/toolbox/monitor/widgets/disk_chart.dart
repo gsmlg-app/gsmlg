@@ -13,8 +13,8 @@ class DiskChart extends StatelessWidget {
   });
 
   final List<DiskMetrics> disks;
-  final Map<String, List<double>> readHistory;
-  final Map<String, List<double>> writeHistory;
+  final Map<String, RingBuffer<double>> readHistory;
+  final Map<String, RingBuffer<double>> writeHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -76,16 +76,16 @@ class DiskChart extends StatelessWidget {
               ),
               if (readHistory[disk.device] != null)
                 SparklineChart(
-                  values: readHistory[disk.device]!,
-                  maxValue: _maxRate(readHistory[disk.device]!),
+                  values: readHistory[disk.device]!.items,
+                  maxValue: _maxRate(readHistory[disk.device]!.items),
                   color: colorScheme.tertiary,
                   label: 'Read',
                   height: 40,
                 ),
               if (writeHistory[disk.device] != null)
                 SparklineChart(
-                  values: writeHistory[disk.device]!,
-                  maxValue: _maxRate(writeHistory[disk.device]!),
+                  values: writeHistory[disk.device]!.items,
+                  maxValue: _maxRate(writeHistory[disk.device]!.items),
                   color: colorScheme.secondary,
                   label: 'Write',
                   height: 40,
