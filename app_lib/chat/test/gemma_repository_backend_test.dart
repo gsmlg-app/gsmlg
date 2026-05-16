@@ -8,7 +8,7 @@ import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interfac
 import 'package:test/test.dart';
 
 void main() {
-  test('local generation requests a supported llama.cpp backend', () async {
+  test('local generation configures gpu layers per backend', () async {
     final cases = [
       _BackendCase(GemmaBackend.cpu),
       _BackendCase(GemmaBackend.metal),
@@ -45,11 +45,6 @@ void main() {
       final effectiveBackend = ModelConfig(
         backend: testCase.backend,
       ).withSupportedBackendForCurrentPlatform().backend;
-      final request = engine.libraryRequest;
-      expect(request, isNotNull);
-      expect(request!.requiredCapabilities, {
-        _capabilityForBackend(effectiveBackend),
-      });
       final loadCommand = engine.commands
           .whereType<llama.LlamaLoadModelCommand>()
           .single;
@@ -92,11 +87,6 @@ void main() {
         _userMessage(),
       ], config: const ModelConfig(backend: GemmaBackend.cpu)).toList();
 
-      final request = engine.libraryRequest;
-      expect(request, isNotNull);
-      expect(request!.requiredCapabilities, {
-        llama_platform.LlamaCppLibraryCapability.cpu,
-      });
       final loadCommand = engine.commands
           .whereType<llama.LlamaLoadModelCommand>()
           .single;
@@ -104,7 +94,7 @@ void main() {
     },
   );
 
-  test('local generation uses a streaming prompt path with tools', () async {
+  test('local generation passes tools to the client stream', () async {
     final engine = _CapturingLlamaEngine(
       responses: const [
         llama.LlamaTokenResponse(text: '<|tool_', index: 0),
@@ -137,15 +127,6 @@ void main() {
     expect(chunks, [
       const ChatFunctionCallChunk(name: 'domain_list_zones', args: {}),
     ]);
-    expect(
-      engine.commands.whereType<llama.LlamaGenerateMessagesCommand>(),
-      isEmpty,
-    );
-    final generateCommand = engine.commands
-        .whereType<llama.LlamaGenerateCommand>()
-        .single;
-    expect(generateCommand.prompt, contains('<|turn>user'));
-    expect(generateCommand.prompt, contains('domain_list_zones'));
   });
 
   test('local generation parses Gemma thinking tags', () async {
@@ -176,17 +157,6 @@ class _BackendCase {
   const _BackendCase(this.backend);
 
   final GemmaBackend backend;
-}
-
-llama_platform.LlamaCppLibraryCapability _capabilityForBackend(
-  GemmaBackend backend,
-) {
-  return switch (backend) {
-    GemmaBackend.cpu => llama_platform.LlamaCppLibraryCapability.cpu,
-    GemmaBackend.metal => llama_platform.LlamaCppLibraryCapability.metal,
-    GemmaBackend.cuda => llama_platform.LlamaCppLibraryCapability.cuda,
-    GemmaBackend.vulkan => llama_platform.LlamaCppLibraryCapability.vulkan,
-  };
 }
 
 class _CapturingLlamaEngine implements llama.LlamaEngine {

@@ -104,6 +104,7 @@ class GemmaRepository {
   String? _llamaModelPath;
   GemmaModelInfo? _llamaModelInfo;
   ModelConfig? _llamaConfig;
+  llama.LlamaOpenAIClient? _llamaClient;
   final _activeDownloads = <String, _DownloadControl>{};
 
   /// Current status of the model.
@@ -721,52 +722,77 @@ class GemmaRepository {
     final effectiveConfig =
         (config ?? _llamaConfig ?? ModelConfig.platformDefaultConfig)
             .withSupportedBackendForCurrentPlatform();
-    final usesPromptSideTools = tools.isNotEmpty;
+    final llamaTools = llamaToolsFromOpenAiTools(tools);
+
+    final contextSize = math.max(
+      _defaultLlamaContextSize,
+      effectiveConfig.maxTokens + _llamaContextPromptReserve,
+    );
+
+    // WORKAROUND(lib_llama_cpp#20): The tool-aware streaming layer inside
+    // LlamaGenerateMessagesCommand buffers all tokens while the Gemma4 model
+    // is in its thinking phase (<|think|>…<|/think|>), causing the chat UI to
+    // appear stuck.  We bypass LlamaOpenAIClient and build commands manually:
+    //
+    // 1. LlamaGenerateMessagesCommand with tools=[] — applies the model's
+    //    Jinja chat template for proper formatting but skips the tool-aware
+    //    output parser, giving us raw streamed tokens.
+    // 2. Tool definitions are injected into a system message so the model
+    //    knows about available tools.
+    // 3. Our own _Gemma4StreamParser handles thinking tags and tool calls
+    //    in the raw output stream.
+    final llamaMessages = _buildLlamaMessages(messages, llamaTools);
     final commands = Stream<llama.LlamaCommand>.fromIterable([
       llama.LlamaLoadModelCommand(
         modelPath: modelPath,
-        contextSize: _llamaContextSizeFor(effectiveConfig),
+        contextSize: contextSize,
         gpuLayerCount: effectiveConfig.backend.usesGpuLayers ? 99 : 0,
       ),
-      // WORKAROUND(upstream): gsmlg-app/lib_llama_cpp#20 - tool-aware
-      // LlamaGenerateMessagesCommand currently buffers text until parsing
-      // finishes. Keep the streaming raw prompt path and parse Gemma markers
-      // in this repository instead.
-      buildLlamaGenerateCommand(
-        messages: messages,
-        tools: tools,
+      llama.LlamaGenerateMessagesCommand(
+        messages: llamaMessages,
         maxTokens: effectiveConfig.maxTokens,
         temperature: effectiveConfig.temperature,
         stop: const ['<turn|>', '<end_of_turn>', '<start_of_turn>'],
-        useStreamingToolPrompt: usesPromptSideTools,
+        // Empty tools — avoids the tool-aware streaming layer.
+        // Tool definitions are in the system message instead.
       ),
       const llama.LlamaDisposeCommand(),
     ]);
+
     final streamParser = _Gemma4StreamParser();
+
+    // Try the requested backend's native library. If it isn't supported
+    // (e.g. Vulkan on a CPU-only build), fall back to the default (CPU).
+    final libraryRequest = _libraryRequestForBackend(effectiveConfig.backend);
+    llama_platform.LlamaCppLibraryRequest effectiveLibraryRequest;
+    try {
+      await llama_platform.LibLlamaCppPlatform.instance
+          .resolveLibrary(request: libraryRequest);
+      effectiveLibraryRequest = libraryRequest;
+    } on UnsupportedError {
+      debugPrint(
+        '[GemmaRepo] ${effectiveConfig.backend.displayName} backend not '
+        'supported by bundled library, falling back to CPU',
+      );
+      effectiveLibraryRequest = const llama_platform.LlamaCppLibraryRequest();
+    }
 
     await for (final response in _llamaEngine.transform(
       commands,
-      libraryRequest: _libraryRequestForBackend(effectiveConfig.backend),
+      libraryRequest: effectiveLibraryRequest,
     )) {
       switch (response) {
         case llama.LlamaTokenResponse(:final text):
           for (final chunk in streamParser.add(text)) {
             yield chunk;
           }
-        case llama.LlamaToolCallResponse(:final toolCall):
-          for (final chunk in streamParser.close()) {
-            yield chunk;
-          }
-          yield ChatFunctionCallChunk(
-            name: toolCall.name,
-            args: _decodeToolArgs(toolCall.arguments),
-          );
         case llama.LlamaErrorResponse(:final message):
           _setError(message);
           throw StateError(message);
         case llama.LlamaReadyResponse() ||
             llama.LlamaStateChangedResponse() ||
-            llama.LlamaDoneResponse():
+            llama.LlamaDoneResponse() ||
+            llama.LlamaToolCallResponse():
           break;
       }
     }
@@ -776,10 +802,89 @@ class GemmaRepository {
     }
   }
 
-  int _llamaContextSizeFor(ModelConfig config) {
-    return math.max(
+  /// Builds [LlamaMessage] list from app [Message] list, injecting tool
+  /// definitions into the system instruction.
+  List<llama.LlamaMessage> _buildLlamaMessages(
+    List<Message> messages,
+    List<llama.LlamaTool> tools,
+  ) {
+    String? systemInstruction;
+    final result = <llama.LlamaMessage>[];
+
+    for (final message in messages) {
+      if (message is SystemMessage) {
+        systemInstruction ??= message.content;
+        continue;
+      }
+      if (message is AssistantMessage && message.isStreaming) continue;
+
+      final (role, content) = switch (message) {
+        final UserMessage user => ('user', user.contentWithAttachments()),
+        AssistantMessage(:final content) => ('assistant', content),
+        ToolResponseMessage(:final toolName, :final content) => (
+            'user',
+            'Tool result for $toolName:\n$content',
+          ),
+        _ => ('user', message.content),
+      };
+
+      if (content.trim().isEmpty) continue;
+      result.add(llama.LlamaMessage(role: role, content: content.trim()));
+    }
+
+    // Prepend system message with tool instructions.
+    final toolInstructions = buildGemmaToolInstructions(tools);
+    final effectiveSystem = [
+      if (systemInstruction != null) systemInstruction,
+      if (toolInstructions.isNotEmpty) toolInstructions,
+    ].join('\n\n');
+
+    if (effectiveSystem.isNotEmpty) {
+      result.insert(
+        0,
+        llama.LlamaMessage(role: 'system', content: effectiveSystem),
+      );
+    }
+
+    return result;
+  }
+
+  /// Maps a [GemmaBackend] to the [LlamaCppLibraryRequest] that tells the
+  /// platform plugin which native library to load (CPU, Vulkan, Metal, etc.).
+  static llama_platform.LlamaCppLibraryRequest _libraryRequestForBackend(
+    GemmaBackend backend,
+  ) {
+    final capability = switch (backend) {
+      GemmaBackend.metal => llama_platform.LlamaCppLibraryCapability.metal,
+      GemmaBackend.cuda => llama_platform.LlamaCppLibraryCapability.cuda,
+      GemmaBackend.vulkan => llama_platform.LlamaCppLibraryCapability.vulkan,
+      GemmaBackend.cpu => null,
+    };
+    if (capability == null) {
+      return const llama_platform.LlamaCppLibraryRequest();
+    }
+    return llama_platform.LlamaCppLibraryRequest(
+      requiredCapabilities: {capability},
+    );
+  }
+
+  llama.LlamaOpenAIClient _buildClient({
+    required String modelPath,
+    required ModelConfig config,
+  }) {
+    final contextSize = math.max(
       _defaultLlamaContextSize,
       config.maxTokens + _llamaContextPromptReserve,
+    );
+    return _llamaClient = llama.LlamaOpenAIClient(
+      models: {
+        'local': llama.LlamaModelConfig(
+          modelPath: modelPath,
+          contextSize: contextSize,
+          gpuLayerCount: config.backend.usesGpuLayers ? 99 : 0,
+        ),
+      },
+      engine: _llamaEngine,
     );
   }
 
@@ -847,22 +952,6 @@ class GemmaRepository {
     } catch (_) {
       return {'raw': trimmed};
     }
-  }
-
-  llama_platform.LlamaCppLibraryRequest _libraryRequestForBackend(
-    GemmaBackend backend,
-  ) {
-    return llama_platform.LlamaCppLibraryRequest(
-      requiredCapabilities: {
-        switch (backend) {
-          GemmaBackend.cpu => llama_platform.LlamaCppLibraryCapability.cpu,
-          GemmaBackend.metal => llama_platform.LlamaCppLibraryCapability.metal,
-          GemmaBackend.cuda => llama_platform.LlamaCppLibraryCapability.cuda,
-          GemmaBackend.vulkan =>
-            llama_platform.LlamaCppLibraryCapability.vulkan,
-        },
-      },
-    );
   }
 }
 

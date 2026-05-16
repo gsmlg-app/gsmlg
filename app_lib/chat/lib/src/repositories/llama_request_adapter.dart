@@ -50,7 +50,7 @@ String buildGemmaPrompt(
     }
   }
 
-  final toolInstructions = _buildGemmaToolInstructions(tools);
+  final toolInstructions = buildGemmaToolInstructions(tools);
   final prompt = StringBuffer();
   for (var i = 0; i < chatMessages.length; i += 1) {
     final message = chatMessages[i];
@@ -86,7 +86,7 @@ String buildGemmaPrompt(
   return prompt.toString();
 }
 
-String _buildGemmaToolInstructions(List<llama.LlamaTool> tools) {
+String buildGemmaToolInstructions(List<llama.LlamaTool> tools) {
   if (tools.isEmpty) return '';
 
   final buffer = StringBuffer()
@@ -149,4 +149,43 @@ List<llama.LlamaTool> llamaToolsFromOpenAiTools(
     }
   }
   return result;
+}
+
+/// Converts app [Message] list to a [LlamaResponseInputItem] list suitable
+/// for [LlamaOpenAIClient.responses.stream].
+///
+/// Returns a tuple of (input items, system instruction).  The first
+/// [SystemMessage] is extracted into the `instructions` parameter instead of
+/// being included as a separate input item.
+(List<llama.LlamaResponseInputItem>, String?) llamaResponseInputFromMessages(
+  List<Message> messages,
+) {
+  String? systemInstruction;
+  final inputItems = <llama.LlamaResponseInputItem>[];
+
+  for (final message in messages) {
+    if (message is SystemMessage) {
+      systemInstruction ??= message.content;
+      continue;
+    }
+    if (message is AssistantMessage && message.isStreaming) continue;
+
+    final (role, content) = switch (message) {
+      final UserMessage user => ('user', user.contentWithAttachments()),
+      AssistantMessage(:final content) => ('assistant', content),
+      ToolResponseMessage(:final toolName, :final content) => (
+          'user',
+          'Tool result for $toolName:\n$content',
+        ),
+      _ => ('user', message.content),
+    };
+
+    if (content.trim().isEmpty) continue;
+    inputItems.add(llama.LlamaResponseInputItem(
+      role: role,
+      content: [llama.LlamaTextPart(content.trim())],
+    ));
+  }
+
+  return (inputItems, systemInstruction);
 }
