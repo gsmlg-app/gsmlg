@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:math' as math;
+import 'dart:ui' show DartPluginRegistrant;
 
 import 'package:flutter/foundation.dart';
 import 'package:lib_llama_cpp/lib_llama_cpp.dart' as llama;
@@ -724,11 +726,6 @@ class GemmaRepository {
             .withSupportedBackendForCurrentPlatform();
     final llamaTools = llamaToolsFromOpenAiTools(tools);
 
-    final contextSize = math.max(
-      _defaultLlamaContextSize,
-      effectiveConfig.maxTokens + _llamaContextPromptReserve,
-    );
-
     // WORKAROUND(lib_llama_cpp#20): The tool-aware streaming layer inside
     // LlamaGenerateMessagesCommand buffers all tokens while the Gemma4 model
     // is in its thinking phase (<|think|>…<|/think|>), causing the chat UI to
@@ -1033,6 +1030,29 @@ class GemmaRepository {
       return {'raw': trimmed};
     }
   }
+}
+
+/// Parameters passed to the llama inference isolate.
+class _LlamaIsolateParams {
+  _LlamaIsolateParams({
+    required this.sendPort,
+    required this.modelPath,
+    required this.contextSize,
+    required this.gpuLayerCount,
+    required this.messages,
+    required this.temperature,
+    required this.maxTokens,
+    required this.libraryRequest,
+  });
+
+  final SendPort sendPort;
+  final String modelPath;
+  final int contextSize;
+  final int gpuLayerCount;
+  final List<llama.LlamaMessage> messages;
+  final double temperature;
+  final int maxTokens;
+  final llama_platform.LlamaCppLibraryRequest libraryRequest;
 }
 
 class _Gemma4StreamParser {
