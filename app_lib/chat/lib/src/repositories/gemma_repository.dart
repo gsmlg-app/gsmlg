@@ -742,63 +742,143 @@ class GemmaRepository {
     // 3. Our own _Gemma4StreamParser handles thinking tags and tool calls
     //    in the raw output stream.
     final llamaMessages = _buildLlamaMessages(messages, llamaTools);
+    final libraryRequest = _libraryRequestForBackend(effectiveConfig.backend);
+
+    final contextSize = math.max(
+      _defaultLlamaContextSize,
+      effectiveConfig.maxTokens + _llamaContextPromptReserve,
+    );
+    final gpuLayerCount = effectiveConfig.backend.usesGpuLayers ? 99 : 0;
+
+    final controller = StreamController<ChatGenerationChunk>();
+    final receivePort = ReceivePort();
+
+    final params = _LlamaIsolateParams(
+      sendPort: receivePort.sendPort,
+      modelPath: modelPath,
+      contextSize: contextSize,
+      gpuLayerCount: gpuLayerCount,
+      messages: llamaMessages,
+      temperature: effectiveConfig.temperature,
+      maxTokens: effectiveConfig.maxTokens,
+      libraryRequest: libraryRequest,
+    );
+
+    // Spawn isolate for inference to prevent blocking the main thread.
+    // This allows us to detect and report native hangs without freezing the UI.
+    final isolate = await Isolate.spawn(_llamaIsolateEntryPoint, params);
+
+    final streamParser = _Gemma4StreamParser();
+    var hasReceivedFirstResponse = false;
+
+    // Timer to detect native hangs (e.g. Vulkan initialization freeze)
+    final hangTimer = Timer(const Duration(seconds: 45), () {
+      if (!hasReceivedFirstResponse) {
+        debugPrint('[GemmaRepo] Native hang detected (timeout after 45s)');
+        _setError('Model execution timed out. This likely indicates an upstream Vulkan driver issue.');
+        controller.addError(TimeoutException(
+          'The model failed to respond within 45 seconds. '
+          'This is a known issue with Vulkan on some Android devices. '
+          'Please report this to the lib_llama_cpp repository.',
+        ));
+        receivePort.close();
+        isolate.kill(priority: Isolate.immediate);
+        if (!controller.isClosed) controller.close();
+      }
+    });
+
+    receivePort.listen(
+      (response) {
+        hasReceivedFirstResponse = true;
+        hangTimer.cancel();
+
+        if (response == null) {
+          // EOF marker from isolate
+          for (final chunk in streamParser.close()) {
+            controller.add(chunk);
+          }
+          receivePort.close();
+          isolate.kill();
+          if (!controller.isClosed) controller.close();
+          return;
+        }
+
+        if (response is Exception || response is Error) {
+          debugPrint('[GemmaRepo] Isolate error: $response');
+          if (response is StateError) {
+            _setError(response.message);
+          }
+          controller.addError(response);
+          receivePort.close();
+          isolate.kill();
+          if (!controller.isClosed) controller.close();
+          return;
+        }
+
+        switch (response) {
+          case llama.LlamaTokenResponse(:final text):
+            for (final chunk in streamParser.add(text)) {
+              controller.add(chunk);
+            }
+          case llama.LlamaErrorResponse(:final message):
+            _setError(message);
+            controller.addError(StateError(message));
+            receivePort.close();
+            isolate.kill();
+            if (!controller.isClosed) controller.close();
+          case llama.LlamaReadyResponse() ||
+              llama.LlamaStateChangedResponse() ||
+              llama.LlamaDoneResponse() ||
+              llama.LlamaToolCallResponse():
+            break;
+        }
+      },
+      onError: (error) {
+        hangTimer.cancel();
+        controller.addError(error);
+        receivePort.close();
+        isolate.kill();
+        if (!controller.isClosed) controller.close();
+      },
+    );
+
+    yield* controller.stream;
+  }
+
+  static void _llamaIsolateEntryPoint(_LlamaIsolateParams params) async {
+    DartPluginRegistrant.ensureInitialized();
+    const llamaEngine = llama.LibLlamaCpp();
     final commands = Stream<llama.LlamaCommand>.fromIterable([
       llama.LlamaLoadModelCommand(
-        modelPath: modelPath,
-        contextSize: contextSize,
-        gpuLayerCount: effectiveConfig.backend.usesGpuLayers ? 99 : 0,
+        modelPath: params.modelPath,
+        contextSize: params.contextSize,
+        gpuLayerCount: params.gpuLayerCount,
       ),
       llama.LlamaGenerateMessagesCommand(
-        messages: llamaMessages,
-        maxTokens: effectiveConfig.maxTokens,
-        temperature: effectiveConfig.temperature,
+        messages: params.messages,
+        maxTokens: params.maxTokens,
+        temperature: params.temperature,
         stop: const ['<turn|>', '<end_of_turn>', '<start_of_turn>'],
-        // Empty tools — avoids the tool-aware streaming layer.
-        // Tool definitions are in the system message instead.
       ),
       const llama.LlamaDisposeCommand(),
     ]);
 
-    final streamParser = _Gemma4StreamParser();
-
-    // Try the requested backend's native library. If it isn't supported
-    // (e.g. Vulkan on a CPU-only build), fall back to the default (CPU).
-    final libraryRequest = _libraryRequestForBackend(effectiveConfig.backend);
-    llama_platform.LlamaCppLibraryRequest effectiveLibraryRequest;
     try {
+      // Must resolve library in the worker isolate too
       await llama_platform.LibLlamaCppPlatform.instance
-          .resolveLibrary(request: libraryRequest);
-      effectiveLibraryRequest = libraryRequest;
-    } on UnsupportedError {
-      debugPrint(
-        '[GemmaRepo] ${effectiveConfig.backend.displayName} backend not '
-        'supported by bundled library, falling back to CPU',
-      );
-      effectiveLibraryRequest = const llama_platform.LlamaCppLibraryRequest();
-    }
+          .resolveLibrary(request: params.libraryRequest);
 
-    await for (final response in _llamaEngine.transform(
-      commands,
-      libraryRequest: effectiveLibraryRequest,
-    )) {
-      switch (response) {
-        case llama.LlamaTokenResponse(:final text):
-          for (final chunk in streamParser.add(text)) {
-            yield chunk;
-          }
-        case llama.LlamaErrorResponse(:final message):
-          _setError(message);
-          throw StateError(message);
-        case llama.LlamaReadyResponse() ||
-            llama.LlamaStateChangedResponse() ||
-            llama.LlamaDoneResponse() ||
-            llama.LlamaToolCallResponse():
-          break;
+      await for (final response in llamaEngine.transform(
+        commands,
+        libraryRequest: params.libraryRequest,
+      )) {
+        params.sendPort.send(response);
       }
-    }
-
-    for (final chunk in streamParser.close()) {
-      yield chunk;
+    } catch (e, stack) {
+      debugPrint('[GemmaIsolate] ERROR: $e\n$stack');
+      params.sendPort.send(e);
+    } finally {
+      params.sendPort.send(null); // EOF marker
     }
   }
 
