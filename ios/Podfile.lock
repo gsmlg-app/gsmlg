@@ -46,7 +46,7 @@ PODS:
   - flutter_secure_storage_darwin (10.0.0):
     - Flutter
     - FlutterMacOS
-  - lib_llama_cpp_ios (0.6.2):
+  - lib_llama_cpp_ios (0.7.1):
     - Flutter
   - package_info_plus (0.4.5):
     - Flutter
@@ -130,7 +130,7 @@ SPEC CHECKSUMS:
   flutter_blue_plus_darwin: 20a08bfeaa0f7804d524858d3d8744bcc1b6dbc3
   flutter_keyboard_visibility: 4625131e43015dbbe759d9b20daaf77e0e3f6619
   flutter_secure_storage_darwin: acdb3f316ed05a3e68f856e0353b133eec373a23
-  lib_llama_cpp_ios: 9e4157a0448b5a53fb9e2dadf8ecd181b05beb83
+  lib_llama_cpp_ios: 2b5cd958eeaa31730a713f4884e3a447d9a2cec4
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
   record_ios: 412daca2350b228e698fffcd08f1f94ceb1e3844
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf

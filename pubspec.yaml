@@ -178,12 +178,6 @@ flutter_launcher_icons:
   macos:
     generate: true
 
-hooks:
-  user_defines:
-    sqlite3:
-      source: system
-      name: sqlite3
-
 melos:
   name: gsmlg
   command:

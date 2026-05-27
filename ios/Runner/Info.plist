@@ -4,6 +4,8 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -41,7 +43,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Use Camera for recording video</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>GSMLG needs local network access to discover monitor agents.</string>
+	<string>GSMLG needs local network access to discover monitor agents and perform local model inference services.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Need for Get Wifi Information</string>
 	<key>NSLocationAlwaysUsageDescription</key>

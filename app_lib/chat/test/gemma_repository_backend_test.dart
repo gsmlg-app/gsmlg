@@ -2,9 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:app_chat/app_chat.dart';
-import 'package:lib_llama_cpp/lib_llama_cpp.dart' as llama;
-import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart'
-    as llama_platform;
 import 'package:test/test.dart';
 
 void main() {
@@ -25,10 +22,10 @@ void main() {
       });
       final modelFile = File('${tempDir.path}/model.gguf')
         ..writeAsStringSync('model');
-      final engine = _CapturingLlamaEngine();
+      final serverFactory = _CapturingLlamaServerFactory();
       final repository = GemmaRepository(
-        llamaEngine: engine,
         initialModelPath: modelFile.path,
+        llamaServerFactory: serverFactory.call,
       );
       addTearDown(repository.dispose);
 
@@ -45,12 +42,10 @@ void main() {
       final effectiveBackend = ModelConfig(
         backend: testCase.backend,
       ).withSupportedBackendForCurrentPlatform().backend;
-      final loadCommand = engine.commands
-          .whereType<llama.LlamaLoadModelCommand>()
-          .single;
-      expect(loadCommand.contextSize, 4096);
+      final serverConfig = serverFactory.configs.single;
+      expect(serverConfig.contextSize, 4096);
       expect(
-        loadCommand.gpuLayerCount,
+        serverConfig.gpuLayerCount,
         effectiveBackend.usesGpuLayers ? 99 : 0,
       );
     }
@@ -59,26 +54,23 @@ void main() {
   test(
     'local generation sizes context from configured output tokens',
     () async {
-      final engine = _CapturingLlamaEngine();
-      final repository = await _repositoryWithEngine(engine);
+      final serverFactory = _CapturingLlamaServerFactory();
+      final repository = await _repositoryWithServerFactory(serverFactory);
 
       await repository.loadModel(
         const ModelConfig(maxTokens: 8192, backend: GemmaBackend.metal),
       );
       await repository.generateResponse([_userMessage()]).toList();
 
-      final loadCommand = engine.commands
-          .whereType<llama.LlamaLoadModelCommand>()
-          .single;
-      expect(loadCommand.contextSize, 9216);
+      expect(serverFactory.configs.single.contextSize, 9216);
     },
   );
 
   test(
     'local generation uses the current config over the loaded config',
     () async {
-      final engine = _CapturingLlamaEngine();
-      final repository = await _repositoryWithEngine(engine);
+      final serverFactory = _CapturingLlamaServerFactory();
+      final repository = await _repositoryWithServerFactory(serverFactory);
 
       await repository.loadModel(
         const ModelConfig(backend: GemmaBackend.metal),
@@ -87,25 +79,20 @@ void main() {
         _userMessage(),
       ], config: const ModelConfig(backend: GemmaBackend.cpu)).toList();
 
-      final loadCommand = engine.commands
-          .whereType<llama.LlamaLoadModelCommand>()
-          .single;
-      expect(loadCommand.gpuLayerCount, 0);
+      expect(serverFactory.configs, hasLength(2));
+      expect(serverFactory.configs.last.gpuLayerCount, 0);
+      expect(serverFactory.sessions.first.isClosed, isTrue);
     },
   );
 
   test('local generation passes tools to the client stream', () async {
-    final engine = _CapturingLlamaEngine(
-      responses: const [
-        llama.LlamaTokenResponse(text: '<|tool_', index: 0),
-        llama.LlamaTokenResponse(
-          text: 'call>call:domain_list_zones{}<tool_call>',
-          index: 1,
-        ),
-        llama.LlamaDoneResponse(),
+    final serverFactory = _CapturingLlamaServerFactory(
+      events: [
+        _streamContent('<|tool_'),
+        _streamContent('call>call:domain_list_zones{}<tool_call>'),
       ],
     );
-    final repository = await _repositoryWithEngine(engine);
+    final repository = await _repositoryWithServerFactory(serverFactory);
 
     await repository.loadModel(const ModelConfig(backend: GemmaBackend.metal));
     final chunks = await repository
@@ -130,14 +117,13 @@ void main() {
   });
 
   test('local generation parses Gemma thinking tags', () async {
-    final engine = _CapturingLlamaEngine(
-      responses: const [
-        llama.LlamaTokenResponse(text: '<|think|>plan', index: 0),
-        llama.LlamaTokenResponse(text: 'ning</think>final answer', index: 1),
-        llama.LlamaDoneResponse(),
+    final serverFactory = _CapturingLlamaServerFactory(
+      events: [
+        _streamContent('<|think|>plan'),
+        _streamContent('ning</think>final answer'),
       ],
     );
-    final repository = await _repositoryWithEngine(engine);
+    final repository = await _repositoryWithServerFactory(serverFactory);
 
     await repository.loadModel(const ModelConfig(backend: GemmaBackend.metal));
     final chunks = await repository.generateResponse([_userMessage()]).toList();
@@ -151,6 +137,18 @@ void main() {
     );
     expect(chunks.whereType<ChatTextChunk>().single.text, 'final answer');
   });
+
+  test('unloadModel closes the active local llama server', () async {
+    final serverFactory = _CapturingLlamaServerFactory();
+    final repository = await _repositoryWithServerFactory(serverFactory);
+
+    await repository.loadModel(const ModelConfig(backend: GemmaBackend.cpu));
+    expect(serverFactory.sessions.single.isClosed, isFalse);
+
+    await repository.unloadModel();
+
+    expect(serverFactory.sessions.single.isClosed, isTrue);
+  });
 }
 
 class _BackendCase {
@@ -159,38 +157,63 @@ class _BackendCase {
   final GemmaBackend backend;
 }
 
-class _CapturingLlamaEngine implements llama.LlamaEngine {
-  _CapturingLlamaEngine({
-    this.responses = const [
-      llama.LlamaTokenResponse(text: 'ok', index: 0),
-      llama.LlamaDoneResponse(),
-    ],
-  });
+class _CapturingLlamaServerFactory {
+  _CapturingLlamaServerFactory({List<Map<String, Object?>>? events})
+    : events = events ?? [_streamContent('ok')];
 
-  final List<llama.LlamaResponse> responses;
-  llama_platform.LlamaCppLibraryRequest? libraryRequest;
-  List<llama.LlamaCommand> commands = const [];
+  final List<Map<String, Object?>> events;
+  final configs = <LocalLlamaServerConfig>[];
+  final sessions = <_CapturingLlamaServerSession>[];
 
-  @override
-  Stream<llama.LlamaResponse> transform(
-    Stream<llama.LlamaCommand> commands, {
-    llama.LlamaState initialState = const llama.LlamaState.empty(),
-    llama_platform.LlamaCppLibraryRequest libraryRequest =
-        const llama_platform.LlamaCppLibraryRequest(),
-  }) async* {
-    this.libraryRequest = libraryRequest;
-    this.commands = await commands.toList();
-    yield* Stream<llama.LlamaResponse>.fromIterable(responses);
+  Future<LocalLlamaServerSession> call(LocalLlamaServerConfig config) async {
+    configs.add(config);
+    final session = _CapturingLlamaServerSession(events);
+    sessions.add(session);
+    return session;
   }
 }
 
-Future<GemmaRepository> _repositoryWithEngine(llama.LlamaEngine engine) async {
+class _CapturingLlamaServerSession implements LocalLlamaServerSession {
+  _CapturingLlamaServerSession(this.events);
+
+  final List<Map<String, Object?>> events;
+  var isClosed = false;
+  List<Map<String, Object?>>? messages;
+  int? maxTokens;
+  double? temperature;
+  List<String>? stop;
+
+  @override
+  Future<void> close() async {
+    isClosed = true;
+  }
+
+  @override
+  Stream<Map<String, Object?>> streamChatCompletion({
+    required String model,
+    required List<Map<String, Object?>> messages,
+    int? maxTokens,
+    double? temperature,
+    double? topP,
+    List<String> stop = const [],
+  }) async* {
+    this.messages = messages;
+    this.maxTokens = maxTokens;
+    this.temperature = temperature;
+    this.stop = stop;
+    yield* Stream<Map<String, Object?>>.fromIterable(events);
+  }
+}
+
+Future<GemmaRepository> _repositoryWithServerFactory(
+  _CapturingLlamaServerFactory serverFactory,
+) async {
   final tempDir = await Directory.systemTemp.createTemp('gsmlg_llama_');
   final modelFile = File('${tempDir.path}/model.gguf')
     ..writeAsStringSync('model');
   final repository = GemmaRepository(
-    llamaEngine: engine,
     initialModelPath: modelFile.path,
+    llamaServerFactory: serverFactory.call,
   );
   addTearDown(() async {
     await repository.dispose();
@@ -208,4 +231,14 @@ UserMessage _userMessage() {
     conversationId: 'conversation',
     timestamp: DateTime(2026),
   );
+}
+
+Map<String, Object?> _streamContent(String content) {
+  return {
+    'choices': [
+      {
+        'delta': {'content': content},
+      },
+    ],
+  };
 }

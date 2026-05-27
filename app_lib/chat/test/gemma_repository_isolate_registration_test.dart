@@ -4,33 +4,26 @@ import 'package:test/test.dart';
 
 void main() {
   test(
-    'llama worker isolate initializes Flutter plugins before resolving library',
+    'local llama server resolves the platform library before opening',
     () async {
       final source = await File(
         'lib/src/repositories/gemma_repository.dart',
       ).readAsString();
 
-      final entrypointIndex = source.indexOf(
-        'static void _llamaIsolateEntryPoint(_LlamaIsolateParams params) async',
+      final startIndex = source.indexOf(
+        'static Future<LocalLlamaServerSession> start',
       );
-      expect(entrypointIndex, isNonNegative);
+      expect(startIndex, isNonNegative);
 
-      final registrationIndex = source.indexOf(
-        'DartPluginRegistrant.ensureInitialized();',
-        entrypointIndex,
-      );
       final resolveIndex = source.indexOf(
         'LibLlamaCppPlatform.instance',
-        entrypointIndex,
+        startIndex,
       );
+      final openIndex = source.indexOf('LlamaHttpServer.open', startIndex);
 
-      expect(
-        registrationIndex,
-        isNonNegative,
-        reason: 'The worker isolate must register Flutter plugins.',
-      );
       expect(resolveIndex, isNonNegative);
-      expect(registrationIndex, lessThan(resolveIndex));
+      expect(openIndex, isNonNegative);
+      expect(resolveIndex, lessThan(openIndex));
     },
   );
 }

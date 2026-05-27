@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:math' as math;
-import 'dart:ui' show DartPluginRegistrant;
 
 import 'package:flutter/foundation.dart';
 import 'package:lib_llama_cpp/lib_llama_cpp.dart' as llama;
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart'
     as llama_platform;
+import 'package:lib_llama_cpp_server/lib_llama_cpp_server.dart' as llama_server;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -19,6 +18,49 @@ import 'llama_request_adapter.dart';
 
 const _defaultLlamaContextSize = 4096;
 const _llamaContextPromptReserve = 1024;
+const _localLlamaModelAlias = 'local';
+const _localLlamaStopSequences = [
+  '<turn|>',
+  '<end_of_turn>',
+  '<start_of_turn>',
+];
+
+/// Configuration used to start the local llama.cpp server.
+@visibleForTesting
+final class LocalLlamaServerConfig {
+  const LocalLlamaServerConfig({
+    required this.model,
+    required this.modelPath,
+    required this.contextSize,
+    required this.gpuLayerCount,
+    required this.libraryRequest,
+  });
+
+  final String model;
+  final String modelPath;
+  final int contextSize;
+  final int gpuLayerCount;
+  final llama_platform.LlamaCppLibraryRequest libraryRequest;
+}
+
+/// Active local llama.cpp server session.
+@visibleForTesting
+abstract interface class LocalLlamaServerSession {
+  Stream<Map<String, Object?>> streamChatCompletion({
+    required String model,
+    required List<Map<String, Object?>> messages,
+    int? maxTokens,
+    double? temperature,
+    double? topP,
+    List<String> stop,
+  });
+
+  Future<void> close();
+}
+
+@visibleForTesting
+typedef LocalLlamaServerFactory =
+    Future<LocalLlamaServerSession> Function(LocalLlamaServerConfig config);
 
 /// Status of the model lifecycle.
 enum GemmaModelStatus {
@@ -97,16 +139,19 @@ class ModelDownloadCanceledException implements Exception {
 /// Repository for app-managed GGUF models and local llama.cpp generation.
 class GemmaRepository {
   GemmaRepository({
-    llama.LlamaEngine llamaEngine = const llama.LibLlamaCpp(),
+    llama.LlamaEngine? llamaEngine,
     String? initialModelPath,
-  }) : _llamaEngine = llamaEngine,
-       _llamaModelPath = initialModelPath;
+    LocalLlamaServerFactory? llamaServerFactory,
+  }) : _llamaModelPath = initialModelPath,
+       _llamaServerFactory =
+           llamaServerFactory ?? _LibLlamaCppServerSession.start;
 
-  final llama.LlamaEngine _llamaEngine;
+  final LocalLlamaServerFactory _llamaServerFactory;
   String? _llamaModelPath;
   GemmaModelInfo? _llamaModelInfo;
   ModelConfig? _llamaConfig;
-  llama.LlamaOpenAIClient? _llamaClient;
+  LocalLlamaServerConfig? _llamaServerConfig;
+  LocalLlamaServerSession? _llamaServer;
   final _activeDownloads = <String, _DownloadControl>{};
 
   /// Current status of the model.
@@ -654,6 +699,7 @@ class GemmaRepository {
       _llamaModelPath = llamaModelPath;
       _llamaModelInfo = llamaModelInfo;
       _llamaConfig = config;
+      await _ensureLlamaServer(config);
       _setStatus(GemmaModelStatus.ready);
     } catch (e) {
       debugPrint('[GemmaRepo] loadModel FAILED: $e');
@@ -663,6 +709,7 @@ class GemmaRepository {
 
   /// Unloads the active model selection.
   Future<void> unloadModel() async {
+    await _closeLlamaServer();
     _llamaModelPath = null;
     _llamaModelInfo = null;
     _llamaConfig = null;
@@ -726,167 +773,115 @@ class GemmaRepository {
             .withSupportedBackendForCurrentPlatform();
     final llamaTools = llamaToolsFromOpenAiTools(tools);
 
-    // WORKAROUND(lib_llama_cpp#20): The tool-aware streaming layer inside
-    // LlamaGenerateMessagesCommand buffers all tokens while the Gemma4 model
-    // is in its thinking phase (<|think|>…<|/think|>), causing the chat UI to
-    // appear stuck.  We bypass LlamaOpenAIClient and build commands manually:
-    //
-    // 1. LlamaGenerateMessagesCommand with tools=[] — applies the model's
-    //    Jinja chat template for proper formatting but skips the tool-aware
-    //    output parser, giving us raw streamed tokens.
-    // 2. Tool definitions are injected into a system message so the model
-    //    knows about available tools.
-    // 3. Our own _Gemma4StreamParser handles thinking tags and tool calls
-    //    in the raw output stream.
-    final llamaMessages = _buildLlamaMessages(messages, llamaTools);
-    final libraryRequest = _libraryRequestForBackend(effectiveConfig.backend);
+    final server = await _ensureLlamaServer(effectiveConfig);
+    final serverMessages = _buildServerMessages(messages, llamaTools);
+    final streamParser = _Gemma4StreamParser();
 
+    try {
+      await for (final event in server.streamChatCompletion(
+        model: _localLlamaModelAlias,
+        messages: serverMessages,
+        maxTokens: effectiveConfig.maxTokens,
+        temperature: effectiveConfig.temperature,
+        stop: _localLlamaStopSequences,
+      )) {
+        final error = _serverErrorMessage(event);
+        if (error != null) {
+          _setError(error);
+          throw StateError(error);
+        }
+
+        final content = _serverDeltaContent(event);
+        if (content == null || content.isEmpty) {
+          continue;
+        }
+        for (final chunk in streamParser.add(content)) {
+          yield chunk;
+        }
+      }
+    } on TimeoutException catch (error) {
+      _setError(error.message ?? error.toString());
+      rethrow;
+    }
+
+    for (final chunk in streamParser.close()) {
+      yield chunk;
+    }
+  }
+
+  Future<LocalLlamaServerSession> _ensureLlamaServer(ModelConfig config) async {
+    final modelPath = _llamaModelPath;
+    if (modelPath == null) {
+      throw StateError('Model is not loaded. Call loadModel() first.');
+    }
+
+    final serverConfig = _serverConfigFor(modelPath: modelPath, config: config);
+    final currentServer = _llamaServer;
+    final currentConfig = _llamaServerConfig;
+    if (currentServer != null &&
+        currentConfig != null &&
+        _sameServerConfig(currentConfig, serverConfig)) {
+      return currentServer;
+    }
+
+    await _closeLlamaServer();
+    final server = await _llamaServerFactory(serverConfig);
+    _llamaServer = server;
+    _llamaServerConfig = serverConfig;
+    return server;
+  }
+
+  LocalLlamaServerConfig _serverConfigFor({
+    required String modelPath,
+    required ModelConfig config,
+  }) {
+    final effectiveConfig = config.withSupportedBackendForCurrentPlatform();
     final contextSize = math.max(
       _defaultLlamaContextSize,
       effectiveConfig.maxTokens + _llamaContextPromptReserve,
     );
-    final gpuLayerCount = effectiveConfig.backend.usesGpuLayers ? 99 : 0;
-
-    final controller = StreamController<ChatGenerationChunk>();
-    final receivePort = ReceivePort();
-
-    final params = _LlamaIsolateParams(
-      sendPort: receivePort.sendPort,
+    return LocalLlamaServerConfig(
+      model: _localLlamaModelAlias,
       modelPath: modelPath,
       contextSize: contextSize,
-      gpuLayerCount: gpuLayerCount,
-      messages: llamaMessages,
-      temperature: effectiveConfig.temperature,
-      maxTokens: effectiveConfig.maxTokens,
-      libraryRequest: libraryRequest,
+      gpuLayerCount: effectiveConfig.backend.usesGpuLayers ? 99 : 0,
+      libraryRequest: _libraryRequestForBackend(effectiveConfig.backend),
     );
-
-    // Spawn isolate for inference to prevent blocking the main thread.
-    // This allows us to detect and report native hangs without freezing the UI.
-    final isolate = await Isolate.spawn(_llamaIsolateEntryPoint, params);
-
-    final streamParser = _Gemma4StreamParser();
-    var hasReceivedFirstResponse = false;
-
-    // Timer to detect native hangs (e.g. Vulkan initialization freeze)
-    final hangTimer = Timer(const Duration(seconds: 45), () {
-      if (!hasReceivedFirstResponse) {
-        debugPrint('[GemmaRepo] Native hang detected (timeout after 45s)');
-        _setError('Model execution timed out. This likely indicates an upstream Vulkan driver issue.');
-        controller.addError(TimeoutException(
-          'The model failed to respond within 45 seconds. '
-          'This is a known issue with Vulkan on some Android devices. '
-          'Please report this to the lib_llama_cpp repository.',
-        ));
-        receivePort.close();
-        isolate.kill(priority: Isolate.immediate);
-        if (!controller.isClosed) controller.close();
-      }
-    });
-
-    receivePort.listen(
-      (response) {
-        hasReceivedFirstResponse = true;
-        hangTimer.cancel();
-
-        if (response == null) {
-          // EOF marker from isolate
-          for (final chunk in streamParser.close()) {
-            controller.add(chunk);
-          }
-          receivePort.close();
-          isolate.kill();
-          if (!controller.isClosed) controller.close();
-          return;
-        }
-
-        if (response is Exception || response is Error) {
-          debugPrint('[GemmaRepo] Isolate error: $response');
-          if (response is StateError) {
-            _setError(response.message);
-          }
-          controller.addError(response);
-          receivePort.close();
-          isolate.kill();
-          if (!controller.isClosed) controller.close();
-          return;
-        }
-
-        switch (response) {
-          case llama.LlamaTokenResponse(:final text):
-            for (final chunk in streamParser.add(text)) {
-              controller.add(chunk);
-            }
-          case llama.LlamaErrorResponse(:final message):
-            _setError(message);
-            controller.addError(StateError(message));
-            receivePort.close();
-            isolate.kill();
-            if (!controller.isClosed) controller.close();
-          case llama.LlamaReadyResponse() ||
-              llama.LlamaStateChangedResponse() ||
-              llama.LlamaDoneResponse() ||
-              llama.LlamaToolCallResponse():
-            break;
-        }
-      },
-      onError: (error) {
-        hangTimer.cancel();
-        controller.addError(error);
-        receivePort.close();
-        isolate.kill();
-        if (!controller.isClosed) controller.close();
-      },
-    );
-
-    yield* controller.stream;
   }
 
-  static void _llamaIsolateEntryPoint(_LlamaIsolateParams params) async {
-    DartPluginRegistrant.ensureInitialized();
-    const llamaEngine = llama.LibLlamaCpp();
-    final commands = Stream<llama.LlamaCommand>.fromIterable([
-      llama.LlamaLoadModelCommand(
-        modelPath: params.modelPath,
-        contextSize: params.contextSize,
-        gpuLayerCount: params.gpuLayerCount,
-      ),
-      llama.LlamaGenerateMessagesCommand(
-        messages: params.messages,
-        maxTokens: params.maxTokens,
-        temperature: params.temperature,
-        stop: const ['<turn|>', '<end_of_turn>', '<start_of_turn>'],
-      ),
-      const llama.LlamaDisposeCommand(),
-    ]);
+  bool _sameServerConfig(
+    LocalLlamaServerConfig left,
+    LocalLlamaServerConfig right,
+  ) {
+    return left.model == right.model &&
+        left.modelPath == right.modelPath &&
+        left.contextSize == right.contextSize &&
+        left.gpuLayerCount == right.gpuLayerCount &&
+        left.libraryRequest.preferredPath ==
+            right.libraryRequest.preferredPath &&
+        setEquals(
+          left.libraryRequest.requiredCapabilities,
+          right.libraryRequest.requiredCapabilities,
+        );
+  }
 
-    try {
-      // Must resolve library in the worker isolate too
-      await llama_platform.LibLlamaCppPlatform.instance
-          .resolveLibrary(request: params.libraryRequest);
-
-      await for (final response in llamaEngine.transform(
-        commands,
-        libraryRequest: params.libraryRequest,
-      )) {
-        params.sendPort.send(response);
-      }
-    } catch (e, stack) {
-      debugPrint('[GemmaIsolate] ERROR: $e\n$stack');
-      params.sendPort.send(e);
-    } finally {
-      params.sendPort.send(null); // EOF marker
+  Future<void> _closeLlamaServer() async {
+    final server = _llamaServer;
+    _llamaServer = null;
+    _llamaServerConfig = null;
+    if (server != null) {
+      await server.close();
     }
   }
 
-  /// Builds [LlamaMessage] list from app [Message] list, injecting tool
+  /// Builds OpenAI-compatible messages from app [Message] list, injecting tool
   /// definitions into the system instruction.
-  List<llama.LlamaMessage> _buildLlamaMessages(
+  List<Map<String, Object?>> _buildServerMessages(
     List<Message> messages,
     List<llama.LlamaTool> tools,
   ) {
     String? systemInstruction;
-    final result = <llama.LlamaMessage>[];
+    final result = <Map<String, Object?>>[];
 
     for (final message in messages) {
       if (message is SystemMessage) {
@@ -899,28 +894,25 @@ class GemmaRepository {
         final UserMessage user => ('user', user.contentWithAttachments()),
         AssistantMessage(:final content) => ('assistant', content),
         ToolResponseMessage(:final toolName, :final content) => (
-            'user',
-            'Tool result for $toolName:\n$content',
-          ),
+          'user',
+          'Tool result for $toolName:\n$content',
+        ),
         _ => ('user', message.content),
       };
 
       if (content.trim().isEmpty) continue;
-      result.add(llama.LlamaMessage(role: role, content: content.trim()));
+      result.add({'role': role, 'content': content.trim()});
     }
 
     // Prepend system message with tool instructions.
     final toolInstructions = buildGemmaToolInstructions(tools);
     final effectiveSystem = [
-      if (systemInstruction != null) systemInstruction,
+      ?systemInstruction,
       if (toolInstructions.isNotEmpty) toolInstructions,
     ].join('\n\n');
 
     if (effectiveSystem.isNotEmpty) {
-      result.insert(
-        0,
-        llama.LlamaMessage(role: 'system', content: effectiveSystem),
-      );
+      result.insert(0, {'role': 'system', 'content': effectiveSystem});
     }
 
     return result;
@@ -942,26 +934,6 @@ class GemmaRepository {
     }
     return llama_platform.LlamaCppLibraryRequest(
       requiredCapabilities: {capability},
-    );
-  }
-
-  llama.LlamaOpenAIClient _buildClient({
-    required String modelPath,
-    required ModelConfig config,
-  }) {
-    final contextSize = math.max(
-      _defaultLlamaContextSize,
-      config.maxTokens + _llamaContextPromptReserve,
-    );
-    return _llamaClient = llama.LlamaOpenAIClient(
-      models: {
-        'local': llama.LlamaModelConfig(
-          modelPath: modelPath,
-          contextSize: contextSize,
-          gpuLayerCount: config.backend.usesGpuLayers ? 99 : 0,
-        ),
-      },
-      engine: _llamaEngine,
     );
   }
 
@@ -1018,41 +990,116 @@ class GemmaRepository {
     _statusController.add(GemmaModelStatus.error);
   }
 
-  Map<String, dynamic> _decodeToolArgs(String arguments) {
-    final trimmed = arguments.trim();
-    if (trimmed.isEmpty) return const {};
-
-    try {
-      final decoded = jsonDecode(trimmed);
-      if (decoded is Map<String, dynamic>) return decoded;
-      return {'value': decoded};
-    } catch (_) {
-      return {'raw': trimmed};
+  String? _serverDeltaContent(Map<String, Object?> event) {
+    final choices = event['choices'];
+    if (choices is! List || choices.isEmpty) {
+      final rootDelta = event['delta'];
+      return rootDelta is String ? rootDelta : null;
     }
+
+    final firstChoice = choices.first;
+    if (firstChoice is! Map) {
+      return null;
+    }
+
+    final delta = firstChoice['delta'];
+    if (delta is Map) {
+      final content = delta['content'];
+      if (content is String) return content;
+      final reasoningContent = delta['reasoning_content'];
+      if (reasoningContent is String) return reasoningContent;
+      final reasoning = delta['reasoning'];
+      if (reasoning is String) return reasoning;
+    }
+
+    final message = firstChoice['message'];
+    if (message is Map) {
+      final content = message['content'];
+      if (content is String) return content;
+    }
+
+    return null;
+  }
+
+  String? _serverErrorMessage(Map<String, Object?> event) {
+    final error = event['error'];
+    if (error is Map) {
+      final message = error['message'];
+      if (message is String && message.isNotEmpty) {
+        return message;
+      }
+      return error.toString();
+    }
+    return null;
   }
 }
 
-/// Parameters passed to the llama inference isolate.
-class _LlamaIsolateParams {
-  _LlamaIsolateParams({
-    required this.sendPort,
-    required this.modelPath,
-    required this.contextSize,
-    required this.gpuLayerCount,
-    required this.messages,
-    required this.temperature,
-    required this.maxTokens,
-    required this.libraryRequest,
-  });
+final class _LibLlamaCppServerSession implements LocalLlamaServerSession {
+  _LibLlamaCppServerSession._({
+    required llama_server.LlamaHttpServer server,
+    required llama_server.LlamaServerClient client,
+  }) : _server = server,
+       _client = client;
 
-  final SendPort sendPort;
-  final String modelPath;
-  final int contextSize;
-  final int gpuLayerCount;
-  final List<llama.LlamaMessage> messages;
-  final double temperature;
-  final int maxTokens;
-  final llama_platform.LlamaCppLibraryRequest libraryRequest;
+  static Future<LocalLlamaServerSession> start(
+    LocalLlamaServerConfig config,
+  ) async {
+    final descriptor = await llama_platform.LibLlamaCppPlatform.instance
+        .resolveLibrary(request: config.libraryRequest);
+    final libraryPath = _libraryPathForDescriptor(descriptor);
+    final server = llama_server.LlamaHttpServer.open(
+      config: llama_server.LlamaServerConfig(
+        model: config.model,
+        modelPath: config.modelPath,
+        ctxSize: config.contextSize,
+        gpuLayers: config.gpuLayerCount,
+        port: 0,
+      ),
+      libraryPath: libraryPath,
+    );
+    final address = await server.start(host: '127.0.0.1', port: 0);
+    final client = llama_server.LlamaServerClient(
+      baseUri: Uri.parse('http://${address.host}:${address.port}/v1'),
+    );
+    return _LibLlamaCppServerSession._(server: server, client: client);
+  }
+
+  final llama_server.LlamaHttpServer _server;
+  final llama_server.LlamaServerClient _client;
+
+  @override
+  Stream<Map<String, Object?>> streamChatCompletion({
+    required String model,
+    required List<Map<String, Object?>> messages,
+    int? maxTokens,
+    double? temperature,
+    double? topP,
+    List<String> stop = const [],
+  }) {
+    return _client.streamChatCompletion(
+      model: model,
+      messages: messages,
+      maxTokens: maxTokens,
+      temperature: temperature,
+      topP: topP,
+      stop: stop,
+    );
+  }
+
+  @override
+  Future<void> close() => _server.close();
+}
+
+String? _libraryPathForDescriptor(
+  llama_platform.LlamaCppLibraryDescriptor descriptor,
+) {
+  return switch (descriptor.resolution) {
+    llama_platform.LlamaCppLibraryResolution.path => descriptor.path,
+    llama_platform.LlamaCppLibraryResolution.lookupName =>
+      descriptor.lookupName,
+    llama_platform.LlamaCppLibraryResolution.process ||
+    llama_platform.LlamaCppLibraryResolution.executable => null,
+  };
 }
 
 class _Gemma4StreamParser {
