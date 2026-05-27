@@ -42,6 +42,10 @@ workspace:
   - app_plugin/client_info/client_info_linux
   - app_plugin/client_info/client_info_macos
   - app_plugin/client_info/client_info_windows
+  - app_plugin/local_llm/local_llm
+  - app_plugin/local_llm/local_llm_platform_interface
+  - app_plugin/local_llm/local_llm_android
+  - app_plugin/local_llm/local_llm_ios
   - app_api/route53
   - app_api/cloudflare_dns
   - app_api/github
@@ -126,6 +130,7 @@ dependencies:
   camera_settings_form: any
   ip_db: any
   app_chat: any
+  app_local_llm: any
   chat_bloc: any
   monitor_bloc: any
   monitor_models: any

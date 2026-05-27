@@ -685,6 +685,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
+  flutter_litert_lm:
+    dependency: transitive
+    description:
+      name: flutter_litert_lm
+      sha256: "222fa9e669c6864c901049930b5639c7276a18b508a38f1fa8697427bde2abb0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
   flutter_localizations:
     dependency: transitive
     description: flutter
@@ -1164,6 +1172,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  mlx_c_ffi:
+    dependency: transitive
+    description:
+      name: mlx_c_ffi
+      sha256: "92ce906cd0d299d735c7bc91205f44f115b7552711a755fe0ce60a599032ef14"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
+  mlx_dart:
+    dependency: transitive
+    description:
+      name: mlx_dart
+      sha256: c7360a34d35c3e408082d5406cb750e038cdf6d1bb5c14610267048e81d466c1
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.2"
   mockito:
     dependency: transitive
     description:

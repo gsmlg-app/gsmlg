@@ -10,6 +10,7 @@ import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interfac
 import 'package:lib_llama_cpp_server/lib_llama_cpp_server.dart' as llama_server;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:app_local_llm/app_local_llm.dart' as app_local_llm;
 
 import '../models/inference.dart';
 import '../models/message.dart';
@@ -177,7 +178,16 @@ class GemmaRepository {
   /// Stream of download progress updates.
   Stream<DownloadProgress> get progressStream => _progressController.stream;
 
-  static bool _isGgufPath(String path) => path.toLowerCase().endsWith('.gguf');
+  static bool _isGgufPath(String path) {
+    final lower = path.toLowerCase();
+    if (Platform.isAndroid) {
+      return lower.endsWith('.litertlm');
+    }
+    if (Platform.isIOS) {
+      return lower.endsWith('.zip') || lower.contains('mlx');
+    }
+    return lower.endsWith('.gguf');
+  }
 
   /// Activates an already-installed GGUF model so [loadModel] can use it.
   Future<void> activateModel(GemmaModelInfo info) async {
@@ -699,7 +709,11 @@ class GemmaRepository {
       _llamaModelPath = llamaModelPath;
       _llamaModelInfo = llamaModelInfo;
       _llamaConfig = config;
-      await _ensureLlamaServer(config);
+      if (Platform.isAndroid || Platform.isIOS) {
+        await app_local_llm.LocalLlm.instance.loadModel(llamaModelPath);
+      } else {
+        await _ensureLlamaServer(config);
+      }
       _setStatus(GemmaModelStatus.ready);
     } catch (e) {
       debugPrint('[GemmaRepo] loadModel FAILED: $e');
@@ -709,7 +723,11 @@ class GemmaRepository {
 
   /// Unloads the active model selection.
   Future<void> unloadModel() async {
-    await _closeLlamaServer();
+    if (Platform.isAndroid || Platform.isIOS) {
+      await app_local_llm.LocalLlm.instance.unloadModel();
+    } else {
+      await _closeLlamaServer();
+    }
     _llamaModelPath = null;
     _llamaModelInfo = null;
     _llamaConfig = null;
@@ -755,7 +773,45 @@ class GemmaRepository {
       _setError(blockReason);
       throw StateError(blockReason);
     }
-    yield* _generateLlamaResponse(messages, tools: tools, config: config);
+    if (Platform.isAndroid || Platform.isIOS) {
+      yield* _generateMobileResponse(messages, config: config);
+    } else {
+      yield* _generateLlamaResponse(messages, tools: tools, config: config);
+    }
+  }
+
+  Stream<ChatGenerationChunk> _generateMobileResponse(
+    List<Message> messages, {
+    ModelConfig? config,
+  }) async* {
+    final effectiveConfig =
+        (config ?? _llamaConfig ?? ModelConfig.platformDefaultConfig)
+            .withSupportedBackendForCurrentPlatform();
+
+    final prompt = buildGemmaPrompt(messages);
+    final streamParser = _Gemma4StreamParser();
+
+    try {
+      await for (final token in app_local_llm.LocalLlm.instance.generateResponse(
+        prompt,
+        maxTokens: effectiveConfig.maxTokens,
+        temperature: effectiveConfig.temperature,
+      )) {
+        if (token.isEmpty) {
+          continue;
+        }
+        for (final chunk in streamParser.add(token)) {
+          yield chunk;
+        }
+      }
+    } catch (error) {
+      _setError(error.toString());
+      rethrow;
+    }
+
+    for (final chunk in streamParser.close()) {
+      yield chunk;
+    }
   }
 
   Stream<ChatGenerationChunk> _generateLlamaResponse(

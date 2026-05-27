@@ -47,6 +47,8 @@ class GemmaModelInfo {
     required this.sizeLabel,
     required this.quantizationLabel,
     required this.url,
+    this.androidUrl,
+    this.iosUrl,
     this.category = ModelCategory.gemma,
     this.needsAuth = false,
     this.supportsMultimodal = false,
@@ -74,6 +76,12 @@ class GemmaModelInfo {
 
   /// HuggingFace download URL.
   final String url;
+
+  /// Android-specific download URL.
+  final String? androidUrl;
+
+  /// iOS-specific download URL.
+  final String? iosUrl;
 
   /// Category for grouping in UI.
   final ModelCategory category;
@@ -176,7 +184,15 @@ class GemmaModelInfo {
   }
 
   /// The download URL for this model.
-  String get downloadUrl => url;
+  String get downloadUrl {
+    if (Platform.isAndroid && androidUrl != null) {
+      return androidUrl!;
+    }
+    if (Platform.isIOS && iosUrl != null) {
+      return iosUrl!;
+    }
+    return url;
+  }
 
   /// The size label for this model.
   String get effectiveSizeLabel => sizeLabel;
@@ -207,6 +223,10 @@ class GemmaModelInfo {
     quantizationLabel: 'Q4_K_M',
     url:
         'https://huggingface.co/dahus/gemma-4-e2b-it-Q4_K_M-GGUF/resolve/main/gemma-4-e2b-Q4_K_M.gguf',
+    androidUrl:
+        'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+    iosUrl:
+        'https://huggingface.co/mlx-community/gemma-4-E2B-it-4bit-mlx/resolve/main/gemma-4-E2B-it-4bit-mlx.zip',
     needsAuth: false,
     supportsThinking: true,
   );
@@ -219,6 +239,10 @@ class GemmaModelInfo {
     quantizationLabel: 'Q4_K_M',
     url:
         'https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf',
+    androidUrl:
+        'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
+    iosUrl:
+        'https://huggingface.co/mlx-community/gemma-4-E4B-it-4bit-mlx/resolve/main/gemma-4-E4B-it-4bit-mlx.zip',
     needsAuth: false,
     supportsThinking: true,
   );

@@ -32,6 +32,7 @@ dependencies:
   lib_llama_cpp_server: ^0.7.1
   dart_mcp: ^0.5.1
   stream_channel: ^2.1.4
+  app_local_llm: any
 
 dev_dependencies:
   test: ^1.30.0
