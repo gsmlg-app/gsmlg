@@ -623,8 +623,13 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }
 
   bool _isGgufFile(String path) {
-    return path.toLowerCase().endsWith('.gguf');
+    final lower = path.toLowerCase();
+    return lower.endsWith('.gguf') ||
+        lower.endsWith('.litertlm') ||
+        lower.endsWith('.zip') ||
+        lower.contains('mlx');
   }
+
 
   void _showImportMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(

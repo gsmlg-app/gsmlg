@@ -120,7 +120,14 @@ class GemmaModelInfo {
   bool get effectiveSupportsThinking => supportsThinking;
 
   /// Whether this model uses the GGUF format for llama.cpp.
-  bool get isGguf => downloadUrl.endsWith('.gguf');
+  bool get isGguf {
+    final lower = downloadUrl.toLowerCase();
+    return lower.endsWith('.gguf') ||
+        lower.endsWith('.litertlm') ||
+        lower.endsWith('.zip') ||
+        lower.contains('mlx');
+  }
+
 
   /// Whether this preset is a 4-bit GGUF model.
   bool get isFourBitGguf => isGguf && quantizationLabel.startsWith('Q4');
