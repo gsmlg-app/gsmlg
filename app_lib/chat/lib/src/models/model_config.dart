@@ -234,6 +234,8 @@ class GemmaModelInfo {
     iosUrl:
         'https://huggingface.co/mlx-community/gemma-4-E2B-it-4bit-mlx/resolve/main/gemma-4-E2B-it-4bit-mlx.zip',
     needsAuth: false,
+    supportsMultimodal: true,
+    supportsAudio: true,
     supportsThinking: true,
   );
 
@@ -250,6 +252,8 @@ class GemmaModelInfo {
     iosUrl:
         'https://huggingface.co/mlx-community/gemma-4-E4B-it-4bit-mlx/resolve/main/gemma-4-E4B-it-4bit-mlx.zip',
     needsAuth: false,
+    supportsMultimodal: true,
+    supportsAudio: true,
     supportsThinking: true,
   );
 

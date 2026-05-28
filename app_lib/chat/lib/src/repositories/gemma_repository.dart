@@ -710,7 +710,11 @@ class GemmaRepository {
       _llamaModelInfo = llamaModelInfo;
       _llamaConfig = config;
       if (Platform.isAndroid || Platform.isIOS) {
-        await app_local_llm.LocalLlm.instance.loadModel(llamaModelPath);
+        await app_local_llm.LocalLlm.instance.loadModel(
+          llamaModelPath,
+          supportImage: supportImage,
+          supportAudio: supportAudio,
+        );
       } else {
         await _ensureLlamaServer(config);
       }
@@ -793,12 +797,40 @@ class GemmaRepository {
     final prompt = buildGemmaPrompt(messages, tools: llamaTools);
     final streamParser = _Gemma4StreamParser();
 
+    Uint8List? imageBytes;
+    Uint8List? audioBytes;
+
+    for (final m in messages.reversed) {
+      if (m is UserMessage) {
+        imageBytes = m.imageBytes;
+        audioBytes = m.audioBytes;
+
+        if (imageBytes == null || audioBytes == null) {
+          for (final attachment in m.attachments) {
+            if (imageBytes == null &&
+                attachment.isImage &&
+                attachment.bytes != null) {
+              imageBytes = attachment.bytes;
+            }
+            if (audioBytes == null &&
+                attachment.isAudio &&
+                attachment.bytes != null) {
+              audioBytes = attachment.bytes;
+            }
+          }
+        }
+        break;
+      }
+    }
+
     try {
       await for (final token
           in app_local_llm.LocalLlm.instance.generateResponse(
             prompt,
             maxTokens: effectiveConfig.maxTokens,
             temperature: effectiveConfig.temperature,
+            imageBytes: imageBytes,
+            audioBytes: audioBytes,
           )) {
         if (token.isEmpty) {
           continue;

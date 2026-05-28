@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
 import 'package:flutter_litert_lm/flutter_litert_lm.dart';
+import 'package:flutter_litert_lm/flutter_litert_lm_platform_interface.dart';
 
 /// The Android implementation of [LocalLlmPlatform] using `flutter_litert_lm`.
 class LocalLlmAndroid extends LocalLlmPlatform {
@@ -13,13 +15,19 @@ class LocalLlmAndroid extends LocalLlmPlatform {
   LiteLmConversation? _conversation;
 
   @override
-  Future<void> loadModel(String modelPath) async {
+  Future<void> loadModel(
+    String modelPath, {
+    bool supportImage = false,
+    bool supportAudio = false,
+  }) async {
     await unloadModel();
     try {
       // By default we use the CPU backend for safety, but can be configured otherwise if needed.
       final config = LiteLmEngineConfig(
         modelPath: modelPath,
         backend: LiteLmBackend.cpu,
+        visionBackend: supportImage ? LiteLmBackend.cpu : null,
+        audioBackend: supportAudio ? LiteLmBackend.cpu : null,
       );
       _engine = await LiteLmEngine.create(config);
       _conversation = await _engine!.createConversation();
@@ -35,6 +43,8 @@ class LocalLlmAndroid extends LocalLlmPlatform {
     int? maxTokens,
     double? temperature,
     List<String>? stopSequences,
+    Uint8List? imageBytes,
+    Uint8List? audioBytes,
   }) {
     final conversation = _conversation;
     if (conversation == null) {
@@ -42,9 +52,15 @@ class LocalLlmAndroid extends LocalLlmPlatform {
           StateError('No model loaded. Call loadModel() first.'));
     }
 
-    // We can also configure LiteLmConversation settings if needed, but standard sendMessageStream
-    // is sufficient for basic generation.
-    return conversation.sendMessageStream(prompt).map((msg) => msg.text);
+    final contents = <Map<String, dynamic>>[
+      LiteLmContent.text(prompt).toMap(),
+      if (imageBytes != null) LiteLmContent.imageBytes(imageBytes).toMap(),
+      if (audioBytes != null) LiteLmContent.audioBytes(audioBytes).toMap(),
+    ];
+
+    return FlutterLitertLmPlatform.instance
+        .sendMessageStream(conversation.id, contents, null)
+        .map((map) => LiteLmMessage.fromMap(map).text);
   }
 
   @override

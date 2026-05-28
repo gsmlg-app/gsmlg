@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
 import 'package:app_local_llm_android/local_llm_android.dart';
 import 'package:app_local_llm_ios/local_llm_ios.dart';
@@ -21,8 +22,16 @@ class LocalLlm {
   static final LocalLlm instance = LocalLlm._();
 
   /// Loads the local model into memory.
-  Future<void> loadModel(String modelPath) {
-    return LocalLlmPlatform.instance.loadModel(modelPath);
+  Future<void> loadModel(
+    String modelPath, {
+    bool supportImage = false,
+    bool supportAudio = false,
+  }) {
+    return LocalLlmPlatform.instance.loadModel(
+      modelPath,
+      supportImage: supportImage,
+      supportAudio: supportAudio,
+    );
   }
 
   /// Generates response tokens streaming from the loaded model.
@@ -31,12 +40,16 @@ class LocalLlm {
     int? maxTokens,
     double? temperature,
     List<String>? stopSequences,
+    Uint8List? imageBytes,
+    Uint8List? audioBytes,
   }) {
     return LocalLlmPlatform.instance.generateResponse(
       prompt,
       maxTokens: maxTokens,
       temperature: temperature,
       stopSequences: stopSequences,
+      imageBytes: imageBytes,
+      audioBytes: audioBytes,
     );
   }
 

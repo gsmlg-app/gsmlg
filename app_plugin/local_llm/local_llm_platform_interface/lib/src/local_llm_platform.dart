@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 /// The interface that platform-specific implementations of
@@ -22,7 +23,11 @@ abstract class LocalLlmPlatform extends PlatformInterface {
   }
 
   /// Loads the local model into memory.
-  Future<void> loadModel(String modelPath) {
+  Future<void> loadModel(
+    String modelPath, {
+    bool supportImage = false,
+    bool supportAudio = false,
+  }) {
     throw UnimplementedError('loadModel() has not been implemented.');
   }
 
@@ -32,6 +37,8 @@ abstract class LocalLlmPlatform extends PlatformInterface {
     int? maxTokens,
     double? temperature,
     List<String>? stopSequences,
+    Uint8List? imageBytes,
+    Uint8List? audioBytes,
   }) {
     throw UnimplementedError('generateResponse() has not been implemented.');
   }
@@ -44,7 +51,11 @@ abstract class LocalLlmPlatform extends PlatformInterface {
 
 class _PlaceholderLocalLlmPlatform extends LocalLlmPlatform {
   @override
-  Future<void> loadModel(String modelPath) async {
+  Future<void> loadModel(
+    String modelPath, {
+    bool supportImage = false,
+    bool supportAudio = false,
+  }) async {
     throw UnimplementedError('Local LLM is not supported on this platform.');
   }
 
@@ -54,6 +65,8 @@ class _PlaceholderLocalLlmPlatform extends LocalLlmPlatform {
     int? maxTokens,
     double? temperature,
     List<String>? stopSequences,
+    Uint8List? imageBytes,
+    Uint8List? audioBytes,
   }) {
     return Stream.error(
       UnimplementedError('Local LLM is not supported on this platform.'),

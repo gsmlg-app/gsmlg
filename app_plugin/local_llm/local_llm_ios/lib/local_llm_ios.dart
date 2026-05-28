@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
 import 'package:mlx_dart/mlx_dart.dart';
 
@@ -13,7 +14,11 @@ class LocalLlmIos extends LocalLlmPlatform {
   bool _isLoaded = false;
 
   @override
-  Future<void> loadModel(String modelPath) async {
+  Future<void> loadModel(
+    String modelPath, {
+    bool supportImage = false,
+    bool supportAudio = false,
+  }) async {
     await unloadModel();
     try {
       // Open a GPU (Metal) context on iOS for MLX execution.
@@ -35,6 +40,8 @@ class LocalLlmIos extends LocalLlmPlatform {
     int? maxTokens,
     double? temperature,
     List<String>? stopSequences,
+    Uint8List? imageBytes,
+    Uint8List? audioBytes,
   }) {
     if (!_isLoaded || _context == null) {
       return Stream.error(
