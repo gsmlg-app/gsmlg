@@ -5,8 +5,8 @@ import 'package:meta/meta.dart';
 @immutable
 class RingBuffer<T> {
   RingBuffer({this.capacity = 60})
-      : _items = ListQueue<T>(capacity),
-        items = const [];
+    : _items = ListQueue<T>(capacity),
+      items = const [];
 
   RingBuffer._(this.capacity, this._items) : items = List.unmodifiable(_items);
 

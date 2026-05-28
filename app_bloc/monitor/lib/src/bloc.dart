@@ -283,7 +283,7 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     // Update history ring buffers
     var cpuHistory = host.cpuHistory;
     var memoryHistory = host.memoryHistory;
-    
+
     // Use current interfaces/disks to prune history and avoid memory growth
     final rxHistory = <String, RingBuffer<double>>{};
     final txHistory = <String, RingBuffer<double>>{};
@@ -299,18 +299,22 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
 
     for (final net in m.networks) {
       final iface = net.interface_;
-      rxHistory[iface] = (host.rxHistory[iface] ?? RingBuffer<double>())
-          .add(net.rxBytesPerSec.toDouble());
-      txHistory[iface] = (host.txHistory[iface] ?? RingBuffer<double>())
-          .add(net.txBytesPerSec.toDouble());
+      rxHistory[iface] = (host.rxHistory[iface] ?? RingBuffer<double>()).add(
+        net.rxBytesPerSec.toDouble(),
+      );
+      txHistory[iface] = (host.txHistory[iface] ?? RingBuffer<double>()).add(
+        net.txBytesPerSec.toDouble(),
+      );
     }
 
     for (final disk in m.disks) {
       final dev = disk.device;
-      readHistory[dev] = (host.readHistory[dev] ?? RingBuffer<double>())
-          .add(disk.readBytesPerSec.toDouble());
-      writeHistory[dev] = (host.writeHistory[dev] ?? RingBuffer<double>())
-          .add(disk.writeBytesPerSec.toDouble());
+      readHistory[dev] = (host.readHistory[dev] ?? RingBuffer<double>()).add(
+        disk.readBytesPerSec.toDouble(),
+      );
+      writeHistory[dev] = (host.writeHistory[dev] ?? RingBuffer<double>()).add(
+        disk.writeBytesPerSec.toDouble(),
+      );
     }
 
     hosts[event.hostId] = host.copyWith(

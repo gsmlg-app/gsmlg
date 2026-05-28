@@ -18,10 +18,10 @@ class LocalLlmIos extends LocalLlmPlatform {
     try {
       // Open a GPU (Metal) context on iOS for MLX execution.
       _context = MLXContext.gpu();
-      
+
       // Load weights or initialize model layers here using mlx_dart FFI.
       // E.g., loading model weights using SafeTensors format or Module.loadWeights.
-      
+
       _isLoaded = true;
     } catch (e) {
       await unloadModel();
@@ -37,7 +37,8 @@ class LocalLlmIos extends LocalLlmPlatform {
     List<String>? stopSequences,
   }) {
     if (!_isLoaded || _context == null) {
-      return Stream.error(StateError('No model loaded. Call loadModel() first.'));
+      return Stream.error(
+          StateError('No model loaded. Call loadModel() first.'));
     }
 
     final controller = StreamController<String>();
@@ -53,7 +54,7 @@ class LocalLlmIos extends LocalLlmPlatform {
         // 2. Feed to model embedding and Transformer layers.
         // 3. Sample next token and yield it.
         // 4. Stop when end-of-sequence is met or maxTokens reached.
-        
+
         controller.add("Generation on iOS via mlx_dart (Metal) is running.");
         await controller.close();
       } catch (e) {

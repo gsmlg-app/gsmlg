@@ -128,7 +128,6 @@ class GemmaModelInfo {
         lower.contains('mlx');
   }
 
-
   /// Whether this preset is a 4-bit GGUF model.
   bool get isFourBitGguf => isGguf && quantizationLabel.startsWith('Q4');
 

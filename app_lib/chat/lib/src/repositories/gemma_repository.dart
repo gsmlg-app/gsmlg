@@ -774,7 +774,7 @@ class GemmaRepository {
       throw StateError(blockReason);
     }
     if (Platform.isAndroid || Platform.isIOS) {
-      yield* _generateMobileResponse(messages, config: config);
+      yield* _generateMobileResponse(messages, tools: tools, config: config);
     } else {
       yield* _generateLlamaResponse(messages, tools: tools, config: config);
     }
@@ -782,21 +782,24 @@ class GemmaRepository {
 
   Stream<ChatGenerationChunk> _generateMobileResponse(
     List<Message> messages, {
+    List<Map<String, dynamic>> tools = const [],
     ModelConfig? config,
   }) async* {
     final effectiveConfig =
         (config ?? _llamaConfig ?? ModelConfig.platformDefaultConfig)
             .withSupportedBackendForCurrentPlatform();
 
-    final prompt = buildGemmaPrompt(messages);
+    final llamaTools = llamaToolsFromOpenAiTools(tools);
+    final prompt = buildGemmaPrompt(messages, tools: llamaTools);
     final streamParser = _Gemma4StreamParser();
 
     try {
-      await for (final token in app_local_llm.LocalLlm.instance.generateResponse(
-        prompt,
-        maxTokens: effectiveConfig.maxTokens,
-        temperature: effectiveConfig.temperature,
-      )) {
+      await for (final token
+          in app_local_llm.LocalLlm.instance.generateResponse(
+            prompt,
+            maxTokens: effectiveConfig.maxTokens,
+            temperature: effectiveConfig.temperature,
+          )) {
         if (token.isEmpty) {
           continue;
         }

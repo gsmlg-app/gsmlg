@@ -174,17 +174,19 @@ List<llama.LlamaTool> llamaToolsFromOpenAiTools(
       final UserMessage user => ('user', user.contentWithAttachments()),
       AssistantMessage(:final content) => ('assistant', content),
       ToolResponseMessage(:final toolName, :final content) => (
-          'user',
-          'Tool result for $toolName:\n$content',
-        ),
+        'user',
+        'Tool result for $toolName:\n$content',
+      ),
       _ => ('user', message.content),
     };
 
     if (content.trim().isEmpty) continue;
-    inputItems.add(llama.LlamaResponseInputItem(
-      role: role,
-      content: [llama.LlamaTextPart(content.trim())],
-    ));
+    inputItems.add(
+      llama.LlamaResponseInputItem(
+        role: role,
+        content: [llama.LlamaTextPart(content.trim())],
+      ),
+    );
   }
 
   return (inputItems, systemInstruction);

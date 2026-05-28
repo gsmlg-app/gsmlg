@@ -38,7 +38,8 @@ class LocalLlmAndroid extends LocalLlmPlatform {
   }) {
     final conversation = _conversation;
     if (conversation == null) {
-      return Stream.error(StateError('No model loaded. Call loadModel() first.'));
+      return Stream.error(
+          StateError('No model loaded. Call loadModel() first.'));
     }
 
     // We can also configure LiteLmConversation settings if needed, but standard sendMessageStream
