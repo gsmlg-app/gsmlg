@@ -91,8 +91,8 @@ void main() {
       expect(e4b.isHuggingFaceDownload, isTrue);
       expect(e4b.huggingFaceRepoPath, 'ggml-org/gemma-4-E4B-it-GGUF');
       expect(e4b.downloadFileName, 'gemma-4-E4B-it-Q4_K_M.gguf');
-      expect(e4b.supportsMultimodal, isFalse);
-      expect(e4b.supportsAudio, isFalse);
+      expect(e4b.supportsMultimodal, isTrue);
+      expect(e4b.supportsAudio, isTrue);
       expect(e4b.supportsFunctionCalls, isFalse);
       expect(e4b.memoryRequirement, GemmaModelMemoryRequirement.standard);
       expect(e4b.requiresLargeMemory, isFalse);
@@ -110,8 +110,8 @@ void main() {
       expect(e2b.isHuggingFaceDownload, isTrue);
       expect(e2b.huggingFaceRepoPath, 'dahus/gemma-4-e2b-it-Q4_K_M-GGUF');
       expect(e2b.downloadFileName, 'gemma-4-e2b-Q4_K_M.gguf');
-      expect(e2b.supportsMultimodal, isFalse);
-      expect(e2b.supportsAudio, isFalse);
+      expect(e2b.supportsMultimodal, isTrue);
+      expect(e2b.supportsAudio, isTrue);
       expect(e2b.supportsFunctionCalls, isFalse);
       expect(e2b.memoryRequirement, GemmaModelMemoryRequirement.standard);
       expect(e2b.requiresLargeMemory, isFalse);
