@@ -685,14 +685,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
-  flutter_litert_lm:
-    dependency: transitive
-    description:
-      name: flutter_litert_lm
-      sha256: "222fa9e669c6864c901049930b5639c7276a18b508a38f1fa8697427bde2abb0"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.0"
   flutter_localizations:
     dependency: transitive
     description: flutter
@@ -972,6 +964,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  lib_litert_lm:
+    dependency: transitive
+    description:
+      name: lib_litert_lm
+      sha256: "149537a4a1f16e872f7bfa3275fa65d6c635ee57e2893c3870b10b9eb386611e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.1"
   lib_llama_cpp:
     dependency: "direct main"
     description:
@@ -2050,5 +2050,5 @@ packages:
     source: hosted
     version: "2.2.4"
 sdks:
-  dart: ">=3.11.5 <4.0.0"
-  flutter: ">=3.41.0"
+  dart: ">=3.12.0 <4.0.0"
+  flutter: ">=3.41.0 <4.0.0"

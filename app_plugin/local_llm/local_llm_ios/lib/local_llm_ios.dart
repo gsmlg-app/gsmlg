@@ -39,6 +39,7 @@ class LocalLlmIos extends LocalLlmPlatform {
     String prompt, {
     int? maxTokens,
     double? temperature,
+    int? topK,
     List<String>? stopSequences,
     Uint8List? imageBytes,
     Uint8List? audioBytes,

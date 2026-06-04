@@ -1,18 +1,18 @@
 name: app_local_llm_android
-description: Android implementation of app_local_llm using flutter_litert_lm
+description: Android implementation of app_local_llm using lib_litert_lm
 version: 0.1.0
 publish_to: none
 resolution: workspace
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.12.0
   flutter: ^3.24.0
 
 dependencies:
   flutter:
     sdk: flutter
   app_local_llm_platform_interface: any
-  flutter_litert_lm: any
+  lib_litert_lm: ^0.0.1
 
 dev_dependencies:
   flutter_test:

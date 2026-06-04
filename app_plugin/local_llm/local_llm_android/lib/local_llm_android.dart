@@ -1,18 +1,23 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
-import 'package:flutter_litert_lm/flutter_litert_lm.dart';
-import 'package:flutter_litert_lm/flutter_litert_lm_platform_interface.dart';
+import 'package:lib_litert_lm/lib_litert_lm.dart';
 
-/// The Android implementation of [LocalLlmPlatform] using `flutter_litert_lm`.
+const _defaultMaxNumTokens = 4096;
+const _defaultMaxOutputTokens = 256;
+const _defaultTemperature = 0.8;
+const _defaultTopK = 40;
+
+/// The Android implementation of [LocalLlmPlatform] using `lib_litert_lm`.
 class LocalLlmAndroid extends LocalLlmPlatform {
   /// Registers this class as the default instance of [LocalLlmPlatform].
   static void registerWith() {
     LocalLlmPlatform.instance = LocalLlmAndroid();
   }
 
-  LiteLmEngine? _engine;
-  LiteLmConversation? _conversation;
+  LiteRtLm? _client;
+  LiteRtLmEngine? _engine;
+  LiteRtLmSession? _activeSession;
 
   @override
   Future<void> loadModel(
@@ -22,15 +27,19 @@ class LocalLlmAndroid extends LocalLlmPlatform {
   }) async {
     await unloadModel();
     try {
-      // By default we use the CPU backend for safety, but can be configured otherwise if needed.
-      final config = LiteLmEngineConfig(
-        modelPath: modelPath,
-        backend: LiteLmBackend.cpu,
-        visionBackend: supportImage ? LiteLmBackend.cpu : null,
-        audioBackend: supportAudio ? LiteLmBackend.cpu : null,
+      final client = _requireOk(await LiteRtLm.create());
+      final engine = _requireOk(
+        await client.loadEngine(
+          LiteRtLmEngineConfig(
+            modelPath: modelPath,
+            backend: 'cpu',
+            maxNumTokens: _defaultMaxNumTokens,
+          ),
+        ),
       );
-      _engine = await LiteLmEngine.create(config);
-      _conversation = await _engine!.createConversation();
+
+      _client = client;
+      _engine = engine;
     } catch (e) {
       await unloadModel();
       rethrow;
@@ -42,40 +51,81 @@ class LocalLlmAndroid extends LocalLlmPlatform {
     String prompt, {
     int? maxTokens,
     double? temperature,
+    int? topK,
     List<String>? stopSequences,
     Uint8List? imageBytes,
     Uint8List? audioBytes,
-  }) {
-    final conversation = _conversation;
-    if (conversation == null) {
-      return Stream.error(
-          StateError('No model loaded. Call loadModel() first.'));
+  }) async* {
+    final engine = _engine;
+    if (engine == null) {
+      throw StateError('No model loaded. Call loadModel() first.');
+    }
+    if (imageBytes != null || audioBytes != null) {
+      // WORKAROUND(upstream): gsmlg-app/lib_litert_lm#1
+      throw UnsupportedError(
+        'lib_litert_lm does not support multimodal input yet.',
+      );
     }
 
-    final contents = <Map<String, dynamic>>[
-      LiteLmContent.text(prompt).toMap(),
-      if (imageBytes != null) LiteLmContent.imageBytes(imageBytes).toMap(),
-      if (audioBytes != null) LiteLmContent.audioBytes(audioBytes).toMap(),
-    ];
+    await _activeSession?.cancel();
+    await _activeSession?.dispose();
+    _activeSession = null;
 
-    return FlutterLitertLmPlatform.instance
-        .sendMessageStream(conversation.id, contents, null)
-        .map((map) => LiteLmMessage.fromMap(map).text);
+    final session = _requireOk(
+      await engine.createSession(
+        params: LiteRtLmGenerationParams(
+          maxTokens: maxTokens ?? _defaultMaxOutputTokens,
+          temperature: temperature ?? _defaultTemperature,
+          topK: topK ?? _defaultTopK,
+        ),
+      ),
+    );
+    _activeSession = session;
+
+    try {
+      await for (final event in session.generateStream(prompt)) {
+        switch (event) {
+          case LiteRtLmToken(:final text):
+            yield text;
+          case LiteRtLmCompleted():
+            return;
+          case LiteRtLmFailed(:final error):
+            throw StateError(_formatFailure(error));
+          case LiteRtLmCancelledEvent():
+            return;
+        }
+      }
+    } finally {
+      if (identical(_activeSession, session)) {
+        _activeSession = null;
+      }
+      await session.dispose();
+    }
   }
 
   @override
   Future<void> unloadModel() async {
-    if (_conversation != null) {
-      try {
-        await _conversation!.dispose();
-      } catch (_) {}
-      _conversation = null;
-    }
-    if (_engine != null) {
-      try {
-        await _engine!.dispose();
-      } catch (_) {}
-      _engine = null;
-    }
+    final session = _activeSession;
+    final engine = _engine;
+    final client = _client;
+    _activeSession = null;
+    _engine = null;
+    _client = null;
+
+    await session?.cancel();
+    await session?.dispose();
+    await engine?.dispose();
+    await client?.dispose();
   }
+}
+
+T _requireOk<T>(LiteRtLmResult<T> result) {
+  final value = result.valueOrNull;
+  if (value != null) return value;
+  throw StateError(_formatFailure(result.errorOrNull));
+}
+
+String _formatFailure(LiteRtLmFailure? failure) {
+  if (failure == null) return 'LiteRT-LM operation failed.';
+  return '${failure.code}: ${failure.message}';
 }

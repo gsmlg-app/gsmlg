@@ -829,6 +829,7 @@ class GemmaRepository {
             prompt,
             maxTokens: effectiveConfig.maxTokens,
             temperature: effectiveConfig.temperature,
+            topK: effectiveConfig.topK,
             imageBytes: imageBytes,
             audioBytes: audioBytes,
           )) {

@@ -36,6 +36,7 @@ abstract class LocalLlmPlatform extends PlatformInterface {
     String prompt, {
     int? maxTokens,
     double? temperature,
+    int? topK,
     List<String>? stopSequences,
     Uint8List? imageBytes,
     Uint8List? audioBytes,
@@ -64,6 +65,7 @@ class _PlaceholderLocalLlmPlatform extends LocalLlmPlatform {
     String prompt, {
     int? maxTokens,
     double? temperature,
+    int? topK,
     List<String>? stopSequences,
     Uint8List? imageBytes,
     Uint8List? audioBytes,
