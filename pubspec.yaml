@@ -140,6 +140,7 @@ dependencies:
   duskmoon_visualization: ^1.6.0
   record: ^6.2.0
   wakelock_plus: ^1.5.2
+  background_downloader: ^9.5.5
 
 dependency_overrides:
   flutter_blue_plus_darwin:

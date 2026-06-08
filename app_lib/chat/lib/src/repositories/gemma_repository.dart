@@ -11,6 +11,7 @@ import 'package:lib_llama_cpp_server/lib_llama_cpp_server.dart' as llama_server;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:app_local_llm/app_local_llm.dart' as app_local_llm;
+import 'package:background_downloader/background_downloader.dart';
 
 import '../models/inference.dart';
 import '../models/message.dart';
@@ -153,7 +154,7 @@ class GemmaRepository {
   ModelConfig? _llamaConfig;
   LocalLlamaServerConfig? _llamaServerConfig;
   LocalLlamaServerSession? _llamaServer;
-  final _activeDownloads = <String, _DownloadControl>{};
+  final _activeDownloads = <String, Object>{};
 
   /// Current status of the model.
   GemmaModelStatus get status => _status;
@@ -437,18 +438,25 @@ class GemmaRepository {
   /// Pauses an active download while preserving its partial file for resume.
   Future<void> pauseModelDownload(String url) async {
     debugPrint('[GemmaRepo] pauseModelDownload(url=$url)');
-    _activeDownloads[url]?.pause();
+    final active = _activeDownloads[url];
+    if (active is _DownloadControl) {
+      active.pause();
+    } else if (active is DownloadTask) {
+      await FileDownloader().pause(active);
+    }
   }
 
   /// Cancels an active download and removes its partial file.
   Future<void> cancelModelDownload(String url) async {
     debugPrint('[GemmaRepo] cancelModelDownload(url=$url)');
-    final control = _activeDownloads[url];
-    if (control == null) {
+    final active = _activeDownloads[url];
+    if (active is _DownloadControl) {
+      active.cancel();
+    } else if (active is DownloadTask) {
+      await FileDownloader().cancelTasksWithIds([active.taskId]);
+    } else {
       await deleteDownloadForUrl(url);
-      return;
     }
-    control.cancel();
   }
 
   /// Deletes the partial or completed download file for a preset URL.
@@ -467,6 +475,74 @@ class GemmaRepository {
     void Function(DownloadProgress progress)? onProgress,
   }) async {
     final filePath = await _downloadFilePathForUrl(url);
+
+    var useBackgroundDownloader = true;
+    try {
+      // Detect if platform channels are supported (throws MissingPluginException / UnsupportedError in test runner)
+      await FileDownloader().trackTasks();
+    } catch (_) {
+      useBackgroundDownloader = false;
+    }
+
+    if (useBackgroundDownloader) {
+      try {
+        debugPrint('[GemmaRepo] Starting background_downloader for $url...');
+        final task = DownloadTask(
+          url: url,
+          filename: p.basename(filePath),
+          baseDirectory: BaseDirectory.temporary,
+          updates: Updates.statusAndProgress,
+          headers: token != null ? {'Authorization': 'Bearer $token'} : {},
+        );
+        _activeDownloads[url] = task;
+
+        final result = await FileDownloader().download(
+          task,
+          onProgress: (progress) {
+            final pct = (progress * 100).clamp(0.0, 100.0);
+            final downloadProgress = DownloadProgress(
+              percentage: pct,
+              receivedBytes: null,
+              totalBytes: null,
+              bytesPerSecond: null,
+            );
+            onProgress?.call(downloadProgress);
+            _progressController.add(downloadProgress);
+          },
+        );
+
+        _activeDownloads.remove(url);
+
+        if (result.status == TaskStatus.complete) {
+          final tempPath = await FileDownloader().pathInDirectory(task);
+          final downloadedFile = File(tempPath);
+          if (downloadedFile.existsSync()) {
+            final destination = File(filePath);
+            destination.parent.createSync(recursive: true);
+            if (destination.existsSync()) {
+              destination.deleteSync();
+            }
+            await downloadedFile.rename(filePath);
+          }
+          debugPrint('[GemmaRepo] background_downloader complete: $filePath');
+          return filePath;
+        } else if (result.status == TaskStatus.canceled) {
+          throw const ModelDownloadCanceledException();
+        } else if (result.status == TaskStatus.paused) {
+          throw const ModelDownloadPausedException();
+        } else {
+          throw HttpException('Download failed with status: ${result.status}');
+        }
+      } catch (e) {
+        _activeDownloads.remove(url);
+        if (e is ModelDownloadCanceledException || e is ModelDownloadPausedException) {
+          rethrow;
+        }
+        debugPrint('[GemmaRepo] background_downloader failed, trying fallback: $e');
+      }
+    }
+
+    // Fallback: HttpClient Range download
     final file = File(filePath);
     file.parent.createSync(recursive: true);
 
@@ -474,7 +550,7 @@ class GemmaRepository {
     if (file.existsSync()) {
       existingBytes = file.lengthSync();
       debugPrint(
-        '[GemmaRepo] Found partial download: $existingBytes bytes at $filePath',
+        '[GemmaRepo] Found partial download (fallback): $existingBytes bytes at $filePath',
       );
     }
 
@@ -507,7 +583,7 @@ class GemmaRepository {
       }
 
       debugPrint(
-        '[GemmaRepo] Sending GET request to $url (resume from $existingBytes bytes)...',
+        '[GemmaRepo] Sending GET request (fallback) to $url (resume from $existingBytes bytes)...',
       );
       final request = await client.getUrl(Uri.parse(url));
       if (token != null) {
@@ -532,24 +608,24 @@ class GemmaRepository {
         received = existingBytes;
         sink = file.openWrite(mode: FileMode.append);
         debugPrint(
-          '[GemmaRepo] Resuming download: $existingBytes / $totalBytes bytes',
+          '[GemmaRepo] Resuming download (fallback): $existingBytes / $totalBytes bytes',
         );
       } else if (response.statusCode == 200) {
         totalBytes = response.contentLength;
         received = 0;
         sink = file.openWrite();
         debugPrint(
-          '[GemmaRepo] Starting fresh download (totalBytes=$totalBytes)',
+          '[GemmaRepo] Starting fresh download (fallback, totalBytes=$totalBytes)',
         );
       } else if (response.statusCode == 416) {
         await response.drain<void>();
         debugPrint(
-          '[GemmaRepo] 416 Range Not Satisfiable; keeping existing file ($existingBytes bytes)',
+          '[GemmaRepo] 416 Range Not Satisfiable (fallback); keeping existing file ($existingBytes bytes)',
         );
         return filePath;
       } else {
         final errorBody = await response.transform(utf8.decoder).join();
-        debugPrint('[GemmaRepo] Error response body: $errorBody');
+        debugPrint('[GemmaRepo] Error response body (fallback): $errorBody');
         throw HttpException(
           'Download failed with status ${response.statusCode}: $errorBody',
         );
@@ -593,7 +669,7 @@ class GemmaRepository {
           final percentInt = percent.toInt();
           if (percentInt != lastLogPercent && percentInt % 10 == 0) {
             debugPrint(
-              '[GemmaRepo] Download progress: $percentInt% ($received / $totalBytes bytes)',
+              '[GemmaRepo] Download progress (fallback): $percentInt% ($received / $totalBytes bytes)',
             );
             lastLogPercent = percentInt;
           }
@@ -605,7 +681,7 @@ class GemmaRepository {
       sink = null;
 
       final fileSize = file.lengthSync();
-      debugPrint('[GemmaRepo] Download complete: $filePath ($fileSize bytes)');
+      debugPrint('[GemmaRepo] Download complete (fallback): $filePath ($fileSize bytes)');
       return filePath;
     } on ModelDownloadCanceledException {
       deletePartial = true;
@@ -625,16 +701,14 @@ class GemmaRepository {
       if (sink != null) {
         try {
           await sink.close();
-        } catch (_) {
-          // Closing after a forced HttpClient shutdown can surface stream errors.
-        }
+        } catch (_) {}
       }
       if (deletePartial) {
         _cleanupDownloadFile(filePath);
       }
       _activeDownloads.remove(url);
       client.close();
-      debugPrint('[GemmaRepo] HttpClient closed');
+      debugPrint('[GemmaRepo] HttpClient closed (fallback)');
     }
   }
 

@@ -33,6 +33,7 @@ dependencies:
   dart_mcp: ^0.5.1
   stream_channel: ^2.1.4
   app_local_llm: any
+  background_downloader: any
 
 dev_dependencies:
   test: ^1.30.0
