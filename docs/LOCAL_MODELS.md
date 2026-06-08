@@ -1,13 +1,27 @@
 # Local Model Downloads
 
-GSMLG's first local-LLM release supports two preset GGUF models:
+GSMLG's first local-LLM release supports two preset Gemma 4 models. Desktop
+downloads use 4-bit GGUF artifacts; Android downloads use LiteRT-LM artifacts.
+
+## Desktop GGUF Artifacts
 
 | Model | Hugging Face repository | File | Notes |
 |-------|-------------------------|------|-------|
 | Gemma 4 E4B IT | `ggml-org/gemma-4-E4B-it-GGUF` | `gemma-4-E4B-it-Q4_K_M.gguf` | Default 4-bit local model |
 | Gemma 4 E2B IT | `dahus/gemma-4-e2b-it-Q4_K_M-GGUF` | `gemma-4-e2b-Q4_K_M.gguf` | Smaller 4-bit preset model |
 
-The app downloads these files from Hugging Face and stores them in its
+## Android LiteRT-LM Artifacts
+
+| Model | Hugging Face repository | File |
+|-------|-------------------------|------|
+| Gemma 4 E4B IT | `litert-community/gemma-4-E4B-it-litert-lm` | `gemma-4-E4B-it.litertlm` |
+| Gemma 4 E2B IT | `litert-community/gemma-4-E2B-it-litert-lm` | `gemma-4-E2B-it.litertlm` |
+
+The in-app downloader selects the Android artifacts automatically on Android.
+
+## Cache Layout
+
+The app downloads model files from Hugging Face and stores them in its
 app-managed cache under:
 
 ```text
@@ -87,12 +101,15 @@ hf download \
 ```
 
 After downloading, restart GSMLG or reopen `Settings > Local Models`. The app
-will list the model as downloaded when the preset GGUF file exists and is
+will list the model as downloaded when the preset model file exists and is
 non-empty.
 
 ## Notes
 
-- The local model catalog is intentionally 4-bit GGUF-only for this release.
+- The local model catalog is intentionally limited to Gemma 4 E4B and E2B for
+  this release.
+- Android uses LiteRT-LM `.litertlm` artifacts; desktop uses 4-bit GGUF
+  artifacts.
 - Multimodal, audio, and function-calling local models are deferred.
 - The Hugging Face CLI command is `hf`; older installations may also provide
   `huggingface-cli`, but new docs and examples should use `hf`.

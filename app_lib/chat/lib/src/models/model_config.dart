@@ -71,7 +71,7 @@ class GemmaModelInfo {
   /// Approximate download size, e.g. '529 MB'.
   final String sizeLabel;
 
-  /// GGUF quantization label, e.g. 'Q4_K_M'.
+  /// Quantization label, e.g. 'Q4_K_M'.
   final String quantizationLabel;
 
   /// HuggingFace download URL.
@@ -108,27 +108,44 @@ class GemmaModelInfo {
   final String? minimumMemoryLabel;
 
   /// Whether vision/multimodal works on the current platform.
-  bool get effectiveSupportsMultimodal => supportsMultimodal;
-
-  /// Whether audio input works on the current platform.
-  bool get effectiveSupportsAudio => supportsAudio;
-
-  /// Whether function calling works on the current platform.
-  bool get effectiveSupportsFunctionCalls => supportsFunctionCalls;
-
-  /// Whether thinking mode works on the current platform.
-  bool get effectiveSupportsThinking => supportsThinking;
-
-  /// Whether this model uses the GGUF format for llama.cpp.
-  bool get isGguf {
-    final lower = downloadUrl.toLowerCase();
-    return lower.endsWith('.gguf') ||
-        lower.endsWith('.litertlm') ||
-        lower.endsWith('.zip') ||
-        lower.contains('mlx');
+  bool get effectiveSupportsMultimodal {
+    // Local multimodal execution is currently not supported on any platform.
+    return false;
   }
 
-  /// Whether this preset is a 4-bit GGUF model.
+  /// Whether audio input works on the current platform.
+  bool get effectiveSupportsAudio {
+    // Local audio execution is currently not supported on any platform.
+    return false;
+  }
+
+  /// Whether function calling works on the current platform.
+  bool get effectiveSupportsFunctionCalls {
+    // Local function calling is currently not supported on any platform.
+    return false;
+  }
+
+  /// Whether thinking mode works on the current platform.
+  bool get effectiveSupportsThinking {
+    if (Platform.isAndroid || Platform.isIOS) {
+      return false; // Mobile platforms do not support thinking mode yet.
+    }
+    return supportsThinking;
+  }
+
+  /// Whether this model has a format compatible with the current platform.
+  bool get isGguf {
+    final lower = downloadUrl.toLowerCase();
+    if (Platform.isAndroid) {
+      return lower.endsWith('.litertlm');
+    }
+    if (Platform.isIOS) {
+      return lower.endsWith('.zip') || lower.contains('mlx');
+    }
+    return lower.endsWith('.gguf');
+  }
+
+  /// Whether this preset is a 4-bit model compatible with the current platform.
   bool get isFourBitGguf => isGguf && quantizationLabel.startsWith('Q4');
 
   /// Whether this model is known to need a large runtime memory budget.
@@ -189,15 +206,21 @@ class GemmaModelInfo {
         'Preset URL';
   }
 
-  /// The download URL for this model.
-  String get downloadUrl {
-    if (Platform.isAndroid && androidUrl != null) {
+  /// The download URL for this model on a Dart operating system name.
+  String downloadUrlForOperatingSystem(String operatingSystem) {
+    final normalizedOperatingSystem = operatingSystem.toLowerCase();
+    if (normalizedOperatingSystem == 'android' && androidUrl != null) {
       return androidUrl!;
     }
-    if (Platform.isIOS && iosUrl != null) {
+    if (normalizedOperatingSystem == 'ios' && iosUrl != null) {
       return iosUrl!;
     }
     return url;
+  }
+
+  /// The download URL for this model on the current platform.
+  String get downloadUrl {
+    return downloadUrlForOperatingSystem(Platform.operatingSystem);
   }
 
   /// The size label for this model.
@@ -224,7 +247,7 @@ class GemmaModelInfo {
   static const _gemma4e2b = GemmaModelInfo(
     id: 'gemma-4-E2B-it',
     displayName: 'Gemma 4 E2B IT',
-    description: 'Default local GGUF text model, Q4_K_M',
+    description: 'Default local text model, Q4_K_M',
     sizeLabel: '3.43 GB',
     quantizationLabel: 'Q4_K_M',
     url:
@@ -242,7 +265,7 @@ class GemmaModelInfo {
   static const _gemma4e4b = GemmaModelInfo(
     id: 'gemma-4-E4B-it',
     displayName: 'Gemma 4 E4B IT',
-    description: 'Local GGUF text model, Q4_K_M',
+    description: 'Local text model, Q4_K_M',
     sizeLabel: '5.34 GB',
     quantizationLabel: 'Q4_K_M',
     url:
@@ -260,8 +283,9 @@ class GemmaModelInfo {
   // ---------------------------------------------------------------------------
   // Per-platform model lists
   //
-  // The local catalog is GGUF-only. Model files are downloaded and owned by the
-  // app, then loaded through lib_llama_cpp on all native platforms.
+  // The local catalog is platform-specific. Android downloads LiteRT-LM
+  // artifacts, iOS downloads MLX artifacts, and desktop downloads GGUF
+  // artifacts. Model files are downloaded and owned by the app.
   // ---------------------------------------------------------------------------
 
   /// Models available on mobile platforms (Android, iOS).

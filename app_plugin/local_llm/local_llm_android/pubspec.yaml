@@ -12,7 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   app_local_llm_platform_interface: any
-  lib_litert_lm: ^0.0.1
+  lib_litert_lm: ^0.1.0
 
 dev_dependencies:
   flutter_test:

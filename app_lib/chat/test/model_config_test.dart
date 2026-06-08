@@ -72,7 +72,7 @@ void main() {
     });
   });
 
-  group('Gemma 4 GGUF catalog', () {
+  group('Gemma 4 local model catalog', () {
     test('uses Hugging Face GGUF downloads for E4B and E2B', () {
       final e4b = GemmaModelInfo.findById('gemma-4-E4B-it');
       final e2b = GemmaModelInfo.findById('gemma-4-E2B-it');
@@ -124,7 +124,28 @@ void main() {
       expect(GemmaModelInfo.smallestFreeModel?.id, 'gemma-4-E2B-it');
     });
 
-    test('exposes only GGUF local models', () {
+    test('uses LiteRT-LM Gemma 4 E4B and E2B artifacts on Android', () {
+      final androidModels = GemmaModelInfo.availableModels;
+
+      expect(androidModels.map((model) => model.id).toList(), [
+        'gemma-4-E2B-it',
+        'gemma-4-E4B-it',
+      ]);
+
+      final e4b = GemmaModelInfo.findById('gemma-4-E4B-it')!;
+      final e2b = GemmaModelInfo.findById('gemma-4-E2B-it')!;
+
+      expect(
+        e4b.downloadUrlForOperatingSystem('android'),
+        'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
+      );
+      expect(
+        e2b.downloadUrlForOperatingSystem('android'),
+        'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+      );
+    });
+
+    test('exposes only app-supported local models', () {
       expect(GemmaModelInfo.availableModels, isNotEmpty);
       expect(GemmaModelInfo.availableModels.map((model) => model.id).toList(), [
         'gemma-4-E2B-it',
@@ -152,6 +173,27 @@ void main() {
       expect(e4b.downloadSourceLabel, 'ggml-org/gemma-4-E4B-it-GGUF');
       expect(e2b.downloadSourceName, 'Hugging Face');
       expect(e2b.downloadSourceLabel, 'dahus/gemma-4-e2b-it-Q4_K_M-GGUF');
+    });
+
+    test('verifies platform-specific capabilities', () {
+      final e2b = GemmaModelInfo.findById('gemma-4-E2B-it')!;
+
+      // Multimodal and audio are not supported locally on any platform currently
+      expect(e2b.effectiveSupportsMultimodal, isFalse);
+      expect(e2b.effectiveSupportsAudio, isFalse);
+      expect(e2b.effectiveSupportsFunctionCalls, isFalse);
+
+      // Thinking mode is supported on desktop but not mobile
+      // Since tests run on desktop (e.g. macos), effectiveSupportsThinking should be true if supportsThinking is true
+      // but we can check the logic itself via Platform
+      // (Testing isGguf properties under simulated platform check)
+      final androidUrl = e2b.downloadUrlForOperatingSystem('android');
+      final iosUrl = e2b.downloadUrlForOperatingSystem('ios');
+      final macosUrl = e2b.downloadUrlForOperatingSystem('macos');
+
+      expect(androidUrl.endsWith('.litertlm'), isTrue);
+      expect(iosUrl.endsWith('.zip') || iosUrl.contains('mlx'), isTrue);
+      expect(macosUrl.endsWith('.gguf'), isTrue);
     });
   });
 }

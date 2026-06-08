@@ -189,12 +189,15 @@ class GemmaRepository {
     return lower.endsWith('.gguf');
   }
 
-  /// Activates an already-installed GGUF model so [loadModel] can use it.
+  /// Activates an already-installed model so [loadModel] can use it.
   Future<void> activateModel(GemmaModelInfo info) async {
     debugPrint('[GemmaRepo] activateModel(${info.id})');
     try {
       if (!info.isGguf) {
-        _setError('Only GGUF models are supported for local inference.');
+        String expectedFormat = 'GGUF';
+        if (Platform.isAndroid) expectedFormat = 'LiteRT-LM';
+        if (Platform.isIOS) expectedFormat = 'MLX';
+        _setError('Only $expectedFormat models are supported for local inference.');
         return;
       }
 
@@ -208,7 +211,7 @@ class GemmaRepository {
 
       _llamaModelPath = filePath;
       _llamaModelInfo = info;
-      debugPrint('[GemmaRepo] activateModel using GGUF file: $filePath');
+      debugPrint('[GemmaRepo] activateModel using file: $filePath');
       _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
       debugPrint('[GemmaRepo] activateModel FAILED: $e');
@@ -217,7 +220,7 @@ class GemmaRepository {
     }
   }
 
-  /// Installs a GGUF model from the network with resume support.
+  /// Installs a model from the network with resume support.
   Future<void> installModel({
     required String url,
     String? token,
@@ -225,7 +228,10 @@ class GemmaRepository {
   }) async {
     debugPrint('[GemmaRepo] installModel(url=$url, hasToken=${token != null})');
     if (!_isGgufPath(url)) {
-      throw ArgumentError.value(url, 'url', 'Only GGUF models are supported.');
+      String expectedFormat = 'GGUF';
+      if (Platform.isAndroid) expectedFormat = 'LiteRT-LM';
+      if (Platform.isIOS) expectedFormat = 'MLX';
+      throw ArgumentError.value(url, 'url', 'Only $expectedFormat models are supported.');
     }
 
     try {
@@ -234,7 +240,7 @@ class GemmaRepository {
         token: token,
         onProgress: onProgress,
       );
-      debugPrint('[GemmaRepo] GGUF download ready at: $filePath');
+      debugPrint('[GemmaRepo] download ready at: $filePath');
       _setStatus(GemmaModelStatus.installed);
     } catch (e, st) {
       debugPrint('[GemmaRepo] installModel FAILED: $e');
@@ -244,7 +250,7 @@ class GemmaRepository {
     }
   }
 
-  /// Installs a GGUF model from the network via a proxy with resume support.
+  /// Installs a model from the network via a proxy with resume support.
   Future<void> installModelWithProxy({
     required String url,
     required String proxyUrl,
@@ -255,7 +261,10 @@ class GemmaRepository {
       '[GemmaRepo] installModelWithProxy(url=$url, proxy=$proxyUrl, hasToken=${token != null})',
     );
     if (!_isGgufPath(url)) {
-      throw ArgumentError.value(url, 'url', 'Only GGUF models are supported.');
+      String expectedFormat = 'GGUF';
+      if (Platform.isAndroid) expectedFormat = 'LiteRT-LM';
+      if (Platform.isIOS) expectedFormat = 'MLX';
+      throw ArgumentError.value(url, 'url', 'Only $expectedFormat models are supported.');
     }
 
     try {
@@ -275,7 +284,7 @@ class GemmaRepository {
     }
   }
 
-  /// Imports a user-selected GGUF file into the app-managed model cache.
+  /// Imports a user-selected model file into the app-managed model cache.
   Future<void> importModelFromFile({
     required GemmaModelInfo info,
     required String sourcePath,
@@ -284,17 +293,23 @@ class GemmaRepository {
       '[GemmaRepo] importModelFromFile(model=${info.id}, source=$sourcePath)',
     );
     if (!info.isGguf) {
+      String expectedFormat = 'GGUF';
+      if (Platform.isAndroid) expectedFormat = 'LiteRT-LM';
+      if (Platform.isIOS) expectedFormat = 'MLX';
       throw ArgumentError.value(
         info.id,
         'info',
-        'Only GGUF models are supported.',
+        'Only $expectedFormat models are supported.',
       );
     }
     if (!_isGgufPath(sourcePath)) {
+      String expectedExtension = '.gguf';
+      if (Platform.isAndroid) expectedExtension = '.litertlm';
+      if (Platform.isIOS) expectedExtension = '.zip or MLX';
       throw ArgumentError.value(
         sourcePath,
         'sourcePath',
-        'Only .gguf files are supported.',
+        'Only $expectedExtension files are supported.',
       );
     }
 
@@ -443,7 +458,7 @@ class GemmaRepository {
 
   /// Downloads a file with HTTP Range resume support.
   ///
-  /// GGUF files are downloaded into the app cache under
+  /// Model artifacts are downloaded into the app cache under
   /// `lib_llama_cpp/models/<org>/<repo>/` because the app owns those files.
   Future<String> _downloadFile({
     required String url,
@@ -662,7 +677,7 @@ class GemmaRepository {
     return '${uri.pathSegments[0]}/${uri.pathSegments[1]}';
   }
 
-  /// Lists all installed app-managed GGUF model IDs.
+  /// Lists all installed app-managed model IDs.
   Future<List<String>> listInstalledModels() async {
     debugPrint('[GemmaRepo] listInstalledModels()');
     final installed = <String>[];
