@@ -514,7 +514,8 @@ class GemmaRepository {
         _activeDownloads.remove(url);
 
         if (result.status == TaskStatus.complete) {
-          final tempPath = await FileDownloader().pathInDirectory(task);
+          final tempDir = await getTemporaryDirectory();
+          final tempPath = p.join(tempDir.path, task.filename);
           final downloadedFile = File(tempPath);
           if (downloadedFile.existsSync()) {
             final destination = File(filePath);
