@@ -24,11 +24,15 @@ class LocalLlm {
   /// Loads the local model into memory.
   Future<void> loadModel(
     String modelPath, {
+    String? backend,
+    String? litertDispatchLibDir,
     bool supportImage = false,
     bool supportAudio = false,
   }) {
     return LocalLlmPlatform.instance.loadModel(
       modelPath,
+      backend: backend,
+      litertDispatchLibDir: litertDispatchLibDir,
       supportImage: supportImage,
       supportAudio: supportAudio,
     );

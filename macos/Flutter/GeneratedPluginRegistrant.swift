@@ -6,6 +6,7 @@ import FlutterMacOS
 import Foundation
 
 import app_client_info_macos
+import app_system_metrics_macos
 import camera_macos
 import file_picker
 import flutter_blue_plus_darwin
@@ -19,6 +20,7 @@ import webview_flutter_wkwebview
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   ClientInfoPlugin.register(with: registry.registrar(forPlugin: "ClientInfoPlugin"))
+  SystemMetricsPlugin.register(with: registry.registrar(forPlugin: "SystemMetricsPlugin"))
   CameraMacosPlugin.register(with: registry.registrar(forPlugin: "CameraMacosPlugin"))
   FilePickerPlugin.register(with: registry.registrar(forPlugin: "FilePickerPlugin"))
   FlutterBluePlusPlugin.register(with: registry.registrar(forPlugin: "FlutterBluePlusPlugin"))

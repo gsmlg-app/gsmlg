@@ -87,9 +87,10 @@ final class GemmaModelSetProxy extends GemmaModelEvent {
 
 /// Select a model, persist the selection, and activate + auto-load it.
 final class GemmaModelSelect extends GemmaModelEvent {
-  const GemmaModelSelect({required this.modelId});
+  const GemmaModelSelect({required this.modelId, this.config});
 
   final String modelId;
+  final ModelConfig? config;
 }
 
 /// Deselect the current model without deleting it.

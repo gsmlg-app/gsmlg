@@ -59,13 +59,15 @@ class ClientInfoPlugin : FlutterPlugin, MethodCallHandler {
                 "brand" to Build.BRAND,
                 "device" to Build.DEVICE,
                 "sdkInt" to Build.VERSION.SDK_INT,
-                "release" to Build.VERSION.RELEASE
+                "release" to Build.VERSION.RELEASE,
+                "nativeLibraryDir" to context.applicationInfo.nativeLibraryDir
             )
         )
 
         cachedData = data
         return data
     }
+
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)

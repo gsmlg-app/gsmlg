@@ -454,6 +454,14 @@ void main() {
       );
       await _pumpUntil(
         tester,
+        () => chatSettingsBloc.state.agents.any((agent) => agent.name == 'Writer'),
+      );
+      final writerId = chatSettingsBloc.state.agents
+          .singleWhere((agent) => agent.name == 'Writer')
+          .id;
+      chatSettingsBloc.add(ChatSettingsSelectAgent(id: writerId));
+      await _pumpUntil(
+        tester,
         () => chatSettingsBloc.state.activeAgent?.name == 'Writer',
       );
       chatSettingsBloc.add(
@@ -477,9 +485,6 @@ void main() {
       expect(chatSettingsBloc.state.activeAgent?.name, 'Reviewer');
       expect(chatSettingsBloc.state.config.temperature, 0.2);
 
-      final writerId = chatSettingsBloc.state.agents
-          .singleWhere((agent) => agent.name == 'Writer')
-          .id;
       chatSettingsBloc.add(ChatSettingsSelectAgent(id: writerId));
       await _pumpUntil(
         tester,

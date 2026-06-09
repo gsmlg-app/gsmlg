@@ -103,6 +103,24 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     };
   }
 
+  String get _targetOperatingSystem {
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android => 'android',
+      TargetPlatform.iOS => 'ios',
+      TargetPlatform.macOS => 'macos',
+      TargetPlatform.linux => 'linux',
+      TargetPlatform.windows => 'windows',
+      TargetPlatform.fuchsia => 'fuchsia',
+    };
+  }
+
+  String _modelSourceLine(GemmaModelInfo model) {
+    final operatingSystem = _targetOperatingSystem;
+    return '${model.formatLabelForOperatingSystem(operatingSystem)} from '
+        '${model.downloadSourceNameForOperatingSystem(operatingSystem)}: '
+        '${model.downloadSourceLabelForOperatingSystem(operatingSystem)}';
+  }
+
   SettingsSection _buildDownloadedSection(
     BuildContext context,
     GemmaModelState state,
@@ -116,7 +134,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           SettingsTile(
             title: const Text('No models downloaded'),
             description: const Text(
-              'Download one of the preset 4-bit Gemma 4 GGUF models.',
+              'Download one of the preset Gemma 4 models for this platform.',
             ),
             leading: const Icon(Icons.info_outline),
           ),
@@ -137,8 +155,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           title: Text(displayName),
           description: info != null
               ? Text(
-                  '${info.description}\n'
-                  '${info.quantizationLabel} GGUF\n'
+                  '${info.descriptionForOperatingSystem(_targetOperatingSystem)}\n'
+                  '${info.formatLabelForOperatingSystem(_targetOperatingSystem)}\n'
                   '${info.memoryRequirementLabel}',
                 )
               : null,
@@ -213,7 +231,10 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     final tiles = <SettingsTile>[];
 
     for (final download in state.activeDownloads) {
-      final info = GemmaModelInfo.findById(download.modelId);
+      final info = GemmaModelInfo.findByIdForOperatingSystem(
+        download.modelId,
+        _targetOperatingSystem,
+      );
       final displayName = info?.displayName ?? download.modelId;
       final category = info?.category ?? ModelCategory.other;
       final progressValue = download.progress > 0
@@ -226,7 +247,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           title: Text(displayName),
           description: Text(
             [
-              if (info != null) info.description,
+              if (info != null)
+                info.descriptionForOperatingSystem(_targetOperatingSystem),
               _downloadTransferLabel(download),
             ].join('\n'),
           ),
@@ -296,7 +318,10 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     final tiles = <SettingsTile>[];
 
     for (final download in state.pausedDownloads) {
-      final info = GemmaModelInfo.findById(download.modelId);
+      final info = GemmaModelInfo.findByIdForOperatingSystem(
+        download.modelId,
+        _targetOperatingSystem,
+      );
       final displayName = info?.displayName ?? download.modelId;
       final category = info?.category ?? ModelCategory.other;
 
@@ -306,7 +331,8 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
           title: Text(displayName),
           description: Text(
             [
-              if (info != null) info.description,
+              if (info != null)
+                info.descriptionForOperatingSystem(_targetOperatingSystem),
               _downloadTransferLabel(download),
             ].join('\n'),
           ),
@@ -353,7 +379,10 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     final tiles = <SettingsTile>[];
 
     for (final failed in state.failedDownloads) {
-      final info = GemmaModelInfo.findById(failed.modelId);
+      final info = GemmaModelInfo.findByIdForOperatingSystem(
+        failed.modelId,
+        _targetOperatingSystem,
+      );
       final displayName = info?.displayName ?? failed.modelId;
 
       tiles.add(
@@ -413,10 +442,11 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     BuildContext context,
     GemmaModelState state,
   ) {
+    final operatingSystem = _targetOperatingSystem;
     final models = GemmaModelInfo.platformModels
         .where(
           (model) =>
-              model.isFourBitGguf &&
+              model.isFourBitArtifactForOperatingSystem(operatingSystem) &&
               !state.isModelDownloading(model.id) &&
               !state.isModelPaused(model.id) &&
               !_isInstalled(model, state.installedModels),
@@ -443,12 +473,11 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                   : model.displayName,
             ),
             description: Text(
-              '${model.description}\n'
-              '${model.quantizationLabel} GGUF from '
-              '${model.downloadSourceName}: ${model.downloadSourceLabel}\n'
+              '${model.descriptionForOperatingSystem(operatingSystem)}\n'
+              '${_modelSourceLine(model)}\n'
               '${model.memoryRequirementLabel}',
             ),
-            trailing: Text(model.effectiveSizeLabel),
+            trailing: Text(model.sizeLabelForOperatingSystem(operatingSystem)),
             onPressed: (_) => _showDownloadConfirmDialog(context, model, false),
           ),
       ],
@@ -456,7 +485,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }
 
   String _downloadDialogNote(GemmaModelInfo model) {
-    if (model.isHuggingFaceDownload) {
+    if (model.isHuggingFaceDownloadForOperatingSystem(_targetOperatingSystem)) {
       return 'Uses your configured Hugging Face token when available.';
     }
     return 'Uses the preset download URL bundled with the app.';
@@ -521,19 +550,31 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                Text(model.description),
+                Text(
+                  model.descriptionForOperatingSystem(_targetOperatingSystem),
+                ),
                 const SizedBox(height: 8),
-                Text('Size: ${model.effectiveSizeLabel}'),
+                Text(
+                  'Size: ${model.sizeLabelForOperatingSystem(_targetOperatingSystem)}',
+                ),
                 const SizedBox(height: 8),
-                Text('Format: ${model.quantizationLabel} GGUF'),
+                Text(
+                  'Format: ${model.formatLabelForOperatingSystem(_targetOperatingSystem)}',
+                ),
                 const SizedBox(height: 8),
                 Text('Memory: ${model.memoryRequirementLabel}'),
                 const SizedBox(height: 8),
-                Text('Source: ${model.downloadSourceName}'),
+                Text(
+                  'Source: ${model.downloadSourceNameForOperatingSystem(_targetOperatingSystem)}',
+                ),
                 const SizedBox(height: 8),
-                Text('Repository: ${model.downloadSourceLabel}'),
+                Text(
+                  'Repository: ${model.downloadSourceLabelForOperatingSystem(_targetOperatingSystem)}',
+                ),
                 const SizedBox(height: 8),
-                Text('File: ${model.downloadFileName}'),
+                Text(
+                  'File: ${model.downloadFileNameForOperatingSystem(_targetOperatingSystem)}',
+                ),
                 const SizedBox(height: 8),
                 Text(
                   _downloadDialogNote(model),
@@ -573,7 +614,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 _pickLocalModelFile(context, model);
               },
               icon: const Icon(Icons.folder_open),
-              label: const Text('Add Local GGUF File'),
+              label: Text(
+                'Add Local ${model.formatLabelForOperatingSystem(_targetOperatingSystem)} File',
+              ),
             ),
             FilledButton(
               onPressed: () {
@@ -596,11 +639,15 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     BuildContext context,
     GemmaModelInfo model,
   ) async {
-    final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+    final operatingSystem = _targetOperatingSystem;
+    final isAndroid = operatingSystem == 'android';
     final result = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Select ${model.downloadFileName}',
+      dialogTitle:
+          'Select ${model.downloadFileNameForOperatingSystem(operatingSystem)}',
       type: isAndroid ? FileType.any : FileType.custom,
-      allowedExtensions: isAndroid ? null : const ['gguf'],
+      allowedExtensions: isAndroid
+          ? null
+          : model.fileExtensionsForOperatingSystem(operatingSystem),
       allowMultiple: false,
       withData: false,
     );
@@ -612,8 +659,12 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
       _showImportMessage(context, 'Selected file has no readable path.');
       return;
     }
-    if (!_isGgufFile(file.name) && !_isGgufFile(filePath)) {
-      _showImportMessage(context, 'Selected file is not a GGUF model.');
+    if (!_isSupportedModelFile(file.name, model) &&
+        !_isSupportedModelFile(filePath, model)) {
+      _showImportMessage(
+        context,
+        'Selected file is not a ${model.formatLabelForOperatingSystem(operatingSystem)} model.',
+      );
       return;
     }
 
@@ -622,14 +673,12 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     );
   }
 
-  bool _isGgufFile(String path) {
+  bool _isSupportedModelFile(String path, GemmaModelInfo model) {
     final lower = path.toLowerCase();
-    return lower.endsWith('.gguf') ||
-        lower.endsWith('.litertlm') ||
-        lower.endsWith('.zip') ||
-        lower.contains('mlx');
+    return model
+        .fileExtensionsForOperatingSystem(_targetOperatingSystem)
+        .any((extension) => lower.endsWith('.$extension'));
   }
-
 
   void _showImportMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(
@@ -638,7 +687,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }
 
   void _installModel(BuildContext context, GemmaModelInfo model) {
-    if (model.isHuggingFaceDownload) {
+    if (model.isHuggingFaceDownloadForOperatingSystem(_targetOperatingSystem)) {
       _installWithHuggingFaceToken(
         context,
         model,
@@ -701,7 +750,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   }) {
     context.read<GemmaModelBloc>().add(
       GemmaModelInstall(
-        url: model.downloadUrl,
+        url: model.downloadUrlForOperatingSystem(_targetOperatingSystem),
         modelId: model.id,
         token: token,
       ),
@@ -710,13 +759,19 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
 
   void _pauseDownload(BuildContext context, GemmaModelInfo model) {
     context.read<GemmaModelBloc>().add(
-      GemmaModelPauseDownload(url: model.downloadUrl, modelId: model.id),
+      GemmaModelPauseDownload(
+        url: model.downloadUrlForOperatingSystem(_targetOperatingSystem),
+        modelId: model.id,
+      ),
     );
   }
 
   void _cancelDownload(BuildContext context, GemmaModelInfo model) {
     context.read<GemmaModelBloc>().add(
-      GemmaModelCancelDownload(url: model.downloadUrl, modelId: model.id),
+      GemmaModelCancelDownload(
+        url: model.downloadUrlForOperatingSystem(_targetOperatingSystem),
+        modelId: model.id,
+      ),
     );
   }
 
@@ -760,6 +815,20 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     BuildContext context,
     ModelConfig config,
   ) {
+    if (_targetOperatingSystem == 'android') {
+      return SettingsSection(
+        title: const Text('Inference Settings'),
+        tiles: [
+          SettingsTile(
+            leading: const Icon(Icons.memory),
+            title: const Text('Runtime'),
+            description: const Text('Android LiteRT-LM inference.'),
+            trailing: const Text('LiteRT-LM'),
+          ),
+        ],
+      );
+    }
+
     final effectiveConfig = config.withSupportedBackendForCurrentPlatform();
     return SettingsSection(
       title: const Text('Inference Settings'),
@@ -826,6 +895,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
       GemmaBackend.metal => 'Apple Metal acceleration.',
       GemmaBackend.cuda => 'NVIDIA CUDA acceleration.',
       GemmaBackend.vulkan => 'Vulkan acceleration.',
+      GemmaBackend.npu => 'NPU acceleration.',
     };
   }
 
@@ -972,13 +1042,9 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   // ---------------------------------------------------------------------------
 
   GemmaModelInfo? _findModelInfoByInstalledId(String installedId) {
-    for (final model in GemmaModelInfo.availableModels) {
-      if (installedId == model.id ||
-          installedId.contains(model.id) ||
-          model.id.contains(installedId)) {
-        return model;
-      }
-    }
-    return null;
+    return GemmaModelInfo.findByIdForOperatingSystem(
+      installedId,
+      _targetOperatingSystem,
+    );
   }
 }

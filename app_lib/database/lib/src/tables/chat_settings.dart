@@ -58,6 +58,9 @@ class ChatSettingsTable extends Table {
   /// Default system prompt for new conversations.
   TextColumn get defaultSystemPrompt => text().nullable()();
 
+  /// The local model ID.
+  TextColumn get localModelId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {key};
 }

@@ -47,7 +47,11 @@ class GemmaModelInfo {
     required this.sizeLabel,
     required this.quantizationLabel,
     required this.url,
+    this.androidDescription,
+    this.androidSizeLabel,
     this.androidUrl,
+    this.iosDescription,
+    this.iosSizeLabel,
     this.iosUrl,
     this.category = ModelCategory.gemma,
     this.needsAuth = false,
@@ -77,8 +81,20 @@ class GemmaModelInfo {
   /// HuggingFace download URL.
   final String url;
 
+  /// Android-specific model description.
+  final String? androidDescription;
+
+  /// Android-specific approximate download size.
+  final String? androidSizeLabel;
+
   /// Android-specific download URL.
   final String? androidUrl;
+
+  /// iOS-specific model description.
+  final String? iosDescription;
+
+  /// iOS-specific approximate download size.
+  final String? iosSizeLabel;
 
   /// iOS-specific download URL.
   final String? iosUrl;
@@ -133,20 +149,31 @@ class GemmaModelInfo {
     return supportsThinking;
   }
 
+  /// Whether this model has an artifact compatible with an operating system.
+  bool isCompatibleArtifactForOperatingSystem(String operatingSystem) {
+    final lower = downloadUrlForOperatingSystem(operatingSystem).toLowerCase();
+    return switch (operatingSystem.toLowerCase()) {
+      'android' => lower.endsWith('.litertlm'),
+      'ios' => lower.endsWith('.zip') || lower.contains('mlx'),
+      _ => lower.endsWith('.gguf'),
+    };
+  }
+
   /// Whether this model has a format compatible with the current platform.
   bool get isGguf {
-    final lower = downloadUrl.toLowerCase();
-    if (Platform.isAndroid) {
-      return lower.endsWith('.litertlm');
-    }
-    if (Platform.isIOS) {
-      return lower.endsWith('.zip') || lower.contains('mlx');
-    }
-    return lower.endsWith('.gguf');
+    return isCompatibleArtifactForOperatingSystem(Platform.operatingSystem);
+  }
+
+  /// Whether this preset is a 4-bit model compatible with an operating system.
+  bool isFourBitArtifactForOperatingSystem(String operatingSystem) {
+    return isCompatibleArtifactForOperatingSystem(operatingSystem) &&
+        quantizationLabel.startsWith('Q4');
   }
 
   /// Whether this preset is a 4-bit model compatible with the current platform.
-  bool get isFourBitGguf => isGguf && quantizationLabel.startsWith('Q4');
+  bool get isFourBitGguf {
+    return isFourBitArtifactForOperatingSystem(Platform.operatingSystem);
+  }
 
   /// Whether this model is known to need a large runtime memory budget.
   bool get requiresLargeMemory {
@@ -175,35 +202,85 @@ class GemmaModelInfo {
     return '$baseLabel: $minimum';
   }
 
+  /// Whether this model downloads from Hugging Face on an operating system.
+  bool isHuggingFaceDownloadForOperatingSystem(String operatingSystem) {
+    return Uri.parse(
+          downloadUrlForOperatingSystem(operatingSystem),
+        ).host.toLowerCase() ==
+        'huggingface.co';
+  }
+
   /// Whether this model downloads from Hugging Face.
   bool get isHuggingFaceDownload {
-    return Uri.parse(downloadUrl).host.toLowerCase() == 'huggingface.co';
+    return isHuggingFaceDownloadForOperatingSystem(Platform.operatingSystem);
+  }
+
+  /// Filename from an operating system's download URL.
+  String downloadFileNameForOperatingSystem(String operatingSystem) {
+    return Uri.parse(
+      downloadUrlForOperatingSystem(operatingSystem),
+    ).pathSegments.last;
   }
 
   /// Filename from the current platform's download URL.
-  String get downloadFileName => Uri.parse(downloadUrl).pathSegments.last;
+  String get downloadFileName {
+    return downloadFileNameForOperatingSystem(Platform.operatingSystem);
+  }
 
-  /// Hugging Face `org/repo` path for app-managed model cache layout.
-  String? get huggingFaceRepoPath {
-    final uri = Uri.parse(downloadUrl);
+  String? _huggingFaceRepoPathForUrl(String url) {
+    final uri = Uri.parse(url);
     if (uri.host != 'huggingface.co' || uri.pathSegments.length < 2) {
       return null;
     }
     return '${uri.pathSegments[0]}/${uri.pathSegments[1]}';
   }
 
-  /// Human-readable source name for the preset download URL.
-  String get downloadSourceName {
-    final host = Uri.tryParse(downloadUrl)?.host.toLowerCase() ?? '';
+  /// Hugging Face `org/repo` path for app-managed model cache layout.
+  String? huggingFaceRepoPathForOperatingSystem(String operatingSystem) {
+    return _huggingFaceRepoPathForUrl(
+      downloadUrlForOperatingSystem(operatingSystem),
+    );
+  }
+
+  /// Hugging Face `org/repo` path for app-managed model cache layout.
+  String? get huggingFaceRepoPath {
+    return huggingFaceRepoPathForOperatingSystem(Platform.operatingSystem);
+  }
+
+  String _downloadSourceNameForUrl(String url) {
+    final host = Uri.tryParse(url)?.host.toLowerCase() ?? '';
     if (host == 'huggingface.co') return 'Hugging Face';
     return host.isEmpty ? 'Preset URL' : host;
   }
 
+  /// Human-readable source name for an operating system's preset download URL.
+  String downloadSourceNameForOperatingSystem(String operatingSystem) {
+    return _downloadSourceNameForUrl(
+      downloadUrlForOperatingSystem(operatingSystem),
+    );
+  }
+
+  /// Human-readable source name for the preset download URL.
+  String get downloadSourceName {
+    return downloadSourceNameForOperatingSystem(Platform.operatingSystem);
+  }
+
+  String _downloadSourceLabelForUrl(String url) {
+    return _huggingFaceRepoPathForUrl(url) ??
+        Uri.tryParse(url)?.host ??
+        'Preset URL';
+  }
+
+  /// Human-readable source label for an operating system.
+  String downloadSourceLabelForOperatingSystem(String operatingSystem) {
+    return _downloadSourceLabelForUrl(
+      downloadUrlForOperatingSystem(operatingSystem),
+    );
+  }
+
   /// Human-readable source label, usually the Hugging Face `org/repo` path.
   String get downloadSourceLabel {
-    return huggingFaceRepoPath ??
-        Uri.tryParse(downloadUrl)?.host ??
-        'Preset URL';
+    return downloadSourceLabelForOperatingSystem(Platform.operatingSystem);
   }
 
   /// The download URL for this model on a Dart operating system name.
@@ -223,8 +300,56 @@ class GemmaModelInfo {
     return downloadUrlForOperatingSystem(Platform.operatingSystem);
   }
 
+  /// Description for this model on an operating system.
+  String descriptionForOperatingSystem(String operatingSystem) {
+    return switch (operatingSystem.toLowerCase()) {
+      'android' => androidDescription ?? description,
+      'ios' => iosDescription ?? description,
+      _ => description,
+    };
+  }
+
+  /// Description for this model on the current platform.
+  String get effectiveDescription {
+    return descriptionForOperatingSystem(Platform.operatingSystem);
+  }
+
+  /// User-facing artifact format for this model on an operating system.
+  String formatLabelForOperatingSystem(String operatingSystem) {
+    return switch (operatingSystem.toLowerCase()) {
+      'android' => 'LiteRT-LM',
+      'ios' => 'MLX',
+      _ => 'GGUF',
+    };
+  }
+
+  /// User-facing artifact format for this model on the current platform.
+  String get formatLabel {
+    return formatLabelForOperatingSystem(Platform.operatingSystem);
+  }
+
+  /// Expected local file extensions for this model on an operating system.
+  List<String> fileExtensionsForOperatingSystem(String operatingSystem) {
+    return switch (operatingSystem.toLowerCase()) {
+      'android' => const ['litertlm'],
+      'ios' => const ['zip'],
+      _ => const ['gguf'],
+    };
+  }
+
+  /// The size label for this model on an operating system.
+  String sizeLabelForOperatingSystem(String operatingSystem) {
+    return switch (operatingSystem.toLowerCase()) {
+      'android' => androidSizeLabel ?? sizeLabel,
+      'ios' => iosSizeLabel ?? sizeLabel,
+      _ => sizeLabel,
+    };
+  }
+
   /// The size label for this model.
-  String get effectiveSizeLabel => sizeLabel;
+  String get effectiveSizeLabel {
+    return sizeLabelForOperatingSystem(Platform.operatingSystem);
+  }
 
   /// Maximum KV cache size supported by this model on the current platform.
   ///
@@ -247,13 +372,16 @@ class GemmaModelInfo {
   static const _gemma4e2b = GemmaModelInfo(
     id: 'gemma-4-E2B-it',
     displayName: 'Gemma 4 E2B IT',
-    description: 'Default local text model, Q4_K_M',
+    description: 'Default local GGUF text model, Q4_K_M',
     sizeLabel: '3.43 GB',
     quantizationLabel: 'Q4_K_M',
     url:
         'https://huggingface.co/dahus/gemma-4-e2b-it-Q4_K_M-GGUF/resolve/main/gemma-4-e2b-Q4_K_M.gguf',
+    androidDescription: 'Default Android LiteRT-LM text model',
+    androidSizeLabel: '2.4 GB',
     androidUrl:
         'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+    iosDescription: 'Default iOS MLX text model',
     iosUrl:
         'https://huggingface.co/mlx-community/gemma-4-E2B-it-4bit-mlx/resolve/main/gemma-4-E2B-it-4bit-mlx.zip',
     needsAuth: false,
@@ -265,13 +393,16 @@ class GemmaModelInfo {
   static const _gemma4e4b = GemmaModelInfo(
     id: 'gemma-4-E4B-it',
     displayName: 'Gemma 4 E4B IT',
-    description: 'Local text model, Q4_K_M',
+    description: 'Local GGUF text model, Q4_K_M',
     sizeLabel: '5.34 GB',
     quantizationLabel: 'Q4_K_M',
     url:
         'https://huggingface.co/ggml-org/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf',
+    androidDescription: 'Android LiteRT-LM text model',
+    androidSizeLabel: '3.4 GB',
     androidUrl:
         'https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm',
+    iosDescription: 'iOS MLX text model',
     iosUrl:
         'https://huggingface.co/mlx-community/gemma-4-E4B-it-4bit-mlx/resolve/main/gemma-4-E4B-it-4bit-mlx.zip',
     needsAuth: false,
@@ -322,19 +453,34 @@ class GemmaModelInfo {
   /// Searches [platformModels] first, then falls back to [availableModels]
   /// so installed-but-incompatible models can still be identified.
   static GemmaModelInfo? findById(String id) {
-    // Search platform models first for the common case
-    final result = _findInList(id, platformModels);
-    if (result != null) return result;
-    // Fall back to all models (e.g. model installed from another platform)
-    return _findInList(id, availableModels);
+    return findByIdForOperatingSystem(id, Platform.operatingSystem);
   }
 
-  static GemmaModelInfo? _findInList(String id, List<GemmaModelInfo> models) {
+  /// Look up a model by its ID or installed filename on an operating system.
+  static GemmaModelInfo? findByIdForOperatingSystem(
+    String id,
+    String operatingSystem,
+  ) {
+    // Search platform models first for the common case
+    final result = _findInList(id, platformModels, operatingSystem);
+    if (result != null) return result;
+    // Fall back to all models (e.g. model installed from another platform)
+    return _findInList(id, availableModels, operatingSystem);
+  }
+
+  static GemmaModelInfo? _findInList(
+    String id,
+    List<GemmaModelInfo> models,
+    String operatingSystem,
+  ) {
     for (final model in models) {
       if (model.id == id) return model;
       if (id.contains(model.id) || model.id.contains(id)) return model;
       final urlFilename =
-          Uri.parse(model.downloadUrl).pathSegments.lastOrNull ?? '';
+          Uri.parse(
+            model.downloadUrlForOperatingSystem(operatingSystem),
+          ).pathSegments.lastOrNull ??
+          '';
       if (urlFilename.isNotEmpty && id == urlFilename) return model;
     }
     return null;
@@ -360,6 +506,9 @@ enum GemmaBackend {
 
   /// Vulkan acceleration on supported platforms.
   vulkan,
+
+  /// NPU acceleration on supported platforms.
+  npu,
 }
 
 /// Backends supported by the current platform.
@@ -378,7 +527,11 @@ List<GemmaBackend> supportedGemmaBackendsForOperatingSystem(
       GemmaBackend.cuda,
       GemmaBackend.vulkan,
     ],
-    'android' => const [GemmaBackend.cpu, GemmaBackend.vulkan],
+    'android' => const [
+      GemmaBackend.cpu,
+      GemmaBackend.vulkan,
+      GemmaBackend.npu,
+    ],
     _ => const [GemmaBackend.cpu],
   };
 }
@@ -392,6 +545,9 @@ GemmaBackend defaultGemmaBackendForCurrentPlatform() {
 GemmaBackend defaultGemmaBackendForOperatingSystem(String operatingSystem) {
   final supported = supportedGemmaBackendsForOperatingSystem(operatingSystem);
   if (supported.contains(GemmaBackend.metal)) return GemmaBackend.metal;
+  if (operatingSystem.toLowerCase() == 'android') {
+    if (supported.contains(GemmaBackend.vulkan)) return GemmaBackend.vulkan;
+  }
   return GemmaBackend.cpu;
 }
 
@@ -402,6 +558,7 @@ extension GemmaBackendDisplay on GemmaBackend {
       GemmaBackend.metal => 'Metal',
       GemmaBackend.cuda => 'CUDA',
       GemmaBackend.vulkan => 'Vulkan',
+      GemmaBackend.npu => 'NPU',
     };
   }
 
@@ -424,6 +581,7 @@ class ModelConfig extends Equatable {
     this.inferenceMode = ChatInferenceMode.local,
     this.modelType = GemmaModelType.gemma2bIt,
     this.customModelPath,
+    this.localModelId,
     this.maxTokens = 2048,
     this.temperature = 0.8,
     this.topK = 40,
@@ -466,6 +624,9 @@ class ModelConfig extends Equatable {
   /// Path to a custom model file (only used when modelType is custom).
   final String? customModelPath;
 
+  /// The local model ID.
+  final String? localModelId;
+
   /// Maximum number of tokens to generate.
   final int maxTokens;
 
@@ -506,6 +667,7 @@ class ModelConfig extends Equatable {
     inferenceMode,
     modelType,
     customModelPath,
+    localModelId,
     maxTokens,
     temperature,
     topK,
@@ -530,6 +692,12 @@ class ModelConfig extends Equatable {
   /// Returns a human-readable model name.
   String get modelDisplayName {
     if (inferenceMode == ChatInferenceMode.remote) return remoteModel;
+
+    if (localModelId != null) {
+      final info = GemmaModelInfo.findById(localModelId!);
+      if (info != null) return info.displayName;
+      return localModelId!;
+    }
 
     return switch (modelType) {
       GemmaModelType.gemma2bIt => 'Gemma 2B-IT',
@@ -573,6 +741,8 @@ class ModelConfig extends Equatable {
     ChatInferenceMode? inferenceMode,
     GemmaModelType? modelType,
     String? customModelPath,
+    String? localModelId,
+    bool clearLocalModel = false,
     int? maxTokens,
     double? temperature,
     int? topK,
@@ -590,6 +760,7 @@ class ModelConfig extends Equatable {
       inferenceMode: inferenceMode ?? this.inferenceMode,
       modelType: modelType ?? this.modelType,
       customModelPath: customModelPath ?? this.customModelPath,
+      localModelId: clearLocalModel ? null : (localModelId ?? this.localModelId),
       maxTokens: maxTokens ?? this.maxTokens,
       temperature: temperature ?? this.temperature,
       topK: topK ?? this.topK,

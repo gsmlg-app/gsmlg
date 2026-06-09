@@ -162,38 +162,9 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
         await _repository.activateModel(modelInfo);
 
         if (_repository.status == GemmaModelStatus.installed) {
-          debugPrint('[GemmaModelBloc] Auto-loading model into memory...');
-          emit(state.copyWith(
-            status: GemmaModelStatus.loading,
-            modelType: event.modelType,
-          ));
-
-          // Mark which model we're about to load. If the app crashes during
-          // native model loading (e.g. GPU OOM), this key persists and we
-          // skip this model on the next launch.
-          await _preferences.setString(_loadingModelKey, modelId);
-
-          await _loadModelWithCapabilities(
-            ModelConfig.platformDefaultConfig,
-            modelInfo,
-            thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false,
-          );
-          debugPrint(
-              '[GemmaModelBloc] Auto-load done, repo status: ${_repository.status}');
-
-          // Clear the crash-detection key on successful load.
-          await _preferences.remove(_loadingModelKey);
-
-          if (_repository.status == GemmaModelStatus.ready) {
-            debugPrint('[GemmaModelBloc] Model $modelId loaded successfully');
-            emit(state.copyWith(status: GemmaModelStatus.ready));
-            loaded = true;
-            break;
-          }
-
-          debugPrint(
-              '[GemmaModelBloc] Model $modelId failed to load (status=${_repository.status})');
-          continue;
+          emit(state.copyWith(status: GemmaModelStatus.installed));
+          loaded = true;
+          break;
         }
       }
 
@@ -576,7 +547,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
 
       await _preferences.setString(_loadingModelKey, event.modelId);
       await _loadModelWithCapabilities(
-        ModelConfig.platformDefaultConfig,
+        event.config ?? ModelConfig.platformDefaultConfig,
         modelInfo,
         thinkingEnabled: _preferences.getBool(_thinkingEnabledKey) ?? false,
       );

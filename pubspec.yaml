@@ -43,6 +43,13 @@ workspace:
   - app_plugin/client_info/client_info_macos
   - app_plugin/client_info/client_info_windows
   - app_plugin/local_llm/local_llm
+  - app_plugin/system_metrics/system_metrics
+  - app_plugin/system_metrics/system_metrics_platform_interface
+  - app_plugin/system_metrics/system_metrics_android
+  - app_plugin/system_metrics/system_metrics_ios
+  - app_plugin/system_metrics/system_metrics_linux
+  - app_plugin/system_metrics/system_metrics_macos
+  - app_plugin/system_metrics/system_metrics_windows
   - app_plugin/local_llm/local_llm_platform_interface
   - app_plugin/local_llm/local_llm_android
   - app_plugin/local_llm/local_llm_ios
@@ -53,6 +60,7 @@ workspace:
   - app_api/openai_compatible
   - app_api/anthropic_compatible
   - third_party/gsmlg_whois
+  - third_party/lib_litert_lm
   - app_form/camera_settings
   - app_lib/ip_db
   - monitor_models
@@ -116,6 +124,7 @@ dependencies:
   accounts_bloc: any
   app_artwork: any
   app_client_info: any
+  app_system_metrics: any
   app_feedback: any
   app_adaptive_widgets: any
   app_logging: any

@@ -1,0 +1,26 @@
+name: app_system_metrics_ios
+description: iOS implementation of app_system_metrics
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.5.0
+  flutter: ^3.24.0
+
+flutter:
+  plugin:
+    implements: app_system_metrics
+    platforms:
+      ios:
+        pluginClass: SystemMetricsPlugin
+
+dependencies:
+  flutter:
+    sdk: flutter
+  app_system_metrics_platform_interface: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

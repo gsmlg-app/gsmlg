@@ -14,6 +14,7 @@ import 'chat_settings_screen.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/chat_message_list.dart';
 import 'widgets/model_status_banner.dart';
+import 'widgets/system_metrics_indicator.dart';
 
 class ChatScreen extends StatefulWidget {
   static const name = 'Chat';
@@ -58,13 +59,13 @@ class _ChatScreenState extends State<ChatScreen> {
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
         appBar: DmAppBar(
-          title: BlocBuilder<GemmaModelBloc, GemmaModelState>(
-            builder: (context, modelState) {
-              final selectedId = modelState.selectedModelId;
-              final modelInfo = selectedId != null
-                  ? GemmaModelInfo.findById(selectedId)
-                  : null;
-              final modelName = modelInfo?.displayName;
+          title: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+            builder: (context, settingsState) {
+              final modelName = settingsState.config.inferenceMode == ChatInferenceMode.remote
+                  ? settingsState.config.remoteModel
+                  : (settingsState.config.localModelId != null
+                      ? GemmaModelInfo.findById(settingsState.config.localModelId!)?.displayName ?? settingsState.config.localModelId
+                      : GemmaModelInfo.defaultModel.displayName);
               return BlocBuilder<ChatBloc, ChatState>(
                 builder: (context, state) {
                   final title = state.conversation?.title ?? 'Chat';
@@ -89,6 +90,74 @@ class _ChatScreenState extends State<ChatScreen> {
             },
           ),
           actions: [
+            const SystemMetricsIndicator(),
+            BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
+              builder: (context, settingsState) {
+                if (settingsState.config.inferenceMode != ChatInferenceMode.local) {
+                  return const SizedBox.shrink();
+                }
+                return BlocBuilder<GemmaModelBloc, GemmaModelState>(
+                  builder: (context, modelState) {
+                    final targetModelId = settingsState.config.localModelId ?? GemmaModelInfo.defaultModel.id;
+                    final isCurrentModelLoaded = modelState.status == GemmaModelStatus.ready && modelState.selectedModelId == targetModelId;
+
+                    if (isCurrentModelLoaded) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: TextButton.icon(
+                          style: TextButton.styleFrom(
+                            foregroundColor: Theme.of(context).colorScheme.error,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          icon: const Icon(Icons.stop),
+                          label: const Text('Stop'),
+                          onPressed: () {
+                            context.read<GemmaModelBloc>().add(const GemmaModelUnload());
+                          },
+                        ),
+                      );
+                    }
+
+                    final isLoading = modelState.status == GemmaModelStatus.loading || modelState.status == GemmaModelStatus.checking;
+                    final isInstalled = modelState.installedModels.contains(targetModelId);
+
+                    if (isLoading) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+
+                    if (isInstalled) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          icon: const Icon(Icons.play_arrow),
+                          label: const Text('Start'),
+                          onPressed: () {
+                            context.read<GemmaModelBloc>().add(
+                              GemmaModelSelect(
+                                modelId: targetModelId,
+                                config: settingsState.config,
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    }
+
+                    return const SizedBox.shrink();
+                  },
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.history),
               tooltip: 'History',
@@ -195,16 +264,19 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildLocalInputBar(ChatSettingsState settingsState) {
     return BlocBuilder<GemmaModelBloc, GemmaModelState>(
       builder: (context, modelState) {
+        final targetModelId = settingsState.config.localModelId ?? GemmaModelInfo.defaultModel.id;
         final selectedId = modelState.selectedModelId;
         final modelInfo = selectedId != null
             ? GemmaModelInfo.findById(selectedId)
             : null;
+        final isCurrentModelLoaded = modelState.status == GemmaModelStatus.ready && selectedId == targetModelId;
         return BlocBuilder<ChatBloc, ChatState>(
           builder: (context, chatState) {
-            final canSend = modelState.isReady && chatState.canSendMessage;
+            final canSend = isCurrentModelLoaded && chatState.canSendMessage;
             return ChatInputBar(
               enabled: canSend,
               isStreaming: chatState.isStreaming,
+              historyTokenCount: _calculateHistoryTokens(chatState.conversation),
               supportsImage: modelInfo?.effectiveSupportsMultimodal ?? false,
               supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
               supportsThinking: modelInfo?.effectiveSupportsThinking ?? false,
@@ -253,6 +325,7 @@ class _ChatScreenState extends State<ChatScreen> {
         return ChatInputBar(
           enabled: canSend,
           isStreaming: chatState.isStreaming,
+          historyTokenCount: _calculateHistoryTokens(chatState.conversation),
           thinkingEnabled: isDeepSeek
               ? config.remoteThinkingEffort != RemoteThinkingEffort.off
               : settingsState.thinkingEnabled,
@@ -420,5 +493,24 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
+  }
+
+  int _calculateHistoryTokens(Conversation? conversation) {
+    if (conversation == null) return 0;
+    var tokens = 0;
+    if (conversation.systemPrompt != null) {
+      tokens += (conversation.systemPrompt!.length / 4).round();
+    }
+    for (final msg in conversation.messages) {
+      if (msg is UserMessage) {
+        tokens += (msg.contentWithAttachments().length / 4).round();
+      } else {
+        tokens += (msg.content.length / 4).round();
+        if (msg is AssistantMessage && msg.thinkingContent != null) {
+          tokens += (msg.thinkingContent!.length / 4).round();
+        }
+      }
+    }
+    return tokens;
   }
 }

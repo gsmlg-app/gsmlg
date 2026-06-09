@@ -9,6 +9,7 @@ void main() {
         GemmaBackend.metal,
         GemmaBackend.cuda,
         GemmaBackend.vulkan,
+        GemmaBackend.npu,
       ]);
       expect(ModelConfig.defaultConfig.backend, GemmaBackend.cpu);
       expect(
@@ -20,6 +21,7 @@ void main() {
       expect(GemmaBackend.metal.displayName, 'Metal');
       expect(GemmaBackend.cuda.displayName, 'CUDA');
       expect(GemmaBackend.vulkan.displayName, 'Vulkan');
+      expect(GemmaBackend.npu.displayName, 'NPU');
     });
 
     test('filters selectable backends by operating system', () {
@@ -44,6 +46,7 @@ void main() {
       expect(supportedGemmaBackendsForOperatingSystem('android'), [
         GemmaBackend.cpu,
         GemmaBackend.vulkan,
+        GemmaBackend.npu,
       ]);
       expect(supportedGemmaBackendsForOperatingSystem('fuchsia'), [
         GemmaBackend.cpu,
@@ -142,6 +145,26 @@ void main() {
       expect(
         e2b.downloadUrlForOperatingSystem('android'),
         'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm',
+      );
+      expect(
+        e4b.descriptionForOperatingSystem('android'),
+        'Android LiteRT-LM text model',
+      );
+      expect(
+        e2b.descriptionForOperatingSystem('android'),
+        'Default Android LiteRT-LM text model',
+      );
+      expect(e4b.formatLabelForOperatingSystem('android'), 'LiteRT-LM');
+      expect(e2b.formatLabelForOperatingSystem('android'), 'LiteRT-LM');
+      expect(e4b.sizeLabelForOperatingSystem('android'), '3.4 GB');
+      expect(e2b.sizeLabelForOperatingSystem('android'), '2.4 GB');
+      expect(
+        e4b.downloadSourceLabelForOperatingSystem('android'),
+        'litert-community/gemma-4-E4B-it-litert-lm',
+      );
+      expect(
+        e2b.downloadSourceLabelForOperatingSystem('android'),
+        'litert-community/gemma-4-E2B-it-litert-lm',
       );
     });
 

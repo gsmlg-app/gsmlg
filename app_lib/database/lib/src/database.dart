@@ -50,7 +50,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration {
@@ -172,6 +172,13 @@ class AppDatabase extends _$AppDatabase {
             "UPDATE chat_settings_table SET remote_api_type = "
             "CASE WHEN remote_provider = 'openAi' THEN 'openAiResponses' "
             "ELSE 'openAiChatCompletions' END",
+          );
+        }
+        if (from < 14) {
+          await _addColumnIfMissing(
+            m,
+            chatSettingsTable,
+            chatSettingsTable.localModelId,
           );
         }
       },

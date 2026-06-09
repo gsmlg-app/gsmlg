@@ -204,11 +204,11 @@ void main() {
       await _flushBloc();
 
       expect(repository.activatedModels, [_e4bModelId]);
-      expect(repository.loadCount, 1);
+      expect(repository.loadCount, 0);
       expect(preferences.getString('gemma_selected_model_id'), _e4bModelId);
       expect(bloc.state.selectedModelId, _e4bModelId);
       expect(bloc.state.installedModels, [_e4bModelId]);
-      expect(bloc.state.status, GemmaModelStatus.ready);
+      expect(bloc.state.status, GemmaModelStatus.installed);
       expect(bloc.state.errorMessage, isNull);
     });
   });

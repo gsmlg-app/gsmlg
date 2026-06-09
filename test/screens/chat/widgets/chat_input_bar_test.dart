@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
+import 'package:chat_bloc/chat_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -124,6 +125,46 @@ void main() {
     expect(sentAttachments, hasLength(1));
     expect(sentAttachments!.single.name, 'notes.txt');
     expect(utf8.decode(sentAttachments!.single.bytes!), 'hello from file');
+  });
+
+  testWidgets('can change agent when chat input is disabled', (tester) async {
+    String? selectedAgentId;
+    final agents = [
+      ChatAgent(id: 'agent1', name: 'Agent 1', config: ModelConfig.defaultConfig),
+      ChatAgent(id: 'agent2', name: 'Agent 2', config: ModelConfig.defaultConfig),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatInputBar(
+            enabled: false,
+            selectedAgentName: 'Agent 1',
+            selectedAgentId: 'agent1',
+            agents: agents,
+            onAgentSelect: (id) => selectedAgentId = id,
+            onSend: (_, {imageBytes, audioBytes, attachments}) {},
+            onStop: () {},
+          ),
+        ),
+      ),
+    );
+
+    // Verify it displays Agent 1
+    expect(find.text('Agent 1'), findsNWidgets(2));
+
+    // Tap the agent selector in the overlay
+    await tester.tap(find.text('Agent 1').last);
+    await tester.pumpAndSettle();
+
+    // Verify popup menu is shown with Agent 2
+    expect(find.text('Agent 2'), findsOneWidget);
+
+    // Select Agent 2
+    await tester.tap(find.text('Agent 2'));
+    await tester.pumpAndSettle();
+
+    expect(selectedAgentId, 'agent2');
   });
 }
 

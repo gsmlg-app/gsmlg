@@ -82,17 +82,30 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     }
 
     try {
-      await _repository.saveSettings(event.config);
-      final agents = _replaceActiveAgent(
-        (agent) => agent.copyWith(config: event.config),
-      );
+      final targetAgentId = event.agentId ?? state.activeAgentId;
+      final isActive = targetAgentId == state.activeAgentId;
+
+      final agents = state.agents.map((agent) {
+        if (agent.id != targetAgentId) return agent;
+        return agent.copyWith(config: event.config);
+      }).toList(growable: false);
+
       await _saveAgents(agents);
-      emit(state.copyWith(
-        status: ChatSettingsStatus.loaded,
-        config: event.config,
-        agents: agents,
-        configChanged: true,
-      ));
+
+      if (isActive) {
+        await _repository.saveSettings(event.config);
+        emit(state.copyWith(
+          status: ChatSettingsStatus.loaded,
+          config: event.config,
+          agents: agents,
+          configChanged: true,
+        ));
+      } else {
+        emit(state.copyWith(
+          status: ChatSettingsStatus.loaded,
+          agents: agents,
+        ));
+      }
     } catch (e) {
       emit(state.copyWith(
         status: ChatSettingsStatus.error,
@@ -106,19 +119,32 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     Emitter<ChatSettingsState> emit,
   ) async {
     try {
-      await _repository.saveDefaultSystemPrompt(event.prompt);
-      final agents = _replaceActiveAgent(
-        (agent) => agent.copyWith(
+      final targetAgentId = event.agentId ?? state.activeAgentId;
+      final isActive = targetAgentId == state.activeAgentId;
+
+      final agents = state.agents.map((agent) {
+        if (agent.id != targetAgentId) return agent;
+        return agent.copyWith(
           systemPrompt: event.prompt,
           clearSystemPrompt: event.prompt == null,
-        ),
-      );
+        );
+      }).toList(growable: false);
+
       await _saveAgents(agents);
-      emit(state.copyWith(
-        status: ChatSettingsStatus.loaded,
-        defaultSystemPrompt: event.prompt,
-        agents: agents,
-      ));
+
+      if (isActive) {
+        await _repository.saveDefaultSystemPrompt(event.prompt);
+        emit(state.copyWith(
+          status: ChatSettingsStatus.loaded,
+          defaultSystemPrompt: event.prompt,
+          agents: agents,
+        ));
+      } else {
+        emit(state.copyWith(
+          status: ChatSettingsStatus.loaded,
+          agents: agents,
+        ));
+      }
     } catch (e) {
       emit(state.copyWith(
         status: ChatSettingsStatus.error,
@@ -160,18 +186,29 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     }
 
     await _saveAgents(agents);
-    await _preferences.setString(_activeAgentIdKey, agent.id);
-    await _preferences.setBool(_thinkingEnabledKey, agent.thinkingEnabled);
-    await _repository.saveSettings(agent.config);
-    await _repository.saveDefaultSystemPrompt(agent.systemPrompt);
-    emit(state.copyWith(
-      status: ChatSettingsStatus.loaded,
-      agents: agents,
-      activeAgentId: agent.id,
-      config: agent.config,
-      defaultSystemPrompt: agent.systemPrompt,
-      thinkingEnabled: agent.thinkingEnabled,
-    ));
+
+    final isFirst = state.agents.isEmpty;
+    final isActive = event.id == state.activeAgentId || isFirst;
+
+    if (isActive) {
+      await _preferences.setString(_activeAgentIdKey, agent.id);
+      await _preferences.setBool(_thinkingEnabledKey, agent.thinkingEnabled);
+      await _repository.saveSettings(agent.config);
+      await _repository.saveDefaultSystemPrompt(agent.systemPrompt);
+      emit(state.copyWith(
+        status: ChatSettingsStatus.loaded,
+        agents: agents,
+        activeAgentId: agent.id,
+        config: agent.config,
+        defaultSystemPrompt: agent.systemPrompt,
+        thinkingEnabled: agent.thinkingEnabled,
+      ));
+    } else {
+      emit(state.copyWith(
+        status: ChatSettingsStatus.loaded,
+        agents: agents,
+      ));
+    }
   }
 
   Future<void> _onDeleteAgent(
@@ -229,16 +266,29 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     ChatSettingsToggleThinking event,
     Emitter<ChatSettingsState> emit,
   ) async {
-    await _preferences.setBool(_thinkingEnabledKey, event.enabled);
-    final agents = _replaceActiveAgent(
-      (agent) => agent.copyWith(thinkingEnabled: event.enabled),
-    );
+    final targetAgentId = event.agentId ?? state.activeAgentId;
+    final isActive = targetAgentId == state.activeAgentId;
+
+    final agents = state.agents.map((agent) {
+      if (agent.id != targetAgentId) return agent;
+      return agent.copyWith(thinkingEnabled: event.enabled);
+    }).toList(growable: false);
+
     await _saveAgents(agents);
-    emit(state.copyWith(
-      agents: agents,
-      thinkingEnabled: event.enabled,
-      configChanged: true,
-    ));
+
+    if (isActive) {
+      await _preferences.setBool(_thinkingEnabledKey, event.enabled);
+      emit(state.copyWith(
+        agents: agents,
+        thinkingEnabled: event.enabled,
+        configChanged: true,
+      ));
+    } else {
+      emit(state.copyWith(
+        status: ChatSettingsStatus.loaded,
+        agents: agents,
+      ));
+    }
   }
 
   Future<void> _onReset(
@@ -361,6 +411,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
         ModelConfig.defaultConfig.modelType,
       ),
       customModelPath: json['customModelPath'] as String?,
+      localModelId: json['localModelId'] as String?,
       maxTokens:
           json['maxTokens'] as int? ?? ModelConfig.defaultConfig.maxTokens,
       temperature: (json['temperature'] as num?)?.toDouble() ??
@@ -393,6 +444,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       'inferenceMode': config.inferenceMode.name,
       'modelType': config.modelType.name,
       'customModelPath': config.customModelPath,
+      'localModelId': config.localModelId,
       'maxTokens': config.maxTokens,
       'temperature': config.temperature,
       'topK': config.topK,

@@ -16,6 +16,8 @@ class LocalLlmIos extends LocalLlmPlatform {
   @override
   Future<void> loadModel(
     String modelPath, {
+    String? backend,
+    String? litertDispatchLibDir,
     bool supportImage = false,
     bool supportAudio = false,
   }) async {

@@ -11,6 +11,7 @@ import 'package:lib_llama_cpp_server/lib_llama_cpp_server.dart' as llama_server;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:app_local_llm/app_local_llm.dart' as app_local_llm;
+import 'package:app_client_info/app_client_info.dart' as app_client_info;
 import 'package:background_downloader/background_downloader.dart';
 
 import '../models/inference.dart';
@@ -203,11 +204,28 @@ class GemmaRepository {
       }
 
       final filePath = await modelFilePath(info);
-      if (!File(filePath).existsSync()) {
+      final file = File(filePath);
+      if (!file.existsSync()) {
         _llamaModelPath = null;
         _llamaModelInfo = null;
         _setStatus(GemmaModelStatus.notInstalled);
         return;
+      }
+
+      // Check if file is truncated/corrupt (LiteRT-LM files should be > 1.5 GB on Android)
+      if (Platform.isAndroid) {
+        final fileSize = file.lengthSync();
+        final expectedSize = info.id == 'gemma-4-E2B-it' ? 2588147712 : 3659530240;
+        if (fileSize < expectedSize - 10 * 1024 * 1024) {
+          debugPrint('[GemmaRepo] Model file is truncated ($fileSize bytes vs expected $expectedSize). Deleting.');
+          try {
+            file.deleteSync();
+          } catch (_) {}
+          _llamaModelPath = null;
+          _llamaModelInfo = null;
+          _setStatus(GemmaModelStatus.notInstalled);
+          return;
+        }
       }
 
       _llamaModelPath = filePath;
@@ -760,8 +778,17 @@ class GemmaRepository {
     for (final model in GemmaModelInfo.availableModels.where((m) => m.isGguf)) {
       final filePath = await modelFilePath(model);
       final file = File(filePath);
-      if (file.existsSync() && file.lengthSync() > 0) {
-        installed.add(model.id);
+      if (file.existsSync()) {
+        if (Platform.isAndroid) {
+          final expectedSize = model.id == 'gemma-4-E2B-it' ? 2588147712 : 3659530240;
+          if (file.lengthSync() >= expectedSize - 10 * 1024 * 1024) {
+            installed.add(model.id);
+          }
+        } else {
+          if (file.lengthSync() > 0) {
+            installed.add(model.id);
+          }
+        }
       }
     }
 
@@ -791,17 +818,47 @@ class GemmaRepository {
       }
 
       final file = File(llamaModelPath);
+      debugPrint('[GemmaRepo] Checking model file path: $llamaModelPath');
       if (!file.existsSync()) {
+        debugPrint('[GemmaRepo] Model file does not exist at path: $llamaModelPath');
         _setStatus(GemmaModelStatus.notInstalled);
         return;
       }
+      debugPrint('[GemmaRepo] Model file size: ${file.lengthSync()} bytes');
 
       _llamaModelPath = llamaModelPath;
       _llamaModelInfo = llamaModelInfo;
       _llamaConfig = config;
       if (Platform.isAndroid || Platform.isIOS) {
+        String? backendStr;
+        String? dispatchLibDir;
+        if (Platform.isAndroid) {
+          switch (config.backend) {
+            case GemmaBackend.vulkan:
+              backendStr = 'gpu';
+              break;
+            case GemmaBackend.npu:
+              backendStr = 'npu';
+              try {
+                final clientInfo =
+                    await app_client_info.ClientInfo.instance.getData();
+                dispatchLibDir =
+                    clientInfo.additionalData['nativeLibraryDir'] as String?;
+              } catch (e) {
+                debugPrint(
+                  '[GemmaRepo] Failed to retrieve nativeLibraryDir for NPU: $e',
+                );
+              }
+              break;
+            default:
+              backendStr = 'cpu';
+              break;
+          }
+        }
         await app_local_llm.LocalLlm.instance.loadModel(
           llamaModelPath,
+          backend: backendStr,
+          litertDispatchLibDir: dispatchLibDir,
           supportImage: supportImage,
           supportAudio: supportAudio,
         );
@@ -1109,7 +1166,7 @@ class GemmaRepository {
       GemmaBackend.metal => llama_platform.LlamaCppLibraryCapability.metal,
       GemmaBackend.cuda => llama_platform.LlamaCppLibraryCapability.cuda,
       GemmaBackend.vulkan => llama_platform.LlamaCppLibraryCapability.vulkan,
-      GemmaBackend.cpu => null,
+      GemmaBackend.cpu || GemmaBackend.npu => null,
     };
     if (capability == null) {
       return const llama_platform.LlamaCppLibraryRequest();

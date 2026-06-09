@@ -2470,6 +2470,12 @@ class $ChatSettingsTableTable extends ChatSettingsTable
   late final GeneratedColumn<String> defaultSystemPrompt =
       GeneratedColumn<String>('default_system_prompt', aliasedName, true,
           type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _localModelIdMeta =
+      const VerificationMeta('localModelId');
+  @override
+  late final GeneratedColumn<String> localModelId = GeneratedColumn<String>(
+      'local_model_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         key,
@@ -2487,7 +2493,8 @@ class $ChatSettingsTableTable extends ChatSettingsTable
         remoteModel,
         remoteStreamingEnabled,
         remoteThinkingEffort,
-        defaultSystemPrompt
+        defaultSystemPrompt,
+        localModelId
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2586,6 +2593,12 @@ class $ChatSettingsTableTable extends ChatSettingsTable
           defaultSystemPrompt.isAcceptableOrUnknown(
               data['default_system_prompt']!, _defaultSystemPromptMeta));
     }
+    if (data.containsKey('local_model_id')) {
+      context.handle(
+          _localModelIdMeta,
+          localModelId.isAcceptableOrUnknown(
+              data['local_model_id']!, _localModelIdMeta));
+    }
     return context;
   }
 
@@ -2629,6 +2642,8 @@ class $ChatSettingsTableTable extends ChatSettingsTable
           data['${effectivePrefix}remote_thinking_effort'])!,
       defaultSystemPrompt: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}default_system_prompt']),
+      localModelId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}local_model_id']),
     );
   }
 
@@ -2687,6 +2702,9 @@ class ChatSettingsTableData extends DataClass
 
   /// Default system prompt for new conversations.
   final String? defaultSystemPrompt;
+
+  /// The local model ID.
+  final String? localModelId;
   const ChatSettingsTableData(
       {required this.key,
       required this.inferenceMode,
@@ -2703,7 +2721,8 @@ class ChatSettingsTableData extends DataClass
       required this.remoteModel,
       required this.remoteStreamingEnabled,
       required this.remoteThinkingEffort,
-      this.defaultSystemPrompt});
+      this.defaultSystemPrompt,
+      this.localModelId});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2728,6 +2747,9 @@ class ChatSettingsTableData extends DataClass
     map['remote_thinking_effort'] = Variable<String>(remoteThinkingEffort);
     if (!nullToAbsent || defaultSystemPrompt != null) {
       map['default_system_prompt'] = Variable<String>(defaultSystemPrompt);
+    }
+    if (!nullToAbsent || localModelId != null) {
+      map['local_model_id'] = Variable<String>(localModelId);
     }
     return map;
   }
@@ -2756,6 +2778,9 @@ class ChatSettingsTableData extends DataClass
       defaultSystemPrompt: defaultSystemPrompt == null && nullToAbsent
           ? const Value.absent()
           : Value(defaultSystemPrompt),
+      localModelId: localModelId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localModelId),
     );
   }
 
@@ -2782,6 +2807,7 @@ class ChatSettingsTableData extends DataClass
           serializer.fromJson<String>(json['remoteThinkingEffort']),
       defaultSystemPrompt:
           serializer.fromJson<String?>(json['defaultSystemPrompt']),
+      localModelId: serializer.fromJson<String?>(json['localModelId']),
     );
   }
   @override
@@ -2804,6 +2830,7 @@ class ChatSettingsTableData extends DataClass
       'remoteStreamingEnabled': serializer.toJson<bool>(remoteStreamingEnabled),
       'remoteThinkingEffort': serializer.toJson<String>(remoteThinkingEffort),
       'defaultSystemPrompt': serializer.toJson<String?>(defaultSystemPrompt),
+      'localModelId': serializer.toJson<String?>(localModelId),
     };
   }
 
@@ -2823,7 +2850,8 @@ class ChatSettingsTableData extends DataClass
           String? remoteModel,
           bool? remoteStreamingEnabled,
           String? remoteThinkingEffort,
-          Value<String?> defaultSystemPrompt = const Value.absent()}) =>
+          Value<String?> defaultSystemPrompt = const Value.absent(),
+          Value<String?> localModelId = const Value.absent()}) =>
       ChatSettingsTableData(
         key: key ?? this.key,
         inferenceMode: inferenceMode ?? this.inferenceMode,
@@ -2848,6 +2876,8 @@ class ChatSettingsTableData extends DataClass
         defaultSystemPrompt: defaultSystemPrompt.present
             ? defaultSystemPrompt.value
             : this.defaultSystemPrompt,
+        localModelId:
+            localModelId.present ? localModelId.value : this.localModelId,
       );
   ChatSettingsTableData copyWithCompanion(ChatSettingsTableCompanion data) {
     return ChatSettingsTableData(
@@ -2888,6 +2918,9 @@ class ChatSettingsTableData extends DataClass
       defaultSystemPrompt: data.defaultSystemPrompt.present
           ? data.defaultSystemPrompt.value
           : this.defaultSystemPrompt,
+      localModelId: data.localModelId.present
+          ? data.localModelId.value
+          : this.localModelId,
     );
   }
 
@@ -2909,7 +2942,8 @@ class ChatSettingsTableData extends DataClass
           ..write('remoteModel: $remoteModel, ')
           ..write('remoteStreamingEnabled: $remoteStreamingEnabled, ')
           ..write('remoteThinkingEffort: $remoteThinkingEffort, ')
-          ..write('defaultSystemPrompt: $defaultSystemPrompt')
+          ..write('defaultSystemPrompt: $defaultSystemPrompt, ')
+          ..write('localModelId: $localModelId')
           ..write(')'))
         .toString();
   }
@@ -2931,7 +2965,8 @@ class ChatSettingsTableData extends DataClass
       remoteModel,
       remoteStreamingEnabled,
       remoteThinkingEffort,
-      defaultSystemPrompt);
+      defaultSystemPrompt,
+      localModelId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2951,7 +2986,8 @@ class ChatSettingsTableData extends DataClass
           other.remoteModel == this.remoteModel &&
           other.remoteStreamingEnabled == this.remoteStreamingEnabled &&
           other.remoteThinkingEffort == this.remoteThinkingEffort &&
-          other.defaultSystemPrompt == this.defaultSystemPrompt);
+          other.defaultSystemPrompt == this.defaultSystemPrompt &&
+          other.localModelId == this.localModelId);
 }
 
 class ChatSettingsTableCompanion
@@ -2972,6 +3008,7 @@ class ChatSettingsTableCompanion
   final Value<bool> remoteStreamingEnabled;
   final Value<String> remoteThinkingEffort;
   final Value<String?> defaultSystemPrompt;
+  final Value<String?> localModelId;
   final Value<int> rowid;
   const ChatSettingsTableCompanion({
     this.key = const Value.absent(),
@@ -2990,6 +3027,7 @@ class ChatSettingsTableCompanion
     this.remoteStreamingEnabled = const Value.absent(),
     this.remoteThinkingEffort = const Value.absent(),
     this.defaultSystemPrompt = const Value.absent(),
+    this.localModelId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ChatSettingsTableCompanion.insert({
@@ -3009,6 +3047,7 @@ class ChatSettingsTableCompanion
     this.remoteStreamingEnabled = const Value.absent(),
     this.remoteThinkingEffort = const Value.absent(),
     this.defaultSystemPrompt = const Value.absent(),
+    this.localModelId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   static Insertable<ChatSettingsTableData> custom({
@@ -3028,6 +3067,7 @@ class ChatSettingsTableCompanion
     Expression<bool>? remoteStreamingEnabled,
     Expression<String>? remoteThinkingEffort,
     Expression<String>? defaultSystemPrompt,
+    Expression<String>? localModelId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3050,6 +3090,7 @@ class ChatSettingsTableCompanion
         'remote_thinking_effort': remoteThinkingEffort,
       if (defaultSystemPrompt != null)
         'default_system_prompt': defaultSystemPrompt,
+      if (localModelId != null) 'local_model_id': localModelId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3071,6 +3112,7 @@ class ChatSettingsTableCompanion
       Value<bool>? remoteStreamingEnabled,
       Value<String>? remoteThinkingEffort,
       Value<String?>? defaultSystemPrompt,
+      Value<String?>? localModelId,
       Value<int>? rowid}) {
     return ChatSettingsTableCompanion(
       key: key ?? this.key,
@@ -3090,6 +3132,7 @@ class ChatSettingsTableCompanion
           remoteStreamingEnabled ?? this.remoteStreamingEnabled,
       remoteThinkingEffort: remoteThinkingEffort ?? this.remoteThinkingEffort,
       defaultSystemPrompt: defaultSystemPrompt ?? this.defaultSystemPrompt,
+      localModelId: localModelId ?? this.localModelId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3148,6 +3191,9 @@ class ChatSettingsTableCompanion
       map['default_system_prompt'] =
           Variable<String>(defaultSystemPrompt.value);
     }
+    if (localModelId.present) {
+      map['local_model_id'] = Variable<String>(localModelId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3173,6 +3219,7 @@ class ChatSettingsTableCompanion
           ..write('remoteStreamingEnabled: $remoteStreamingEnabled, ')
           ..write('remoteThinkingEffort: $remoteThinkingEffort, ')
           ..write('defaultSystemPrompt: $defaultSystemPrompt, ')
+          ..write('localModelId: $localModelId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5557,6 +5604,7 @@ typedef $$ChatSettingsTableTableCreateCompanionBuilder
   Value<bool> remoteStreamingEnabled,
   Value<String> remoteThinkingEffort,
   Value<String?> defaultSystemPrompt,
+  Value<String?> localModelId,
   Value<int> rowid,
 });
 typedef $$ChatSettingsTableTableUpdateCompanionBuilder
@@ -5577,6 +5625,7 @@ typedef $$ChatSettingsTableTableUpdateCompanionBuilder
   Value<bool> remoteStreamingEnabled,
   Value<String> remoteThinkingEffort,
   Value<String?> defaultSystemPrompt,
+  Value<String?> localModelId,
   Value<int> rowid,
 });
 
@@ -5643,6 +5692,9 @@ class $$ChatSettingsTableTableFilterComposer
   ColumnFilters<String> get defaultSystemPrompt => $composableBuilder(
       column: $table.defaultSystemPrompt,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get localModelId => $composableBuilder(
+      column: $table.localModelId, builder: (column) => ColumnFilters(column));
 }
 
 class $$ChatSettingsTableTableOrderingComposer
@@ -5711,6 +5763,10 @@ class $$ChatSettingsTableTableOrderingComposer
   ColumnOrderings<String> get defaultSystemPrompt => $composableBuilder(
       column: $table.defaultSystemPrompt,
       builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get localModelId => $composableBuilder(
+      column: $table.localModelId,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$ChatSettingsTableTableAnnotationComposer
@@ -5769,6 +5825,9 @@ class $$ChatSettingsTableTableAnnotationComposer
 
   GeneratedColumn<String> get defaultSystemPrompt => $composableBuilder(
       column: $table.defaultSystemPrompt, builder: (column) => column);
+
+  GeneratedColumn<String> get localModelId => $composableBuilder(
+      column: $table.localModelId, builder: (column) => column);
 }
 
 class $$ChatSettingsTableTableTableManager extends RootTableManager<
@@ -5816,6 +5875,7 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             Value<bool> remoteStreamingEnabled = const Value.absent(),
             Value<String> remoteThinkingEffort = const Value.absent(),
             Value<String?> defaultSystemPrompt = const Value.absent(),
+            Value<String?> localModelId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChatSettingsTableCompanion(
@@ -5835,6 +5895,7 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             remoteStreamingEnabled: remoteStreamingEnabled,
             remoteThinkingEffort: remoteThinkingEffort,
             defaultSystemPrompt: defaultSystemPrompt,
+            localModelId: localModelId,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -5854,6 +5915,7 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             Value<bool> remoteStreamingEnabled = const Value.absent(),
             Value<String> remoteThinkingEffort = const Value.absent(),
             Value<String?> defaultSystemPrompt = const Value.absent(),
+            Value<String?> localModelId = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               ChatSettingsTableCompanion.insert(
@@ -5873,6 +5935,7 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             remoteStreamingEnabled: remoteStreamingEnabled,
             remoteThinkingEffort: remoteThinkingEffort,
             defaultSystemPrompt: defaultSystemPrompt,
+            localModelId: localModelId,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

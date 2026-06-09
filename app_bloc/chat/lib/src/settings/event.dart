@@ -12,16 +12,18 @@ final class ChatSettingsLoad extends ChatSettingsEvent {
 
 /// Update the model configuration.
 final class ChatSettingsUpdateConfig extends ChatSettingsEvent {
-  const ChatSettingsUpdateConfig({required this.config});
+  const ChatSettingsUpdateConfig({required this.config, this.agentId});
 
   final ModelConfig config;
+  final String? agentId;
 }
 
 /// Update the default system prompt.
 final class ChatSettingsUpdateSystemPrompt extends ChatSettingsEvent {
-  const ChatSettingsUpdateSystemPrompt({this.prompt});
+  const ChatSettingsUpdateSystemPrompt({this.prompt, this.agentId});
 
   final String? prompt;
+  final String? agentId;
 }
 
 /// Add or update a chat agent profile.
@@ -57,9 +59,10 @@ final class ChatSettingsSelectAgent extends ChatSettingsEvent {
 
 /// Toggle thinking/chain-of-thought display.
 final class ChatSettingsToggleThinking extends ChatSettingsEvent {
-  const ChatSettingsToggleThinking({required this.enabled});
+  const ChatSettingsToggleThinking({required this.enabled, this.agentId});
 
   final bool enabled;
+  final String? agentId;
 }
 
 /// Reset settings to defaults.

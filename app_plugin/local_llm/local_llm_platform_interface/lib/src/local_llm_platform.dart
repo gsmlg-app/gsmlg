@@ -25,6 +25,8 @@ abstract class LocalLlmPlatform extends PlatformInterface {
   /// Loads the local model into memory.
   Future<void> loadModel(
     String modelPath, {
+    String? backend,
+    String? litertDispatchLibDir,
     bool supportImage = false,
     bool supportAudio = false,
   }) {
@@ -54,6 +56,8 @@ class _PlaceholderLocalLlmPlatform extends LocalLlmPlatform {
   @override
   Future<void> loadModel(
     String modelPath, {
+    String? backend,
+    String? litertDispatchLibDir,
     bool supportImage = false,
     bool supportAudio = false,
   }) async {

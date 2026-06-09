@@ -25,6 +25,7 @@ class ChatInputBar extends StatefulWidget {
     this.selectedAgentName,
     this.selectedAgentId,
     this.agents = const [],
+    this.historyTokenCount = 0,
     required this.onSend,
     required this.onStop,
     this.onThinkingToggle,
@@ -48,6 +49,7 @@ class ChatInputBar extends StatefulWidget {
   final String? selectedAgentName;
   final String? selectedAgentId;
   final List<ChatAgent> agents;
+  final int historyTokenCount;
   final void Function(
     String text, {
     Uint8List? imageBytes,
@@ -71,6 +73,23 @@ class _ChatInputBarState extends State<ChatInputBar> {
   final _recorder = AudioRecorder();
   final List<DmChatAttachment> _pendingAttachments = [];
   bool _isRecording = false;
+  int _inputTokenCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    final text = _controller.text;
+    final tokens = (text.length / 4).round();
+    if (tokens != _inputTokenCount) {
+      setState(() {
+        _inputTokenCount = tokens;
+      });
+    }
+  }
 
   void _handleSend(String text, List<DmChatAttachment> attachments) {
     if (!widget.enabled || widget.isStreaming) return;
@@ -288,6 +307,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   @override
   void dispose() {
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _recorder.dispose();
     super.dispose();
@@ -368,16 +388,78 @@ class _ChatInputBarState extends State<ChatInputBar> {
           : null,
     );
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: IgnorePointer(
-          ignoring: !widget.enabled && !widget.isStreaming,
+    final showOverlay = !widget.enabled && !widget.isStreaming;
+
+    final inputWidget = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IgnorePointer(
+          ignoring: showOverlay,
           child: Opacity(
             opacity: widget.enabled || widget.isStreaming ? 1 : 0.62,
             child: input,
           ),
+        ),
+        if (showOverlay)
+          Positioned(
+            bottom: 12,
+            right: 56, // SendButton is ~40 wide, container padding is 12, so 52-56 is standard placement
+            child: widget.selectedAgentName != null
+                ? _AgentSelector(
+                    selectedAgentName: widget.selectedAgentName!,
+                    selectedAgentId: widget.selectedAgentId,
+                    agents: widget.agents,
+                    onAgentSelect: widget.onAgentSelect,
+                    onAgentTap: widget.onModelTap,
+                  )
+                : widget.selectedModelName != null
+                ? _ModelSelector(
+                    selectedModelName: widget.selectedModelName!,
+                    selectedModelId: widget.selectedModelId,
+                    installedModels: widget.installedModels,
+                    remoteModels: widget.remoteModels,
+                    onModelSelect: widget.onModelSelect,
+                    onModelTap: widget.onModelTap,
+                  )
+                : const SizedBox.shrink(),
+          ),
+      ],
+    );
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(
+                  Icons.toll_outlined,
+                  size: 13,
+                  color: Theme.of(context).colorScheme.primary.withAlpha(160),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '~${widget.historyTokenCount + _inputTokenCount} tokens',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withAlpha(178),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
+            const SizedBox(height: 4),
+            inputWidget,
+          ],
         ),
       ),
     );

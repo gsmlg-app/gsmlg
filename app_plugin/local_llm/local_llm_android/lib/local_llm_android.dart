@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
 import 'package:lib_litert_lm/lib_litert_lm.dart';
 
-const _defaultMaxNumTokens = 4096;
+const _defaultMaxNumTokens = 2048;
 const _defaultMaxOutputTokens = 256;
 const _defaultTemperature = 0.8;
 const _defaultTopK = 40;
@@ -22,6 +22,8 @@ class LocalLlmAndroid extends LocalLlmPlatform {
   @override
   Future<void> loadModel(
     String modelPath, {
+    String? backend,
+    String? litertDispatchLibDir,
     bool supportImage = false,
     bool supportAudio = false,
   }) async {
@@ -32,7 +34,8 @@ class LocalLlmAndroid extends LocalLlmPlatform {
         await client.loadEngine(
           LiteRtLmEngineConfig(
             modelPath: modelPath,
-            backend: 'cpu',
+            backend: backend ?? 'cpu',
+            litertDispatchLibDir: litertDispatchLibDir,
             maxNumTokens: _defaultMaxNumTokens,
           ),
         ),

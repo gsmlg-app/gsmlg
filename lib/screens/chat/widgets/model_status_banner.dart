@@ -155,15 +155,6 @@ class ModelStatusBanner extends StatelessWidget {
   }
 
   Widget _buildInstalledContent(BuildContext context) {
-    // Auto-load the model so the user doesn't have to press a button.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
-      final settingsState = context.read<ChatSettingsBloc>().state;
-      context.read<GemmaModelBloc>().add(
-        GemmaModelLoad(config: settingsState.config),
-      );
-    });
-
     final selectedId = state.selectedModelId;
     final info = selectedId != null
         ? GemmaModelInfo.findById(selectedId)
@@ -172,16 +163,12 @@ class ModelStatusBanner extends StatelessWidget {
 
     return Row(
       children: [
-        const SizedBox(
-          width: 16,
-          height: 16,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+        const Icon(Icons.info_outline, size: 20),
         const SizedBox(width: 12),
-        _buildLoadingLabel(
-          context,
-          modelName: modelName,
-          memoryLabel: info?.memoryRequirementLabel,
+        Expanded(
+          child: Text(
+            '$modelName is ready. Press "Start" in the top bar to load it.',
+          ),
         ),
       ],
     );

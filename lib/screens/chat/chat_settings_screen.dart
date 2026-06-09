@@ -155,9 +155,10 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
           builder: (context, state) {
             final localModelState = _watchLocalModelState(context);
             final agentId = widget.agentId;
+            ChatAgent? editingAgent;
             if (agentId != null) {
-              final agent = _agentById(state, agentId);
-              if (agent == null) {
+              editingAgent = _agentById(state, agentId);
+              if (editingAgent == null) {
                 return SettingsList(
                   sections: [
                     SettingsSection(
@@ -172,16 +173,11 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                   ],
                 );
               }
-              if (state.activeAgentId != agent.id) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (!context.mounted) return;
-                  context.read<ChatSettingsBloc>().add(
-                    ChatSettingsSelectAgent(id: agent.id),
-                  );
-                });
-                return const Center(child: CircularProgressIndicator());
-              }
             }
+
+            final currentConfig = editingAgent?.config ?? state.config;
+            final currentSystemPrompt = editingAgent?.systemPrompt ?? state.defaultSystemPrompt;
+            final currentThinkingEnabled = editingAgent?.thinkingEnabled ?? state.thinkingEnabled;
 
             return SettingsList(
               sections: [
@@ -207,11 +203,22 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                         )
                       else
                         ...state.agents.map(
-                          (agent) => SettingsTile.navigation(
-                            leading: Icon(
-                              state.activeAgentId == agent.id
-                                  ? Icons.radio_button_checked
-                                  : Icons.radio_button_unchecked,
+                          (agent) => SettingsTile(
+                            leading: IconButton(
+                              icon: Icon(
+                                state.activeAgentId == agent.id
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                color: state.activeAgentId == agent.id
+                                    ? Theme.of(context).colorScheme.primary
+                                    : null,
+                              ),
+                              tooltip: 'Set as default agent',
+                              onPressed: () {
+                                context.read<ChatSettingsBloc>().add(
+                                  ChatSettingsSelectAgent(id: agent.id),
+                                );
+                              },
                             ),
                             title: Text(agent.name),
                             description: Text(
@@ -220,10 +227,24 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                                 localModelState: localModelState,
                               ),
                             ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (state.activeAgentId == agent.id) ...[
+                                  Text(
+                                    'Default',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                const Icon(Icons.chevron_right, size: 20),
+                              ],
+                            ),
                             onPressed: (_) {
-                              context.read<ChatSettingsBloc>().add(
-                                ChatSettingsSelectAgent(id: agent.id),
-                              );
                               context.goNamed(
                                 ChatAgentSettingsScreen.name,
                                 pathParameters: {'agentId': agent.id},
@@ -240,27 +261,27 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                       SettingsTile.navigation(
                         leading: const Icon(Icons.badge_outlined),
                         title: const Text('Name'),
-                        value: Text(state.activeAgent?.name ?? 'Agent'),
+                        value: Text(editingAgent?.name ?? 'Agent'),
                         onPressed: (_) =>
-                            _showAgentDialog(context, agent: state.activeAgent),
+                            _showAgentDialog(context, agent: editingAgent),
                       ),
-                      if (state.activeAgent != null)
+                      if (editingAgent != null)
                         SettingsTile(
                           leading: const Icon(Icons.delete_outline),
                           title: const Text('Remove Agent'),
                           onPressed: (_) =>
-                              _confirmDeleteAgent(context, state.activeAgent!),
+                              _confirmDeleteAgent(context, editingAgent!),
                         ),
                       SettingsTile.navigation(
                         leading: const Icon(Icons.smart_toy),
                         title: const Text('Model'),
                         value: Text(
                           _modelLabel(
-                            state.config,
+                            currentConfig,
                             localModelState: localModelState,
                           ),
                         ),
-                        onPressed: (_) => _showModelPicker(context),
+                        onPressed: (_) => _showModelPicker(context, editingAgent),
                       ),
                     ],
                   ),
@@ -272,19 +293,19 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                         leading: const Icon(Icons.thermostat),
                         title: const Text('Temperature'),
                         value: Text(
-                          state.config.temperature.toStringAsFixed(2),
+                          currentConfig.temperature.toStringAsFixed(2),
                         ),
                         description: const Text('Higher = more creative'),
                         onPressed: (_) =>
-                            _showTemperatureDialog(context, state.config),
+                            _showTemperatureDialog(context, currentConfig, editingAgent?.id),
                       ),
                       SettingsTile.navigation(
                         leading: const Icon(Icons.filter_list),
                         title: const Text('Top-K'),
-                        value: Text('${state.config.topK}'),
+                        value: Text('${currentConfig.topK}'),
                         description: const Text('Sampling diversity'),
                         onPressed: (_) =>
-                            _showTopKDialog(context, state.config),
+                            _showTopKDialog(context, currentConfig, editingAgent?.id),
                       ),
                     ],
                   ),
@@ -296,13 +317,14 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                         leading: const Icon(Icons.edit_note),
                         title: const Text('Default System Prompt'),
                         value: Text(
-                          state.defaultSystemPrompt?.isNotEmpty == true
-                              ? '${state.defaultSystemPrompt!.substring(0, state.defaultSystemPrompt!.length.clamp(0, 30))}...'
+                          currentSystemPrompt?.isNotEmpty == true
+                              ? '${currentSystemPrompt!.substring(0, currentSystemPrompt!.length.clamp(0, 30))}...'
                               : 'Not set',
                         ),
                         onPressed: (_) => _showSystemPromptDialog(
                           context,
-                          state.defaultSystemPrompt,
+                          currentSystemPrompt,
+                          editingAgent?.id,
                         ),
                       ),
                     ],
@@ -317,10 +339,13 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                         description: const Text(
                           'Display chain-of-thought reasoning from the model',
                         ),
-                        initialValue: state.thinkingEnabled,
+                        initialValue: currentThinkingEnabled,
                         onToggle: (value) {
                           context.read<ChatSettingsBloc>().add(
-                            ChatSettingsToggleThinking(enabled: value),
+                            ChatSettingsToggleThinking(
+                              enabled: value,
+                              agentId: editingAgent?.id,
+                            ),
                           );
                         },
                       ),
@@ -396,7 +421,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
     return GemmaModelInfo.findById(selectedId)?.displayName ?? selectedId;
   }
 
-  void _showModelPicker(BuildContext context) {
+  void _showModelPicker(BuildContext context, ChatAgent? editingAgent) {
     final choices = _configuredModels(context);
     showModalBottomSheet<void>(
       context: context,
@@ -419,14 +444,11 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                             ? null
                             : Text(choice.subtitle!),
                         onTap: () {
-                          final localModelId = choice.localModelId;
-                          if (localModelId != null) {
-                            context.read<GemmaModelBloc>().add(
-                              GemmaModelSelect(modelId: localModelId),
-                            );
-                          }
                           context.read<ChatSettingsBloc>().add(
-                            ChatSettingsUpdateConfig(config: choice.config),
+                            ChatSettingsUpdateConfig(
+                              config: choice.config,
+                              agentId: editingAgent?.id,
+                            ),
                           );
                           Navigator.pop(sheetContext);
                         },
@@ -477,7 +499,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
               ? 'Local model · Selected'
               : 'Local model',
           icon: Icons.memory,
-          config: config,
+          config: config.copyWith(localModelId: modelId),
           localModelId: modelId,
         ),
     ];
@@ -625,7 +647,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
     );
   }
 
-  void _showTemperatureDialog(BuildContext context, ModelConfig config) {
+  void _showTemperatureDialog(BuildContext context, ModelConfig config, String? agentId) {
     var temperature = config.temperature;
     showDialog(
       context: context,
@@ -660,6 +682,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                 context.read<ChatSettingsBloc>().add(
                   ChatSettingsUpdateConfig(
                     config: config.copyWith(temperature: temperature),
+                    agentId: agentId,
                   ),
                 );
                 Navigator.pop(dialogContext);
@@ -672,7 +695,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
     );
   }
 
-  void _showTopKDialog(BuildContext context, ModelConfig config) {
+  void _showTopKDialog(BuildContext context, ModelConfig config, String? agentId) {
     var topK = config.topK;
     showDialog(
       context: context,
@@ -705,7 +728,10 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
             FilledButton(
               onPressed: () {
                 context.read<ChatSettingsBloc>().add(
-                  ChatSettingsUpdateConfig(config: config.copyWith(topK: topK)),
+                  ChatSettingsUpdateConfig(
+                    config: config.copyWith(topK: topK),
+                    agentId: agentId,
+                  ),
                 );
                 Navigator.pop(dialogContext);
               },
@@ -717,7 +743,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
     );
   }
 
-  void _showSystemPromptDialog(BuildContext context, String? currentPrompt) {
+  void _showSystemPromptDialog(BuildContext context, String? currentPrompt, String? agentId) {
     final controller = TextEditingController(text: currentPrompt);
     showDialog(
       context: context,
@@ -743,6 +769,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
               context.read<ChatSettingsBloc>().add(
                 ChatSettingsUpdateSystemPrompt(
                   prompt: prompt.isEmpty ? null : prompt,
+                  agentId: agentId,
                 ),
               );
               Navigator.pop(dialogContext);

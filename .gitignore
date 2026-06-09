@@ -63,3 +63,8 @@ graphify-out/
 !/.claude/commands/
 !/.claude/skills/
 .mcp.json
+
+# Local model downloads & scratch files
+assets/models/
+scratch/
+

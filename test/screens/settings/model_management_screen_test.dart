@@ -1,6 +1,7 @@
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -18,10 +19,15 @@ void main() {
     late AccountsBloc accountsBloc;
     late GemmaModelBloc gemmaModelBloc;
     late ChatSettingsBloc chatSettingsBloc;
-    late FilePicker previousFilePicker;
+    FilePicker? previousFilePicker;
 
     setUp(() async {
-      previousFilePicker = FilePicker.platform;
+      try {
+        previousFilePicker = FilePicker.platform;
+      } catch (_) {
+        previousFilePicker = null;
+      }
+      FilePicker.platform = _RecordingFilePicker(null);
       SharedPreferences.setMockInitialValues({});
       preferences = await SharedPreferences.getInstance();
       database = AppDatabase.forTesting();
@@ -45,123 +51,180 @@ void main() {
       await accountsBloc.close();
       await database.close();
       await preferences.clear();
-      FilePicker.platform = previousFilePicker;
+      final previousPicker = previousFilePicker;
+      if (previousPicker != null) {
+        FilePicker.platform = previousPicker;
+      }
       debugDefaultTargetPlatformOverride = null;
     });
 
     testWidgets('download dialog offers adding a local GGUF file', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MultiRepositoryProvider(
-          providers: [
-            RepositoryProvider<SharedPreferences>.value(value: preferences),
-          ],
-          child: MultiBlocProvider(
-            providers: [
-              BlocProvider<AccountsBloc>.value(value: accountsBloc),
-              BlocProvider<GemmaModelBloc>.value(value: gemmaModelBloc),
-              BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc),
-            ],
-            child: const MaterialApp(home: ModelManagementScreen()),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
+      await _withTargetPlatform(TargetPlatform.macOS, () async {
+        await _pumpScreen(
+          tester,
+          preferences: preferences,
+          accountsBloc: accountsBloc,
+          gemmaModelBloc: gemmaModelBloc,
+          chatSettingsBloc: chatSettingsBloc,
+        );
 
-      await tester.tap(find.text('Gemma 4 E2B IT (Default)'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Gemma 4 E2B IT (Default)'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Download Model'), findsOneWidget);
-      expect(find.text('Add Local GGUF File'), findsOneWidget);
-      expect(find.text('Download from Hugging Face'), findsOneWidget);
+        expect(find.text('Download Model'), findsOneWidget);
+        expect(find.text('Add Local GGUF File'), findsOneWidget);
+        expect(find.text('Download from Hugging Face'), findsOneWidget);
+      });
     });
 
-    testWidgets('uses unfiltered Android picker for local GGUF files', (
+    testWidgets('uses unfiltered Android picker for local LiteRT-LM files', (
       tester,
     ) async {
       final filePicker = _RecordingFilePicker(null);
       FilePicker.platform = filePicker;
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      await _withTargetPlatform(TargetPlatform.android, () async {
+        await _pumpScreen(
+          tester,
+          preferences: preferences,
+          accountsBloc: accountsBloc,
+          gemmaModelBloc: gemmaModelBloc,
+          chatSettingsBloc: chatSettingsBloc,
+        );
 
-      await tester.pumpWidget(
-        MultiRepositoryProvider(
-          providers: [
-            RepositoryProvider<SharedPreferences>.value(value: preferences),
-          ],
-          child: MultiBlocProvider(
-            providers: [
-              BlocProvider<AccountsBloc>.value(value: accountsBloc),
-              BlocProvider<GemmaModelBloc>.value(value: gemmaModelBloc),
-              BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc),
-            ],
-            child: const MaterialApp(home: ModelManagementScreen()),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Gemma 4 E2B IT (Default)'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Add Local LiteRT-LM File'));
+        await tester.pump();
 
-      await tester.tap(find.text('Gemma 4 E2B IT (Default)'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Add Local GGUF File'));
-      await tester.pump();
+        expect(filePicker.type, FileType.any);
+        expect(filePicker.allowedExtensions, isNull);
+      });
+    });
 
-      expect(filePicker.type, FileType.any);
-      expect(filePicker.allowedExtensions, isNull);
+    testWidgets('uses Android LiteRT-LM labels in model settings', (
+      tester,
+    ) async {
+      await _withTargetPlatform(TargetPlatform.android, () async {
+        await _pumpScreen(
+          tester,
+          preferences: preferences,
+          accountsBloc: accountsBloc,
+          gemmaModelBloc: gemmaModelBloc,
+          chatSettingsBloc: chatSettingsBloc,
+        );
+
+        expect(
+          find.textContaining('LiteRT-LM from Hugging Face'),
+          findsWidgets,
+        );
+        expect(
+          find.textContaining('litert-community/gemma-4-E2B-it-litert-lm'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('Q4_K_M GGUF'), findsNothing);
+        expect(find.text('2.4 GB'), findsOneWidget);
+
+        await tester.tap(find.text('Gemma 4 E2B IT (Default)'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Format: LiteRT-LM'), findsOneWidget);
+        expect(find.text('Add Local LiteRT-LM File'), findsOneWidget);
+        expect(find.text('Add Local GGUF File'), findsNothing);
+      });
+    });
+
+    testWidgets('uses Android runtime setting instead of llama.cpp backend', (
+      tester,
+    ) async {
+      await _withTargetPlatform(TargetPlatform.android, () async {
+        await _pumpScreen(
+          tester,
+          preferences: preferences,
+          accountsBloc: accountsBloc,
+          gemmaModelBloc: gemmaModelBloc,
+          chatSettingsBloc: chatSettingsBloc,
+        );
+        final runtimeTile = find.text('Runtime');
+        await tester.scrollUntilVisible(
+          runtimeTile,
+          200,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Runtime'), findsOneWidget);
+        expect(find.text('LiteRT-LM'), findsOneWidget);
+        expect(find.text('Android LiteRT-LM inference.'), findsOneWidget);
+        expect(find.text('Backend'), findsNothing);
+        expect(find.text('CPU-only inference.'), findsNothing);
+      });
     });
 
     testWidgets('local model settings can select llama.cpp backend', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MultiRepositoryProvider(
-          providers: [
-            RepositoryProvider<SharedPreferences>.value(value: preferences),
-          ],
-          child: MultiBlocProvider(
-            providers: [
-              BlocProvider<AccountsBloc>.value(value: accountsBloc),
-              BlocProvider<GemmaModelBloc>.value(value: gemmaModelBloc),
-              BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc),
-            ],
-            child: const MaterialApp(home: ModelManagementScreen()),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.text('Backend'), 200);
-      await tester.pumpAndSettle();
+      await _withTargetPlatform(TargetPlatform.macOS, () async {
+        await _pumpScreen(
+          tester,
+          preferences: preferences,
+          accountsBloc: accountsBloc,
+          gemmaModelBloc: gemmaModelBloc,
+          chatSettingsBloc: chatSettingsBloc,
+        );
+        final backendTile = find.text('Backend');
+        await tester.scrollUntilVisible(
+          backendTile,
+          200,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Inference Settings'), findsOneWidget);
-      expect(find.text('Backend'), findsOneWidget);
-      expect(
-        find.text(defaultGemmaBackendForCurrentPlatform().displayName),
-        findsOneWidget,
-      );
-
-      await tester.tap(find.text('Backend'));
-      await tester.pumpAndSettle();
-
-      final supportedBackends = supportedGemmaBackendsForCurrentPlatform();
-      for (final backend in supportedBackends) {
+        expect(find.text('Inference Settings'), findsOneWidget);
+        expect(find.text('Backend'), findsOneWidget);
         expect(
-          find.widgetWithText(RadioListTile<GemmaBackend>, backend.displayName),
+          find.text(
+            chatSettingsBloc.state.config
+                .withSupportedBackendForCurrentPlatform()
+                .backend
+                .displayName,
+          ),
           findsOneWidget,
         );
-      }
-      for (final backend in GemmaBackend.values.where(
-        (backend) => !supportedBackends.contains(backend),
-      )) {
-        expect(
-          find.widgetWithText(RadioListTile<GemmaBackend>, backend.displayName),
-          findsNothing,
+
+        await tester.tap(find.text('Backend'));
+        await tester.pumpAndSettle();
+
+        final supportedBackends = supportedGemmaBackendsForCurrentPlatform();
+        for (final backend in supportedBackends) {
+          expect(
+            find.widgetWithText(
+              RadioListTile<GemmaBackend>,
+              backend.displayName,
+            ),
+            findsOneWidget,
+          );
+        }
+        for (final backend in GemmaBackend.values.where(
+          (backend) => !supportedBackends.contains(backend),
+        )) {
+          expect(
+            find.widgetWithText(
+              RadioListTile<GemmaBackend>,
+              backend.displayName,
+            ),
+            findsNothing,
+          );
+        }
+
+        await tester.tap(
+          find.widgetWithText(RadioListTile<GemmaBackend>, 'CPU'),
         );
-      }
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(RadioListTile<GemmaBackend>, 'CPU'));
-      await tester.pumpAndSettle();
-
-      expect(chatSettingsBloc.state.config.backend, GemmaBackend.cpu);
+        expect(chatSettingsBloc.state.config.backend, GemmaBackend.cpu);
+      });
     });
   });
 }
@@ -169,6 +232,48 @@ void main() {
 class _FakeGemmaRepository extends GemmaRepository {
   @override
   Future<List<String>> listInstalledModels() async => const [];
+}
+
+Future<void> _pumpScreen(
+  WidgetTester tester, {
+  required SharedPreferences preferences,
+  required AccountsBloc accountsBloc,
+  required GemmaModelBloc gemmaModelBloc,
+  required ChatSettingsBloc chatSettingsBloc,
+}) async {
+  await tester.pumpWidget(
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<SharedPreferences>.value(value: preferences),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AccountsBloc>.value(value: accountsBloc),
+          BlocProvider<GemmaModelBloc>.value(value: gemmaModelBloc),
+          BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocale.localizationsDelegates,
+          supportedLocales: AppLocale.supportedLocales,
+          home: const ModelManagementScreen(),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _withTargetPlatform(
+  TargetPlatform platform,
+  Future<void> Function() body,
+) async {
+  final previousPlatform = debugDefaultTargetPlatformOverride;
+  debugDefaultTargetPlatformOverride = platform;
+  try {
+    await body();
+  } finally {
+    debugDefaultTargetPlatformOverride = previousPlatform;
+  }
 }
 
 class _RecordingFilePicker extends FilePicker {
