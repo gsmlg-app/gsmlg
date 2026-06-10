@@ -146,7 +146,6 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     for (final modelId in installedIds) {
       final info = _findModelInfoByInstalledId(modelId);
       final displayName = info?.displayName ?? modelId;
-      final isSelected = state.selectedModelId == modelId;
       final category = info?.category ?? ModelCategory.other;
 
       tiles.add(
@@ -160,41 +159,13 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                   '${info.memoryRequirementLabel}',
                 )
               : null,
-          trailing: isSelected
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.check),
-                    const SizedBox(width: 4),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      tooltip: 'Deselect model',
-                      onPressed: () {
-                        context.read<GemmaModelBloc>().add(
-                          const GemmaModelDeselect(),
-                        );
-                      },
-                    ),
-                  ],
-                )
-              : IconButton(
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  onPressed: () =>
-                      _showDeleteDialog(context, modelId, displayName),
-                ),
-          onPressed: (_) {
-            final blockReason = info?.localInferenceBlockReason;
-            if (blockReason != null) {
-              _showImportMessage(context, blockReason);
-              return;
-            }
-            context.read<GemmaModelBloc>().add(
-              GemmaModelSelect(modelId: modelId),
-            );
-          },
+          trailing: IconButton(
+            icon: Icon(
+              Icons.delete_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () => _showDeleteDialog(context, modelId, displayName),
+          ),
         ),
       );
     }

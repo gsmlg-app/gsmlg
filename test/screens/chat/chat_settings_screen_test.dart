@@ -114,12 +114,16 @@ void main() {
       expect(chatSettingsBloc.state.config.remoteModel, 'MiniMax-M2.7');
     });
 
-    testWidgets('shows the selected local model in agent settings', (
+    testWidgets("shows the agent's own local model in agent settings", (
       tester,
     ) async {
-      await preferences.setString('gemma_selected_model_id', 'gemma-4-E4B-it');
+      // The globally selected model must not leak into the agent's label.
+      await preferences.setString('gemma_selected_model_id', 'gemma-4-E2B-it');
       gemmaModelBloc = GemmaModelBloc(
-        repository: _InstalledModelsGemmaRepository(['gemma-4-E4B-it']),
+        repository: _InstalledModelsGemmaRepository([
+          'gemma-4-E2B-it',
+          'gemma-4-E4B-it',
+        ]),
         preferences: preferences,
       )..add(const GemmaModelListInstalled());
 
@@ -132,7 +136,10 @@ void main() {
                 id: 'agent-1',
                 name: 'Local agent',
                 systemPrompt: '',
-                config: ModelConfig(inferenceMode: ChatInferenceMode.local),
+                config: ModelConfig(
+                  inferenceMode: ChatInferenceMode.local,
+                  localModelId: 'gemma-4-E4B-it',
+                ),
               ),
             );
 
@@ -154,7 +161,7 @@ void main() {
       );
 
       expect(find.text('Gemma 4 E4B IT'), findsOneWidget);
-      expect(find.text('Gemma 2B-IT'), findsNothing);
+      expect(find.text('Gemma 4 E2B IT'), findsNothing);
     });
 
     testWidgets('lists installed local models in the agent model picker', (
@@ -201,6 +208,100 @@ void main() {
 
       expect(find.text('Gemma 4 E2B IT'), findsOneWidget);
       expect(find.text('No configured models'), findsNothing);
+    });
+
+    testWidgets('two agents can select different local models', (tester) async {
+      gemmaModelBloc = GemmaModelBloc(
+        repository: _InstalledModelsGemmaRepository([
+          'gemma-4-E2B-it',
+          'gemma-4-E4B-it',
+        ]),
+        preferences: preferences,
+      )..add(const GemmaModelListInstalled());
+
+      final repository = ChatStorageRepository(database);
+      chatSettingsBloc = ChatSettingsBloc(
+        repository: repository,
+        preferences: preferences,
+      )..add(const ChatSettingsLoad());
+      await chatSettingsBloc.stream.firstWhere(
+        (state) => state.status == ChatSettingsStatus.loaded,
+      );
+      chatSettingsBloc.add(
+        const ChatSettingsSaveAgent(
+          id: 'agent-1',
+          name: 'Agent One',
+          systemPrompt: '',
+          config: ModelConfig(
+            inferenceMode: ChatInferenceMode.local,
+            temperature: 1.4,
+          ),
+        ),
+      );
+      await chatSettingsBloc.stream.firstWhere(
+        (state) => state.agents.length == 1,
+      );
+      chatSettingsBloc.add(
+        const ChatSettingsSaveAgent(
+          id: 'agent-2',
+          name: 'Agent Two',
+          systemPrompt: '',
+          config: ModelConfig(inferenceMode: ChatInferenceMode.local),
+        ),
+      );
+      await chatSettingsBloc.stream.firstWhere(
+        (state) => state.agents.length == 2,
+      );
+
+      ChatAgent agentById(String id) =>
+          chatSettingsBloc.state.agents.firstWhere((agent) => agent.id == id);
+
+      Future<void> pickModel(String agentId, String modelName) async {
+        await _pumpScreen(
+          tester,
+          chatSettingsBloc: chatSettingsBloc,
+          accountsBloc: accountsBloc,
+          preferences: preferences,
+          gemmaModelBloc: gemmaModelBloc,
+          agentId: agentId,
+        );
+        await _pumpUntil(
+          tester,
+          () =>
+              chatSettingsBloc.state.agents.length == 2 &&
+              gemmaModelBloc!.state.installedModels.isNotEmpty &&
+              find.text('Model').evaluate().isNotEmpty,
+        );
+        expect(
+          chatSettingsBloc.state.agents.map((agent) => agent.id),
+          containsAll(['agent-1', 'agent-2']),
+        );
+        await tester.tap(find.text('Model'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+        await tester.tap(find.widgetWithText(ListTile, modelName));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+
+      await pickModel('agent-1', 'Gemma 4 E2B IT');
+      await _pumpUntil(
+        tester,
+        () => agentById('agent-1').config.localModelId == 'gemma-4-E2B-it',
+      );
+
+      await pickModel('agent-2', 'Gemma 4 E4B IT');
+      await _pumpUntil(
+        tester,
+        () => agentById('agent-2').config.localModelId == 'gemma-4-E4B-it',
+      );
+
+      // Each agent keeps its own local model.
+      expect(agentById('agent-1').config.localModelId, 'gemma-4-E2B-it');
+      expect(agentById('agent-2').config.localModelId, 'gemma-4-E4B-it');
+
+      // Picking a model must not reset the agent's other settings.
+      expect(agentById('agent-1').config.temperature, 1.4);
     });
 
     testWidgets('removes missing local models from the agent model picker', (
@@ -454,7 +555,9 @@ void main() {
       );
       await _pumpUntil(
         tester,
-        () => chatSettingsBloc.state.agents.any((agent) => agent.name == 'Writer'),
+        () => chatSettingsBloc.state.agents.any(
+          (agent) => agent.name == 'Writer',
+        ),
       );
       final writerId = chatSettingsBloc.state.agents
           .singleWhere((agent) => agent.name == 'Writer')

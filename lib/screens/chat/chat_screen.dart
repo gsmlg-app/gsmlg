@@ -13,6 +13,7 @@ import 'chat_history_screen.dart';
 import 'chat_settings_screen.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/chat_message_list.dart';
+import 'widgets/local_model_action_button.dart';
 import 'widgets/model_status_banner.dart';
 import 'widgets/system_metrics_indicator.dart';
 
@@ -61,11 +62,13 @@ class _ChatScreenState extends State<ChatScreen> {
         appBar: DmAppBar(
           title: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
             builder: (context, settingsState) {
-              final modelName = settingsState.config.inferenceMode == ChatInferenceMode.remote
+              final modelName =
+                  settingsState.config.inferenceMode == ChatInferenceMode.remote
                   ? settingsState.config.remoteModel
-                  : (settingsState.config.localModelId != null
-                      ? GemmaModelInfo.findById(settingsState.config.localModelId!)?.displayName ?? settingsState.config.localModelId
-                      : GemmaModelInfo.defaultModel.displayName);
+                  : _localModelDisplayName(
+                      settingsState,
+                      context.watch<GemmaModelBloc>().state,
+                    );
               return BlocBuilder<ChatBloc, ChatState>(
                 builder: (context, state) {
                   final title = state.conversation?.title ?? 'Chat';
@@ -91,73 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           actions: [
             const SystemMetricsIndicator(),
-            BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-              builder: (context, settingsState) {
-                if (settingsState.config.inferenceMode != ChatInferenceMode.local) {
-                  return const SizedBox.shrink();
-                }
-                return BlocBuilder<GemmaModelBloc, GemmaModelState>(
-                  builder: (context, modelState) {
-                    final targetModelId = settingsState.config.localModelId ?? GemmaModelInfo.defaultModel.id;
-                    final isCurrentModelLoaded = modelState.status == GemmaModelStatus.ready && modelState.selectedModelId == targetModelId;
-
-                    if (isCurrentModelLoaded) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: TextButton.icon(
-                          style: TextButton.styleFrom(
-                            foregroundColor: Theme.of(context).colorScheme.error,
-                            visualDensity: VisualDensity.compact,
-                          ),
-                          icon: const Icon(Icons.stop),
-                          label: const Text('Stop'),
-                          onPressed: () {
-                            context.read<GemmaModelBloc>().add(const GemmaModelUnload());
-                          },
-                        ),
-                      );
-                    }
-
-                    final isLoading = modelState.status == GemmaModelStatus.loading || modelState.status == GemmaModelStatus.checking;
-                    final isInstalled = modelState.installedModels.contains(targetModelId);
-
-                    if (isLoading) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    }
-
-                    if (isInstalled) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                          ),
-                          icon: const Icon(Icons.play_arrow),
-                          label: const Text('Start'),
-                          onPressed: () {
-                            context.read<GemmaModelBloc>().add(
-                              GemmaModelSelect(
-                                modelId: targetModelId,
-                                config: settingsState.config,
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    }
-
-                    return const SizedBox.shrink();
-                  },
-                );
-              },
-            ),
+            const LocalModelActionButton(),
             IconButton(
               icon: const Icon(Icons.history),
               tooltip: 'History',
@@ -229,6 +166,17 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  String? _localModelDisplayName(
+    ChatSettingsState settingsState,
+    GemmaModelState modelState,
+  ) {
+    final modelId =
+        resolveLocalModelId(settingsState, modelState) ??
+        settingsState.config.localModelId;
+    if (modelId == null) return null;
+    return GemmaModelInfo.findById(modelId)?.displayName ?? modelId;
+  }
+
   Widget _buildConversationView(ChatSettingsState settingsState) {
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, state) {
@@ -264,19 +212,24 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildLocalInputBar(ChatSettingsState settingsState) {
     return BlocBuilder<GemmaModelBloc, GemmaModelState>(
       builder: (context, modelState) {
-        final targetModelId = settingsState.config.localModelId ?? GemmaModelInfo.defaultModel.id;
+        final targetModelId = resolveLocalModelId(settingsState, modelState);
         final selectedId = modelState.selectedModelId;
         final modelInfo = selectedId != null
             ? GemmaModelInfo.findById(selectedId)
             : null;
-        final isCurrentModelLoaded = modelState.status == GemmaModelStatus.ready && selectedId == targetModelId;
+        final isCurrentModelLoaded =
+            modelState.status == GemmaModelStatus.ready &&
+            targetModelId != null &&
+            selectedId == targetModelId;
         return BlocBuilder<ChatBloc, ChatState>(
           builder: (context, chatState) {
             final canSend = isCurrentModelLoaded && chatState.canSendMessage;
             return ChatInputBar(
               enabled: canSend,
               isStreaming: chatState.isStreaming,
-              historyTokenCount: _calculateHistoryTokens(chatState.conversation),
+              historyTokenCount: _calculateHistoryTokens(
+                chatState.conversation,
+              ),
               supportsImage: modelInfo?.effectiveSupportsMultimodal ?? false,
               supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
               supportsThinking: modelInfo?.effectiveSupportsThinking ?? false,
