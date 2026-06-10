@@ -59,6 +59,27 @@ class LocalLlm {
     );
   }
 
+  /// Streams OpenAI-compatible chat completion events from the loaded model.
+  Stream<Map<String, Object?>> streamChatCompletion({
+    required String model,
+    required List<Map<String, Object?>> messages,
+    int? maxTokens,
+    double? temperature,
+    double? topP,
+    int? topK,
+    List<String> stop = const [],
+  }) {
+    return LocalLlmPlatform.instance.streamChatCompletion(
+      model: model,
+      messages: messages,
+      maxTokens: maxTokens,
+      temperature: temperature,
+      topP: topP,
+      topK: topK,
+      stop: stop,
+    );
+  }
+
   /// Unloads the model from memory.
   Future<void> unloadModel() {
     return LocalLlmPlatform.instance.unloadModel();

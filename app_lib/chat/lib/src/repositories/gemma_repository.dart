@@ -941,59 +941,29 @@ class GemmaRepository {
             .withSupportedBackendForCurrentPlatform();
 
     final llamaTools = llamaToolsFromOpenAiTools(tools);
-    final prompt = buildGemmaPrompt(messages, tools: llamaTools);
-    final streamParser = _Gemma4StreamParser();
+    final serverMessages = _buildServerMessages(messages, llamaTools);
 
-    Uint8List? imageBytes;
-    Uint8List? audioBytes;
-
-    for (final m in messages.reversed) {
-      if (m is UserMessage) {
-        imageBytes = m.imageBytes;
-        audioBytes = m.audioBytes;
-
-        if (imageBytes == null || audioBytes == null) {
-          for (final attachment in m.attachments) {
-            if (imageBytes == null &&
-                attachment.isImage &&
-                attachment.bytes != null) {
-              imageBytes = attachment.bytes;
-            }
-            if (audioBytes == null &&
-                attachment.isAudio &&
-                attachment.bytes != null) {
-              audioBytes = attachment.bytes;
-            }
-          }
-        }
-        break;
-      }
+    if (_hasBinaryMedia(messages)) {
+      const message =
+          'Local OpenAI server multimodal input is not supported yet.';
+      _setError(message);
+      throw UnsupportedError(message);
     }
 
     try {
-      await for (final token
-          in app_local_llm.LocalLlm.instance.generateResponse(
-            prompt,
-            maxTokens: effectiveConfig.maxTokens,
-            temperature: effectiveConfig.temperature,
-            topK: effectiveConfig.topK,
-            imageBytes: imageBytes,
-            audioBytes: audioBytes,
-          )) {
-        if (token.isEmpty) {
-          continue;
-        }
-        for (final chunk in streamParser.add(token)) {
-          yield chunk;
-        }
-      }
+      yield* _parseOpenAiServerStream(
+        app_local_llm.LocalLlm.instance.streamChatCompletion(
+          model: _localLlamaModelAlias,
+          messages: serverMessages,
+          maxTokens: effectiveConfig.maxTokens,
+          temperature: effectiveConfig.temperature,
+          topK: effectiveConfig.topK,
+          stop: _localLlamaStopSequences,
+        ),
+      );
     } catch (error) {
       _setError(error.toString());
       rethrow;
-    }
-
-    for (final chunk in streamParser.close()) {
-      yield chunk;
     }
   }
 
@@ -1014,37 +984,60 @@ class GemmaRepository {
 
     final server = await _ensureLlamaServer(effectiveConfig);
     final serverMessages = _buildServerMessages(messages, llamaTools);
-    final streamParser = _Gemma4StreamParser();
 
     try {
-      await for (final event in server.streamChatCompletion(
-        model: _localLlamaModelAlias,
-        messages: serverMessages,
-        maxTokens: effectiveConfig.maxTokens,
-        temperature: effectiveConfig.temperature,
-        stop: _localLlamaStopSequences,
-      )) {
-        final error = _serverErrorMessage(event);
-        if (error != null) {
-          _setError(error);
-          throw StateError(error);
-        }
-
-        final content = _serverDeltaContent(event);
-        if (content == null || content.isEmpty) {
-          continue;
-        }
-        for (final chunk in streamParser.add(content)) {
-          yield chunk;
-        }
-      }
+      yield* _parseOpenAiServerStream(
+        server.streamChatCompletion(
+          model: _localLlamaModelAlias,
+          messages: serverMessages,
+          maxTokens: effectiveConfig.maxTokens,
+          temperature: effectiveConfig.temperature,
+          stop: _localLlamaStopSequences,
+        ),
+      );
     } on TimeoutException catch (error) {
       _setError(error.message ?? error.toString());
       rethrow;
     }
+  }
+
+  Stream<ChatGenerationChunk> _parseOpenAiServerStream(
+    Stream<Map<String, Object?>> events,
+  ) async* {
+    final streamParser = _Gemma4StreamParser();
+    final toolCallBuffers = <int, _LocalOpenAiToolCallBuffer>{};
+
+    await for (final event in events) {
+      final error = _serverErrorMessage(event);
+      if (error != null) {
+        _setError(error);
+        throw StateError(error);
+      }
+
+      final toolCall = _serverToolCallChunk(event, toolCallBuffers);
+      if (toolCall != null) {
+        for (final chunk in streamParser.close()) {
+          yield chunk;
+        }
+        yield toolCall;
+        continue;
+      }
+
+      final content = _serverDeltaContent(event);
+      if (content == null || content.isEmpty) {
+        continue;
+      }
+      for (final chunk in streamParser.add(content)) {
+        yield chunk;
+      }
+    }
 
     for (final chunk in streamParser.close()) {
       yield chunk;
+    }
+    final trailingToolCall = _toolCallChunkFromBuffers(toolCallBuffers);
+    if (trailingToolCall != null) {
+      yield trailingToolCall;
     }
   }
 
@@ -1271,6 +1264,148 @@ class GemmaRepository {
     }
     return null;
   }
+
+  bool _hasBinaryMedia(List<Message> messages) {
+    for (final message in messages) {
+      if (message is! UserMessage) continue;
+      if (message.imageBytes != null || message.audioBytes != null) {
+        return true;
+      }
+      for (final attachment in message.attachments) {
+        if ((attachment.isImage || attachment.isAudio) &&
+            attachment.bytes != null) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  ChatFunctionCallChunk? _serverToolCallChunk(
+    Map<String, Object?> event,
+    Map<int, _LocalOpenAiToolCallBuffer> buffers,
+  ) {
+    final firstChoice = _firstServerChoice(event);
+    if (firstChoice == null) return null;
+
+    var hasCompleteMessageToolCall = false;
+    final delta = firstChoice['delta'];
+    if (delta is Map) {
+      _collectToolCallDeltas(buffers, delta['tool_calls']);
+      _collectLegacyFunctionCallDelta(buffers, delta['function_call']);
+    }
+
+    final message = firstChoice['message'];
+    if (message is Map) {
+      _collectToolCallDeltas(buffers, message['tool_calls']);
+      _collectLegacyFunctionCallDelta(buffers, message['function_call']);
+      hasCompleteMessageToolCall =
+          message.containsKey('tool_calls') ||
+          message.containsKey('function_call');
+    }
+
+    final finishReason = _stringValue(firstChoice['finish_reason']);
+    if (finishReason == 'tool_calls' ||
+        finishReason == 'function_call' ||
+        hasCompleteMessageToolCall) {
+      final chunk = _toolCallChunkFromBuffers(buffers);
+      buffers.clear();
+      return chunk;
+    }
+
+    return null;
+  }
+
+  Map? _firstServerChoice(Map<String, Object?> event) {
+    final choices = event['choices'];
+    if (choices is! List || choices.isEmpty) return null;
+    final firstChoice = choices.first;
+    return firstChoice is Map ? firstChoice : null;
+  }
+
+  void _collectToolCallDeltas(
+    Map<int, _LocalOpenAiToolCallBuffer> buffers,
+    Object? rawToolCalls,
+  ) {
+    if (rawToolCalls is! List) return;
+
+    for (
+      var fallbackIndex = 0;
+      fallbackIndex < rawToolCalls.length;
+      fallbackIndex++
+    ) {
+      final rawToolCall = rawToolCalls[fallbackIndex];
+      if (rawToolCall is! Map) continue;
+
+      final index = _intValue(rawToolCall['index']) ?? fallbackIndex;
+      final buffer = buffers.putIfAbsent(index, _LocalOpenAiToolCallBuffer.new);
+
+      final function = rawToolCall['function'];
+      if (function is! Map) continue;
+
+      final name = _stringValue(function['name']);
+      if (name != null && name.isNotEmpty) buffer.name = name;
+
+      final arguments = _stringValue(function['arguments']);
+      if (arguments != null) buffer.arguments.write(arguments);
+    }
+  }
+
+  void _collectLegacyFunctionCallDelta(
+    Map<int, _LocalOpenAiToolCallBuffer> buffers,
+    Object? rawFunctionCall,
+  ) {
+    if (rawFunctionCall is! Map) return;
+
+    final buffer = buffers.putIfAbsent(0, _LocalOpenAiToolCallBuffer.new);
+    final name = _stringValue(rawFunctionCall['name']);
+    if (name != null && name.isNotEmpty) buffer.name = name;
+
+    final arguments = _stringValue(rawFunctionCall['arguments']);
+    if (arguments != null) buffer.arguments.write(arguments);
+  }
+
+  ChatFunctionCallChunk? _toolCallChunkFromBuffers(
+    Map<int, _LocalOpenAiToolCallBuffer> buffers,
+  ) {
+    final indexes = buffers.keys.toList()..sort();
+    for (final index in indexes) {
+      final buffer = buffers[index]!;
+      final name = buffer.name?.trim();
+      if (name == null || name.isEmpty) continue;
+      return ChatFunctionCallChunk(
+        name: name,
+        args: _decodeOpenAiToolArgs(buffer.arguments.toString()),
+      );
+    }
+    return null;
+  }
+
+  Map<String, dynamic> _decodeOpenAiToolArgs(String arguments) {
+    final trimmed = arguments.trim();
+    if (trimmed.isEmpty) return const {};
+
+    try {
+      final decoded = jsonDecode(trimmed);
+      if (decoded is Map<String, dynamic>) return decoded;
+      return {'value': decoded};
+    } catch (_) {
+      return {'raw': trimmed};
+    }
+  }
+
+  String? _stringValue(Object? value) => value is String ? value : null;
+
+  int? _intValue(Object? value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return null;
+  }
+}
+
+final class _LocalOpenAiToolCallBuffer {
+  String? name;
+  final arguments = StringBuffer();
 }
 
 final class _LibLlamaCppServerSession implements LocalLlamaServerSession {

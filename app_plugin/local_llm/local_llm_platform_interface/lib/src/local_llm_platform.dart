@@ -43,7 +43,31 @@ abstract class LocalLlmPlatform extends PlatformInterface {
     Uint8List? imageBytes,
     Uint8List? audioBytes,
   }) {
-    throw UnimplementedError('generateResponse() has not been implemented.');
+    return streamChatCompletion(
+      model: 'local',
+      messages: [
+        {'role': 'user', 'content': prompt},
+      ],
+      maxTokens: maxTokens,
+      temperature: temperature,
+      topK: topK,
+      stop: stopSequences ?? const [],
+    ).map(_deltaContent).where((content) => content != null).cast<String>();
+  }
+
+  /// Streams OpenAI-compatible chat completion events from the loaded model.
+  Stream<Map<String, Object?>> streamChatCompletion({
+    required String model,
+    required List<Map<String, Object?>> messages,
+    int? maxTokens,
+    double? temperature,
+    double? topP,
+    int? topK,
+    List<String> stop = const [],
+  }) {
+    throw UnimplementedError(
+      'streamChatCompletion() has not been implemented.',
+    );
   }
 
   /// Unloads the model from memory.
@@ -80,7 +104,44 @@ class _PlaceholderLocalLlmPlatform extends LocalLlmPlatform {
   }
 
   @override
+  Stream<Map<String, Object?>> streamChatCompletion({
+    required String model,
+    required List<Map<String, Object?>> messages,
+    int? maxTokens,
+    double? temperature,
+    double? topP,
+    int? topK,
+    List<String> stop = const [],
+  }) {
+    return Stream.error(
+      UnimplementedError('Local LLM is not supported on this platform.'),
+    );
+  }
+
+  @override
   Future<void> unloadModel() async {
     throw UnimplementedError('Local LLM is not supported on this platform.');
   }
+}
+
+String? _deltaContent(Map<String, Object?> event) {
+  final choices = event['choices'];
+  if (choices is! List || choices.isEmpty) return null;
+
+  final firstChoice = choices.first;
+  if (firstChoice is! Map) return null;
+
+  final delta = firstChoice['delta'];
+  if (delta is Map) {
+    final content = delta['content'];
+    if (content is String) return content;
+  }
+
+  final message = firstChoice['message'];
+  if (message is Map) {
+    final content = message['content'];
+    if (content is String) return content;
+  }
+
+  return null;
 }

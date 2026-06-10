@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
 import 'package:lib_litert_lm/lib_litert_lm.dart';
 
+const _localModelId = 'local';
 const _defaultMaxNumTokens = 2048;
 const _defaultMaxOutputTokens = 256;
 const _defaultTemperature = 0.8;
@@ -17,7 +18,8 @@ class LocalLlmAndroid extends LocalLlmPlatform {
 
   LiteRtLm? _client;
   LiteRtLmEngine? _engine;
-  LiteRtLmSession? _activeSession;
+  LiteRtLmOpenAiServer? _server;
+  LocalOpenAiChatCompletionsClient? _openAiClient;
 
   @override
   Future<void> loadModel(
@@ -40,9 +42,20 @@ class LocalLlmAndroid extends LocalLlmPlatform {
           ),
         ),
       );
+      final server = LiteRtLmOpenAiServer(
+        engine: engine,
+        config: const LiteRtLmOpenAiServerConfig(modelId: _localModelId),
+      );
+      _requireOk(await server.bind(port: 0));
+      final serverUri = server.uri;
+      if (serverUri == null) {
+        throw StateError('LiteRT-LM OpenAI server did not return a URI.');
+      }
 
       _client = client;
       _engine = engine;
+      _server = server;
+      _openAiClient = LocalOpenAiChatCompletionsClient(baseUri: serverUri);
     } catch (e) {
       await unloadModel();
       rethrow;
@@ -70,53 +83,63 @@ class LocalLlmAndroid extends LocalLlmPlatform {
       );
     }
 
-    await _activeSession?.cancel();
-    await _activeSession?.dispose();
-    _activeSession = null;
-
-    final session = _requireOk(
-      await engine.createSession(
-        params: LiteRtLmGenerationParams(
-          maxTokens: maxTokens ?? _defaultMaxOutputTokens,
-          temperature: temperature ?? _defaultTemperature,
-          topK: topK ?? _defaultTopK,
-        ),
-      ),
-    );
-    _activeSession = session;
-
-    try {
-      await for (final event in session.generateStream(prompt)) {
-        switch (event) {
-          case LiteRtLmToken(:final text):
-            yield text;
-          case LiteRtLmCompleted():
-            return;
-          case LiteRtLmFailed(:final error):
-            throw StateError(_formatFailure(error));
-          case LiteRtLmCancelledEvent():
-            return;
-        }
+    await for (final event in streamChatCompletion(
+      model: _localModelId,
+      messages: [
+        {'role': 'user', 'content': prompt},
+      ],
+      maxTokens: maxTokens ?? _defaultMaxOutputTokens,
+      temperature: temperature ?? _defaultTemperature,
+      topK: topK ?? _defaultTopK,
+      stop: stopSequences ?? const [],
+    )) {
+      final content = _deltaContent(event);
+      if (content != null && content.isNotEmpty) {
+        yield content;
       }
-    } finally {
-      if (identical(_activeSession, session)) {
-        _activeSession = null;
-      }
-      await session.dispose();
     }
   }
 
   @override
+  Stream<Map<String, Object?>> streamChatCompletion({
+    required String model,
+    required List<Map<String, Object?>> messages,
+    int? maxTokens,
+    double? temperature,
+    double? topP,
+    int? topK,
+    List<String> stop = const [],
+  }) {
+    final client = _openAiClient;
+    if (_engine == null || client == null) {
+      return Stream.error(
+        StateError('No model loaded. Call loadModel() first.'),
+      );
+    }
+    return client.streamChatCompletion(
+      model: model,
+      messages: messages,
+      maxTokens: maxTokens,
+      temperature: temperature,
+      topP: topP,
+      topK: topK,
+      stop: stop,
+    );
+  }
+
+  @override
   Future<void> unloadModel() async {
-    final session = _activeSession;
+    final openAiClient = _openAiClient;
+    final server = _server;
     final engine = _engine;
     final client = _client;
-    _activeSession = null;
+    _openAiClient = null;
+    _server = null;
     _engine = null;
     _client = null;
 
-    await session?.cancel();
-    await session?.dispose();
+    openAiClient?.close(force: true);
+    await server?.close();
     await engine?.dispose();
     await client?.dispose();
   }
@@ -131,4 +154,26 @@ T _requireOk<T>(LiteRtLmResult<T> result) {
 String _formatFailure(LiteRtLmFailure? failure) {
   if (failure == null) return 'LiteRT-LM operation failed.';
   return '${failure.code}: ${failure.message}';
+}
+
+String? _deltaContent(Map<String, Object?> event) {
+  final choices = event['choices'];
+  if (choices is! List || choices.isEmpty) return null;
+
+  final firstChoice = choices.first;
+  if (firstChoice is! Map) return null;
+
+  final delta = firstChoice['delta'];
+  if (delta is Map) {
+    final content = delta['content'];
+    if (content is String) return content;
+  }
+
+  final message = firstChoice['message'];
+  if (message is Map) {
+    final content = message['content'];
+    if (content is String) return content;
+  }
+
+  return null;
 }

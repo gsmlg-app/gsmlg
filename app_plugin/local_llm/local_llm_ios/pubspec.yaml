@@ -1,18 +1,18 @@
 name: app_local_llm_ios
-description: iOS implementation of app_local_llm using mlx_dart
+description: iOS implementation of app_local_llm using lib_mlx
 version: 0.1.0
 publish_to: none
 resolution: workspace
 
 environment:
-  sdk: ^3.5.0
-  flutter: ^3.24.0
+  sdk: ^3.12.0
+  flutter: '>=3.44.0'
 
 dependencies:
   flutter:
     sdk: flutter
   app_local_llm_platform_interface: any
-  mlx_dart: any
+  lib_mlx: ^0.1.0
 
 dev_dependencies:
   flutter_test:

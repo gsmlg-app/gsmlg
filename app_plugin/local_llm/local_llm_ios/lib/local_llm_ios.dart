@@ -1,17 +1,26 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
-import 'package:mlx_dart/mlx_dart.dart';
 
-/// The iOS implementation of [LocalLlmPlatform] using `mlx_dart`.
+import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
+import 'package:lib_mlx/lib_mlx.dart';
+
+const _localModelId = 'local';
+const _defaultMaxOutputTokens = 256;
+const _defaultTemperature = 0.8;
+const _defaultTopK = 40;
+
+/// The iOS implementation of [LocalLlmPlatform] using `lib_mlx`.
 class LocalLlmIos extends LocalLlmPlatform {
+  LocalLlmIos();
+
   /// Registers this class as the default instance of [LocalLlmPlatform].
   static void registerWith() {
     LocalLlmPlatform.instance = LocalLlmIos();
   }
 
-  MLXContext? _context;
-  bool _isLoaded = false;
+  final LibMlxRuntime _runtime = const LibMlxRuntime();
+  MlxModelHandle? _handle;
+  LibMlxOpenAiClient? _openAiClient;
 
   @override
   Future<void> loadModel(
@@ -23,13 +32,15 @@ class LocalLlmIos extends LocalLlmPlatform {
   }) async {
     await unloadModel();
     try {
-      // Open a GPU (Metal) context on iOS for MLX execution.
-      _context = MLXContext.gpu();
-
-      // Load weights or initialize model layers here using mlx_dart FFI.
-      // E.g., loading model weights using SafeTensors format or Module.loadWeights.
-
-      _isLoaded = true;
+      final handle = await _runtime.loadModel(
+        MlxModelConfig(modelPath: modelPath, modelId: _localModelId),
+      );
+      final server = await _runtime.startServer(
+        handle,
+        config: const MlxServerConfig(modelId: _localModelId),
+      );
+      _handle = handle;
+      _openAiClient = LibMlxOpenAiClient(baseUri: server.uri);
     } catch (e) {
       await unloadModel();
       rethrow;
@@ -45,45 +56,95 @@ class LocalLlmIos extends LocalLlmPlatform {
     List<String>? stopSequences,
     Uint8List? imageBytes,
     Uint8List? audioBytes,
-  }) {
-    if (!_isLoaded || _context == null) {
-      return Stream.error(
-          StateError('No model loaded. Call loadModel() first.'));
+  }) async* {
+    if (imageBytes != null || audioBytes != null) {
+      throw UnsupportedError(
+        'lib_mlx OpenAI server multimodal input is not wired yet.',
+      );
     }
 
-    final controller = StreamController<String>();
-
-    // Run the model autoregressive token generation loop using mlx_dart primitives
-    // and yield tokens streaming.
-    // For now, we provide the streaming interface and yield the result.
-    // This is resolved by the MLX-based FFI runner on the target device.
-    runZonedGuarded(() async {
-      try {
-        // Autoregressive decoding loop goes here:
-        // 1. Tokenize prompt.
-        // 2. Feed to model embedding and Transformer layers.
-        // 3. Sample next token and yield it.
-        // 4. Stop when end-of-sequence is met or maxTokens reached.
-
-        controller.add("Generation on iOS via mlx_dart (Metal) is running.");
-        await controller.close();
-      } catch (e) {
-        controller.addError(e);
-        await controller.close();
+    await for (final event in streamChatCompletion(
+      model: _localModelId,
+      messages: [
+        {'role': 'user', 'content': prompt},
+      ],
+      maxTokens: maxTokens ?? _defaultMaxOutputTokens,
+      temperature: temperature ?? _defaultTemperature,
+      topK: topK ?? _defaultTopK,
+      stop: stopSequences ?? const [],
+    )) {
+      final content = _deltaContent(event);
+      if (content != null && content.isNotEmpty) {
+        yield content;
       }
-    }, (error, stack) {
-      if (!controller.isClosed) {
-        controller.addError(error, stack);
-        controller.close();
-      }
-    });
+    }
+  }
 
-    return controller.stream;
+  @override
+  Stream<Map<String, Object?>> streamChatCompletion({
+    required String model,
+    required List<Map<String, Object?>> messages,
+    int? maxTokens,
+    double? temperature,
+    double? topP,
+    int? topK,
+    List<String> stop = const [],
+  }) async* {
+    final client = _openAiClient;
+    if (_handle == null || client == null) {
+      throw StateError('No model loaded. Call loadModel() first.');
+    }
+
+    final request = <String, Object?>{'model': model, 'messages': messages};
+    if (maxTokens != null) request['max_tokens'] = maxTokens;
+    if (temperature != null) request['temperature'] = temperature;
+    if (topP != null) request['top_p'] = topP;
+    if (topK != null) request['top_k'] = topK;
+    if (stop.isNotEmpty) request['stop'] = stop;
+
+    await for (final event in client.chatCompletionsStream(request)) {
+      if (!event.done && event.data != null) {
+        yield event.data!;
+      }
+    }
   }
 
   @override
   Future<void> unloadModel() async {
-    _isLoaded = false;
-    _context = null;
+    final handle = _handle;
+    final client = _openAiClient;
+    _handle = null;
+    _openAiClient = null;
+
+    client?.close(force: true);
+    if (handle == null) return;
+
+    try {
+      await _runtime.stopServer(handle);
+    } finally {
+      await _runtime.unloadModel(handle);
+    }
   }
+}
+
+String? _deltaContent(Map<String, Object?> event) {
+  final choices = event['choices'];
+  if (choices is! List || choices.isEmpty) return null;
+
+  final firstChoice = choices.first;
+  if (firstChoice is! Map) return null;
+
+  final delta = firstChoice['delta'];
+  if (delta is Map) {
+    final content = delta['content'];
+    if (content is String) return content;
+  }
+
+  final message = firstChoice['message'];
+  if (message is Map) {
+    final content = message['content'];
+    if (content is String) return content;
+  }
+
+  return null;
 }

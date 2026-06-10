@@ -116,6 +116,47 @@ void main() {
     ]);
   });
 
+  test(
+    'local generation consumes OpenAI tool calls from server stream',
+    () async {
+      final serverFactory = _CapturingLlamaServerFactory(
+        events: const [
+          {
+            'choices': [
+              {
+                'delta': {
+                  'tool_calls': [
+                    {
+                      'index': 0,
+                      'type': 'function',
+                      'function': {
+                        'name': 'domain_list_zones',
+                        'arguments': '{}',
+                      },
+                    },
+                  ],
+                },
+                'finish_reason': 'tool_calls',
+              },
+            ],
+          },
+        ],
+      );
+      final repository = await _repositoryWithServerFactory(serverFactory);
+
+      await repository.loadModel(
+        const ModelConfig(backend: GemmaBackend.metal),
+      );
+      final chunks = await repository.generateResponse([
+        _userMessage(),
+      ]).toList();
+
+      expect(chunks, [
+        const ChatFunctionCallChunk(name: 'domain_list_zones', args: {}),
+      ]);
+    },
+  );
+
   test('local generation parses Gemma thinking tags', () async {
     final serverFactory = _CapturingLlamaServerFactory(
       events: [
