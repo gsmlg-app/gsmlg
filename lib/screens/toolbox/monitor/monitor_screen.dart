@@ -5,7 +5,6 @@ import 'package:app_components/app_components.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/add_host_dialog.dart';
@@ -27,6 +26,7 @@ class MonitorScreen extends StatefulWidget {
 }
 
 class _MonitorScreenState extends State<MonitorScreen> {
+  late final MonitorBloc _monitorBloc;
   String? _selectedHostId;
   bool _isScanning = false;
   bool _isPinned = false;
@@ -34,6 +34,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
   @override
   void initState() {
     super.initState();
+    _monitorBloc = context.read<MonitorBloc>();
     // Auto-trigger mDNS discovery on screen open
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startDiscovery();
@@ -42,6 +43,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
 
   @override
   void dispose() {
+    _monitorBloc.add(const MonitorDisconnectAllHosts());
     if (_isPinned) {
       WakelockPlus.disable();
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -64,7 +66,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
 
   void _startDiscovery() {
     setState(() => _isScanning = true);
-    context.read<MonitorBloc>().add(const MonitorDiscoverHosts());
+    _monitorBloc.add(const MonitorDiscoverHosts());
     // mDNS browse is finite; hide scanning after a timeout
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) setState(() => _isScanning = false);
@@ -281,8 +283,8 @@ class _MonitorScreenState extends State<MonitorScreen> {
               icon: const Icon(Icons.refresh),
               tooltip: 'Ping agent',
               onPressed: () => context.read<MonitorBloc>().add(
-                    MonitorPingHost(hostId: host.id),
-                  ),
+                MonitorPingHost(hostId: host.id),
+              ),
             ),
             IconButton(
               icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
@@ -306,8 +308,8 @@ class _MonitorScreenState extends State<MonitorScreen> {
               icon: const Icon(Icons.refresh),
               tooltip: 'Ping agent',
               onPressed: () => context.read<MonitorBloc>().add(
-                    MonitorPingHost(hostId: host.id),
-                  ),
+                MonitorPingHost(hostId: host.id),
+              ),
             ),
             IconButton(
               icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
@@ -330,8 +332,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
             Icon(
               Icons.lock_outline,
               size: 48,
-              color:
-                  Theme.of(context).extension<DmColorExtension>()!.warning,
+              color: Theme.of(context).extension<DmColorExtension>()!.warning,
             ),
             const SizedBox(height: 16),
             const Text('Waiting for trust verification'),

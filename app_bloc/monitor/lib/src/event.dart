@@ -15,6 +15,10 @@ final class MonitorDisconnectHost extends MonitorEvent {
   final String hostId;
 }
 
+final class MonitorDisconnectAllHosts extends MonitorEvent {
+  const MonitorDisconnectAllHosts();
+}
+
 final class MonitorAddManualHost extends MonitorEvent {
   const MonitorAddManualHost({required this.ip, required this.port});
   final String ip;

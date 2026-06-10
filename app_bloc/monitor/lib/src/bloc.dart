@@ -20,6 +20,7 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
        super(const MonitorInitial()) {
     on<MonitorConnectHost>(_onConnectHost);
     on<MonitorDisconnectHost>(_onDisconnectHost);
+    on<MonitorDisconnectAllHosts>(_onDisconnectAllHosts);
     on<MonitorAddManualHost>(_onAddManualHost);
     on<MonitorRemoveHost>(_onRemoveHost);
     on<MonitorDiscoverHosts>(_onDiscoverHosts);
@@ -87,41 +88,66 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
           host.port,
           pinnedFingerprint: pinnedFingerprint,
         )
-        .listen((connectionEvent) {
-          switch (connectionEvent) {
-            case MonitorMessageReceived(:final message):
-              if (message.type == MonitorMessageType.hostInfo) {
-                add(
-                  _MonitorHostInfoReceived(
-                    hostId: event.hostId,
-                    hostInfo: message.hostInfo,
-                  ),
-                );
-              } else if (message.type == MonitorMessageType.metrics) {
-                add(
-                  _MonitorMetricsReceived(
-                    hostId: event.hostId,
-                    metrics: message.systemMetrics,
-                  ),
-                );
-              }
-            case MonitorConnectionStatusChanged(:final status, :final error):
+        .listen(
+          (connectionEvent) {
+            try {
+              _handleConnectionEvent(event.hostId, connectionEvent);
+            } catch (error) {
               add(
                 _MonitorConnectionStatusChanged(
                   hostId: event.hostId,
-                  status: status,
+                  status: ConnectionStatus.error,
                   error: error,
                 ),
               );
-            case MonitorCertificateReceived(:final fingerprint):
-              add(
-                _MonitorCertificateReceived(
-                  hostId: event.hostId,
-                  fingerprint: fingerprint,
-                ),
-              );
-          }
-        });
+            }
+          },
+          onError: (Object error) {
+            add(
+              _MonitorConnectionStatusChanged(
+                hostId: event.hostId,
+                status: ConnectionStatus.error,
+                error: error,
+              ),
+            );
+          },
+        );
+  }
+
+  void _handleConnectionEvent(
+    String hostId,
+    MonitorConnectionEvent connectionEvent,
+  ) {
+    switch (connectionEvent) {
+      case MonitorMessageReceived(:final message):
+        if (message.type == MonitorMessageType.hostInfo) {
+          add(
+            _MonitorHostInfoReceived(
+              hostId: hostId,
+              hostInfo: message.hostInfo,
+            ),
+          );
+        } else if (message.type == MonitorMessageType.metrics) {
+          add(
+            _MonitorMetricsReceived(
+              hostId: hostId,
+              metrics: message.systemMetrics,
+            ),
+          );
+        }
+      case MonitorConnectionStatusChanged(:final status, :final error):
+        add(
+          _MonitorConnectionStatusChanged(
+            hostId: hostId,
+            status: status,
+            error: error,
+          ),
+        );
+      case MonitorCertificateReceived(:final fingerprint):
+        add(
+          _MonitorCertificateReceived(hostId: hostId, fingerprint: fingerprint),
+        );
+    }
   }
 
   Future<void> _onDisconnectHost(
@@ -140,10 +166,40 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     if (host != null) {
       hosts[event.hostId] = host.copyWith(
         status: ConnectionStatus.disconnected,
-        metrics: null,
+        clearMetrics: true,
       );
       emit(MonitorLoaded(hosts: hosts));
     }
+  }
+
+  Future<void> _onDisconnectAllHosts(
+    MonitorDisconnectAllHosts event,
+    Emitter<MonitorState> emit,
+  ) async {
+    await _discoverySubscription?.cancel();
+    _discoverySubscription = null;
+
+    for (final subscription in _hostSubscriptions.values) {
+      await subscription.cancel();
+    }
+    _hostSubscriptions.clear();
+    await _repository.disconnectAll();
+
+    final currentState = state;
+    if (currentState is! MonitorLoaded) return;
+
+    final hosts = currentState.hosts.map(
+      (id, host) => MapEntry(
+        id,
+        host.copyWith(
+          status: ConnectionStatus.disconnected,
+          clearMetrics: true,
+        ),
+      ),
+    );
+    emit(
+      MonitorLoaded(hosts: hosts, selectedHostId: currentState.selectedHostId),
+    );
   }
 
   Future<void> _onRemoveHost(

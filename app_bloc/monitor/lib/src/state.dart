@@ -66,25 +66,30 @@ final class MonitorHost extends Equatable {
     Map<String, RingBuffer<double>>? txHistory,
     Map<String, RingBuffer<double>>? readHistory,
     Map<String, RingBuffer<double>>? writeHistory,
+    bool clearMetrics = false,
   }) => MonitorHost(
     id: id,
     ip: ip,
     port: port,
     status: status ?? this.status,
     hostInfo: hostInfo ?? this.hostInfo,
-    metrics: metrics ?? this.metrics,
+    metrics: clearMetrics ? null : metrics ?? this.metrics,
     label: label ?? this.label,
     isManual: isManual,
     trustStatus: trustStatus ?? this.trustStatus,
     certFingerprint: certFingerprint ?? this.certFingerprint,
     versionWarning: versionWarning ?? this.versionWarning,
     interval: interval ?? this.interval,
-    cpuHistory: cpuHistory ?? this.cpuHistory,
-    memoryHistory: memoryHistory ?? this.memoryHistory,
-    rxHistory: rxHistory ?? this.rxHistory,
-    txHistory: txHistory ?? this.txHistory,
-    readHistory: readHistory ?? this.readHistory,
-    writeHistory: writeHistory ?? this.writeHistory,
+    cpuHistory: clearMetrics
+        ? RingBuffer<double>()
+        : cpuHistory ?? this.cpuHistory,
+    memoryHistory: clearMetrics
+        ? RingBuffer<double>()
+        : memoryHistory ?? this.memoryHistory,
+    rxHistory: clearMetrics ? const {} : rxHistory ?? this.rxHistory,
+    txHistory: clearMetrics ? const {} : txHistory ?? this.txHistory,
+    readHistory: clearMetrics ? const {} : readHistory ?? this.readHistory,
+    writeHistory: clearMetrics ? const {} : writeHistory ?? this.writeHistory,
   );
 
   @override

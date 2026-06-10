@@ -19,3 +19,7 @@ dependencies:
   monitor_models: any
   multicast_dns: any
   web_socket_channel: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
