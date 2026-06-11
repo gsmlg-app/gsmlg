@@ -69,17 +69,23 @@ void main() {
   test(
     'local generation uses the current config over the loaded config',
     () async {
+      final gpuBackends = supportedGemmaBackendsForCurrentPlatform()
+          .where((backend) => backend.usesGpuLayers)
+          .toList();
+      if (gpuBackends.isEmpty) {
+        markTestSkipped('No GPU local backend is supported on this platform.');
+        return;
+      }
       final serverFactory = _CapturingLlamaServerFactory();
       final repository = await _repositoryWithServerFactory(serverFactory);
 
-      await repository.loadModel(
-        const ModelConfig(backend: GemmaBackend.metal),
-      );
+      await repository.loadModel(ModelConfig(backend: gpuBackends.first));
       await repository.generateResponse([
         _userMessage(),
       ], config: const ModelConfig(backend: GemmaBackend.cpu)).toList();
 
       expect(serverFactory.configs, hasLength(2));
+      expect(serverFactory.configs.first.gpuLayerCount, 99);
       expect(serverFactory.configs.last.gpuLayerCount, 0);
       expect(serverFactory.sessions.first.isClosed, isTrue);
     },
