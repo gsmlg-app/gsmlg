@@ -475,9 +475,11 @@ final class _NativeWorkerState {
     try {
       final temperature = args['temperature']! as double;
       if (temperature == 0.0) {
-        sampler.ref.typeAsInt = c.LiteRtLmSamplerType.kLiteRtLmSamplerTypeGreedy.value;
+        sampler.ref.typeAsInt =
+            c.LiteRtLmSamplerType.kLiteRtLmSamplerTypeGreedy.value;
       } else {
-        sampler.ref.typeAsInt = c.LiteRtLmSamplerType.kLiteRtLmSamplerTypeTopP.value;
+        sampler.ref.typeAsInt =
+            c.LiteRtLmSamplerType.kLiteRtLmSamplerTypeTopP.value;
       }
       sampler.ref
         ..top_k = args['topK']! as int

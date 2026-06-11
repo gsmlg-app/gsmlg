@@ -760,7 +760,9 @@ class ModelConfig extends Equatable {
       inferenceMode: inferenceMode ?? this.inferenceMode,
       modelType: modelType ?? this.modelType,
       customModelPath: customModelPath ?? this.customModelPath,
-      localModelId: clearLocalModel ? null : (localModelId ?? this.localModelId),
+      localModelId: clearLocalModel
+          ? null
+          : (localModelId ?? this.localModelId),
       maxTokens: maxTokens ?? this.maxTokens,
       temperature: temperature ?? this.temperature,
       topK: topK ?? this.topK,

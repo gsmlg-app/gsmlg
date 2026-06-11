@@ -199,7 +199,9 @@ class GemmaRepository {
         String expectedFormat = 'GGUF';
         if (Platform.isAndroid) expectedFormat = 'LiteRT-LM';
         if (Platform.isIOS) expectedFormat = 'MLX';
-        _setError('Only $expectedFormat models are supported for local inference.');
+        _setError(
+          'Only $expectedFormat models are supported for local inference.',
+        );
         return;
       }
 
@@ -215,9 +217,13 @@ class GemmaRepository {
       // Check if file is truncated/corrupt (LiteRT-LM files should be > 1.5 GB on Android)
       if (Platform.isAndroid) {
         final fileSize = file.lengthSync();
-        final expectedSize = info.id == 'gemma-4-E2B-it' ? 2588147712 : 3659530240;
+        final expectedSize = info.id == 'gemma-4-E2B-it'
+            ? 2588147712
+            : 3659530240;
         if (fileSize < expectedSize - 10 * 1024 * 1024) {
-          debugPrint('[GemmaRepo] Model file is truncated ($fileSize bytes vs expected $expectedSize). Deleting.');
+          debugPrint(
+            '[GemmaRepo] Model file is truncated ($fileSize bytes vs expected $expectedSize). Deleting.',
+          );
           try {
             file.deleteSync();
           } catch (_) {}
@@ -250,7 +256,11 @@ class GemmaRepository {
       String expectedFormat = 'GGUF';
       if (Platform.isAndroid) expectedFormat = 'LiteRT-LM';
       if (Platform.isIOS) expectedFormat = 'MLX';
-      throw ArgumentError.value(url, 'url', 'Only $expectedFormat models are supported.');
+      throw ArgumentError.value(
+        url,
+        'url',
+        'Only $expectedFormat models are supported.',
+      );
     }
 
     try {
@@ -283,7 +293,11 @@ class GemmaRepository {
       String expectedFormat = 'GGUF';
       if (Platform.isAndroid) expectedFormat = 'LiteRT-LM';
       if (Platform.isIOS) expectedFormat = 'MLX';
-      throw ArgumentError.value(url, 'url', 'Only $expectedFormat models are supported.');
+      throw ArgumentError.value(
+        url,
+        'url',
+        'Only $expectedFormat models are supported.',
+      );
     }
 
     try {
@@ -554,10 +568,13 @@ class GemmaRepository {
         }
       } catch (e) {
         _activeDownloads.remove(url);
-        if (e is ModelDownloadCanceledException || e is ModelDownloadPausedException) {
+        if (e is ModelDownloadCanceledException ||
+            e is ModelDownloadPausedException) {
           rethrow;
         }
-        debugPrint('[GemmaRepo] background_downloader failed, trying fallback: $e');
+        debugPrint(
+          '[GemmaRepo] background_downloader failed, trying fallback: $e',
+        );
       }
     }
 
@@ -700,7 +717,9 @@ class GemmaRepository {
       sink = null;
 
       final fileSize = file.lengthSync();
-      debugPrint('[GemmaRepo] Download complete (fallback): $filePath ($fileSize bytes)');
+      debugPrint(
+        '[GemmaRepo] Download complete (fallback): $filePath ($fileSize bytes)',
+      );
       return filePath;
     } on ModelDownloadCanceledException {
       deletePartial = true;
@@ -780,7 +799,9 @@ class GemmaRepository {
       final file = File(filePath);
       if (file.existsSync()) {
         if (Platform.isAndroid) {
-          final expectedSize = model.id == 'gemma-4-E2B-it' ? 2588147712 : 3659530240;
+          final expectedSize = model.id == 'gemma-4-E2B-it'
+              ? 2588147712
+              : 3659530240;
           if (file.lengthSync() >= expectedSize - 10 * 1024 * 1024) {
             installed.add(model.id);
           }
@@ -820,7 +841,9 @@ class GemmaRepository {
       final file = File(llamaModelPath);
       debugPrint('[GemmaRepo] Checking model file path: $llamaModelPath');
       if (!file.existsSync()) {
-        debugPrint('[GemmaRepo] Model file does not exist at path: $llamaModelPath');
+        debugPrint(
+          '[GemmaRepo] Model file does not exist at path: $llamaModelPath',
+        );
         _setStatus(GemmaModelStatus.notInstalled);
         return;
       }
@@ -840,8 +863,8 @@ class GemmaRepository {
             case GemmaBackend.npu:
               backendStr = 'npu';
               try {
-                final clientInfo =
-                    await app_client_info.ClientInfo.instance.getData();
+                final clientInfo = await app_client_info.ClientInfo.instance
+                    .getData();
                 dispatchLibDir =
                     clientInfo.additionalData['nativeLibraryDir'] as String?;
               } catch (e) {
