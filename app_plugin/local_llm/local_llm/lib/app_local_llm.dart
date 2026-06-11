@@ -28,13 +28,34 @@ class LocalLlm {
     String? litertDispatchLibDir,
     bool supportImage = false,
     bool supportAudio = false,
+  }) async {
+    var serviceStarted = false;
+    try {
+      await LocalLlmPlatform.instance.startService();
+      serviceStarted = true;
+      await LocalLlmPlatform.instance.loadModel(
+        modelPath,
+        backend: backend,
+        litertDispatchLibDir: litertDispatchLibDir,
+        supportImage: supportImage,
+        supportAudio: supportAudio,
+      );
+    } catch (_) {
+      if (serviceStarted) {
+        await LocalLlmPlatform.instance.stopService();
+      }
+      rethrow;
+    }
+  }
+
+  /// Starts the platform service that keeps local inference user-visible.
+  Future<void> startService({
+    String title = 'Local LLM',
+    String message = 'Local model is running.',
   }) {
-    return LocalLlmPlatform.instance.loadModel(
-      modelPath,
-      backend: backend,
-      litertDispatchLibDir: litertDispatchLibDir,
-      supportImage: supportImage,
-      supportAudio: supportAudio,
+    return LocalLlmPlatform.instance.startService(
+      title: title,
+      message: message,
     );
   }
 
@@ -81,7 +102,16 @@ class LocalLlm {
   }
 
   /// Unloads the model from memory.
-  Future<void> unloadModel() {
-    return LocalLlmPlatform.instance.unloadModel();
+  Future<void> unloadModel() async {
+    try {
+      await LocalLlmPlatform.instance.unloadModel();
+    } finally {
+      await LocalLlmPlatform.instance.stopService();
+    }
+  }
+
+  /// Stops the platform service that keeps local inference user-visible.
+  Future<void> stopService() {
+    return LocalLlmPlatform.instance.stopService();
   }
 }

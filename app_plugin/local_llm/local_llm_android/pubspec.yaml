@@ -8,6 +8,14 @@ environment:
   sdk: ^3.12.0
   flutter: ^3.24.0
 
+flutter:
+  plugin:
+    implements: app_local_llm
+    platforms:
+      android:
+        package: com.app.local_llm
+        pluginClass: LocalLlmAndroidPlugin
+
 dependencies:
   flutter:
     sdk: flutter

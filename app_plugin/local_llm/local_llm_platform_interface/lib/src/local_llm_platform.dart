@@ -22,6 +22,14 @@ abstract class LocalLlmPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  /// Starts the platform service that keeps local inference user-visible.
+  Future<void> startService({
+    String title = 'Local LLM',
+    String message = 'Local model is running.',
+  }) {
+    throw UnimplementedError('startService() has not been implemented.');
+  }
+
   /// Loads the local model into memory.
   Future<void> loadModel(
     String modelPath, {
@@ -74,9 +82,22 @@ abstract class LocalLlmPlatform extends PlatformInterface {
   Future<void> unloadModel() {
     throw UnimplementedError('unloadModel() has not been implemented.');
   }
+
+  /// Stops the platform service that keeps local inference user-visible.
+  Future<void> stopService() {
+    throw UnimplementedError('stopService() has not been implemented.');
+  }
 }
 
 class _PlaceholderLocalLlmPlatform extends LocalLlmPlatform {
+  @override
+  Future<void> startService({
+    String title = 'Local LLM',
+    String message = 'Local model is running.',
+  }) async {
+    throw UnimplementedError('Local LLM is not supported on this platform.');
+  }
+
   @override
   Future<void> loadModel(
     String modelPath, {
@@ -120,6 +141,11 @@ class _PlaceholderLocalLlmPlatform extends LocalLlmPlatform {
 
   @override
   Future<void> unloadModel() async {
+    throw UnimplementedError('Local LLM is not supported on this platform.');
+  }
+
+  @override
+  Future<void> stopService() async {
     throw UnimplementedError('Local LLM is not supported on this platform.');
   }
 }

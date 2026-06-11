@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
+import 'package:flutter/services.dart';
 import 'package:lib_litert_lm/lib_litert_lm.dart';
 
 const _localModelId = 'local';
@@ -8,6 +8,7 @@ const _defaultMaxNumTokens = 2048;
 const _defaultMaxOutputTokens = 256;
 const _defaultTemperature = 0.8;
 const _defaultTopK = 40;
+const _serviceChannel = MethodChannel('app_local_llm_android/service');
 
 /// The Android implementation of [LocalLlmPlatform] using `lib_litert_lm`.
 class LocalLlmAndroid extends LocalLlmPlatform {
@@ -20,6 +21,17 @@ class LocalLlmAndroid extends LocalLlmPlatform {
   LiteRtLmEngine? _engine;
   LiteRtLmOpenAiServer? _server;
   LocalOpenAiChatCompletionsClient? _openAiClient;
+
+  @override
+  Future<void> startService({
+    String title = 'Local LLM',
+    String message = 'Local model is running.',
+  }) {
+    return _serviceChannel.invokeMethod<void>('startService', {
+      'title': title,
+      'message': message,
+    });
+  }
 
   @override
   Future<void> loadModel(
@@ -142,6 +154,11 @@ class LocalLlmAndroid extends LocalLlmPlatform {
     await server?.close();
     await engine?.dispose();
     await client?.dispose();
+  }
+
+  @override
+  Future<void> stopService() {
+    return _serviceChannel.invokeMethod<void>('stopService');
   }
 }
 

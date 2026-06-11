@@ -8,6 +8,13 @@ environment:
   sdk: ^3.12.0
   flutter: '>=3.44.0'
 
+flutter:
+  plugin:
+    implements: app_local_llm
+    platforms:
+      ios:
+        pluginClass: LocalLlmIosPlugin
+
 dependencies:
   flutter:
     sdk: flutter

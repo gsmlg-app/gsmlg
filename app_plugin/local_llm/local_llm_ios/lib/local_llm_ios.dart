@@ -1,13 +1,14 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:app_local_llm_platform_interface/app_local_llm_platform_interface.dart';
+import 'package:flutter/services.dart';
 import 'package:lib_mlx/lib_mlx.dart';
 
 const _localModelId = 'local';
 const _defaultMaxOutputTokens = 256;
 const _defaultTemperature = 0.8;
 const _defaultTopK = 40;
+const _serviceChannel = MethodChannel('app_local_llm_ios/service');
 
 /// The iOS implementation of [LocalLlmPlatform] using `lib_mlx`.
 class LocalLlmIos extends LocalLlmPlatform {
@@ -21,6 +22,17 @@ class LocalLlmIos extends LocalLlmPlatform {
   final LibMlxRuntime _runtime = const LibMlxRuntime();
   MlxModelHandle? _handle;
   LibMlxOpenAiClient? _openAiClient;
+
+  @override
+  Future<void> startService({
+    String title = 'Local LLM',
+    String message = 'Local model is running.',
+  }) {
+    return _serviceChannel.invokeMethod<void>('startService', {
+      'title': title,
+      'message': message,
+    });
+  }
 
   @override
   Future<void> loadModel(
@@ -124,6 +136,11 @@ class LocalLlmIos extends LocalLlmPlatform {
     } finally {
       await _runtime.unloadModel(handle);
     }
+  }
+
+  @override
+  Future<void> stopService() {
+    return _serviceChannel.invokeMethod<void>('stopService');
   }
 }
 
