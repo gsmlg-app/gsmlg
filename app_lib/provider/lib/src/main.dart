@@ -12,6 +12,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_bloc/github_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:theme_bloc/theme_bloc.dart';
+import 'package:tts_dataset/tts_dataset.dart';
+import 'package:tts_dataset_bloc/tts_dataset_bloc.dart';
 import 'package:vultr_bloc/vultr_bloc.dart';
 import 'package:whois_bloc/whois_bloc.dart';
 import 'package:monitor_bloc/monitor_bloc.dart';
@@ -46,6 +48,9 @@ class MainProvider extends StatelessWidget {
         ),
         RepositoryProvider<ChatStorageRepository>(
           create: (context) => ChatStorageRepository(database),
+        ),
+        RepositoryProvider<TtsDatasetRepository>(
+          create: (context) => TtsDatasetRepository(database),
         ),
         RepositoryProvider<ToolExecutor>(
           create: (context) => ToolExecutor(
@@ -107,6 +112,11 @@ class MainProvider extends StatelessWidget {
             create: (context) => MonitorBloc(
               repository: MonitorRepository(),
               trustStore: DbTrustStore(database),
+            ),
+          ),
+          BlocProvider<TtsDatasetBloc>(
+            create: (context) => TtsDatasetBloc(
+              repository: context.read<TtsDatasetRepository>(),
             ),
           ),
         ],

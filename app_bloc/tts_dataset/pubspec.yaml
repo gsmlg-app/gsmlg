@@ -1,0 +1,23 @@
+name: tts_dataset_bloc
+description: App tts_dataset bloc
+version: 1.0.0
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bloc: ^9.0.0
+  equatable: ^2.0.7
+  path: any
+  tts_dataset: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  app_database: any
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.3
+  flutter_lints: ^6.0.0

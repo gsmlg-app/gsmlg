@@ -11,6 +11,11 @@ import 'tables/github_repo.dart';
 import 'tables/monitor_host.dart';
 import 'tables/monitor_trusted_cert.dart';
 import 'tables/service_account.dart';
+import 'tables/tts_dataset_clip.dart';
+import 'tables/tts_dataset_project.dart';
+import 'tables/tts_dataset_prompt.dart';
+import 'tables/tts_dataset_speaker.dart';
+import 'tables/tts_dataset_validation_issue.dart';
 import 'tables/whois_history.dart';
 import 'type_converter.dart';
 
@@ -22,6 +27,11 @@ export 'tables/github_repo.dart';
 export 'tables/monitor_host.dart';
 export 'tables/monitor_trusted_cert.dart';
 export 'tables/service_account.dart';
+export 'tables/tts_dataset_clip.dart';
+export 'tables/tts_dataset_project.dart';
+export 'tables/tts_dataset_prompt.dart';
+export 'tables/tts_dataset_speaker.dart';
+export 'tables/tts_dataset_validation_issue.dart';
 export 'tables/whois_history.dart';
 export 'type_converter.dart';
 
@@ -37,6 +47,11 @@ part 'database.g.dart';
   ServiceAccountTable,
   MonitorHostTable,
   MonitorTrustedCertTable,
+  TtsDatasetProjectTable,
+  TtsDatasetSpeakerTable,
+  TtsDatasetPromptTable,
+  TtsDatasetClipTable,
+  TtsDatasetValidationIssueTable,
 ])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
@@ -50,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration {
@@ -180,6 +195,13 @@ class AppDatabase extends _$AppDatabase {
             chatSettingsTable,
             chatSettingsTable.localModelId,
           );
+        }
+        if (from < 15) {
+          await m.createTable(ttsDatasetProjectTable);
+          await m.createTable(ttsDatasetSpeakerTable);
+          await m.createTable(ttsDatasetPromptTable);
+          await m.createTable(ttsDatasetClipTable);
+          await m.createTable(ttsDatasetValidationIssueTable);
         }
       },
     );

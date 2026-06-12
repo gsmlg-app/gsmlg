@@ -167,5 +167,27 @@
     "placeholders": {
       "version": {"type": "String"}
     }
-  }
+  },
+  "ttsDatasetTitle": "TTS Dataset",
+  "ttsDatasetRefresh": "Refresh",
+  "ttsDatasetProjectName": "Project name",
+  "ttsDatasetSpeaker": "Speaker",
+  "ttsDatasetLanguage": "Language",
+  "ttsDatasetLicense": "License",
+  "ttsDatasetCreateProject": "Create project",
+  "ttsDatasetNoProjectSelected": "No project selected",
+  "ttsDatasetNotValidated": "Not validated",
+  "ttsDatasetValidationBlocking": "{count} blocking",
+  "@ttsDatasetValidationBlocking": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "ttsDatasetReady": "Ready",
+  "ttsDatasetProjects": "Projects",
+  "ttsDatasetPrompts": "Prompts",
+  "ttsDatasetAcceptedClips": "Accepted clips",
+  "ttsDatasetValidation": "Validation",
+  "ttsDatasetValidate": "Validate",
+  "ttsDatasetExportZip": "Export ZIP"
 }

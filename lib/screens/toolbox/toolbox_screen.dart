@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -13,6 +14,7 @@ import 'package:gsmlg/screens/toolbox/camera/camera_macos_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_screen.dart';
 import 'package:gsmlg/screens/toolbox/ip_geo/ip_geo_screen.dart';
 import 'package:gsmlg/screens/toolbox/monitor/monitor_screen.dart';
+import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_screen.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_screen.dart';
 
 class ToolboxScreen extends StatelessWidget {
@@ -76,6 +78,10 @@ class ToolboxScreen extends StatelessWidget {
                 AppGridTile(
                   onTap: () => context.goNamed(MonitorScreen.name),
                   child: const Text('Monitor'),
+                ),
+                AppGridTile(
+                  onTap: () => context.goNamed(TtsDatasetScreen.name),
+                  child: Text(context.l10n.ttsDatasetTitle),
                 ),
                 if (_isBluetoothPlatform)
                   AppGridTile(

@@ -959,6 +959,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Agent v{version} — update available'**
   String monitorVersionWarning(String version);
+
+  /// No description provided for @ttsDatasetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'TTS Dataset'**
+  String get ttsDatasetTitle;
+
+  /// No description provided for @ttsDatasetRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get ttsDatasetRefresh;
+
+  /// No description provided for @ttsDatasetProjectName.
+  ///
+  /// In en, this message translates to:
+  /// **'Project name'**
+  String get ttsDatasetProjectName;
+
+  /// No description provided for @ttsDatasetSpeaker.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaker'**
+  String get ttsDatasetSpeaker;
+
+  /// No description provided for @ttsDatasetLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get ttsDatasetLanguage;
+
+  /// No description provided for @ttsDatasetLicense.
+  ///
+  /// In en, this message translates to:
+  /// **'License'**
+  String get ttsDatasetLicense;
+
+  /// No description provided for @ttsDatasetCreateProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Create project'**
+  String get ttsDatasetCreateProject;
+
+  /// No description provided for @ttsDatasetNoProjectSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'No project selected'**
+  String get ttsDatasetNoProjectSelected;
+
+  /// No description provided for @ttsDatasetNotValidated.
+  ///
+  /// In en, this message translates to:
+  /// **'Not validated'**
+  String get ttsDatasetNotValidated;
+
+  /// No description provided for @ttsDatasetValidationBlocking.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocking'**
+  String ttsDatasetValidationBlocking(int count);
+
+  /// No description provided for @ttsDatasetReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get ttsDatasetReady;
+
+  /// No description provided for @ttsDatasetProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get ttsDatasetProjects;
+
+  /// No description provided for @ttsDatasetPrompts.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompts'**
+  String get ttsDatasetPrompts;
+
+  /// No description provided for @ttsDatasetAcceptedClips.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted clips'**
+  String get ttsDatasetAcceptedClips;
+
+  /// No description provided for @ttsDatasetValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Validation'**
+  String get ttsDatasetValidation;
+
+  /// No description provided for @ttsDatasetValidate.
+  ///
+  /// In en, this message translates to:
+  /// **'Validate'**
+  String get ttsDatasetValidate;
+
+  /// No description provided for @ttsDatasetExportZip.
+  ///
+  /// In en, this message translates to:
+  /// **'Export ZIP'**
+  String get ttsDatasetExportZip;
 }
 
 class _AppLocalizationsDelegate

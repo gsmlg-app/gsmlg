@@ -15,6 +15,7 @@ workspace:
   - app_lib/logging
   - app_lib/secure_storage
   - app_lib/chat
+  - app_lib/tts_dataset
   - app_lib/isolate_orchestrator
   - app_bloc/theme
   - app_bloc/auth
@@ -28,6 +29,7 @@ workspace:
   - app_bloc/accounts
   - app_bloc/chat
   - app_bloc/monitor
+  - app_bloc/tts_dataset
   - app_widget/adaptive
   - app_widget/artwork
   - app_widget/feedback
@@ -139,9 +141,11 @@ dependencies:
   camera_settings_form: any
   ip_db: any
   app_chat: any
+  tts_dataset: any
   app_local_llm: any
   chat_bloc: any
   monitor_bloc: any
+  tts_dataset_bloc: any
   monitor_models: any
   monitor_agent: any
 

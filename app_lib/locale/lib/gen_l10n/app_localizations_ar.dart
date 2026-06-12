@@ -442,4 +442,57 @@ class AppLocalizationsAr extends AppLocalizations {
   String monitorVersionWarning(String version) {
     return 'Agent v$version — update available';
   }
+
+  @override
+  String get ttsDatasetTitle => 'TTS Dataset';
+
+  @override
+  String get ttsDatasetRefresh => 'Refresh';
+
+  @override
+  String get ttsDatasetProjectName => 'Project name';
+
+  @override
+  String get ttsDatasetSpeaker => 'Speaker';
+
+  @override
+  String get ttsDatasetLanguage => 'Language';
+
+  @override
+  String get ttsDatasetLicense => 'License';
+
+  @override
+  String get ttsDatasetCreateProject => 'Create project';
+
+  @override
+  String get ttsDatasetNoProjectSelected => 'No project selected';
+
+  @override
+  String get ttsDatasetNotValidated => 'Not validated';
+
+  @override
+  String ttsDatasetValidationBlocking(int count) {
+    return '$count blocking';
+  }
+
+  @override
+  String get ttsDatasetReady => 'Ready';
+
+  @override
+  String get ttsDatasetProjects => 'Projects';
+
+  @override
+  String get ttsDatasetPrompts => 'Prompts';
+
+  @override
+  String get ttsDatasetAcceptedClips => 'Accepted clips';
+
+  @override
+  String get ttsDatasetValidation => 'Validation';
+
+  @override
+  String get ttsDatasetValidate => 'Validate';
+
+  @override
+  String get ttsDatasetExportZip => 'Export ZIP';
 }
