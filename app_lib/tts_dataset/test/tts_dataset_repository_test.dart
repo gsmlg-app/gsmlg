@@ -71,4 +71,44 @@ void main() {
     expect(loaded!.clips.single.id, clip.id);
     expect(loaded.speaker.referenceClipId, clip.id);
   });
+
+  test('deletes a project with prompts, clips, and speaker metadata', () async {
+    final database = AppDatabase.forTesting();
+    addTearDown(database.close);
+    final repository = TtsDatasetRepository(database);
+    final detail = await repository.createProject(
+      name: 'My voice',
+      targetProfile: TtsDatasetTargetProfiles.qwen3Tts12HzRaw,
+      language: 'English',
+      speakerDisplayName: 'Example Speaker',
+      datasetLicense: 'private',
+      consentStatus: ConsentStatus.granted,
+      rootPath: '/tmp/my_voice',
+      defaultNoiseReductionMode: NoiseReductionMode.medium,
+      starterPrompts: englishStarterPrompts.take(1).toList(),
+    );
+    await repository.addManualClip(
+      projectId: detail.project.id,
+      speakerId: detail.speaker.id,
+      promptId: detail.prompts.single.id,
+      rawPath: 'raw/utt000001_original.wav',
+      processedPath: 'wavs/utt000001.wav',
+      exportWavPath: 'wavs/utt000001.wav',
+      rawText: detail.prompts.single.rawText,
+      normalizedText: detail.prompts.single.normalizedText,
+      language: detail.prompts.single.language,
+      durationMs: 3000,
+      sampleRate: 24000,
+      channels: 1,
+      bitDepth: 16,
+      noiseReductionMode: NoiseReductionMode.medium,
+      status: ClipStatus.accepted,
+    );
+
+    final deleted = await repository.deleteProject(detail.project.id);
+
+    expect(deleted?.project.id, detail.project.id);
+    expect(await repository.loadProject(detail.project.id), isNull);
+    expect(await repository.listProjects(), isEmpty);
+  });
 }

@@ -8,6 +8,7 @@
 
 #include <app_client_info_windows/client_info_plugin.h>
 #include <app_system_metrics_windows/system_metrics_plugin.h>
+#include <audioplayers_windows/audioplayers_windows_plugin.h>
 #include <flutter_blue_plus_winrt/flutter_blue_plus_plugin.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
 #include <record_windows/record_windows_plugin_c_api.h>
@@ -18,6 +19,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("ClientInfoPlugin"));
   SystemMetricsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("SystemMetricsPlugin"));
+  AudioplayersWindowsPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("AudioplayersWindowsPlugin"));
   FlutterBluePlusPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterBluePlusPlugin"));
   FlutterSecureStorageWindowsPluginRegisterWithRegistrar(

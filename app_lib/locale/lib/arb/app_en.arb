@@ -175,6 +175,18 @@
   "ttsDatasetLanguage": "Language",
   "ttsDatasetLicense": "License",
   "ttsDatasetCreateProject": "Create project",
+  "ttsDatasetEnglishUs": "English (US)",
+  "ttsDatasetChineseMandarin": "Chinese (Mandarin)",
+  "ttsDatasetCancel": "Cancel",
+  "ttsDatasetNoProjects": "No projects yet",
+  "ttsDatasetProjectNotFound": "Project not found",
+  "ttsDatasetRemoveProject": "Remove project",
+  "ttsDatasetRemoveProjectConfirm": "Remove {name} from the TTS dataset projects?",
+  "@ttsDatasetRemoveProjectConfirm": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
   "ttsDatasetNoProjectSelected": "No project selected",
   "ttsDatasetNotValidated": "Not validated",
   "ttsDatasetValidationBlocking": "{count} blocking",
@@ -189,5 +201,16 @@
   "ttsDatasetAcceptedClips": "Accepted clips",
   "ttsDatasetValidation": "Validation",
   "ttsDatasetValidate": "Validate",
-  "ttsDatasetExportZip": "Export ZIP"
+  "ttsDatasetExportZip": "Export ZIP",
+  "ttsDatasetTrainingText": "Training text",
+  "ttsDatasetSelectedText": "Selected text",
+  "ttsDatasetRecordAudio": "Record audio",
+  "ttsDatasetClearRecording": "Clear recording",
+  "ttsDatasetPlayRecording": "Play recording",
+  "ttsDatasetStopRecording": "Stop recording",
+  "ttsDatasetRecorded": "Recorded",
+  "ttsDatasetNeedsAudio": "Need audio",
+  "ttsDatasetMicrophoneDenied": "Microphone permission denied",
+  "ttsDatasetNoRecordingToPlay": "No recording to play",
+  "ttsDatasetPlaybackUnavailable": "Could not play recording"
 }

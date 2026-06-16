@@ -6,6 +6,7 @@ import 'package:gsmlg/screens/toolbox/camera/camera_screen.dart';
 import 'package:gsmlg/screens/toolbox/ip_geo/ip_geo_screen.dart';
 import 'package:gsmlg/screens/toolbox/monitor/monitor_screen.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
+import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_project_screen.dart';
 import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_screen.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_history_screen.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_history_show_screen.dart';
@@ -148,6 +149,21 @@ GoRoute toolboxRoutes() => GoRoute(
           child: const TtsDatasetScreen(),
         );
       },
+      routes: [
+        GoRoute(
+          name: TtsDatasetProjectScreen.name,
+          path: TtsDatasetProjectScreen.path,
+          pageBuilder: (context, state) {
+            return NoTransitionPage<void>(
+              key: state.pageKey,
+              restorationId: state.pageKey.value,
+              child: TtsDatasetProjectScreen(
+                projectId: state.pathParameters['projectId']!,
+              ),
+            );
+          },
+        ),
+      ],
     ),
   ],
 );

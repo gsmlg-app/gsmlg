@@ -465,6 +465,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get ttsDatasetCreateProject => 'Create project';
 
   @override
+  String get ttsDatasetEnglishUs => 'English (US)';
+
+  @override
+  String get ttsDatasetChineseMandarin => 'Chinese (Mandarin)';
+
+  @override
+  String get ttsDatasetCancel => 'Cancel';
+
+  @override
+  String get ttsDatasetNoProjects => 'No projects yet';
+
+  @override
+  String get ttsDatasetProjectNotFound => 'Project not found';
+
+  @override
+  String get ttsDatasetRemoveProject => 'Remove project';
+
+  @override
+  String ttsDatasetRemoveProjectConfirm(String name) {
+    return 'Remove $name from the TTS dataset projects?';
+  }
+
+  @override
   String get ttsDatasetNoProjectSelected => 'No project selected';
 
   @override
@@ -495,4 +518,37 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get ttsDatasetExportZip => 'Export ZIP';
+
+  @override
+  String get ttsDatasetTrainingText => 'Training text';
+
+  @override
+  String get ttsDatasetSelectedText => 'Selected text';
+
+  @override
+  String get ttsDatasetRecordAudio => 'Record audio';
+
+  @override
+  String get ttsDatasetClearRecording => 'Clear recording';
+
+  @override
+  String get ttsDatasetPlayRecording => 'Play recording';
+
+  @override
+  String get ttsDatasetStopRecording => 'Stop recording';
+
+  @override
+  String get ttsDatasetRecorded => 'Recorded';
+
+  @override
+  String get ttsDatasetNeedsAudio => 'Need audio';
+
+  @override
+  String get ttsDatasetMicrophoneDenied => 'Microphone permission denied';
+
+  @override
+  String get ttsDatasetNoRecordingToPlay => 'No recording to play';
+
+  @override
+  String get ttsDatasetPlaybackUnavailable => 'Could not play recording';
 }

@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_client_info_linux
   app_system_metrics_linux
+  audioplayers_linux
   flutter_secure_storage_linux
   record_linux
   url_launcher_linux

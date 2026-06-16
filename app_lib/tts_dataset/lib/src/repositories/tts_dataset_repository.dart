@@ -110,6 +110,31 @@ class TtsDatasetRepository {
     );
   }
 
+  Future<TtsDatasetProjectDetail?> deleteProject(String projectId) async {
+    final detail = await loadProject(projectId);
+    if (detail == null) return null;
+
+    await _database.transaction(() async {
+      await (_database.delete(
+        _database.ttsDatasetValidationIssueTable,
+      )..where((table) => table.projectId.equals(projectId))).go();
+      await (_database.delete(
+        _database.ttsDatasetClipTable,
+      )..where((table) => table.projectId.equals(projectId))).go();
+      await (_database.delete(
+        _database.ttsDatasetPromptTable,
+      )..where((table) => table.projectId.equals(projectId))).go();
+      await (_database.delete(
+        _database.ttsDatasetSpeakerTable,
+      )..where((table) => table.projectId.equals(projectId))).go();
+      await (_database.delete(
+        _database.ttsDatasetProjectTable,
+      )..where((table) => table.id.equals(projectId))).go();
+    });
+
+    return detail;
+  }
+
   Future<TrainingTextItem> addPrompt({
     required String projectId,
     required String rawText,
@@ -214,7 +239,39 @@ class TtsDatasetRepository {
     return clip;
   }
 
-  Future<void> selectReferenceClip(String projectId, String clipId) async {
+  Future<void> updatePromptStatus(String promptId, String status) {
+    return (_database.update(
+      _database.ttsDatasetPromptTable,
+    )..where((table) => table.id.equals(promptId))).write(
+      TtsDatasetPromptTableCompanion(
+        status: Value(status),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+  }
+
+  Future<List<AudioClip>> clearPromptClips({
+    required String projectId,
+    required String promptId,
+  }) async {
+    final rows =
+        await (_database.select(_database.ttsDatasetClipTable)..where(
+              (table) =>
+                  table.projectId.equals(projectId) &
+                  table.promptId.equals(promptId),
+            ))
+            .get();
+    await (_database.delete(_database.ttsDatasetClipTable)..where(
+          (table) =>
+              table.projectId.equals(projectId) &
+              table.promptId.equals(promptId),
+        ))
+        .go();
+    await updatePromptStatus(promptId, PromptStatus.newPrompt);
+    return rows.map(_clipFromRow).toList(growable: false);
+  }
+
+  Future<void> selectReferenceClip(String projectId, String? clipId) async {
     final now = DateTime.now().toUtc();
     await (_database.update(
       _database.ttsDatasetSpeakerTable,

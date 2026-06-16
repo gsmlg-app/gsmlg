@@ -49,6 +49,63 @@ final class TtsDatasetCreateProject extends TtsDatasetEvent {
   ];
 }
 
+final class TtsDatasetOpenProject extends TtsDatasetEvent {
+  const TtsDatasetOpenProject({required this.projectId});
+
+  final String projectId;
+
+  @override
+  List<Object?> get props => [projectId];
+}
+
+final class TtsDatasetSelectPrompt extends TtsDatasetEvent {
+  const TtsDatasetSelectPrompt({required this.promptId});
+
+  final String promptId;
+
+  @override
+  List<Object?> get props => [promptId];
+}
+
+final class TtsDatasetSavePromptRecording extends TtsDatasetEvent {
+  const TtsDatasetSavePromptRecording({
+    required this.projectId,
+    required this.promptId,
+    required this.recordingPath,
+    required this.durationMs,
+  });
+
+  final String projectId;
+  final String promptId;
+  final String recordingPath;
+  final int durationMs;
+
+  @override
+  List<Object?> get props => [projectId, promptId, recordingPath, durationMs];
+}
+
+final class TtsDatasetClearPromptRecording extends TtsDatasetEvent {
+  const TtsDatasetClearPromptRecording({
+    required this.projectId,
+    required this.promptId,
+  });
+
+  final String projectId;
+  final String promptId;
+
+  @override
+  List<Object?> get props => [projectId, promptId];
+}
+
+final class TtsDatasetDeleteProject extends TtsDatasetEvent {
+  const TtsDatasetDeleteProject({required this.projectId});
+
+  final String projectId;
+
+  @override
+  List<Object?> get props => [projectId];
+}
+
 final class TtsDatasetValidateProject extends TtsDatasetEvent {
   const TtsDatasetValidateProject({required this.projectId});
 

@@ -1002,6 +1002,48 @@ abstract class AppLocalizations {
   /// **'Create project'**
   String get ttsDatasetCreateProject;
 
+  /// No description provided for @ttsDatasetEnglishUs.
+  ///
+  /// In en, this message translates to:
+  /// **'English (US)'**
+  String get ttsDatasetEnglishUs;
+
+  /// No description provided for @ttsDatasetChineseMandarin.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese (Mandarin)'**
+  String get ttsDatasetChineseMandarin;
+
+  /// No description provided for @ttsDatasetCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get ttsDatasetCancel;
+
+  /// No description provided for @ttsDatasetNoProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'No projects yet'**
+  String get ttsDatasetNoProjects;
+
+  /// No description provided for @ttsDatasetProjectNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Project not found'**
+  String get ttsDatasetProjectNotFound;
+
+  /// No description provided for @ttsDatasetRemoveProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove project'**
+  String get ttsDatasetRemoveProject;
+
+  /// No description provided for @ttsDatasetRemoveProjectConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from the TTS dataset projects?'**
+  String ttsDatasetRemoveProjectConfirm(String name);
+
   /// No description provided for @ttsDatasetNoProjectSelected.
   ///
   /// In en, this message translates to:
@@ -1061,6 +1103,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Export ZIP'**
   String get ttsDatasetExportZip;
+
+  /// No description provided for @ttsDatasetTrainingText.
+  ///
+  /// In en, this message translates to:
+  /// **'Training text'**
+  String get ttsDatasetTrainingText;
+
+  /// No description provided for @ttsDatasetSelectedText.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected text'**
+  String get ttsDatasetSelectedText;
+
+  /// No description provided for @ttsDatasetRecordAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Record audio'**
+  String get ttsDatasetRecordAudio;
+
+  /// No description provided for @ttsDatasetClearRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear recording'**
+  String get ttsDatasetClearRecording;
+
+  /// No description provided for @ttsDatasetPlayRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Play recording'**
+  String get ttsDatasetPlayRecording;
+
+  /// No description provided for @ttsDatasetStopRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get ttsDatasetStopRecording;
+
+  /// No description provided for @ttsDatasetRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Recorded'**
+  String get ttsDatasetRecorded;
+
+  /// No description provided for @ttsDatasetNeedsAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Need audio'**
+  String get ttsDatasetNeedsAudio;
+
+  /// No description provided for @ttsDatasetMicrophoneDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission denied'**
+  String get ttsDatasetMicrophoneDenied;
+
+  /// No description provided for @ttsDatasetNoRecordingToPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'No recording to play'**
+  String get ttsDatasetNoRecordingToPlay;
+
+  /// No description provided for @ttsDatasetPlaybackUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not play recording'**
+  String get ttsDatasetPlaybackUnavailable;
 }
 
 class _AppLocalizationsDelegate

@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_client_info_windows
   app_system_metrics_windows
+  audioplayers_windows
   flutter_blue_plus_winrt
   flutter_secure_storage_windows
   record_windows

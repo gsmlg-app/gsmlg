@@ -2,11 +2,14 @@ part of 'bloc.dart';
 
 enum TtsDatasetStatus { initial, loading, loaded, exported, error }
 
+const _unset = Object();
+
 class TtsDatasetState extends Equatable {
   const TtsDatasetState({
     this.status = TtsDatasetStatus.initial,
     this.projects = const [],
     this.selectedProject,
+    this.selectedPromptId,
     this.validationResult,
     this.exportResult,
     this.errorMessage,
@@ -15,6 +18,7 @@ class TtsDatasetState extends Equatable {
   final TtsDatasetStatus status;
   final List<TtsDatasetProject> projects;
   final TtsDatasetProjectDetail? selectedProject;
+  final String? selectedPromptId;
   final ValidationResult? validationResult;
   final DatasetExportResult? exportResult;
   final String? errorMessage;
@@ -26,7 +30,8 @@ class TtsDatasetState extends Equatable {
   TtsDatasetState copyWith({
     TtsDatasetStatus? status,
     List<TtsDatasetProject>? projects,
-    TtsDatasetProjectDetail? selectedProject,
+    Object? selectedProject = _unset,
+    Object? selectedPromptId = _unset,
     ValidationResult? validationResult,
     DatasetExportResult? exportResult,
     String? errorMessage,
@@ -34,7 +39,12 @@ class TtsDatasetState extends Equatable {
     return TtsDatasetState(
       status: status ?? this.status,
       projects: projects ?? this.projects,
-      selectedProject: selectedProject ?? this.selectedProject,
+      selectedProject: identical(selectedProject, _unset)
+          ? this.selectedProject
+          : selectedProject as TtsDatasetProjectDetail?,
+      selectedPromptId: identical(selectedPromptId, _unset)
+          ? this.selectedPromptId
+          : selectedPromptId as String?,
       validationResult: validationResult ?? this.validationResult,
       exportResult: exportResult ?? this.exportResult,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -46,6 +56,7 @@ class TtsDatasetState extends Equatable {
     status,
     projects,
     selectedProject,
+    selectedPromptId,
     validationResult,
     exportResult,
     errorMessage,
