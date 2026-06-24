@@ -27,6 +27,10 @@ abstract class TtsDatasetAudioRecorder {
   Future<void> dispose();
 }
 
+Future<Source> ttsDatasetRecordingSource(File file) async {
+  return BytesSource(await file.readAsBytes(), mimeType: 'audio/wav');
+}
+
 class TtsDatasetProjectScreen extends StatefulWidget {
   static const name = 'TTS Dataset Project';
   static const path = ':projectId';
@@ -307,7 +311,7 @@ class _TtsDatasetProjectScreenState extends State<TtsDatasetProjectScreen> {
   Future<bool> _playRecording(String path) async {
     final player = _audioPlayer ??= AudioPlayer();
     await player.stop();
-    await player.play(DeviceFileSource(path));
+    await player.play(await ttsDatasetRecordingSource(File(path)));
     return true;
   }
 

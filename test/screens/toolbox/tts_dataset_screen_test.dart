@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:app_database/app_database.dart';
 import 'package:app_locale/app_locale.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -342,6 +343,22 @@ void main() {
 
       expect(File(outputPath).existsSync(), isTrue);
       expect(bloc.state.exportResult?.outputPath, outputPath);
+    });
+
+    test('uses audio bytes as the recorded playback source', () async {
+      final tempDir = Directory.systemTemp.createTempSync(
+        'tts_dataset_recording_source_test_',
+      );
+      addTearDown(() => tempDir.delete(recursive: true));
+      final wavFile = File(p.join(tempDir.path, 'recording.wav'))
+        ..writeAsBytesSync(_tinyWavBytes);
+
+      final source = await ttsDatasetRecordingSource(wavFile);
+
+      expect(source, isA<BytesSource>());
+      final bytesSource = source as BytesSource;
+      expect(bytesSource.bytes, _tinyWavBytes);
+      expect(bytesSource.mimeType, 'audio/wav');
     });
   });
 }
