@@ -155,7 +155,7 @@ class _TtsDatasetScreenState extends State<TtsDatasetScreen> {
   }
 
   Future<String?> _selectExportPath(TtsDatasetProject project) {
-    return FilePicker.platform.saveFile(
+    return FilePicker.saveFile(
       dialogTitle: context.l10n.ttsDatasetExportZip,
       fileName: '${_slugProjectName(project.name)}.zip',
       type: FileType.custom,

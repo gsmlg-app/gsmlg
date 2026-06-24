@@ -1,28 +1,25 @@
+// ignore_for_file: implementation_imports
+
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:file_picker/src/platform/file_picker_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gsmlg/screens/chat/widgets/chat_input_bar.dart';
 
 void main() {
-  FilePicker? previousFilePicker;
+  late FilePickerPlatform previousFilePicker;
 
   setUp(() {
-    try {
-      previousFilePicker = FilePicker.platform;
-    } catch (_) {
-      previousFilePicker = null;
-    }
+    previousFilePicker = FilePickerPlatform.instance;
   });
 
   tearDown(() {
-    if (previousFilePicker != null) {
-      FilePicker.platform = previousFilePicker!;
-    }
+    FilePickerPlatform.instance = previousFilePicker;
   });
 
   testWidgets('selects remote thinking effort from the chat input', (
@@ -83,7 +80,7 @@ void main() {
   });
 
   testWidgets('attaches a file and sends it with the message', (tester) async {
-    FilePicker.platform = _FakeFilePicker(
+    FilePickerPlatform.instance = _FakeFilePicker(
       FilePickerResult([
         PlatformFile(
           name: 'notes.txt',
@@ -168,7 +165,7 @@ void main() {
   });
 }
 
-class _FakeFilePicker extends FilePicker {
+class _FakeFilePicker extends FilePickerPlatform {
   _FakeFilePicker(this.result);
 
   final FilePickerResult? result;
@@ -180,13 +177,13 @@ class _FakeFilePicker extends FilePicker {
     FileType type = FileType.any,
     List<String>? allowedExtensions,
     Function(FilePickerStatus)? onFileLoading,
-    bool allowCompression = true,
-    int compressionQuality = 30,
+    int compressionQuality = 0,
     bool allowMultiple = false,
     bool withData = false,
     bool withReadStream = false,
     bool lockParentWindow = false,
     bool readSequential = false,
+    bool cancelUploadOnWindowBlur = true,
   }) async {
     return result;
   }

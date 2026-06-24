@@ -151,7 +151,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   Future<void> _pickAttachments() async {
     if (!widget.enabled || widget.isStreaming) return;
 
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       withData: !Platform.isMacOS,
     );

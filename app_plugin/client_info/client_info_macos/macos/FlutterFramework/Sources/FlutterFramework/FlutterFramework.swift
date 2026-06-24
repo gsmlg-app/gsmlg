@@ -1,0 +1,2 @@
+// Stub module for direct SwiftPM parsing of the app_client_info_macos plugin package.
+// Flutter app builds provide their generated FlutterFramework package.

@@ -88,17 +88,18 @@ dependencies:
   flutter_svg: ^2.2.4
   lottie: ^3.3.3
 
-  duskmoon_ui: ^1.6.0
-  duskmoon_adaptive_scaffold: ^1.6.0
+  duskmoon_ui: ^1.6.2
+  duskmoon_adaptive_scaffold: ^1.6.2
   flutter_slidable: ^4.0.0
-  file_picker: ^8.3.7
+  file_picker: ^11.0.2
   intl: any
-  flutter_blue_plus: ^2.2.1
+  flutter_blue_plus: ^2.3.9
   camera: ^0.12.0+1
   camera_macos: any
 
   crypto: any
   dio: any
+  # TODO(upstream): gsmlg-app/lib_llama_cpp#30 - remove after published SwiftPM packages resolve directly.
   lib_llama_cpp: any
   multicast_dns: any
   url_launcher: ^6.3.1
@@ -137,7 +138,7 @@ dependencies:
   app_data_list: any
   app_world_map: any
   gsmlg_whois: any
-  duskmoon_form: ^1.6.0
+  duskmoon_form: ^1.6.2
   camera_settings_form: any
   ip_db: any
   app_chat: any
@@ -150,26 +151,26 @@ dependencies:
   monitor_agent: any
 
   # data visualization
-  duskmoon_visualization: ^1.6.0
-  record: ^6.2.0
+  duskmoon_visualization: ^1.6.2
+  record: ^7.1.0
   wakelock_plus: ^1.5.2
   background_downloader: ^9.5.5
   audioplayers: ^6.7.1
 
 dependency_overrides:
-  flutter_blue_plus_darwin:
-    path: third_party/flutter_blue_plus_darwin
+  camera_macos:
+    path: third_party/camera_macos
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  test: ^1.30.0
+  test: ^1.31.0
 
   flutter_lints: ^6.0.0
 
   build_runner: ^2.13.1
 
-  melos: ^7.5.1
+  melos: ^7.8.1
   mason: ^0.1.1
   mason_cli: ^0.1.1
   dependency_validator: ^5.0.2

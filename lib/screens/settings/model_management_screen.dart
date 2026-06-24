@@ -612,7 +612,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   ) async {
     final operatingSystem = _targetOperatingSystem;
     final isAndroid = operatingSystem == 'android';
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       dialogTitle:
           'Select ${model.downloadFileNameForOperatingSystem(operatingSystem)}',
       type: isAndroid ? FileType.any : FileType.custom,

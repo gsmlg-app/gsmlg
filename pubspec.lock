@@ -236,10 +236,9 @@ packages:
   camera_macos:
     dependency: "direct main"
     description:
-      name: camera_macos
-      sha256: a0e15729caf4e7c2831b9cd964e8c2e2ea985cd816e56316be03355de44aa743
-      url: "https://pub.dev"
-    source: hosted
+      path: "third_party/camera_macos"
+      relative: true
+    source: path
     version: "0.0.9"
   camera_platform_interface:
     dependency: transitive
@@ -421,10 +420,10 @@ packages:
     dependency: transitive
     description:
       name: dbus
-      sha256: d0c98dcd4f5169878b6cf8f6e0a52403a9dff371a3e2f019697accbf6f44a270
+      sha256: "792974a4007974fbc5c1b5433eb2330a9db3e368c3f906253af4c007d0f49a91"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.12"
+    version: "0.7.13"
   dependency_validator:
     dependency: "direct dev"
     description:
@@ -485,82 +484,82 @@ packages:
     dependency: "direct main"
     description:
       name: duskmoon_adaptive_scaffold
-      sha256: f658e8b91009727d69cfe4e2fc350d630265c319475d30def84c0153e54969bc
+      sha256: fdacff9d630d66014b4bea37348c507ba49e69c46db424e1cf8f74990564edb3
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   duskmoon_code_engine:
     dependency: transitive
     description:
       name: duskmoon_code_engine
-      sha256: "294250f8838b206c9cdcdb7df3748eb245d733ce34ee1eb6853b599ab8c84b70"
+      sha256: ce9956235b0b2688a10653055bc89975e138319e8fd5343968cf120c83b7ff2d
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   duskmoon_feedback:
     dependency: transitive
     description:
       name: duskmoon_feedback
-      sha256: "02b6de478d7e76548e5beae5f90c6f8ed0dfecfc66b8133b833cc0686ecfe2da"
+      sha256: "6c1570afd32ad7797a9ef4e9b5bccc7e56ec082069ef4558b3702a7f3058d16c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   duskmoon_form:
     dependency: "direct main"
     description:
       name: duskmoon_form
-      sha256: "76620fe6336e7198b1483e6b76d59912021806cd34a945581608758e76826873"
+      sha256: "9163fffb6ad93f0940bb4eac274bb7729c8bbe09dc165fdb752d733f43070bcf"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   duskmoon_settings:
     dependency: transitive
     description:
       name: duskmoon_settings
-      sha256: "55c13fb59e2e77049c2004cd0275e4664dd1fc6db79947795bfcc645e80e88c3"
+      sha256: "3cd89a52118b0bbda5d14a60b09c511d4c7c849bbf421e20019b3117762ab8e9"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   duskmoon_theme:
     dependency: transitive
     description:
       name: duskmoon_theme
-      sha256: da12d5dad10b401f2f03d04c37ca0749c050d026edb29ca4cf8e036789ac5850
+      sha256: "03c24d319a95762042c942f6db5b1a972ff031ff243e8092608cc2ec259331bb"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   duskmoon_theme_bloc:
     dependency: transitive
     description:
       name: duskmoon_theme_bloc
-      sha256: afb7d5ccc370f057f36b06fa68566b40380bca5f8066687f6567686b68424d63
+      sha256: "31823684e03a35c5138b04ff27abb218724633fef6be9c487fcc576f4257fb14"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   duskmoon_ui:
     dependency: "direct main"
     description:
       name: duskmoon_ui
-      sha256: "59dee8a3ee0c30b1e827eeff77610356114bd5da4d2e963abba6ce3885710b81"
+      sha256: "5869c87517cdc6c6d7c63e6ee11b214b02a9d00987044a241dd36be63271cace"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   duskmoon_visualization:
     dependency: "direct main"
     description:
       name: duskmoon_visualization
-      sha256: "49df0a977b2a86027cbc640c788f1df6397d8e7fb6ea116b89633d224ec54a18"
+      sha256: "4c82400b55df9e9f3f87cc85bd4ddf79e64c3363dd0bcb8e05bda7faf3b8fb66"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   duskmoon_widgets:
     dependency: transitive
     description:
       name: duskmoon_widgets
-      sha256: b17be10559fcdd3f18fe05e6ed7783082c1abb4657e66692bc99f6be247aef00
+      sha256: "9393b821082979d2a24e0bc1e97419c0402c9b45e25d7a7174090e7ee7622560"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.0"
+    version: "1.6.2"
   equatable:
     dependency: "direct main"
     description:
@@ -613,10 +612,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: ab13ae8ef5580a411c458d6207b6774a6c237d77ac37011b13994879f68a8810
+      sha256: f13a03000d942e476bc1ff0a736d2e9de711d2f89a95cd4c1d88f861c3348387
       url: "https://pub.dev"
     source: hosted
-    version: "8.3.7"
+    version: "11.0.2"
   fixnum:
     dependency: transitive
     description:
@@ -650,105 +649,58 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_blue_plus
-      sha256: "4fba86c513feab2c5cdb9497da0910ed5b50c0fa8d6cec4a26ffb1a558a24eb8"
+      sha256: "22337d5b31758522912c34160977ad193611578c6ee5d8d3d71c458f47738a8e"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.1"
+    version: "2.3.9"
   flutter_blue_plus_android:
     dependency: transitive
     description:
       name: flutter_blue_plus_android
-      sha256: "2a73e264685574d1d29dcdd565bad9ecfdf237630237c508ae8b47f5cc791f1d"
+      sha256: "5f1db477d442974c516196718e2ab66e3601e9a2de271bddde9368c1a85e6e64"
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.1"
+    version: "9.0.3"
   flutter_blue_plus_darwin:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "third_party/flutter_blue_plus_darwin"
-      relative: true
-    source: path
-    version: "8.2.1"
+      name: flutter_blue_plus_darwin
+      sha256: bf41a4a07978b4c86a344c0c6e7388ff69f2b442a8d943b8da6d7f01a5c435bc
+      url: "https://pub.dev"
+    source: hosted
+    version: "9.0.3"
   flutter_blue_plus_linux:
     dependency: transitive
     description:
       name: flutter_blue_plus_linux
-      sha256: "5add6c14d2f90672c5e3ded1455b9ca8e6fe44adf9b53cdc60eb3417d38f34fe"
+      sha256: "79387947c27d04fce505916d168a1f8b7a89846d22d11a659970aba316459622"
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.1"
+    version: "9.0.3"
   flutter_blue_plus_platform_interface:
     dependency: transitive
     description:
       name: flutter_blue_plus_platform_interface
-      sha256: "226fb6753a74a407e3b9975c0fc00de02c490ae655b31c6508cb5790ad30965d"
+      sha256: "9378ed463673ab51e7ab72cf4bad3633b134182ca184ddcc598d6f7474ada993"
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.1"
+    version: "9.0.3"
   flutter_blue_plus_web:
     dependency: transitive
     description:
       name: flutter_blue_plus_web
-      sha256: "10a7465ccfc50138280abf32c8ab314f5029aa19039628ad9b4d0ed786e0021f"
+      sha256: "62670fd0072e9424661170c3439eb2784679e0cb8420907ae2fe979aab8eed71"
       url: "https://pub.dev"
     source: hosted
-    version: "8.2.1"
+    version: "9.0.3"
   flutter_blue_plus_winrt:
     dependency: transitive
     description:
       name: flutter_blue_plus_winrt
-      sha256: ed894f0ab341f4cece8fa33edc381d46424a7c5bfd0e841d933d0f8c34c86521
+      sha256: "0000b2d818e6f79ad07764206fdd8afb69426fd44453c6254c35828fd16aa09f"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.18"
-  flutter_keyboard_visibility:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility
-      sha256: "98664be7be0e3ffca00de50f7f6a287ab62c763fc8c762e0a21584584a3ff4f8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.0.0"
-  flutter_keyboard_visibility_linux:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_linux
-      sha256: "6fba7cd9bb033b6ddd8c2beb4c99ad02d728f1e6e6d9b9446667398b2ac39f08"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
-  flutter_keyboard_visibility_macos:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_macos
-      sha256: c5c49b16fff453dfdafdc16f26bdd8fb8d55812a1d50b0ce25fc8d9f2e53d086
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
-  flutter_keyboard_visibility_platform_interface:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_platform_interface
-      sha256: e43a89845873f7be10cb3884345ceb9aebf00a659f479d1c8f4293fcb37022a4
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
-  flutter_keyboard_visibility_web:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_web
-      sha256: d3771a2e752880c79203f8d80658401d0c998e4183edca05a149f5098ce6e3d1
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.0"
-  flutter_keyboard_visibility_windows:
-    dependency: transitive
-    description:
-      name: flutter_keyboard_visibility_windows
-      sha256: fc4b0f0b6be9b93ae527f3d527fb56ee2d918cd88bbca438c478af7bcfd0ef73
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
+    version: "0.0.20"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -1040,82 +992,82 @@ packages:
     dependency: "direct main"
     description:
       name: lib_llama_cpp
-      sha256: "87eacade0323e1cf426c1f3114e691e1bef7e3b1785c2e432195251b822d4740"
+      sha256: "681c962fc707ad50f63983532561591ce291d9d147db48985cad333386bb2267"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.7.2"
   lib_llama_cpp_android:
     dependency: transitive
     description:
       name: lib_llama_cpp_android
-      sha256: "3bdd670206198c9de1f4c9bfdb2e0aee55c8738887d94e89dbc1c4f4c8adfab2"
+      sha256: "4c08aacd8e659df9a2d13bb771902bba239607d3215a64e5128e54a6e101b395"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.7.2"
   lib_llama_cpp_ffi:
     dependency: transitive
     description:
       name: lib_llama_cpp_ffi
-      sha256: "938c2a2003ec30beea7b403bfc294e9ea87a9825a802109f18d685a25b031741"
+      sha256: "86787e040be51ddc29e176c079641530ca0afb32c7c8de209471c8004289030e"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.7.2"
   lib_llama_cpp_ios:
     dependency: transitive
     description:
       name: lib_llama_cpp_ios
-      sha256: d96fada365751a0a7a92a502463d4d46bdc37bc2fcc38688fb04291297995526
+      sha256: "48481a357b09f5e42d103a1551f8cb9cb1b58cd40a509223f9c95210e06fa95b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.7.2"
   lib_llama_cpp_linux:
     dependency: transitive
     description:
       name: lib_llama_cpp_linux
-      sha256: "055429294b6f6d0d289a341f3238da0b047507c1685c3c4e26a8200d9e15cc1a"
+      sha256: "48cfa3330fffdfe4df7ac6e3c2d8099c927df7b230ecbfd70552bc08579cdd20"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.7.2"
   lib_llama_cpp_macos:
     dependency: transitive
     description:
       name: lib_llama_cpp_macos
-      sha256: c111029987ed55fc4f767887fe7a2c968b1173e1366f51cb18e2aeff7a4c0d68
+      sha256: b9344ce5337edd008a10ff73746e701462d89cdabf04fba1681983ac80ea58d4
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.7.2"
   lib_llama_cpp_platform_interface:
     dependency: transitive
     description:
       name: lib_llama_cpp_platform_interface
-      sha256: "687eb4268f981c7bde648c1e0a0c1b0647f7d98b55367444c6689ab208336211"
+      sha256: "951b7df8452dbb2487bc3044fc892c74d389d0b35f35386b918c71be2505fbec"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.7.2"
   lib_llama_cpp_server:
     dependency: transitive
     description:
       name: lib_llama_cpp_server
-      sha256: f6e8c77f1d0b7940d1736e2b11e87ea2a12e02ee54903a0a3219319ad8807308
+      sha256: "5dafee2b7b02fb354b3df42a80a1b528031cab6330b2705d9c6b54499d31911a"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.7.2"
   lib_llama_cpp_windows:
     dependency: transitive
     description:
       name: lib_llama_cpp_windows
-      sha256: "83b235c18e39e6b2e924f08d69ce05f56eddf36536bf3514783a215879d43e85"
+      sha256: "7629cc6c18c5fbaf563e7a43607485df11402bfb5e783f8a20bd7bc403fca092"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.1"
+    version: "0.7.2"
   lib_mlx:
     dependency: transitive
     description:
       name: lib_mlx
-      sha256: "3df5759d693d9f51af3a561006df40084c319311ddc4cf260e63624cc7efd0e9"
+      sha256: dcb32359d834425cabb820de7de051a8f85d536e96218abb1d68d5973cf7044d
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0"
+    version: "0.1.1"
   lint:
     dependency: transitive
     description:
@@ -1224,10 +1176,10 @@ packages:
     dependency: "direct dev"
     description:
       name: melos
-      sha256: "2f7381d209ab7554203c51481a6a57c7896593b7f06190a06a467aa5bfd693c5"
+      sha256: b40731f34d3aacb199641a9b4955e52a866b0b0bc93ffc5c8ff21bffc6593134
       url: "https://pub.dev"
     source: hosted
-    version: "7.5.1"
+    version: "7.8.1"
   meta:
     dependency: transitive
     description:
@@ -1528,66 +1480,66 @@ packages:
     dependency: "direct main"
     description:
       name: record
-      sha256: d5b6b334f3ab02460db6544e08583c942dbf23e3504bf1e14fd4cbe3d9409277
+      sha256: d28ec249ee4af6753a68a7a5077d6a2eee71e38dc61a241724aded53263274ba
       url: "https://pub.dev"
     source: hosted
-    version: "6.2.0"
+    version: "7.1.0"
   record_android:
     dependency: transitive
     description:
       name: record_android
-      sha256: "94783f08403aed33ffb68797bf0715b0812eb852f3c7985644c945faea462ba1"
+      sha256: "6722be803d8b2a0945112d69cfbda1391970c5cff2cb53c16afd307a6b7ef0c4"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.1"
+    version: "2.1.1"
   record_ios:
     dependency: transitive
     description:
       name: record_ios
-      sha256: "8df7c136131bd05efc19256af29b2ba6ccc000ccc2c80d4b6b6d7a8d21a3b5a9"
+      sha256: de6f660b02c2a909c963d5c3c929fdf100b03cea9e5552599d0e5ae1b7d1a89d
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "2.1.0"
   record_linux:
     dependency: transitive
     description:
       name: record_linux
-      sha256: c31a35cc158cd666fc6395f7f56fc054f31685571684be6b97670a27649ce5c7
+      sha256: "305526af0560866a0cc4219aa3726ef8541f819e14bd5f65b73ffdb7dc5911be"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.0"
+    version: "2.1.0"
   record_macos:
     dependency: transitive
     description:
       name: record_macos
-      sha256: "084902e63fc9c0c224c29203d6c75f0bdf9b6a40536c9d916393c8f4c4256488"
+      sha256: "9c29a7efdace0662db2aa7284873d49f8b48992432db3b5f0d38cbe2da8eecde"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.1"
+    version: "2.1.0"
   record_platform_interface:
     dependency: transitive
     description:
       name: record_platform_interface
-      sha256: "8a81dbc4e14e1272a285bbfef6c9136d070a47d9b0d1f40aa6193516253ee2f6"
+      sha256: d94b37cadb8fe203e64b0e9893271c0b71b34f2550ee7fb0c6105d650e00c1f5
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.0"
+    version: "2.1.0"
   record_web:
     dependency: transitive
     description:
       name: record_web
-      sha256: "7e9846981c1f2d111d86f0ae3309071f5bba8b624d1c977316706f08fc31d16d"
+      sha256: "9d2d43162afff63d8608eb09c2982b9c6898dd8fbf5b05395ca7d08305b6db40"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.0"
+    version: "2.1.0"
   record_windows:
     dependency: transitive
     description:
       name: record_windows
-      sha256: "223258060a1d25c62bae18282c16783f28581ec19401d17e56b5205b9f039d78"
+      sha256: a1db1c0b996acd4161a93cc412b81a2a09a4fd7161c6353f32bf97683003b52f
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.7"
+    version: "2.1.0"
   retrofit:
     dependency: transitive
     description:
@@ -1973,10 +1925,10 @@ packages:
     dependency: transitive
     description:
       name: vector_graphics_compiler
-      sha256: "5a88dd14c0954a5398af544651c7fb51b457a2a556949bfb25369b210ef73a74"
+      sha256: "7ee12e6dffe0fc8e755179d6d91b3b34f5924223fc104d85572ef9180d73d172"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.0"
+    version: "1.2.5"
   vector_math:
     dependency: transitive
     description:
@@ -2101,10 +2053,10 @@ packages:
     dependency: transitive
     description:
       name: xml
-      sha256: "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"
+      sha256: "67f0aff7be013d107995e9b75bf4e7f2c3ef2dfdb2c8e68024bba0a7fd5756a4"
       url: "https://pub.dev"
     source: hosted
-    version: "6.6.1"
+    version: "7.0.1"
   yaml:
     dependency: transitive
     description:
