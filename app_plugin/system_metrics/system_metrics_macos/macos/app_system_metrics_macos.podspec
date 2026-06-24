@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name             = 'system_metrics_macos'
+  s.name             = 'app_system_metrics_macos'
   s.version          = '0.1.0'
   s.summary          = 'macOS implementation of app_system_metrics'
   s.description      = <<-DESC

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppKit
 
 func showInFinder(url: URL?) {
     guard let url = url else { return }
