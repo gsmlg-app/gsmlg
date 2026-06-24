@@ -11,7 +11,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  lib_llama_cpp: ^0.7.2
+  lib_llama_cpp: ^0.7.3
   equatable: ^2.0.8
   drift: ^2.28.2
   dio: any
@@ -28,8 +28,8 @@ dependencies:
   vultr_api: any
   openai_compatible: any
   anthropic_compatible: any
-  lib_llama_cpp_platform_interface: ^0.7.2
-  lib_llama_cpp_server: ^0.7.2
+  lib_llama_cpp_platform_interface: ^0.7.3
+  lib_llama_cpp_server: ^0.7.3
   dart_mcp: ^0.5.1
   stream_channel: ^2.1.4
   app_local_llm: any
