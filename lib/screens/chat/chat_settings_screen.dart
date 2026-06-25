@@ -62,22 +62,27 @@ class _RemoteProviderConfig {
     required this.defaultModel,
     required this.remoteProvider,
     required this.remoteApiType,
+    required this.authType,
     this.accountId,
     this.useDummyToken = false,
+    this.authHeaderName,
   });
 
   factory _RemoteProviderConfig.fromMap(Map<String, Object?> map) {
     final remoteProvider = _parseProvider(map['remoteProvider'] as String?);
+    final remoteApiType = _parseApiType(
+      map['remoteApiType'] as String?,
+      remoteProvider,
+    );
     return _RemoteProviderConfig(
       id: map['id'] as String,
       name: map['name'] as String,
       baseUrl: map['baseUrl'] as String,
       defaultModel: map['defaultModel'] as String? ?? 'local-model',
       remoteProvider: remoteProvider,
-      remoteApiType: _parseApiType(
-        map['remoteApiType'] as String?,
-        remoteProvider,
-      ),
+      remoteApiType: remoteApiType,
+      authType: _parseAuthType(map['authType'] as String?, remoteApiType),
+      authHeaderName: map['authHeaderName'] as String?,
       accountId: map['accountId'] as int?,
       useDummyToken:
           map['useDummyToken'] as bool? ?? map['isLocal'] as bool? ?? false,
@@ -100,6 +105,8 @@ class _RemoteProviderConfig {
   final String defaultModel;
   final RemoteLlmProvider remoteProvider;
   final RemoteLlmApiType remoteApiType;
+  final RemoteAuthType authType;
+  final String? authHeaderName;
   final int? accountId;
   final bool useDummyToken;
 
@@ -126,6 +133,22 @@ class _RemoteProviderConfig {
       if (apiType.name == value) return apiType;
     }
     return remoteProvider.defaultApiType;
+  }
+
+  static RemoteAuthType _defaultAuthTypeForApiType(RemoteLlmApiType apiType) {
+    return apiType == RemoteLlmApiType.anthropicMessages
+        ? RemoteAuthType.xApiKey
+        : RemoteAuthType.bearerToken;
+  }
+
+  static RemoteAuthType _parseAuthType(
+    String? value,
+    RemoteLlmApiType apiType,
+  ) {
+    for (final type in RemoteAuthType.values) {
+      if (type.name == value) return type;
+    }
+    return _defaultAuthTypeForApiType(apiType);
   }
 }
 
@@ -177,6 +200,10 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
             final currentConfig = editingAgent?.config ?? state.config;
             final currentSystemPrompt =
                 editingAgent?.systemPrompt ?? state.defaultSystemPrompt;
+            final currentSystemPromptPreview =
+                currentSystemPrompt == null || currentSystemPrompt.isEmpty
+                ? 'Not set'
+                : '${currentSystemPrompt.substring(0, currentSystemPrompt.length.clamp(0, 30))}...';
             final currentThinkingEnabled =
                 editingAgent?.thinkingEnabled ?? state.thinkingEnabled;
 
@@ -279,7 +306,8 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                       ),
                     ],
                   ),
-                if (widget.agentId != null)
+                if (widget.agentId != null &&
+                    _supportsSamplingControls(currentConfig))
                   SettingsSection(
                     title: const Text('Generation'),
                     tiles: [
@@ -316,11 +344,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
                       SettingsTile.navigation(
                         leading: const Icon(Icons.edit_note),
                         title: const Text('Default System Prompt'),
-                        value: Text(
-                          currentSystemPrompt?.isNotEmpty == true
-                              ? '${currentSystemPrompt!.substring(0, currentSystemPrompt!.length.clamp(0, 30))}...'
-                              : 'Not set',
-                        ),
+                        value: Text(currentSystemPromptPreview),
                         onPressed: (_) => _showSystemPromptDialog(
                           context,
                           currentSystemPrompt,
@@ -385,6 +409,11 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
 
   String _settingsSummary(ChatAgent agent) {
     return _modelLabel(agent.config);
+  }
+
+  bool _supportsSamplingControls(ModelConfig config) {
+    return config.inferenceMode == ChatInferenceMode.local ||
+        config.remoteProvider == RemoteLlmProvider.openAiCompatible;
   }
 
   ModelConfig _defaultAgentConfig(BuildContext context) {
@@ -557,6 +586,10 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
       clearRemoteAccount: !provider.useDummyToken && provider.accountId == null,
       remoteBaseUrl: provider.baseUrl,
       remoteModel: provider.defaultModel,
+      remoteAuthType: provider.authType,
+      remoteAuthHeaderName: provider.authHeaderName,
+      clearRemoteAuthHeaderName:
+          provider.authType != RemoteAuthType.customHeader,
     );
   }
 

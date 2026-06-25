@@ -141,6 +141,10 @@ class _RemoteToolsSettingsScreenState extends State<RemoteToolsSettingsScreen> {
     const transport = _McpTransport.http;
     var enabled = profile?.enabled ?? true;
     int? accountId = profile?.accountId;
+    var authType = profile?.authType ?? RemoteAuthType.bearerToken;
+    final authHeaderNameController = TextEditingController(
+      text: profile?.authHeaderName ?? '',
+    );
     final accountsState = context.read<AccountsBloc>().state;
     final accounts = accountsState is AccountsLoaded
         ? accountsState.accounts
@@ -195,6 +199,37 @@ class _RemoteToolsSettingsScreenState extends State<RemoteToolsSettingsScreen> {
                     onChanged: (value) =>
                         setDialogState(() => accountId = value),
                   ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<RemoteAuthType>(
+                    initialValue: authType,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Auth type',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final type in _mcpAuthTypes)
+                        DropdownMenuItem(
+                          value: type,
+                          child: Text(type.displayName),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() => authType = value);
+                    },
+                  ),
+                  if (authType == RemoteAuthType.customHeader) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: authHeaderNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Header name',
+                        hintText: 'X-API-Key',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
@@ -214,7 +249,12 @@ class _RemoteToolsSettingsScreenState extends State<RemoteToolsSettingsScreen> {
             FilledButton(
               onPressed: () {
                 final url = urlController.text.trim();
-                if (url.isEmpty) return;
+                final authHeaderName = authHeaderNameController.text.trim();
+                if (url.isEmpty ||
+                    (authType == RemoteAuthType.customHeader &&
+                        authHeaderName.isEmpty)) {
+                  return;
+                }
                 final name = nameController.text.trim();
                 _replaceProfile(
                   _RemoteMcpProfile(
@@ -226,6 +266,10 @@ class _RemoteToolsSettingsScreenState extends State<RemoteToolsSettingsScreen> {
                     transport: transport,
                     enabled: enabled,
                     accountId: accountId,
+                    authType: authType,
+                    authHeaderName: authType == RemoteAuthType.customHeader
+                        ? authHeaderName
+                        : null,
                     tools: profile?.tools ?? const [],
                   ),
                 );
@@ -243,7 +287,9 @@ class _RemoteToolsSettingsScreenState extends State<RemoteToolsSettingsScreen> {
     if (profile.accountId == null) return 'No auth';
     if (state is! AccountsLoaded) return 'Loading auth';
     for (final account in state.accounts) {
-      if (account.id == profile.accountId) return account.name;
+      if (account.id == profile.accountId) {
+        return '${account.name} (${_mcpAuthTypeLabel(profile)})';
+      }
     }
     return 'Missing account';
   }
@@ -419,30 +465,14 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
                                 },
                               ),
                               SettingsTile.navigation(
-                                leading: const Icon(Icons.password),
-                                title: const Text('Change Secret'),
-                                value: BlocBuilder<AccountsBloc, AccountsState>(
-                                  builder: (context, state) {
-                                    final account = _selectedAccount(
-                                      state,
-                                      profile,
-                                    );
-                                    return Text(account?.name ?? 'No account');
-                                  },
-                                ),
+                                leading: const Icon(Icons.http),
+                                title: const Text('Auth Type'),
+                                value: Text(_mcpAuthTypeLabel(profile)),
                                 description: const Text(
-                                  'Update the selected service account secret.',
+                                  'Choose how the selected secret is sent.',
                                 ),
                                 onPressed: (context) {
-                                  final account = _selectedAccount(
-                                    context.read<AccountsBloc>().state,
-                                    profile,
-                                  );
-                                  if (account == null) {
-                                    _showAccountPicker(context, profile);
-                                    return;
-                                  }
-                                  _showUpdateSecretDialog(context, account);
+                                  _showAuthTypeDialog(context, profile);
                                 },
                               ),
                               SettingsTile.navigation(
@@ -547,12 +577,22 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
   Future<List<_RemoteMcpTool>> _listHttpTools(_RemoteMcpProfile profile) async {
     final headers = <String, dynamic>{};
     if (profile.accountId != null) {
+      final accountName = _accountName(
+        context.read<AccountsBloc>().state,
+        profile.accountId!,
+      );
       final apiKey = await context.read<AccountsBloc>().getApiKey(
         profile.accountId!,
       );
-      if (apiKey != null && apiKey.trim().isNotEmpty) {
-        headers['Authorization'] = 'Bearer ${apiKey.trim()}';
+      final trimmedApiKey = apiKey?.trim();
+      if (trimmedApiKey == null || trimmedApiKey.isEmpty) {
+        throw _RemoteToolConfigurationException(
+          accountName == null
+              ? 'Selected service account has no secret. Update it in Service Accounts.'
+              : 'Service account "$accountName" has no secret. Update it in Service Accounts.',
+        );
       }
+      headers.addAll(_mcpAuthHeaders(profile, trimmedApiKey));
     }
 
     final tools = await DartMcpToolClient().listHttpTools(
@@ -705,115 +745,53 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
     );
   }
 
-  void _showUpdateSecretDialog(
-    BuildContext context,
-    ServiceAccountTableData account,
-  ) {
-    if (account.provider == ServiceProvider.aws) {
-      _showUpdateAwsSecretDialog(context, account);
-      return;
-    }
-    _showUpdateGenericSecretDialog(context, account);
-  }
-
-  void _showUpdateGenericSecretDialog(
-    BuildContext context,
-    ServiceAccountTableData account,
-  ) {
-    final controller = TextEditingController();
-    var obscure = true;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text('Change ${_providerLabel(account.provider)} Secret'),
-            content: TextField(
-              controller: controller,
-              obscureText: obscure,
-              decoration: InputDecoration(
-                labelText: _secretLabel(account.provider),
-                hintText: _secretHint(account.provider),
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () {
-                    setDialogState(() => obscure = !obscure);
-                  },
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  final secret = controller.text.trim();
-                  if (secret.isEmpty) return;
-                  context.read<AccountsBloc>().add(
-                    AccountsUpdateApiKey(id: account.id, apiKey: secret),
-                  );
-                  Navigator.pop(dialogContext);
-                },
-                child: const Text('Update'),
-              ),
-            ],
-          );
-        },
-      ),
+  void _showAuthTypeDialog(BuildContext context, _RemoteMcpProfile profile) {
+    var authType = profile.authType;
+    final headerNameController = TextEditingController(
+      text: profile.authHeaderName ?? '',
     );
-  }
-
-  void _showUpdateAwsSecretDialog(
-    BuildContext context,
-    ServiceAccountTableData account,
-  ) {
-    final accessKeyIdController = TextEditingController();
-    final secretKeyController = TextEditingController();
-    var obscureSecret = true;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: const Text('Change AWS Secret'),
+            title: const Text('Auth Type'),
             content: SizedBox(
-              width: 400,
+              width: 420,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(
-                    controller: accessKeyIdController,
+                  DropdownButtonFormField<RemoteAuthType>(
+                    initialValue: authType,
+                    isExpanded: true,
                     decoration: const InputDecoration(
-                      labelText: 'Access Key ID',
-                      hintText: 'AKIAIOSFODNN7EXAMPLE',
+                      labelText: 'Auth type',
                       border: OutlineInputBorder(),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: secretKeyController,
-                    obscureText: obscureSecret,
-                    decoration: InputDecoration(
-                      labelText: 'Secret Access Key',
-                      hintText: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          obscureSecret
-                              ? Icons.visibility_off
-                              : Icons.visibility,
+                    items: [
+                      for (final type in _mcpAuthTypes)
+                        DropdownMenuItem(
+                          value: type,
+                          child: Text(type.displayName),
                         ),
-                        onPressed: () {
-                          setDialogState(() => obscureSecret = !obscureSecret);
-                        },
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() => authType = value);
+                    },
+                  ),
+                  if (authType == RemoteAuthType.customHeader) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: headerNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Header name',
+                        hintText: 'X-API-Key',
+                        border: OutlineInputBorder(),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -824,21 +802,24 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
               ),
               FilledButton(
                 onPressed: () {
-                  final accessKeyId = accessKeyIdController.text.trim();
-                  final secretKey = secretKeyController.text.trim();
-                  if (accessKeyId.isEmpty || secretKey.isEmpty) return;
-                  context.read<AccountsBloc>().add(
-                    AccountsUpdateApiKey(
-                      id: account.id,
-                      apiKey: jsonEncode({
-                        'accessKeyId': accessKeyId,
-                        'secretAccessKey': secretKey,
-                      }),
+                  final headerName = headerNameController.text.trim();
+                  if (authType == RemoteAuthType.customHeader &&
+                      headerName.isEmpty) {
+                    return;
+                  }
+                  _replaceProfile(
+                    profile.copyWith(
+                      authType: authType,
+                      authHeaderName: authType == RemoteAuthType.customHeader
+                          ? headerName
+                          : null,
+                      clearAuthHeaderName:
+                          authType != RemoteAuthType.customHeader,
                     ),
                   );
                   Navigator.pop(dialogContext);
                 },
-                child: const Text('Update'),
+                child: const Text('Save'),
               ),
             ],
           );
@@ -880,18 +861,17 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
     if (profile.accountId == null) return 'No auth';
     if (state is! AccountsLoaded) return 'Loading auth';
     for (final account in state.accounts) {
-      if (account.id == profile.accountId) return account.name;
+      if (account.id == profile.accountId) {
+        return '${account.name} (${_mcpAuthTypeLabel(profile)})';
+      }
     }
     return 'Missing account';
   }
 
-  ServiceAccountTableData? _selectedAccount(
-    AccountsState state,
-    _RemoteMcpProfile profile,
-  ) {
-    if (profile.accountId == null || state is! AccountsLoaded) return null;
+  String? _accountName(AccountsState state, int accountId) {
+    if (state is! AccountsLoaded) return null;
     for (final account in state.accounts) {
-      if (account.id == profile.accountId) return account;
+      if (account.id == accountId) return account.name;
     }
     return null;
   }
@@ -935,43 +915,53 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
   }
 }
 
-String _providerLabel(ServiceProvider provider) {
-  return switch (provider) {
-    ServiceProvider.openai => 'OpenAI',
-    ServiceProvider.anthropic => 'Anthropic',
-    ServiceProvider.ollama => 'Ollama',
-    ServiceProvider.github => 'GitHub',
-    ServiceProvider.vultr => 'Vultr',
-    ServiceProvider.aws => 'AWS',
-    ServiceProvider.cloudflare => 'Cloudflare',
-    ServiceProvider.huggingface => 'Hugging Face',
+class _RemoteToolConfigurationException implements Exception {
+  const _RemoteToolConfigurationException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+const _mcpAuthTypes = [
+  RemoteAuthType.bearerToken,
+  RemoteAuthType.xApiKey,
+  RemoteAuthType.customHeader,
+];
+
+RemoteAuthType _parseRemoteAuthType(String? value) {
+  for (final type in _mcpAuthTypes) {
+    if (type.name == value) return type;
+  }
+  return RemoteAuthType.bearerToken;
+}
+
+String _mcpAuthTypeLabel(_RemoteMcpProfile profile) {
+  if (profile.authType != RemoteAuthType.customHeader) {
+    return profile.authType.displayName;
+  }
+  final headerName = profile.authHeaderName?.trim();
+  return headerName == null || headerName.isEmpty
+      ? profile.authType.displayName
+      : '$headerName header';
+}
+
+Map<String, String> _mcpAuthHeaders(_RemoteMcpProfile profile, String secret) {
+  return switch (profile.authType) {
+    RemoteAuthType.providerDefault => {'Authorization': 'Bearer $secret'},
+    RemoteAuthType.bearerToken => {'Authorization': 'Bearer $secret'},
+    RemoteAuthType.xApiKey => {'x-api-key': secret},
+    RemoteAuthType.customHeader => {_customMcpHeaderName(profile): secret},
   };
 }
 
-String _secretLabel(ServiceProvider provider) {
-  return switch (provider) {
-    ServiceProvider.openai => 'API Key',
-    ServiceProvider.anthropic => 'API Key',
-    ServiceProvider.ollama => 'API Key',
-    ServiceProvider.github => 'Personal Access Token',
-    ServiceProvider.vultr => 'API Key',
-    ServiceProvider.aws => 'Secret Access Key',
-    ServiceProvider.cloudflare => 'API Token',
-    ServiceProvider.huggingface => 'Access Token',
-  };
-}
-
-String _secretHint(ServiceProvider provider) {
-  return switch (provider) {
-    ServiceProvider.openai => 'sk-...',
-    ServiceProvider.anthropic => 'sk-ant-...',
-    ServiceProvider.ollama => 'Ollama API key',
-    ServiceProvider.github => 'ghp_...',
-    ServiceProvider.vultr => 'Vultr API key',
-    ServiceProvider.aws => 'AWS secret access key',
-    ServiceProvider.cloudflare => 'Cloudflare API token',
-    ServiceProvider.huggingface => 'hf_...',
-  };
+String _customMcpHeaderName(_RemoteMcpProfile profile) {
+  final headerName = profile.authHeaderName?.trim();
+  if (headerName == null || headerName.isEmpty) {
+    throw StateError('MCP custom auth header name is required.');
+  }
+  return headerName;
 }
 
 enum _McpTransport {
@@ -992,6 +982,8 @@ class _RemoteMcpProfile {
     required this.transport,
     required this.enabled,
     this.accountId,
+    this.authType = RemoteAuthType.bearerToken,
+    this.authHeaderName,
     this.tools = const [],
   });
 
@@ -1005,6 +997,8 @@ class _RemoteMcpProfile {
       transport: _McpTransport.parse(decoded['transport'] as String?),
       enabled: decoded['enabled'] as bool? ?? true,
       accountId: decoded['accountId'] as int?,
+      authType: _parseRemoteAuthType(decoded['authType'] as String?),
+      authHeaderName: decoded['authHeaderName'] as String?,
       tools: [
         for (final rawTool in rawTools)
           if (rawTool is Map<String, dynamic>) _RemoteMcpTool.fromJson(rawTool),
@@ -1018,6 +1012,8 @@ class _RemoteMcpProfile {
   final _McpTransport transport;
   final bool enabled;
   final int? accountId;
+  final RemoteAuthType authType;
+  final String? authHeaderName;
   final List<_RemoteMcpTool> tools;
 
   _RemoteMcpProfile copyWith({
@@ -1027,6 +1023,9 @@ class _RemoteMcpProfile {
     bool? enabled,
     int? accountId,
     bool clearAccount = false,
+    RemoteAuthType? authType,
+    String? authHeaderName,
+    bool clearAuthHeaderName = false,
     List<_RemoteMcpTool>? tools,
   }) {
     return _RemoteMcpProfile(
@@ -1036,6 +1035,10 @@ class _RemoteMcpProfile {
       transport: transport ?? this.transport,
       enabled: enabled ?? this.enabled,
       accountId: clearAccount ? null : (accountId ?? this.accountId),
+      authType: authType ?? this.authType,
+      authHeaderName: clearAuthHeaderName
+          ? null
+          : (authHeaderName ?? this.authHeaderName),
       tools: tools ?? this.tools,
     );
   }
@@ -1048,6 +1051,8 @@ class _RemoteMcpProfile {
       'transport': transport.name,
       'enabled': enabled,
       'accountId': accountId,
+      'authType': authType.name,
+      'authHeaderName': authHeaderName,
       'tools': [for (final tool in tools) tool.toJson()],
     });
   }

@@ -114,6 +114,88 @@ void main() {
       expect(chatSettingsBloc.state.config.remoteModel, 'MiniMax-M2.7');
     });
 
+    testWidgets('hides sampling controls for managed cloud remote agents', (
+      tester,
+    ) async {
+      final repository = ChatStorageRepository(database);
+      chatSettingsBloc =
+          ChatSettingsBloc(repository: repository, preferences: preferences)
+            ..add(const ChatSettingsLoad())
+            ..add(
+              const ChatSettingsSaveAgent(
+                id: 'agent-1',
+                name: 'Cloud agent',
+                systemPrompt: '',
+                config: ModelConfig(
+                  inferenceMode: ChatInferenceMode.remote,
+                  remoteProvider: RemoteLlmProvider.openAi,
+                  remoteApiType: RemoteLlmApiType.openAiResponses,
+                  remoteAccountId: ModelConfig.dummyRemoteAccountId,
+                  remoteBaseUrl: 'https://api.openai.com/v1',
+                  remoteModel: 'gpt-5',
+                ),
+              ),
+            );
+
+      await _pumpScreen(
+        tester,
+        chatSettingsBloc: chatSettingsBloc,
+        accountsBloc: accountsBloc,
+        preferences: preferences,
+        agentId: 'agent-1',
+      );
+      await _pumpUntil(
+        tester,
+        () =>
+            chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
+            find.text('Model').evaluate().isNotEmpty,
+      );
+
+      expect(find.text('Temperature'), findsNothing);
+      expect(find.text('Top-K'), findsNothing);
+    });
+
+    testWidgets('shows sampling controls for self-hosted remote agents', (
+      tester,
+    ) async {
+      final repository = ChatStorageRepository(database);
+      chatSettingsBloc =
+          ChatSettingsBloc(repository: repository, preferences: preferences)
+            ..add(const ChatSettingsLoad())
+            ..add(
+              const ChatSettingsSaveAgent(
+                id: 'agent-1',
+                name: 'Self-hosted agent',
+                systemPrompt: '',
+                config: ModelConfig(
+                  inferenceMode: ChatInferenceMode.remote,
+                  remoteProvider: RemoteLlmProvider.openAiCompatible,
+                  remoteApiType: RemoteLlmApiType.openAiChatCompletions,
+                  remoteAccountId: ModelConfig.dummyRemoteAccountId,
+                  remoteBaseUrl: 'http://localhost:11434/v1',
+                  remoteModel: 'local-model',
+                ),
+              ),
+            );
+
+      await _pumpScreen(
+        tester,
+        chatSettingsBloc: chatSettingsBloc,
+        accountsBloc: accountsBloc,
+        preferences: preferences,
+        agentId: 'agent-1',
+      );
+      await _pumpUntil(
+        tester,
+        () =>
+            chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
+            find.text('Model').evaluate().isNotEmpty,
+      );
+
+      expect(find.text('Temperature'), findsOneWidget);
+      expect(find.text('Top-K'), findsOneWidget);
+    });
+
     testWidgets("shows the agent's own local model in agent settings", (
       tester,
     ) async {

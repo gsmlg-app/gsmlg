@@ -142,6 +142,12 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
           onPressed: (_) => _showProviderDialog(context, provider: provider),
         ),
         SettingsTile.navigation(
+          leading: const Icon(Icons.http),
+          title: const Text('Auth type'),
+          value: Text(_authTypeLabel(provider)),
+          onPressed: (_) => _showProviderDialog(context, provider: provider),
+        ),
+        SettingsTile.navigation(
           leading: const Icon(Icons.key),
           title: const Text('Token'),
           value: BlocBuilder<AccountsBloc, AccountsState>(
@@ -207,6 +213,10 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
       clearRemoteAccount: !provider.useDummyToken && provider.accountId == null,
       remoteBaseUrl: provider.baseUrl,
       remoteModel: '',
+      remoteAuthType: provider.authType,
+      remoteAuthHeaderName: provider.authHeaderName,
+      clearRemoteAuthHeaderName:
+          provider.authType != RemoteAuthType.customHeader,
     );
   }
 
@@ -488,6 +498,13 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
     var useDummyToken =
         provider?.useDummyToken ?? selectedPreset?.useDummyToken ?? true;
     int? accountId = provider?.accountId;
+    var authType =
+        provider?.authType ??
+        selectedPreset?.authType ??
+        _RemoteProviderProfile.defaultAuthTypeForApiType(remoteApiType);
+    final authHeaderNameController = TextEditingController(
+      text: provider?.authHeaderName ?? selectedPreset?.authHeaderName ?? '',
+    );
 
     final accountsState = context.read<AccountsBloc>().state;
     final List<ServiceAccountTableData> allAccounts =
@@ -510,112 +527,156 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
             title: Text(isEditing ? 'Edit Provider' : 'Add Provider'),
             content: SizedBox(
               width: 420,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedPreset?.id,
-                    decoration: const InputDecoration(
-                      labelText: 'Provider preset',
-                      border: OutlineInputBorder(),
-                    ),
-                    hint: const Text('Select provider'),
-                    items: [
-                      for (final preset in presets)
-                        DropdownMenuItem(
-                          value: preset.id,
-                          child: Text(preset.name),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      final preset = presets.firstWhere(
-                        (item) => item.id == value,
-                        orElse: () => presets.first,
-                      );
-                      setDialogState(() {
-                        selectedPreset = preset;
-                        nameController.text = preset.name;
-                        baseUrlController.text = preset.baseUrl;
-                        remoteProvider = preset.remoteProvider;
-                        remoteApiType = preset.remoteApiType;
-                        defaultModel = preset.defaultModel;
-                        useDummyToken = preset.useDummyToken;
-                        if (useDummyToken) accountId = null;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<RemoteLlmApiType>(
-                    initialValue: remoteApiType,
-                    decoration: const InputDecoration(
-                      labelText: 'API type',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: [
-                      for (final apiType in RemoteLlmApiType.values)
-                        DropdownMenuItem(
-                          value: apiType,
-                          child: Text(apiType.displayName),
-                        ),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
-                      setDialogState(() {
-                        remoteApiType = value;
-                        remoteProvider = _providerForApiType(
-                          value,
-                          currentProvider: remoteProvider,
-                        );
-                        accountId = null;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Name',
-                      hintText: 'Ollama, LM Studio, Work OpenAI',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: baseUrlController,
-                    decoration: const InputDecoration(
-                      labelText: 'Base URL',
-                      hintText: 'http://localhost:11434/v1',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    value: useDummyToken,
-                    title: const Text('Use dummy token'),
-                    subtitle: const Text('Default for local LLM APIs'),
-                    onChanged: (value) => setDialogState(() {
-                      useDummyToken = value;
-                      if (value) accountId = null;
-                    }),
-                  ),
-                  if (!useDummyToken)
-                    DropdownButtonFormField<int>(
-                      initialValue: accountId,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedPreset?.id,
+                      isExpanded: true,
                       decoration: const InputDecoration(
-                        labelText: 'Token account',
+                        labelText: 'Provider preset',
+                        border: OutlineInputBorder(),
+                      ),
+                      hint: const Text('Select provider'),
+                      items: [
+                        for (final preset in presets)
+                          DropdownMenuItem(
+                            value: preset.id,
+                            child: Text(preset.name),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        final preset = presets.firstWhere(
+                          (item) => item.id == value,
+                          orElse: () => presets.first,
+                        );
+                        setDialogState(() {
+                          selectedPreset = preset;
+                          nameController.text = preset.name;
+                          baseUrlController.text = preset.baseUrl;
+                          remoteProvider = preset.remoteProvider;
+                          remoteApiType = preset.remoteApiType;
+                          defaultModel = preset.defaultModel;
+                          useDummyToken = preset.useDummyToken;
+                          authType = preset.authType;
+                          authHeaderNameController.text =
+                              preset.authHeaderName ?? '';
+                          if (useDummyToken) accountId = null;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<RemoteLlmApiType>(
+                      initialValue: remoteApiType,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'API type',
                         border: OutlineInputBorder(),
                       ),
                       items: [
-                        for (final account in accounts)
+                        for (final apiType in RemoteLlmApiType.values)
                           DropdownMenuItem(
-                            value: account.id,
-                            child: Text(account.name),
+                            value: apiType,
+                            child: Text(apiType.displayName),
                           ),
                       ],
-                      onChanged: (value) =>
-                          setDialogState(() => accountId = value),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() {
+                          remoteApiType = value;
+                          remoteProvider = _providerForApiType(
+                            value,
+                            currentProvider: remoteProvider,
+                          );
+                          authType =
+                              _RemoteProviderProfile.defaultAuthTypeForApiType(
+                                value,
+                              );
+                          authHeaderNameController.clear();
+                          accountId = null;
+                        });
+                      },
                     ),
-                ],
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                        hintText: 'Ollama, LM Studio, Work OpenAI',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: baseUrlController,
+                      decoration: const InputDecoration(
+                        labelText: 'Base URL',
+                        hintText: 'http://localhost:11434/v1',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      value: useDummyToken,
+                      title: const Text('Use dummy token'),
+                      subtitle: const Text('Default for local LLM APIs'),
+                      onChanged: (value) => setDialogState(() {
+                        useDummyToken = value;
+                        if (value) accountId = null;
+                      }),
+                    ),
+                    if (!useDummyToken)
+                      DropdownButtonFormField<int>(
+                        initialValue: accountId,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Token account',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: [
+                          for (final account in accounts)
+                            DropdownMenuItem(
+                              value: account.id,
+                              child: Text(account.name),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setDialogState(() => accountId = value),
+                      ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<RemoteAuthType>(
+                      initialValue: authType,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Auth type',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        for (final type in _RemoteProviderProfile.authTypes)
+                          DropdownMenuItem(
+                            value: type,
+                            child: Text(type.displayName),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setDialogState(() => authType = value);
+                      },
+                    ),
+                    if (authType == RemoteAuthType.customHeader) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: authHeaderNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Header name',
+                          hintText: 'X-API-Key',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -626,8 +687,11 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
               FilledButton(
                 onPressed: () {
                   final baseUrl = baseUrlController.text.trim();
+                  final authHeaderName = authHeaderNameController.text.trim();
                   if (baseUrl.isEmpty ||
-                      (!useDummyToken && accountId == null)) {
+                      (!useDummyToken && accountId == null) ||
+                      (authType == RemoteAuthType.customHeader &&
+                          authHeaderName.isEmpty)) {
                     return;
                   }
                   final next = _RemoteProviderProfile(
@@ -644,6 +708,10 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
                     remoteProvider: remoteProvider,
                     remoteApiType: remoteApiType,
                     defaultModel: defaultModel,
+                    authType: authType,
+                    authHeaderName: authType == RemoteAuthType.customHeader
+                        ? authHeaderName
+                        : null,
                   );
                   _replaceProvider(next);
                   Navigator.pop(dialogContext);
@@ -663,7 +731,9 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
       if (preset.remoteProvider == provider.remoteProvider &&
           preset.remoteApiType == provider.remoteApiType &&
           preset.baseUrl == provider.baseUrl &&
-          preset.defaultModel == provider.defaultModel) {
+          preset.defaultModel == provider.defaultModel &&
+          preset.authType == provider.authType &&
+          preset.authHeaderName == provider.authHeaderName) {
         return preset;
       }
     }
@@ -679,6 +749,16 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
       if (account.id == provider.accountId) return account.name;
     }
     return 'Missing account';
+  }
+
+  String _authTypeLabel(_RemoteProviderProfile provider) {
+    if (provider.authType != RemoteAuthType.customHeader) {
+      return provider.authType.displayName;
+    }
+    final headerName = provider.authHeaderName?.trim();
+    return headerName == null || headerName.isEmpty
+        ? provider.authType.displayName
+        : '$headerName header';
   }
 
   ServiceProvider _accountProviderForApiType(RemoteLlmApiType apiType) {
@@ -759,11 +839,22 @@ class _RemoteProviderProfile {
     this.isBuiltIn = false,
     this.remoteProvider = RemoteLlmProvider.openAiCompatible,
     RemoteLlmApiType? remoteApiType,
-  }) : remoteApiType = remoteApiType ?? remoteProvider.defaultApiType;
+    RemoteAuthType? authType,
+    this.authHeaderName,
+  }) : remoteApiType = remoteApiType ?? remoteProvider.defaultApiType,
+       authType =
+           authType ??
+           defaultAuthTypeForApiType(
+             remoteApiType ?? remoteProvider.defaultApiType,
+           );
 
   factory _RemoteProviderProfile.fromJson(String raw) {
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     final remoteProvider = _parseProvider(decoded['remoteProvider'] as String?);
+    final remoteApiType = _parseApiType(
+      decoded['remoteApiType'] as String?,
+      remoteProvider,
+    );
     return _RemoteProviderProfile(
       id: decoded['id'] as String,
       name: decoded['name'] as String,
@@ -776,10 +867,9 @@ class _RemoteProviderProfile {
           false,
       isBuiltIn: decoded['isBuiltIn'] as bool? ?? false,
       remoteProvider: remoteProvider,
-      remoteApiType: _parseApiType(
-        decoded['remoteApiType'] as String?,
-        remoteProvider,
-      ),
+      remoteApiType: remoteApiType,
+      authType: _parseAuthType(decoded['authType'] as String?, remoteApiType),
+      authHeaderName: decoded['authHeaderName'] as String?,
     );
   }
 
@@ -792,6 +882,8 @@ class _RemoteProviderProfile {
   final bool isBuiltIn;
   final RemoteLlmProvider remoteProvider;
   final RemoteLlmApiType remoteApiType;
+  final RemoteAuthType authType;
+  final String? authHeaderName;
 
   ServiceProvider get accountProvider {
     return remoteApiType == RemoteLlmApiType.anthropicMessages
@@ -814,6 +906,9 @@ class _RemoteProviderProfile {
     int? accountId,
     bool clearAccount = false,
     bool? useDummyToken,
+    RemoteAuthType? authType,
+    String? authHeaderName,
+    bool clearAuthHeaderName = false,
   }) {
     return _RemoteProviderProfile(
       id: id,
@@ -825,6 +920,10 @@ class _RemoteProviderProfile {
       isBuiltIn: isBuiltIn,
       remoteProvider: remoteProvider,
       remoteApiType: remoteApiType,
+      authType: authType ?? this.authType,
+      authHeaderName: clearAuthHeaderName
+          ? null
+          : (authHeaderName ?? this.authHeaderName),
     );
   }
 
@@ -839,6 +938,8 @@ class _RemoteProviderProfile {
       'isBuiltIn': isBuiltIn,
       'remoteProvider': remoteProvider.name,
       'remoteApiType': remoteApiType.name,
+      'authType': authType.name,
+      'authHeaderName': authHeaderName,
     });
   }
 
@@ -859,11 +960,42 @@ class _RemoteProviderProfile {
     return remoteProvider.defaultApiType;
   }
 
+  static const authTypes = [
+    RemoteAuthType.bearerToken,
+    RemoteAuthType.xApiKey,
+    RemoteAuthType.customHeader,
+  ];
+
+  static RemoteAuthType defaultAuthTypeForApiType(RemoteLlmApiType apiType) {
+    return apiType == RemoteLlmApiType.anthropicMessages
+        ? RemoteAuthType.xApiKey
+        : RemoteAuthType.bearerToken;
+  }
+
+  static RemoteAuthType _parseAuthType(
+    String? value,
+    RemoteLlmApiType apiType,
+  ) {
+    for (final type in RemoteAuthType.values) {
+      if (type.name == value) return type;
+    }
+    return defaultAuthTypeForApiType(apiType);
+  }
+
   static final presets = [
     _RemoteProviderProfile(
       id: 'openai',
       name: 'OpenAI',
       baseUrl: 'https://api.openai.com/v1',
+      defaultModel: 'gpt-4.1-mini',
+      isBuiltIn: true,
+      remoteProvider: RemoteLlmProvider.openAi,
+      remoteApiType: RemoteLlmApiType.openAiResponses,
+    ),
+    _RemoteProviderProfile(
+      id: 'backplane',
+      name: 'Backplane',
+      baseUrl: 'https://backplane.gsmlg.net/v1',
       defaultModel: 'gpt-4.1-mini',
       isBuiltIn: true,
       remoteProvider: RemoteLlmProvider.openAi,

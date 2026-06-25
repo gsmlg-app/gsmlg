@@ -362,6 +362,158 @@ void main() {
       expect(find.text('Delete Ollama'), findsOneWidget);
     });
 
+    testWidgets('adds Backplane preset with an LLM token account', (
+      tester,
+    ) async {
+      await preferences.setStringList('remote_model_provider_profiles', []);
+      final accountId = await database
+          .into(database.serviceAccountTable)
+          .insert(
+            ServiceAccountTableCompanion.insert(
+              provider: ServiceProvider.openai,
+              name: 'LLM token',
+            ),
+          );
+      await vault.write(
+        key: 'service_account_$accountId',
+        value: 'backplane-token',
+      );
+      final seededAccountsBloc = _SeededAccountsBloc(
+        database: database,
+        vault: vault,
+        accounts: [
+          ServiceAccountTableData(
+            id: accountId,
+            provider: ServiceProvider.openai,
+            name: 'LLM token',
+            description: '',
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+          ),
+        ],
+      );
+      addTearDown(seededAccountsBloc.close);
+      chatSettingsBloc = ChatSettingsBloc(
+        repository: ChatStorageRepository(database),
+        preferences: preferences,
+      );
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        vault: vault,
+        chatSettingsBloc: chatSettingsBloc!,
+        accountsBloc: seededAccountsBloc,
+      );
+
+      await tester.tap(find.byTooltip('Add provider'));
+      await _pumpInteraction(tester);
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+      await _pumpInteraction(tester);
+      await tester.tap(find.text('Backplane').last);
+      await _pumpInteraction(tester);
+
+      expect(
+        find.text('https://backplane.gsmlg.net/v1'),
+        findsAtLeastNWidgets(1),
+      );
+      expect(find.text('OpenAI Responses'), findsAtLeastNWidgets(1));
+
+      await tester.tap(find.byType(DropdownButtonFormField<int>).first);
+      await _pumpInteraction(tester);
+      await tester.tap(find.text('LLM token').last);
+      await _pumpInteraction(tester);
+      await tester.tap(find.text('Add'));
+      await _pumpInteraction(tester);
+
+      final saved = preferences.getStringList('remote_model_provider_profiles');
+      expect(saved, hasLength(1));
+      final provider = jsonDecode(saved!.single) as Map<String, dynamic>;
+      expect(provider['id'], isNot('backplane'));
+      expect(provider['name'], 'Backplane');
+      expect(provider['baseUrl'], 'https://backplane.gsmlg.net/v1');
+      expect(provider['defaultModel'], 'gpt-4.1-mini');
+      expect(provider['useDummyToken'], isFalse);
+      expect(provider['accountId'], isA<int>());
+      expect(provider['remoteProvider'], 'openAi');
+      expect(provider['remoteApiType'], 'openAiResponses');
+      expect(provider['authType'], 'bearerToken');
+      expect(provider['authHeaderName'], isNull);
+    });
+
+    testWidgets('saves custom auth header for a remote provider', (
+      tester,
+    ) async {
+      await preferences.setStringList('remote_model_provider_profiles', []);
+      final accountId = await database
+          .into(database.serviceAccountTable)
+          .insert(
+            ServiceAccountTableCompanion.insert(
+              provider: ServiceProvider.openai,
+              name: 'Custom token',
+            ),
+          );
+      await vault.write(key: 'service_account_$accountId', value: 'secret');
+      final seededAccountsBloc = _SeededAccountsBloc(
+        database: database,
+        vault: vault,
+        accounts: [
+          ServiceAccountTableData(
+            id: accountId,
+            provider: ServiceProvider.openai,
+            name: 'Custom token',
+            description: '',
+            createdAt: DateTime(2026),
+            updatedAt: DateTime(2026),
+          ),
+        ],
+      );
+      addTearDown(seededAccountsBloc.close);
+      chatSettingsBloc = ChatSettingsBloc(
+        repository: ChatStorageRepository(database),
+        preferences: preferences,
+      );
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        vault: vault,
+        chatSettingsBloc: chatSettingsBloc!,
+        accountsBloc: seededAccountsBloc,
+      );
+
+      await tester.tap(find.byTooltip('Add provider'));
+      await _pumpInteraction(tester);
+      await tester.tap(find.byType(DropdownButtonFormField<int>).first);
+      await _pumpInteraction(tester);
+      await tester.tap(find.text('Custom token').last);
+      await _pumpInteraction(tester);
+      await tester.ensureVisible(
+        find.byType(DropdownButtonFormField<RemoteAuthType>).first,
+      );
+      await _pumpInteraction(tester);
+      await tester.tap(
+        find.byType(DropdownButtonFormField<RemoteAuthType>).first,
+      );
+      await _pumpInteraction(tester);
+      await tester.tap(find.text('Custom header').last);
+      await _pumpInteraction(tester);
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Header name'),
+        'X-Model-Key',
+      );
+      await _pumpInteraction(tester);
+      await tester.tap(find.text('Add'));
+      await _pumpInteraction(tester);
+
+      final saved = preferences.getStringList('remote_model_provider_profiles');
+      expect(saved, hasLength(1));
+      final provider = jsonDecode(saved!.single) as Map<String, dynamic>;
+      expect(provider['authType'], 'customHeader');
+      expect(provider['authHeaderName'], 'X-Model-Key');
+    });
+
     testWidgets('saves selected Anthropic Messages API type', (tester) async {
       await preferences.setStringList('remote_model_provider_profiles', []);
       chatSettingsBloc = ChatSettingsBloc(
@@ -533,12 +685,27 @@ Future<void> _pumpUntil(WidgetTester tester, bool Function() done) async {
   }
 }
 
+Future<void> _pumpInteraction(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
+
 class _FakeRemoteLlmRepository extends RemoteLlmRepository {
   _FakeRemoteLlmRepository({required super.vault});
 
   @override
   Future<List<String>> listModels(ModelConfig config) async {
     return const ['new-alpha', 'new-beta'];
+  }
+}
+
+class _SeededAccountsBloc extends AccountsBloc {
+  _SeededAccountsBloc({
+    required super.database,
+    required super.vault,
+    required List<ServiceAccountTableData> accounts,
+  }) {
+    emit(AccountsLoaded(accounts: accounts));
   }
 }
 

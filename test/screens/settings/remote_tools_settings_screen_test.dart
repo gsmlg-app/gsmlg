@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:accounts_bloc/accounts_bloc.dart';
+import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
@@ -32,8 +33,8 @@ void main() {
         jsonEncode({
           'id': 'filesystem',
           'name': 'Filesystem MCP',
-          'url': 'https://mcp.example.com/sse',
-          'transport': 'sse',
+          'url': 'https://mcp.example.com/http',
+          'transport': 'http',
           'enabled': true,
           'accountId': null,
         }),
@@ -47,7 +48,7 @@ void main() {
 
       expect(find.text('Remote Tools'), findsAtLeastNWidgets(1));
       expect(find.text('Filesystem MCP'), findsOneWidget);
-      expect(find.textContaining('SSE'), findsOneWidget);
+      expect(find.textContaining('HTTP'), findsOneWidget);
 
       await tester.tap(find.byType(Switch).first);
       await tester.pumpAndSettle();
@@ -147,6 +148,99 @@ void main() {
       expect(find.textContaining('Work Token'), findsOneWidget);
     });
 
+    testWidgets('does not expose secret editing on MCP detail screen', (
+      tester,
+    ) async {
+      const accountId = 1;
+      await accountsBloc.close();
+      accountsBloc = _FakeAccountsBloc(
+        AccountsLoaded(
+          accounts: [
+            ServiceAccountTableData(
+              id: accountId,
+              provider: ServiceProvider.openai,
+              name: 'Work Token',
+              description: '',
+              createdAt: DateTime(2026),
+              updatedAt: DateTime(2026),
+            ),
+          ],
+        ),
+      );
+      await preferences.setStringList('remote_mcp_profiles', [
+        jsonEncode({
+          'id': 'docs',
+          'name': 'Docs MCP',
+          'url': 'https://mcp.example.com/http',
+          'transport': 'http',
+          'enabled': true,
+          'accountId': accountId,
+        }),
+      ]);
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        accountsBloc: accountsBloc,
+        home: const RemoteToolSettingsScreen(profileId: 'docs'),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Auth Account'), findsOneWidget);
+      expect(find.text('Auth Type'), findsOneWidget);
+      expect(find.text('Change Secret'), findsNothing);
+      expect(find.text('Manage Service Accounts'), findsOneWidget);
+    });
+
+    testWidgets('shows a clear error when selected MCP account has no secret', (
+      tester,
+    ) async {
+      const accountId = 1;
+      await accountsBloc.close();
+      accountsBloc = _FakeAccountsBloc(
+        AccountsLoaded(
+          accounts: [
+            ServiceAccountTableData(
+              id: accountId,
+              provider: ServiceProvider.openai,
+              name: 'Backplane',
+              description: '',
+              createdAt: DateTime(2026),
+              updatedAt: DateTime(2026),
+            ),
+          ],
+        ),
+      );
+      await preferences.setStringList('remote_mcp_profiles', [
+        jsonEncode({
+          'id': 'docs',
+          'name': 'Docs MCP',
+          'url': 'https://mcp.example.com/http',
+          'transport': 'http',
+          'enabled': true,
+          'accountId': accountId,
+        }),
+      ]);
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        accountsBloc: accountsBloc,
+        home: const RemoteToolSettingsScreen(profileId: 'docs'),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.tap(find.byTooltip('Refresh tools'));
+      await tester.pump();
+
+      expect(
+        find.textContaining(
+          'Service account "Backplane" has no secret. Update it in Service Accounts.',
+        ),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('adds an HTTP MCP service', (tester) async {
       await _pumpScreen(
         tester,
@@ -177,9 +271,45 @@ void main() {
       expect(profile['accountId'], isNull);
     });
 
-    testWidgets('lists MCP server tools from the server action menu', (
+    testWidgets('adds an HTTP MCP service with custom header auth', (
       tester,
     ) async {
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        accountsBloc: accountsBloc,
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.byTooltip('Add MCP service'));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Name'),
+        'Secure Docs MCP',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Endpoint URL'),
+        'https://mcp.example.com/http',
+      );
+      await tester.tap(
+        find.byType(DropdownButtonFormField<RemoteAuthType>).first,
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Custom header').last);
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Header name'),
+        'X-MCP-Key',
+      );
+      await tester.tap(find.text('Add'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final saved = preferences.getStringList('remote_mcp_profiles');
+      final profile = jsonDecode(saved!.single) as Map<String, dynamic>;
+      expect(profile['authType'], 'customHeader');
+      expect(profile['authHeaderName'], 'X-MCP-Key');
+    });
+
+    testWidgets('lists MCP server tools on the detail screen', (tester) async {
       await preferences.setStringList('remote_mcp_profiles', [
         jsonEncode({
           'id': 'docs',
@@ -199,15 +329,14 @@ void main() {
         tester,
         preferences: preferences,
         accountsBloc: accountsBloc,
+        home: const RemoteToolSettingsScreen(profileId: 'docs'),
       );
       await tester.pump(const Duration(milliseconds: 300));
 
-      await tester.tap(find.byType(PopupMenuButton<String>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('List Tools'));
+      expect(find.text('Docs MCP'), findsAtLeastNWidgets(1));
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -700));
       await tester.pumpAndSettle();
 
-      expect(find.text('Docs MCP Tools'), findsOneWidget);
       expect(find.text('search_docs'), findsOneWidget);
       expect(find.text('Search documentation'), findsOneWidget);
       expect(find.text('read_doc'), findsOneWidget);
@@ -220,6 +349,7 @@ Future<void> _pumpScreen(
   WidgetTester tester, {
   required SharedPreferences preferences,
   required AccountsBloc accountsBloc,
+  Widget home = const RemoteToolsSettingsScreen(),
 }) {
   return tester.pumpWidget(
     RepositoryProvider<SharedPreferences>.value(
@@ -229,7 +359,7 @@ Future<void> _pumpScreen(
         child: MaterialApp(
           localizationsDelegates: AppLocale.localizationsDelegates,
           supportedLocales: AppLocale.supportedLocales,
-          home: const RemoteToolsSettingsScreen(),
+          home: home,
         ),
       ),
     ),
