@@ -10,7 +10,8 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  flutter_secure_storage: ^10.0.0
+  # 10.3.0+ fixes macOS usesDataProtectionKeychain option propagation.
+  flutter_secure_storage: ^10.3.1
 
 dev_dependencies:
   flutter_test:

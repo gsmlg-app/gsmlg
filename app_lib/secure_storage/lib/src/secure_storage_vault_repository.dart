@@ -12,13 +12,26 @@ import 'vault_repository.dart';
 /// - Windows: Windows Credential Manager
 /// - Web: Uses encrypted local storage (less secure than native platforms)
 class SecureStorageVaultRepository implements VaultRepository {
-  SecureStorageVaultRepository({FlutterSecureStorage? storage, this.namespace})
-    : _storage = storage ?? _createDefaultStorage();
+  SecureStorageVaultRepository({
+    FlutterSecureStorage? storage,
+    FlutterSecureStorage? legacyMacOsStorage,
+    this.namespace,
+  }) : _storage = storage ?? _createDefaultStorage(),
+       _legacyMacOsStorage =
+           legacyMacOsStorage ??
+           (storage == null
+               ? _createDefaultStorage(usesDataProtectionKeychain: true)
+               : null);
 
   /// Creates default FlutterSecureStorage with platform-specific options.
-  static FlutterSecureStorage _createDefaultStorage() {
-    return const FlutterSecureStorage(
+  static FlutterSecureStorage _createDefaultStorage({
+    bool usesDataProtectionKeychain = false,
+  }) {
+    return FlutterSecureStorage(
       aOptions: AndroidOptions(
+        // Keep the legacy Android namespace so existing stored secrets remain
+        // readable after flutter_secure_storage upgrades.
+        // ignore: deprecated_member_use
         sharedPreferencesName: 'gsmlg_secure_prefs',
         preferencesKeyPrefix: 'gsmlg_',
       ),
@@ -29,6 +42,10 @@ class SecureStorageVaultRepository implements VaultRepository {
       mOptions: MacOsOptions(
         accessibility: KeychainAccessibility.first_unlock_this_device,
         accountName: 'gsmlg_vault',
+        // The macOS data-protection keychain requires Keychain Sharing
+        // entitlements. Standard Keychain storage avoids errSecMissingEntitlement
+        // for local/ad-hoc builds while still using the platform Keychain.
+        usesDataProtectionKeychain: usesDataProtectionKeychain,
       ),
       lOptions: LinuxOptions(),
       wOptions: WindowsOptions(),
@@ -36,6 +53,7 @@ class SecureStorageVaultRepository implements VaultRepository {
   }
 
   final FlutterSecureStorage _storage;
+  final FlutterSecureStorage? _legacyMacOsStorage;
 
   /// Optional namespace prefix for keys to avoid collisions.
   final String? namespace;
@@ -55,17 +73,24 @@ class SecureStorageVaultRepository implements VaultRepository {
 
   @override
   Future<String?> read({required String key}) async {
-    return _storage.read(key: _prefixedKey(key));
+    final prefixedKey = _prefixedKey(key);
+    final value = await _storage.read(key: prefixedKey);
+    if (value != null) return value;
+    return _readLegacyMacOsValue(prefixedKey);
   }
 
   @override
   Future<void> delete({required String key}) async {
-    await _storage.delete(key: _prefixedKey(key));
+    final prefixedKey = _prefixedKey(key);
+    await _storage.delete(key: prefixedKey);
+    await _deleteLegacyMacOsValue(prefixedKey);
   }
 
   @override
   Future<bool> containsKey({required String key}) async {
-    return _storage.containsKey(key: _prefixedKey(key));
+    final prefixedKey = _prefixedKey(key);
+    if (await _storage.containsKey(key: prefixedKey)) return true;
+    return _containsLegacyMacOsValue(prefixedKey);
   }
 
   @override
@@ -81,6 +106,7 @@ class SecureStorageVaultRepository implements VaultRepository {
     } else {
       await _storage.deleteAll();
     }
+    await _deleteAllLegacyMacOsValues();
   }
 
   @override
@@ -96,5 +122,63 @@ class SecureStorageVaultRepository implements VaultRepository {
       );
     }
     return all;
+  }
+
+  Future<String?> _readLegacyMacOsValue(String prefixedKey) async {
+    final legacyStorage = _legacyMacOsStorage;
+    if (legacyStorage == null) return null;
+
+    try {
+      final value = await legacyStorage.read(key: prefixedKey);
+      if (value == null) return null;
+      await _storage.write(key: prefixedKey, value: value);
+      await _deleteLegacyMacOsValue(prefixedKey);
+      return value;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> _containsLegacyMacOsValue(String prefixedKey) async {
+    final legacyStorage = _legacyMacOsStorage;
+    if (legacyStorage == null) return false;
+
+    try {
+      return await legacyStorage.containsKey(key: prefixedKey);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _deleteLegacyMacOsValue(String prefixedKey) async {
+    final legacyStorage = _legacyMacOsStorage;
+    if (legacyStorage == null) return;
+
+    try {
+      await legacyStorage.delete(key: prefixedKey);
+    } catch (_) {
+      // Legacy data-protection keychain access can fail without entitlements.
+    }
+  }
+
+  Future<void> _deleteAllLegacyMacOsValues() async {
+    final legacyStorage = _legacyMacOsStorage;
+    if (legacyStorage == null) return;
+
+    try {
+      if (namespace == null || namespace!.isEmpty) {
+        await legacyStorage.deleteAll();
+        return;
+      }
+
+      final all = await legacyStorage.readAll();
+      for (final key in all.keys) {
+        if (key.startsWith('${namespace}_')) {
+          await legacyStorage.delete(key: key);
+        }
+      }
+    } catch (_) {
+      // Legacy data-protection keychain access can fail without entitlements.
+    }
   }
 }

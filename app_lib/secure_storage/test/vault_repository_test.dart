@@ -1,4 +1,5 @@
 import 'package:app_secure_storage/app_secure_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// In-memory implementation of VaultRepository for testing.
@@ -105,4 +106,189 @@ void main() {
       expect(all, isEmpty);
     });
   });
+
+  group('SecureStorageVaultRepository', () {
+    test('migrates legacy macOS data-protection values on read', () async {
+      final primaryValues = <String, String>{};
+      final legacyValues = {'gsmlg_service_account_1': 'secret'};
+      final vault = SecureStorageVaultRepository(
+        storage: _MemoryFlutterSecureStorage(primaryValues),
+        legacyMacOsStorage: _MemoryFlutterSecureStorage(legacyValues),
+        namespace: 'gsmlg',
+      );
+
+      final value = await vault.read(key: 'service_account_1');
+
+      expect(value, 'secret');
+      expect(primaryValues, {'gsmlg_service_account_1': 'secret'});
+      expect(legacyValues, isEmpty);
+    });
+
+    test('ignores legacy macOS storage failures', () async {
+      final vault = SecureStorageVaultRepository(
+        storage: _MemoryFlutterSecureStorage({}),
+        legacyMacOsStorage: _ThrowingFlutterSecureStorage(),
+        namespace: 'gsmlg',
+      );
+
+      expect(await vault.read(key: 'service_account_1'), isNull);
+      expect(await vault.containsKey(key: 'service_account_1'), isFalse);
+      await vault.delete(key: 'service_account_1');
+      await vault.deleteAll();
+    });
+  });
+}
+
+class _MemoryFlutterSecureStorage extends FlutterSecureStorage {
+  _MemoryFlutterSecureStorage(this._values);
+
+  final Map<String, String> _values;
+
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    if (value == null) {
+      _values.remove(key);
+    } else {
+      _values[key] = value;
+    }
+  }
+
+  @override
+  Future<String?> read({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    return _values[key];
+  }
+
+  @override
+  Future<void> delete({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    _values.remove(key);
+  }
+
+  @override
+  Future<bool> containsKey({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    return _values.containsKey(key);
+  }
+
+  @override
+  Future<void> deleteAll({
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    _values.clear();
+  }
+
+  @override
+  Future<Map<String, String>> readAll({
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    return Map.unmodifiable(_values);
+  }
+}
+
+class _ThrowingFlutterSecureStorage extends _MemoryFlutterSecureStorage {
+  _ThrowingFlutterSecureStorage() : super({});
+
+  @override
+  Future<String?> read({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw StateError('missing entitlement');
+  }
+
+  @override
+  Future<void> delete({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw StateError('missing entitlement');
+  }
+
+  @override
+  Future<bool> containsKey({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw StateError('missing entitlement');
+  }
+
+  @override
+  Future<Map<String, String>> readAll({
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw StateError('missing entitlement');
+  }
+
+  @override
+  Future<void> deleteAll({
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    AppleOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw StateError('missing entitlement');
+  }
 }
