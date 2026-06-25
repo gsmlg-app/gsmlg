@@ -251,6 +251,7 @@ class _ChatScreenState extends State<ChatScreen> {
               },
               onSend: (message, {imageBytes, audioBytes, attachments}) {
                 _sendMessage(
+                  settingsState,
                   chatState,
                   message,
                   imageBytes: imageBytes,
@@ -310,6 +311,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 },
           onSend: (message, {imageBytes, audioBytes, attachments}) {
             _sendMessage(
+              settingsState,
               chatState,
               message,
               imageBytes: imageBytes,
@@ -326,34 +328,24 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _sendMessage(
+    ChatSettingsState settingsState,
     ChatState chatState,
     String message, {
     Uint8List? imageBytes,
     Uint8List? audioBytes,
     List<ChatAttachment> attachments = const [],
   }) {
-    if (chatState.conversation == null) {
-      _startNewConversation();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<ChatBloc>().add(
-          ChatSendMessage(
-            content: message,
-            imageBytes: imageBytes,
-            audioBytes: audioBytes,
-            attachments: attachments,
-          ),
-        );
-      });
-    } else {
-      context.read<ChatBloc>().add(
-        ChatSendMessage(
-          content: message,
-          imageBytes: imageBytes,
-          audioBytes: audioBytes,
-          attachments: attachments,
-        ),
-      );
-    }
+    context.read<ChatBloc>().add(
+      ChatSendMessage(
+        content: message,
+        systemPrompt: chatState.conversation == null
+            ? settingsState.defaultSystemPrompt
+            : null,
+        imageBytes: imageBytes,
+        audioBytes: audioBytes,
+        attachments: attachments,
+      ),
+    );
   }
 
   Widget _buildRemoteStatusBanner(ModelConfig config) {
