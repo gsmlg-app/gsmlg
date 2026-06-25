@@ -48,17 +48,19 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     emit(const AccountsLoading());
 
     try {
-      final id = await _db
-          .into(_db.serviceAccountTable)
-          .insert(
-            ServiceAccountTableCompanion.insert(
-              provider: event.provider,
-              name: event.name,
-              description: Value(event.description),
-            ),
-          );
-
-      await _vault.write(key: _vaultKey(id), value: event.apiKey);
+      await _db.transaction(() async {
+        final id = await _db
+            .into(_db.serviceAccountTable)
+            .insert(
+              ServiceAccountTableCompanion.insert(
+                provider: event.provider,
+                name: event.name,
+                description: Value(event.description),
+              ),
+            );
+        await _vault.write(key: _vaultKey(id), value: event.apiKey);
+        return id;
+      });
 
       final accounts = await _db.select(_db.serviceAccountTable).get();
       emit(AccountsLoaded(accounts: accounts));
