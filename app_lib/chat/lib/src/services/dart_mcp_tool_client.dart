@@ -7,6 +7,8 @@ import 'package:dart_mcp/stdio.dart';
 import 'package:dio/dio.dart';
 import 'package:stream_channel/stream_channel.dart';
 
+const _mcpSessionIdHeader = 'Mcp-Session-Id';
+
 class DartMcpStdioServerConfig {
   const DartMcpStdioServerConfig({
     required this.command,
@@ -108,11 +110,22 @@ class DartMcpToolClient {
     );
     unawaited(server.done.then((_) => process.kill()));
 
+    Object? failure;
     try {
       return await _initializeAndRun(server, callback);
+    } catch (error, stackTrace) {
+      failure = error;
+      Error.throwWithStackTrace(error, stackTrace);
     } finally {
-      await server.shutdown();
-      process.kill();
+      try {
+        await server.shutdown();
+      } catch (error, stackTrace) {
+        if (failure == null) {
+          Error.throwWithStackTrace(error, stackTrace);
+        }
+      } finally {
+        process.kill();
+      }
     }
   }
 
@@ -121,10 +134,20 @@ class DartMcpToolClient {
     Future<T> Function(mcp.ServerConnection server) callback,
   ) async {
     final server = _client.connectServer(channel);
+    Object? failure;
     try {
       return await _initializeAndRun(server, callback);
+    } catch (error, stackTrace) {
+      failure = error;
+      Error.throwWithStackTrace(error, stackTrace);
     } finally {
-      await server.shutdown();
+      try {
+        await server.shutdown();
+      } catch (error, stackTrace) {
+        if (failure == null) {
+          Error.throwWithStackTrace(error, stackTrace);
+        }
+      }
     }
   }
 
@@ -148,24 +171,43 @@ class DartMcpToolClient {
 
   StreamChannel<String> _httpChannel(DartMcpHttpServerConfig config) {
     final controller = StreamChannelController<String>();
+    String? sessionId;
     controller.local.stream.listen(
       (message) async {
         try {
+          final headers = {
+            'Accept': 'application/json, text/event-stream',
+            'Content-Type': 'application/json',
+            ...config.headers,
+          };
+          final currentSessionId = sessionId;
+          if (currentSessionId != null) {
+            headers[_mcpSessionIdHeader] = currentSessionId;
+          }
           final response = await _dio.post<String>(
             config.url,
             options: Options(
               responseType: ResponseType.plain,
-              headers: {
-                'Accept': 'application/json, text/event-stream',
-                'Content-Type': 'application/json',
-                ...config.headers,
-              },
+              headers: headers,
             ),
             data: message,
           );
+          final responseSessionId = response.headers.value(_mcpSessionIdHeader);
+          if (responseSessionId != null &&
+              responseSessionId.trim().isNotEmpty) {
+            sessionId = responseSessionId.trim();
+          }
           final messages = _responseMessages(response.data);
           for (final responseMessage in messages) {
             controller.local.sink.add(responseMessage);
+          }
+        } on DioException catch (error, stackTrace) {
+          final exception = _httpExceptionFrom(error);
+          final rpcError = _jsonRpcErrorResponse(message, exception.message);
+          if (rpcError == null) {
+            controller.local.sink.addError(exception, stackTrace);
+          } else {
+            controller.local.sink.add(rpcError);
           }
         } catch (error, stackTrace) {
           controller.local.sink.addError(error, stackTrace);
@@ -239,5 +281,70 @@ class DartMcpToolClient {
 
   Map<String, dynamic> _mapFrom(Object? value) {
     return Map<String, dynamic>.from(value as Map);
+  }
+}
+
+class DartMcpHttpException implements Exception {
+  const DartMcpHttpException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+DartMcpHttpException _httpExceptionFrom(DioException error) {
+  final response = error.response;
+  if (response == null) {
+    return DartMcpHttpException(
+      'MCP HTTP request failed: ${error.message ?? error.type.name}',
+    );
+  }
+
+  final statusCode = response.statusCode;
+  final statusMessage = response.statusMessage;
+  final buffer = StringBuffer(
+    'MCP endpoint returned HTTP $statusCode'
+    '${statusMessage == null || statusMessage.isEmpty ? '' : ' $statusMessage'}.',
+  );
+  if (statusCode == 401) {
+    buffer.write(
+      ' Check the endpoint URL, Auth Type, and selected service account secret.',
+    );
+  }
+
+  final challenge = response.headers.value('www-authenticate');
+  if (challenge != null && challenge.trim().isNotEmpty) {
+    buffer.write(' WWW-Authenticate: ${_truncateHttpDetail(challenge)}');
+  }
+
+  final body = response.data?.toString().trim();
+  if (body != null && body.isNotEmpty) {
+    buffer.write(' Response: ${_truncateHttpDetail(body)}');
+  }
+
+  return DartMcpHttpException(buffer.toString());
+}
+
+String _truncateHttpDetail(String value) {
+  const maxLength = 300;
+  final trimmed = value.trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  return '${trimmed.substring(0, maxLength)}...';
+}
+
+String? _jsonRpcErrorResponse(String requestMessage, String message) {
+  try {
+    final decoded = jsonDecode(requestMessage);
+    if (decoded is! Map<String, dynamic>) return null;
+    final id = decoded['id'];
+    if (id == null) return null;
+    return jsonEncode({
+      'jsonrpc': '2.0',
+      'id': id,
+      'error': {'code': -32000, 'message': message},
+    });
+  } catch (_) {
+    return null;
   }
 }

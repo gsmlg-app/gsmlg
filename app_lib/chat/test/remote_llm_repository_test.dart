@@ -299,6 +299,97 @@ void main() {
       ]);
     });
 
+    test(
+      'uses configured x-api-key auth for OpenAI-compatible requests',
+      () async {
+        Map<String, String>? headers;
+        final repository = RemoteLlmRepository(
+          vault: _MemoryVaultRepository(),
+          client: MockClient((request) async {
+            headers = request.headers;
+            return http.Response(
+              jsonEncode({
+                'choices': [
+                  {
+                    'message': {'content': 'ok'},
+                  },
+                ],
+              }),
+              200,
+            );
+          }),
+        );
+
+        await repository.generateResponse(
+          [
+            UserMessage(
+              id: 'user',
+              content: 'hello',
+              conversationId: 'conversation',
+              timestamp: DateTime(2026),
+            ),
+          ],
+          const ModelConfig(
+            inferenceMode: ChatInferenceMode.remote,
+            remoteProvider: RemoteLlmProvider.openAiCompatible,
+            remoteAccountId: ModelConfig.dummyRemoteAccountId,
+            remoteBaseUrl: 'https://api.example.com/v1',
+            remoteModel: 'custom-model',
+            remoteAuthType: RemoteAuthType.xApiKey,
+            remoteStreamingEnabled: false,
+          ),
+        ).toList();
+
+        expect(headers!['x-api-key'], 'dummy');
+        expect(headers!['Authorization'], isNull);
+      },
+    );
+
+    test('uses configured custom auth header for remote requests', () async {
+      Map<String, String>? headers;
+      final repository = RemoteLlmRepository(
+        vault: _MemoryVaultRepository(),
+        client: MockClient((request) async {
+          headers = request.headers;
+          return http.Response(
+            jsonEncode({
+              'choices': [
+                {
+                  'message': {'content': 'ok'},
+                },
+              ],
+            }),
+            200,
+          );
+        }),
+      );
+
+      await repository.generateResponse(
+        [
+          UserMessage(
+            id: 'user',
+            content: 'hello',
+            conversationId: 'conversation',
+            timestamp: DateTime(2026),
+          ),
+        ],
+        const ModelConfig(
+          inferenceMode: ChatInferenceMode.remote,
+          remoteProvider: RemoteLlmProvider.openAiCompatible,
+          remoteAccountId: ModelConfig.dummyRemoteAccountId,
+          remoteBaseUrl: 'https://api.example.com/v1',
+          remoteModel: 'custom-model',
+          remoteAuthType: RemoteAuthType.customHeader,
+          remoteAuthHeaderName: 'X-Model-Key',
+          remoteStreamingEnabled: false,
+        ),
+      ).toList();
+
+      expect(headers!['X-Model-Key'], 'dummy');
+      expect(headers!['Authorization'], isNull);
+      expect(headers!['x-api-key'], isNull);
+    });
+
     test('parses streaming Anthropic Messages events', () async {
       final repository = RemoteLlmRepository(
         vault: _MemoryVaultRepository(),
@@ -537,7 +628,7 @@ void main() {
       expect(bodies, hasLength(3));
       expect(bodies[0]['thinking'], {'type': 'disabled'});
       expect(bodies[0].containsKey('reasoning_effort'), isFalse);
-      expect(bodies[0].containsKey('temperature'), isTrue);
+      expect(bodies[0].containsKey('temperature'), isFalse);
       expect(bodies[1]['thinking'], {'type': 'enabled'});
       expect(bodies[1]['reasoning_effort'], 'high');
       expect(bodies[1].containsKey('temperature'), isFalse);
@@ -588,6 +679,168 @@ void main() {
       expect(body!.containsKey('thinking'), isFalse);
       expect(body!.containsKey('reasoning_effort'), isFalse);
     });
+
+    test(
+      'omits sampling parameters for managed cloud remote providers',
+      () async {
+        final bodies = <Map<String, dynamic>>[];
+        final repository = RemoteLlmRepository(
+          vault: _MemoryVaultRepository(),
+          client: MockClient((request) async {
+            bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+            if (request.url.path.endsWith('/messages')) {
+              return http.Response(
+                jsonEncode({
+                  'content': [
+                    {'type': 'text', 'text': 'ok'},
+                  ],
+                }),
+                200,
+              );
+            }
+            if (request.url.path.endsWith('/responses')) {
+              return http.Response(
+                jsonEncode({
+                  'output': [
+                    {
+                      'type': 'message',
+                      'role': 'assistant',
+                      'content': [
+                        {'type': 'output_text', 'text': 'ok'},
+                      ],
+                    },
+                  ],
+                }),
+                200,
+              );
+            }
+            return http.Response(
+              jsonEncode({
+                'choices': [
+                  {
+                    'message': {'content': 'ok'},
+                  },
+                ],
+              }),
+              200,
+            );
+          }),
+        );
+
+        final messages = [
+          UserMessage(
+            id: 'user',
+            content: 'hello',
+            conversationId: 'conversation',
+            timestamp: DateTime(2026),
+          ),
+        ];
+
+        await repository
+            .generateResponse(
+              messages,
+              const ModelConfig(
+                inferenceMode: ChatInferenceMode.remote,
+                remoteProvider: RemoteLlmProvider.openAi,
+                remoteApiType: RemoteLlmApiType.openAiResponses,
+                remoteAccountId: ModelConfig.dummyRemoteAccountId,
+                remoteBaseUrl: 'https://api.openai.com/v1',
+                remoteModel: 'gpt-5',
+                remoteStreamingEnabled: false,
+                temperature: 1.3,
+                topK: 8,
+              ),
+            )
+            .toList();
+        await repository
+            .generateResponse(
+              messages,
+              const ModelConfig(
+                inferenceMode: ChatInferenceMode.remote,
+                remoteProvider: RemoteLlmProvider.anthropic,
+                remoteApiType: RemoteLlmApiType.anthropicMessages,
+                remoteAccountId: ModelConfig.dummyRemoteAccountId,
+                remoteBaseUrl: 'https://api.anthropic.com/v1',
+                remoteModel: 'claude-sonnet-4-5',
+                remoteStreamingEnabled: false,
+                temperature: 1.3,
+                topK: 8,
+              ),
+            )
+            .toList();
+        await repository
+            .generateResponse(
+              messages,
+              const ModelConfig(
+                inferenceMode: ChatInferenceMode.remote,
+                remoteProvider: RemoteLlmProvider.openRouter,
+                remoteApiType: RemoteLlmApiType.openAiChatCompletions,
+                remoteAccountId: ModelConfig.dummyRemoteAccountId,
+                remoteBaseUrl: 'https://openrouter.ai/api/v1',
+                remoteModel: 'openai/gpt-4.1-mini',
+                remoteStreamingEnabled: false,
+                temperature: 1.3,
+                topK: 8,
+              ),
+            )
+            .toList();
+
+        expect(bodies, hasLength(3));
+        for (final body in bodies) {
+          expect(body.containsKey('temperature'), isFalse);
+          expect(body.containsKey('top_k'), isFalse);
+          expect(body.containsKey('topK'), isFalse);
+        }
+      },
+    );
+
+    test(
+      'keeps temperature for self-hosted OpenAI-compatible providers',
+      () async {
+        Map<String, dynamic>? body;
+        final repository = RemoteLlmRepository(
+          vault: _MemoryVaultRepository(),
+          client: MockClient((request) async {
+            body = jsonDecode(request.body) as Map<String, dynamic>;
+            return http.Response(
+              jsonEncode({
+                'choices': [
+                  {
+                    'message': {'content': 'ok'},
+                  },
+                ],
+              }),
+              200,
+            );
+          }),
+        );
+
+        await repository.generateResponse(
+          [
+            UserMessage(
+              id: 'user',
+              content: 'hello',
+              conversationId: 'conversation',
+              timestamp: DateTime(2026),
+            ),
+          ],
+          const ModelConfig(
+            inferenceMode: ChatInferenceMode.remote,
+            remoteProvider: RemoteLlmProvider.openAiCompatible,
+            remoteAccountId: ModelConfig.dummyRemoteAccountId,
+            remoteBaseUrl: 'http://localhost:11434/v1',
+            remoteModel: 'local-model',
+            remoteStreamingEnabled: false,
+            temperature: 1.3,
+            topK: 8,
+          ),
+        ).toList();
+
+        expect(body!['temperature'], 1.3);
+        expect(body!.containsKey('top_k'), isFalse);
+        expect(body!.containsKey('topK'), isFalse);
+      },
+    );
 
     test('includes text attachments in remote user messages', () async {
       Map<String, dynamic>? body;

@@ -36,9 +36,7 @@ class RemoteLlmRepository {
 
   Future<List<String>> listModels(ModelConfig config) async {
     final apiKey = await _apiKeyFor(config);
-    final headers = config.remoteApiType == RemoteLlmApiType.anthropicMessages
-        ? anthropic.AnthropicMessagesApi.headers(apiKey: apiKey, stream: false)
-        : {'Authorization': 'Bearer $apiKey', 'Accept': 'application/json'};
+    final headers = _listModelsHeaders(config, apiKey);
     final response = await _client.get(
       _modelsUri(config.remoteBaseUrl),
       headers: headers,
@@ -225,19 +223,66 @@ class RemoteLlmRepository {
   }
 
   Map<String, String> _generationHeaders(ModelConfig config, String apiKey) {
-    if (config.remoteApiType == RemoteLlmApiType.anthropicMessages) {
-      return anthropic.AnthropicMessagesApi.headers(
-        apiKey: apiKey,
-        stream: config.remoteStreamingEnabled,
+    final headers = config.remoteApiType == RemoteLlmApiType.anthropicMessages
+        ? anthropic.AnthropicMessagesApi.headers(
+            apiKey: apiKey,
+            stream: config.remoteStreamingEnabled,
+          )
+        : {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Accept': config.remoteStreamingEnabled
+                ? 'text/event-stream'
+                : 'application/json',
+          };
+    _replaceAuthHeaders(headers, _authHeaders(config, apiKey));
+    return headers;
+  }
+
+  Map<String, String> _listModelsHeaders(ModelConfig config, String apiKey) {
+    final headers = config.remoteApiType == RemoteLlmApiType.anthropicMessages
+        ? anthropic.AnthropicMessagesApi.headers(apiKey: apiKey, stream: false)
+        : {'Accept': 'application/json'};
+    _replaceAuthHeaders(headers, _authHeaders(config, apiKey));
+    return headers;
+  }
+
+  void _replaceAuthHeaders(
+    Map<String, String> headers,
+    Map<String, String> authHeaders,
+  ) {
+    headers.remove('Authorization');
+    headers.remove('x-api-key');
+    headers.addAll(authHeaders);
+  }
+
+  Map<String, String> _authHeaders(ModelConfig config, String apiKey) {
+    return switch (_effectiveAuthType(config)) {
+      RemoteAuthType.providerDefault => throw StateError(
+        'Provider default auth must be resolved before building headers.',
+      ),
+      RemoteAuthType.bearerToken => {'Authorization': 'Bearer $apiKey'},
+      RemoteAuthType.xApiKey => {'x-api-key': apiKey},
+      RemoteAuthType.customHeader => {_customAuthHeaderName(config): apiKey},
+    };
+  }
+
+  RemoteAuthType _effectiveAuthType(ModelConfig config) {
+    if (config.remoteAuthType != RemoteAuthType.providerDefault) {
+      return config.remoteAuthType;
+    }
+    return config.remoteApiType == RemoteLlmApiType.anthropicMessages
+        ? RemoteAuthType.xApiKey
+        : RemoteAuthType.bearerToken;
+  }
+
+  String _customAuthHeaderName(ModelConfig config) {
+    final headerName = config.remoteAuthHeaderName?.trim();
+    if (headerName == null || headerName.isEmpty) {
+      throw const RemoteLlmException(
+        'Remote custom auth header name is required.',
       );
     }
-    return {
-      'Authorization': 'Bearer $apiKey',
-      'Content-Type': 'application/json; charset=utf-8',
-      'Accept': config.remoteStreamingEnabled
-          ? 'text/event-stream'
-          : 'application/json',
-    };
+    return headerName;
   }
 
   Map<String, dynamic> _requestBody(
@@ -285,7 +330,8 @@ class RemoteLlmRepository {
       tools: tools,
       extra: extra,
     ).toJson();
-    if (extra.containsKey('reasoning_effort')) {
+    if (!_supportsRemoteSamplingParameters(config) ||
+        extra.containsKey('reasoning_effort')) {
       request.remove('temperature');
     }
     return request;
@@ -296,7 +342,7 @@ class RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
   }) {
-    return openai.OpenAiResponsesRequest(
+    final request = openai.OpenAiResponsesRequest(
       model: config.remoteModel.trim(),
       input: _toOpenAiMessages(messages),
       stream: config.remoteStreamingEnabled,
@@ -304,6 +350,10 @@ class RemoteLlmRepository {
       store: false,
       tools: openai.OpenAiResponsesTool.fromChatCompletionsTools(tools),
     ).toJson();
+    if (!_supportsRemoteSamplingParameters(config)) {
+      request.remove('temperature');
+    }
+    return request;
   }
 
   Map<String, dynamic> _anthropicMessagesRequestBody(
@@ -317,10 +367,16 @@ class RemoteLlmRepository {
       maxTokens: config.maxTokens,
       messages: payload.messages,
       stream: config.remoteStreamingEnabled,
-      temperature: config.temperature,
+      temperature: _supportsRemoteSamplingParameters(config)
+          ? config.temperature
+          : null,
       system: payload.system,
       tools: anthropic.AnthropicTool.fromOpenAiTools(tools),
     ).toJson();
+  }
+
+  bool _supportsRemoteSamplingParameters(ModelConfig config) {
+    return config.remoteProvider == RemoteLlmProvider.openAiCompatible;
   }
 
   List<openai.OpenAiMessage> _toOpenAiMessages(List<Message> messages) {

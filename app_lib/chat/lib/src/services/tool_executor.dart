@@ -11,6 +11,7 @@ import 'package:ip_db/ip_db.dart';
 import 'package:route53/route53.dart' as r53;
 import 'package:vultr_api/api.dart' as vultr;
 
+import '../models/model_config.dart';
 import 'dart_mcp_tool_client.dart';
 
 typedef RemoteMcpProfilesProvider = List<String> Function();
@@ -368,8 +369,12 @@ class ToolExecutor {
       }
       final headers = <String, dynamic>{};
       if (server.accountId != null) {
-        headers['Authorization'] =
-            'Bearer ${await _serviceAccountSecret(server.accountId!)}';
+        headers.addAll(
+          _remoteMcpAuthHeaders(
+            server,
+            await _serviceAccountSecret(server.accountId!),
+          ),
+        );
       }
       return {
         'server': server.name,
@@ -1225,6 +1230,8 @@ class _RemoteMcpServer {
     required this.enabled,
     required this.tools,
     this.accountId,
+    this.authType = RemoteAuthType.bearerToken,
+    this.authHeaderName,
   });
 
   factory _RemoteMcpServer.fromJson(Map<String, dynamic> decoded) {
@@ -1237,6 +1244,8 @@ class _RemoteMcpServer {
       transport: _stringValue(decoded['transport'], fallback: 'http'),
       enabled: decoded['enabled'] as bool? ?? true,
       accountId: _intValue(decoded['accountId']),
+      authType: _parseRemoteAuthType(_stringValue(decoded['authType'])),
+      authHeaderName: _nullableStringValue(decoded['authHeaderName']),
       tools: [
         for (final rawTool in rawTools)
           if (rawTool is Map<String, dynamic>)
@@ -1251,6 +1260,8 @@ class _RemoteMcpServer {
   final String transport;
   final bool enabled;
   final int? accountId;
+  final RemoteAuthType authType;
+  final String? authHeaderName;
   final List<_RemoteMcpTool> tools;
 
   Map<String, dynamic> toJson() {
@@ -1261,6 +1272,8 @@ class _RemoteMcpServer {
       'transport': transport,
       'enabled': enabled,
       'accountId': accountId,
+      'authType': authType.name,
+      'authHeaderName': authHeaderName,
     };
   }
 }
@@ -1314,11 +1327,44 @@ String _stringValue(Object? value, {String fallback = ''}) {
   return string == null || string.isEmpty ? fallback : string;
 }
 
+String? _nullableStringValue(Object? value) {
+  final string = value?.toString().trim();
+  return string == null || string.isEmpty ? null : string;
+}
+
 int? _intValue(Object? value) {
   if (value is int) return value;
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value);
   return null;
+}
+
+RemoteAuthType _parseRemoteAuthType(String value) {
+  return switch (value) {
+    'xApiKey' => RemoteAuthType.xApiKey,
+    'customHeader' => RemoteAuthType.customHeader,
+    _ => RemoteAuthType.bearerToken,
+  };
+}
+
+Map<String, String> _remoteMcpAuthHeaders(
+  _RemoteMcpServer server,
+  String secret,
+) {
+  return switch (server.authType) {
+    RemoteAuthType.providerDefault => {'Authorization': 'Bearer $secret'},
+    RemoteAuthType.bearerToken => {'Authorization': 'Bearer $secret'},
+    RemoteAuthType.xApiKey => {'x-api-key': secret},
+    RemoteAuthType.customHeader => {_remoteMcpCustomHeaderName(server): secret},
+  };
+}
+
+String _remoteMcpCustomHeaderName(_RemoteMcpServer server) {
+  final headerName = server.authHeaderName?.trim();
+  if (headerName == null || headerName.isEmpty) {
+    throw StateError('MCP custom auth header name is required.');
+  }
+  return headerName;
 }
 
 String _sanitizeIdentifier(String value) {

@@ -358,6 +358,43 @@ void main() {
       expect(result['tool'], 'search_docs');
       expect(result['response'], {
         'url': 'https://mcp.example.com/http',
+        'headers': <String, String>{},
+        'tool': 'search_docs',
+        'argumentsPayload': {'query': 'flutter'},
+      });
+    });
+
+    test('HTTP MCP tool calls use configured custom auth header', () async {
+      const accountId = 7;
+      final vault = _MemoryVaultRepository();
+      await vault.write(key: 'service_account_$accountId', value: 'mcp-secret');
+      final executor = ToolExecutor(
+        vault: vault,
+        remoteMcpProfilesProvider: () => [
+          jsonEncode({
+            'id': 'secure-docs',
+            'name': 'Secure Docs MCP',
+            'url': 'https://mcp.example.com/http',
+            'transport': 'http',
+            'enabled': true,
+            'accountId': accountId,
+            'authType': 'customHeader',
+            'authHeaderName': 'X-MCP-Key',
+            'tools': [
+              {'name': 'search_docs'},
+            ],
+          }),
+        ],
+        dartMcpToolClient: _FakeDartMcpToolClient(),
+      );
+
+      final result = await executor.execute('mcp_secure_docs_search_docs', {
+        'query': 'flutter',
+      });
+
+      expect(result['response'], {
+        'url': 'https://mcp.example.com/http',
+        'headers': {'X-MCP-Key': 'mcp-secret'},
         'tool': 'search_docs',
         'argumentsPayload': {'query': 'flutter'},
       });
@@ -491,6 +528,11 @@ class _FakeDartMcpToolClient extends DartMcpToolClient {
     required String name,
     required Map<String, dynamic> arguments,
   }) async {
-    return {'url': config.url, 'tool': name, 'argumentsPayload': arguments};
+    return {
+      'url': config.url,
+      'headers': config.headers,
+      'tool': name,
+      'argumentsPayload': arguments,
+    };
   }
 }
