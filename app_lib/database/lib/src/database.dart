@@ -65,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration {
@@ -202,6 +202,18 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(ttsDatasetPromptTable);
           await m.createTable(ttsDatasetClipTable);
           await m.createTable(ttsDatasetValidationIssueTable);
+        }
+        if (from < 16) {
+          await _addColumnIfMissing(
+            m,
+            chatSettingsTable,
+            chatSettingsTable.remoteAuthType,
+          );
+          await _addColumnIfMissing(
+            m,
+            chatSettingsTable,
+            chatSettingsTable.remoteAuthHeaderName,
+          );
         }
       },
     );

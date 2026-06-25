@@ -429,6 +429,12 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
           ModelConfig.defaultConfig.remoteBaseUrl,
       remoteModel: json['remoteModel'] as String? ??
           ModelConfig.defaultConfig.remoteModel,
+      remoteAuthType: _enumFromName(
+        RemoteAuthType.values,
+        json['remoteAuthType'],
+        ModelConfig.defaultConfig.remoteAuthType,
+      ),
+      remoteAuthHeaderName: json['remoteAuthHeaderName'] as String?,
       remoteStreamingEnabled: json['remoteStreamingEnabled'] as bool? ??
           ModelConfig.defaultConfig.remoteStreamingEnabled,
       remoteThinkingEffort: _enumFromName(
@@ -454,6 +460,8 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       'remoteAccountId': config.remoteAccountId,
       'remoteBaseUrl': config.remoteBaseUrl,
       'remoteModel': config.remoteModel,
+      'remoteAuthType': config.remoteAuthType.name,
+      'remoteAuthHeaderName': config.remoteAuthHeaderName,
       'remoteStreamingEnabled': config.remoteStreamingEnabled,
       'remoteThinkingEffort': config.remoteThinkingEffort.name,
     };

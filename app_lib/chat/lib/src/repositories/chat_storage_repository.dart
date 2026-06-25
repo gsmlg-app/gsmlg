@@ -186,6 +186,8 @@ class ChatStorageRepository {
       remoteAccountId: row.remoteAccountId,
       remoteBaseUrl: row.remoteBaseUrl,
       remoteModel: row.remoteModel,
+      remoteAuthType: _parseRemoteAuthType(row.remoteAuthType),
+      remoteAuthHeaderName: row.remoteAuthHeaderName,
       remoteStreamingEnabled: row.remoteStreamingEnabled,
       remoteThinkingEffort: _parseRemoteThinkingEffort(
         row.remoteThinkingEffort,
@@ -215,6 +217,10 @@ class ChatStorageRepository {
             remoteAccountId: Value(config.remoteAccountId),
             remoteBaseUrl: Value(config.remoteBaseUrl),
             remoteModel: Value(config.remoteModel),
+            remoteAuthType: Value(
+              _remoteAuthTypeToString(config.remoteAuthType),
+            ),
+            remoteAuthHeaderName: Value(config.remoteAuthHeaderName),
             remoteStreamingEnabled: Value(config.remoteStreamingEnabled),
             remoteThinkingEffort: Value(
               _remoteThinkingEffortToString(config.remoteThinkingEffort),
@@ -373,6 +379,24 @@ class ChatStorageRepository {
       RemoteLlmApiType.openAiChatCompletions => 'openAiChatCompletions',
       RemoteLlmApiType.openAiResponses => 'openAiResponses',
       RemoteLlmApiType.anthropicMessages => 'anthropicMessages',
+    };
+  }
+
+  RemoteAuthType _parseRemoteAuthType(String value) {
+    return switch (value) {
+      'bearerToken' => RemoteAuthType.bearerToken,
+      'xApiKey' => RemoteAuthType.xApiKey,
+      'customHeader' => RemoteAuthType.customHeader,
+      _ => RemoteAuthType.providerDefault,
+    };
+  }
+
+  String _remoteAuthTypeToString(RemoteAuthType authType) {
+    return switch (authType) {
+      RemoteAuthType.providerDefault => 'providerDefault',
+      RemoteAuthType.bearerToken => 'bearerToken',
+      RemoteAuthType.xApiKey => 'xApiKey',
+      RemoteAuthType.customHeader => 'customHeader',
     };
   }
 

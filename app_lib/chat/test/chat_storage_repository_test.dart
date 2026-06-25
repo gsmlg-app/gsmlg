@@ -50,6 +50,8 @@ void main() {
         remoteAccountId: ModelConfig.dummyRemoteAccountId,
         remoteBaseUrl: 'https://api.deepseek.com/v1',
         remoteModel: 'deepseek-v4-pro',
+        remoteAuthType: RemoteAuthType.customHeader,
+        remoteAuthHeaderName: 'X-DeepSeek-Key',
         remoteThinkingEffort: RemoteThinkingEffort.max,
       );
 

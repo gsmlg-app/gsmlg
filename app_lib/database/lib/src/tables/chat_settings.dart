@@ -47,6 +47,13 @@ class ChatSettingsTable extends Table {
   TextColumn get remoteModel =>
       text().withDefault(const Constant('gpt-4.1-mini'))();
 
+  /// Remote auth header strategy.
+  TextColumn get remoteAuthType =>
+      text().withDefault(const Constant('providerDefault'))();
+
+  /// Custom remote auth header name.
+  TextColumn get remoteAuthHeaderName => text().nullable()();
+
   /// Whether remote responses should be streamed.
   BoolColumn get remoteStreamingEnabled =>
       boolean().withDefault(const Constant(true))();

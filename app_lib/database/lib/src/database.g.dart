@@ -2446,6 +2446,20 @@ class $ChatSettingsTableTable extends ChatSettingsTable
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('gpt-4.1-mini'));
+  static const VerificationMeta _remoteAuthTypeMeta =
+      const VerificationMeta('remoteAuthType');
+  @override
+  late final GeneratedColumn<String> remoteAuthType = GeneratedColumn<String>(
+      'remote_auth_type', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('providerDefault'));
+  static const VerificationMeta _remoteAuthHeaderNameMeta =
+      const VerificationMeta('remoteAuthHeaderName');
+  @override
+  late final GeneratedColumn<String> remoteAuthHeaderName =
+      GeneratedColumn<String>('remote_auth_header_name', aliasedName, true,
+          type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _remoteStreamingEnabledMeta =
       const VerificationMeta('remoteStreamingEnabled');
   @override
@@ -2491,6 +2505,8 @@ class $ChatSettingsTableTable extends ChatSettingsTable
         remoteAccountId,
         remoteBaseUrl,
         remoteModel,
+        remoteAuthType,
+        remoteAuthHeaderName,
         remoteStreamingEnabled,
         remoteThinkingEffort,
         defaultSystemPrompt,
@@ -2575,6 +2591,18 @@ class $ChatSettingsTableTable extends ChatSettingsTable
           remoteModel.isAcceptableOrUnknown(
               data['remote_model']!, _remoteModelMeta));
     }
+    if (data.containsKey('remote_auth_type')) {
+      context.handle(
+          _remoteAuthTypeMeta,
+          remoteAuthType.isAcceptableOrUnknown(
+              data['remote_auth_type']!, _remoteAuthTypeMeta));
+    }
+    if (data.containsKey('remote_auth_header_name')) {
+      context.handle(
+          _remoteAuthHeaderNameMeta,
+          remoteAuthHeaderName.isAcceptableOrUnknown(
+              data['remote_auth_header_name']!, _remoteAuthHeaderNameMeta));
+    }
     if (data.containsKey('remote_streaming_enabled')) {
       context.handle(
           _remoteStreamingEnabledMeta,
@@ -2634,6 +2662,11 @@ class $ChatSettingsTableTable extends ChatSettingsTable
           DriftSqlType.string, data['${effectivePrefix}remote_base_url'])!,
       remoteModel: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}remote_model'])!,
+      remoteAuthType: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}remote_auth_type'])!,
+      remoteAuthHeaderName: attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}remote_auth_header_name']),
       remoteStreamingEnabled: attachedDatabase.typeMapping.read(
           DriftSqlType.bool,
           data['${effectivePrefix}remote_streaming_enabled'])!,
@@ -2694,6 +2727,12 @@ class ChatSettingsTableData extends DataClass
   /// Remote model identifier.
   final String remoteModel;
 
+  /// Remote auth header strategy.
+  final String remoteAuthType;
+
+  /// Custom remote auth header name.
+  final String? remoteAuthHeaderName;
+
   /// Whether remote responses should be streamed.
   final bool remoteStreamingEnabled;
 
@@ -2719,6 +2758,8 @@ class ChatSettingsTableData extends DataClass
       this.remoteAccountId,
       required this.remoteBaseUrl,
       required this.remoteModel,
+      required this.remoteAuthType,
+      this.remoteAuthHeaderName,
       required this.remoteStreamingEnabled,
       required this.remoteThinkingEffort,
       this.defaultSystemPrompt,
@@ -2743,6 +2784,10 @@ class ChatSettingsTableData extends DataClass
     }
     map['remote_base_url'] = Variable<String>(remoteBaseUrl);
     map['remote_model'] = Variable<String>(remoteModel);
+    map['remote_auth_type'] = Variable<String>(remoteAuthType);
+    if (!nullToAbsent || remoteAuthHeaderName != null) {
+      map['remote_auth_header_name'] = Variable<String>(remoteAuthHeaderName);
+    }
     map['remote_streaming_enabled'] = Variable<bool>(remoteStreamingEnabled);
     map['remote_thinking_effort'] = Variable<String>(remoteThinkingEffort);
     if (!nullToAbsent || defaultSystemPrompt != null) {
@@ -2773,6 +2818,10 @@ class ChatSettingsTableData extends DataClass
           : Value(remoteAccountId),
       remoteBaseUrl: Value(remoteBaseUrl),
       remoteModel: Value(remoteModel),
+      remoteAuthType: Value(remoteAuthType),
+      remoteAuthHeaderName: remoteAuthHeaderName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(remoteAuthHeaderName),
       remoteStreamingEnabled: Value(remoteStreamingEnabled),
       remoteThinkingEffort: Value(remoteThinkingEffort),
       defaultSystemPrompt: defaultSystemPrompt == null && nullToAbsent
@@ -2801,6 +2850,9 @@ class ChatSettingsTableData extends DataClass
       remoteAccountId: serializer.fromJson<int?>(json['remoteAccountId']),
       remoteBaseUrl: serializer.fromJson<String>(json['remoteBaseUrl']),
       remoteModel: serializer.fromJson<String>(json['remoteModel']),
+      remoteAuthType: serializer.fromJson<String>(json['remoteAuthType']),
+      remoteAuthHeaderName:
+          serializer.fromJson<String?>(json['remoteAuthHeaderName']),
       remoteStreamingEnabled:
           serializer.fromJson<bool>(json['remoteStreamingEnabled']),
       remoteThinkingEffort:
@@ -2827,6 +2879,8 @@ class ChatSettingsTableData extends DataClass
       'remoteAccountId': serializer.toJson<int?>(remoteAccountId),
       'remoteBaseUrl': serializer.toJson<String>(remoteBaseUrl),
       'remoteModel': serializer.toJson<String>(remoteModel),
+      'remoteAuthType': serializer.toJson<String>(remoteAuthType),
+      'remoteAuthHeaderName': serializer.toJson<String?>(remoteAuthHeaderName),
       'remoteStreamingEnabled': serializer.toJson<bool>(remoteStreamingEnabled),
       'remoteThinkingEffort': serializer.toJson<String>(remoteThinkingEffort),
       'defaultSystemPrompt': serializer.toJson<String?>(defaultSystemPrompt),
@@ -2848,6 +2902,8 @@ class ChatSettingsTableData extends DataClass
           Value<int?> remoteAccountId = const Value.absent(),
           String? remoteBaseUrl,
           String? remoteModel,
+          String? remoteAuthType,
+          Value<String?> remoteAuthHeaderName = const Value.absent(),
           bool? remoteStreamingEnabled,
           String? remoteThinkingEffort,
           Value<String?> defaultSystemPrompt = const Value.absent(),
@@ -2870,6 +2926,10 @@ class ChatSettingsTableData extends DataClass
             : this.remoteAccountId,
         remoteBaseUrl: remoteBaseUrl ?? this.remoteBaseUrl,
         remoteModel: remoteModel ?? this.remoteModel,
+        remoteAuthType: remoteAuthType ?? this.remoteAuthType,
+        remoteAuthHeaderName: remoteAuthHeaderName.present
+            ? remoteAuthHeaderName.value
+            : this.remoteAuthHeaderName,
         remoteStreamingEnabled:
             remoteStreamingEnabled ?? this.remoteStreamingEnabled,
         remoteThinkingEffort: remoteThinkingEffort ?? this.remoteThinkingEffort,
@@ -2909,6 +2969,12 @@ class ChatSettingsTableData extends DataClass
           : this.remoteBaseUrl,
       remoteModel:
           data.remoteModel.present ? data.remoteModel.value : this.remoteModel,
+      remoteAuthType: data.remoteAuthType.present
+          ? data.remoteAuthType.value
+          : this.remoteAuthType,
+      remoteAuthHeaderName: data.remoteAuthHeaderName.present
+          ? data.remoteAuthHeaderName.value
+          : this.remoteAuthHeaderName,
       remoteStreamingEnabled: data.remoteStreamingEnabled.present
           ? data.remoteStreamingEnabled.value
           : this.remoteStreamingEnabled,
@@ -2940,6 +3006,8 @@ class ChatSettingsTableData extends DataClass
           ..write('remoteAccountId: $remoteAccountId, ')
           ..write('remoteBaseUrl: $remoteBaseUrl, ')
           ..write('remoteModel: $remoteModel, ')
+          ..write('remoteAuthType: $remoteAuthType, ')
+          ..write('remoteAuthHeaderName: $remoteAuthHeaderName, ')
           ..write('remoteStreamingEnabled: $remoteStreamingEnabled, ')
           ..write('remoteThinkingEffort: $remoteThinkingEffort, ')
           ..write('defaultSystemPrompt: $defaultSystemPrompt, ')
@@ -2963,6 +3031,8 @@ class ChatSettingsTableData extends DataClass
       remoteAccountId,
       remoteBaseUrl,
       remoteModel,
+      remoteAuthType,
+      remoteAuthHeaderName,
       remoteStreamingEnabled,
       remoteThinkingEffort,
       defaultSystemPrompt,
@@ -2984,6 +3054,8 @@ class ChatSettingsTableData extends DataClass
           other.remoteAccountId == this.remoteAccountId &&
           other.remoteBaseUrl == this.remoteBaseUrl &&
           other.remoteModel == this.remoteModel &&
+          other.remoteAuthType == this.remoteAuthType &&
+          other.remoteAuthHeaderName == this.remoteAuthHeaderName &&
           other.remoteStreamingEnabled == this.remoteStreamingEnabled &&
           other.remoteThinkingEffort == this.remoteThinkingEffort &&
           other.defaultSystemPrompt == this.defaultSystemPrompt &&
@@ -3005,6 +3077,8 @@ class ChatSettingsTableCompanion
   final Value<int?> remoteAccountId;
   final Value<String> remoteBaseUrl;
   final Value<String> remoteModel;
+  final Value<String> remoteAuthType;
+  final Value<String?> remoteAuthHeaderName;
   final Value<bool> remoteStreamingEnabled;
   final Value<String> remoteThinkingEffort;
   final Value<String?> defaultSystemPrompt;
@@ -3024,6 +3098,8 @@ class ChatSettingsTableCompanion
     this.remoteAccountId = const Value.absent(),
     this.remoteBaseUrl = const Value.absent(),
     this.remoteModel = const Value.absent(),
+    this.remoteAuthType = const Value.absent(),
+    this.remoteAuthHeaderName = const Value.absent(),
     this.remoteStreamingEnabled = const Value.absent(),
     this.remoteThinkingEffort = const Value.absent(),
     this.defaultSystemPrompt = const Value.absent(),
@@ -3044,6 +3120,8 @@ class ChatSettingsTableCompanion
     this.remoteAccountId = const Value.absent(),
     this.remoteBaseUrl = const Value.absent(),
     this.remoteModel = const Value.absent(),
+    this.remoteAuthType = const Value.absent(),
+    this.remoteAuthHeaderName = const Value.absent(),
     this.remoteStreamingEnabled = const Value.absent(),
     this.remoteThinkingEffort = const Value.absent(),
     this.defaultSystemPrompt = const Value.absent(),
@@ -3064,6 +3142,8 @@ class ChatSettingsTableCompanion
     Expression<int>? remoteAccountId,
     Expression<String>? remoteBaseUrl,
     Expression<String>? remoteModel,
+    Expression<String>? remoteAuthType,
+    Expression<String>? remoteAuthHeaderName,
     Expression<bool>? remoteStreamingEnabled,
     Expression<String>? remoteThinkingEffort,
     Expression<String>? defaultSystemPrompt,
@@ -3084,6 +3164,9 @@ class ChatSettingsTableCompanion
       if (remoteAccountId != null) 'remote_account_id': remoteAccountId,
       if (remoteBaseUrl != null) 'remote_base_url': remoteBaseUrl,
       if (remoteModel != null) 'remote_model': remoteModel,
+      if (remoteAuthType != null) 'remote_auth_type': remoteAuthType,
+      if (remoteAuthHeaderName != null)
+        'remote_auth_header_name': remoteAuthHeaderName,
       if (remoteStreamingEnabled != null)
         'remote_streaming_enabled': remoteStreamingEnabled,
       if (remoteThinkingEffort != null)
@@ -3109,6 +3192,8 @@ class ChatSettingsTableCompanion
       Value<int?>? remoteAccountId,
       Value<String>? remoteBaseUrl,
       Value<String>? remoteModel,
+      Value<String>? remoteAuthType,
+      Value<String?>? remoteAuthHeaderName,
       Value<bool>? remoteStreamingEnabled,
       Value<String>? remoteThinkingEffort,
       Value<String?>? defaultSystemPrompt,
@@ -3128,6 +3213,8 @@ class ChatSettingsTableCompanion
       remoteAccountId: remoteAccountId ?? this.remoteAccountId,
       remoteBaseUrl: remoteBaseUrl ?? this.remoteBaseUrl,
       remoteModel: remoteModel ?? this.remoteModel,
+      remoteAuthType: remoteAuthType ?? this.remoteAuthType,
+      remoteAuthHeaderName: remoteAuthHeaderName ?? this.remoteAuthHeaderName,
       remoteStreamingEnabled:
           remoteStreamingEnabled ?? this.remoteStreamingEnabled,
       remoteThinkingEffort: remoteThinkingEffort ?? this.remoteThinkingEffort,
@@ -3179,6 +3266,13 @@ class ChatSettingsTableCompanion
     if (remoteModel.present) {
       map['remote_model'] = Variable<String>(remoteModel.value);
     }
+    if (remoteAuthType.present) {
+      map['remote_auth_type'] = Variable<String>(remoteAuthType.value);
+    }
+    if (remoteAuthHeaderName.present) {
+      map['remote_auth_header_name'] =
+          Variable<String>(remoteAuthHeaderName.value);
+    }
     if (remoteStreamingEnabled.present) {
       map['remote_streaming_enabled'] =
           Variable<bool>(remoteStreamingEnabled.value);
@@ -3216,6 +3310,8 @@ class ChatSettingsTableCompanion
           ..write('remoteAccountId: $remoteAccountId, ')
           ..write('remoteBaseUrl: $remoteBaseUrl, ')
           ..write('remoteModel: $remoteModel, ')
+          ..write('remoteAuthType: $remoteAuthType, ')
+          ..write('remoteAuthHeaderName: $remoteAuthHeaderName, ')
           ..write('remoteStreamingEnabled: $remoteStreamingEnabled, ')
           ..write('remoteThinkingEffort: $remoteThinkingEffort, ')
           ..write('defaultSystemPrompt: $defaultSystemPrompt, ')
@@ -9030,6 +9126,8 @@ typedef $$ChatSettingsTableTableCreateCompanionBuilder
   Value<int?> remoteAccountId,
   Value<String> remoteBaseUrl,
   Value<String> remoteModel,
+  Value<String> remoteAuthType,
+  Value<String?> remoteAuthHeaderName,
   Value<bool> remoteStreamingEnabled,
   Value<String> remoteThinkingEffort,
   Value<String?> defaultSystemPrompt,
@@ -9051,6 +9149,8 @@ typedef $$ChatSettingsTableTableUpdateCompanionBuilder
   Value<int?> remoteAccountId,
   Value<String> remoteBaseUrl,
   Value<String> remoteModel,
+  Value<String> remoteAuthType,
+  Value<String?> remoteAuthHeaderName,
   Value<bool> remoteStreamingEnabled,
   Value<String> remoteThinkingEffort,
   Value<String?> defaultSystemPrompt,
@@ -9109,6 +9209,14 @@ class $$ChatSettingsTableTableFilterComposer
 
   ColumnFilters<String> get remoteModel => $composableBuilder(
       column: $table.remoteModel, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remoteAuthType => $composableBuilder(
+      column: $table.remoteAuthType,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get remoteAuthHeaderName => $composableBuilder(
+      column: $table.remoteAuthHeaderName,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<bool> get remoteStreamingEnabled => $composableBuilder(
       column: $table.remoteStreamingEnabled,
@@ -9181,6 +9289,14 @@ class $$ChatSettingsTableTableOrderingComposer
   ColumnOrderings<String> get remoteModel => $composableBuilder(
       column: $table.remoteModel, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get remoteAuthType => $composableBuilder(
+      column: $table.remoteAuthType,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get remoteAuthHeaderName => $composableBuilder(
+      column: $table.remoteAuthHeaderName,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<bool> get remoteStreamingEnabled => $composableBuilder(
       column: $table.remoteStreamingEnabled,
       builder: (column) => ColumnOrderings(column));
@@ -9246,6 +9362,12 @@ class $$ChatSettingsTableTableAnnotationComposer
   GeneratedColumn<String> get remoteModel => $composableBuilder(
       column: $table.remoteModel, builder: (column) => column);
 
+  GeneratedColumn<String> get remoteAuthType => $composableBuilder(
+      column: $table.remoteAuthType, builder: (column) => column);
+
+  GeneratedColumn<String> get remoteAuthHeaderName => $composableBuilder(
+      column: $table.remoteAuthHeaderName, builder: (column) => column);
+
   GeneratedColumn<bool> get remoteStreamingEnabled => $composableBuilder(
       column: $table.remoteStreamingEnabled, builder: (column) => column);
 
@@ -9301,6 +9423,8 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             Value<int?> remoteAccountId = const Value.absent(),
             Value<String> remoteBaseUrl = const Value.absent(),
             Value<String> remoteModel = const Value.absent(),
+            Value<String> remoteAuthType = const Value.absent(),
+            Value<String?> remoteAuthHeaderName = const Value.absent(),
             Value<bool> remoteStreamingEnabled = const Value.absent(),
             Value<String> remoteThinkingEffort = const Value.absent(),
             Value<String?> defaultSystemPrompt = const Value.absent(),
@@ -9321,6 +9445,8 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             remoteAccountId: remoteAccountId,
             remoteBaseUrl: remoteBaseUrl,
             remoteModel: remoteModel,
+            remoteAuthType: remoteAuthType,
+            remoteAuthHeaderName: remoteAuthHeaderName,
             remoteStreamingEnabled: remoteStreamingEnabled,
             remoteThinkingEffort: remoteThinkingEffort,
             defaultSystemPrompt: defaultSystemPrompt,
@@ -9341,6 +9467,8 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             Value<int?> remoteAccountId = const Value.absent(),
             Value<String> remoteBaseUrl = const Value.absent(),
             Value<String> remoteModel = const Value.absent(),
+            Value<String> remoteAuthType = const Value.absent(),
+            Value<String?> remoteAuthHeaderName = const Value.absent(),
             Value<bool> remoteStreamingEnabled = const Value.absent(),
             Value<String> remoteThinkingEffort = const Value.absent(),
             Value<String?> defaultSystemPrompt = const Value.absent(),
@@ -9361,6 +9489,8 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             remoteAccountId: remoteAccountId,
             remoteBaseUrl: remoteBaseUrl,
             remoteModel: remoteModel,
+            remoteAuthType: remoteAuthType,
+            remoteAuthHeaderName: remoteAuthHeaderName,
             remoteStreamingEnabled: remoteStreamingEnabled,
             remoteThinkingEffort: remoteThinkingEffort,
             defaultSystemPrompt: defaultSystemPrompt,

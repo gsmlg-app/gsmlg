@@ -29,6 +29,32 @@ enum GemmaModelMemoryRequirement {
   large,
 }
 
+/// Auth header strategy for remote HTTP APIs.
+enum RemoteAuthType {
+  /// Use the auth header normally expected by the selected API protocol.
+  providerDefault,
+
+  /// Send `Authorization: Bearer <token>`.
+  bearerToken,
+
+  /// Send `x-api-key: <token>`.
+  xApiKey,
+
+  /// Send `<custom header name>: <token>`.
+  customHeader,
+}
+
+extension RemoteAuthTypeDisplay on RemoteAuthType {
+  String get displayName {
+    return switch (this) {
+      RemoteAuthType.providerDefault => 'Provider default',
+      RemoteAuthType.bearerToken => 'Bearer token',
+      RemoteAuthType.xApiKey => 'x-api-key',
+      RemoteAuthType.customHeader => 'Custom header',
+    };
+  }
+}
+
 extension GemmaModelMemoryRequirementDisplay on GemmaModelMemoryRequirement {
   String get displayName {
     return switch (this) {
@@ -591,6 +617,8 @@ class ModelConfig extends Equatable {
     this.remoteAccountId,
     this.remoteBaseUrl = 'https://api.openai.com/v1',
     this.remoteModel = 'gpt-4.1-mini',
+    this.remoteAuthType = RemoteAuthType.providerDefault,
+    this.remoteAuthHeaderName,
     this.remoteStreamingEnabled = true,
     this.remoteThinkingEffort = RemoteThinkingEffort.off,
   }) : remoteApiType =
@@ -656,6 +684,12 @@ class ModelConfig extends Equatable {
   /// Remote model identifier.
   final String remoteModel;
 
+  /// Auth header strategy for remote model requests.
+  final RemoteAuthType remoteAuthType;
+
+  /// Header name used when [remoteAuthType] is [RemoteAuthType.customHeader].
+  final String? remoteAuthHeaderName;
+
   /// Whether to request streaming responses from the remote API.
   final bool remoteStreamingEnabled;
 
@@ -677,6 +711,8 @@ class ModelConfig extends Equatable {
     remoteAccountId,
     remoteBaseUrl,
     remoteModel,
+    remoteAuthType,
+    remoteAuthHeaderName,
     remoteStreamingEnabled,
     remoteThinkingEffort,
   ];
@@ -753,6 +789,9 @@ class ModelConfig extends Equatable {
     bool clearRemoteAccount = false,
     String? remoteBaseUrl,
     String? remoteModel,
+    RemoteAuthType? remoteAuthType,
+    String? remoteAuthHeaderName,
+    bool clearRemoteAuthHeaderName = false,
     bool? remoteStreamingEnabled,
     RemoteThinkingEffort? remoteThinkingEffort,
   }) {
@@ -774,6 +813,10 @@ class ModelConfig extends Equatable {
           : (remoteAccountId ?? this.remoteAccountId),
       remoteBaseUrl: remoteBaseUrl ?? this.remoteBaseUrl,
       remoteModel: remoteModel ?? this.remoteModel,
+      remoteAuthType: remoteAuthType ?? this.remoteAuthType,
+      remoteAuthHeaderName: clearRemoteAuthHeaderName
+          ? null
+          : (remoteAuthHeaderName ?? this.remoteAuthHeaderName),
       remoteStreamingEnabled:
           remoteStreamingEnabled ?? this.remoteStreamingEnabled,
       remoteThinkingEffort: remoteThinkingEffort ?? this.remoteThinkingEffort,
@@ -832,6 +875,11 @@ class ModelConfig extends Equatable {
           uri.scheme != 'https' &&
           !(uri.scheme == 'http' && _isLocalhost(uri.host))) {
         errors.add('Remote base URL must use HTTPS');
+      }
+      if (remoteAuthType == RemoteAuthType.customHeader &&
+          (remoteAuthHeaderName == null ||
+              remoteAuthHeaderName!.trim().isEmpty)) {
+        errors.add('Remote custom auth header name is required');
       }
     }
 
