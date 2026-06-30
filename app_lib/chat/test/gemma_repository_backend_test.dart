@@ -120,6 +120,47 @@ void main() {
     expect(chunks, [
       const ChatFunctionCallChunk(name: 'domain_list_zones', args: {}),
     ]);
+    final messages = serverFactory.sessions.single.messages!;
+    expect(messages.first['role'], 'system');
+    expect(messages.first['content'], contains('domain_list_zones'));
+  });
+
+  test('local generation skips oversized tool instructions', () async {
+    final serverFactory = _CapturingLlamaServerFactory();
+    final repository = await _repositoryWithServerFactory(serverFactory);
+
+    await repository.loadModel(const ModelConfig(backend: GemmaBackend.metal));
+    await repository
+        .generateResponse(
+          [_userMessage()],
+          tools: [
+            {
+              'type': 'function',
+              'function': {
+                'name': 'oversized_remote_tool',
+                'description': 'Remote MCP tool with a very large schema',
+                'parameters': {
+                  'type': 'object',
+                  'properties': {
+                    'payload': {'type': 'string', 'description': 'x' * 70000},
+                  },
+                },
+              },
+            },
+          ],
+        )
+        .toList();
+
+    final messages = serverFactory.sessions.single.messages!;
+    expect(_totalContentLength(messages), lessThan(8192));
+    expect(messages.last, {'role': 'user', 'content': 'Hello'});
+    expect(
+      messages.any(
+        (message) =>
+            (message['content'] as String).contains('oversized_remote_tool'),
+      ),
+      isFalse,
+    );
   });
 
   test(
@@ -277,6 +318,13 @@ UserMessage _userMessage() {
     content: 'Hello',
     conversationId: 'conversation',
     timestamp: DateTime(2026),
+  );
+}
+
+int _totalContentLength(List<Map<String, Object?>> messages) {
+  return messages.fold<int>(
+    0,
+    (total, message) => total + (message['content'] as String).length,
   );
 }
 

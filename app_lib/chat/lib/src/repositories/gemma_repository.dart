@@ -21,6 +21,11 @@ import 'llama_request_adapter.dart';
 
 const _defaultLlamaContextSize = 4096;
 const _llamaContextPromptReserve = 1024;
+const _mobileLiteRtLmContextSize = 2048;
+const _localPromptApproxCharsPerToken = 4;
+const _localPromptSafetyTokens = 64;
+const _localPromptOutputReserveTokens = 512;
+const _localPromptMinimumTokens = 256;
 const _localLlamaModelAlias = 'local';
 const _localLlamaStopSequences = [
   '<turn|>',
@@ -964,7 +969,11 @@ class GemmaRepository {
             .withSupportedBackendForCurrentPlatform();
 
     final llamaTools = llamaToolsFromOpenAiTools(tools);
-    final serverMessages = _buildServerMessages(messages, llamaTools);
+    final serverMessages = _buildServerMessages(
+      messages,
+      llamaTools,
+      promptBudgetChars: _localPromptBudgetChars(effectiveConfig),
+    );
 
     if (_hasBinaryMedia(messages)) {
       const message =
@@ -1006,7 +1015,11 @@ class GemmaRepository {
     final llamaTools = llamaToolsFromOpenAiTools(tools);
 
     final server = await _ensureLlamaServer(effectiveConfig);
-    final serverMessages = _buildServerMessages(messages, llamaTools);
+    final serverMessages = _buildServerMessages(
+      messages,
+      llamaTools,
+      promptBudgetChars: _localPromptBudgetChars(effectiveConfig),
+    );
 
     try {
       yield* _parseOpenAiServerStream(
@@ -1133,8 +1146,9 @@ class GemmaRepository {
   /// definitions into the system instruction.
   List<Map<String, Object?>> _buildServerMessages(
     List<Message> messages,
-    List<llama.LlamaTool> tools,
-  ) {
+    List<llama.LlamaTool> tools, {
+    int? promptBudgetChars,
+  }) {
     String? systemInstruction;
     final result = <Map<String, Object?>>[];
 
@@ -1159,18 +1173,155 @@ class GemmaRepository {
       result.add({'role': role, 'content': content.trim()});
     }
 
-    // Prepend system message with tool instructions.
-    final toolInstructions = buildGemmaToolInstructions(tools);
-    final effectiveSystem = [
-      ?systemInstruction,
-      if (toolInstructions.isNotEmpty) toolInstructions,
-    ].join('\n\n');
+    final effectiveSystem = _buildBudgetedSystemInstruction(
+      systemInstruction,
+      tools,
+      promptBudgetChars: promptBudgetChars == null
+          ? null
+          : math.max(
+              0,
+              promptBudgetChars - _latestMessageContentLength(result),
+            ),
+    );
 
     if (effectiveSystem.isNotEmpty) {
       result.insert(0, {'role': 'system', 'content': effectiveSystem});
     }
 
-    return result;
+    return _trimServerMessagesToBudget(result, promptBudgetChars);
+  }
+
+  int _localPromptBudgetChars(ModelConfig config) {
+    final contextTokens = Platform.isAndroid || Platform.isIOS
+        ? _mobileLiteRtLmContextSize
+        : math.max(
+            _defaultLlamaContextSize,
+            config.maxTokens + _llamaContextPromptReserve,
+          );
+    final outputReserve = math.min(
+      config.maxTokens,
+      _localPromptOutputReserveTokens,
+    );
+    final promptTokens = math.max(
+      _localPromptMinimumTokens,
+      contextTokens - outputReserve - _localPromptSafetyTokens,
+    );
+    return promptTokens * _localPromptApproxCharsPerToken;
+  }
+
+  String _buildBudgetedSystemInstruction(
+    String? systemInstruction,
+    List<llama.LlamaTool> tools, {
+    int? promptBudgetChars,
+  }) {
+    final trimmedSystem = systemInstruction?.trim() ?? '';
+    if (promptBudgetChars != null && promptBudgetChars <= 0) {
+      return '';
+    }
+
+    final parts = <String>[];
+    var remaining = promptBudgetChars;
+    if (trimmedSystem.isNotEmpty) {
+      final systemPart = remaining == null
+          ? trimmedSystem
+          : _leadingChars(trimmedSystem, remaining);
+      if (systemPart.isNotEmpty) {
+        parts.add(systemPart);
+        remaining = remaining == null ? null : remaining - systemPart.length;
+      }
+    }
+
+    if (parts.isNotEmpty && remaining != null) {
+      remaining -= 2;
+    }
+    final toolInstructions = remaining == null
+        ? buildGemmaToolInstructions(tools)
+        : _buildGemmaToolInstructionsWithinBudget(tools, remaining);
+    if (toolInstructions.isNotEmpty) {
+      parts.add(toolInstructions);
+    }
+
+    return parts.join('\n\n');
+  }
+
+  String _buildGemmaToolInstructionsWithinBudget(
+    List<llama.LlamaTool> tools,
+    int maxChars,
+  ) {
+    if (tools.isEmpty || maxChars <= 0) return '';
+
+    final included = <llama.LlamaTool>[];
+    for (final tool in tools) {
+      final candidate = buildGemmaToolInstructions([...included, tool]);
+      if (candidate.length <= maxChars) {
+        included.add(tool);
+      }
+    }
+
+    return buildGemmaToolInstructions(included);
+  }
+
+  List<Map<String, Object?>> _trimServerMessagesToBudget(
+    List<Map<String, Object?>> messages,
+    int? promptBudgetChars,
+  ) {
+    if (promptBudgetChars == null ||
+        _serverMessagesContentLength(messages) <= promptBudgetChars) {
+      return messages;
+    }
+
+    final result = [...messages];
+    while (_serverMessagesContentLength(result) > promptBudgetChars &&
+        result.length > 1) {
+      final removableIndex = result.indexWhere(
+        (message) => message['role'] != 'system' && message != result.last,
+      );
+      if (removableIndex == -1) break;
+      result.removeAt(removableIndex);
+    }
+
+    if (_serverMessagesContentLength(result) > promptBudgetChars &&
+        result.length > 1 &&
+        result.first['role'] == 'system') {
+      result.removeAt(0);
+    }
+
+    if (_serverMessagesContentLength(result) <= promptBudgetChars) {
+      return result;
+    }
+
+    if (result.isEmpty) return result;
+    final last = result.last;
+    final content = last['content'];
+    if (content is! String || content.length <= promptBudgetChars) {
+      return result;
+    }
+
+    return [
+      {
+        'role': last['role'],
+        'content': content.substring(content.length - promptBudgetChars),
+      },
+    ];
+  }
+
+  int _serverMessagesContentLength(List<Map<String, Object?>> messages) {
+    return messages.fold<int>(0, (total, message) {
+      final content = message['content'];
+      return total + (content is String ? content.length : 0);
+    });
+  }
+
+  int _latestMessageContentLength(List<Map<String, Object?>> messages) {
+    if (messages.isEmpty) return 0;
+    final content = messages.last['content'];
+    return content is String ? content.length : 0;
+  }
+
+  String _leadingChars(String value, int maxChars) {
+    if (maxChars <= 0) return '';
+    if (value.length <= maxChars) return value;
+    return value.substring(0, maxChars);
   }
 
   /// Maps a [GemmaBackend] to the [LlamaCppLibraryRequest] that tells the
