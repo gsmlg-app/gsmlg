@@ -715,6 +715,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
       supportAudio: modelInfo?.effectiveSupportsAudio ?? false,
       isThinking: enableThinking,
       supportsFunctionCalls: modelInfo?.effectiveSupportsFunctionCalls ?? false,
+      downloadProxyUrl: state.proxyUrl?.isEmpty ?? true ? null : state.proxyUrl,
     );
   }
 

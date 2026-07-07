@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:app_chat/app_chat.dart';
+import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart'
+    as llama_platform;
 import 'package:test/test.dart';
 
 void main() {
@@ -26,6 +28,7 @@ void main() {
       final repository = GemmaRepository(
         initialModelPath: modelFile.path,
         llamaServerFactory: serverFactory.call,
+        llamaLibraryResolver: _fakeLlamaLibraryResolver,
       );
       addTearDown(repository.dispose);
 
@@ -63,6 +66,38 @@ void main() {
       await repository.generateResponse([_userMessage()]).toList();
 
       expect(serverFactory.configs.single.contextSize, 9216);
+    },
+  );
+
+  test(
+    'macOS Metal local generation uses resolved release binary path',
+    () async {
+      if (!Platform.isMacOS) {
+        markTestSkipped('The Metal release binary is only used on macOS.');
+        return;
+      }
+
+      final serverFactory = _CapturingLlamaServerFactory();
+      final repository = await _repositoryWithServerFactory(
+        serverFactory,
+        llamaLibraryResolver: (backend, {String? proxyUrl}) async {
+          expect(backend, GemmaBackend.metal);
+          expect(proxyUrl, 'http://127.0.0.1:3128');
+          return '/tmp/lib_llama_cpp_macos';
+        },
+      );
+
+      await repository.loadModel(
+        const ModelConfig(backend: GemmaBackend.metal),
+        downloadProxyUrl: 'http://127.0.0.1:3128',
+      );
+      await repository.generateResponse([_userMessage()]).toList();
+
+      final request = serverFactory.configs.single.libraryRequest;
+      expect(request.preferredPath, '/tmp/lib_llama_cpp_macos');
+      expect(request.requiredCapabilities, {
+        llama_platform.LlamaCppLibraryCapability.metal,
+      });
     },
   );
 
@@ -294,14 +329,16 @@ class _CapturingLlamaServerSession implements LocalLlamaServerSession {
 }
 
 Future<GemmaRepository> _repositoryWithServerFactory(
-  _CapturingLlamaServerFactory serverFactory,
-) async {
+  _CapturingLlamaServerFactory serverFactory, {
+  LlamaLibraryResolver? llamaLibraryResolver,
+}) async {
   final tempDir = await Directory.systemTemp.createTemp('gsmlg_llama_');
   final modelFile = File('${tempDir.path}/model.gguf')
     ..writeAsStringSync('model');
   final repository = GemmaRepository(
     initialModelPath: modelFile.path,
     llamaServerFactory: serverFactory.call,
+    llamaLibraryResolver: llamaLibraryResolver ?? _fakeLlamaLibraryResolver,
   );
   addTearDown(() async {
     await repository.dispose();
@@ -310,6 +347,15 @@ Future<GemmaRepository> _repositoryWithServerFactory(
     }
   });
   return repository;
+}
+
+Future<String?> _fakeLlamaLibraryResolver(
+  GemmaBackend backend, {
+  String? proxyUrl,
+}) async {
+  return backend == GemmaBackend.cpu
+      ? null
+      : '/tmp/lib_llama_cpp_${backend.name}';
 }
 
 UserMessage _userMessage() {

@@ -3,6 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:app_client_info/app_client_info.dart' as app_client_info;
+import 'package:app_local_llm/app_local_llm.dart' as app_local_llm;
+import 'package:archive/archive_io.dart';
+import 'package:background_downloader/background_downloader.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lib_llama_cpp/lib_llama_cpp.dart' as llama;
 import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interface.dart'
@@ -10,9 +15,6 @@ import 'package:lib_llama_cpp_platform_interface/lib_llama_cpp_platform_interfac
 import 'package:lib_llama_cpp_server/lib_llama_cpp_server.dart' as llama_server;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:app_local_llm/app_local_llm.dart' as app_local_llm;
-import 'package:app_client_info/app_client_info.dart' as app_client_info;
-import 'package:background_downloader/background_downloader.dart';
 
 import '../models/inference.dart';
 import '../models/message.dart';
@@ -31,6 +33,23 @@ const _localLlamaStopSequences = [
   '<turn|>',
   '<end_of_turn>',
   '<start_of_turn>',
+];
+const _llamaCppPrebuiltVersion = '0.7.3';
+const _llamaCppMetalArchiveName =
+    'lib_llama_cpp-prebuilt-metal-$_llamaCppPrebuiltVersion.tar.gz';
+const _llamaCppMetalArchiveUrl =
+    'https://github.com/gsmlg-app/lib_llama_cpp/releases/download/'
+    'v$_llamaCppPrebuiltVersion/$_llamaCppMetalArchiveName';
+const _llamaCppMetalArchiveSha256 =
+    '298cf1625f61314d48595d69ae1cde085bd83a9707917122746ea66c05e5b527';
+const _macosMetalLibraryPathSegments = [
+  'macos',
+  'lib_llama_cpp_macos.xcframework',
+  'macos-arm64_x86_64',
+  'lib_llama_cpp_macos.framework',
+  'Versions',
+  'A',
+  'lib_llama_cpp_macos',
 ];
 
 /// Configuration used to start the local llama.cpp server.
@@ -69,6 +88,10 @@ abstract interface class LocalLlamaServerSession {
 @visibleForTesting
 typedef LocalLlamaServerFactory =
     Future<LocalLlamaServerSession> Function(LocalLlamaServerConfig config);
+
+@visibleForTesting
+typedef LlamaLibraryResolver =
+    Future<String?> Function(GemmaBackend backend, {String? proxyUrl});
 
 /// Status of the model lifecycle.
 enum GemmaModelStatus {
@@ -150,14 +173,18 @@ class GemmaRepository {
     llama.LlamaEngine? llamaEngine,
     String? initialModelPath,
     LocalLlamaServerFactory? llamaServerFactory,
+    LlamaLibraryResolver? llamaLibraryResolver,
   }) : _llamaModelPath = initialModelPath,
+       _llamaLibraryResolver = llamaLibraryResolver,
        _llamaServerFactory =
            llamaServerFactory ?? _LibLlamaCppServerSession.start;
 
   final LocalLlamaServerFactory _llamaServerFactory;
+  final LlamaLibraryResolver? _llamaLibraryResolver;
   String? _llamaModelPath;
   GemmaModelInfo? _llamaModelInfo;
   ModelConfig? _llamaConfig;
+  String? _llamaDownloadProxyUrl;
   LocalLlamaServerConfig? _llamaServerConfig;
   LocalLlamaServerSession? _llamaServer;
   final _activeDownloads = <String, Object>{};
@@ -503,15 +530,19 @@ class GemmaRepository {
 
   /// Downloads a file with HTTP Range resume support.
   ///
-  /// Model artifacts are downloaded into the app cache under
-  /// `lib_llama_cpp/models/<org>/<repo>/` because the app owns those files.
+  /// App-owned artifacts are downloaded into the app cache under
+  /// `lib_llama_cpp/<cacheDirectoryName>/`.
   Future<String> _downloadFile({
     required String url,
     String? proxyUrl,
     String? token,
+    String cacheDirectoryName = 'models',
     void Function(DownloadProgress progress)? onProgress,
   }) async {
-    final filePath = await _downloadFilePathForUrl(url);
+    final filePath = await _downloadFilePathForUrl(
+      url,
+      cacheDirectoryName: cacheDirectoryName,
+    );
 
     var useBackgroundDownloader = true;
     try {
@@ -771,16 +802,19 @@ class GemmaRepository {
     return _downloadFilePathForUrl(info.downloadUrl);
   }
 
-  Future<String> _downloadFilePathForUrl(String url) async {
+  Future<String> _downloadFilePathForUrl(
+    String url, {
+    String cacheDirectoryName = 'models',
+  }) async {
     final cacheDir = await getApplicationCacheDirectory();
     final fileName = Uri.parse(url).pathSegments.last;
     final repoPath = _huggingFaceRepoPath(url);
     final pathSegments = repoPath == null
-        ? <String>[cacheDir.path, 'lib_llama_cpp', 'models']
+        ? <String>[cacheDir.path, 'lib_llama_cpp', cacheDirectoryName]
         : <String>[
             cacheDir.path,
             'lib_llama_cpp',
-            'models',
+            cacheDirectoryName,
             ...repoPath.split('/'),
           ];
     return p.joinAll([...pathSegments, fileName]);
@@ -831,6 +865,7 @@ class GemmaRepository {
     bool supportAudio = false,
     bool isThinking = false,
     bool supportsFunctionCalls = false,
+    String? downloadProxyUrl,
   }) async {
     final llamaModelPath = _llamaModelPath;
     final llamaModelInfo = _llamaModelInfo;
@@ -857,6 +892,10 @@ class GemmaRepository {
       _llamaModelPath = llamaModelPath;
       _llamaModelInfo = llamaModelInfo;
       _llamaConfig = config;
+      _llamaDownloadProxyUrl =
+          downloadProxyUrl == null || downloadProxyUrl.isEmpty
+          ? null
+          : downloadProxyUrl;
       if (Platform.isAndroid || Platform.isIOS) {
         String? backendStr;
         String? dispatchLibDir;
@@ -891,7 +930,7 @@ class GemmaRepository {
           supportAudio: supportAudio,
         );
       } else {
-        await _ensureLlamaServer(config);
+        await _ensureLlamaServer(config, downloadProxyUrl: downloadProxyUrl);
       }
       _setStatus(GemmaModelStatus.ready);
     } catch (e) {
@@ -910,6 +949,7 @@ class GemmaRepository {
     _llamaModelPath = null;
     _llamaModelInfo = null;
     _llamaConfig = null;
+    _llamaDownloadProxyUrl = null;
 
     if (_status == GemmaModelStatus.ready) {
       _setStatus(GemmaModelStatus.installed);
@@ -1014,7 +1054,10 @@ class GemmaRepository {
             .withSupportedBackendForCurrentPlatform();
     final llamaTools = llamaToolsFromOpenAiTools(tools);
 
-    final server = await _ensureLlamaServer(effectiveConfig);
+    final server = await _ensureLlamaServer(
+      effectiveConfig,
+      downloadProxyUrl: _llamaDownloadProxyUrl,
+    );
     final serverMessages = _buildServerMessages(
       messages,
       llamaTools,
@@ -1077,13 +1120,20 @@ class GemmaRepository {
     }
   }
 
-  Future<LocalLlamaServerSession> _ensureLlamaServer(ModelConfig config) async {
+  Future<LocalLlamaServerSession> _ensureLlamaServer(
+    ModelConfig config, {
+    String? downloadProxyUrl,
+  }) async {
     final modelPath = _llamaModelPath;
     if (modelPath == null) {
       throw StateError('Model is not loaded. Call loadModel() first.');
     }
 
-    final serverConfig = _serverConfigFor(modelPath: modelPath, config: config);
+    final serverConfig = await _serverConfigFor(
+      modelPath: modelPath,
+      config: config,
+      downloadProxyUrl: downloadProxyUrl,
+    );
     final currentServer = _llamaServer;
     final currentConfig = _llamaServerConfig;
     if (currentServer != null &&
@@ -1099,10 +1149,11 @@ class GemmaRepository {
     return server;
   }
 
-  LocalLlamaServerConfig _serverConfigFor({
+  Future<LocalLlamaServerConfig> _serverConfigFor({
     required String modelPath,
     required ModelConfig config,
-  }) {
+    String? downloadProxyUrl,
+  }) async {
     final effectiveConfig = config.withSupportedBackendForCurrentPlatform();
     final contextSize = math.max(
       _defaultLlamaContextSize,
@@ -1113,7 +1164,10 @@ class GemmaRepository {
       modelPath: modelPath,
       contextSize: contextSize,
       gpuLayerCount: effectiveConfig.backend.usesGpuLayers ? 99 : 0,
-      libraryRequest: _libraryRequestForBackend(effectiveConfig.backend),
+      libraryRequest: await _libraryRequestForBackend(
+        effectiveConfig.backend,
+        proxyUrl: downloadProxyUrl,
+      ),
     );
   }
 
@@ -1326,9 +1380,10 @@ class GemmaRepository {
 
   /// Maps a [GemmaBackend] to the [LlamaCppLibraryRequest] that tells the
   /// platform plugin which native library to load (CPU, Vulkan, Metal, etc.).
-  static llama_platform.LlamaCppLibraryRequest _libraryRequestForBackend(
-    GemmaBackend backend,
-  ) {
+  Future<llama_platform.LlamaCppLibraryRequest> _libraryRequestForBackend(
+    GemmaBackend backend, {
+    String? proxyUrl,
+  }) async {
     final capability = switch (backend) {
       GemmaBackend.metal => llama_platform.LlamaCppLibraryCapability.metal,
       GemmaBackend.cuda => llama_platform.LlamaCppLibraryCapability.cuda,
@@ -1338,9 +1393,124 @@ class GemmaRepository {
     if (capability == null) {
       return const llama_platform.LlamaCppLibraryRequest();
     }
+    final preferredPath = await _resolveLlamaLibraryPath(
+      backend,
+      proxyUrl: proxyUrl,
+    );
     return llama_platform.LlamaCppLibraryRequest(
+      preferredPath: preferredPath,
       requiredCapabilities: {capability},
     );
+  }
+
+  Future<String?> _resolveLlamaLibraryPath(
+    GemmaBackend backend, {
+    String? proxyUrl,
+  }) {
+    final resolver = _llamaLibraryResolver;
+    if (resolver != null) {
+      return resolver(backend, proxyUrl: proxyUrl);
+    }
+    return _resolveDefaultLlamaLibraryPath(backend, proxyUrl: proxyUrl);
+  }
+
+  Future<String?> _resolveDefaultLlamaLibraryPath(
+    GemmaBackend backend, {
+    String? proxyUrl,
+  }) async {
+    if (!Platform.isMacOS || backend != GemmaBackend.metal) {
+      return null;
+    }
+    return _resolveMacosMetalLibraryPath(proxyUrl: proxyUrl);
+  }
+
+  Future<String> _resolveMacosMetalLibraryPath({String? proxyUrl}) async {
+    final installDir = await _llamaLibraryInstallDirectory(
+      operatingSystem: 'macos',
+      capability: 'metal',
+      version: _llamaCppPrebuiltVersion,
+    );
+    final libraryPath = p.joinAll([
+      installDir.path,
+      ..._macosMetalLibraryPathSegments,
+    ]);
+    final libraryFile = File(libraryPath);
+    if (libraryFile.existsSync() && libraryFile.lengthSync() > 0) {
+      return libraryPath;
+    }
+
+    final archivePath = await _downloadFile(
+      url: _llamaCppMetalArchiveUrl,
+      proxyUrl: proxyUrl,
+      cacheDirectoryName: 'libraries',
+    );
+    try {
+      await _verifyFileSha256(
+        filePath: archivePath,
+        expectedSha256: _llamaCppMetalArchiveSha256,
+      );
+    } catch (_) {
+      _cleanupDownloadFile(archivePath);
+      rethrow;
+    }
+
+    final stagingDir = Directory('${installDir.path}.extracting');
+    await _deleteDirectoryIfExists(stagingDir);
+    await _deleteDirectoryIfExists(installDir);
+    await stagingDir.create(recursive: true);
+    try {
+      await extractFileToDisk(archivePath, stagingDir.path);
+      await stagingDir.rename(installDir.path);
+    } catch (_) {
+      await _deleteDirectoryIfExists(stagingDir);
+      rethrow;
+    }
+
+    if (!libraryFile.existsSync() || libraryFile.lengthSync() <= 0) {
+      throw FileSystemException(
+        'Downloaded Metal llama.cpp library is missing',
+        libraryPath,
+      );
+    }
+    return libraryPath;
+  }
+
+  Future<Directory> _llamaLibraryInstallDirectory({
+    required String operatingSystem,
+    required String capability,
+    required String version,
+  }) async {
+    final cacheDir = await getApplicationCacheDirectory();
+    return Directory(
+      p.join(
+        cacheDir.path,
+        'lib_llama_cpp',
+        'libraries',
+        operatingSystem,
+        capability,
+        version,
+      ),
+    );
+  }
+
+  Future<void> _verifyFileSha256({
+    required String filePath,
+    required String expectedSha256,
+  }) async {
+    final digest = await sha256.bind(File(filePath).openRead()).first;
+    final actual = digest.toString();
+    if (actual.toLowerCase() != expectedSha256.toLowerCase()) {
+      throw StateError(
+        'Downloaded llama.cpp support binary checksum mismatch: '
+        'expected $expectedSha256, got $actual',
+      );
+    }
+  }
+
+  Future<void> _deleteDirectoryIfExists(Directory directory) async {
+    if (await directory.exists()) {
+      await directory.delete(recursive: true);
+    }
   }
 
   /// Generates a complete response without streaming.

@@ -203,5 +203,6 @@ class _FakeGemmaRepository extends GemmaRepository {
     bool supportAudio = false,
     bool isThinking = false,
     bool supportsFunctionCalls = false,
+    String? downloadProxyUrl,
   }) async {}
 }
