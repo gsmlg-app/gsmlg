@@ -438,7 +438,7 @@ void main() {
       expect(provider['accountId'], isA<int>());
       expect(provider['remoteProvider'], 'openAi');
       expect(provider['remoteApiType'], 'openAiResponses');
-      expect(provider['authType'], 'bearerToken');
+      expect(provider['authType'], 'xApiKey');
       expect(provider['authHeaderName'], isNull);
     });
 

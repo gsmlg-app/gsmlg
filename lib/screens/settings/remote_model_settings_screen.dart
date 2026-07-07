@@ -1000,6 +1000,7 @@ class _RemoteProviderProfile {
       isBuiltIn: true,
       remoteProvider: RemoteLlmProvider.openAi,
       remoteApiType: RemoteLlmApiType.openAiResponses,
+      authType: RemoteAuthType.xApiKey,
     ),
     _RemoteProviderProfile(
       id: 'anthropic',

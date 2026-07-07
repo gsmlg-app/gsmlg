@@ -345,6 +345,44 @@ void main() {
       },
     );
 
+    test('listModels uses selected account secret and auth type', () async {
+      Uri? uri;
+      Map<String, String>? headers;
+      final repository = RemoteLlmRepository(
+        vault: _MemoryVaultRepository({'service_account_8': 'backplane-token'}),
+        client: MockClient((request) async {
+          uri = request.url;
+          headers = request.headers;
+          return http.Response(
+            jsonEncode({
+              'data': [
+                {'id': 'zeta'},
+                {'id': 'alpha'},
+              ],
+            }),
+            200,
+          );
+        }),
+      );
+
+      final models = await repository.listModels(
+        const ModelConfig(
+          inferenceMode: ChatInferenceMode.remote,
+          remoteProvider: RemoteLlmProvider.openAi,
+          remoteApiType: RemoteLlmApiType.openAiResponses,
+          remoteAccountId: 8,
+          remoteBaseUrl: 'https://backplane.gsmlg.net/v1',
+          remoteModel: 'gpt-4.1-mini',
+          remoteAuthType: RemoteAuthType.xApiKey,
+        ),
+      );
+
+      expect(uri, Uri.parse('https://backplane.gsmlg.net/v1/models'));
+      expect(headers!['x-api-key'], 'backplane-token');
+      expect(headers!['Authorization'], isNull);
+      expect(models, ['alpha', 'zeta']);
+    });
+
     test('uses configured custom auth header for remote requests', () async {
       Map<String, String>? headers;
       final repository = RemoteLlmRepository(
@@ -999,21 +1037,38 @@ void main() {
 }
 
 class _MemoryVaultRepository implements VaultRepository {
-  @override
-  Future<bool> containsKey({required String key}) async => false;
+  _MemoryVaultRepository([Map<String, String>? values])
+    : _values = {...?values};
+
+  final Map<String, String> _values;
 
   @override
-  Future<void> delete({required String key}) async {}
+  Future<bool> containsKey({required String key}) async {
+    return _values.containsKey(key);
+  }
 
   @override
-  Future<void> deleteAll() async {}
+  Future<void> delete({required String key}) async {
+    _values.remove(key);
+  }
 
   @override
-  Future<String?> read({required String key}) async => null;
+  Future<void> deleteAll() async {
+    _values.clear();
+  }
 
   @override
-  Future<Map<String, String>> readAll() async => const {};
+  Future<String?> read({required String key}) async {
+    return _values[key];
+  }
 
   @override
-  Future<void> write({required String key, required String value}) async {}
+  Future<Map<String, String>> readAll() async {
+    return Map.unmodifiable(_values);
+  }
+
+  @override
+  Future<void> write({required String key, required String value}) async {
+    _values[key] = value;
+  }
 }
