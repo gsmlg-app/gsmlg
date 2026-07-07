@@ -92,10 +92,48 @@ void main() {
         await tester.tap(find.text('Gemma 4 E2B IT (Default)'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Add Local LiteRT-LM File'));
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         expect(filePicker.type, FileType.any);
         expect(filePicker.allowedExtensions, isNull);
+      });
+    });
+
+    testWidgets('waits for dialog close before opening macOS file picker', (
+      tester,
+    ) async {
+      final dialogOpenAtPick = <bool>[];
+      final filePicker = _RecordingFilePicker(
+        null,
+        onPick: () {
+          dialogOpenAtPick.add(
+            find.text('Download Model').evaluate().isNotEmpty,
+          );
+        },
+      );
+      FilePickerPlatform.instance = filePicker;
+
+      await _withTargetPlatform(TargetPlatform.macOS, () async {
+        await _pumpScreen(
+          tester,
+          preferences: preferences,
+          accountsBloc: accountsBloc,
+          gemmaModelBloc: gemmaModelBloc,
+          chatSettingsBloc: chatSettingsBloc,
+        );
+
+        await tester.tap(find.text('Gemma 4 E2B IT (Default)'));
+        await tester.pumpAndSettle();
+        expect(find.text('Download Model'), findsOneWidget);
+
+        await tester.tap(find.text('Add Local GGUF File'));
+        await tester.pump();
+        expect(dialogOpenAtPick, isEmpty);
+
+        await tester.pumpAndSettle();
+        expect(dialogOpenAtPick, [false]);
+        expect(filePicker.type, FileType.custom);
+        expect(filePicker.allowedExtensions, ['gguf']);
       });
     });
 
@@ -273,9 +311,10 @@ Future<void> _withTargetPlatform(
 }
 
 class _RecordingFilePicker extends FilePickerPlatform {
-  _RecordingFilePicker(this.result);
+  _RecordingFilePicker(this.result, {this.onPick});
 
   final FilePickerResult? result;
+  final VoidCallback? onPick;
   FileType? type;
   List<String>? allowedExtensions;
 
@@ -294,6 +333,7 @@ class _RecordingFilePicker extends FilePickerPlatform {
     bool readSequential = false,
     bool cancelUploadOnWindowBlur = true,
   }) async {
+    onPick?.call();
     this.type = type;
     this.allowedExtensions = allowedExtensions;
     return result;

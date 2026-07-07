@@ -16,6 +16,8 @@ import 'package:gsmlg/screens/settings/settings_screen.dart';
 import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum _DownloadConfirmAction { pickLocalModelFile, installModel }
+
 class ModelManagementScreen extends StatefulWidget {
   static const name = 'ModelManagement';
   static const path = 'models';
@@ -498,13 +500,15 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
     return '${value.toStringAsFixed(digits)} ${units[unitIndex]}';
   }
 
-  void _showDownloadConfirmDialog(
+  Future<void> _showDownloadConfirmDialog(
     BuildContext context,
     GemmaModelInfo model,
     bool isInstalled,
-  ) {
-    showDialog(
+  ) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final route = DialogRoute<_DownloadConfirmAction>(
       context: context,
+      themes: InheritedTheme.capture(from: context, to: navigator.context),
       builder: (dialogContext) {
         return AlertDialog(
           title: Text(
@@ -580,20 +584,20 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
               child: const Text('Cancel'),
             ),
             TextButton.icon(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _pickLocalModelFile(context, model);
-              },
+              onPressed: () => Navigator.pop(
+                dialogContext,
+                _DownloadConfirmAction.pickLocalModelFile,
+              ),
               icon: const Icon(Icons.folder_open),
               label: Text(
                 'Add Local ${model.formatLabelForOperatingSystem(_targetOperatingSystem)} File',
               ),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                _installModel(context, model);
-              },
+              onPressed: () => Navigator.pop(
+                dialogContext,
+                _DownloadConfirmAction.installModel,
+              ),
               child: Text(
                 isInstalled
                     ? 'Re-download from Hugging Face'
@@ -604,6 +608,18 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
         );
       },
     );
+    final action = await navigator.push(route);
+
+    if (!mounted || !context.mounted || action == null) return;
+    await route.completed;
+    if (!mounted || !context.mounted) return;
+
+    switch (action) {
+      case _DownloadConfirmAction.pickLocalModelFile:
+        await _pickLocalModelFile(context, model);
+      case _DownloadConfirmAction.installModel:
+        _installModel(context, model);
+    }
   }
 
   Future<void> _pickLocalModelFile(
