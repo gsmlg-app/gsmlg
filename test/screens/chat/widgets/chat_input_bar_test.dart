@@ -1,25 +1,41 @@
 // ignore_for_file: implementation_imports
 
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_picker/src/platform/file_picker_platform_interface.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gsmlg/screens/chat/widgets/chat_input_bar.dart';
+import 'package:gsmlg/screens/chat/widgets/system_metrics_indicator.dart';
 
 void main() {
+  const systemMetricsChannel = MethodChannel('app_system_metrics');
   late FilePickerPlatform previousFilePicker;
 
   setUp(() {
     previousFilePicker = FilePickerPlatform.instance;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(systemMetricsChannel, (call) async {
+          if (call.method != 'getData') return null;
+          return {
+            'platform': 'test',
+            'timestamp': DateTime(2026).toIso8601String(),
+            'cpuUsage': 0.0,
+            'gpuUsage': 0.0,
+            'npuUsage': 0.0,
+            'memoryUsage': 0.0,
+          };
+        });
   });
 
   tearDown(() {
     FilePickerPlatform.instance = previousFilePicker;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(systemMetricsChannel, null);
   });
 
   testWidgets('selects remote thinking effort from the chat input', (
@@ -127,8 +143,16 @@ void main() {
   testWidgets('can change agent when chat input is disabled', (tester) async {
     String? selectedAgentId;
     final agents = [
-      ChatAgent(id: 'agent1', name: 'Agent 1', config: ModelConfig.defaultConfig),
-      ChatAgent(id: 'agent2', name: 'Agent 2', config: ModelConfig.defaultConfig),
+      ChatAgent(
+        id: 'agent1',
+        name: 'Agent 1',
+        config: ModelConfig.defaultConfig,
+      ),
+      ChatAgent(
+        id: 'agent2',
+        name: 'Agent 2',
+        config: ModelConfig.defaultConfig,
+      ),
     ];
 
     await tester.pumpWidget(
@@ -162,6 +186,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(selectedAgentId, 'agent2');
+  });
+
+  testWidgets('shows system metrics in the chat input controls', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatInputBar(
+            onSend: (_, {imageBytes, audioBytes, attachments}) {},
+            onStop: () {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(SystemMetricsIndicator), findsOneWidget);
   });
 }
 

@@ -1,10 +1,12 @@
 import 'dart:async';
-import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:app_system_metrics/app_system_metrics.dart';
 
 class SystemMetricsIndicator extends StatefulWidget {
-  const SystemMetricsIndicator({super.key});
+  const SystemMetricsIndicator({super.key, this.compact = false});
+
+  final bool compact;
 
   @override
   State<SystemMetricsIndicator> createState() => _SystemMetricsIndicatorState();
@@ -24,7 +26,10 @@ class _SystemMetricsIndicatorState extends State<SystemMetricsIndicator> {
     _updateMetrics();
 
     // Poll every 2 seconds
-    _timer = Timer.periodic(const Duration(seconds: 2), (_) => _updateMetrics());
+    _timer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => _updateMetrics(),
+    );
   }
 
   @override
@@ -36,7 +41,11 @@ class _SystemMetricsIndicatorState extends State<SystemMetricsIndicator> {
   Future<void> _updateMetrics() async {
     try {
       final metrics = await SystemMetrics.instance.getData();
-      debugPrint('[SystemMetrics] CPU: ${metrics.cpuUsage.toStringAsFixed(1)}%, GPU: ${metrics.gpuUsage.toStringAsFixed(1)}%, MEM: ${metrics.memoryUsage.toStringAsFixed(1)}%');
+      debugPrint(
+        '[SystemMetrics] CPU: ${metrics.cpuUsage.toStringAsFixed(1)}%, '
+        'GPU: ${metrics.gpuUsage.toStringAsFixed(1)}%, '
+        'MEM: ${metrics.memoryUsage.toStringAsFixed(1)}%',
+      );
       if (mounted) {
         setState(() {
           _cpu = metrics.cpuUsage.clamp(0.0, 100.0);
@@ -51,32 +60,31 @@ class _SystemMetricsIndicatorState extends State<SystemMetricsIndicator> {
 
   @override
   Widget build(BuildContext context) {
-    // Determine whether to show GPU (e.g. only on desktop or if it has non-zero usage)
-    final showGpu =
-        (Platform.isMacOS || Platform.isLinux || Platform.isWindows) &&
-            _gpu > 0.0;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      spacing: widget.compact ? 4 : 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         MetricPill(
           icon: Icons.memory_outlined,
           label: 'CPU',
           value: _cpu,
           color: const Color(0xFFFF9E0F), // Tailwind Amber/Orange
+          compact: widget.compact,
         ),
-        if (showGpu)
-          MetricPill(
-            icon: Icons.bolt_outlined,
-            label: 'GPU',
-            value: _gpu,
-            color: const Color(0xFFA855F7), // Tailwind Purple
-          ),
+        MetricPill(
+          icon: Icons.bolt_outlined,
+          label: 'GPU',
+          value: _gpu,
+          color: const Color(0xFFA855F7), // Tailwind Purple
+          compact: widget.compact,
+        ),
         MetricPill(
           icon: Icons.donut_large_outlined,
           label: 'MEM',
           value: _memory,
           color: const Color(0xFF06B6D4), // Tailwind Cyan
+          compact: widget.compact,
         ),
       ],
     );
@@ -90,12 +98,14 @@ class MetricPill extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
+    this.compact = false,
   });
 
   final IconData icon;
   final String label;
   final double value;
   final Color color;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -103,24 +113,19 @@ class MetricPill extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 6 : 8,
+        vertical: compact ? 3 : 4,
+      ),
       decoration: BoxDecoration(
         color: isDark ? color.withAlpha(25) : color.withAlpha(15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withAlpha(60),
-          width: 1,
-        ),
+        border: Border.all(color: color.withAlpha(60), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: color,
-          ),
+          Icon(icon, size: 14, color: color),
           const SizedBox(width: 4),
           Text(
             '$label: ${value.toStringAsFixed(0)}%',

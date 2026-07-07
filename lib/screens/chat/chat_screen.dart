@@ -15,7 +15,6 @@ import 'widgets/chat_input_bar.dart';
 import 'widgets/chat_message_list.dart';
 import 'widgets/local_model_action_button.dart';
 import 'widgets/model_status_banner.dart';
-import 'widgets/system_metrics_indicator.dart';
 
 class ChatScreen extends StatefulWidget {
   static const name = 'Chat';
@@ -93,7 +92,6 @@ class _ChatScreenState extends State<ChatScreen> {
             },
           ),
           actions: [
-            const SystemMetricsIndicator(),
             const LocalModelActionButton(),
             IconButton(
               icon: const Icon(Icons.history),

@@ -8,6 +8,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
+import 'system_metrics_indicator.dart';
+
 class ChatInputBar extends StatefulWidget {
   const ChatInputBar({
     super.key,
@@ -313,6 +315,45 @@ class _ChatInputBarState extends State<ChatInputBar> {
     super.dispose();
   }
 
+  Widget? _buildSelectionControl() {
+    if (widget.selectedAgentName != null) {
+      return _AgentSelector(
+        selectedAgentName: widget.selectedAgentName!,
+        selectedAgentId: widget.selectedAgentId,
+        agents: widget.agents,
+        onAgentSelect: widget.onAgentSelect,
+        onAgentTap: widget.onModelTap,
+      );
+    }
+
+    if (widget.selectedModelName != null) {
+      return _ModelSelector(
+        selectedModelName: widget.selectedModelName!,
+        selectedModelId: widget.selectedModelId,
+        installedModels: widget.installedModels,
+        remoteModels: widget.remoteModels,
+        onModelSelect: widget.onModelSelect,
+        onModelTap: widget.onModelTap,
+      );
+    }
+
+    return null;
+  }
+
+  Widget _buildTrailingControls() {
+    final selectionControl = _buildSelectionControl();
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        const SystemMetricsIndicator(compact: true),
+        ?selectionControl,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final input = DmChatInput(
@@ -368,24 +409,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
             ),
         ],
       ),
-      trailing: widget.selectedAgentName != null
-          ? _AgentSelector(
-              selectedAgentName: widget.selectedAgentName!,
-              selectedAgentId: widget.selectedAgentId,
-              agents: widget.agents,
-              onAgentSelect: widget.onAgentSelect,
-              onAgentTap: widget.onModelTap,
-            )
-          : widget.selectedModelName != null
-          ? _ModelSelector(
-              selectedModelName: widget.selectedModelName!,
-              selectedModelId: widget.selectedModelId,
-              installedModels: widget.installedModels,
-              remoteModels: widget.remoteModels,
-              onModelSelect: widget.onModelSelect,
-              onModelTap: widget.onModelTap,
-            )
-          : null,
+      trailing: _buildTrailingControls(),
     );
 
     final showOverlay = !widget.enabled && !widget.isStreaming;
@@ -403,25 +427,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
         if (showOverlay)
           Positioned(
             bottom: 12,
-            right: 56, // SendButton is ~40 wide, container padding is 12, so 52-56 is standard placement
-            child: widget.selectedAgentName != null
-                ? _AgentSelector(
-                    selectedAgentName: widget.selectedAgentName!,
-                    selectedAgentId: widget.selectedAgentId,
-                    agents: widget.agents,
-                    onAgentSelect: widget.onAgentSelect,
-                    onAgentTap: widget.onModelTap,
-                  )
-                : widget.selectedModelName != null
-                ? _ModelSelector(
-                    selectedModelName: widget.selectedModelName!,
-                    selectedModelId: widget.selectedModelId,
-                    installedModels: widget.installedModels,
-                    remoteModels: widget.remoteModels,
-                    onModelSelect: widget.onModelSelect,
-                    onModelTap: widget.onModelTap,
-                  )
-                : const SizedBox.shrink(),
+            right:
+                56, // SendButton is ~40 wide, container padding is 12, so 52-56 is standard placement
+            child: _buildSelectionControl() ?? const SizedBox.shrink(),
           ),
       ],
     );
@@ -448,10 +456,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurfaceVariant
-                        .withAlpha(178),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurfaceVariant.withAlpha(178),
                   ),
                 ),
                 const SizedBox(width: 8),
