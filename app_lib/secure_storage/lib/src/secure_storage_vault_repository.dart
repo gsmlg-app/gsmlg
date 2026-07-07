@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'vault_repository.dart';
@@ -39,7 +41,7 @@ class SecureStorageVaultRepository implements VaultRepository {
         accessibility: KeychainAccessibility.first_unlock_this_device,
         accountName: 'gsmlg_vault',
       ),
-      mOptions: MacOsOptions(
+      mOptions: GsmlgMacOsOptions(
         accessibility: KeychainAccessibility.first_unlock_this_device,
         accountName: 'gsmlg_vault',
         // The macOS data-protection keychain requires Keychain Sharing
@@ -54,9 +56,12 @@ class SecureStorageVaultRepository implements VaultRepository {
 
   final FlutterSecureStorage _storage;
   final FlutterSecureStorage? _legacyMacOsStorage;
+  Future<void> _mutationQueue = Future.value();
 
   /// Optional namespace prefix for keys to avoid collisions.
   final String? namespace;
+
+  static const String _vaultStoreKey = '__vault_store__';
 
   /// Returns the namespaced key if a namespace is set.
   String _prefixedKey(String key) {
@@ -66,28 +71,51 @@ class SecureStorageVaultRepository implements VaultRepository {
     return key;
   }
 
+  String get _prefixedVaultStoreKey => _prefixedKey(_vaultStoreKey);
+
   @override
   Future<void> write({required String key, required String value}) async {
-    await _storage.write(key: _prefixedKey(key), value: value);
+    await _withSerializedMutation(() async {
+      final values = await _readVaultValues();
+      values[key] = value;
+      await _writeVaultValues(values);
+      await _deleteLegacyValue(_prefixedKey(key));
+    });
   }
 
   @override
   Future<String?> read({required String key}) async {
+    final values = await _readVaultValues();
+    if (values.containsKey(key)) return values[key];
+
     final prefixedKey = _prefixedKey(key);
-    final value = await _storage.read(key: prefixedKey);
-    if (value != null) return value;
-    return _readLegacyMacOsValue(prefixedKey);
+    final value = await _readLegacyValue(prefixedKey);
+    if (value == null) return null;
+
+    await _withSerializedMutation(() async {
+      final latestValues = await _readVaultValues();
+      latestValues[key] = value;
+      await _writeVaultValues(latestValues);
+      await _deleteLegacyValue(prefixedKey);
+    });
+    return value;
   }
 
   @override
   Future<void> delete({required String key}) async {
-    final prefixedKey = _prefixedKey(key);
-    await _storage.delete(key: prefixedKey);
-    await _deleteLegacyMacOsValue(prefixedKey);
+    await _withSerializedMutation(() async {
+      final values = await _readVaultValues();
+      values.remove(key);
+      await _writeVaultValues(values);
+      await _deleteLegacyValue(_prefixedKey(key));
+    });
   }
 
   @override
   Future<bool> containsKey({required String key}) async {
+    final values = await _readVaultValues();
+    if (values.containsKey(key)) return true;
+
     final prefixedKey = _prefixedKey(key);
     if (await _storage.containsKey(key: prefixedKey)) return true;
     return _containsLegacyMacOsValue(prefixedKey);
@@ -95,11 +123,12 @@ class SecureStorageVaultRepository implements VaultRepository {
 
   @override
   Future<void> deleteAll() async {
+    await _storage.delete(key: _prefixedVaultStoreKey);
     if (namespace != null && namespace!.isNotEmpty) {
       // Only delete keys with our namespace prefix
       final all = await _storage.readAll();
       for (final key in all.keys) {
-        if (key.startsWith('${namespace}_')) {
+        if (key.startsWith('${namespace}_') && key != _prefixedVaultStoreKey) {
           await _storage.delete(key: key);
         }
       }
@@ -111,17 +140,90 @@ class SecureStorageVaultRepository implements VaultRepository {
 
   @override
   Future<Map<String, String>> readAll() async {
+    final values = await _readVaultValues();
+    final legacyValues = await _readLegacyValues();
+    if (legacyValues.isEmpty) return values;
+
+    final mergedValues = {...legacyValues, ...values};
+    await _withSerializedMutation(() async {
+      await _writeVaultValues(mergedValues);
+      await _deleteLegacyValues(legacyValues.keys);
+    });
+    return mergedValues;
+  }
+
+  Future<T> _withSerializedMutation<T>(Future<T> Function() action) {
+    final result = _mutationQueue.then((_) => action());
+    _mutationQueue = result.then<void>((_) {}, onError: (_) {});
+    return result;
+  }
+
+  Future<Map<String, String>> _readVaultValues() async {
+    final raw = await _storage.read(key: _prefixedVaultStoreKey);
+    if (raw == null || raw.isEmpty) return <String, String>{};
+
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('Secure vault data is not a JSON object.');
+    }
+
+    return decoded.map((key, value) {
+      if (value is! String) {
+        throw const FormatException('Secure vault values must be strings.');
+      }
+      return MapEntry(key, value);
+    });
+  }
+
+  Future<void> _writeVaultValues(Map<String, String> values) {
+    return _storage.write(
+      key: _prefixedVaultStoreKey,
+      value: jsonEncode(values),
+    );
+  }
+
+  Future<String?> _readLegacyValue(String prefixedKey) async {
+    final value = await _storage.read(key: prefixedKey);
+    if (value != null) return value;
+    return _readLegacyMacOsValue(prefixedKey);
+  }
+
+  Future<Map<String, String>> _readLegacyValues() async {
     final all = await _storage.readAll();
+    final values = <String, String>{};
+
     if (namespace != null && namespace!.isNotEmpty) {
       // Only return keys with our namespace prefix, stripped of prefix
       final prefix = '${namespace}_';
-      return Map.fromEntries(
+      values.addEntries(
         all.entries
-            .where((e) => e.key.startsWith(prefix))
+            .where(
+              (e) =>
+                  e.key.startsWith(prefix) && e.key != _prefixedVaultStoreKey,
+            )
             .map((e) => MapEntry(e.key.substring(prefix.length), e.value)),
       );
+    } else {
+      values.addEntries(
+        all.entries.where((e) => e.key != _prefixedVaultStoreKey),
+      );
     }
-    return all;
+
+    values.addAll(await _readLegacyMacOsValues());
+    return values;
+  }
+
+  Future<void> _deleteLegacyValue(String prefixedKey) async {
+    if (prefixedKey != _prefixedVaultStoreKey) {
+      await _storage.delete(key: prefixedKey);
+    }
+    await _deleteLegacyMacOsValue(prefixedKey);
+  }
+
+  Future<void> _deleteLegacyValues(Iterable<String> keys) async {
+    for (final key in keys) {
+      await _deleteLegacyValue(_prefixedKey(key));
+    }
   }
 
   Future<String?> _readLegacyMacOsValue(String prefixedKey) async {
@@ -129,13 +231,34 @@ class SecureStorageVaultRepository implements VaultRepository {
     if (legacyStorage == null) return null;
 
     try {
-      final value = await legacyStorage.read(key: prefixedKey);
-      if (value == null) return null;
-      await _storage.write(key: prefixedKey, value: value);
-      await _deleteLegacyMacOsValue(prefixedKey);
-      return value;
+      return await legacyStorage.read(key: prefixedKey);
     } catch (_) {
       return null;
+    }
+  }
+
+  Future<Map<String, String>> _readLegacyMacOsValues() async {
+    final legacyStorage = _legacyMacOsStorage;
+    if (legacyStorage == null) return const <String, String>{};
+
+    try {
+      final all = await legacyStorage.readAll();
+      if (namespace != null && namespace!.isNotEmpty) {
+        final prefix = '${namespace}_';
+        return Map.fromEntries(
+          all.entries
+              .where(
+                (e) =>
+                    e.key.startsWith(prefix) && e.key != _prefixedVaultStoreKey,
+              )
+              .map((e) => MapEntry(e.key.substring(prefix.length), e.value)),
+        );
+      }
+      return Map.fromEntries(
+        all.entries.where((e) => e.key != _prefixedVaultStoreKey),
+      );
+    } catch (_) {
+      return const <String, String>{};
     }
   }
 
@@ -180,5 +303,36 @@ class SecureStorageVaultRepository implements VaultRepository {
     } catch (_) {
       // Legacy data-protection keychain access can fail without entitlements.
     }
+  }
+}
+
+class GsmlgMacOsOptions extends MacOsOptions {
+  const GsmlgMacOsOptions({
+    super.accountName,
+    super.groupId,
+    super.accessibility,
+    super.synchronizable,
+    super.label,
+    super.description,
+    super.comment,
+    super.isInvisible,
+    super.isNegative,
+    super.creationDate,
+    super.lastModifiedDate,
+    super.resultLimit,
+    super.shouldReturnPersistentReference,
+    super.authenticationUIBehavior,
+    super.accessControlFlags,
+    super.usesDataProtectionKeychain,
+    super.useSecureEnclave,
+  });
+
+  @override
+  Map<String, String> toMap() {
+    return {
+      ...super.toMap(),
+      // flutter_secure_storage_darwin 0.2.0 reads this older key spelling.
+      'useDataProtectionKeyChain': '$usesDataProtectionKeychain',
+    };
   }
 }

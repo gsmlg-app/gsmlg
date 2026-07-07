@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -108,6 +110,46 @@ void main() {
   });
 
   group('SecureStorageVaultRepository', () {
+    test('writes secrets into one namespaced vault item', () async {
+      final primaryValues = <String, String>{};
+      final vault = SecureStorageVaultRepository(
+        storage: _MemoryFlutterSecureStorage(primaryValues),
+        legacyMacOsStorage: _MemoryFlutterSecureStorage({}),
+        namespace: 'gsmlg',
+      );
+
+      await vault.write(key: 'service_account_1', value: 'secret');
+      await vault.write(key: 'github_pat', value: 'pat');
+
+      expect(primaryValues.keys, ['gsmlg___vault_store__']);
+      expect(_decodedVaultStore(primaryValues), {
+        'service_account_1': 'secret',
+        'github_pat': 'pat',
+      });
+      expect(await vault.read(key: 'service_account_1'), 'secret');
+      expect(await vault.readAll(), {
+        'service_account_1': 'secret',
+        'github_pat': 'pat',
+      });
+    });
+
+    test('migrates legacy primary values on read', () async {
+      final primaryValues = {'gsmlg_service_account_1': 'secret'};
+      final vault = SecureStorageVaultRepository(
+        storage: _MemoryFlutterSecureStorage(primaryValues),
+        legacyMacOsStorage: _MemoryFlutterSecureStorage({}),
+        namespace: 'gsmlg',
+      );
+
+      final value = await vault.read(key: 'service_account_1');
+
+      expect(value, 'secret');
+      expect(primaryValues.keys, ['gsmlg___vault_store__']);
+      expect(_decodedVaultStore(primaryValues), {
+        'service_account_1': 'secret',
+      });
+    });
+
     test('migrates legacy macOS data-protection values on read', () async {
       final primaryValues = <String, String>{};
       final legacyValues = {'gsmlg_service_account_1': 'secret'};
@@ -120,7 +162,10 @@ void main() {
       final value = await vault.read(key: 'service_account_1');
 
       expect(value, 'secret');
-      expect(primaryValues, {'gsmlg_service_account_1': 'secret'});
+      expect(primaryValues.keys, ['gsmlg___vault_store__']);
+      expect(_decodedVaultStore(primaryValues), {
+        'service_account_1': 'secret',
+      });
       expect(legacyValues, isEmpty);
     });
 
@@ -136,7 +181,24 @@ void main() {
       await vault.delete(key: 'service_account_1');
       await vault.deleteAll();
     });
+
+    test(
+      'emits Darwin plugin compatibility key for data-protection option',
+      () {
+        final options = const GsmlgMacOsOptions(
+          usesDataProtectionKeychain: false,
+        ).toMap();
+
+        expect(options['usesDataProtectionKeychain'], 'false');
+        expect(options['useDataProtectionKeyChain'], 'false');
+      },
+    );
   });
+}
+
+Map<String, String> _decodedVaultStore(Map<String, String> values) {
+  return (jsonDecode(values['gsmlg___vault_store__']!) as Map<String, dynamic>)
+      .cast<String, String>();
 }
 
 class _MemoryFlutterSecureStorage extends FlutterSecureStorage {
