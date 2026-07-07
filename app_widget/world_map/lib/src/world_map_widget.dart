@@ -1,9 +1,21 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:duskmoon_visualization/duskmoon_visualization_compat.dart';
 import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+const _worldMapProjectedWidth = math.pi * 2;
+const _worldMapProjectedHeight = math.pi;
+
+@visibleForTesting
+double worldMapProjectionScaleForSize(Size size) {
+  return math.min(
+    size.width / _worldMapProjectedWidth,
+    size.height / _worldMapProjectedHeight,
+  );
+}
 
 /// A widget that displays a world map with a location marker.
 class WorldMapWidget extends StatefulWidget {
@@ -178,10 +190,14 @@ class _WorldMapPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Point(size.width / 2, size.height / 2);
-    final scale = size.width / 6.5;
+    final scale = worldMapProjectionScaleForSize(size);
 
-    // Use Mercator projection
-    final proj = geoMercator(center: (0, 0), scale: scale, translate: center);
+    // Use equirectangular projection
+    final proj = geoEquirectangular(
+      center: (0, 0),
+      scale: scale,
+      translate: center,
+    );
 
     // Draw ocean background
     canvas.drawRect(
