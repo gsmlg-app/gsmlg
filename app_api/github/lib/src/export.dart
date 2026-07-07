@@ -12,6 +12,7 @@ export 'models/user.dart';
 export 'models/simple_user.dart';
 export 'models/organization.dart';
 export 'models/repository.dart';
+export 'models/repository_content.dart';
 export 'models/repository_permissions.dart';
 export 'models/license.dart';
 export 'models/workflow.dart';

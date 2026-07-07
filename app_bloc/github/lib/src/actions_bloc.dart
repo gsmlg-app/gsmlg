@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:github_api/github_api.dart';
+import 'package:yaml/yaml.dart';
 
 import 'models.dart';
 
@@ -40,9 +43,11 @@ class GitHubActionsBloc extends Bloc<GitHubActionsEvent, GitHubActionsState> {
         owner: _owner,
         repo: _repo,
       );
-      final workflows = workflowsResponse.workflows
-          .map(GitHubWorkflow.fromApiResponse)
-          .toList();
+      final workflows = await Future.wait(
+        workflowsResponse.workflows
+            .map(GitHubWorkflow.fromApiResponse)
+            .map(_loadWorkflowInputs),
+      );
 
       final runsResponse = await _api.actions.listWorkflowRuns(
         owner: _owner,
@@ -80,6 +85,101 @@ class GitHubActionsBloc extends Bloc<GitHubActionsEvent, GitHubActionsState> {
     } catch (e) {
       emit(GitHubActionsError(message: e.toString()));
     }
+  }
+
+  Future<GitHubWorkflow> _loadWorkflowInputs(GitHubWorkflow workflow) async {
+    try {
+      final content = await _api.repos.getRepositoryContent(
+        owner: _owner,
+        repo: _repo,
+        path: workflow.path,
+      );
+      final workflowYaml = _decodeRepositoryContent(content);
+      if (workflowYaml == null) return workflow;
+
+      return workflow.copyWith(
+        inputs: _parseWorkflowDispatchInputs(workflowYaml),
+      );
+    } catch (_) {
+      return workflow;
+    }
+  }
+
+  String? _decodeRepositoryContent(RepositoryContent content) {
+    if (content.encoding != 'base64' || content.content == null) return null;
+
+    final normalized = content.content!.replaceAll(RegExp(r'\s'), '');
+    return utf8.decode(base64.decode(normalized));
+  }
+
+  List<GitHubWorkflowInput> _parseWorkflowDispatchInputs(String workflowYaml) {
+    try {
+      final document = loadYaml(workflowYaml);
+      if (document is! YamlMap) return const [];
+
+      final triggers =
+          _yamlMapValue(document, 'on') ?? _yamlMapValue(document, true);
+      if (triggers is! YamlMap) return const [];
+
+      final dispatch = _yamlMapValue(triggers, 'workflow_dispatch');
+      if (dispatch is! YamlMap) return const [];
+
+      final inputs = _yamlMapValue(dispatch, 'inputs');
+      if (inputs is! YamlMap) return const [];
+
+      return [
+        for (final entry in inputs.nodes.entries)
+          if (_yamlKey(entry.key).isNotEmpty)
+            _workflowInputFromYaml(_yamlKey(entry.key), entry.value.value),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Object? _yamlMapValue(YamlMap map, Object key) {
+    if (map.containsKey(key)) return map[key];
+    return null;
+  }
+
+  GitHubWorkflowInput _workflowInputFromYaml(String name, Object? value) {
+    if (value is! YamlMap) {
+      return GitHubWorkflowInput(name: name);
+    }
+
+    return GitHubWorkflowInput(
+      name: name,
+      description: _yamlString(_yamlMapValue(value, 'description')),
+      defaultValue: _yamlString(_yamlMapValue(value, 'default')),
+      required: _yamlBool(_yamlMapValue(value, 'required')) ?? false,
+      type: _yamlString(_yamlMapValue(value, 'type')),
+      options: _yamlStringList(_yamlMapValue(value, 'options')),
+    );
+  }
+
+  String _yamlKey(YamlNode node) {
+    final value = node.value;
+    return value == null ? '' : value.toString();
+  }
+
+  String? _yamlString(Object? value) {
+    if (value == null) return null;
+    return value.toString();
+  }
+
+  bool? _yamlBool(Object? value) {
+    if (value is bool) return value;
+    if (value is String) return bool.tryParse(value);
+    return null;
+  }
+
+  List<String> _yamlStringList(Object? value) {
+    if (value is! YamlList) return const [];
+
+    return [
+      for (final option in value)
+        if (option != null) option.toString(),
+    ];
   }
 
   Future<void> _onDispatch(

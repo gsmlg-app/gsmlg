@@ -185,6 +185,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/Repository'
 
+  /repos/{owner}/{repo}/contents/{path}:
+    get:
+      operationId: getRepositoryContent
+      summary: Get repository content
+      description: Gets the contents of a file in a repository.
+      tags:
+        - Repos
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          description: The account owner of the repository.
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          description: The name of the repository without the `.git` extension.
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          description: The content path.
+          schema:
+            type: string
+        - name: ref
+          in: query
+          description: The name of the commit/branch/tag.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepositoryContent'
+
   # Orgs endpoints
   /orgs/{org}/repos:
     get:
@@ -1090,6 +1129,50 @@ components:
           type: boolean
         pull:
           type: boolean
+
+    RepositoryContent:
+      type: object
+      description: A repository file content response.
+      properties:
+        type:
+          type: string
+          description: Content type.
+        encoding:
+          type: string
+          nullable: true
+          description: Content encoding.
+        size:
+          type: integer
+        name:
+          type: string
+        path:
+          type: string
+        content:
+          type: string
+          nullable: true
+          description: Base64 encoded file contents.
+        sha:
+          type: string
+        url:
+          type: string
+          format: uri
+        git_url:
+          type: string
+          format: uri
+          nullable: true
+        html_url:
+          type: string
+          format: uri
+          nullable: true
+        download_url:
+          type: string
+          format: uri
+          nullable: true
+      required:
+        - type
+        - name
+        - path
+        - sha
 
     License:
       type: object

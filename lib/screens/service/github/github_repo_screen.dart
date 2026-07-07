@@ -4,7 +4,6 @@ import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_bloc/github_bloc.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/service/service_screen.dart';
@@ -242,28 +241,89 @@ class _WorkflowTile extends StatelessWidget {
 
   void _showDispatchDialog(BuildContext context) {
     final branchController = TextEditingController(text: 'main');
+    final formKey = GlobalKey<FormState>();
+    final textControllers = {
+      for (final input in workflow.inputs)
+        if (!input.isChoice && !input.isBoolean)
+          input.name: TextEditingController(text: input.defaultValue ?? ''),
+    };
+    final choiceValues = {
+      for (final input in workflow.inputs)
+        if (input.isChoice &&
+            input.defaultValue != null &&
+            input.options.contains(input.defaultValue))
+          input.name: input.defaultValue!,
+    };
+    final boolValues = {
+      for (final input in workflow.inputs)
+        if (input.isBoolean) input.name: input.defaultValue == 'true',
+    };
 
     showDmDialog(
       context: context,
       title: Text('Run ${workflow.name}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Enter the branch or tag to run this workflow on:'),
-          const SizedBox(height: 16),
-          Material(
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          return Material(
             type: MaterialType.transparency,
-            child: TextField(
-              controller: branchController,
-              decoration: const InputDecoration(
-                labelText: 'Branch/Tag',
-                hintText: 'main',
-                border: OutlineInputBorder(),
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Material(
+                      type: MaterialType.transparency,
+                      child: TextFormField(
+                        controller: branchController,
+                        decoration: const InputDecoration(
+                          labelText: 'Branch/Tag',
+                          hintText: 'main',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Branch or tag is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    if (workflow.hasInputs) ...[
+                      const SizedBox(height: 16),
+                      ...workflow.inputs.map(
+                        (input) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _WorkflowInputField(
+                            input: input,
+                            textController: textControllers[input.name],
+                            choiceValue: choiceValues[input.name],
+                            boolValue: boolValues[input.name] ?? false,
+                            onChoiceChanged: (value) {
+                              setState(() {
+                                if (value == null) {
+                                  choiceValues.remove(input.name);
+                                } else {
+                                  choiceValues[input.name] = value;
+                                }
+                              });
+                            },
+                            onBoolChanged: (value) {
+                              setState(() {
+                                boolValues[input.name] = value;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          );
+        },
       ),
       actions: [
         DmDialogAction(
@@ -272,10 +332,21 @@ class _WorkflowTile extends StatelessWidget {
         ),
         DmDialogAction(
           onPressed: (ctx) {
+            final isValid = formKey.currentState?.validate() ?? false;
+            if (!isValid) return;
+
             final ref = branchController.text.trim();
             if (ref.isNotEmpty) {
               context.read<GitHubActionsBloc>().add(
-                GitHubActionsDispatch(workflowId: workflow.id, ref: ref),
+                GitHubActionsDispatch(
+                  workflowId: workflow.id,
+                  ref: ref,
+                  inputs: _collectInputs(
+                    textControllers: textControllers,
+                    choiceValues: choiceValues,
+                    boolValues: boolValues,
+                  ),
+                ),
               );
               Navigator.pop(ctx);
             }
@@ -285,6 +356,107 @@ class _WorkflowTile extends StatelessWidget {
       ],
     );
   }
+
+  Map<String, String>? _collectInputs({
+    required Map<String, TextEditingController> textControllers,
+    required Map<String, String> choiceValues,
+    required Map<String, bool> boolValues,
+  }) {
+    final inputs = <String, String>{};
+
+    for (final input in workflow.inputs) {
+      if (input.isBoolean) {
+        inputs[input.name] = (boolValues[input.name] ?? false).toString();
+        continue;
+      }
+
+      final value = input.isChoice
+          ? choiceValues[input.name]
+          : textControllers[input.name]?.text;
+      final trimmed = value?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) {
+        inputs[input.name] = trimmed;
+      }
+    }
+
+    if (inputs.isEmpty) return null;
+    return inputs;
+  }
+}
+
+class _WorkflowInputField extends StatelessWidget {
+  const _WorkflowInputField({
+    required this.input,
+    required this.choiceValue,
+    required this.boolValue,
+    required this.onChoiceChanged,
+    required this.onBoolChanged,
+    this.textController,
+  });
+
+  final GitHubWorkflowInput input;
+  final TextEditingController? textController;
+  final String? choiceValue;
+  final bool boolValue;
+  final ValueChanged<String?> onChoiceChanged;
+  final ValueChanged<bool> onBoolChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    if (input.isChoice) {
+      return DropdownButtonFormField<String>(
+        initialValue: choiceValue,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: _label,
+          helperText: input.description,
+          border: const OutlineInputBorder(),
+        ),
+        items: [
+          for (final option in input.options)
+            DropdownMenuItem(value: option, child: Text(option)),
+        ],
+        onChanged: onChoiceChanged,
+        validator: (value) {
+          if (input.required && (value == null || value.trim().isEmpty)) {
+            return '${input.name} is required';
+          }
+          return null;
+        },
+      );
+    }
+
+    if (input.isBoolean) {
+      return SwitchListTile.adaptive(
+        contentPadding: EdgeInsets.zero,
+        title: Text(_label),
+        subtitle: input.description == null ? null : Text(input.description!),
+        value: boolValue,
+        onChanged: onBoolChanged,
+      );
+    }
+
+    return Material(
+      type: MaterialType.transparency,
+      child: TextFormField(
+        controller: textController,
+        keyboardType: input.type == 'number' ? TextInputType.number : null,
+        decoration: InputDecoration(
+          labelText: _label,
+          helperText: input.description,
+          border: const OutlineInputBorder(),
+        ),
+        validator: (value) {
+          if (input.required && (value == null || value.trim().isEmpty)) {
+            return '${input.name} is required';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  String get _label => input.required ? '${input.name} *' : input.name;
 }
 
 class _WorkflowRunTile extends StatelessWidget {

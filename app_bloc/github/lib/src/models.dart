@@ -130,6 +130,7 @@ class GitHubWorkflow extends Equatable {
     required this.state,
     this.htmlUrl,
     this.badgeUrl,
+    this.inputs = const [],
   });
 
   final int id;
@@ -138,8 +139,22 @@ class GitHubWorkflow extends Equatable {
   final String state; // "active", "disabled_manually", etc.
   final String? htmlUrl;
   final String? badgeUrl;
+  final List<GitHubWorkflowInput> inputs;
 
   bool get isActive => state == 'active';
+  bool get hasInputs => inputs.isNotEmpty;
+
+  GitHubWorkflow copyWith({List<GitHubWorkflowInput>? inputs}) {
+    return GitHubWorkflow(
+      id: id,
+      name: name,
+      path: path,
+      state: state,
+      htmlUrl: htmlUrl,
+      badgeUrl: badgeUrl,
+      inputs: inputs ?? this.inputs,
+    );
+  }
 
   factory GitHubWorkflow.fromJson(Map<String, dynamic> json) {
     return GitHubWorkflow(
@@ -149,6 +164,12 @@ class GitHubWorkflow extends Equatable {
       state: json['state'] as String? ?? 'unknown',
       htmlUrl: json['html_url'] as String?,
       badgeUrl: json['badge_url'] as String?,
+      inputs:
+          (json['inputs'] as List<dynamic>?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(GitHubWorkflowInput.fromJson)
+              .toList() ??
+          const [],
     );
   }
 
@@ -164,7 +185,55 @@ class GitHubWorkflow extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, path, state];
+  List<Object?> get props => [id, name, path, state, inputs];
+}
+
+/// GitHub workflow_dispatch input metadata
+@immutable
+class GitHubWorkflowInput extends Equatable {
+  const GitHubWorkflowInput({
+    required this.name,
+    this.description,
+    this.defaultValue,
+    this.required = false,
+    this.type,
+    this.options = const [],
+  });
+
+  final String name;
+  final String? description;
+  final String? defaultValue;
+  final bool required;
+  final String? type;
+  final List<String> options;
+
+  bool get isChoice => type == 'choice' && options.isNotEmpty;
+  bool get isBoolean => type == 'boolean';
+
+  factory GitHubWorkflowInput.fromJson(Map<String, dynamic> json) {
+    return GitHubWorkflowInput(
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      defaultValue: json['default']?.toString(),
+      required: json['required'] as bool? ?? false,
+      type: json['type']?.toString(),
+      options:
+          (json['options'] as List<dynamic>?)
+              ?.map((option) => option.toString())
+              .toList() ??
+          const [],
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    name,
+    description,
+    defaultValue,
+    required,
+    type,
+    options,
+  ];
 }
 
 /// GitHub Workflow Run

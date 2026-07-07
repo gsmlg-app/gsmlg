@@ -7,6 +7,7 @@ import 'package:retrofit/retrofit.dart';
 
 import '../models/direction.dart';
 import '../models/repository.dart';
+import '../models/repository_content.dart';
 import '../models/sort.dart';
 import '../models/type.dart';
 import '../models/visibility.dart';
@@ -62,5 +63,24 @@ abstract class ReposClient {
   Future<Repository> getRepo({
     @Path('owner') required String owner,
     @Path('repo') required String repo,
+  });
+
+  /// Get repository content.
+  ///
+  /// Gets the contents of a file in a repository.
+  ///
+  /// [owner] - The account owner of the repository.
+  ///
+  /// [repo] - The name of the repository without the `.git` extension.
+  ///
+  /// [path] - The content path.
+  ///
+  /// [ref] - The name of the commit/branch/tag.
+  @GET('/repos/{owner}/{repo}/contents/{path}')
+  Future<RepositoryContent> getRepositoryContent({
+    @Path('owner') required String owner,
+    @Path('repo') required String repo,
+    @Path('path') required String path,
+    @Query('ref') String? ref,
   });
 }

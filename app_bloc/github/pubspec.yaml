@@ -17,6 +17,7 @@ dependencies:
   app_secure_storage: any
   app_database: any
   github_api: any
+  yaml: any
 
 dev_dependencies:
   test: any
