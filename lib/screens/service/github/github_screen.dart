@@ -6,7 +6,6 @@ import 'package:app_components/app_components.dart';
 import 'package:app_database/app_database.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_bloc/github_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
@@ -228,9 +227,7 @@ class GitHubServiceScreen extends StatelessWidget {
                           hintText: 'ghp_xxxxxxxxxxxxxxxxxxxx',
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
-                            tooltip: obscurePat
-                                ? 'Show token'
-                                : 'Hide token',
+                            tooltip: obscurePat ? 'Show token' : 'Hide token',
                             icon: Icon(
                               obscurePat
                                   ? Icons.visibility_off
@@ -531,53 +528,14 @@ class _AllReposTab extends StatelessWidget {
         if (state is GitHubReposLoaded) {
           return CustomScrollView(
             slivers: [
-              // User repos section
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  child: Row(
-                    children: [
-                      if (user.avatarUrl != null)
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundImage: NetworkImage(user.avatarUrl!),
-                        ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Your Repositories (${state.userRepos.length})',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (state.userRepos.isEmpty)
+              if (state.orgs.isEmpty)
                 const SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(16),
-                    child: Text('No repositories found'),
+                    child: Text('No organizations found'),
                   ),
                 )
               else
-                SliverList.builder(
-                  itemCount: state.userRepos.length,
-                  itemBuilder: (context, index) {
-                    final repo = state.userRepos[index];
-                    return _RepoTile(repo: repo);
-                  },
-                ),
-
-              // Organizations section
-              if (state.orgs.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Text(
-                      'Organizations',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                ),
                 SliverList.builder(
                   itemCount: state.orgs.length,
                   itemBuilder: (context, index) {
@@ -596,7 +554,6 @@ class _AllReposTab extends StatelessWidget {
                     );
                   },
                 ),
-              ],
 
               // Bottom padding
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
