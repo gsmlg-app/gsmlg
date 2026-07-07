@@ -4,11 +4,10 @@ import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
 import 'package:camera_macos/camera_macos.dart';
 import 'package:camera_settings_form/camera_settings_form.dart';
-import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:duskmoon_form/duskmoon_form.dart';
 import 'package:gsmlg/destination.dart';
+import 'package:gsmlg/screens/toolbox/camera/camera_settings_dialog.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 
 class CameraMacosScreen extends StatefulWidget {
@@ -178,20 +177,15 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
   }
 
   void _showSettingsDialog(BuildContext context) {
-    showDmDialog(
+    // WORKAROUND(upstream): duskmoon-dev/flutter-duskmoon-ui#16
+    showDialog<void>(
       context: context,
-      title: const Text('Camera Settings'),
-      content: CameraSettingsFormWidget(
+      builder: (dialogContext) => CameraSettingsDialog(
         formBloc: _formBloc,
         videoDevices: videoDevices,
         audioDevices: audioDevices,
+        onClose: () => Navigator.of(dialogContext).pop(),
       ),
-      actions: [
-        DmDialogAction(
-          onPressed: (ctx) => Navigator.of(ctx).pop(),
-          child: const Text('Close'),
-        ),
-      ],
     );
   }
 }

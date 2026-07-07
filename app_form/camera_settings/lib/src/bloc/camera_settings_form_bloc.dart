@@ -9,9 +9,8 @@ class CameraSettingsFormBloc extends FormBloc<String, String> {
     List<CameraMacOSDevice> videoDevices = const [],
     List<CameraMacOSDevice> audioDevices = const [],
   }) : super(autoValidate: true) {
-    // Update items for device selectors
-    deviceId.updateItems(videoDevices.map((d) => d.deviceId).toList());
-    audioDeviceId.updateItems(audioDevices.map((d) => d.deviceId).toList());
+    _updateDeviceItems(deviceId, videoDevices);
+    _updateDeviceItems(audioDeviceId, audioDevices);
 
     addFieldBlocs(fieldBlocs: [
       cameraMode,
@@ -57,11 +56,24 @@ class CameraSettingsFormBloc extends FormBloc<String, String> {
   );
 
   void updateVideoDevices(List<CameraMacOSDevice> devices) {
-    deviceId.updateItems(devices.map((d) => d.deviceId).toList());
+    _updateDeviceItems(deviceId, devices);
   }
 
   void updateAudioDevices(List<CameraMacOSDevice> devices) {
-    audioDeviceId.updateItems(devices.map((d) => d.deviceId).toList());
+    _updateDeviceItems(audioDeviceId, devices);
+  }
+
+  void _updateDeviceItems(
+    SelectFieldBloc<String, dynamic> fieldBloc,
+    List<CameraMacOSDevice> devices,
+  ) {
+    final deviceIds = devices.map((device) => device.deviceId).toList();
+    fieldBloc.updateItems(deviceIds);
+
+    if (deviceIds.isNotEmpty &&
+        (fieldBloc.value == null || !deviceIds.contains(fieldBloc.value))) {
+      fieldBloc.updateValue(deviceIds.first);
+    }
   }
 
   @override
