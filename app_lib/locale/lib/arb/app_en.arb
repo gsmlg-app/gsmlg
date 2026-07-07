@@ -113,6 +113,8 @@
   "deviceInfo": "Device Info",
   "wifiInfo": "Wifi Info",
   "account": "Account",
+  "accountRefresh": "Refresh accounts",
+  "accountSecretMissing": "Account secret missing",
   "monitorTitle": "Monitor",
   "monitorAddHost": "Add Host",
   "monitorDiscovering": "Scanning network...",

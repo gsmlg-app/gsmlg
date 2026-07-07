@@ -14,6 +14,7 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
       _vault = vault,
       super(const AccountsInitial()) {
     on<AccountsLoad>(_onLoad);
+    on<AccountsRefresh>(_onRefresh);
     on<AccountsAdd>(_onAdd);
     on<AccountsUpdate>(_onUpdate);
     on<AccountsUpdateApiKey>(_onUpdateApiKey);
@@ -28,14 +29,54 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
 
   String _vaultKey(int id) => '$_keyPrefix$id';
 
+  Future<AccountsLoaded> _loadAccountsWithSecrets() async {
+    final accounts = await _db.select(_db.serviceAccountTable).get();
+    final secrets = await _vault.readAll();
+    final missingSecretAccountIds = <int>{};
+
+    for (final account in accounts) {
+      final secret = secrets[_vaultKey(account.id)];
+      if (secret == null || secret.isEmpty) {
+        missingSecretAccountIds.add(account.id);
+      }
+    }
+
+    return AccountsLoaded(
+      accounts: accounts,
+      missingSecretAccountIds: missingSecretAccountIds,
+    );
+  }
+
   Future<void> _onLoad(AccountsLoad event, Emitter<AccountsState> emit) async {
     emit(const AccountsLoading());
 
     try {
-      final accounts = await _db.select(_db.serviceAccountTable).get();
-      emit(AccountsLoaded(accounts: accounts));
+      emit(await _loadAccountsWithSecrets());
     } catch (e) {
       emit(AccountsError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onRefresh(
+    AccountsRefresh event,
+    Emitter<AccountsState> emit,
+  ) async {
+    final currentState = state;
+
+    try {
+      emit(await _loadAccountsWithSecrets());
+    } catch (e) {
+      if (currentState is AccountsLoaded) {
+        emit(
+          AccountsLoaded(
+            accounts: currentState.accounts,
+            missingSecretAccountIds: currentState.missingSecretAccountIds,
+            error: 'Failed to refresh accounts: ${e.toString()}',
+          ),
+        );
+      } else {
+        emit(AccountsError(message: e.toString()));
+      }
     }
   }
 
@@ -44,6 +85,9 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
     final currentAccounts = currentState is AccountsLoaded
         ? currentState.accounts
         : <ServiceAccountTableData>[];
+    final currentMissingSecretAccountIds = currentState is AccountsLoaded
+        ? currentState.missingSecretAccountIds
+        : const <int>{};
 
     emit(const AccountsLoading());
 
@@ -62,12 +106,12 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
         return id;
       });
 
-      final accounts = await _db.select(_db.serviceAccountTable).get();
-      emit(AccountsLoaded(accounts: accounts));
+      emit(await _loadAccountsWithSecrets());
     } catch (e) {
       emit(
         AccountsLoaded(
           accounts: currentAccounts,
+          missingSecretAccountIds: currentMissingSecretAccountIds,
           error: 'Failed to add account: ${e.toString()}',
         ),
       );
@@ -92,12 +136,12 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
         ),
       );
 
-      final accounts = await _db.select(_db.serviceAccountTable).get();
-      emit(AccountsLoaded(accounts: accounts));
+      emit(await _loadAccountsWithSecrets());
     } catch (e) {
       emit(
         AccountsLoaded(
           accounts: currentState.accounts,
+          missingSecretAccountIds: currentState.missingSecretAccountIds,
           error: 'Failed to update account: ${e.toString()}',
         ),
       );
@@ -120,11 +164,12 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
         ServiceAccountTableCompanion(updatedAt: Value(DateTime.now())),
       );
 
-      emit(AccountsLoaded(accounts: currentState.accounts));
+      emit(await _loadAccountsWithSecrets());
     } catch (e) {
       emit(
         AccountsLoaded(
           accounts: currentState.accounts,
+          missingSecretAccountIds: currentState.missingSecretAccountIds,
           error: 'Failed to update API key: ${e.toString()}',
         ),
       );
@@ -145,12 +190,12 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
         _db.serviceAccountTable,
       )..where((t) => t.id.equals(event.id))).go();
 
-      final accounts = await _db.select(_db.serviceAccountTable).get();
-      emit(AccountsLoaded(accounts: accounts));
+      emit(await _loadAccountsWithSecrets());
     } catch (e) {
       emit(
         AccountsLoaded(
           accounts: currentState.accounts,
+          missingSecretAccountIds: currentState.missingSecretAccountIds,
           error: 'Failed to delete account: ${e.toString()}',
         ),
       );

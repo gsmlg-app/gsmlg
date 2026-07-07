@@ -36,14 +36,31 @@ class AccountScreen extends StatelessWidget {
             builder: (context, state) {
               return CustomScrollView(
                 slivers: <Widget>[
-                  SliverAppBar(title: Text(context.l10n.account)),
+                  SliverAppBar(
+                    title: Text(context.l10n.account),
+                    actions: [
+                      IconButton(
+                        tooltip: context.l10n.accountRefresh,
+                        onPressed: state is AccountsLoading
+                            ? null
+                            : () => context.read<AccountsBloc>().add(
+                                const AccountsRefresh(),
+                              ),
+                        icon: const Icon(Icons.refresh),
+                      ),
+                    ],
+                  ),
                   if (state is AccountsLoading)
                     const SliverFillRemaining(
                       child: Center(child: CircularProgressIndicator()),
                     )
                   else if (state is AccountsLoaded)
                     SliverFillRemaining(
-                      child: _buildProviderSections(context, state.accounts),
+                      child: _buildProviderSections(
+                        context,
+                        state.accounts,
+                        missingSecretAccountIds: state.missingSecretAccountIds,
+                      ),
                     )
                   else if (state is AccountsError)
                     SliverFillRemaining(
@@ -84,8 +101,9 @@ class AccountScreen extends StatelessWidget {
 
   Widget _buildProviderSections(
     BuildContext context,
-    List<ServiceAccountTableData> accounts,
-  ) {
+    List<ServiceAccountTableData> accounts, {
+    Set<int> missingSecretAccountIds = const {},
+  }) {
     final sections = ServiceProvider.values.map((provider) {
       final providerAccounts = accounts
           .where((a) => a.provider == provider)
@@ -104,9 +122,11 @@ class AccountScreen extends StatelessWidget {
             (account) => SettingsTile(
               leading: Icon(_providerIcon(account.provider)),
               title: Text(account.name),
-              description: account.description.isNotEmpty
-                  ? Text(account.description)
-                  : null,
+              description: _accountDescription(
+                context,
+                account,
+                missingSecretAccountIds.contains(account.id),
+              ),
               trailing: PopupMenuButton<String>(
                 onSelected: (action) {
                   switch (action) {
@@ -169,6 +189,34 @@ class AccountScreen extends StatelessWidget {
     }).toList();
 
     return SettingsList(sections: sections);
+  }
+
+  Widget? _accountDescription(
+    BuildContext context,
+    ServiceAccountTableData account,
+    bool isSecretMissing,
+  ) {
+    final hasDescription = account.description.isNotEmpty;
+    if (!hasDescription && !isSecretMissing) return null;
+
+    if (!isSecretMissing) return Text(account.description);
+
+    final missingSecretText = Text(
+      context.l10n.accountSecretMissing,
+      style: TextStyle(color: Theme.of(context).colorScheme.error),
+    );
+
+    if (!hasDescription) return missingSecretText;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(account.description),
+        const SizedBox(height: 4),
+        missingSecretText,
+      ],
+    );
   }
 
   void _showAddDialog(BuildContext context, ServiceProvider provider) {

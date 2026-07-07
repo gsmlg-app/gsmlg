@@ -13,6 +13,11 @@ final class AccountsLoad extends AccountsEvent {
   const AccountsLoad();
 }
 
+/// Refresh service accounts and validate stored secrets.
+final class AccountsRefresh extends AccountsEvent {
+  const AccountsRefresh();
+}
+
 /// Add a new service account
 final class AccountsAdd extends AccountsEvent {
   const AccountsAdd({

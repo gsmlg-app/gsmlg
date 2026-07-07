@@ -792,6 +792,18 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get account;
 
+  /// No description provided for @accountRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh accounts'**
+  String get accountRefresh;
+
+  /// No description provided for @accountSecretMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Account secret missing'**
+  String get accountSecretMissing;
+
   /// No description provided for @monitorTitle.
   ///
   /// In en, this message translates to:

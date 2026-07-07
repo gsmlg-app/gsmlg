@@ -20,16 +20,24 @@ final class AccountsLoading extends AccountsState {
 
 /// Successfully loaded accounts
 final class AccountsLoaded extends AccountsState {
-  const AccountsLoaded({required this.accounts, this.error});
+  const AccountsLoaded({
+    required this.accounts,
+    this.missingSecretAccountIds = const {},
+    this.error,
+  });
 
   final List<ServiceAccountTableData> accounts;
+  final Set<int> missingSecretAccountIds;
   final String? error;
 
   List<ServiceAccountTableData> byProvider(ServiceProvider provider) =>
       accounts.where((a) => a.provider == provider).toList();
 
+  bool isSecretMissing(int accountId) =>
+      missingSecretAccountIds.contains(accountId);
+
   @override
-  List<Object?> get props => [accounts, error];
+  List<Object?> get props => [accounts, missingSecretAccountIds, error];
 }
 
 /// Error state

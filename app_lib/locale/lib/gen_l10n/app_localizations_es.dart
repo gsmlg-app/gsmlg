@@ -347,6 +347,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get account => 'Account';
 
   @override
+  String get accountRefresh => 'Refresh accounts';
+
+  @override
+  String get accountSecretMissing => 'Account secret missing';
+
+  @override
   String get monitorTitle => 'Monitor';
 
   @override
