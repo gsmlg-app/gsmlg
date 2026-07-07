@@ -4,6 +4,7 @@ import 'package:app_locale/app_locale.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:dio/dio.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:github_api/github_api.dart' as github_api;
@@ -48,9 +49,14 @@ on:
         child: MaterialApp(
           localizationsDelegates: AppLocale.localizationsDelegates,
           supportedLocales: AppLocale.supportedLocales,
-          home: const DmPlatformOverride(
-            style: DmPlatformStyle.cupertino,
-            child: GitHubRepoScreen(owner: 'gsmlg-app', repo: 'gsmlg'),
+          home: MaterialApp(
+            theme: DmThemeData.moonlight(),
+            localizationsDelegates: AppLocale.localizationsDelegates,
+            supportedLocales: AppLocale.supportedLocales,
+            home: const DmPlatformOverride(
+              style: DmPlatformStyle.cupertino,
+              child: GitHubRepoScreen(owner: 'gsmlg-app', repo: 'gsmlg'),
+            ),
           ),
         ),
       ),
@@ -62,6 +68,10 @@ on:
 
     expect(tester.takeException(), isNull);
     expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+    expect(
+      CupertinoTheme.of(tester.element(find.text('Run Release'))).brightness,
+      Brightness.dark,
+    );
   });
 }
 

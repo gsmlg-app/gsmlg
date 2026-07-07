@@ -3,11 +3,47 @@ import 'dart:io';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:github_bloc/github_bloc.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/service/service_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+Future<T?> _showLocalThemedDmDialog<T>({
+  required BuildContext context,
+  required Widget title,
+  required Widget content,
+  List<Widget>? actions,
+}) {
+  final style = resolvePlatformStyle(context);
+  final cupertinoTheme = MaterialBasedCupertinoThemeData(
+    materialTheme: Theme.of(context),
+  );
+
+  // WORKAROUND(upstream): duskmoon-dev/flutter-duskmoon-ui#17
+  return showDialog<T>(
+    context: context,
+    useRootNavigator: false,
+    builder: (context) {
+      if (style == DmPlatformStyle.cupertino) {
+        return DmPlatformOverride(
+          style: style,
+          child: CupertinoTheme(
+            data: cupertinoTheme,
+            child: CupertinoAlertDialog(
+              title: title,
+              content: content,
+              actions: actions ?? const [],
+            ),
+          ),
+        );
+      }
+
+      return AlertDialog(title: title, content: content, actions: actions);
+    },
+  );
+}
 
 class GitHubRepoScreen extends StatelessWidget {
   static const name = 'GitHubRepo';
@@ -259,7 +295,7 @@ class _WorkflowTile extends StatelessWidget {
         if (input.isBoolean) input.name: input.defaultValue == 'true',
     };
 
-    showDmDialog(
+    _showLocalThemedDmDialog(
       context: context,
       title: Text('Run ${workflow.name}'),
       content: StatefulBuilder(
