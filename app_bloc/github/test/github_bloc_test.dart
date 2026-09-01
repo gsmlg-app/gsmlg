@@ -60,9 +60,7 @@ void main() {
             ),
           ],
           contents: {
-            workflowPath: _repositoryContent(
-              workflowPath,
-              '''
+            workflowPath: _repositoryContent(workflowPath, '''
 name: Release
 on:
   workflow_dispatch:
@@ -82,8 +80,7 @@ on:
         description: Validate without publishing
         default: true
         type: boolean
-''',
-            ),
+'''),
           },
         ),
         owner: 'gsmlg',

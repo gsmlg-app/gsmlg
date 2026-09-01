@@ -78,7 +78,7 @@ class ApiClient {
               cancelOnError: true,
             );
         final response = await _client.send(request);
-        return Response.fromStream(response);
+        return await Response.fromStream(response);
       }
 
       if (body is MultipartRequest) {
@@ -88,7 +88,7 @@ class ApiClient {
         request.headers.addAll(body.headers);
         request.headers.addAll(headerParams);
         final response = await _client.send(request);
-        return Response.fromStream(response);
+        return await Response.fromStream(response);
       }
 
       final msgBody = contentType == 'application/x-www-form-urlencoded'

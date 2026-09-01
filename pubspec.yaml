@@ -74,27 +74,27 @@ dependencies:
 
   logging: ^1.3.0
 
-  go_router: ^17.2.1
+  go_router: ^18.0.0
 
-  bloc: ^9.2.0
+  bloc: ^9.2.1
   flutter_bloc: ^9.0.0
-  equatable: ^2.0.8
+  equatable: ^2.1.0
 
   shared_preferences: ^2.5.5
-  path_provider: ^2.1.5
+  path_provider: ^2.1.6
   path: any
 
   cupertino_icons: ^1.0.9
-  flutter_svg: ^2.2.4
-  lottie: ^3.3.3
+  flutter_svg: ^2.3.0
+  lottie: ^3.5.1
 
-  duskmoon_ui: ^1.6.2
-  duskmoon_adaptive_scaffold: ^1.6.2
+  duskmoon_ui: ^1.8.0
+  duskmoon_adaptive_scaffold: ^1.8.0
   flutter_slidable: ^4.0.0
-  file_picker: ^11.0.2
+  file_picker: ^11.0.3
   intl: any
-  flutter_blue_plus: ^2.3.9
-  camera: ^0.12.0+1
+  flutter_blue_plus: ^2.3.12
+  camera: ^0.12.0+2
   camera_macos: any
 
   crypto: any
@@ -138,7 +138,7 @@ dependencies:
   app_data_list: any
   app_world_map: any
   gsmlg_whois: any
-  duskmoon_form: ^1.6.2
+  duskmoon_form: ^1.8.0
   camera_settings_form: any
   ip_db: any
   app_chat: any
@@ -151,11 +151,11 @@ dependencies:
   monitor_agent: any
 
   # data visualization
-  duskmoon_visualization: ^1.6.2
-  record: ^7.1.0
+  duskmoon_visualization: ^1.8.0
+  record: ^7.1.1
   wakelock_plus: ^1.5.2
-  background_downloader: ^9.5.5
-  audioplayers: ^6.7.1
+  background_downloader: ^9.5.9
+  audioplayers: ^6.8.1
 
 dependency_overrides:
   camera_macos:
@@ -168,12 +168,12 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
 
-  build_runner: ^2.13.1
+  build_runner: ^2.16.0
 
   melos: ^7.8.1
   mason: ^0.1.1
   mason_cli: ^0.1.1
-  dependency_validator: ^5.0.2
+  dependency_validator: ^5.0.6
 
 flutter:
   uses-material-design: true

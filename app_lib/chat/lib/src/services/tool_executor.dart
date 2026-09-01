@@ -365,7 +365,7 @@ class ToolExecutor {
     try {
       final caller = _remoteMcpToolCaller;
       if (caller != null) {
-        return caller(serverJson, toolJson, args);
+        return await caller(serverJson, toolJson, args);
       }
       final headers = <String, dynamic>{};
       if (server.accountId != null) {

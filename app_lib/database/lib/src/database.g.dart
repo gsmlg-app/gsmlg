@@ -8473,11 +8473,12 @@ final class $$ChatConversationTableTableReferences extends BaseReferences<
   $$ChatConversationTableTableReferences(
       super.$_db, super.$_table, super.$_typedResult);
 
-  static MultiTypedResultKey<$ChatMessageTableTable, List<ChatMessageTableData>>
-      _chatMessageTableRefsTable(_$AppDatabase db) =>
-          MultiTypedResultKey.fromTable(db.chatMessageTable,
-              aliasName: $_aliasNameGenerator(db.chatConversationTable.id,
-                  db.chatMessageTable.conversationId));
+  static MultiTypedResultKey<$ChatMessageTableTable,
+      List<ChatMessageTableData>> _chatMessageTableRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.chatMessageTable,
+          aliasName:
+              'chat_conversation_table__id__chat_message_table__conversation_id');
 
   $$ChatMessageTableTableProcessedTableManager get chatMessageTableRefs {
     final manager =
@@ -8755,8 +8756,8 @@ final class $$ChatMessageTableTableReferences extends BaseReferences<
       super.$_db, super.$_table, super.$_typedResult);
 
   static $ChatConversationTableTable _conversationIdTable(_$AppDatabase db) =>
-      db.chatConversationTable.createAlias($_aliasNameGenerator(
-          db.chatMessageTable.conversationId, db.chatConversationTable.id));
+      db.chatConversationTable.createAlias(
+          'chat_message_table__conversation_id__chat_conversation_table__id');
 
   $$ChatConversationTableTableProcessedTableManager get conversationId {
     final $_column = $_itemColumn<String>('conversation_id')!;
@@ -9739,8 +9740,8 @@ final class $$MonitorHostTableTableReferences extends BaseReferences<
       List<MonitorTrustedCertTableData>> _monitorTrustedCertTableRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.monitorTrustedCertTable,
-          aliasName: $_aliasNameGenerator(
-              db.monitorHostTable.id, db.monitorTrustedCertTable.hostId));
+          aliasName:
+              'monitor_host_table__id__monitor_trusted_cert_table__host_id');
 
   $$MonitorTrustedCertTableTableProcessedTableManager
       get monitorTrustedCertTableRefs {
@@ -10016,8 +10017,8 @@ final class $$MonitorTrustedCertTableTableReferences extends BaseReferences<
       super.$_db, super.$_table, super.$_typedResult);
 
   static $MonitorHostTableTable _hostIdTable(_$AppDatabase db) =>
-      db.monitorHostTable.createAlias($_aliasNameGenerator(
-          db.monitorTrustedCertTable.hostId, db.monitorHostTable.id));
+      db.monitorHostTable.createAlias(
+          'monitor_trusted_cert_table__host_id__monitor_host_table__id');
 
   $$MonitorHostTableTableProcessedTableManager get hostId {
     final $_column = $_itemColumn<String>('host_id')!;
@@ -10301,8 +10302,8 @@ final class $$TtsDatasetProjectTableTableReferences extends BaseReferences<
       List<TtsDatasetSpeakerTableData>> _ttsDatasetSpeakerTableRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.ttsDatasetSpeakerTable,
-          aliasName: $_aliasNameGenerator(db.ttsDatasetProjectTable.id,
-              db.ttsDatasetSpeakerTable.projectId));
+          aliasName:
+              'tts_dataset_project_table__id__tts_dataset_speaker_table__project_id');
 
   $$TtsDatasetSpeakerTableTableProcessedTableManager
       get ttsDatasetSpeakerTableRefs {
@@ -10320,8 +10321,8 @@ final class $$TtsDatasetProjectTableTableReferences extends BaseReferences<
       List<TtsDatasetPromptTableData>> _ttsDatasetPromptTableRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.ttsDatasetPromptTable,
-          aliasName: $_aliasNameGenerator(db.ttsDatasetProjectTable.id,
-              db.ttsDatasetPromptTable.projectId));
+          aliasName:
+              'tts_dataset_project_table__id__tts_dataset_prompt_table__project_id');
 
   $$TtsDatasetPromptTableTableProcessedTableManager
       get ttsDatasetPromptTableRefs {
@@ -10339,8 +10340,8 @@ final class $$TtsDatasetProjectTableTableReferences extends BaseReferences<
       List<TtsDatasetClipTableData>> _ttsDatasetClipTableRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.ttsDatasetClipTable,
-          aliasName: $_aliasNameGenerator(
-              db.ttsDatasetProjectTable.id, db.ttsDatasetClipTable.projectId));
+          aliasName:
+              'tts_dataset_project_table__id__tts_dataset_clip_table__project_id');
 
   $$TtsDatasetClipTableTableProcessedTableManager get ttsDatasetClipTableRefs {
     final manager = $$TtsDatasetClipTableTableTableManager(
@@ -10357,8 +10358,8 @@ final class $$TtsDatasetProjectTableTableReferences extends BaseReferences<
           List<TtsDatasetValidationIssueTableData>>
       _ttsDatasetValidationIssueTableRefsTable(_$AppDatabase db) =>
           MultiTypedResultKey.fromTable(db.ttsDatasetValidationIssueTable,
-              aliasName: $_aliasNameGenerator(db.ttsDatasetProjectTable.id,
-                  db.ttsDatasetValidationIssueTable.projectId));
+              aliasName:
+                  'tts_dataset_project_table__id__tts_dataset_validation_issue_table__project_id');
 
   $$TtsDatasetValidationIssueTableTableProcessedTableManager
       get ttsDatasetValidationIssueTableRefs {
@@ -10893,8 +10894,8 @@ final class $$TtsDatasetSpeakerTableTableReferences extends BaseReferences<
       super.$_db, super.$_table, super.$_typedResult);
 
   static $TtsDatasetProjectTableTable _projectIdTable(_$AppDatabase db) =>
-      db.ttsDatasetProjectTable.createAlias($_aliasNameGenerator(
-          db.ttsDatasetSpeakerTable.projectId, db.ttsDatasetProjectTable.id));
+      db.ttsDatasetProjectTable.createAlias(
+          'tts_dataset_speaker_table__project_id__tts_dataset_project_table__id');
 
   $$TtsDatasetProjectTableTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -10912,8 +10913,8 @@ final class $$TtsDatasetSpeakerTableTableReferences extends BaseReferences<
       List<TtsDatasetClipTableData>> _ttsDatasetClipTableRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.ttsDatasetClipTable,
-          aliasName: $_aliasNameGenerator(
-              db.ttsDatasetSpeakerTable.id, db.ttsDatasetClipTable.speakerId));
+          aliasName:
+              'tts_dataset_speaker_table__id__tts_dataset_clip_table__speaker_id');
 
   $$TtsDatasetClipTableTableProcessedTableManager get ttsDatasetClipTableRefs {
     final manager = $$TtsDatasetClipTableTableTableManager(
@@ -11343,8 +11344,8 @@ final class $$TtsDatasetPromptTableTableReferences extends BaseReferences<
       super.$_db, super.$_table, super.$_typedResult);
 
   static $TtsDatasetProjectTableTable _projectIdTable(_$AppDatabase db) =>
-      db.ttsDatasetProjectTable.createAlias($_aliasNameGenerator(
-          db.ttsDatasetPromptTable.projectId, db.ttsDatasetProjectTable.id));
+      db.ttsDatasetProjectTable.createAlias(
+          'tts_dataset_prompt_table__project_id__tts_dataset_project_table__id');
 
   $$TtsDatasetProjectTableTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -11362,8 +11363,8 @@ final class $$TtsDatasetPromptTableTableReferences extends BaseReferences<
       List<TtsDatasetClipTableData>> _ttsDatasetClipTableRefsTable(
           _$AppDatabase db) =>
       MultiTypedResultKey.fromTable(db.ttsDatasetClipTable,
-          aliasName: $_aliasNameGenerator(
-              db.ttsDatasetPromptTable.id, db.ttsDatasetClipTable.promptId));
+          aliasName:
+              'tts_dataset_prompt_table__id__tts_dataset_clip_table__prompt_id');
 
   $$TtsDatasetClipTableTableProcessedTableManager get ttsDatasetClipTableRefs {
     final manager = $$TtsDatasetClipTableTableTableManager(
@@ -11826,8 +11827,8 @@ final class $$TtsDatasetClipTableTableReferences extends BaseReferences<
       super.$_db, super.$_table, super.$_typedResult);
 
   static $TtsDatasetProjectTableTable _projectIdTable(_$AppDatabase db) =>
-      db.ttsDatasetProjectTable.createAlias($_aliasNameGenerator(
-          db.ttsDatasetClipTable.projectId, db.ttsDatasetProjectTable.id));
+      db.ttsDatasetProjectTable.createAlias(
+          'tts_dataset_clip_table__project_id__tts_dataset_project_table__id');
 
   $$TtsDatasetProjectTableTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -11842,8 +11843,8 @@ final class $$TtsDatasetClipTableTableReferences extends BaseReferences<
   }
 
   static $TtsDatasetSpeakerTableTable _speakerIdTable(_$AppDatabase db) =>
-      db.ttsDatasetSpeakerTable.createAlias($_aliasNameGenerator(
-          db.ttsDatasetClipTable.speakerId, db.ttsDatasetSpeakerTable.id));
+      db.ttsDatasetSpeakerTable.createAlias(
+          'tts_dataset_clip_table__speaker_id__tts_dataset_speaker_table__id');
 
   $$TtsDatasetSpeakerTableTableProcessedTableManager get speakerId {
     final $_column = $_itemColumn<String>('speaker_id')!;
@@ -11858,8 +11859,8 @@ final class $$TtsDatasetClipTableTableReferences extends BaseReferences<
   }
 
   static $TtsDatasetPromptTableTable _promptIdTable(_$AppDatabase db) =>
-      db.ttsDatasetPromptTable.createAlias($_aliasNameGenerator(
-          db.ttsDatasetClipTable.promptId, db.ttsDatasetPromptTable.id));
+      db.ttsDatasetPromptTable.createAlias(
+          'tts_dataset_clip_table__prompt_id__tts_dataset_prompt_table__id');
 
   $$TtsDatasetPromptTableTableProcessedTableManager? get promptId {
     final $_column = $_itemColumn<String>('prompt_id');
@@ -11877,8 +11878,8 @@ final class $$TtsDatasetClipTableTableReferences extends BaseReferences<
           List<TtsDatasetValidationIssueTableData>>
       _ttsDatasetValidationIssueTableRefsTable(_$AppDatabase db) =>
           MultiTypedResultKey.fromTable(db.ttsDatasetValidationIssueTable,
-              aliasName: $_aliasNameGenerator(db.ttsDatasetClipTable.id,
-                  db.ttsDatasetValidationIssueTable.clipId));
+              aliasName:
+                  'tts_dataset_clip_table__id__tts_dataset_validation_issue_table__clip_id');
 
   $$TtsDatasetValidationIssueTableTableProcessedTableManager
       get ttsDatasetValidationIssueTableRefs {
@@ -12695,9 +12696,8 @@ final class $$TtsDatasetValidationIssueTableTableReferences
       super.$_db, super.$_table, super.$_typedResult);
 
   static $TtsDatasetProjectTableTable _projectIdTable(_$AppDatabase db) =>
-      db.ttsDatasetProjectTable.createAlias($_aliasNameGenerator(
-          db.ttsDatasetValidationIssueTable.projectId,
-          db.ttsDatasetProjectTable.id));
+      db.ttsDatasetProjectTable.createAlias(
+          'tts_dataset_validation_issue_table__project_id__tts_dataset_project_table__id');
 
   $$TtsDatasetProjectTableTableProcessedTableManager get projectId {
     final $_column = $_itemColumn<String>('project_id')!;
@@ -12712,8 +12712,8 @@ final class $$TtsDatasetValidationIssueTableTableReferences
   }
 
   static $TtsDatasetClipTableTable _clipIdTable(_$AppDatabase db) =>
-      db.ttsDatasetClipTable.createAlias($_aliasNameGenerator(
-          db.ttsDatasetValidationIssueTable.clipId, db.ttsDatasetClipTable.id));
+      db.ttsDatasetClipTable.createAlias(
+          'tts_dataset_validation_issue_table__clip_id__tts_dataset_clip_table__id');
 
   $$TtsDatasetClipTableTableProcessedTableManager? get clipId {
     final $_column = $_itemColumn<String>('clip_id');
