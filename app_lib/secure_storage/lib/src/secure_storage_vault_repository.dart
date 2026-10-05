@@ -105,8 +105,10 @@ class SecureStorageVaultRepository implements VaultRepository {
   Future<void> delete({required String key}) async {
     await _withSerializedMutation(() async {
       final values = await _readVaultValues();
-      values.remove(key);
-      await _writeVaultValues(values);
+      if (values.containsKey(key)) {
+        values.remove(key);
+        await _writeVaultValues(values);
+      }
       await _deleteLegacyValue(_prefixedKey(key));
     });
   }
@@ -214,7 +216,8 @@ class SecureStorageVaultRepository implements VaultRepository {
   }
 
   Future<void> _deleteLegacyValue(String prefixedKey) async {
-    if (prefixedKey != _prefixedVaultStoreKey) {
+    if (prefixedKey != _prefixedVaultStoreKey &&
+        await _storage.read(key: prefixedKey) != null) {
       await _storage.delete(key: prefixedKey);
     }
     await _deleteLegacyMacOsValue(prefixedKey);
@@ -278,7 +281,9 @@ class SecureStorageVaultRepository implements VaultRepository {
     if (legacyStorage == null) return;
 
     try {
-      await legacyStorage.delete(key: prefixedKey);
+      if (await legacyStorage.read(key: prefixedKey) != null) {
+        await legacyStorage.delete(key: prefixedKey);
+      }
     } catch (_) {
       // Legacy data-protection keychain access can fail without entitlements.
     }

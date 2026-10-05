@@ -31,11 +31,10 @@ class AccountsBloc extends Bloc<AccountsEvent, AccountsState> {
 
   Future<AccountsLoaded> _loadAccountsWithSecrets() async {
     final accounts = await _db.select(_db.serviceAccountTable).get();
-    final secrets = await _vault.readAll();
     final missingSecretAccountIds = <int>{};
 
     for (final account in accounts) {
-      final secret = secrets[_vaultKey(account.id)];
+      final secret = await _vault.read(key: _vaultKey(account.id));
       if (secret == null || secret.isEmpty) {
         missingSecretAccountIds.add(account.id);
       }

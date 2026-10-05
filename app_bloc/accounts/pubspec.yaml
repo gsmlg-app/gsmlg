@@ -17,5 +17,7 @@ dependencies:
   app_database: any
 
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
   test: any
   bloc_test: any
