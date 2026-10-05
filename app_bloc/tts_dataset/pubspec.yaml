@@ -19,5 +19,5 @@ dev_dependencies:
     sdk: flutter
   app_database: any
   bloc_test: ^10.0.0
-  mocktail: ^1.0.3
+  mocktail: ^1.0.5
   flutter_lints: ^6.0.0

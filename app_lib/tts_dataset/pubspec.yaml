@@ -9,7 +9,7 @@ environment:
   flutter: ">=3.41.0"
 
 dependencies:
-  archive: ^4.0.7
+  archive: ^4.3.0
   crypto: any
   drift: any
   equatable: ^2.0.8

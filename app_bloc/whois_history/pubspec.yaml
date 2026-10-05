@@ -8,7 +8,7 @@ resolution: workspace
 
 dependencies:
   bloc: ^9.2.0
-  drift: ^2.26.2
+  drift: ^2.35.0
   equatable: ^2.0.8
   flutter:
     sdk: flutter

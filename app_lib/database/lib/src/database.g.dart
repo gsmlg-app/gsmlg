@@ -7933,7 +7933,12 @@ class $$WhoisHistoryTableTableTableManager extends RootTableManager<
             createdAt: createdAt,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable<$WhoisHistoryTableTable, WhoisHistoryTableData>(
+                        table),
+                    BaseReferences<_$AppDatabase, $WhoisHistoryTableTable,
+                        WhoisHistoryTableData>(db, table, e)
+                  ))
               .toList(),
           prefetchHooksCallback: null,
         ));
@@ -8150,7 +8155,11 @@ class $$DnsZoneTableTableTableManager extends RootTableManager<
             updatedAt: updatedAt,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable<$DnsZoneTableTable, DnsZoneTableData>(table),
+                    BaseReferences<_$AppDatabase, $DnsZoneTableTable,
+                        DnsZoneTableData>(db, table, e)
+                  ))
               .toList(),
           prefetchHooksCallback: null,
         ));
@@ -8428,7 +8437,12 @@ class $$GitHubRepoTableTableTableManager extends RootTableManager<
             updatedAt: updatedAt,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable<$GitHubRepoTableTable, GitHubRepoTableData>(
+                        table),
+                    BaseReferences<_$AppDatabase, $GitHubRepoTableTable,
+                        GitHubRepoTableData>(db, table, e)
+                  ))
               .toList(),
           prefetchHooksCallback: null,
         ));
@@ -8670,7 +8684,8 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$ChatConversationTableTable,
+                        ChatConversationTableData>(table),
                     $$ChatConversationTableTableReferences(db, table, e)
                   ))
               .toList(),
@@ -9057,7 +9072,8 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$ChatMessageTableTable, ChatMessageTableData>(
+                        table),
                     $$ChatMessageTableTableReferences(db, table, e)
                   ))
               .toList(),
@@ -9499,7 +9515,12 @@ class $$ChatSettingsTableTableTableManager extends RootTableManager<
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable<$ChatSettingsTableTable, ChatSettingsTableData>(
+                        table),
+                    BaseReferences<_$AppDatabase, $ChatSettingsTableTable,
+                        ChatSettingsTableData>(db, table, e)
+                  ))
               .toList(),
           prefetchHooksCallback: null,
         ));
@@ -9688,7 +9709,12 @@ class $$ServiceAccountTableTableTableManager extends RootTableManager<
             updatedAt: updatedAt,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable<$ServiceAccountTableTable,
+                        ServiceAccountTableData>(table),
+                    BaseReferences<_$AppDatabase, $ServiceAccountTableTable,
+                        ServiceAccountTableData>(db, table, e)
+                  ))
               .toList(),
           prefetchHooksCallback: null,
         ));
@@ -9947,7 +9973,8 @@ class $$MonitorHostTableTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$MonitorHostTableTable, MonitorHostTableData>(
+                        table),
                     $$MonitorHostTableTableReferences(db, table, e)
                   ))
               .toList(),
@@ -10210,7 +10237,8 @@ class $$MonitorTrustedCertTableTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$MonitorTrustedCertTableTable,
+                        MonitorTrustedCertTableData>(table),
                     $$MonitorTrustedCertTableTableReferences(db, table, e)
                   ))
               .toList(),
@@ -10750,7 +10778,8 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$TtsDatasetProjectTableTable,
+                        TtsDatasetProjectTableData>(table),
                     $$TtsDatasetProjectTableTableReferences(db, table, e)
                   ))
               .toList(),
@@ -11233,7 +11262,8 @@ class $$TtsDatasetSpeakerTableTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$TtsDatasetSpeakerTableTable,
+                        TtsDatasetSpeakerTableData>(table),
                     $$TtsDatasetSpeakerTableTableReferences(db, table, e)
                   ))
               .toList(),
@@ -11680,7 +11710,8 @@ class $$TtsDatasetPromptTableTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$TtsDatasetPromptTableTable,
+                        TtsDatasetPromptTableData>(table),
                     $$TtsDatasetPromptTableTableReferences(db, table, e)
                   ))
               .toList(),
@@ -12560,7 +12591,8 @@ class $$TtsDatasetClipTableTableTableManager extends RootTableManager<
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$TtsDatasetClipTableTable,
+                        TtsDatasetClipTableData>(table),
                     $$TtsDatasetClipTableTableReferences(db, table, e)
                   ))
               .toList(),
@@ -13014,7 +13046,8 @@ class $$TtsDatasetValidationIssueTableTableTableManager
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (
-                    e.readTable(table),
+                    e.readTable<$TtsDatasetValidationIssueTableTable,
+                        TtsDatasetValidationIssueTableData>(table),
                     $$TtsDatasetValidationIssueTableTableReferences(
                         db, table, e)
                   ))

@@ -9,8 +9,8 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  drift: ^2.26.2
-  drift_flutter: ^0.3.0
+  drift: ^2.35.0
+  drift_flutter: ^0.3.1
   path_provider: ^2.1.5
   sqlite3_flutter_libs: ^0.6.0+eol
 
@@ -18,7 +18,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  drift_dev: ^2.26.2
-  build_runner: ^2.4.15
+  drift_dev: ^2.35.0
+  build_runner: ^2.16.1
 
 flutter:

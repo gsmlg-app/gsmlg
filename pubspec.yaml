@@ -74,10 +74,10 @@ dependencies:
 
   logging: ^1.3.0
 
-  go_router: ^18.0.0
+  go_router: ^18.0.1
 
   bloc: ^9.2.1
-  flutter_bloc: ^9.0.0
+  flutter_bloc: ^9.1.1
   equatable: ^2.1.0
 
   shared_preferences: ^2.5.5
@@ -86,15 +86,15 @@ dependencies:
 
   cupertino_icons: ^1.0.9
   flutter_svg: ^2.3.0
-  lottie: ^3.5.1
+  lottie: ^3.6.1
 
   duskmoon_ui: ^1.8.0
   duskmoon_adaptive_scaffold: ^1.8.0
-  flutter_slidable: ^4.0.0
+  flutter_slidable: ^4.0.3
   file_picker: ^11.0.3
   intl: any
-  flutter_blue_plus: ^2.3.12
-  camera: ^0.12.0+2
+  flutter_blue_plus: ^2.3.13
+  camera: ^0.12.1
   camera_macos: any
 
   crypto: any
@@ -102,7 +102,7 @@ dependencies:
   # TODO(upstream): gsmlg-app/lib_llama_cpp#32 - remove after macOS framework symlink warning is fixed.
   lib_llama_cpp: ^0.7.3
   multicast_dns: any
-  url_launcher: ^6.3.1
+  url_launcher: ^6.3.2
 
   # workspace packages
   cloudflare_dns: any
@@ -154,7 +154,7 @@ dependencies:
   duskmoon_visualization: ^1.8.0
   record: ^7.1.1
   wakelock_plus: ^1.5.2
-  background_downloader: ^9.5.9
+  background_downloader: ^9.6.2
   audioplayers: ^6.8.1
 
 dependency_overrides:
@@ -168,12 +168,12 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
 
-  build_runner: ^2.16.0
+  build_runner: ^2.16.1
 
   melos: ^7.8.1
-  mason: ^0.1.1
+  mason: ^0.1.3
   mason_cli: ^0.1.1
-  dependency_validator: ^5.0.6
+  dependency_validator: ^5.1.0
 
 flutter:
   uses-material-design: true
