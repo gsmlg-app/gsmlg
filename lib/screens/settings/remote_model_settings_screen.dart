@@ -6,6 +6,7 @@ import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
+import 'package:gsmlg/screens/settings/backplane_settings_screen.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -77,6 +79,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
                             state.config,
                             provider,
                           ),
+                        _buildBackplaneSection(context),
                         SettingsSection(
                           title: const Text('Accounts'),
                           tiles: [
@@ -102,6 +105,28 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
         );
       },
       smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
+    );
+  }
+
+  SettingsSection _buildBackplaneSection(BuildContext context) {
+    final settings = BackplaneSettingsBloc.readSettings(
+      context.read<SharedPreferences>(),
+    );
+    return SettingsSection(
+      title: Text(context.l10n.backplaneTitle),
+      tiles: [
+        SettingsTile.navigation(
+          title: Text(context.l10n.backplaneManagedConnection),
+          description: Text(settings.apiBaseUrl),
+          onPressed: (_) => context.goNamed(BackplaneSettingsScreen.name),
+        ),
+        for (final model in settings.models)
+          SettingsTile.navigation(
+            title: Text(model),
+            description: Text(context.l10n.backplaneManagedBy),
+            onPressed: (_) => context.goNamed(BackplaneSettingsScreen.name),
+          ),
+      ],
     );
   }
 

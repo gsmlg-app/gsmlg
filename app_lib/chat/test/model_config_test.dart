@@ -1,7 +1,33 @@
 import 'package:app_chat/src/models/model_config.dart';
+import 'package:app_chat/src/models/backplane_settings.dart';
+import 'package:app_chat/src/models/inference.dart';
 import 'package:test/test.dart';
 
 void main() {
+  test(
+    'managed Backplane requires real auth and preserves prefixed endpoints',
+    () {
+      const settings = BackplaneSettings(
+        serviceUrl: 'http://localhost:8080/team/',
+        models: ['model'],
+      );
+      final config = settings.modelConfig('model');
+      expect(settings.apiBaseUrl, 'http://localhost:8080/team/v1');
+      expect(settings.mcpUrl, 'http://localhost:8080/team/mcp');
+      expect(config.remoteUsesDummyToken, isFalse);
+      expect(config.remoteProvider, RemoteLlmProvider.openAi);
+      expect(config.remoteAuthType, RemoteAuthType.bearerToken);
+      expect(config.managedRemoteId, BackplaneSettings.managedId);
+      expect(
+        BackplaneSettings.validateUrl('https://secret@example.com'),
+        isNotNull,
+      );
+      expect(
+        BackplaneSettings.validateUrl('https://example.com/path?token=x'),
+        isNotNull,
+      );
+    },
+  );
   group('GemmaBackend', () {
     test('exposes selectable llama.cpp backends', () {
       expect(GemmaBackend.values, [

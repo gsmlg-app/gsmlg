@@ -237,6 +237,50 @@ void main() {
   });
 
   group('ToolExecutor remote MCP tools', () {
+    test(
+      'managed Backplane tools use the account and reject deletion',
+      () async {
+        final database = AppDatabase.forTesting();
+        addTearDown(database.close);
+        final accountId = await database
+            .into(database.serviceAccountTable)
+            .insert(
+              ServiceAccountTableCompanion.insert(
+                provider: ServiceProvider.openai,
+                name: 'Backplane token',
+              ),
+            );
+        final vault = _MemoryVaultRepository();
+        await vault.write(key: 'service_account_$accountId', value: 'secret');
+        final settings = BackplaneSettings(
+          serviceUrl: 'https://example.com/team',
+          accountId: accountId,
+          mcpEnabled: true,
+          tools: const [
+            {'name': 'lookup'},
+          ],
+        );
+        final executor = ToolExecutor(
+          database: database,
+          vault: vault,
+          remoteMcpProfilesProvider: () => [jsonEncode(settings.mcpProfile)],
+          dartMcpToolClient: _FakeDartMcpToolClient(),
+        );
+        final result = await executor.execute('mcp_backplane_lookup', {});
+        expect((result['response'] as Map<String, dynamic>)['headers'], {
+          'Authorization': 'Bearer secret',
+        });
+        expect(
+          (result['response'] as Map<String, dynamic>)['url'],
+          'https://example.com/team/mcp',
+        );
+
+        await database.delete(database.serviceAccountTable).go();
+        final blocked = await executor.execute('mcp_backplane_lookup', {});
+        expect(blocked['error'], contains('Manage Service Accounts'));
+      },
+    );
+
     test('adds enabled remote MCP tools to chat tool definitions', () {
       final executor = ToolExecutor(
         remoteMcpProfilesProvider: () => [

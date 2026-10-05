@@ -6,12 +6,15 @@ import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
+import 'package:app_locale/app_locale.dart';
+import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
+import 'package:gsmlg/screens/settings/backplane_settings_screen.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -63,6 +66,7 @@ class _RemoteToolsSettingsScreenState extends State<RemoteToolsSettingsScreen> {
               SliverFillRemaining(
                 child: SettingsList(
                   sections: [
+                    _buildBackplaneSection(context),
                     SettingsSection(
                       title: const Text('MCP Services'),
                       tiles: [
@@ -103,6 +107,32 @@ class _RemoteToolsSettingsScreenState extends State<RemoteToolsSettingsScreen> {
         );
       },
       smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
+    );
+  }
+
+  SettingsSection _buildBackplaneSection(BuildContext context) {
+    final settings = BackplaneSettingsBloc.readSettings(
+      context.read<SharedPreferences>(),
+    );
+    return SettingsSection(
+      title: Text(context.l10n.backplaneTitle),
+      tiles: [
+        SettingsTile.navigation(
+          title: Text(context.l10n.backplaneManagedTools),
+          description: Text(
+            settings.mcpEnabled
+                ? context.l10n.backplaneEnabled
+                : context.l10n.backplaneDisabled,
+          ),
+          onPressed: (_) => context.goNamed(BackplaneSettingsScreen.name),
+        ),
+        for (final tool in settings.tools)
+          SettingsTile.navigation(
+            title: Text(tool['name']?.toString() ?? ''),
+            description: Text(context.l10n.backplaneManagedBy),
+            onPressed: (_) => context.goNamed(BackplaneSettingsScreen.name),
+          ),
+      ],
     );
   }
 

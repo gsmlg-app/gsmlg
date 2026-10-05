@@ -557,4 +557,90 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get ttsDatasetPlaybackUnavailable => 'Could not play recording';
+
+  @override
+  String get backplaneTitle => 'Backplane';
+
+  @override
+  String get settingsChatGroup => 'Chat';
+
+  @override
+  String get settingsAgentMenu => 'Agent';
+
+  @override
+  String get backplaneServiceUrl => 'Service URL';
+
+  @override
+  String get backplaneAccount => 'Service account token';
+
+  @override
+  String get backplaneSelectAccount => 'Select an account';
+
+  @override
+  String get backplaneMissingAccount =>
+      'The selected account is unavailable. Manage Service Accounts.';
+
+  @override
+  String get backplaneManageAccounts => 'Manage Service Accounts';
+
+  @override
+  String get backplaneProtocol => 'LLM protocol';
+
+  @override
+  String get backplaneResponses => 'OpenAI Responses';
+
+  @override
+  String get backplaneCompletions => 'Chat Completions';
+
+  @override
+  String get backplaneMcpEnabled => 'Enable MCP tools';
+
+  @override
+  String get backplaneSave => 'Save';
+
+  @override
+  String get backplaneLoadModels => 'Load Models';
+
+  @override
+  String get backplaneRefreshTools => 'Refresh Tools';
+
+  @override
+  String get backplaneModels => 'Discovered models';
+
+  @override
+  String get backplaneTools => 'Discovered tools';
+
+  @override
+  String get backplaneNoModels => 'No models discovered';
+
+  @override
+  String get backplaneNoTools => 'No tools discovered';
+
+  @override
+  String get backplaneSaveBeforeDiscovery => 'Save changes before discovery.';
+
+  @override
+  String get backplaneInvalidUrl =>
+      'Enter an HTTP or HTTPS service URL without credentials, query, or fragment.';
+
+  @override
+  String get backplaneManagedConnection => 'Managed Backplane connection';
+
+  @override
+  String get backplaneManagedTools => 'Managed Backplane tools';
+
+  @override
+  String get backplaneManagedBy => 'Managed by Backplane';
+
+  @override
+  String get backplaneEnabled => 'Enabled';
+
+  @override
+  String get backplaneDisabled => 'Disabled';
+
+  @override
+  String get backplaneModelsLoadFailed => 'Could not load Backplane models';
+
+  @override
+  String get backplaneToolsRefreshFailed => 'Could not refresh Backplane tools';
 }

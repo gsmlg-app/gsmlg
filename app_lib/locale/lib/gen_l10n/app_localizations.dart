@@ -1181,6 +1181,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not play recording'**
   String get ttsDatasetPlaybackUnavailable;
+
+  /// No description provided for @backplaneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backplane'**
+  String get backplaneTitle;
+
+  /// No description provided for @settingsChatGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get settingsChatGroup;
+
+  /// No description provided for @settingsAgentMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent'**
+  String get settingsAgentMenu;
+
+  /// No description provided for @backplaneServiceUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Service URL'**
+  String get backplaneServiceUrl;
+
+  /// No description provided for @backplaneAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Service account token'**
+  String get backplaneAccount;
+
+  /// No description provided for @backplaneSelectAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an account'**
+  String get backplaneSelectAccount;
+
+  /// No description provided for @backplaneMissingAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected account is unavailable. Manage Service Accounts.'**
+  String get backplaneMissingAccount;
+
+  /// No description provided for @backplaneManageAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Service Accounts'**
+  String get backplaneManageAccounts;
+
+  /// No description provided for @backplaneProtocol.
+  ///
+  /// In en, this message translates to:
+  /// **'LLM protocol'**
+  String get backplaneProtocol;
+
+  /// No description provided for @backplaneResponses.
+  ///
+  /// In en, this message translates to:
+  /// **'OpenAI Responses'**
+  String get backplaneResponses;
+
+  /// No description provided for @backplaneCompletions.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat Completions'**
+  String get backplaneCompletions;
+
+  /// No description provided for @backplaneMcpEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable MCP tools'**
+  String get backplaneMcpEnabled;
+
+  /// No description provided for @backplaneSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get backplaneSave;
+
+  /// No description provided for @backplaneLoadModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Load Models'**
+  String get backplaneLoadModels;
+
+  /// No description provided for @backplaneRefreshTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Tools'**
+  String get backplaneRefreshTools;
+
+  /// No description provided for @backplaneModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovered models'**
+  String get backplaneModels;
+
+  /// No description provided for @backplaneTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Discovered tools'**
+  String get backplaneTools;
+
+  /// No description provided for @backplaneNoModels.
+  ///
+  /// In en, this message translates to:
+  /// **'No models discovered'**
+  String get backplaneNoModels;
+
+  /// No description provided for @backplaneNoTools.
+  ///
+  /// In en, this message translates to:
+  /// **'No tools discovered'**
+  String get backplaneNoTools;
+
+  /// No description provided for @backplaneSaveBeforeDiscovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes before discovery.'**
+  String get backplaneSaveBeforeDiscovery;
+
+  /// No description provided for @backplaneInvalidUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an HTTP or HTTPS service URL without credentials, query, or fragment.'**
+  String get backplaneInvalidUrl;
+
+  /// No description provided for @backplaneManagedConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Managed Backplane connection'**
+  String get backplaneManagedConnection;
+
+  /// No description provided for @backplaneManagedTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Managed Backplane tools'**
+  String get backplaneManagedTools;
+
+  /// No description provided for @backplaneManagedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Managed by Backplane'**
+  String get backplaneManagedBy;
+
+  /// No description provided for @backplaneEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get backplaneEnabled;
+
+  /// No description provided for @backplaneDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get backplaneDisabled;
+
+  /// No description provided for @backplaneModelsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load Backplane models'**
+  String get backplaneModelsLoadFailed;
+
+  /// No description provided for @backplaneToolsRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh Backplane tools'**
+  String get backplaneToolsRefreshFailed;
 }
 
 class _AppLocalizationsDelegate

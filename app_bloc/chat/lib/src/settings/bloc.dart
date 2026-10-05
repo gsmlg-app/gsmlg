@@ -442,6 +442,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
         json['remoteThinkingEffort'],
         ModelConfig.defaultConfig.remoteThinkingEffort,
       ),
+      managedRemoteId: json['managedRemoteId'] as String?,
     ).withSupportedBackendForCurrentPlatform();
   }
 
@@ -464,6 +465,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       'remoteAuthHeaderName': config.remoteAuthHeaderName,
       'remoteStreamingEnabled': config.remoteStreamingEnabled,
       'remoteThinkingEffort': config.remoteThinkingEffort.name,
+      'managedRemoteId': config.managedRemoteId,
     };
   }
 

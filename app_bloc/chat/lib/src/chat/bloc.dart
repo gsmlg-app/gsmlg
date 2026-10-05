@@ -6,6 +6,9 @@ import 'package:app_chat/app_chat.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:uuid/uuid.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../backplane/bloc.dart';
 
 import 'stream_error_message.dart';
 
@@ -19,10 +22,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     required RemoteLlmRepository remoteRepository,
     required ChatStorageRepository storageRepository,
     required ToolExecutor toolExecutor,
+    SharedPreferences? preferences,
+    BackplaneServiceRepository? backplaneService,
   })  : _gemmaRepository = gemmaRepository,
         _remoteRepository = remoteRepository,
         _storageRepository = storageRepository,
         _toolExecutor = toolExecutor,
+        _preferences = preferences,
+        _backplaneService = backplaneService,
         super(const ChatState()) {
     on<ChatLoadConversation>(_onLoadConversation);
     on<ChatNewConversation>(_onNewConversation);
@@ -45,6 +52,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final RemoteLlmRepository _remoteRepository;
   final ChatStorageRepository _storageRepository;
   final ToolExecutor _toolExecutor;
+  final SharedPreferences? _preferences;
+  final BackplaneServiceRepository? _backplaneService;
   StreamSubscription<ChatGenerationChunk>? _streamSubscription;
   Conversation? _streamingConversation;
   String? _streamingMessageId;
@@ -123,7 +132,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     ChatSendMessage event,
     Emitter<ChatState> emit,
   ) async {
-    final config = await _storageRepository.loadSettings();
+    final config = await _loadEffectiveConfig();
     final readinessError = await _readinessError(config);
     if (readinessError != null) {
       emit(state.copyWith(
@@ -319,7 +328,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     if (state.conversation == null) return;
-    final config = await _storageRepository.loadSettings();
+    final config = await _loadEffectiveConfig();
     final readinessError = await _readinessError(config);
     if (readinessError != null) {
       emit(state.copyWith(
@@ -355,7 +364,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final content = event.content.trim();
     if (content.isEmpty) return;
 
-    final config = await _storageRepository.loadSettings();
+    final config = await _loadEffectiveConfig();
     final readinessError = await _readinessError(config);
     if (readinessError != null) {
       emit(state.copyWith(
@@ -792,6 +801,19 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   Future<String?> _readinessError(ModelConfig config) async {
     if (config.inferenceMode == ChatInferenceMode.remote) {
+      if (config.managedRemoteId == BackplaneSettings.managedId) {
+        final preferences = _preferences;
+        final service = _backplaneService;
+        if (preferences == null || service == null) {
+          return 'Backplane settings are unavailable.';
+        }
+        try {
+          await service
+              .tokenFor(BackplaneSettingsBloc.readSettings(preferences));
+        } catch (error) {
+          return error.toString();
+        }
+      }
       final errors = config.validate();
       if (errors.isNotEmpty) return errors.join(', ');
       if (!config.isRemoteConfigured) {
@@ -805,6 +827,33 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     if (!_gemmaRepository.isReady) return 'Model is not loaded';
     return null;
+  }
+
+  Future<ModelConfig> _loadEffectiveConfig() async {
+    final config = await _storageRepository.loadSettings();
+    final preferences = _preferences;
+    if (preferences == null) return config;
+    final activeId = preferences.getString('chat_active_agent_id');
+    if (activeId == null) return config;
+    final agents = preferences.getStringList('chat_agents') ?? const <String>[];
+    for (final raw in agents) {
+      try {
+        final agent = jsonDecode(raw);
+        if (agent is! Map<String, dynamic> || agent['id'] != activeId) continue;
+        final agentConfig = agent['config'];
+        if (agentConfig is! Map<String, dynamic> ||
+            agentConfig['managedRemoteId'] != BackplaneSettings.managedId) {
+          return config;
+        }
+        final model = agentConfig['remoteModel'];
+        if (model is! String) return config;
+        return BackplaneSettingsBloc.readSettings(preferences)
+            .modelConfig(model, base: config);
+      } catch (_) {
+        continue;
+      }
+    }
+    return config;
   }
 
   @override

@@ -685,6 +685,7 @@ IconData _providerIcon(ServiceProvider provider) {
     ServiceProvider.aws => Icons.cloud_queue,
     ServiceProvider.cloudflare => Icons.shield,
     ServiceProvider.huggingface => Icons.smart_toy,
+    ServiceProvider.backplane => Icons.hub_outlined,
   };
 }
 
@@ -698,6 +699,7 @@ String _providerLabel(ServiceProvider provider) {
     ServiceProvider.aws => 'AWS',
     ServiceProvider.cloudflare => 'Cloudflare',
     ServiceProvider.huggingface => 'HuggingFace',
+    ServiceProvider.backplane => 'Backplane',
   };
 }
 
@@ -711,6 +713,7 @@ String _apiKeyLabel(ServiceProvider provider) {
     ServiceProvider.aws => 'Access Key ID',
     ServiceProvider.cloudflare => 'API Token',
     ServiceProvider.huggingface => 'Access Token',
+    ServiceProvider.backplane => 'Access Token',
   };
 }
 
@@ -724,5 +727,6 @@ String _apiKeyHint(ServiceProvider provider) {
     ServiceProvider.aws => 'AKIAIOSFODNN7EXAMPLE',
     ServiceProvider.cloudflare => 'Enter your Cloudflare API token',
     ServiceProvider.huggingface => 'hf_xxxxxxxxxxxxxxxxxxxx',
+    ServiceProvider.backplane => 'Enter your Backplane API token',
   };
 }

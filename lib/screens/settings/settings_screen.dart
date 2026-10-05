@@ -13,6 +13,7 @@ import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
 import 'package:gsmlg/screens/settings/app_settings_screen.dart';
 import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
+import 'package:gsmlg/screens/settings/backplane_settings_screen.dart';
 import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:gsmlg/screens/settings/local_tools_settings_screen.dart';
@@ -85,6 +86,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 context.goNamed(AccountScreen.name);
                               },
                             ),
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.hub_outlined),
+                              title: Text(context.l10n.backplaneTitle),
+                              onPressed: (context) {
+                                context.goNamed(BackplaneSettingsScreen.name);
+                              },
+                            ),
                           ],
                         ),
                         SettingsSection(
@@ -137,25 +145,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               },
                             ),
                             SettingsTile.navigation(
-                              leading: const Icon(Icons.people_alt_outlined),
-                              title: const Text('Agents'),
-                              value:
-                                  BlocBuilder<
-                                    ChatSettingsBloc,
-                                    ChatSettingsState
-                                  >(
-                                    builder: (context, settingsState) {
-                                      final count = settingsState.agents.length;
-                                      return Text(
-                                        '$count agent${count == 1 ? '' : 's'} configured',
-                                      );
-                                    },
-                                  ),
-                              onPressed: (context) {
-                                context.goNamed(ChatAgentsSettingsScreen.name);
-                              },
-                            ),
-                            SettingsTile.navigation(
                               leading: const Icon(Icons.build_circle_outlined),
                               title: const Text('Local Tools'),
                               value: Builder(
@@ -191,6 +180,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               onPressed: (context) {
                                 context.goNamed(RemoteToolsSettingsScreen.name);
+                              },
+                            ),
+                          ],
+                        ),
+                        SettingsSection(
+                          title: Text(context.l10n.settingsChatGroup),
+                          tiles: <SettingsTile>[
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.people_alt_outlined),
+                              title: Text(context.l10n.settingsAgentMenu),
+                              value:
+                                  BlocBuilder<
+                                    ChatSettingsBloc,
+                                    ChatSettingsState
+                                  >(
+                                    builder: (context, settingsState) {
+                                      final count = settingsState.agents.length;
+                                      return Text(
+                                        '$count agent${count == 1 ? '' : 's'} configured',
+                                      );
+                                    },
+                                  ),
+                              onPressed: (context) {
+                                context.goNamed(ChatAgentsSettingsScreen.name);
                               },
                             ),
                           ],

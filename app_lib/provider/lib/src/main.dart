@@ -1,5 +1,6 @@
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_chat/app_chat.dart';
+import 'dart:convert';
 import 'package:app_database/app_database.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:auth_bloc/auth_bloc.dart';
@@ -46,6 +47,13 @@ class MainProvider extends StatelessWidget {
         RepositoryProvider<RemoteLlmRepository>(
           create: (context) => RemoteLlmRepository(vault: vault),
         ),
+        RepositoryProvider<BackplaneServiceRepository>(
+          create: (context) => BackplaneServiceRepository(
+            database: database,
+            vault: vault,
+            remoteLlm: context.read<RemoteLlmRepository>(),
+          ),
+        ),
         RepositoryProvider<ChatStorageRepository>(
           create: (context) => ChatStorageRepository(database),
         ),
@@ -56,9 +64,15 @@ class MainProvider extends StatelessWidget {
           create: (context) => ToolExecutor(
             database: database,
             vault: vault,
-            remoteMcpProfilesProvider: () =>
-                sharedPrefs.getStringList('remote_mcp_profiles') ??
-                const <String>[],
+            remoteMcpProfilesProvider: () {
+              final profiles =
+                  sharedPrefs.getStringList('remote_mcp_profiles') ??
+                  const <String>[];
+              final managed = BackplaneSettingsBloc.readSettings(
+                sharedPrefs,
+              ).mcpProfile;
+              return [...profiles, if (managed != null) jsonEncode(managed)];
+            },
           ),
         ),
       ],
@@ -94,6 +108,12 @@ class MainProvider extends StatelessWidget {
               preferences: context.read<SharedPreferences>(),
             ),
           ),
+          BlocProvider<BackplaneSettingsBloc>(
+            create: (context) => BackplaneSettingsBloc(
+              preferences: sharedPrefs,
+              service: context.read<BackplaneServiceRepository>(),
+            ),
+          ),
           BlocProvider<GemmaModelBloc>(
             create: (context) => GemmaModelBloc(
               repository: context.read<GemmaRepository>(),
@@ -106,6 +126,8 @@ class MainProvider extends StatelessWidget {
               remoteRepository: context.read<RemoteLlmRepository>(),
               storageRepository: context.read<ChatStorageRepository>(),
               toolExecutor: context.read<ToolExecutor>(),
+              preferences: sharedPrefs,
+              backplaneService: context.read<BackplaneServiceRepository>(),
             ),
           ),
           BlocProvider<MonitorBloc>(

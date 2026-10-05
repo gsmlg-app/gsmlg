@@ -553,7 +553,7 @@ packages:
     source: hosted
     version: "1.8.0"
   duskmoon_settings:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: duskmoon_settings
       sha256: "0b533bfa268697d1958053accf1f49eff7ad337b120021ff87d8ad3f70253d5f"

@@ -10,6 +10,7 @@ enum ServiceProvider {
   aws,
   cloudflare,
   huggingface,
+  backplane,
 }
 
 /// Drift table definition for ServiceAccount.

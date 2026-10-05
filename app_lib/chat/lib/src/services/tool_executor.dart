@@ -369,6 +369,18 @@ class ToolExecutor {
       }
       final headers = <String, dynamic>{};
       if (server.accountId != null) {
+        if (server.id == 'backplane') {
+          final database = _requireDatabase();
+          final account =
+              await (database.select(database.serviceAccountTable)
+                    ..where((table) => table.id.equals(server.accountId!)))
+                  .getSingleOrNull();
+          if (account == null) {
+            throw StateError(
+              'Selected service account is missing. Manage Service Accounts.',
+            );
+          }
+        }
         headers.addAll(
           _remoteMcpAuthHeaders(
             server,

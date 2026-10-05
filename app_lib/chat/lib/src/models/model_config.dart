@@ -621,6 +621,7 @@ class ModelConfig extends Equatable {
     this.remoteAuthHeaderName,
     this.remoteStreamingEnabled = true,
     this.remoteThinkingEffort = RemoteThinkingEffort.off,
+    this.managedRemoteId,
   }) : remoteApiType =
            remoteApiType ??
            (remoteProvider == RemoteLlmProvider.openAi
@@ -695,6 +696,7 @@ class ModelConfig extends Equatable {
 
   /// Provider-side thinking/reasoning effort for remote APIs that support it.
   final RemoteThinkingEffort remoteThinkingEffort;
+  final String? managedRemoteId;
 
   @override
   List<Object?> get props => [
@@ -715,6 +717,7 @@ class ModelConfig extends Equatable {
     remoteAuthHeaderName,
     remoteStreamingEnabled,
     remoteThinkingEffort,
+    managedRemoteId,
   ];
 
   /// Returns the model path for the selected model type.
@@ -758,6 +761,7 @@ class ModelConfig extends Equatable {
   }
 
   bool get remoteUsesDummyToken {
+    if (managedRemoteId != null) return false;
     final host = Uri.tryParse(remoteBaseUrl.trim())?.host.toLowerCase();
     return remoteAccountId == dummyRemoteAccountId ||
         (remoteAccountId == null &&
@@ -794,6 +798,8 @@ class ModelConfig extends Equatable {
     bool clearRemoteAuthHeaderName = false,
     bool? remoteStreamingEnabled,
     RemoteThinkingEffort? remoteThinkingEffort,
+    String? managedRemoteId,
+    bool clearManagedRemote = false,
   }) {
     return ModelConfig(
       inferenceMode: inferenceMode ?? this.inferenceMode,
@@ -820,6 +826,9 @@ class ModelConfig extends Equatable {
       remoteStreamingEnabled:
           remoteStreamingEnabled ?? this.remoteStreamingEnabled,
       remoteThinkingEffort: remoteThinkingEffort ?? this.remoteThinkingEffort,
+      managedRemoteId: clearManagedRemote
+          ? null
+          : managedRemoteId ?? this.managedRemoteId,
     );
   }
 
@@ -873,7 +882,8 @@ class ModelConfig extends Equatable {
       }
       if (uri != null &&
           uri.scheme != 'https' &&
-          !(uri.scheme == 'http' && _isLocalhost(uri.host))) {
+          !(uri.scheme == 'http' &&
+              (managedRemoteId == 'backplane' || _isLocalhost(uri.host)))) {
         errors.add('Remote base URL must use HTTPS');
       }
       if (remoteAuthType == RemoteAuthType.customHeader &&

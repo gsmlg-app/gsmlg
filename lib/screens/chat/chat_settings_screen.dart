@@ -443,6 +443,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
       return base.copyWith(
         inferenceMode: ChatInferenceMode.local,
         localModelId: choice.localModelId,
+        clearManagedRemote: true,
       );
     }
     return base.copyWith(
@@ -453,6 +454,11 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
       clearRemoteAccount: config.remoteAccountId == null,
       remoteBaseUrl: config.remoteBaseUrl,
       remoteModel: config.remoteModel,
+      remoteAuthType: config.remoteAuthType,
+      remoteAuthHeaderName: config.remoteAuthHeaderName,
+      clearRemoteAuthHeaderName: config.remoteAuthHeaderName == null,
+      managedRemoteId: config.managedRemoteId,
+      clearManagedRemote: config.managedRemoteId == null,
     );
   }
 
@@ -544,6 +550,17 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
         preferences.getStringList('remote_model_provider_profiles') ??
         const <String>[];
     final choices = <_ConfiguredModel>[];
+    final backplane = BackplaneSettingsBloc.readSettings(preferences);
+    for (final model in backplane.models) {
+      choices.add(
+        _ConfiguredModel(
+          title: model,
+          subtitle: 'Backplane',
+          icon: Icons.cloud_queue,
+          config: backplane.modelConfig(model),
+        ),
+      );
+    }
 
     for (final raw in providers) {
       final provider = _RemoteProviderConfig.fromJson(raw);

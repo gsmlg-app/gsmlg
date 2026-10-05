@@ -90,6 +90,7 @@ dependencies:
 
   duskmoon_ui: ^1.8.0
   duskmoon_adaptive_scaffold: ^1.8.0
+  duskmoon_settings: ^1.8.0
   flutter_slidable: ^4.0.3
   file_picker: ^11.0.3
   intl: any

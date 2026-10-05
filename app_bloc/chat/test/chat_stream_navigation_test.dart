@@ -1,10 +1,97 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('managed agent resolves current Backplane URL and account at runtime',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final storedConfig = const BackplaneSettings(accountId: 1).modelConfig(
+        'chosen-model',
+        base: const ModelConfig(temperature: 0.35));
+    await preferences.setString('backplane_settings',
+        jsonEncode(const BackplaneSettings(accountId: 1).toJson()));
+    await preferences.setString('chat_active_agent_id', 'agent-1');
+    await preferences.setStringList('chat_agents', [
+      jsonEncode({
+        'id': 'agent-1',
+        'config': {
+          'managedRemoteId': 'backplane',
+          'remoteModel': 'chosen-model'
+        },
+      })
+    ]);
+    final storage = _FakeChatStorageRepository();
+    await storage.saveSettings(storedConfig);
+    final service = _FakeBackplaneService();
+
+    Future<ModelConfig> send() async {
+      final remote = _FakeRemoteLlmRepository();
+      final gemma = _FakeGemmaRepository();
+      final bloc = ChatBloc(
+        gemmaRepository: gemma,
+        remoteRepository: remote,
+        storageRepository: storage,
+        toolExecutor: ToolExecutor(),
+        preferences: preferences,
+        backplaneService: service,
+      );
+      final streaming =
+          _waitForState(bloc, (state) => state.status == ChatStatus.streaming);
+      bloc.add(const ChatSendMessage(content: 'hello'));
+      await streaming;
+      final config = remote.lastConfig!;
+      await bloc.close();
+      await gemma.dispose();
+      return config;
+    }
+
+    final first = await send();
+    expect(first.remoteAccountId, 1);
+    expect(first.remoteBaseUrl, 'https://backplane.gsmlg.net/v1');
+    expect(first.temperature, 0.35);
+    expect(first.managedRemoteId, 'backplane');
+
+    await preferences.setString(
+        'backplane_settings',
+        jsonEncode(const BackplaneSettings(
+                serviceUrl: 'http://localhost:8080/team',
+                accountId: 2,
+                apiType: RemoteLlmApiType.openAiChatCompletions)
+            .toJson()));
+    final second = await send();
+    expect(second.remoteAccountId, 2);
+    expect(second.remoteBaseUrl, 'http://localhost:8080/team/v1');
+    expect(second.remoteApiType, RemoteLlmApiType.openAiChatCompletions);
+    expect(second.remoteModel, 'chosen-model');
+    expect(second.temperature, 0.35);
+    expect(second.remoteUsesDummyToken, isFalse);
+
+    service.accountMissing = true;
+    final remote = _FakeRemoteLlmRepository();
+    final gemma = _FakeGemmaRepository();
+    final bloc = ChatBloc(
+      gemmaRepository: gemma,
+      remoteRepository: remote,
+      storageRepository: storage,
+      toolExecutor: ToolExecutor(),
+      preferences: preferences,
+      backplaneService: service,
+    );
+    final failed =
+        _waitForState(bloc, (state) => state.status == ChatStatus.error);
+    bloc.add(const ChatSendMessage(content: 'blocked'));
+    await failed;
+    expect(bloc.state.errorMessage, contains('Manage Service Accounts'));
+    expect(remote.lastConfig, isNull);
+    await bloc.close();
+    await gemma.dispose();
+  });
   test(
     'keeps streaming tokens attached to their original conversation',
     () async {
@@ -251,6 +338,7 @@ class _FakeGemmaRepository extends GemmaRepository {
 
 class _FakeRemoteLlmRepository implements RemoteLlmRepository {
   final _controller = StreamController<ChatGenerationChunk>.broadcast();
+  ModelConfig? lastConfig;
 
   @override
   Future<bool> isReady(ModelConfig config) async => true;
@@ -264,6 +352,7 @@ class _FakeRemoteLlmRepository implements RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
   }) {
+    lastConfig = config;
     return _controller.stream;
   }
 
@@ -280,6 +369,22 @@ class _FakeRemoteLlmRepository implements RemoteLlmRepository {
       await _controller.close();
     }
   }
+}
+
+class _FakeBackplaneService implements BackplaneServiceRepository {
+  bool accountMissing = false;
+
+  @override
+  Future<String> tokenFor(BackplaneSettings settings) async {
+    if (accountMissing || settings.accountId == null) {
+      throw StateError(
+          'Selected service account is missing. Manage Service Accounts.');
+    }
+    return 'token';
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _FakeChatStorageRepository implements ChatStorageRepository {

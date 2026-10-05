@@ -29,6 +29,113 @@ void main() {
       accountsBloc = AccountsBloc(database: database, vault: vault);
     });
 
+    testWidgets(
+      'managed Backplane picker survives reload and clears identity on switch',
+      (tester) async {
+        await preferences.setString(
+          BackplaneSettingsBloc.preferencesKey,
+          jsonEncode(
+            const BackplaneSettings(
+              accountId: 9,
+              models: ['backplane-model'],
+            ).toJson(),
+          ),
+        );
+        await preferences.setStringList('remote_model_provider_profiles', [
+          jsonEncode({
+            'id': 'other',
+            'name': 'Other',
+            'baseUrl': 'https://other.example.com/v1',
+            'defaultModel': 'other-model',
+            'accountId': 4,
+            'useDummyToken': false,
+            'remoteProvider': RemoteLlmProvider.openAiCompatible.name,
+            'remoteApiType': RemoteLlmApiType.openAiChatCompletions.name,
+            'authType': RemoteAuthType.customHeader.name,
+            'authHeaderName': 'X-Other-Key',
+          }),
+        ]);
+        chatSettingsBloc =
+            ChatSettingsBloc(
+                repository: ChatStorageRepository(database),
+                preferences: preferences,
+              )
+              ..add(const ChatSettingsLoad())
+              ..add(
+                const ChatSettingsSaveAgent(
+                  id: 'agent-1',
+                  name: 'Managed agent',
+                  systemPrompt: '',
+                  config: ModelConfig(
+                    inferenceMode: ChatInferenceMode.remote,
+                    remoteAuthType: RemoteAuthType.customHeader,
+                    remoteAuthHeaderName: 'X-Old-Key',
+                  ),
+                ),
+              );
+        await _pumpScreen(
+          tester,
+          chatSettingsBloc: chatSettingsBloc,
+          accountsBloc: accountsBloc,
+          preferences: preferences,
+          agentId: 'agent-1',
+        );
+        await _pumpUntil(
+          tester,
+          () => chatSettingsBloc.state.activeAgent != null,
+        );
+
+        await tester.tap(find.text('Model'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('backplane-model').last);
+        await tester.pumpAndSettle();
+        await _pumpUntil(
+          tester,
+          () =>
+              chatSettingsBloc.state.config.managedRemoteId ==
+              BackplaneSettings.managedId,
+        );
+        expect(
+          chatSettingsBloc.state.config.remoteAuthType,
+          RemoteAuthType.bearerToken,
+        );
+        expect(chatSettingsBloc.state.config.remoteAuthHeaderName, isNull);
+        expect(chatSettingsBloc.state.config.remoteAccountId, 9);
+        expect(
+          chatSettingsBloc.state.config.remoteProvider,
+          RemoteLlmProvider.openAi,
+        );
+
+        chatSettingsBloc.add(const ChatSettingsLoad());
+        await _pumpUntil(
+          tester,
+          () => chatSettingsBloc.state.status == ChatSettingsStatus.loaded,
+        );
+        expect(
+          chatSettingsBloc.state.activeAgent!.config.managedRemoteId,
+          BackplaneSettings.managedId,
+        );
+
+        await tester.tap(find.text('Model'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('other-model').last);
+        await tester.pumpAndSettle();
+        await _pumpUntil(
+          tester,
+          () => chatSettingsBloc.state.config.remoteModel == 'other-model',
+        );
+        expect(chatSettingsBloc.state.config.managedRemoteId, isNull);
+        expect(
+          chatSettingsBloc.state.config.remoteAuthType,
+          RemoteAuthType.customHeader,
+        );
+        expect(
+          chatSettingsBloc.state.config.remoteAuthHeaderName,
+          'X-Other-Key',
+        );
+      },
+    );
+
     tearDown(() async {
       await chatSettingsBloc.close();
       await gemmaModelBloc?.close();

@@ -9,3 +9,4 @@ export 'src/chat/bloc.dart';
 
 // Settings BLoC
 export 'src/settings/bloc.dart';
+export 'src/backplane/bloc.dart';
