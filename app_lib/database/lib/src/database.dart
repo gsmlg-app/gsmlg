@@ -65,7 +65,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 16;
+  int get schemaVersion => 17;
 
   @override
   MigrationStrategy get migration {
@@ -213,6 +213,13 @@ class AppDatabase extends _$AppDatabase {
             m,
             chatSettingsTable,
             chatSettingsTable.remoteAuthHeaderName,
+          );
+        }
+        if (from < 17) {
+          await _addColumnIfMissing(
+            m,
+            chatMessageTable,
+            chatMessageTable.responseTimeToFirstTokenMs,
           );
         }
       },

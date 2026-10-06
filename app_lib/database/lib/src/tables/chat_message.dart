@@ -32,6 +32,8 @@ class ChatMessageTable extends Table {
   /// Wall-clock generation duration in milliseconds for assistant responses.
   IntColumn get responseDurationMs => integer().nullable()();
 
+  IntColumn get responseTimeToFirstTokenMs => integer().nullable()();
+
   /// Image data for multimodal user messages (null for text-only).
   BlobColumn get imageBytes => blob().nullable()();
 

@@ -112,10 +112,11 @@ void main() {
                 conversationId: 'conversation',
                 timestamp: DateTime(2026),
                 responseInfo: const ChatResponseInfo(
-                  outputTokens: 24,
+                  outputTokens: 42,
                   contextTokens: 128,
                   maxOutputTokens: 2048,
                   duration: Duration(seconds: 2),
+                  timeToFirstToken: Duration(milliseconds: 500),
                 ),
               ),
             ],
@@ -130,12 +131,89 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Speed'), findsOneWidget);
-    expect(find.text('12.0 t/s'), findsOneWidget);
+    expect(find.text('28.0 t/s'), findsOneWidget);
+    expect(find.text('TTFT'), findsOneWidget);
+    expect(find.text('500ms'), findsOneWidget);
     expect(find.text('Context size'), findsOneWidget);
     expect(find.text('128 tokens'), findsOneWidget);
     expect(find.text('Output tokens'), findsOneWidget);
-    expect(find.text('24 tokens'), findsOneWidget);
+    expect(find.text('42 tokens'), findsOneWidget);
+    expect(find.text('Duration'), findsOneWidget);
+    expect(find.text('2.0s'), findsOneWidget);
   });
+
+  testWidgets('shows an unavailable TTFT without changing legacy speed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageList(
+            messages: [
+              AssistantMessage(
+                id: 'assistant',
+                content: 'hi',
+                conversationId: 'conversation',
+                timestamp: DateTime(2026),
+                responseInfo: const ChatResponseInfo(
+                  outputTokens: 24,
+                  duration: Duration(seconds: 2),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Response info'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('12.0 t/s'), findsOneWidget);
+    expect(find.text('TTFT'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
+  });
+
+  for (final timeToFirstToken in [
+    const Duration(milliseconds: 1200),
+    Duration.zero,
+  ]) {
+    testWidgets(
+      'formats ${timeToFirstToken == Duration.zero ? 'zero' : 'long'} TTFT value',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ChatMessageList(
+                messages: [
+                  AssistantMessage(
+                    id: 'assistant',
+                    content: 'hi',
+                    conversationId: 'conversation',
+                    timestamp: DateTime(2026),
+                    responseInfo: ChatResponseInfo(
+                      outputTokens: 24,
+                      duration: const Duration(seconds: 2),
+                      timeToFirstToken: timeToFirstToken,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.byTooltip('Response info'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('TTFT'), findsOneWidget);
+        expect(
+          find.text(timeToFirstToken == Duration.zero ? '0ms' : '1.2s'),
+          findsOneWidget,
+        );
+      },
+    );
+  }
 
   testWidgets('renders tool responses before assistant output', (tester) async {
     await tester.pumpWidget(

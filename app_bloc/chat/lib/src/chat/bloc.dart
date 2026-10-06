@@ -59,7 +59,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   String? _streamingMessageId;
   Timer? _responseMetricsTimer;
   ModelConfig? _activeConfig;
-  DateTime? _responseStartedAt;
+  Stopwatch? _responseStopwatch;
+  Duration? _responseTimeToFirstToken;
   int? _responseContextTokens;
   int? _responseMaxOutputTokens;
   final _uuid = const Uuid();
@@ -236,8 +237,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       (chunk) {
         switch (chunk) {
           case ChatTextChunk(:final text):
+            if (text.isNotEmpty) {
+              _responseTimeToFirstToken ??= _responseStopwatch?.elapsed;
+            }
             add(_ChatStreamToken(text));
           case ChatThinkingChunk(:final content):
+            if (content.isNotEmpty) {
+              _responseTimeToFirstToken ??= _responseStopwatch?.elapsed;
+            }
             add(_ChatThinkingToken(content));
           case ChatFunctionCallChunk(:final name, :final args):
             sawFunctionCall = true;
@@ -513,7 +520,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     _ChatResponseMetricsTick event,
     Emitter<ChatState> emit,
   ) {
-    if (_responseStartedAt == null) return;
+    if (_responseStopwatch == null) return;
     final didUpdate = _updateStreamingAssistant(_withResponseInfo);
     if (!didUpdate) return;
     _emitStreamingConversationIfVisible(emit);
@@ -722,7 +729,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   void _beginResponseMetrics(
       List<Message> contextMessages, ModelConfig config) {
     _responseMetricsTimer?.cancel();
-    _responseStartedAt = DateTime.now();
+    _responseStopwatch?.stop();
+    _responseStopwatch = Stopwatch()..start();
+    _responseTimeToFirstToken = null;
     _responseContextTokens = _estimateContextTokens(contextMessages);
     _responseMaxOutputTokens = config.maxTokens;
     _responseMetricsTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -736,12 +745,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   ChatResponseInfo _responseInfoForText(String text) {
     final outputTokens = _estimateTokenCount(text);
-    final startedAt = _responseStartedAt ?? DateTime.now();
     return ChatResponseInfo(
       outputTokens: outputTokens,
       contextTokens: _responseContextTokens,
       maxOutputTokens: _responseMaxOutputTokens,
-      duration: DateTime.now().difference(startedAt),
+      duration: _responseStopwatch?.elapsed ?? Duration.zero,
+      timeToFirstToken: _responseTimeToFirstToken,
     );
   }
 
@@ -751,12 +760,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       if (message.thinkingContent != null) message.thinkingContent!,
     ].where((part) => part.trim().isNotEmpty).join('\n');
     final outputTokens = _estimateTokenCount(responseText);
-    final startedAt = _responseStartedAt ?? message.timestamp;
     final responseInfo = ChatResponseInfo(
       outputTokens: outputTokens,
       contextTokens: _responseContextTokens,
       maxOutputTokens: _responseMaxOutputTokens,
-      duration: DateTime.now().difference(startedAt),
+      duration: _responseStopwatch?.elapsed ?? Duration.zero,
+      timeToFirstToken: _responseTimeToFirstToken,
     );
 
     return message.copyWith(
@@ -766,7 +775,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   void _clearResponseMetrics() {
     _responseMetricsTimer?.cancel();
     _responseMetricsTimer = null;
-    _responseStartedAt = null;
+    _responseStopwatch?.stop();
+    _responseStopwatch = null;
+    _responseTimeToFirstToken = null;
     _responseContextTokens = null;
     _responseMaxOutputTokens = null;
   }

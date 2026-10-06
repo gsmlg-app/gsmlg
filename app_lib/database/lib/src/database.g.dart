@@ -1729,6 +1729,12 @@ class $ChatMessageTableTable extends ChatMessageTable
   late final GeneratedColumn<int> responseDurationMs = GeneratedColumn<int>(
       'response_duration_ms', aliasedName, true,
       type: DriftSqlType.int, requiredDuringInsert: false);
+  static const VerificationMeta _responseTimeToFirstTokenMsMeta =
+      const VerificationMeta('responseTimeToFirstTokenMs');
+  @override
+  late final GeneratedColumn<int> responseTimeToFirstTokenMs =
+      GeneratedColumn<int>('response_time_to_first_token_ms', aliasedName, true,
+          type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _imageBytesMeta =
       const VerificationMeta('imageBytes');
   @override
@@ -1760,6 +1766,7 @@ class $ChatMessageTableTable extends ChatMessageTable
         responseContextTokens,
         responseMaxOutputTokens,
         responseDurationMs,
+        responseTimeToFirstTokenMs,
         imageBytes,
         toolName,
         timestamp
@@ -1831,6 +1838,13 @@ class $ChatMessageTableTable extends ChatMessageTable
           responseDurationMs.isAcceptableOrUnknown(
               data['response_duration_ms']!, _responseDurationMsMeta));
     }
+    if (data.containsKey('response_time_to_first_token_ms')) {
+      context.handle(
+          _responseTimeToFirstTokenMsMeta,
+          responseTimeToFirstTokenMs.isAcceptableOrUnknown(
+              data['response_time_to_first_token_ms']!,
+              _responseTimeToFirstTokenMsMeta));
+    }
     if (data.containsKey('image_bytes')) {
       context.handle(
           _imageBytesMeta,
@@ -1873,6 +1887,9 @@ class $ChatMessageTableTable extends ChatMessageTable
           data['${effectivePrefix}response_max_output_tokens']),
       responseDurationMs: attachedDatabase.typeMapping.read(
           DriftSqlType.int, data['${effectivePrefix}response_duration_ms']),
+      responseTimeToFirstTokenMs: attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}response_time_to_first_token_ms']),
       imageBytes: attachedDatabase.typeMapping
           .read(DriftSqlType.blob, data['${effectivePrefix}image_bytes']),
       toolName: attachedDatabase.typeMapping
@@ -1916,6 +1933,7 @@ class ChatMessageTableData extends DataClass
 
   /// Wall-clock generation duration in milliseconds for assistant responses.
   final int? responseDurationMs;
+  final int? responseTimeToFirstTokenMs;
 
   /// Image data for multimodal user messages (null for text-only).
   final Uint8List? imageBytes;
@@ -1935,6 +1953,7 @@ class ChatMessageTableData extends DataClass
       this.responseContextTokens,
       this.responseMaxOutputTokens,
       this.responseDurationMs,
+      this.responseTimeToFirstTokenMs,
       this.imageBytes,
       this.toolName,
       required this.timestamp});
@@ -1960,6 +1979,10 @@ class ChatMessageTableData extends DataClass
     }
     if (!nullToAbsent || responseDurationMs != null) {
       map['response_duration_ms'] = Variable<int>(responseDurationMs);
+    }
+    if (!nullToAbsent || responseTimeToFirstTokenMs != null) {
+      map['response_time_to_first_token_ms'] =
+          Variable<int>(responseTimeToFirstTokenMs);
     }
     if (!nullToAbsent || imageBytes != null) {
       map['image_bytes'] = Variable<Uint8List>(imageBytes);
@@ -1992,6 +2015,10 @@ class ChatMessageTableData extends DataClass
       responseDurationMs: responseDurationMs == null && nullToAbsent
           ? const Value.absent()
           : Value(responseDurationMs),
+      responseTimeToFirstTokenMs:
+          responseTimeToFirstTokenMs == null && nullToAbsent
+              ? const Value.absent()
+              : Value(responseTimeToFirstTokenMs),
       imageBytes: imageBytes == null && nullToAbsent
           ? const Value.absent()
           : Value(imageBytes),
@@ -2018,6 +2045,8 @@ class ChatMessageTableData extends DataClass
       responseMaxOutputTokens:
           serializer.fromJson<int?>(json['responseMaxOutputTokens']),
       responseDurationMs: serializer.fromJson<int?>(json['responseDurationMs']),
+      responseTimeToFirstTokenMs:
+          serializer.fromJson<int?>(json['responseTimeToFirstTokenMs']),
       imageBytes: serializer.fromJson<Uint8List?>(json['imageBytes']),
       toolName: serializer.fromJson<String?>(json['toolName']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
@@ -2037,6 +2066,8 @@ class ChatMessageTableData extends DataClass
       'responseMaxOutputTokens':
           serializer.toJson<int?>(responseMaxOutputTokens),
       'responseDurationMs': serializer.toJson<int?>(responseDurationMs),
+      'responseTimeToFirstTokenMs':
+          serializer.toJson<int?>(responseTimeToFirstTokenMs),
       'imageBytes': serializer.toJson<Uint8List?>(imageBytes),
       'toolName': serializer.toJson<String?>(toolName),
       'timestamp': serializer.toJson<DateTime>(timestamp),
@@ -2053,6 +2084,7 @@ class ChatMessageTableData extends DataClass
           Value<int?> responseContextTokens = const Value.absent(),
           Value<int?> responseMaxOutputTokens = const Value.absent(),
           Value<int?> responseDurationMs = const Value.absent(),
+          Value<int?> responseTimeToFirstTokenMs = const Value.absent(),
           Value<Uint8List?> imageBytes = const Value.absent(),
           Value<String?> toolName = const Value.absent(),
           DateTime? timestamp}) =>
@@ -2074,6 +2106,9 @@ class ChatMessageTableData extends DataClass
         responseDurationMs: responseDurationMs.present
             ? responseDurationMs.value
             : this.responseDurationMs,
+        responseTimeToFirstTokenMs: responseTimeToFirstTokenMs.present
+            ? responseTimeToFirstTokenMs.value
+            : this.responseTimeToFirstTokenMs,
         imageBytes: imageBytes.present ? imageBytes.value : this.imageBytes,
         toolName: toolName.present ? toolName.value : this.toolName,
         timestamp: timestamp ?? this.timestamp,
@@ -2100,6 +2135,9 @@ class ChatMessageTableData extends DataClass
       responseDurationMs: data.responseDurationMs.present
           ? data.responseDurationMs.value
           : this.responseDurationMs,
+      responseTimeToFirstTokenMs: data.responseTimeToFirstTokenMs.present
+          ? data.responseTimeToFirstTokenMs.value
+          : this.responseTimeToFirstTokenMs,
       imageBytes:
           data.imageBytes.present ? data.imageBytes.value : this.imageBytes,
       toolName: data.toolName.present ? data.toolName.value : this.toolName,
@@ -2119,6 +2157,7 @@ class ChatMessageTableData extends DataClass
           ..write('responseContextTokens: $responseContextTokens, ')
           ..write('responseMaxOutputTokens: $responseMaxOutputTokens, ')
           ..write('responseDurationMs: $responseDurationMs, ')
+          ..write('responseTimeToFirstTokenMs: $responseTimeToFirstTokenMs, ')
           ..write('imageBytes: $imageBytes, ')
           ..write('toolName: $toolName, ')
           ..write('timestamp: $timestamp')
@@ -2137,6 +2176,7 @@ class ChatMessageTableData extends DataClass
       responseContextTokens,
       responseMaxOutputTokens,
       responseDurationMs,
+      responseTimeToFirstTokenMs,
       $driftBlobEquality.hash(imageBytes),
       toolName,
       timestamp);
@@ -2153,6 +2193,7 @@ class ChatMessageTableData extends DataClass
           other.responseContextTokens == this.responseContextTokens &&
           other.responseMaxOutputTokens == this.responseMaxOutputTokens &&
           other.responseDurationMs == this.responseDurationMs &&
+          other.responseTimeToFirstTokenMs == this.responseTimeToFirstTokenMs &&
           $driftBlobEquality.equals(other.imageBytes, this.imageBytes) &&
           other.toolName == this.toolName &&
           other.timestamp == this.timestamp);
@@ -2168,6 +2209,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
   final Value<int?> responseContextTokens;
   final Value<int?> responseMaxOutputTokens;
   final Value<int?> responseDurationMs;
+  final Value<int?> responseTimeToFirstTokenMs;
   final Value<Uint8List?> imageBytes;
   final Value<String?> toolName;
   final Value<DateTime> timestamp;
@@ -2182,6 +2224,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     this.responseContextTokens = const Value.absent(),
     this.responseMaxOutputTokens = const Value.absent(),
     this.responseDurationMs = const Value.absent(),
+    this.responseTimeToFirstTokenMs = const Value.absent(),
     this.imageBytes = const Value.absent(),
     this.toolName = const Value.absent(),
     this.timestamp = const Value.absent(),
@@ -2197,6 +2240,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     this.responseContextTokens = const Value.absent(),
     this.responseMaxOutputTokens = const Value.absent(),
     this.responseDurationMs = const Value.absent(),
+    this.responseTimeToFirstTokenMs = const Value.absent(),
     this.imageBytes = const Value.absent(),
     this.toolName = const Value.absent(),
     this.timestamp = const Value.absent(),
@@ -2215,6 +2259,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     Expression<int>? responseContextTokens,
     Expression<int>? responseMaxOutputTokens,
     Expression<int>? responseDurationMs,
+    Expression<int>? responseTimeToFirstTokenMs,
     Expression<Uint8List>? imageBytes,
     Expression<String>? toolName,
     Expression<DateTime>? timestamp,
@@ -2234,6 +2279,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
         'response_max_output_tokens': responseMaxOutputTokens,
       if (responseDurationMs != null)
         'response_duration_ms': responseDurationMs,
+      if (responseTimeToFirstTokenMs != null)
+        'response_time_to_first_token_ms': responseTimeToFirstTokenMs,
       if (imageBytes != null) 'image_bytes': imageBytes,
       if (toolName != null) 'tool_name': toolName,
       if (timestamp != null) 'timestamp': timestamp,
@@ -2251,6 +2298,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       Value<int?>? responseContextTokens,
       Value<int?>? responseMaxOutputTokens,
       Value<int?>? responseDurationMs,
+      Value<int?>? responseTimeToFirstTokenMs,
       Value<Uint8List?>? imageBytes,
       Value<String?>? toolName,
       Value<DateTime>? timestamp,
@@ -2267,6 +2315,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       responseMaxOutputTokens:
           responseMaxOutputTokens ?? this.responseMaxOutputTokens,
       responseDurationMs: responseDurationMs ?? this.responseDurationMs,
+      responseTimeToFirstTokenMs:
+          responseTimeToFirstTokenMs ?? this.responseTimeToFirstTokenMs,
       imageBytes: imageBytes ?? this.imageBytes,
       toolName: toolName ?? this.toolName,
       timestamp: timestamp ?? this.timestamp,
@@ -2306,6 +2356,10 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     if (responseDurationMs.present) {
       map['response_duration_ms'] = Variable<int>(responseDurationMs.value);
     }
+    if (responseTimeToFirstTokenMs.present) {
+      map['response_time_to_first_token_ms'] =
+          Variable<int>(responseTimeToFirstTokenMs.value);
+    }
     if (imageBytes.present) {
       map['image_bytes'] = Variable<Uint8List>(imageBytes.value);
     }
@@ -2333,6 +2387,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
           ..write('responseContextTokens: $responseContextTokens, ')
           ..write('responseMaxOutputTokens: $responseMaxOutputTokens, ')
           ..write('responseDurationMs: $responseDurationMs, ')
+          ..write('responseTimeToFirstTokenMs: $responseTimeToFirstTokenMs, ')
           ..write('imageBytes: $imageBytes, ')
           ..write('toolName: $toolName, ')
           ..write('timestamp: $timestamp, ')
@@ -8743,6 +8798,7 @@ typedef $$ChatMessageTableTableCreateCompanionBuilder
   Value<int?> responseContextTokens,
   Value<int?> responseMaxOutputTokens,
   Value<int?> responseDurationMs,
+  Value<int?> responseTimeToFirstTokenMs,
   Value<Uint8List?> imageBytes,
   Value<String?> toolName,
   Value<DateTime> timestamp,
@@ -8759,6 +8815,7 @@ typedef $$ChatMessageTableTableUpdateCompanionBuilder
   Value<int?> responseContextTokens,
   Value<int?> responseMaxOutputTokens,
   Value<int?> responseDurationMs,
+  Value<int?> responseTimeToFirstTokenMs,
   Value<Uint8List?> imageBytes,
   Value<String?> toolName,
   Value<DateTime> timestamp,
@@ -8822,6 +8879,10 @@ class $$ChatMessageTableTableFilterComposer
 
   ColumnFilters<int> get responseDurationMs => $composableBuilder(
       column: $table.responseDurationMs,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get responseTimeToFirstTokenMs => $composableBuilder(
+      column: $table.responseTimeToFirstTokenMs,
       builder: (column) => ColumnFilters(column));
 
   ColumnFilters<Uint8List> get imageBytes => $composableBuilder(
@@ -8892,6 +8953,10 @@ class $$ChatMessageTableTableOrderingComposer
       column: $table.responseDurationMs,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get responseTimeToFirstTokenMs => $composableBuilder(
+      column: $table.responseTimeToFirstTokenMs,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<Uint8List> get imageBytes => $composableBuilder(
       column: $table.imageBytes, builder: (column) => ColumnOrderings(column));
 
@@ -8955,6 +9020,9 @@ class $$ChatMessageTableTableAnnotationComposer
 
   GeneratedColumn<int> get responseDurationMs => $composableBuilder(
       column: $table.responseDurationMs, builder: (column) => column);
+
+  GeneratedColumn<int> get responseTimeToFirstTokenMs => $composableBuilder(
+      column: $table.responseTimeToFirstTokenMs, builder: (column) => column);
 
   GeneratedColumn<Uint8List> get imageBytes => $composableBuilder(
       column: $table.imageBytes, builder: (column) => column);
@@ -9020,6 +9088,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             Value<int?> responseContextTokens = const Value.absent(),
             Value<int?> responseMaxOutputTokens = const Value.absent(),
             Value<int?> responseDurationMs = const Value.absent(),
+            Value<int?> responseTimeToFirstTokenMs = const Value.absent(),
             Value<Uint8List?> imageBytes = const Value.absent(),
             Value<String?> toolName = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
@@ -9035,6 +9104,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             responseContextTokens: responseContextTokens,
             responseMaxOutputTokens: responseMaxOutputTokens,
             responseDurationMs: responseDurationMs,
+            responseTimeToFirstTokenMs: responseTimeToFirstTokenMs,
             imageBytes: imageBytes,
             toolName: toolName,
             timestamp: timestamp,
@@ -9050,6 +9120,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             Value<int?> responseContextTokens = const Value.absent(),
             Value<int?> responseMaxOutputTokens = const Value.absent(),
             Value<int?> responseDurationMs = const Value.absent(),
+            Value<int?> responseTimeToFirstTokenMs = const Value.absent(),
             Value<Uint8List?> imageBytes = const Value.absent(),
             Value<String?> toolName = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
@@ -9065,6 +9136,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             responseContextTokens: responseContextTokens,
             responseMaxOutputTokens: responseMaxOutputTokens,
             responseDurationMs: responseDurationMs,
+            responseTimeToFirstTokenMs: responseTimeToFirstTokenMs,
             imageBytes: imageBytes,
             toolName: toolName,
             timestamp: timestamp,

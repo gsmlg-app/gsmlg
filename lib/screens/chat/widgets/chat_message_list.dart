@@ -372,6 +372,12 @@ class _ResponseInfoPanel extends StatelessWidget {
               value: '${info.tokensPerSecond.toStringAsFixed(1)} t/s',
             ),
             _ResponseInfoRow(
+              label: 'TTFT',
+              value: info.timeToFirstToken == null
+                  ? '—'
+                  : _formatDuration(info.timeToFirstToken!),
+            ),
+            _ResponseInfoRow(
               label: 'Context size',
               value: _formatTokenCount(info.contextTokens),
             ),

@@ -1,6 +1,6 @@
 import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -18,6 +18,7 @@ void main() {
       contextTokens: 512,
       maxOutputTokens: 2048,
       duration: Duration(milliseconds: 2000),
+      timeToFirstToken: Duration(milliseconds: 500),
     );
     final message = AssistantMessage(
       id: 'message-1',
@@ -33,8 +34,47 @@ void main() {
     final messages = await repository.loadMessages('conversation-1');
     final restored = messages.single as AssistantMessage;
     expect(restored.responseInfo, responseInfo);
-    expect(restored.responseInfo?.tokensPerSecond, 21);
+    expect(restored.responseInfo?.tokensPerSecond, 28);
+    final row = await database.select(database.chatMessageTable).getSingle();
+    expect(row.responseTimeToFirstTokenMs, 500);
   });
+
+  test(
+    'roundtrips unknown first-token latency and absent response info',
+    () async {
+      final database = AppDatabase.forTesting();
+      addTearDown(database.close);
+      final repository = ChatStorageRepository(database);
+      await repository.saveConversation(Conversation.create(id: 'history'));
+      for (final info in [
+        const ChatResponseInfo(
+          outputTokens: 42,
+          duration: Duration(seconds: 2),
+        ),
+        null,
+      ]) {
+        await repository.saveMessage(
+          AssistantMessage(
+            id: 'legacy',
+            content: 'history',
+            conversationId: 'history',
+            timestamp: DateTime(2026),
+            responseInfo: info,
+          ),
+        );
+        final restored =
+            (await repository.loadMessages('history')).single
+                as AssistantMessage;
+        expect(restored.responseInfo, info);
+        expect(restored.responseInfo?.timeToFirstToken, isNull);
+        expect(
+          (await database.select(database.chatMessageTable).getSingle())
+              .responseTimeToFirstTokenMs,
+          isNull,
+        );
+      }
+    },
+  );
 
   test(
     'persists remote API type and thinking effort with chat settings',

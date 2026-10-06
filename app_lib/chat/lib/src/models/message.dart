@@ -223,6 +223,7 @@ final class ChatResponseInfo extends Equatable {
     required this.duration,
     this.contextTokens,
     this.maxOutputTokens,
+    this.timeToFirstToken,
   });
 
   /// Generated output token count. This is estimated when provider usage data
@@ -238,9 +239,12 @@ final class ChatResponseInfo extends Equatable {
   /// Wall-clock generation duration.
   final Duration duration;
 
+  final Duration? timeToFirstToken;
+
   /// Output throughput in tokens per second.
   double get tokensPerSecond {
-    final millis = duration.inMilliseconds;
+    final millis =
+        (duration - (timeToFirstToken ?? Duration.zero)).inMilliseconds;
     if (millis <= 0) return 0;
     return outputTokens / (millis / 1000);
   }
@@ -251,6 +255,7 @@ final class ChatResponseInfo extends Equatable {
     contextTokens,
     maxOutputTokens,
     duration,
+    timeToFirstToken,
   ];
 }
 

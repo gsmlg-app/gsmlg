@@ -117,6 +117,9 @@ class ChatStorageRepository {
             responseContextTokens: Value(responseInfo?.contextTokens),
             responseMaxOutputTokens: Value(responseInfo?.maxOutputTokens),
             responseDurationMs: Value(responseInfo?.duration.inMilliseconds),
+            responseTimeToFirstTokenMs: Value(
+              responseInfo?.timeToFirstToken?.inMilliseconds,
+            ),
             imageBytes: Value(
               message is UserMessage ? message.imageBytes : null,
             ),
@@ -313,6 +316,9 @@ class ChatStorageRepository {
       contextTokens: row.responseContextTokens,
       maxOutputTokens: row.responseMaxOutputTokens,
       duration: Duration(milliseconds: durationMs),
+      timeToFirstToken: row.responseTimeToFirstTokenMs == null
+          ? null
+          : Duration(milliseconds: row.responseTimeToFirstTokenMs!),
     );
   }
 
