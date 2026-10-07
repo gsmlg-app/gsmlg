@@ -153,34 +153,24 @@ class _ChatInputBarState extends State<ChatInputBar> {
   Future<void> _pickAttachments() async {
     if (!widget.enabled || widget.isStreaming) return;
 
-    final result = await FilePicker.pickFiles(
-      allowMultiple: true,
-      withData: !Platform.isMacOS,
-    );
-    if (result == null) return;
+    final files = await FilePicker.pickFiles();
+    if (files.isEmpty) return;
 
     final picked = <DmChatAttachment>[];
-    for (final file in result.files) {
-      Uint8List? bytes = file.bytes;
+    for (final file in files) {
+      Uint8List? bytes;
       String? errorMessage;
       try {
-        if (bytes == null) {
-          final path = file.path;
-          if (path != null) {
-            bytes = await File(path).readAsBytes();
-          }
-        }
+        bytes = await file.readAsBytes();
       } catch (_) {
         errorMessage = 'Unable to read file';
       }
 
       picked.add(
         DmChatAttachment(
-          id:
-              file.identifier ??
-              '${file.name}:${DateTime.now().microsecondsSinceEpoch}',
+          id: '${file.name}:${DateTime.now().microsecondsSinceEpoch}',
           name: file.name,
-          sizeBytes: file.size == 0 ? bytes?.length : file.size,
+          sizeBytes: file.lengthSync() ?? bytes?.length,
           mimeType: _mimeTypeFor(file.name, file.extension),
           bytes: bytes,
           status: bytes == null

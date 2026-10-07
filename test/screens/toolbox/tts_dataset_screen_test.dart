@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:app_database/app_database.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -318,15 +319,17 @@ void main() {
       );
       await repository.selectReferenceClip(detail.project.id, clip.id);
       final outputPath = p.join(tempDir.path, 'my_voice.zip');
+      final previousSelector = FileSelectorPlatform.instance;
+      final selector = _RecordingFileSelector(FileSaveLocation(outputPath));
+      FileSelectorPlatform.instance = selector;
+      addTearDown(() => FileSelectorPlatform.instance = previousSelector);
 
       await tester.pumpWidget(
         RepositoryProvider<TtsDatasetRepository>.value(
           value: repository,
           child: BlocProvider<TtsDatasetBloc>.value(
             value: bloc,
-            child: _localizedApp(
-              TtsDatasetScreen(exportPathProvider: (_) async => outputPath),
-            ),
+            child: _localizedApp(const TtsDatasetScreen()),
           ),
         ),
       );
@@ -343,6 +346,46 @@ void main() {
 
       expect(File(outputPath).existsSync(), isTrue);
       expect(bloc.state.exportResult?.outputPath, outputPath);
+      expect(selector.options?.suggestedName, 'my_voice.zip');
+      expect(selector.acceptedTypeGroups?.single.extensions, ['zip']);
+    });
+
+    testWidgets('canceling the save dialog leaves export unchanged', (
+      tester,
+    ) async {
+      final previousSelector = FileSelectorPlatform.instance;
+      final selector = _RecordingFileSelector(null);
+      FileSelectorPlatform.instance = selector;
+      addTearDown(() => FileSelectorPlatform.instance = previousSelector);
+      await repository.createProject(
+        name: 'My voice',
+        targetProfile: TtsDatasetTargetProfiles.qwen3Tts12HzRaw,
+        language: 'English (US)',
+        speakerDisplayName: 'My voice',
+        datasetLicense: 'private',
+        consentStatus: ConsentStatus.granted,
+        rootPath: '/tmp/my_voice',
+        defaultNoiseReductionMode: NoiseReductionMode.medium,
+        starterPrompts: englishStarterPrompts,
+      );
+      await tester.pumpWidget(
+        RepositoryProvider<TtsDatasetRepository>.value(
+          value: repository,
+          child: BlocProvider<TtsDatasetBloc>.value(
+            value: bloc,
+            child: _localizedApp(const TtsDatasetScreen()),
+          ),
+        ),
+      );
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Export ZIP'));
+      await tester.pumpAndSettle();
+      expect(selector.options?.suggestedName, 'my_voice.zip');
+      expect(bloc.state.exportResult, isNull);
+      expect(bloc.state.errorMessage, isNull);
     });
 
     test('uses audio bytes as the recorded playback source', () async {
@@ -470,3 +513,21 @@ const _tinyWavBytes = <int>[
   0x00,
   0x00,
 ];
+
+class _RecordingFileSelector extends FileSelectorPlatform {
+  _RecordingFileSelector(this.location);
+
+  final FileSaveLocation? location;
+  SaveDialogOptions? options;
+  List<XTypeGroup>? acceptedTypeGroups;
+
+  @override
+  Future<FileSaveLocation?> getSaveLocation({
+    List<XTypeGroup>? acceptedTypeGroups,
+    SaveDialogOptions options = const SaveDialogOptions(),
+  }) async {
+    this.options = options;
+    this.acceptedTypeGroups = acceptedTypeGroups;
+    return location;
+  }
+}

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_locale/app_locale.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -154,13 +154,14 @@ class _TtsDatasetScreenState extends State<TtsDatasetScreen> {
     );
   }
 
-  Future<String?> _selectExportPath(TtsDatasetProject project) {
-    return FilePicker.saveFile(
-      dialogTitle: context.l10n.ttsDatasetExportZip,
-      fileName: '${_slugProjectName(project.name)}.zip',
-      type: FileType.custom,
-      allowedExtensions: const ['zip'],
+  Future<String?> _selectExportPath(TtsDatasetProject project) async {
+    final location = await getSaveLocation(
+      suggestedName: '${_slugProjectName(project.name)}.zip',
+      acceptedTypeGroups: const [
+        XTypeGroup(label: 'ZIP', extensions: ['zip']),
+      ],
     );
+    return location?.path;
   }
 
   Future<void> _confirmRemoveProject(TtsDatasetProject project) async {

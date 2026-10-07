@@ -1,11 +1,9 @@
-// ignore_for_file: implementation_imports
-
 import 'dart:convert';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_picker/src/platform/file_picker_platform_interface.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,15 +94,12 @@ void main() {
   });
 
   testWidgets('attaches a file and sends it with the message', (tester) async {
-    FilePickerPlatform.instance = _FakeFilePicker(
-      FilePickerResult([
-        PlatformFile(
-          name: 'notes.txt',
-          size: 15,
-          bytes: Uint8List.fromList(utf8.encode('hello from file')),
-        ),
-      ]),
-    );
+    FilePickerPlatform.instance = _FakeFilePicker([
+      _MemoryPlatformFile(
+        name: 'notes.txt',
+        bytes: Uint8List.fromList(utf8.encode('hello from file')),
+      ),
+    ]);
 
     String? sentText;
     List<ChatAttachment>? sentAttachments;
@@ -138,6 +133,38 @@ void main() {
     expect(sentAttachments, hasLength(1));
     expect(sentAttachments!.single.name, 'notes.txt');
     expect(utf8.decode(sentAttachments!.single.bytes!), 'hello from file');
+  });
+
+  testWidgets('an unreadable picked file remains an error attachment', (
+    tester,
+  ) async {
+    FilePickerPlatform.instance = _FakeFilePicker([
+      _MemoryPlatformFile(
+        name: 'missing.txt',
+        bytes: Uint8List(0),
+        unreadable: true,
+      ),
+    ]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatInputBar(
+            onSend: (text, {imageBytes, audioBytes, attachments}) {},
+            onStop: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byTooltip('Attach'));
+    await tester.pump();
+    final attachment = tester
+        .widget<DmChatInput>(find.byType(DmChatInput))
+        .pendingAttachments
+        .single;
+    expect(attachment.name, 'missing.txt');
+    expect(attachment.status, DmChatAttachmentStatus.error);
+    expect(attachment.errorMessage, 'Unable to read file');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('can change agent when chat input is disabled', (tester) async {
@@ -209,23 +236,56 @@ void main() {
 class _FakeFilePicker extends FilePickerPlatform {
   _FakeFilePicker(this.result);
 
-  final FilePickerResult? result;
+  final List<PlatformFile> result;
 
   @override
-  Future<FilePickerResult?> pickFiles({
+  Future<List<PlatformFile>> pickFiles({
     String? dialogTitle,
     String? initialDirectory,
     FileType type = FileType.any,
     List<String>? allowedExtensions,
     Function(FilePickerStatus)? onFileLoading,
     int compressionQuality = 0,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-    bool cancelUploadOnWindowBlur = true,
+    AndroidOptions androidOptions = const AndroidOptions(),
+    DarwinOptions darwinOptions = const DarwinOptions(),
+    WindowsOptions windowsOptions = const WindowsOptions(),
+    LinuxOptions linuxOptions = const LinuxOptions(),
+    WebOptions webOptions = const WebOptions(),
   }) async {
     return result;
   }
+}
+
+final class _MemoryPlatformFile extends PlatformFile {
+  _MemoryPlatformFile({
+    required this.name,
+    required this.bytes,
+    this.unreadable = false,
+  });
+
+  @override
+  final String name;
+  final Uint8List bytes;
+  final bool unreadable;
+
+  @override
+  Uri get uri => Uri.dataFromBytes(bytes);
+
+  @override
+  get xFile => throw UnimplementedError();
+
+  @override
+  int lengthSync() => bytes.length;
+
+  @override
+  Future<int> length() async => bytes.length;
+
+  @override
+  Future<Uint8List> readAsBytes() async {
+    if (unreadable) throw StateError('File is unreadable');
+    return bytes;
+  }
+
+  @override
+  Stream<Uint8List> readAsByteStream() => Stream.value(bytes);
 }

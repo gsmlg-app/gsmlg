@@ -1,5 +1,3 @@
-// ignore_for_file: implementation_imports
-
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
@@ -7,7 +5,6 @@ import 'package:app_locale/app_locale.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:file_picker/src/platform/file_picker_platform_interface.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,7 +23,7 @@ void main() {
 
     setUp(() async {
       previousFilePicker = FilePickerPlatform.instance;
-      FilePickerPlatform.instance = _RecordingFilePicker(null);
+      FilePickerPlatform.instance = _RecordingFilePicker(const []);
       SharedPreferences.setMockInitialValues({});
       preferences = await SharedPreferences.getInstance();
       database = AppDatabase.forTesting();
@@ -78,7 +75,7 @@ void main() {
     testWidgets('uses unfiltered Android picker for local LiteRT-LM files', (
       tester,
     ) async {
-      final filePicker = _RecordingFilePicker(null);
+      final filePicker = _RecordingFilePicker(const []);
       FilePickerPlatform.instance = filePicker;
       await _withTargetPlatform(TargetPlatform.android, () async {
         await _pumpScreen(
@@ -104,7 +101,7 @@ void main() {
     ) async {
       final dialogOpenAtPick = <bool>[];
       final filePicker = _RecordingFilePicker(
-        null,
+        const [],
         onPick: () {
           dialogOpenAtPick.add(
             find.text('Download Model').evaluate().isNotEmpty,
@@ -313,30 +310,29 @@ Future<void> _withTargetPlatform(
 class _RecordingFilePicker extends FilePickerPlatform {
   _RecordingFilePicker(this.result, {this.onPick});
 
-  final FilePickerResult? result;
+  final List<PlatformFile> result;
   final VoidCallback? onPick;
   FileType? type;
   List<String>? allowedExtensions;
 
   @override
-  Future<FilePickerResult?> pickFiles({
+  Future<PlatformFile?> pickFile({
     String? dialogTitle,
     String? initialDirectory,
     FileType type = FileType.any,
     List<String>? allowedExtensions,
     Function(FilePickerStatus)? onFileLoading,
     int compressionQuality = 0,
-    bool allowMultiple = false,
-    bool withData = false,
-    bool withReadStream = false,
-    bool lockParentWindow = false,
-    bool readSequential = false,
-    bool cancelUploadOnWindowBlur = true,
+    AndroidOptions androidOptions = const AndroidOptions(),
+    DarwinOptions darwinOptions = const DarwinOptions(),
+    WindowsOptions windowsOptions = const WindowsOptions(),
+    LinuxOptions linuxOptions = const LinuxOptions(),
+    WebOptions webOptions = const WebOptions(),
   }) async {
     onPick?.call();
     this.type = type;
     this.allowedExtensions = allowedExtensions;
-    return result;
+    return result.isEmpty ? null : result.single;
   }
 }
 

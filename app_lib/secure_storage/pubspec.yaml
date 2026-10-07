@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   # 10.3.0+ fixes macOS usesDataProtectionKeychain option propagation.
-  flutter_secure_storage: ^10.3.1
+  flutter_secure_storage: ^11.2.0
 
 dev_dependencies:
   flutter_test:

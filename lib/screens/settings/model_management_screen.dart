@@ -628,19 +628,15 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   ) async {
     final operatingSystem = _targetOperatingSystem;
     final isAndroid = operatingSystem == 'android';
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       dialogTitle:
           'Select ${model.downloadFileNameForOperatingSystem(operatingSystem)}',
       type: isAndroid ? FileType.any : FileType.custom,
       allowedExtensions: isAndroid
           ? null
           : model.fileExtensionsForOperatingSystem(operatingSystem),
-      allowMultiple: false,
-      withData: false,
     );
-    if (!context.mounted || result == null || result.files.isEmpty) return;
-
-    final file = result.files.single;
+    if (!context.mounted || file == null) return;
     final filePath = file.path;
     if (filePath == null || filePath.isEmpty) {
       _showImportMessage(context, 'Selected file has no readable path.');

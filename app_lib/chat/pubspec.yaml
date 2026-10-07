@@ -14,12 +14,12 @@ dependencies:
   archive: any
   crypto: any
   lib_llama_cpp: ^0.7.3
-  equatable: ^2.0.8
-  drift: ^2.35.0
+  equatable: ^2.1.0
+  drift: ^2.35.1
   dio: any
   html: any
   http: any
-  path_provider: ^2.1.5
+  path_provider: ^2.1.6
   path: any
   app_database: any
   app_secure_storage: any
@@ -39,7 +39,7 @@ dependencies:
   background_downloader: any
 
 dev_dependencies:
-  test: ^1.30.0
+  test: ^1.31.1
   flutter_test:
     sdk: flutter
   path_provider_platform_interface: ^2.1.3

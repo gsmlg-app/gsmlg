@@ -33,8 +33,7 @@ class SecureStorageVaultRepository implements VaultRepository {
       aOptions: AndroidOptions(
         // Keep the legacy Android namespace so existing stored secrets remain
         // readable after flutter_secure_storage upgrades.
-        // ignore: deprecated_member_use
-        sharedPreferencesName: 'gsmlg_secure_prefs',
+        storageNamespace: 'gsmlg_secure_prefs',
         preferencesKeyPrefix: 'gsmlg_',
       ),
       iOptions: IOSOptions(
