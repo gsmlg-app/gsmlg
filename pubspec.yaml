@@ -45,6 +45,7 @@ workspace:
   - app_plugin/client_info/client_info_macos
   - app_plugin/client_info/client_info_windows
   - app_plugin/local_llm/local_llm
+  - app_plugin/compass
   - app_plugin/system_metrics/system_metrics
   - app_plugin/system_metrics/system_metrics_platform_interface
   - app_plugin/system_metrics/system_metrics_android
@@ -146,6 +147,7 @@ dependencies:
   app_chat: any
   tts_dataset: any
   app_local_llm: any
+  app_compass: any
   chat_bloc: any
   monitor_bloc: any
   tts_dataset_bloc: any

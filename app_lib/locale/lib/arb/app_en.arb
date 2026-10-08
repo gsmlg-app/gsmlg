@@ -242,5 +242,29 @@
   "backplaneEnabled": "Enabled",
   "backplaneDisabled": "Disabled",
   "backplaneModelsLoadFailed": "Could not load Backplane models",
-  "backplaneToolsRefreshFailed": "Could not refresh Backplane tools"
+  "backplaneToolsRefreshFailed": "Could not refresh Backplane tools",
+  "compassTitle": "Compass",
+  "compassMagneticNorth": "Magnetic north",
+  "compassWaitingForSensor": "Waiting for compass readings…",
+  "compassUnavailable": "This device does not have the required compass sensors.",
+  "compassUnsupportedPlatform": "Compass is available on Android and iOS.",
+  "compassSensorError": "Unable to read the compass. Try again.",
+  "compassCalibrationNeeded": "Calibration recommended",
+  "compassHelpTitle": "Using and calibrating the compass",
+  "compassHelpBody": "Hold your phone flat and keep it away from metal and magnetic accessories. If calibration is recommended, slowly move your phone in a figure-eight pattern. Readings use magnetic north.",
+  "compassDirectionNorth": "North",
+  "compassDirectionNorthEast": "Northeast",
+  "compassDirectionEast": "East",
+  "compassDirectionSouthEast": "Southeast",
+  "compassDirectionSouth": "South",
+  "compassDirectionSouthWest": "Southwest",
+  "compassDirectionWest": "West",
+  "compassDirectionNorthWest": "Northwest",
+  "compassHeadingReadout": "{degrees}° · {direction}",
+  "@compassHeadingReadout": {
+    "placeholders": {
+      "degrees": {"type": "int"},
+      "direction": {"type": "String"}
+    }
+  }
 }

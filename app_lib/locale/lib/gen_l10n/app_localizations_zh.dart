@@ -642,6 +642,62 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get backplaneToolsRefreshFailed => 'Could not refresh Backplane tools';
+
+  @override
+  String get compassTitle => '指南针';
+
+  @override
+  String get compassMagneticNorth => '磁北';
+
+  @override
+  String get compassWaitingForSensor => '正在等待指南针读数…';
+
+  @override
+  String get compassUnavailable => '此设备没有指南针所需的传感器。';
+
+  @override
+  String get compassUnsupportedPlatform => '指南针仅在 Android 和 iOS 上可用。';
+
+  @override
+  String get compassSensorError => '无法读取指南针，请重试。';
+
+  @override
+  String get compassCalibrationNeeded => '建议校准';
+
+  @override
+  String get compassHelpTitle => '指南针使用与校准';
+
+  @override
+  String get compassHelpBody => '请将手机平放，并远离金属和磁性配件。提示校准时，缓慢移动手机画“8”字。读数以磁北为基准。';
+
+  @override
+  String get compassDirectionNorth => '北';
+
+  @override
+  String get compassDirectionNorthEast => '东北';
+
+  @override
+  String get compassDirectionEast => '东';
+
+  @override
+  String get compassDirectionSouthEast => '东南';
+
+  @override
+  String get compassDirectionSouth => '南';
+
+  @override
+  String get compassDirectionSouthWest => '西南';
+
+  @override
+  String get compassDirectionWest => '西';
+
+  @override
+  String get compassDirectionNorthWest => '西北';
+
+  @override
+  String compassHeadingReadout(int degrees, String direction) {
+    return '$degrees° · $direction';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

@@ -109,5 +109,29 @@
   "smenuSmenuYellowDog": "关于YellowDog",
   "titleAboutYellowDog": "关于YellowDog",
   "aboutYellowDog": "纪念YellowDog，1988 - 1990",
-  "aboutYellowDog2": "你是一只强壮、聪明、忠诚的狗"
+  "aboutYellowDog2": "你是一只强壮、聪明、忠诚的狗",
+  "compassTitle": "指南针",
+  "compassMagneticNorth": "磁北",
+  "compassWaitingForSensor": "正在等待指南针读数…",
+  "compassUnavailable": "此设备没有指南针所需的传感器。",
+  "compassUnsupportedPlatform": "指南针仅在 Android 和 iOS 上可用。",
+  "compassSensorError": "无法读取指南针，请重试。",
+  "compassCalibrationNeeded": "建议校准",
+  "compassHelpTitle": "指南针使用与校准",
+  "compassHelpBody": "请将手机平放，并远离金属和磁性配件。提示校准时，缓慢移动手机画“8”字。读数以磁北为基准。",
+  "compassDirectionNorth": "北",
+  "compassDirectionNorthEast": "东北",
+  "compassDirectionEast": "东",
+  "compassDirectionSouthEast": "东南",
+  "compassDirectionSouth": "南",
+  "compassDirectionSouthWest": "西南",
+  "compassDirectionWest": "西",
+  "compassDirectionNorthWest": "西北",
+  "compassHeadingReadout": "{degrees}° · {direction}",
+  "@compassHeadingReadout": {
+    "placeholders": {
+      "degrees": {"type": "int"},
+      "direction": {"type": "String"}
+    }
+  }
 }

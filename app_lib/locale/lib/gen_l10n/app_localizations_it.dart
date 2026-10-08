@@ -643,4 +643,63 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get backplaneToolsRefreshFailed => 'Could not refresh Backplane tools';
+
+  @override
+  String get compassTitle => 'Compass';
+
+  @override
+  String get compassMagneticNorth => 'Magnetic north';
+
+  @override
+  String get compassWaitingForSensor => 'Waiting for compass readings…';
+
+  @override
+  String get compassUnavailable =>
+      'This device does not have the required compass sensors.';
+
+  @override
+  String get compassUnsupportedPlatform =>
+      'Compass is available on Android and iOS.';
+
+  @override
+  String get compassSensorError => 'Unable to read the compass. Try again.';
+
+  @override
+  String get compassCalibrationNeeded => 'Calibration recommended';
+
+  @override
+  String get compassHelpTitle => 'Using and calibrating the compass';
+
+  @override
+  String get compassHelpBody =>
+      'Hold your phone flat and keep it away from metal and magnetic accessories. If calibration is recommended, slowly move your phone in a figure-eight pattern. Readings use magnetic north.';
+
+  @override
+  String get compassDirectionNorth => 'North';
+
+  @override
+  String get compassDirectionNorthEast => 'Northeast';
+
+  @override
+  String get compassDirectionEast => 'East';
+
+  @override
+  String get compassDirectionSouthEast => 'Southeast';
+
+  @override
+  String get compassDirectionSouth => 'South';
+
+  @override
+  String get compassDirectionSouthWest => 'Southwest';
+
+  @override
+  String get compassDirectionWest => 'West';
+
+  @override
+  String get compassDirectionNorthWest => 'Northwest';
+
+  @override
+  String compassHeadingReadout(int degrees, String direction) {
+    return '$degrees° · $direction';
+  }
 }

@@ -1349,6 +1349,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not refresh Backplane tools'**
   String get backplaneToolsRefreshFailed;
+
+  /// No description provided for @compassTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass'**
+  String get compassTitle;
+
+  /// No description provided for @compassMagneticNorth.
+  ///
+  /// In en, this message translates to:
+  /// **'Magnetic north'**
+  String get compassMagneticNorth;
+
+  /// No description provided for @compassWaitingForSensor.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for compass readings…'**
+  String get compassWaitingForSensor;
+
+  /// No description provided for @compassUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This device does not have the required compass sensors.'**
+  String get compassUnavailable;
+
+  /// No description provided for @compassUnsupportedPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Compass is available on Android and iOS.'**
+  String get compassUnsupportedPlatform;
+
+  /// No description provided for @compassSensorError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to read the compass. Try again.'**
+  String get compassSensorError;
+
+  /// No description provided for @compassCalibrationNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Calibration recommended'**
+  String get compassCalibrationNeeded;
+
+  /// No description provided for @compassHelpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Using and calibrating the compass'**
+  String get compassHelpTitle;
+
+  /// No description provided for @compassHelpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold your phone flat and keep it away from metal and magnetic accessories. If calibration is recommended, slowly move your phone in a figure-eight pattern. Readings use magnetic north.'**
+  String get compassHelpBody;
+
+  /// No description provided for @compassDirectionNorth.
+  ///
+  /// In en, this message translates to:
+  /// **'North'**
+  String get compassDirectionNorth;
+
+  /// No description provided for @compassDirectionNorthEast.
+  ///
+  /// In en, this message translates to:
+  /// **'Northeast'**
+  String get compassDirectionNorthEast;
+
+  /// No description provided for @compassDirectionEast.
+  ///
+  /// In en, this message translates to:
+  /// **'East'**
+  String get compassDirectionEast;
+
+  /// No description provided for @compassDirectionSouthEast.
+  ///
+  /// In en, this message translates to:
+  /// **'Southeast'**
+  String get compassDirectionSouthEast;
+
+  /// No description provided for @compassDirectionSouth.
+  ///
+  /// In en, this message translates to:
+  /// **'South'**
+  String get compassDirectionSouth;
+
+  /// No description provided for @compassDirectionSouthWest.
+  ///
+  /// In en, this message translates to:
+  /// **'Southwest'**
+  String get compassDirectionSouthWest;
+
+  /// No description provided for @compassDirectionWest.
+  ///
+  /// In en, this message translates to:
+  /// **'West'**
+  String get compassDirectionWest;
+
+  /// No description provided for @compassDirectionNorthWest.
+  ///
+  /// In en, this message translates to:
+  /// **'Northwest'**
+  String get compassDirectionNorthWest;
+
+  /// No description provided for @compassHeadingReadout.
+  ///
+  /// In en, this message translates to:
+  /// **'{degrees}° · {direction}'**
+  String compassHeadingReadout(int degrees, String direction);
 }
 
 class _AppLocalizationsDelegate

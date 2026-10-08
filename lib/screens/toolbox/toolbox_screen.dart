@@ -12,6 +12,7 @@ import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_macos_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_screen.dart';
+import 'package:gsmlg/screens/toolbox/compass/compass_screen.dart';
 import 'package:gsmlg/screens/toolbox/ip_geo/ip_geo_screen.dart';
 import 'package:gsmlg/screens/toolbox/monitor/monitor_screen.dart';
 import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_screen.dart';
@@ -92,6 +93,14 @@ class ToolboxScreen extends StatelessWidget {
                   AppGridTile(
                     onTap: () => context.goNamed(CameraScreen.name),
                     child: const Text('Camera'),
+                  ),
+                if (isCompassPlatformSupported(
+                  isWeb: kIsWeb,
+                  platform: defaultTargetPlatform,
+                ))
+                  AppGridTile(
+                    onTap: () => context.goNamed(CompassScreen.name),
+                    child: Text(context.l10n.compassTitle),
                   ),
                 if (!kIsWeb && Platform.isMacOS)
                   AppGridTile(
