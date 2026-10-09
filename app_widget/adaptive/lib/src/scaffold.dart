@@ -343,6 +343,8 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
           child: Stack(
             fit: StackFit.expand,
             children: [
+              // TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#22
+              // Replace the extra restore row with shared header integration.
               // Keep the scaffold mounted while reserving space above its AppBar.
               Padding(
                 padding: EdgeInsets.only(top: showRestore ? 48 : 0),
