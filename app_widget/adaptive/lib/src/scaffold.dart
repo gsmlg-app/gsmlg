@@ -3,7 +3,7 @@ import 'package:duskmoon_adaptive_scaffold/duskmoon_adaptive_scaffold.dart';
 
 export 'package:duskmoon_adaptive_scaffold/duskmoon_adaptive_scaffold.dart';
 
-class AppAdaptiveScaffold extends StatelessWidget {
+class AppAdaptiveScaffold extends StatefulWidget {
   static const appSmallBreakpoint = Breakpoints.small;
   static const appMediumBreakpoint = Breakpoints.medium;
   static const appMediumLargeBreakpoint = Breakpoints.mediumLarge;
@@ -19,6 +19,10 @@ class AppAdaptiveScaffold extends StatelessWidget {
 
   /// The index to be used by the [NavigationRail].
   final int? selectedIndex;
+
+  /// Whether navigation is available. When false, the rail, drawer, and bottom
+  /// navigation are hidden. Users can also hide and restore the rail locally.
+  final bool navigationVisible;
 
   /// Option to display a leading widget at the top of the navigation rail
   /// at the middle breakpoint.
@@ -212,7 +216,7 @@ class AppAdaptiveScaffold extends StatelessWidget {
 
   /// Whether to show a collapse/expand toggle button on the navigation rail.
   ///
-  /// Defaults to false.
+  /// Defaults to true.
   final bool showCollapseToggle;
 
   /// Icon to display when the navigation rail can be collapsed.
@@ -225,6 +229,7 @@ class AppAdaptiveScaffold extends StatelessWidget {
     super.key,
     required this.destinations,
     this.selectedIndex = 0,
+    this.navigationVisible = true,
     this.leadingUnextendedNavRail,
     this.leadingExtendedNavRail,
     this.trailingNavRail,
@@ -261,15 +266,56 @@ class AppAdaptiveScaffold extends StatelessWidget {
     this.groupAlignment,
     this.isExtendedOverride,
     this.onExtendedChange,
-    this.showCollapseToggle = false,
-    this.collapseIcon = Icons.menu_open,
-    this.expandIcon = Icons.menu,
+    this.showCollapseToggle = true,
+    this.collapseIcon = Icons.chevron_left,
+    this.expandIcon = Icons.chevron_right,
   });
+
+  @override
+  State<AppAdaptiveScaffold> createState() => _AppAdaptiveScaffoldState();
+}
+
+class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
+  bool _sidebarVisible = true;
+
+  @override
+  void didUpdateWidget(AppAdaptiveScaffold oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.navigationVisible != widget.navigationVisible) {
+      _sidebarVisible = true;
+    }
+  }
+
+  Widget _buildRailHeader(Widget? leading) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: AlignmentDirectional.topEnd,
+          child: IconButton(
+            tooltip: 'Hide navigation',
+            color: Theme.of(context).colorScheme.onSecondaryContainer,
+            icon: const Icon(Icons.view_sidebar_outlined),
+            onPressed: () => setState(() => _sidebarVisible = false),
+          ),
+        ),
+        if (leading != null) leading,
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final hasRail = [
+      widget.mediumBreakpoint,
+      widget.mediumLargeBreakpoint,
+      widget.largeBreakpoint,
+      widget.extraLargeBreakpoint,
+    ].any((breakpoint) => breakpoint.isActive(context));
+    final showRestore = widget.navigationVisible && hasRail && !_sidebarVisible;
     final navRailTheme = theme.navigationRailTheme.copyWith(
       backgroundColor: colorScheme.secondaryContainer,
       selectedIconTheme: IconThemeData(color: colorScheme.onSecondaryContainer),
@@ -287,46 +333,82 @@ class AppAdaptiveScaffold extends StatelessWidget {
 
     return Theme(
       data: theme.copyWith(navigationRailTheme: navRailTheme),
-      child: DmAdaptiveScaffold(
-        destinations: destinations,
-        selectedIndex: selectedIndex,
-        leadingUnextendedNavRail: leadingUnextendedNavRail,
-        leadingExtendedNavRail: leadingExtendedNavRail,
-        trailingNavRail: trailingNavRail,
-        navigationRailPadding: navigationRailPadding,
-        smallBody: smallBody,
-        body: body,
-        mediumLargeBody: mediumLargeBody,
-        largeBody: largeBody,
-        extraLargeBody: extraLargeBody,
-        smallSecondaryBody: smallSecondaryBody,
-        secondaryBody: secondaryBody,
-        mediumLargeSecondaryBody: mediumLargeSecondaryBody,
-        largeSecondaryBody: largeSecondaryBody,
-        extraLargeSecondaryBody: extraLargeSecondaryBody,
-        bodyRatio: bodyRatio,
-        smallBreakpoint: smallBreakpoint,
-        mediumBreakpoint: mediumBreakpoint,
-        mediumLargeBreakpoint: mediumLargeBreakpoint,
-        largeBreakpoint: largeBreakpoint,
-        extraLargeBreakpoint: extraLargeBreakpoint,
-        drawerBreakpoint: drawerBreakpoint,
-        internalAnimations: internalAnimations,
-        transitionDuration: transitionDuration,
-        bodyOrientation: bodyOrientation,
-        onSelectedIndexChange: onSelectedIndexChange,
-        useDrawer: useDrawer,
-        appBar: appBar,
-        navigationRailWidth: navigationRailWidth,
-        extendedNavigationRailWidth: extendedNavigationRailWidth,
-        appBarBreakpoint: appBarBreakpoint,
-        navigationRailDestinationBuilder: navigationRailDestinationBuilder,
-        groupAlignment: groupAlignment,
-        isExtendedOverride: isExtendedOverride,
-        onExtendedChange: onExtendedChange,
-        showCollapseToggle: showCollapseToggle,
-        collapseIcon: collapseIcon,
-        expandIcon: expandIcon,
+      child: Material(
+        color: colorScheme.surface,
+        child: SafeArea(
+          top: showRestore,
+          bottom: false,
+          left: false,
+          right: false,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Keep the scaffold mounted while reserving space above its AppBar.
+              Padding(
+                padding: EdgeInsets.only(top: showRestore ? 48 : 0),
+                child: DmAdaptiveScaffold(
+                  destinations: widget.destinations,
+                  selectedIndex: widget.selectedIndex,
+                  navigationVisible:
+                      widget.navigationVisible && (!hasRail || _sidebarVisible),
+                  leadingUnextendedNavRail: hasRail
+                      ? _buildRailHeader(widget.leadingUnextendedNavRail)
+                      : widget.leadingUnextendedNavRail,
+                  leadingExtendedNavRail: hasRail
+                      ? _buildRailHeader(widget.leadingExtendedNavRail)
+                      : widget.leadingExtendedNavRail,
+                  trailingNavRail: widget.trailingNavRail,
+                  navigationRailPadding: widget.navigationRailPadding,
+                  smallBody: widget.smallBody,
+                  body: widget.body,
+                  mediumLargeBody: widget.mediumLargeBody,
+                  largeBody: widget.largeBody,
+                  extraLargeBody: widget.extraLargeBody,
+                  smallSecondaryBody: widget.smallSecondaryBody,
+                  secondaryBody: widget.secondaryBody,
+                  mediumLargeSecondaryBody: widget.mediumLargeSecondaryBody,
+                  largeSecondaryBody: widget.largeSecondaryBody,
+                  extraLargeSecondaryBody: widget.extraLargeSecondaryBody,
+                  bodyRatio: widget.bodyRatio,
+                  smallBreakpoint: widget.smallBreakpoint,
+                  mediumBreakpoint: widget.mediumBreakpoint,
+                  mediumLargeBreakpoint: widget.mediumLargeBreakpoint,
+                  largeBreakpoint: widget.largeBreakpoint,
+                  extraLargeBreakpoint: widget.extraLargeBreakpoint,
+                  drawerBreakpoint: widget.drawerBreakpoint,
+                  internalAnimations: widget.internalAnimations,
+                  transitionDuration: widget.transitionDuration,
+                  bodyOrientation: widget.bodyOrientation,
+                  onSelectedIndexChange: widget.onSelectedIndexChange,
+                  useDrawer: widget.useDrawer,
+                  appBar: widget.appBar,
+                  navigationRailWidth: widget.navigationRailWidth,
+                  extendedNavigationRailWidth:
+                      widget.extendedNavigationRailWidth,
+                  appBarBreakpoint: widget.appBarBreakpoint,
+                  navigationRailDestinationBuilder:
+                      widget.navigationRailDestinationBuilder,
+                  groupAlignment: widget.groupAlignment,
+                  isExtendedOverride: widget.isExtendedOverride,
+                  onExtendedChange: widget.onExtendedChange,
+                  showCollapseToggle: widget.showCollapseToggle,
+                  collapseIcon: widget.collapseIcon,
+                  expandIcon: widget.expandIcon,
+                ),
+              ),
+              if (showRestore)
+                PositionedDirectional(
+                  top: 0,
+                  start: 0,
+                  child: IconButton(
+                    tooltip: 'Show navigation',
+                    icon: const Icon(Icons.view_sidebar_outlined),
+                    onPressed: () => setState(() => _sidebarVisible = true),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
