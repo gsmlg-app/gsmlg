@@ -49,6 +49,7 @@ class _WifiInfoScreenState extends State<WifiInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(SettingsScreen.name),
         context,
@@ -59,7 +60,14 @@ class _WifiInfoScreenState extends State<WifiInfoScreen> {
         return SafeArea(
           child: CustomScrollView(
             slivers: <Widget>[
-              SliverAppBar(title: Text(context.l10n.wifiInfo)),
+              DmNavigationHeader(
+                builder: (context, header) => SliverAppBar(
+                  leading: header.leading,
+                  leadingWidth: header.leadingWidth,
+                  automaticallyImplyLeading: header.automaticallyImplyLeading,
+                  title: Text(context.l10n.wifiInfo),
+                ),
+              ),
               SliverFillRemaining(child: _buildContent(context)),
             ],
           ),

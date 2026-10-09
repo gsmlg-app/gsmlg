@@ -17,6 +17,9 @@ class WhoisHistoryShowScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: context.select<WhoisHistoryBloc, bool>(
+        (bloc) => bloc.state is WhoisHistoryLoaded,
+      ),
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreen.name),
         context,
@@ -59,19 +62,25 @@ class WhoisHistoryShowScreen extends StatelessWidget {
                   .firstOrNull;
               return CustomScrollView(
                 slivers: [
-                  SliverAppBar(
-                    floating: true,
-                    title: Hero(
-                      tag: 'whois-history-$historyId',
-                      createRectTween: (Rect? begin, Rect? end) {
-                        return MaterialRectCenterArcTween(
-                          begin: begin,
-                          end: end,
-                        );
-                      },
-                      child: whoisHistory?.query != null
-                          ? Text('Whois History: ${whoisHistory?.query}')
-                          : const Text('Whois History'),
+                  DmNavigationHeader(
+                    builder: (context, header) => SliverAppBar(
+                      leading: header.leading,
+                      leadingWidth: header.leadingWidth,
+                      automaticallyImplyLeading:
+                          header.automaticallyImplyLeading,
+                      floating: true,
+                      title: Hero(
+                        tag: 'whois-history-$historyId',
+                        createRectTween: (Rect? begin, Rect? end) {
+                          return MaterialRectCenterArcTween(
+                            begin: begin,
+                            end: end,
+                          );
+                        },
+                        child: whoisHistory?.query != null
+                            ? Text('Whois History: ${whoisHistory?.query}')
+                            : const Text('Whois History'),
+                      ),
                     ),
                   ),
                   SliverList.list(

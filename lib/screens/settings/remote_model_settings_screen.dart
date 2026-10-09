@@ -48,6 +48,7 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(SettingsScreen.name),
         context,
@@ -60,15 +61,21 @@ class _RemoteModelSettingsScreenState extends State<RemoteModelSettingsScreen> {
             builder: (context, state) {
               return CustomScrollView(
                 slivers: <Widget>[
-                  SliverAppBar(
-                    title: const Text('Remote Models'),
-                    actions: [
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        tooltip: 'Add provider',
-                        onPressed: () => _showProviderDialog(context),
-                      ),
-                    ],
+                  DmNavigationHeader(
+                    builder: (context, header) => SliverAppBar(
+                      leading: header.leading,
+                      leadingWidth: header.leadingWidth,
+                      automaticallyImplyLeading:
+                          header.automaticallyImplyLeading,
+                      title: const Text('Remote Models'),
+                      actions: [
+                        IconButton(
+                          icon: const Icon(Icons.add),
+                          tooltip: 'Add provider',
+                          onPressed: () => _showProviderDialog(context),
+                        ),
+                      ],
+                    ),
                   ),
                   SliverFillRemaining(
                     child: SettingsList(

@@ -38,6 +38,7 @@ class _TtsDatasetScreenState extends State<TtsDatasetScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreenMarker.name),
         context,
@@ -54,18 +55,24 @@ class _TtsDatasetScreenState extends State<TtsDatasetScreen> {
             builder: (context, state) {
               return CustomScrollView(
                 slivers: [
-                  SliverAppBar(
-                    floating: true,
-                    title: Text(context.l10n.ttsDatasetTitle),
-                    actions: [
-                      IconButton(
-                        tooltip: context.l10n.ttsDatasetRefresh,
-                        onPressed: () => context.read<TtsDatasetBloc>().add(
-                          const TtsDatasetLoadProjects(),
+                  DmNavigationHeader(
+                    builder: (context, header) => SliverAppBar(
+                      leading: header.leading,
+                      leadingWidth: header.leadingWidth,
+                      automaticallyImplyLeading:
+                          header.automaticallyImplyLeading,
+                      floating: true,
+                      title: Text(context.l10n.ttsDatasetTitle),
+                      actions: [
+                        IconButton(
+                          tooltip: context.l10n.ttsDatasetRefresh,
+                          onPressed: () => context.read<TtsDatasetBloc>().add(
+                            const TtsDatasetLoadProjects(),
+                          ),
+                          icon: const Icon(Icons.refresh),
                         ),
-                        icon: const Icon(Icons.refresh),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   if (state.status == TtsDatasetStatus.loading &&
                       state.projects.isEmpty)

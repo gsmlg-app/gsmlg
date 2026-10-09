@@ -76,6 +76,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreen.name),
         context,
@@ -158,30 +159,35 @@ class _MonitorScreenState extends State<MonitorScreen> {
         onRefresh: () async => _startDiscovery(),
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              floating: true,
-              title: const Text('Monitor'),
-              actions: [
-                if (_isScanning)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 8),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+            DmNavigationHeader(
+              builder: (context, header) => SliverAppBar(
+                leading: header.leading,
+                leadingWidth: header.leadingWidth,
+                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                floating: true,
+                title: const Text('Monitor'),
+                actions: [
+                  if (_isScanning)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: _startDiscovery,
+                    tooltip: 'Scan network',
                   ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _startDiscovery,
-                  tooltip: 'Scan network',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => _showAddHostDialog(context),
-                  tooltip: 'Add host manually',
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => _showAddHostDialog(context),
+                    tooltip: 'Add host manually',
+                  ),
+                ],
+              ),
             ),
             if (hosts.isEmpty)
               SliverFillRemaining(
@@ -272,6 +278,7 @@ class _MonitorScreenState extends State<MonitorScreen> {
     return Column(
       children: [
         DmAppBar(
+          restoreNavigation: true,
           title: Text(host.displayName),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),

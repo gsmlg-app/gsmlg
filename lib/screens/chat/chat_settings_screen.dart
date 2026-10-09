@@ -167,11 +167,13 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(const Key('Settings'), context),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
         appBar: DmAppBar(
+          restoreNavigation: true,
           title: Text(widget.agentId == null ? 'Agents' : 'Agent Settings'),
         ),
         body: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(

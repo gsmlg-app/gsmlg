@@ -27,11 +27,13 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(const Key(HomeScreen.name), context),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
         appBar: DmAppBar(
+          restoreNavigation: true,
           title: const Text('Chat History'),
           actions: [
             BlocBuilder<ChatBloc, ChatState>(

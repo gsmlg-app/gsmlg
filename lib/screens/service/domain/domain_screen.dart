@@ -28,6 +28,7 @@ class _DomainScreenState extends State<DomainScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ServiceScreen.name),
         context,
@@ -37,22 +38,27 @@ class _DomainScreenState extends State<DomainScreen> {
       body: (_) => SafeArea(
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              floating: true,
-              title: const Text('DNS Zones'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () => context.go('/service/domain/add'),
-                  tooltip: 'Add Zone',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () =>
-                      context.read<ZoneBloc>().add(const ZoneSync()),
-                  tooltip: 'Refresh',
-                ),
-              ],
+            DmNavigationHeader(
+              builder: (context, header) => SliverAppBar(
+                leading: header.leading,
+                leadingWidth: header.leadingWidth,
+                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                floating: true,
+                title: const Text('DNS Zones'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => context.go('/service/domain/add'),
+                    tooltip: 'Add Zone',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () =>
+                        context.read<ZoneBloc>().add(const ZoneSync()),
+                    tooltip: 'Refresh',
+                  ),
+                ],
+              ),
             ),
             BlocBuilder<ZoneBloc, ZoneState>(
               builder: (context, state) {

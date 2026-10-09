@@ -27,6 +27,10 @@ class AppAdaptiveScaffold extends StatefulWidget {
   /// users' rail visibility and expansion preferences are shared across pages.
   final bool navigationVisible;
 
+  /// Whether the body restores navigation in its existing header using
+  /// DmAppBar or [DmNavigationHeader]. Otherwise, a restore overlay is shown.
+  final bool navigationRestoreInHeader;
+
   /// Option to display a leading widget at the top of the navigation rail
   /// at the middle breakpoint.
   final Widget? leadingUnextendedNavRail;
@@ -234,6 +238,7 @@ class AppAdaptiveScaffold extends StatefulWidget {
     required this.destinations,
     this.selectedIndex = 0,
     this.navigationVisible = true,
+    this.navigationRestoreInHeader = false,
     this.leadingUnextendedNavRail,
     this.leadingExtendedNavRail,
     this.trailingNavRail,
@@ -299,25 +304,6 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
     }
   }
 
-  Widget _buildRailHeader(Widget? leading) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Align(
-          alignment: AlignmentDirectional.topEnd,
-          child: IconButton(
-            tooltip: 'Hide navigation',
-            color: Theme.of(context).colorScheme.onSecondaryContainer,
-            icon: const Icon(Icons.view_sidebar_outlined),
-            onPressed: () => _setSidebarVisible(false),
-          ),
-        ),
-        if (leading != null) leading,
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final navigationState = context.watch<NavigationBloc?>()?.state;
@@ -331,7 +317,6 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
       widget.largeBreakpoint,
       widget.extraLargeBreakpoint,
     ].any((breakpoint) => breakpoint.isActive(context));
-    final showRestore = widget.navigationVisible && hasRail && !sidebarVisible;
     final navRailTheme = theme.navigationRailTheme.copyWith(
       backgroundColor: colorScheme.secondaryContainer,
       selectedIconTheme: IconThemeData(color: colorScheme.onSecondaryContainer),
@@ -349,92 +334,60 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
 
     return Theme(
       data: theme.copyWith(navigationRailTheme: navRailTheme),
-      child: Material(
-        color: colorScheme.surface,
-        child: SafeArea(
-          top: showRestore,
-          bottom: false,
-          left: false,
-          right: false,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#22
-              // Replace the extra restore row with shared header integration.
-              // Keep the scaffold mounted while reserving space above its AppBar.
-              Padding(
-                padding: EdgeInsets.only(top: showRestore ? 48 : 0),
-                child: DmAdaptiveScaffold(
-                  destinations: widget.destinations,
-                  selectedIndex: widget.selectedIndex,
-                  navigationVisible:
-                      widget.navigationVisible && (!hasRail || sidebarVisible),
-                  leadingUnextendedNavRail: hasRail
-                      ? _buildRailHeader(widget.leadingUnextendedNavRail)
-                      : widget.leadingUnextendedNavRail,
-                  leadingExtendedNavRail: hasRail
-                      ? _buildRailHeader(widget.leadingExtendedNavRail)
-                      : widget.leadingExtendedNavRail,
-                  trailingNavRail: widget.trailingNavRail,
-                  navigationRailPadding: widget.navigationRailPadding,
-                  smallBody: widget.smallBody,
-                  body: widget.body,
-                  mediumLargeBody: widget.mediumLargeBody,
-                  largeBody: widget.largeBody,
-                  extraLargeBody: widget.extraLargeBody,
-                  smallSecondaryBody: widget.smallSecondaryBody,
-                  secondaryBody: widget.secondaryBody,
-                  mediumLargeSecondaryBody: widget.mediumLargeSecondaryBody,
-                  largeSecondaryBody: widget.largeSecondaryBody,
-                  extraLargeSecondaryBody: widget.extraLargeSecondaryBody,
-                  bodyRatio: widget.bodyRatio,
-                  smallBreakpoint: widget.smallBreakpoint,
-                  mediumBreakpoint: widget.mediumBreakpoint,
-                  mediumLargeBreakpoint: widget.mediumLargeBreakpoint,
-                  largeBreakpoint: widget.largeBreakpoint,
-                  extraLargeBreakpoint: widget.extraLargeBreakpoint,
-                  drawerBreakpoint: widget.drawerBreakpoint,
-                  internalAnimations: widget.internalAnimations,
-                  transitionDuration: widget.transitionDuration,
-                  bodyOrientation: widget.bodyOrientation,
-                  onSelectedIndexChange: widget.onSelectedIndexChange,
-                  useDrawer: widget.useDrawer,
-                  appBar: widget.appBar,
-                  navigationRailWidth: widget.navigationRailWidth,
-                  extendedNavigationRailWidth:
-                      widget.extendedNavigationRailWidth,
-                  appBarBreakpoint: widget.appBarBreakpoint,
-                  navigationRailDestinationBuilder:
-                      widget.navigationRailDestinationBuilder,
-                  groupAlignment: widget.groupAlignment,
-                  isExtendedOverride:
-                      widget.isExtendedOverride ?? navigationState?.isExtended,
-                  onExtendedChange: (extended) {
-                    if (widget.isExtendedOverride == null) {
-                      context.read<NavigationBloc?>()?.add(
-                            NavigationRailExtendedChanged(extended),
-                          );
-                    }
-                    widget.onExtendedChange?.call(extended);
-                  },
-                  showCollapseToggle: widget.showCollapseToggle,
-                  collapseIcon: widget.collapseIcon,
-                  expandIcon: widget.expandIcon,
-                ),
-              ),
-              if (showRestore)
-                PositionedDirectional(
-                  top: 0,
-                  start: 0,
-                  child: IconButton(
-                    tooltip: 'Show navigation',
-                    icon: const Icon(Icons.view_sidebar_outlined),
-                    onPressed: () => _setSidebarVisible(true),
-                  ),
-                ),
-            ],
-          ),
-        ),
+      child: DmAdaptiveScaffold(
+        destinations: widget.destinations,
+        selectedIndex: widget.selectedIndex,
+        navigationVisible:
+            widget.navigationVisible && (!hasRail || sidebarVisible),
+        showNavigationToggle: widget.navigationVisible && hasRail,
+        onNavigationVisibleChange: _setSidebarVisible,
+        navigationRestoreInHeader: widget.navigationRestoreInHeader,
+        leadingUnextendedNavRail: widget.leadingUnextendedNavRail,
+        leadingExtendedNavRail: widget.leadingExtendedNavRail,
+        trailingNavRail: widget.trailingNavRail,
+        navigationRailPadding: widget.navigationRailPadding,
+        smallBody: widget.smallBody,
+        body: widget.body,
+        mediumLargeBody: widget.mediumLargeBody,
+        largeBody: widget.largeBody,
+        extraLargeBody: widget.extraLargeBody,
+        smallSecondaryBody: widget.smallSecondaryBody,
+        secondaryBody: widget.secondaryBody,
+        mediumLargeSecondaryBody: widget.mediumLargeSecondaryBody,
+        largeSecondaryBody: widget.largeSecondaryBody,
+        extraLargeSecondaryBody: widget.extraLargeSecondaryBody,
+        bodyRatio: widget.bodyRatio,
+        smallBreakpoint: widget.smallBreakpoint,
+        mediumBreakpoint: widget.mediumBreakpoint,
+        mediumLargeBreakpoint: widget.mediumLargeBreakpoint,
+        largeBreakpoint: widget.largeBreakpoint,
+        extraLargeBreakpoint: widget.extraLargeBreakpoint,
+        drawerBreakpoint: widget.drawerBreakpoint,
+        internalAnimations: widget.internalAnimations,
+        transitionDuration: widget.transitionDuration,
+        bodyOrientation: widget.bodyOrientation,
+        onSelectedIndexChange: widget.onSelectedIndexChange,
+        useDrawer: widget.useDrawer,
+        appBar: widget.appBar,
+        navigationRailWidth: widget.navigationRailWidth,
+        extendedNavigationRailWidth: widget.extendedNavigationRailWidth,
+        appBarBreakpoint: widget.appBarBreakpoint,
+        navigationRailDestinationBuilder:
+            widget.navigationRailDestinationBuilder,
+        groupAlignment: widget.groupAlignment,
+        isExtendedOverride:
+            widget.isExtendedOverride ?? navigationState?.isExtended,
+        onExtendedChange: (extended) {
+          if (widget.isExtendedOverride == null) {
+            context.read<NavigationBloc?>()?.add(
+                  NavigationRailExtendedChanged(extended),
+                );
+          }
+          widget.onExtendedChange?.call(extended);
+        },
+        showCollapseToggle: widget.showCollapseToggle,
+        collapseIcon: widget.collapseIcon,
+        expandIcon: widget.expandIcon,
       ),
     );
   }

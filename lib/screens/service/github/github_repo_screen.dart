@@ -87,6 +87,7 @@ class _GitHubRepoView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ServiceScreen.name),
         context,
@@ -101,32 +102,42 @@ class _GitHubRepoView extends StatelessWidget {
           builder: (context, state) {
             return CustomScrollView(
               slivers: [
-                SliverAppBar(
-                  floating: true,
-                  title: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(repo),
-                      Text(owner, style: Theme.of(context).textTheme.bodySmall),
-                    ],
-                  ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.open_in_new),
-                      onPressed: () {
-                        launchUrl(Uri.parse('https://github.com/$owner/$repo'));
-                      },
+                DmNavigationHeader(
+                  builder: (context, header) => SliverAppBar(
+                    leading: header.leading,
+                    leadingWidth: header.leadingWidth,
+                    automaticallyImplyLeading: header.automaticallyImplyLeading,
+                    floating: true,
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(repo),
+                        Text(
+                          owner,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
-                    if (state is GitHubActionsLoaded)
+                    actions: [
                       IconButton(
-                        icon: const Icon(Icons.refresh),
+                        icon: const Icon(Icons.open_in_new),
                         onPressed: () {
-                          context.read<GitHubActionsBloc>().add(
-                            const GitHubActionsRefresh(),
+                          launchUrl(
+                            Uri.parse('https://github.com/$owner/$repo'),
                           );
                         },
                       ),
-                  ],
+                      if (state is GitHubActionsLoaded)
+                        IconButton(
+                          icon: const Icon(Icons.refresh),
+                          onPressed: () {
+                            context.read<GitHubActionsBloc>().add(
+                              const GitHubActionsRefresh(),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
                 ),
                 if (state is GitHubActionsLoading)
                   const SliverFillRemaining(

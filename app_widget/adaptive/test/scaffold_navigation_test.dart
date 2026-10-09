@@ -1,10 +1,222 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
+import 'package:duskmoon_widgets/duskmoon_widgets.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:navigation_bloc/navigation_bloc.dart';
 
 void main() {
+  for (final style in DmPlatformStyle.values) {
+    testWidgets(
+        'header integration keeps DmAppBar ${style.name} in one toolbar', (
+      tester,
+    ) async {
+      await _setSize(tester, 1300);
+      _setTopInset(tester, 24);
+      await tester.pumpWidget(
+        _HeaderFixture(body: (_) => _PlatformDraftBody(style: style)),
+      );
+      await tester.pumpAndSettle();
+      final titleY = tester.getCenter(find.text('Platform chat')).dy;
+      final inputY = tester.getCenter(find.byType(TextField)).dy;
+      final bodyState = tester
+          .state<_PlatformDraftBodyState>(find.byType(_PlatformDraftBody));
+      await tester.enterText(find.byType(TextField), 'Platform draft');
+      await tester.tap(find.byTooltip('Hide navigation'));
+      await tester.pumpAndSettle();
+      expect(tester.getCenter(find.text('Platform chat')).dy, titleY);
+      expect(tester.getCenter(find.byType(TextField)).dy, inputY);
+      final show = find.byTooltip('Show navigation');
+      expect(find.ancestor(of: show, matching: find.byType(DmAppBar)),
+          findsOneWidget);
+      expect(tester.getCenter(show).dy, closeTo(titleY, 1));
+      expect(tester.getCenter(find.byTooltip('Platform action')).dy,
+          closeTo(titleY, 1));
+      final back = find.byType(BackButton);
+      expect(tester.getRect(show).overlaps(tester.getRect(back)), isFalse);
+      await tester.tap(back);
+      await tester.pumpAndSettle();
+      expect(bodyState.backPressed, isTrue);
+      await tester.tap(find.byTooltip('Platform action'));
+      await tester.pumpAndSettle();
+      expect(bodyState.actionPressed, isTrue);
+      expect(
+          tester
+              .state<_PlatformDraftBodyState>(find.byType(_PlatformDraftBody)),
+          bodyState);
+      expect(find.text('Platform draft'), findsOneWidget);
+      await tester.tap(show);
+      await tester.pumpAndSettle();
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(tester.getCenter(find.text('Platform chat')).dy, titleY);
+      expect(tester.getCenter(find.byType(TextField)).dy, inputY);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final width in [750.0, 1300.0]) {
+    for (final topInset in [0.0, 24.0, 32.0]) {
+      testWidgets(
+        'header integration preserves Material geometry at $width inset $topInset',
+        (tester) async {
+          await _setSize(tester, width);
+          _setTopInset(tester, topInset);
+          await tester.pumpWidget(const _Harness(platform: TargetPlatform.iOS));
+          await tester.pumpAndSettle();
+          final appBarRect = tester.getRect(find.byType(AppBar));
+          final titleY = tester.getCenter(find.text('Chat')).dy;
+          final inputY = tester.getCenter(find.byType(TextField)).dy;
+          final bodyState =
+              tester.state<_DraftBodyState>(find.byType(_DraftBody));
+          await tester.enterText(find.byType(TextField), 'Header draft');
+          await tester.tap(find.byTooltip('Hide navigation'));
+          await tester.pumpAndSettle();
+
+          expect(tester.getRect(find.byType(AppBar)).top, appBarRect.top);
+          expect(tester.getRect(find.byType(AppBar)).height, appBarRect.height);
+          expect(tester.getCenter(find.text('Chat')).dy, titleY);
+          expect(tester.getCenter(find.byType(TextField)).dy, inputY);
+          final show = find.byTooltip('Show navigation');
+          expect(
+            find.ancestor(of: show, matching: find.byType(AppBar)),
+            findsOneWidget,
+          );
+          expect(tester.getCenter(show).dy, closeTo(titleY, 1));
+          expect(
+            tester.getCenter(find.byTooltip('Header action')).dy,
+            closeTo(titleY, 1),
+          );
+          final back = find.byType(BackButton);
+          expect(tester.getRect(show).overlaps(tester.getRect(back)), isFalse);
+          expect(tester.getRect(show).top, greaterThanOrEqualTo(topInset));
+          await tester.tap(back);
+          await tester.pumpAndSettle();
+          expect(bodyState.backPressed, isTrue);
+          await tester.tap(find.byTooltip('Header action'));
+          await tester.pumpAndSettle();
+          expect(bodyState.actionPressed, isTrue);
+          expect(tester.state<_DraftBodyState>(find.byType(_DraftBody)),
+              bodyState);
+          expect(find.text('Header draft'), findsOneWidget);
+          await tester.tap(show);
+          await tester.pumpAndSettle();
+          expect(tester.getCenter(find.text('Chat')).dy, titleY);
+          expect(tester.getCenter(find.byType(TextField)).dy, inputY);
+          expect(find.text('Header draft'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
+  testWidgets(
+      'header integration fallback does not shift a body without AppBar', (
+    tester,
+  ) async {
+    await _setSize(tester, 1300);
+    _setTopInset(tester, 24);
+    await tester.pumpWidget(
+      _HeaderFixture(
+          body: (_) => const _PlainDraftBody(), restoreInHeader: false),
+    );
+    await tester.pumpAndSettle();
+    final bodyRect = tester.getRect(find.byType(_PlainDraftBody));
+    final inputY = tester.getCenter(find.byType(TextField)).dy;
+    final bodyState =
+        tester.state<_PlainDraftBodyState>(find.byType(_PlainDraftBody));
+    await tester.enterText(find.byType(TextField), 'Plain draft');
+    await tester.tap(find.byTooltip('Hide navigation'));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(find.byType(_PlainDraftBody)).top, bodyRect.top);
+    expect(tester.getCenter(find.byType(TextField)).dy, inputY);
+    expect(tester.getRect(find.byTooltip('Show navigation')).top,
+        greaterThanOrEqualTo(24));
+    expect(tester.state<_PlainDraftBodyState>(find.byType(_PlainDraftBody)),
+        bodyState);
+    expect(find.text('Plain draft'), findsOneWidget);
+    await tester.tap(find.byTooltip('Show navigation'));
+    await tester.pumpAndSettle();
+    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(tester.getCenter(find.byType(TextField)).dy, inputY);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'header integration preserves pinned SliverAppBar and scroll state', (
+    tester,
+  ) async {
+    await _setSize(tester, 1300);
+    _setTopInset(tester, 32);
+    await tester.pumpWidget(
+      _HeaderFixture(body: (_) => const _SliverDraftBody()),
+    );
+    await tester.pumpAndSettle();
+    final bodyState =
+        tester.state<_SliverDraftBodyState>(find.byType(_SliverDraftBody));
+    bodyState.scrollController.jumpTo(80);
+    await tester.pumpAndSettle();
+    final titleY = tester.getCenter(find.text('Sliver chat')).dy;
+    final inputY = tester.getCenter(find.byType(TextField)).dy;
+    await tester.enterText(find.byType(TextField), 'Scrolled draft');
+    await tester.tap(find.byTooltip('Hide navigation'));
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(find.text('Sliver chat')).dy, titleY);
+    expect(tester.getCenter(find.byType(TextField)).dy, inputY);
+    expect(bodyState.scrollController.offset, 80);
+    expect(tester.state<_SliverDraftBodyState>(find.byType(_SliverDraftBody)),
+        bodyState);
+    final show = find.byTooltip('Show navigation');
+    expect(
+      find.ancestor(of: show, matching: find.byType(SliverAppBar)),
+      findsOneWidget,
+    );
+    expect(tester.getCenter(show).dy, closeTo(titleY, 1));
+    expect(
+        tester.getRect(show).overlaps(tester.getRect(find.byType(BackButton))),
+        isFalse);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(bodyState.backPressed, isTrue);
+    await tester.tap(show);
+    await tester.pumpAndSettle();
+    expect(bodyState.scrollController.offset, 80);
+    expect(find.text('Scrolled draft'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('header integration preserves Cupertino toolbar geometry', (
+    tester,
+  ) async {
+    await _setSize(tester, 1300);
+    _setTopInset(tester, 24);
+    await tester.pumpWidget(
+      _HeaderFixture(body: (_) => const _CupertinoDraftBody()),
+    );
+    await tester.pumpAndSettle();
+    final titleY = tester.getCenter(find.text('Cupertino chat')).dy;
+    final bodyState = tester
+        .state<_CupertinoDraftBodyState>(find.byType(_CupertinoDraftBody));
+    await tester.tap(find.byTooltip('Hide navigation'));
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(find.text('Cupertino chat')).dy, titleY);
+    final show = find.byTooltip('Show navigation');
+    expect(
+      find.ancestor(of: show, matching: find.byType(CupertinoNavigationBar)),
+      findsOneWidget,
+    );
+    expect(tester.getCenter(show).dy, closeTo(titleY, 1));
+    final back = find.byKey(const ValueKey('cupertino-back'));
+    expect(tester.getRect(show).overlaps(tester.getRect(back)), isFalse);
+    await tester.tap(back);
+    await tester.pumpAndSettle();
+    expect(bodyState.backPressed, isTrue);
+    await tester.tap(show);
+    await tester.pumpAndSettle();
+    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final width in [750.0, 1300.0]) {
     testWidgets('route replacement preserves hidden navigation at $width', (
       tester,
@@ -201,6 +413,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: AppAdaptiveScaffold(
+          navigationRestoreInHeader: true,
           destinations: const [
             NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
             NavigationDestination(icon: Icon(Icons.explore), label: 'Explore'),
@@ -245,6 +458,7 @@ void main() {
       final originalBody = tester.state<_DraftBodyState>(
         find.byType(_DraftBody),
       );
+      final originalBodyTop = tester.getRect(find.byType(_DraftBody)).top;
       await tester.enterText(find.byType(TextField), 'Keep this chat draft');
       await tester.tap(hide);
       await tester.pumpAndSettle();
@@ -261,7 +475,9 @@ void main() {
       expect(showRect.left, lessThan(scaffoldRect.left + 24));
       expect(showRect.top, greaterThanOrEqualTo(scaffoldRect.top));
       expect(showRect.top, lessThan(scaffoldRect.top + 24));
-      expect(showRect.bottom, lessThanOrEqualTo(bodyRect.top));
+      expect(bodyRect.top, originalBodyTop);
+      expect(find.ancestor(of: show, matching: find.byType(AppBar)),
+          findsOneWidget);
       expect(bodyRect.left, 0);
       expect(bodyRect.width, width);
       expect(
@@ -532,6 +748,7 @@ class _RouteHarness extends StatelessWidget {
           pageBuilder: (context, animation, secondaryAnimation) {
             final route = settings.name!;
             return AppAdaptiveScaffold(
+              navigationRestoreInHeader: true,
               key: ValueKey('$route-scaffold'),
               selectedIndex: route == 'first' ? 1 : 2,
               isExtendedOverride:
@@ -593,6 +810,7 @@ class _HarnessState extends State<_Harness> {
     return MaterialApp(
       theme: ThemeData(platform: widget.platform),
       home: AppAdaptiveScaffold(
+        navigationRestoreInHeader: true,
         selectedIndex: selectedIndex,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
@@ -627,6 +845,7 @@ class _DraftBody extends StatefulWidget {
 class _DraftBodyState extends State<_DraftBody> {
   final controller = TextEditingController();
   bool backPressed = false;
+  bool actionPressed = false;
 
   @override
   void dispose() {
@@ -637,10 +856,25 @@ class _DraftBodyState extends State<_DraftBody> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        leading:
-            BackButton(onPressed: () => setState(() => backPressed = true)),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: DmNavigationHeader(
+          leading:
+              BackButton(onPressed: () => setState(() => backPressed = true)),
+          builder: (context, header) => AppBar(
+            title: Text(widget.title),
+            leading: header.leading,
+            leadingWidth: header.leadingWidth,
+            automaticallyImplyLeading: header.automaticallyImplyLeading,
+            actions: [
+              IconButton(
+                tooltip: 'Header action',
+                icon: const Icon(Icons.settings),
+                onPressed: () => setState(() => actionPressed = true),
+              ),
+            ],
+          ),
+        ),
       ),
       body: Center(
         child: Padding(
@@ -648,6 +882,190 @@ class _DraftBodyState extends State<_DraftBody> {
           child: TextField(controller: controller),
         ),
       ),
+    );
+  }
+}
+
+void _setTopInset(WidgetTester tester, double inset) {
+  tester.view.padding = FakeViewPadding(top: inset);
+  tester.view.viewPadding = FakeViewPadding(top: inset);
+  addTearDown(tester.view.resetPadding);
+  addTearDown(tester.view.resetViewPadding);
+}
+
+class _HeaderFixture extends StatelessWidget {
+  const _HeaderFixture({required this.body, this.restoreInHeader = true});
+
+  final WidgetBuilder body;
+  final bool restoreInHeader;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(platform: TargetPlatform.iOS),
+      home: AppAdaptiveScaffold(
+        navigationRestoreInHeader: restoreInHeader,
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.explore), label: 'Explore'),
+        ],
+        body: body,
+      ),
+    );
+  }
+}
+
+class _PlainDraftBody extends StatefulWidget {
+  const _PlainDraftBody();
+
+  @override
+  State<_PlainDraftBody> createState() => _PlainDraftBodyState();
+}
+
+class _PlainDraftBodyState extends State<_PlainDraftBody> {
+  final controller = TextEditingController();
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(child: TextField(controller: controller)),
+    );
+  }
+}
+
+class _SliverDraftBody extends StatefulWidget {
+  const _SliverDraftBody();
+
+  @override
+  State<_SliverDraftBody> createState() => _SliverDraftBodyState();
+}
+
+class _SliverDraftBodyState extends State<_SliverDraftBody> {
+  final scrollController = ScrollController();
+  final draftController = TextEditingController();
+  bool backPressed = false;
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    draftController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          DmNavigationHeader(
+            leading:
+                BackButton(onPressed: () => setState(() => backPressed = true)),
+            builder: (context, header) => SliverAppBar(
+              pinned: true,
+              expandedHeight: 160,
+              title: const Text('Sliver chat'),
+              leading: header.leading,
+              leadingWidth: header.leadingWidth,
+              automaticallyImplyLeading: header.automaticallyImplyLeading,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+                height: 200,
+                child: Center(child: TextField(controller: draftController))),
+          ),
+          SliverList.builder(
+            itemCount: 40,
+            itemBuilder: (_, index) =>
+                SizedBox(height: 80, child: Text('Row $index')),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CupertinoDraftBody extends StatefulWidget {
+  const _CupertinoDraftBody();
+
+  @override
+  State<_CupertinoDraftBody> createState() => _CupertinoDraftBodyState();
+}
+
+class _CupertinoDraftBodyState extends State<_CupertinoDraftBody> {
+  bool backPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: DmAppBar(
+        title: const Text('Cupertino chat'),
+        restoreNavigation: true,
+        platformOverride: DmPlatformStyle.cupertino,
+        leading: CupertinoButton(
+          key: const ValueKey('cupertino-back'),
+          padding: EdgeInsets.zero,
+          onPressed: () => setState(() => backPressed = true),
+          child: const Icon(CupertinoIcons.back),
+        ),
+        actions: [
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () {},
+            child: const Icon(CupertinoIcons.settings),
+          ),
+        ],
+      ),
+      body: const Center(child: Text('Cupertino body')),
+    );
+  }
+}
+
+class _PlatformDraftBody extends StatefulWidget {
+  const _PlatformDraftBody({required this.style});
+
+  final DmPlatformStyle style;
+
+  @override
+  State<_PlatformDraftBody> createState() => _PlatformDraftBodyState();
+}
+
+class _PlatformDraftBodyState extends State<_PlatformDraftBody> {
+  final controller = TextEditingController();
+  bool backPressed = false;
+  bool actionPressed = false;
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: DmAppBar(
+        title: const Text('Platform chat'),
+        restoreNavigation: true,
+        platformOverride: widget.style,
+        leading:
+            BackButton(onPressed: () => setState(() => backPressed = true)),
+        actions: [
+          IconButton(
+            tooltip: 'Platform action',
+            icon: const Icon(Icons.settings),
+            onPressed: () => setState(() => actionPressed = true),
+          ),
+        ],
+      ),
+      body: Center(child: TextField(controller: controller)),
     );
   }
 }

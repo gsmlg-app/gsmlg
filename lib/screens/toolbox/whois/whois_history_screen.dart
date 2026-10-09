@@ -33,6 +33,7 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
     const String title = 'Whois Search History';
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreen.name),
         context,
@@ -48,51 +49,57 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
           },
           child: CustomScrollView(
             slivers: [
-              SliverAppBar(
-                floating: true,
-                title: const Text(title),
-                actions: [
-                  AppAdaptiveActionList(
-                    actions: [
-                      AppAdaptiveAction(
-                        icon: Icons.clear_all_rounded,
-                        title: 'Clear History',
-                        onPressed: () {
-                          showDmDialog(
-                            context: context,
-                            title: const Text('Clear History'),
-                            content: const Text(
-                              'Are you sure you want to clear the history?',
-                            ),
-                            actions: [
-                              DmDialogAction(
-                                onPressed: (ctx) {
-                                  Navigator.of(ctx).pop();
-                                  context.read<WhoisHistoryBloc>().add(
-                                    const WhoisHistoryRemoveAll(),
-                                  );
-                                },
-                                child: Text(
-                                  'Clear',
-                                  style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.error,
+              DmNavigationHeader(
+                builder: (context, header) => SliverAppBar(
+                  leading: header.leading,
+                  leadingWidth: header.leadingWidth,
+                  automaticallyImplyLeading: header.automaticallyImplyLeading,
+                  floating: true,
+                  title: const Text(title),
+                  actions: [
+                    AppAdaptiveActionList(
+                      actions: [
+                        AppAdaptiveAction(
+                          icon: Icons.clear_all_rounded,
+                          title: 'Clear History',
+                          onPressed: () {
+                            showDmDialog(
+                              context: context,
+                              title: const Text('Clear History'),
+                              content: const Text(
+                                'Are you sure you want to clear the history?',
+                              ),
+                              actions: [
+                                DmDialogAction(
+                                  onPressed: (ctx) {
+                                    Navigator.of(ctx).pop();
+                                    context.read<WhoisHistoryBloc>().add(
+                                      const WhoisHistoryRemoveAll(),
+                                    );
+                                  },
+                                  child: Text(
+                                    'Clear',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              DmDialogAction(
-                                onPressed: (ctx) {
-                                  Navigator.of(ctx).pop();
-                                },
-                                child: const Text('Cancel'),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+                                DmDialogAction(
+                                  onPressed: (ctx) {
+                                    Navigator.of(ctx).pop();
+                                  },
+                                  child: const Text('Cancel'),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               BlocBuilder<WhoisHistoryBloc, WhoisHistoryState>(
                 builder: (context, state) {

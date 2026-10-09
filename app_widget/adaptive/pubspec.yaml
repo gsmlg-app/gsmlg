@@ -15,11 +15,15 @@ dependencies:
     sdk: flutter
   intl: any
 
-  duskmoon_adaptive_scaffold: ^1.10.0
+  duskmoon_adaptive_scaffold: ^1.11.0
   flutter_bloc: ^9.1.1
   navigation_bloc: any
 
 dev_dependencies:
+  duskmoon_widgets: ^1.11.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

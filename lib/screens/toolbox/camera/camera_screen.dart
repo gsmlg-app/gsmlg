@@ -35,6 +35,9 @@ class _CameraScreenState extends State<CameraScreen> {
     const String title = 'Camera';
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: context.select<CameraBloc, bool>(
+        (bloc) => bloc.state is CameraError || bloc.state is CameraLoaded,
+      ),
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreen.name),
         context,
@@ -52,7 +55,16 @@ class _CameraScreenState extends State<CameraScreen> {
             if (state is CameraError) {
               return CustomScrollView(
                 slivers: [
-                  const SliverAppBar(floating: true, title: Text(title)),
+                  DmNavigationHeader(
+                    builder: (context, header) => SliverAppBar(
+                      leading: header.leading,
+                      leadingWidth: header.leadingWidth,
+                      automaticallyImplyLeading:
+                          header.automaticallyImplyLeading,
+                      floating: true,
+                      title: const Text(title),
+                    ),
+                  ),
                   SliverToBoxAdapter(
                     child: SizedBox(
                       height: MediaQuery.of(context).size.height * 0.618,
@@ -78,7 +90,16 @@ class _CameraScreenState extends State<CameraScreen> {
 
               return CustomScrollView(
                 slivers: [
-                  const SliverAppBar(floating: true, title: Text(title)),
+                  DmNavigationHeader(
+                    builder: (context, header) => SliverAppBar(
+                      leading: header.leading,
+                      leadingWidth: header.leadingWidth,
+                      automaticallyImplyLeading:
+                          header.automaticallyImplyLeading,
+                      floating: true,
+                      title: const Text(title),
+                    ),
+                  ),
                   SliverList.list(
                     children: [
                       const SizedBox(height: kDefaultGridGap),

@@ -49,6 +49,7 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(SettingsScreen.name),
         context,
@@ -63,7 +64,15 @@ class _ModelManagementScreenState extends State<ModelManagementScreen> {
                 builder: (context, settingsState) {
                   return CustomScrollView(
                     slivers: <Widget>[
-                      const SliverAppBar(title: Text('Local Models')),
+                      DmNavigationHeader(
+                        builder: (context, header) => SliverAppBar(
+                          leading: header.leading,
+                          leadingWidth: header.leadingWidth,
+                          automaticallyImplyLeading:
+                              header.automaticallyImplyLeading,
+                          title: const Text('Local Models'),
+                        ),
+                      ),
                       SliverFillRemaining(
                         child: SettingsList(
                           sections: [

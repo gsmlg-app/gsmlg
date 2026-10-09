@@ -90,9 +90,9 @@ dependencies:
   flutter_svg: ^2.3.0
   lottie: ^3.6.1
 
-  duskmoon_ui: ^1.10.0
-  duskmoon_adaptive_scaffold: ^1.10.0
-  duskmoon_settings: ^1.10.0
+  duskmoon_ui: ^1.11.0
+  duskmoon_adaptive_scaffold: ^1.11.0
+  duskmoon_settings: ^1.11.0
   flutter_slidable: ^4.0.3
   file_picker: ^13.1.0
   file_selector: ^1.1.0
@@ -143,7 +143,7 @@ dependencies:
   app_data_list: any
   app_world_map: any
   gsmlg_whois: any
-  duskmoon_form: ^1.10.0
+  duskmoon_form: ^1.11.0
   camera_settings_form: any
   ip_db: any
   app_chat: any
@@ -157,7 +157,7 @@ dependencies:
   monitor_agent: any
 
   # data visualization
-  duskmoon_visualization: ^1.10.0
+  duskmoon_visualization: ^1.11.0
   record: ^7.1.1
   wakelock_plus: ^1.8.0
   background_downloader: ^9.6.4

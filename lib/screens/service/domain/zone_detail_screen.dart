@@ -53,6 +53,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   Widget build(BuildContext context) {
     if (_zone == null) {
       return AppAdaptiveScaffold(
+        navigationRestoreInHeader: false,
         selectedIndex: Destinations.indexOf(
           const Key(ServiceScreen.name),
           context,
@@ -67,6 +68,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     final zone = _zone!;
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ServiceScreen.name),
         context,
@@ -82,27 +84,32 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
-              SliverAppBar(
-                floating: true,
-                title: Text(zone.zoneName),
+              DmNavigationHeader(
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => context.go('/service/domain'),
                   tooltip: 'Back',
                 ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () => _showAddRecordDialog(context, zone),
-                    tooltip: 'Add Record',
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: () =>
-                        context.read<RecordBloc>().add(RecordSync(zone)),
-                    tooltip: 'Refresh',
-                  ),
-                ],
+                builder: (context, header) => SliverAppBar(
+                  leading: header.leading,
+                  leadingWidth: header.leadingWidth,
+                  automaticallyImplyLeading: header.automaticallyImplyLeading,
+                  floating: true,
+                  title: Text(zone.zoneName),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () => _showAddRecordDialog(context, zone),
+                      tooltip: 'Add Record',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh),
+                      onPressed: () =>
+                          context.read<RecordBloc>().add(RecordSync(zone)),
+                      tooltip: 'Refresh',
+                    ),
+                  ],
+                ),
               ),
               // Zone info header
               SliverToBoxAdapter(

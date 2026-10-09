@@ -54,11 +54,13 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(const Key(HomeScreen.name), context),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
         appBar: DmAppBar(
+          restoreNavigation: true,
           title: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
             builder: (context, settingsState) {
               final modelName =

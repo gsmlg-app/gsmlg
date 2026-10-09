@@ -19,6 +19,11 @@ class VultrDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: context.select<VultrBloc, bool>((bloc) {
+        final state = bloc.state;
+        return state is VultrLoaded &&
+            state.instances.any((instance) => instance.id == instanceId);
+      }),
       selectedIndex: Destinations.indexOf(
         const Key(ServiceScreen.name),
         context,
@@ -65,43 +70,48 @@ class _DetailView extends StatelessWidget {
 
     return CustomScrollView(
       slivers: [
-        SliverAppBar(
-          floating: true,
-          title: Text(instance.label ?? instance.hostname ?? 'Server'),
-          actions: [
-            if (isActioning)
-              const Padding(
-                padding: EdgeInsets.all(12),
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            else ...[
-              if (!isRunning)
-                IconButton(
-                  icon: Icon(Icons.play_arrow, color: dmColors.success),
-                  onPressed: () => _startInstance(context),
-                  tooltip: 'Start',
-                ),
-              if (isRunning)
-                IconButton(
-                  icon: Icon(
-                    Icons.stop,
-                    color: Theme.of(context).colorScheme.error,
+        DmNavigationHeader(
+          builder: (context, header) => SliverAppBar(
+            leading: header.leading,
+            leadingWidth: header.leadingWidth,
+            automaticallyImplyLeading: header.automaticallyImplyLeading,
+            floating: true,
+            title: Text(instance.label ?? instance.hostname ?? 'Server'),
+            actions: [
+              if (isActioning)
+                const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  onPressed: () => _stopInstance(context),
-                  tooltip: 'Stop',
-                ),
-              if (isRunning)
-                IconButton(
-                  icon: Icon(Icons.restart_alt, color: dmColors.warning),
-                  onPressed: () => _rebootInstance(context),
-                  tooltip: 'Reboot',
-                ),
+                )
+              else ...[
+                if (!isRunning)
+                  IconButton(
+                    icon: Icon(Icons.play_arrow, color: dmColors.success),
+                    onPressed: () => _startInstance(context),
+                    tooltip: 'Start',
+                  ),
+                if (isRunning)
+                  IconButton(
+                    icon: Icon(
+                      Icons.stop,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    onPressed: () => _stopInstance(context),
+                    tooltip: 'Stop',
+                  ),
+                if (isRunning)
+                  IconButton(
+                    icon: Icon(Icons.restart_alt, color: dmColors.warning),
+                    onPressed: () => _rebootInstance(context),
+                    tooltip: 'Reboot',
+                  ),
+              ],
             ],
-          ],
+          ),
         ),
         SliverToBoxAdapter(
           child: Padding(

@@ -23,6 +23,7 @@ class WhoisScreen extends StatelessWidget {
     const String title = 'Whois';
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreen.name),
         context,
@@ -35,50 +36,56 @@ class WhoisScreen extends StatelessWidget {
             : const EdgeInsets.symmetric(horizontal: kDefaultGridGap),
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              floating: true,
-              title: const Text(title),
-              actions: [
-                AppAdaptiveActionList(
-                  actions: [
-                    AppAdaptiveAction(
-                      icon: Icons.history,
-                      title: 'History',
-                      onPressed: () => context.goNamed(WhoisHistoryScreen.name),
-                    ),
-                  ],
-                ),
-              ],
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48.0 + 24.0),
-                child: Container(
-                  margin: const EdgeInsets.all(12.0),
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: TextField(
-                    autocorrect: false,
-                    controller: _controller,
-                    onSubmitted: (value) {
-                      context.read<WhoisBloc>().add(WhoisLookup(value));
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Find Whois',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _controller.clear();
-                          context.read<WhoisBloc>().add(const WhoisReset());
-                        },
+            DmNavigationHeader(
+              builder: (context, header) => SliverAppBar(
+                leading: header.leading,
+                leadingWidth: header.leadingWidth,
+                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                floating: true,
+                title: const Text(title),
+                actions: [
+                  AppAdaptiveActionList(
+                    actions: [
+                      AppAdaptiveAction(
+                        icon: Icons.history,
+                        title: 'History',
+                        onPressed: () =>
+                            context.goNamed(WhoisHistoryScreen.name),
                       ),
-                      prefixIcon: IconButton(
-                        icon: const Icon(Icons.search),
-                        onPressed: () {
-                          context.read<WhoisBloc>().add(
-                            WhoisLookup(_controller.text),
-                          );
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20.0),
+                    ],
+                  ),
+                ],
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(48.0 + 24.0),
+                  child: Container(
+                    margin: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: TextField(
+                      autocorrect: false,
+                      controller: _controller,
+                      onSubmitted: (value) {
+                        context.read<WhoisBloc>().add(WhoisLookup(value));
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Find Whois',
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _controller.clear();
+                            context.read<WhoisBloc>().add(const WhoisReset());
+                          },
+                        ),
+                        prefixIcon: IconButton(
+                          icon: const Icon(Icons.search),
+                          onPressed: () {
+                            context.read<WhoisBloc>().add(
+                              WhoisLookup(_controller.text),
+                            );
+                          },
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
                       ),
                     ),
                   ),

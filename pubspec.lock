@@ -524,90 +524,90 @@ packages:
     dependency: "direct main"
     description:
       name: duskmoon_adaptive_scaffold
-      sha256: d0c668f8b6b2cddf85dc2acda8fb3a92dd3ca9e755fdb01dfd1ca1470016413c
+      sha256: a6752ad048b572ef99b3817c1b22142d05c95209c31daa081e9f17f1d649f2c2
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_code_engine:
     dependency: transitive
     description:
       name: duskmoon_code_engine
-      sha256: e86bb8cac5c01d14180099f9cff294120797818b444c3ea900caefab710260d2
+      sha256: beb8bcbd086af1d369bfb43b92d39dbcbad2d2ba181676f6bd90a8d6f42049af
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_feedback:
     dependency: transitive
     description:
       name: duskmoon_feedback
-      sha256: "1d4c12eaf173ad4b75d0900df95edefa0f95657ba82f542a0230c6c1820e68e9"
+      sha256: b9199e03ad6de15bd004c60b89605d10575fc60aef40a7cbf84b3e23aa38bbfe
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_form:
     dependency: "direct main"
     description:
       name: duskmoon_form
-      sha256: "2c73ff6a66418c6457dd92f655ce1ca8ca2e30c67feccaf724f968f72a2f09f1"
+      sha256: "95215f28f490ab5650b08c8b056002edb1c48d6904a9dd0d308dac40292d0e58"
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_mermaid_renderer:
     dependency: transitive
     description:
       name: duskmoon_mermaid_renderer
-      sha256: "2f5a65946d31e8f03a449ef31e8d9ee378555dc8b804eacae7a34e63c0c40648"
+      sha256: bab0040e4b3098297beaa3513368c824d7f1d59990fadd1b7d0d8abe682fb200
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_settings:
     dependency: "direct main"
     description:
       name: duskmoon_settings
-      sha256: "239fdb1249502c14305a984df50ff4616be907874ff0ac0e429aeeec8884de34"
+      sha256: af5c80a2d245f124199ad937854bc2f21d61bd914482feaf1c3f171b965be5d3
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_theme:
     dependency: transitive
     description:
       name: duskmoon_theme
-      sha256: "0f8549613096dff94ec8740475c356699c1d5bf2c8bec6776995d215a41ec109"
+      sha256: "4860fb0e48339daa71e552f3460821f5943a430d091dac0bf4e2153d510ace9c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_theme_bloc:
     dependency: transitive
     description:
       name: duskmoon_theme_bloc
-      sha256: df25f9f46e60152e09b0e2f2fd2b9c85c4f7748842f58ec9bf5fec1180cba101
+      sha256: "77c872c799e7021adb8b3e38d79c305e274a371a72856200f10e834c67ec6b98"
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_ui:
     dependency: "direct main"
     description:
       name: duskmoon_ui
-      sha256: c34e9595a945167a923b822ea9ee56ec3595623729bdbc66d49d7b37684da214
+      sha256: "6ab94042290b775c1cb59c1548d393bfbe7737dd2abde2bb0a75d589cc905204"
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_visualization:
     dependency: "direct main"
     description:
       name: duskmoon_visualization
-      sha256: "28948cea47aff21d8eb74d3e6119984014bb3712b8ea42fe3b26714aac5c202d"
+      sha256: eadd18ff75b4fdf1db477fc16af2bac1caa54c2823de835e42775f96f15a9db2
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   duskmoon_widgets:
     dependency: transitive
     description:
       name: duskmoon_widgets
-      sha256: "183955c7875aedbe8f5c181da2b93abfa489b6363fccfcd388d05c127a35b254"
+      sha256: a09839e50a7af68b1802cbec55c578635983c83248548607f68aeeef27e458f2
       url: "https://pub.dev"
     source: hosted
-    version: "1.10.0"
+    version: "1.11.0"
   equatable:
     dependency: "direct main"
     description:

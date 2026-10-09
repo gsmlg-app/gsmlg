@@ -52,6 +52,7 @@ class GitHubServiceScreen extends StatelessWidget {
 
   Widget _buildNotConnected(BuildContext context, GitHubState state) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ServiceScreen.name),
         context,
@@ -70,7 +71,14 @@ class GitHubServiceScreen extends StatelessWidget {
 
             return CustomScrollView(
               slivers: [
-                SliverAppBar(title: const Text('GitHub')),
+                DmNavigationHeader(
+                  builder: (context, header) => SliverAppBar(
+                    leading: header.leading,
+                    leadingWidth: header.leadingWidth,
+                    automaticallyImplyLeading: header.automaticallyImplyLeading,
+                    title: const Text('GitHub'),
+                  ),
+                ),
                 if (state is GitHubLoading)
                   const SliverFillRemaining(
                     child: Center(child: CircularProgressIndicator.adaptive()),
@@ -302,6 +310,7 @@ class _GitHubReposViewState extends State<_GitHubReposView>
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ServiceScreen.name),
         context,
@@ -310,6 +319,7 @@ class _GitHubReposViewState extends State<_GitHubReposView>
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       body: (_) => Scaffold(
         appBar: DmAppBar(
+          restoreNavigation: true,
           title: const Text('GitHub Repositories'),
           actions: [
             IconButton(

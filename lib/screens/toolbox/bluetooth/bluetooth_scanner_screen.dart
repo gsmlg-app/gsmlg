@@ -20,6 +20,7 @@ class BluetoothScannerScreen extends StatelessWidget {
     const String title = 'Bluetooth Scanner';
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreen.name),
         context,
@@ -30,49 +31,54 @@ class BluetoothScannerScreen extends StatelessWidget {
         minimum: const EdgeInsets.symmetric(horizontal: kDefaultGridGap),
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              floating: true,
-              title: const Text(title),
-              actions: [
-                StreamBuilder<bool>(
-                  stream: FlutterBluePlus.isScanning,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return const SizedBox();
-                    }
-                    if (!snapshot.hasData) {
-                      return const SizedBox();
-                    }
-                    final isScanning = snapshot.data!;
-                    return AppAdaptiveActionList(
-                      actions: [
-                        AppAdaptiveAction(
-                          disabled: isScanning,
-                          icon: Icons.start_outlined,
-                          title: 'Start Scan',
-                          onPressed: () {
-                            context.read<BluetoothBloc>().add(
-                              const BluetoothStartScan(),
-                            );
-                          },
-                        ),
-                        AppAdaptiveAction(
-                          disabled: !isScanning,
-                          icon: Icons.stop_outlined,
-                          title: 'Stop Scan',
-                          onPressed: () {
-                            context.read<BluetoothBloc>().add(
-                              const BluetoothStopScan(),
-                            );
-                          },
-                        ),
-                      ],
-                    );
-                  },
+            DmNavigationHeader(
+              builder: (context, header) => SliverAppBar(
+                leading: header.leading,
+                leadingWidth: header.leadingWidth,
+                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                floating: true,
+                title: const Text(title),
+                actions: [
+                  StreamBuilder<bool>(
+                    stream: FlutterBluePlus.isScanning,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return const SizedBox();
+                      }
+                      if (!snapshot.hasData) {
+                        return const SizedBox();
+                      }
+                      final isScanning = snapshot.data!;
+                      return AppAdaptiveActionList(
+                        actions: [
+                          AppAdaptiveAction(
+                            disabled: isScanning,
+                            icon: Icons.start_outlined,
+                            title: 'Start Scan',
+                            onPressed: () {
+                              context.read<BluetoothBloc>().add(
+                                const BluetoothStartScan(),
+                              );
+                            },
+                          ),
+                          AppAdaptiveAction(
+                            disabled: !isScanning,
+                            icon: Icons.stop_outlined,
+                            title: 'Stop Scan',
+                            onPressed: () {
+                              context.read<BluetoothBloc>().add(
+                                const BluetoothStopScan(),
+                              );
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+                bottom: const BluetoothScannerBar(
+                  preferredSize: Size.fromHeight(24.0 + 24.0),
                 ),
-              ],
-              bottom: const BluetoothScannerBar(
-                preferredSize: Size.fromHeight(24.0 + 24.0),
               ),
             ),
             BlocBuilder<BluetoothBloc, BluetoothBlocState>(

@@ -49,6 +49,7 @@ class LocalToolsSettingsScreen extends StatelessWidget {
     ].where((group) => group.tools.isNotEmpty).toList(growable: false);
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(SettingsScreen.name),
         context,
@@ -59,7 +60,14 @@ class LocalToolsSettingsScreen extends StatelessWidget {
         return SafeArea(
           child: CustomScrollView(
             slivers: <Widget>[
-              const SliverAppBar(title: Text('Local Tools')),
+              DmNavigationHeader(
+                builder: (context, header) => SliverAppBar(
+                  leading: header.leading,
+                  leadingWidth: header.leadingWidth,
+                  automaticallyImplyLeading: header.automaticallyImplyLeading,
+                  title: const Text('Local Tools'),
+                ),
+              ),
               SliverFillRemaining(
                 child: SettingsList(
                   sections: [

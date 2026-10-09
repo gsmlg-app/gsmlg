@@ -60,6 +60,7 @@ class _BackplaneSettingsScreenState extends State<BackplaneSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(SettingsScreen.name),
         context,
@@ -88,7 +89,14 @@ class _BackplaneSettingsScreenState extends State<BackplaneSettingsScreen> {
 
             return CustomScrollView(
               slivers: [
-                SliverAppBar(title: Text(context.l10n.backplaneTitle)),
+                DmNavigationHeader(
+                  builder: (context, header) => SliverAppBar(
+                    leading: header.leading,
+                    leadingWidth: header.leadingWidth,
+                    automaticallyImplyLeading: header.automaticallyImplyLeading,
+                    title: Text(context.l10n.backplaneTitle),
+                  ),
+                ),
                 SliverFillRemaining(
                   child: SettingsList(
                     sections: [

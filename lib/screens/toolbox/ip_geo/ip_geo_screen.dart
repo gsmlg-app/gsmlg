@@ -101,6 +101,7 @@ class _IpGeoScreenState extends State<IpGeoScreen> {
     const String title = 'IP Geolocation';
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreen.name),
         context,
@@ -113,34 +114,39 @@ class _IpGeoScreenState extends State<IpGeoScreen> {
             : const EdgeInsets.symmetric(horizontal: kDefaultGridGap),
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              floating: true,
-              title: const Text(title),
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48.0 + 24.0),
-                child: Container(
-                  margin: const EdgeInsets.all(12.0),
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: TextField(
-                    autocorrect: false,
-                    controller: _controller,
-                    enabled: !_isInitializing,
-                    keyboardType: TextInputType.text,
-                    onSubmitted: _lookup,
-                    decoration: InputDecoration(
-                      hintText: _isInitializing
-                          ? 'Loading database...'
-                          : 'Enter IP address (e.g., 8.8.8.8)',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: _reset,
-                      ),
-                      prefixIcon: IconButton(
-                        icon: const Icon(Icons.search),
-                        onPressed: () => _lookup(_controller.text),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20.0),
+            DmNavigationHeader(
+              builder: (context, header) => SliverAppBar(
+                leading: header.leading,
+                leadingWidth: header.leadingWidth,
+                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                floating: true,
+                title: const Text(title),
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(48.0 + 24.0),
+                  child: Container(
+                    margin: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: TextField(
+                      autocorrect: false,
+                      controller: _controller,
+                      enabled: !_isInitializing,
+                      keyboardType: TextInputType.text,
+                      onSubmitted: _lookup,
+                      decoration: InputDecoration(
+                        hintText: _isInitializing
+                            ? 'Loading database...'
+                            : 'Enter IP address (e.g., 8.8.8.8)',
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: _reset,
+                        ),
+                        prefixIcon: IconButton(
+                          icon: const Icon(Icons.search),
+                          onPressed: () => _lookup(_controller.text),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
                       ),
                     ),
                   ),

@@ -120,6 +120,7 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
     return BlocProvider.value(
       value: _formBloc,
       child: AppAdaptiveScaffold(
+        navigationRestoreInHeader: true,
         selectedIndex: Destinations.indexOf(
           const Key(ToolboxScreen.name),
           context,
@@ -131,10 +132,15 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
           minimum: const EdgeInsets.symmetric(horizontal: kDefaultGridGap),
           child: CustomScrollView(
             slivers: [
-              SliverAppBar(
-                floating: true,
-                title: const Text(title),
-                actions: _buildActions(context),
+              DmNavigationHeader(
+                builder: (context, header) => SliverAppBar(
+                  leading: header.leading,
+                  leadingWidth: header.leadingWidth,
+                  automaticallyImplyLeading: header.automaticallyImplyLeading,
+                  floating: true,
+                  title: const Text(title),
+                  actions: _buildActions(context),
+                ),
               ),
               SliverFillRemaining(child: _buildCameraView()),
             ],

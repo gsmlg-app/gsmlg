@@ -19,6 +19,9 @@ class VultrScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: context.select<VultrBloc, bool>(
+        (bloc) => bloc.state is VultrLoaded,
+      ),
       selectedIndex: Destinations.indexOf(
         const Key(ServiceScreen.name),
         context,
@@ -172,17 +175,22 @@ class _InstancesListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        SliverAppBar(
-          floating: true,
-          title: const Text('Vultr Servers'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () =>
-                  context.read<VultrBloc>().add(const VultrRefresh()),
-              tooltip: 'Refresh',
-            ),
-          ],
+        DmNavigationHeader(
+          builder: (context, header) => SliverAppBar(
+            leading: header.leading,
+            leadingWidth: header.leadingWidth,
+            automaticallyImplyLeading: header.automaticallyImplyLeading,
+            floating: true,
+            title: const Text('Vultr Servers'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () =>
+                    context.read<VultrBloc>().add(const VultrRefresh()),
+                tooltip: 'Refresh',
+              ),
+            ],
+          ),
         ),
         if (refreshing)
           const SliverToBoxAdapter(child: LinearProgressIndicator()),

@@ -20,6 +20,7 @@ class ServiceScreen extends StatelessWidget {
     final screenSize = MediaQuery.of(context).size;
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(const Key(name), context),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
@@ -29,15 +30,20 @@ class ServiceScreen extends StatelessWidget {
         ),
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              floating: true,
-              expandedHeight: 160.0,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Hero(
-                  tag: Constants.logoTag,
-                  child: SvgPicture.asset(
-                    'packages/app_artwork/assets/svg/gsmlg-dev.svg',
-                    semanticsLabel: 'GSMLG.dev',
+            DmNavigationHeader(
+              builder: (context, header) => SliverAppBar(
+                leading: header.leading,
+                leadingWidth: header.leadingWidth,
+                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                floating: true,
+                expandedHeight: 160.0,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Hero(
+                    tag: Constants.logoTag,
+                    child: SvgPicture.asset(
+                      'packages/app_artwork/assets/svg/gsmlg-dev.svg',
+                      semanticsLabel: 'GSMLG.dev',
+                    ),
                   ),
                 ),
               ),

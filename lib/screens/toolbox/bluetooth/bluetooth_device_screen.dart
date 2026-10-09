@@ -63,6 +63,7 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
     const String title = 'Bluetooth Device';
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreen.name),
         context,
@@ -76,7 +77,16 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
         child: device == null
             ? CustomScrollView(
                 slivers: <Widget>[
-                  const SliverAppBar(floating: true, title: Text(title)),
+                  DmNavigationHeader(
+                    builder: (context, header) => SliverAppBar(
+                      leading: header.leading,
+                      leadingWidth: header.leadingWidth,
+                      automaticallyImplyLeading:
+                          header.automaticallyImplyLeading,
+                      floating: true,
+                      title: const Text(title),
+                    ),
+                  ),
                   SliverList.list(
                     children: [
                       Text('Seeking ${widget.remoteId} for device...'),
@@ -92,15 +102,21 @@ class _BluetoothDeviceScreenState extends State<BluetoothDeviceScreen> {
               )
             : CustomScrollView(
                 slivers: <Widget>[
-                  SliverAppBar(
-                    floating: true,
-                    title: StreamBuilder(
-                      stream: FlutterBluePlus.events.onNameChanged.where(
-                        (event) => event.device.remoteId == device!.remoteId,
+                  DmNavigationHeader(
+                    builder: (context, header) => SliverAppBar(
+                      leading: header.leading,
+                      leadingWidth: header.leadingWidth,
+                      automaticallyImplyLeading:
+                          header.automaticallyImplyLeading,
+                      floating: true,
+                      title: StreamBuilder(
+                        stream: FlutterBluePlus.events.onNameChanged.where(
+                          (event) => event.device.remoteId == device!.remoteId,
+                        ),
+                        builder: (context, snapshot) => snapshot.hasData
+                            ? Text(snapshot.data!.name!)
+                            : Text(device!.platformName),
                       ),
-                      builder: (context, snapshot) => snapshot.hasData
-                          ? Text(snapshot.data!.name!)
-                          : Text(device!.platformName),
                     ),
                   ),
                   SliverList(

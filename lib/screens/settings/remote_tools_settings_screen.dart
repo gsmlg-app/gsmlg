@@ -43,6 +43,7 @@ class _RemoteToolsSettingsScreenState extends State<RemoteToolsSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(SettingsScreen.name),
         context,
@@ -53,15 +54,20 @@ class _RemoteToolsSettingsScreenState extends State<RemoteToolsSettingsScreen> {
         return SafeArea(
           child: CustomScrollView(
             slivers: [
-              SliverAppBar(
-                title: const Text('Remote Tools'),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    tooltip: 'Add MCP service',
-                    onPressed: () => _showProfileDialog(context),
-                  ),
-                ],
+              DmNavigationHeader(
+                builder: (context, header) => SliverAppBar(
+                  leading: header.leading,
+                  leadingWidth: header.leadingWidth,
+                  automaticallyImplyLeading: header.automaticallyImplyLeading,
+                  title: const Text('Remote Tools'),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.add),
+                      tooltip: 'Add MCP service',
+                      onPressed: () => _showProfileDialog(context),
+                    ),
+                  ],
+                ),
               ),
               SliverFillRemaining(
                 child: SettingsList(
@@ -388,6 +394,7 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
     final profile = _profile;
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(SettingsScreen.name),
         context,
@@ -398,29 +405,36 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
         return SafeArea(
           child: CustomScrollView(
             slivers: [
-              SliverAppBar(
-                title: Text(profile?.name ?? 'Remote Tool'),
+              DmNavigationHeader(
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
                   tooltip: 'Back',
                   onPressed: () =>
                       context.goNamed(RemoteToolsSettingsScreen.name),
                 ),
-                actions: [
-                  if (profile != null)
-                    IconButton(
-                      icon: _isRefreshingTools
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.sync),
-                      tooltip: 'Refresh tools',
-                      onPressed: _isRefreshingTools
-                          ? null
-                          : () => _refreshTools(context, profile),
-                    ),
-                ],
+                builder: (context, header) => SliverAppBar(
+                  leading: header.leading,
+                  leadingWidth: header.leadingWidth,
+                  automaticallyImplyLeading: header.automaticallyImplyLeading,
+                  title: Text(profile?.name ?? 'Remote Tool'),
+                  actions: [
+                    if (profile != null)
+                      IconButton(
+                        icon: _isRefreshingTools
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.sync),
+                        tooltip: 'Refresh tools',
+                        onPressed: _isRefreshingTools
+                            ? null
+                            : () => _refreshTools(context, profile),
+                      ),
+                  ],
+                ),
               ),
               SliverFillRemaining(
                 child: profile == null

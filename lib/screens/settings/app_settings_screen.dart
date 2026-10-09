@@ -19,6 +19,7 @@ class AppSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(SettingsScreen.name),
         context,
@@ -32,7 +33,14 @@ class AppSettingsScreen extends StatelessWidget {
         return SafeArea(
           child: CustomScrollView(
             slivers: <Widget>[
-              SliverAppBar(title: Text(context.l10n.settingsTitle)),
+              DmNavigationHeader(
+                builder: (context, header) => SliverAppBar(
+                  leading: header.leading,
+                  leadingWidth: header.leadingWidth,
+                  automaticallyImplyLeading: header.automaticallyImplyLeading,
+                  title: Text(context.l10n.settingsTitle),
+                ),
+              ),
               SliverFillRemaining(
                 child: BlocBuilder<DmThemeBloc, DmThemeState>(
                   builder: (context, state) {

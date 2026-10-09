@@ -204,6 +204,7 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ServiceScreen.name),
         context,
@@ -213,13 +214,18 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
       body: (_) => SafeArea(
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              floating: true,
-              title: const Text('Add DNS Zone'),
+            DmNavigationHeader(
               leading: IconButton(
                 tooltip: 'Back',
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => context.go('/service/domain'),
+              ),
+              builder: (context, header) => SliverAppBar(
+                leading: header.leading,
+                leadingWidth: header.leadingWidth,
+                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                floating: true,
+                title: const Text('Add DNS Zone'),
               ),
             ),
             SliverPadding(

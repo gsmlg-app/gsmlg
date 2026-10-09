@@ -81,6 +81,11 @@ class _TtsDatasetProjectScreenState extends State<TtsDatasetProjectScreen> {
   @override
   Widget build(BuildContext context) {
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: context.select<TtsDatasetBloc, bool>(
+        (bloc) =>
+            bloc.state.selectedProject?.project.id == widget.projectId ||
+            bloc.state.status != TtsDatasetStatus.loading,
+      ),
       selectedIndex: Destinations.indexOf(const Key('Toolbox'), context),
       destinations: Destinations.navs(context),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
@@ -100,8 +105,7 @@ class _TtsDatasetProjectScreenState extends State<TtsDatasetProjectScreen> {
 
             return CustomScrollView(
               slivers: [
-                SliverAppBar(
-                  floating: true,
+                DmNavigationHeader(
                   leading: IconButton(
                     tooltip: MaterialLocalizations.of(
                       context,
@@ -109,18 +113,25 @@ class _TtsDatasetProjectScreenState extends State<TtsDatasetProjectScreen> {
                     onPressed: () => Navigator.of(context).maybePop(),
                     icon: const Icon(Icons.arrow_back),
                   ),
-                  title: Text(
-                    currentDetail?.project.name ?? context.l10n.ttsDatasetTitle,
-                  ),
-                  actions: [
-                    IconButton(
-                      tooltip: context.l10n.ttsDatasetRefresh,
-                      onPressed: () => context.read<TtsDatasetBloc>().add(
-                        TtsDatasetOpenProject(projectId: widget.projectId),
-                      ),
-                      icon: const Icon(Icons.refresh),
+                  builder: (context, header) => SliverAppBar(
+                    leading: header.leading,
+                    leadingWidth: header.leadingWidth,
+                    automaticallyImplyLeading: header.automaticallyImplyLeading,
+                    floating: true,
+                    title: Text(
+                      currentDetail?.project.name ??
+                          context.l10n.ttsDatasetTitle,
                     ),
-                  ],
+                    actions: [
+                      IconButton(
+                        tooltip: context.l10n.ttsDatasetRefresh,
+                        onPressed: () => context.read<TtsDatasetBloc>().add(
+                          TtsDatasetOpenProject(projectId: widget.projectId),
+                        ),
+                        icon: const Icon(Icons.refresh),
+                      ),
+                    ],
+                  ),
                 ),
                 if (currentDetail == null)
                   SliverFillRemaining(

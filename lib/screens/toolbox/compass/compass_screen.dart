@@ -241,6 +241,7 @@ class _CompassScreenState extends State<CompassScreen>
         : null;
 
     return AppAdaptiveScaffold(
+      navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
         const Key(ToolboxScreen.name),
         context,
@@ -253,25 +254,30 @@ class _CompassScreenState extends State<CompassScreen>
         ),
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
-              floating: true,
-              title: Text(l10n.compassTitle),
-              actions: [
-                // TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#21
-                // WORKAROUND(upstream): duskmoon-dev/flutter-duskmoon-ui#21
-                // The Cupertino button drops the tooltip's semantic label.
-                Semantics(
-                  label: l10n.compassHelpTitle,
-                  button: true,
-                  excludeSemantics: true,
-                  onTap: _showHelp,
-                  child: DmIconButton(
-                    tooltip: l10n.compassHelpTitle,
-                    icon: const Icon(Icons.help_outline),
-                    onPressed: _showHelp,
+            DmNavigationHeader(
+              builder: (context, header) => SliverAppBar(
+                leading: header.leading,
+                leadingWidth: header.leadingWidth,
+                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                floating: true,
+                title: Text(l10n.compassTitle),
+                actions: [
+                  // TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#21
+                  // WORKAROUND(upstream): duskmoon-dev/flutter-duskmoon-ui#21
+                  // The Cupertino button drops the tooltip's semantic label.
+                  Semantics(
+                    label: l10n.compassHelpTitle,
+                    button: true,
+                    excludeSemantics: true,
+                    onTap: _showHelp,
+                    child: DmIconButton(
+                      tooltip: l10n.compassHelpTitle,
+                      icon: const Icon(Icons.help_outline),
+                      onPressed: _showHelp,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             SliverToBoxAdapter(
               child: Padding(
