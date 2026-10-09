@@ -15,6 +15,7 @@ dependencies:
   shared_preferences: ^2.5.6
 
   accounts_bloc: any
+  navigation_bloc: any
   theme_bloc: any
   auth_bloc: any
   whois_bloc: any

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:duskmoon_adaptive_scaffold/duskmoon_adaptive_scaffold.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:navigation_bloc/navigation_bloc.dart';
 
 export 'package:duskmoon_adaptive_scaffold/duskmoon_adaptive_scaffold.dart';
 
@@ -21,7 +23,8 @@ class AppAdaptiveScaffold extends StatefulWidget {
   final int? selectedIndex;
 
   /// Whether navigation is available. When false, the rail, drawer, and bottom
-  /// navigation are hidden. Users can also hide and restore the rail locally.
+  /// navigation are hidden. When a [NavigationBloc] is provided above routes,
+  /// users' rail visibility and expansion preferences are shared across pages.
   final bool navigationVisible;
 
   /// Option to display a leading widget at the top of the navigation rail
@@ -206,7 +209,8 @@ class AppAdaptiveScaffold extends StatefulWidget {
 
   /// Override the automatic extended state of the navigation rail.
   ///
-  /// When null, the extended state is determined by the current breakpoint.
+  /// When null, the global navigation preference is used if set; otherwise,
+  /// the extended state is determined by the current breakpoint.
   /// When true, the navigation rail is always extended.
   /// When false, the navigation rail is always collapsed.
   final bool? isExtendedOverride;
@@ -278,6 +282,15 @@ class AppAdaptiveScaffold extends StatefulWidget {
 class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
   bool _sidebarVisible = true;
 
+  void _setSidebarVisible(bool visible) {
+    final bloc = context.read<NavigationBloc?>();
+    if (bloc != null) {
+      bloc.add(NavigationVisibilityChanged(visible));
+    } else {
+      setState(() => _sidebarVisible = visible);
+    }
+  }
+
   @override
   void didUpdateWidget(AppAdaptiveScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -297,7 +310,7 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
             tooltip: 'Hide navigation',
             color: Theme.of(context).colorScheme.onSecondaryContainer,
             icon: const Icon(Icons.view_sidebar_outlined),
-            onPressed: () => setState(() => _sidebarVisible = false),
+            onPressed: () => _setSidebarVisible(false),
           ),
         ),
         if (leading != null) leading,
@@ -307,6 +320,9 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    final navigationState = context.watch<NavigationBloc?>()?.state;
+    final sidebarVisible =
+        navigationState?.navigationVisible ?? _sidebarVisible;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final hasRail = [
@@ -315,7 +331,7 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
       widget.largeBreakpoint,
       widget.extraLargeBreakpoint,
     ].any((breakpoint) => breakpoint.isActive(context));
-    final showRestore = widget.navigationVisible && hasRail && !_sidebarVisible;
+    final showRestore = widget.navigationVisible && hasRail && !sidebarVisible;
     final navRailTheme = theme.navigationRailTheme.copyWith(
       backgroundColor: colorScheme.secondaryContainer,
       selectedIconTheme: IconThemeData(color: colorScheme.onSecondaryContainer),
@@ -352,7 +368,7 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
                   destinations: widget.destinations,
                   selectedIndex: widget.selectedIndex,
                   navigationVisible:
-                      widget.navigationVisible && (!hasRail || _sidebarVisible),
+                      widget.navigationVisible && (!hasRail || sidebarVisible),
                   leadingUnextendedNavRail: hasRail
                       ? _buildRailHeader(widget.leadingUnextendedNavRail)
                       : widget.leadingUnextendedNavRail,
@@ -391,8 +407,16 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
                   navigationRailDestinationBuilder:
                       widget.navigationRailDestinationBuilder,
                   groupAlignment: widget.groupAlignment,
-                  isExtendedOverride: widget.isExtendedOverride,
-                  onExtendedChange: widget.onExtendedChange,
+                  isExtendedOverride:
+                      widget.isExtendedOverride ?? navigationState?.isExtended,
+                  onExtendedChange: (extended) {
+                    if (widget.isExtendedOverride == null) {
+                      context.read<NavigationBloc?>()?.add(
+                            NavigationRailExtendedChanged(extended),
+                          );
+                    }
+                    widget.onExtendedChange?.call(extended);
+                  },
                   showCollapseToggle: widget.showCollapseToggle,
                   collapseIcon: widget.collapseIcon,
                   expandIcon: widget.expandIcon,
@@ -405,7 +429,7 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
                   child: IconButton(
                     tooltip: 'Show navigation',
                     icon: const Icon(Icons.view_sidebar_outlined),
-                    onPressed: () => setState(() => _sidebarVisible = true),
+                    onPressed: () => _setSidebarVisible(true),
                   ),
                 ),
             ],

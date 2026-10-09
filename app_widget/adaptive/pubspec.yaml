@@ -17,6 +17,7 @@ dependencies:
 
   duskmoon_adaptive_scaffold: ^1.10.0
   flutter_bloc: ^9.1.1
+  navigation_bloc: any
 
 dev_dependencies:
   flutter_test:

@@ -18,6 +18,7 @@ workspace:
   - app_lib/tts_dataset
   - app_lib/isolate_orchestrator
   - app_bloc/theme
+  - app_bloc/navigation
   - app_bloc/auth
   - app_bloc/whois
   - app_bloc/whois_history
@@ -119,6 +120,7 @@ dependencies:
   app_locale: any
   app_provider: any
   theme_bloc: any
+  navigation_bloc: any
   auth_bloc: any
   whois_bloc: any
   whois_history_bloc: any

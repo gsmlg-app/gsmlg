@@ -11,6 +11,7 @@ import 'package:domain_bloc/domain_bloc.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_bloc/github_bloc.dart';
+import 'package:navigation_bloc/navigation_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:theme_bloc/theme_bloc.dart';
 import 'package:tts_dataset/tts_dataset.dart';
@@ -78,6 +79,7 @@ class MainProvider extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          BlocProvider<NavigationBloc>(create: (context) => NavigationBloc()),
           BlocProvider<DmThemeBloc>(
             create: (context) => DmThemeBloc(prefs: sharedPrefs),
           ),

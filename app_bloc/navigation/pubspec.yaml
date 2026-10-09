@@ -1,0 +1,20 @@
+name: navigation_bloc
+description: Shared application navigation visibility and rail preferences
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bloc: any
+  equatable: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  bloc_test: any
+  flutter_lints: ^6.0.0
