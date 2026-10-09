@@ -9,7 +9,7 @@ resolution: workspace
 dependencies:
   http: ^1.6.0
   intl: any
-  meta: ^1.19.0
+  meta: any
 
 dev_dependencies:
   test: ^1.31.1
