@@ -32,6 +32,7 @@ workspace:
   - app_bloc/chat
   - app_bloc/monitor
   - app_bloc/tts_dataset
+  - app_bloc/audio
   - app_widget/adaptive
   - app_widget/artwork
   - app_widget/feedback
@@ -155,6 +156,7 @@ dependencies:
   chat_bloc: any
   monitor_bloc: any
   tts_dataset_bloc: any
+  audio_bloc: any
   monitor_models: any
   monitor_agent: any
 
