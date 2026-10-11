@@ -8,11 +8,8 @@ import 'package:app_secure_storage/vault_repository.dart';
 import '../models/audio_settings.dart';
 
 class OpenAiAudioRepository {
-  OpenAiAudioRepository({
-    this.database,
-    this.vault,
-    http.Client? httpClient,
-  }) : _httpClient = httpClient ?? http.Client();
+  OpenAiAudioRepository({this.database, this.vault, http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
 
   final AppDatabase? database;
   final VaultRepository? vault;
@@ -71,6 +68,31 @@ class OpenAiAudioRepository {
     );
   }
 
+  MediaType _resolveMediaType(String? name) {
+    if (name == null || !name.contains('.')) {
+      return MediaType('audio', 'wav');
+    }
+    final ext = name.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'mp3':
+      case 'mpga':
+        return MediaType('audio', 'mpeg');
+      case 'm4a':
+      case 'mp4':
+        return MediaType('audio', 'mp4');
+      case 'ogg':
+      case 'oga':
+        return MediaType('audio', 'ogg');
+      case 'webm':
+        return MediaType('audio', 'webm');
+      case 'flac':
+        return MediaType('audio', 'flac');
+      case 'wav':
+      default:
+        return MediaType('audio', 'wav');
+    }
+  }
+
   Future<String> transcribeAudio(
     AudioSettings settings, {
     List<int>? bytes,
@@ -95,14 +117,23 @@ class OpenAiAudioRepository {
     request.fields['response_format'] = 'json';
 
     if (filePath != null) {
-      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      final effectiveName = filename ?? filePath;
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          filePath,
+          filename: filename,
+          contentType: _resolveMediaType(effectiveName),
+        ),
+      );
     } else if (bytes != null) {
+      final effectiveFilename = filename ?? 'audio.wav';
       request.files.add(
         http.MultipartFile.fromBytes(
           'file',
           bytes,
-          filename: filename ?? 'audio.wav',
-          contentType: MediaType('audio', 'wav'),
+          filename: effectiveFilename,
+          contentType: _resolveMediaType(effectiveFilename),
         ),
       );
     } else {
