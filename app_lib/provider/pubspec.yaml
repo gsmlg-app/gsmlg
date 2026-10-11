@@ -32,6 +32,8 @@ dependencies:
   app_secure_storage: any
   app_chat: any
   tts_dataset: any
+  app_audio: any
+  audio_bloc: any
 
 dev_dependencies:
   flutter_test:

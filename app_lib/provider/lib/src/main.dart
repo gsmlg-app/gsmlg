@@ -1,8 +1,10 @@
 import 'package:accounts_bloc/accounts_bloc.dart';
+import 'package:app_audio/audio.dart';
 import 'package:app_chat/app_chat.dart';
 import 'dart:convert';
 import 'package:app_database/app_database.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
+import 'package:audio_bloc/audio_bloc.dart';
 import 'package:auth_bloc/auth_bloc.dart';
 import 'package:bluetooth_bloc/bluetooth_bloc.dart';
 import 'package:camera_bloc/camera_bloc.dart';
@@ -60,6 +62,10 @@ class MainProvider extends StatelessWidget {
         ),
         RepositoryProvider<TtsDatasetRepository>(
           create: (context) => TtsDatasetRepository(database),
+        ),
+        RepositoryProvider<OpenAiAudioRepository>(
+          create: (context) =>
+              OpenAiAudioRepository(database: database, vault: vault),
         ),
         RepositoryProvider<ToolExecutor>(
           create: (context) => ToolExecutor(
@@ -141,6 +147,18 @@ class MainProvider extends StatelessWidget {
           BlocProvider<TtsDatasetBloc>(
             create: (context) => TtsDatasetBloc(
               repository: context.read<TtsDatasetRepository>(),
+            ),
+          ),
+          BlocProvider<AudioSettingsBloc>(
+            create: (context) =>
+                AudioSettingsBloc(preferences: sharedPrefs)
+                  ..add(const AudioSettingsLoad()),
+          ),
+          BlocProvider<AudioServiceBloc>(
+            create: (context) => AudioServiceBloc(
+              repository: context.read<OpenAiAudioRepository>(),
+              settingsProvider: () =>
+                  context.read<AudioSettingsBloc>().state.settings,
             ),
           ),
         ],
