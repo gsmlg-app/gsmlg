@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:gsmlg/screens/service/audio/audio_screen.dart';
 import 'package:gsmlg/screens/service/domain/add_zone_screen.dart';
 import 'package:gsmlg/screens/service/domain/domain_screen.dart';
 import 'package:gsmlg/screens/service/domain/zone_detail_screen.dart';
@@ -107,6 +108,17 @@ GoRoute serviceRoutes() {
             },
           ),
         ],
+      ),
+      GoRoute(
+        name: AudioScreen.name,
+        path: AudioScreen.path,
+        pageBuilder: (context, state) {
+          return NoTransitionPage<void>(
+            key: state.pageKey,
+            restorationId: state.pageKey.value,
+            child: const AudioScreen(),
+          );
+        },
       ),
     ],
   );

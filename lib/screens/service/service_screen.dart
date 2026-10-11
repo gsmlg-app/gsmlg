@@ -1,5 +1,6 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -94,7 +95,9 @@ class ServiceScreen extends StatelessWidget {
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).extension<DmColorExtension>()!.success,
+                                      color: Theme.of(
+                                        context,
+                                      ).extension<DmColorExtension>()!.success,
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: Theme.of(
@@ -113,6 +116,17 @@ class ServiceScreen extends StatelessWidget {
                       ),
                     );
                   },
+                ),
+                AppGridTile(
+                  onTap: () => context.go('/service/audio'),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.graphic_eq, size: 48),
+                      const SizedBox(height: 8),
+                      Text(context.l10n.audioServiceTitle),
+                    ],
+                  ),
                 ),
               ],
             ),
