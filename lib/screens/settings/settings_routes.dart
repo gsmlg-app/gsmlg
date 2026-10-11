@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
+import 'package:gsmlg/screens/settings/audio_settings_screen.dart';
 import 'package:gsmlg/screens/settings/backplane_settings_screen.dart';
 import 'package:gsmlg/screens/settings/app_settings_screen.dart';
 import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
@@ -24,6 +25,15 @@ GoRoute settingsRoutes() => GoRoute(
     );
   },
   routes: [
+    GoRoute(
+      name: AudioSettingsScreen.name,
+      path: AudioSettingsScreen.path,
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        restorationId: state.pageKey.value,
+        child: const AudioSettingsScreen(),
+      ),
+    ),
     GoRoute(
       name: BackplaneSettingsScreen.name,
       path: BackplaneSettingsScreen.path,

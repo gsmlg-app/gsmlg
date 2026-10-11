@@ -3,6 +3,7 @@ import 'package:app_chat/app_chat.dart';
 import 'package:app_database/app_database.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
+import 'package:audio_bloc/audio_bloc.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +24,7 @@ void main() {
     late AccountsBloc accountsBloc;
     late ChatSettingsBloc chatSettingsBloc;
     late GemmaModelBloc gemmaModelBloc;
+    late AudioSettingsBloc audioSettingsBloc;
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
@@ -40,9 +42,11 @@ void main() {
         repository: GemmaRepository(),
         preferences: sharedPreferences,
       );
+      audioSettingsBloc = AudioSettingsBloc(preferences: sharedPreferences);
     });
 
     tearDown(() async {
+      await audioSettingsBloc.close();
       await gemmaModelBloc.close();
       await chatSettingsBloc.close();
       await accountsBloc.close();
@@ -63,6 +67,7 @@ void main() {
         accountsBloc: accountsBloc,
         chatSettingsBloc: chatSettingsBloc,
         gemmaModelBloc: gemmaModelBloc,
+        audioSettingsBloc: audioSettingsBloc,
       );
 
       expect(find.byType(SettingsScreen), findsOneWidget);
@@ -76,6 +81,9 @@ void main() {
     testWidgets('shows Agent under Chat and preserves AI Model options', (
       WidgetTester tester,
     ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       await sharedPreferences.setStringList('remote_mcp_profiles', [
         '{"id":"docs","name":"Docs MCP","url":"https://mcp.example.com/http","transport":"http","enabled":true,"accountId":null}',
       ]);
@@ -88,6 +96,7 @@ void main() {
         accountsBloc: accountsBloc,
         chatSettingsBloc: chatSettingsBloc,
         gemmaModelBloc: gemmaModelBloc,
+        audioSettingsBloc: audioSettingsBloc,
       );
 
       final sections = tester
@@ -102,7 +111,13 @@ void main() {
             .cast<SettingsTile>()
             .map((tile) => (tile.title as Text).data)
             .toList(),
-        ['Local Models', 'Remote Models', 'Local Tools', 'Remote Tools'],
+        [
+          'Local Models',
+          'Remote Models',
+          'Local Tools',
+          'Remote Tools',
+          'Audio Settings',
+        ],
       );
       expect((chatSection.title as Text).data, 'Chat');
       expect(
@@ -116,10 +131,16 @@ void main() {
       expect(find.text('0 agents configured'), findsOneWidget);
       expect(find.text('Remote Tools'), findsOneWidget);
       expect(
-        (aiModelsSection.tiles.last as SettingsTile).leading,
+        (aiModelsSection.tiles[3] as SettingsTile).leading,
         isA<Icon>().having((icon) => icon.icon, 'icon', Icons.hub_outlined),
       );
       expect(find.text('1 service configured'), findsOneWidget);
+      expect(
+        (aiModelsSection.tiles.last as SettingsTile).leading,
+        isA<Icon>().having((icon) => icon.icon, 'icon', Icons.graphic_eq),
+      );
+      expect(find.text('Audio Settings'), findsOneWidget);
+      expect(find.text('Backplane'), findsWidgets);
     });
 
     testWidgets('shows Backplane after Service Accounts and navigates', (
@@ -133,6 +154,7 @@ void main() {
         accountsBloc: accountsBloc,
         chatSettingsBloc: chatSettingsBloc,
         gemmaModelBloc: gemmaModelBloc,
+        audioSettingsBloc: audioSettingsBloc,
       );
 
       final accountSection = tester
@@ -147,7 +169,7 @@ void main() {
         ['Service Accounts', 'Backplane'],
       );
 
-      await tester.tap(find.text('Backplane'));
+      await tester.tap(find.text('Backplane').first);
       await tester.pumpAndSettle();
 
       expect(find.text('Backplane route'), findsOneWidget);
@@ -164,6 +186,7 @@ void main() {
         accountsBloc: accountsBloc,
         chatSettingsBloc: chatSettingsBloc,
         gemmaModelBloc: gemmaModelBloc,
+        audioSettingsBloc: audioSettingsBloc,
       );
 
       await tester.drag(find.byType(CustomScrollView), const Offset(0, -300));
@@ -172,6 +195,26 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Agent route'), findsOneWidget);
+    });
+
+    testWidgets('shows Audio Settings in AI Models and navigates', (
+      WidgetTester tester,
+    ) async {
+      await _pumpScreen(
+        tester,
+        sharedPreferences: sharedPreferences,
+        toolExecutor: toolExecutor,
+        themeBloc: themeBloc,
+        accountsBloc: accountsBloc,
+        chatSettingsBloc: chatSettingsBloc,
+        gemmaModelBloc: gemmaModelBloc,
+        audioSettingsBloc: audioSettingsBloc,
+      );
+
+      await tester.tap(find.text('Audio Settings'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('AudioSettings route'), findsOneWidget);
     });
   });
 }
@@ -184,6 +227,7 @@ Future<void> _pumpScreen(
   required AccountsBloc accountsBloc,
   required ChatSettingsBloc chatSettingsBloc,
   required GemmaModelBloc gemmaModelBloc,
+  required AudioSettingsBloc audioSettingsBloc,
 }) {
   final router = GoRouter(
     initialLocation: SettingsScreen.path,
@@ -208,6 +252,11 @@ Future<void> _pumpScreen(
         name: 'ChatAgentsSettings',
         builder: (context, state) => const Text('Agent route'),
       ),
+      GoRoute(
+        path: '/test/audio',
+        name: 'AudioSettings',
+        builder: (context, state) => const Text('AudioSettings route'),
+      ),
     ],
   );
   addTearDown(router.dispose);
@@ -224,6 +273,7 @@ Future<void> _pumpScreen(
           BlocProvider<AccountsBloc>.value(value: accountsBloc),
           BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc),
           BlocProvider<GemmaModelBloc>.value(value: gemmaModelBloc),
+          BlocProvider<AudioSettingsBloc>.value(value: audioSettingsBloc),
         ],
         child: MaterialApp.router(
           localizationsDelegates: AppLocale.localizationsDelegates,

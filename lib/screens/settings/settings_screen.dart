@@ -2,8 +2,10 @@
 
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
+import 'package:app_audio/audio.dart';
 import 'package:app_chat/app_chat.dart';
 import 'package:app_locale/app_locale.dart';
+import 'package:audio_bloc/audio_bloc.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,7 @@ import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
 import 'package:gsmlg/screens/settings/app_settings_screen.dart';
 import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
+import 'package:gsmlg/screens/settings/audio_settings_screen.dart';
 import 'package:gsmlg/screens/settings/backplane_settings_screen.dart';
 import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
@@ -188,6 +191,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               onPressed: (context) {
                                 context.goNamed(RemoteToolsSettingsScreen.name);
+                              },
+                            ),
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.graphic_eq),
+                              title: Text(context.l10n.audioSettingsTitle),
+                              value:
+                                  BlocBuilder<
+                                    AudioSettingsBloc,
+                                    AudioSettingsState
+                                  >(
+                                    builder: (context, audioState) {
+                                      return Text(
+                                        audioState.settings.providerType ==
+                                                AudioProviderType.backplane
+                                            ? 'Backplane'
+                                            : 'OpenAI-Compatible',
+                                      );
+                                    },
+                                  ),
+                              onPressed: (context) {
+                                context.goNamed(AudioSettingsScreen.name);
                               },
                             ),
                           ],
