@@ -702,4 +702,111 @@ class AppLocalizationsIt extends AppLocalizations {
   String compassHeadingReadout(int degrees, String direction) {
     return '$degrees° · $direction';
   }
+
+  @override
+  String get audioServiceTitle => 'Audio';
+
+  @override
+  String get audioServiceDescription =>
+      'ASR speech recognition and TTS speech synthesis';
+
+  @override
+  String get audioTtsTab => 'Text to Speech (TTS)';
+
+  @override
+  String get audioAsrTab => 'Speech to Text (ASR)';
+
+  @override
+  String get audioTextInputHint => 'Enter text to convert to speech…';
+
+  @override
+  String get audioSynthesizeButton => 'Synthesize';
+
+  @override
+  String get audioSynthesizing => 'Synthesizing audio…';
+
+  @override
+  String get audioVoiceLabel => 'Voice';
+
+  @override
+  String get audioModelLabel => 'Model';
+
+  @override
+  String get audioPlayButton => 'Play';
+
+  @override
+  String get audioPauseButton => 'Pause';
+
+  @override
+  String get audioStopButton => 'Stop';
+
+  @override
+  String get audioSaveButton => 'Export Audio';
+
+  @override
+  String get audioRecordButton => 'Record';
+
+  @override
+  String get audioStopRecordButton => 'Stop & Transcribe';
+
+  @override
+  String get audioUploadButton => 'Pick Audio File';
+
+  @override
+  String get audioTranscribing => 'Transcribing audio…';
+
+  @override
+  String get audioTranscriptionResult => 'Transcription Result';
+
+  @override
+  String get audioCopySuccess => 'Copied to clipboard';
+
+  @override
+  String get audioClear => 'Clear';
+
+  @override
+  String get audioSettingsTitle => 'Audio Settings';
+
+  @override
+  String get audioSettingsProvider => 'Provider';
+
+  @override
+  String get audioSettingsBackplanePreset => 'Backplane (Default)';
+
+  @override
+  String get audioSettingsCustomOpenAi => 'Custom OpenAI-Compatible';
+
+  @override
+  String get audioSettingsBaseUrl => 'Base URL';
+
+  @override
+  String get audioSettingsAccount => 'Service Account';
+
+  @override
+  String get audioSettingsUseDummyToken =>
+      'Use dummy token (for unauthenticated local APIs)';
+
+  @override
+  String get audioSettingsTtsModel => 'Default TTS Model';
+
+  @override
+  String get audioSettingsTtsVoice => 'Default TTS Voice';
+
+  @override
+  String get audioSettingsTtsSpeed => 'Speech Speed';
+
+  @override
+  String get audioSettingsTtsFormat => 'Audio Format';
+
+  @override
+  String get audioSettingsAsrModel => 'Default ASR Model';
+
+  @override
+  String get audioSettingsAsrLanguage => 'Language Code (e.g. en, zh)';
+
+  @override
+  String get audioSettingsResetButton => 'Reset to Backplane Defaults';
+
+  @override
+  String get audioSettingsSaveButton => 'Save Settings';
 }

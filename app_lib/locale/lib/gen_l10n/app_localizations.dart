@@ -1457,6 +1457,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{degrees}° · {direction}'**
   String compassHeadingReadout(int degrees, String direction);
+
+  /// No description provided for @audioServiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio'**
+  String get audioServiceTitle;
+
+  /// No description provided for @audioServiceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'ASR speech recognition and TTS speech synthesis'**
+  String get audioServiceDescription;
+
+  /// No description provided for @audioTtsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Text to Speech (TTS)'**
+  String get audioTtsTab;
+
+  /// No description provided for @audioAsrTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech to Text (ASR)'**
+  String get audioAsrTab;
+
+  /// No description provided for @audioTextInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter text to convert to speech…'**
+  String get audioTextInputHint;
+
+  /// No description provided for @audioSynthesizeButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Synthesize'**
+  String get audioSynthesizeButton;
+
+  /// No description provided for @audioSynthesizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Synthesizing audio…'**
+  String get audioSynthesizing;
+
+  /// No description provided for @audioVoiceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get audioVoiceLabel;
+
+  /// No description provided for @audioModelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get audioModelLabel;
+
+  /// No description provided for @audioPlayButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get audioPlayButton;
+
+  /// No description provided for @audioPauseButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get audioPauseButton;
+
+  /// No description provided for @audioStopButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get audioStopButton;
+
+  /// No description provided for @audioSaveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Audio'**
+  String get audioSaveButton;
+
+  /// No description provided for @audioRecordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Record'**
+  String get audioRecordButton;
+
+  /// No description provided for @audioStopRecordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop & Transcribe'**
+  String get audioStopRecordButton;
+
+  /// No description provided for @audioUploadButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Audio File'**
+  String get audioUploadButton;
+
+  /// No description provided for @audioTranscribing.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcribing audio…'**
+  String get audioTranscribing;
+
+  /// No description provided for @audioTranscriptionResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Transcription Result'**
+  String get audioTranscriptionResult;
+
+  /// No description provided for @audioCopySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get audioCopySuccess;
+
+  /// No description provided for @audioClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get audioClear;
+
+  /// No description provided for @audioSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio Settings'**
+  String get audioSettingsTitle;
+
+  /// No description provided for @audioSettingsProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get audioSettingsProvider;
+
+  /// No description provided for @audioSettingsBackplanePreset.
+  ///
+  /// In en, this message translates to:
+  /// **'Backplane (Default)'**
+  String get audioSettingsBackplanePreset;
+
+  /// No description provided for @audioSettingsCustomOpenAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom OpenAI-Compatible'**
+  String get audioSettingsCustomOpenAi;
+
+  /// No description provided for @audioSettingsBaseUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Base URL'**
+  String get audioSettingsBaseUrl;
+
+  /// No description provided for @audioSettingsAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Service Account'**
+  String get audioSettingsAccount;
+
+  /// No description provided for @audioSettingsUseDummyToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Use dummy token (for unauthenticated local APIs)'**
+  String get audioSettingsUseDummyToken;
+
+  /// No description provided for @audioSettingsTtsModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Default TTS Model'**
+  String get audioSettingsTtsModel;
+
+  /// No description provided for @audioSettingsTtsVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Default TTS Voice'**
+  String get audioSettingsTtsVoice;
+
+  /// No description provided for @audioSettingsTtsSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech Speed'**
+  String get audioSettingsTtsSpeed;
+
+  /// No description provided for @audioSettingsTtsFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio Format'**
+  String get audioSettingsTtsFormat;
+
+  /// No description provided for @audioSettingsAsrModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Default ASR Model'**
+  String get audioSettingsAsrModel;
+
+  /// No description provided for @audioSettingsAsrLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Language Code (e.g. en, zh)'**
+  String get audioSettingsAsrLanguage;
+
+  /// No description provided for @audioSettingsResetButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset to Backplane Defaults'**
+  String get audioSettingsResetButton;
+
+  /// No description provided for @audioSettingsSaveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Settings'**
+  String get audioSettingsSaveButton;
 }
 
 class _AppLocalizationsDelegate
