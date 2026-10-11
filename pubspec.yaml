@@ -17,6 +17,7 @@ workspace:
   - app_lib/chat
   - app_lib/tts_dataset
   - app_lib/isolate_orchestrator
+  - app_lib/audio
   - app_bloc/theme
   - app_bloc/navigation
   - app_bloc/auth
@@ -148,6 +149,7 @@ dependencies:
   ip_db: any
   app_chat: any
   tts_dataset: any
+  app_audio: any
   app_local_llm: any
   app_compass: any
   chat_bloc: any

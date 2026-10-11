@@ -1,0 +1,23 @@
+name: app_audio
+description: Core audio models and OpenAI-compatible ASR/TTS repository.
+publish_to: "none"
+version: 1.0.0
+resolution: workspace
+
+environment:
+  sdk: ">=3.12.0 <4.0.0"
+
+dependencies:
+  equatable: ^2.1.0
+  flutter:
+    sdk: flutter
+  dio: any
+  http: any
+  path: any
+  app_database: any
+  app_secure_storage: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  test: any
