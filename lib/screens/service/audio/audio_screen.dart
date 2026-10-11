@@ -149,6 +149,8 @@ class _AudioScreenState extends State<AudioScreen> {
 
   AudioScreenAudioRecorder? _recorder;
   bool _isRecording = false;
+  Timer? _recordTimer;
+  Duration _recordDuration = Duration.zero;
 
   @override
   void initState() {
@@ -168,6 +170,7 @@ class _AudioScreenState extends State<AudioScreen> {
     _durationSub?.cancel();
     _positionSub?.cancel();
     _player?.dispose();
+    _recordTimer?.cancel();
     _recorder?.dispose();
     _ttsTextController.dispose();
     super.dispose();
@@ -266,12 +269,26 @@ class _AudioScreenState extends State<AudioScreen> {
       );
       await _recorder!.start(path: path);
       if (mounted) {
+        _recordDuration = Duration.zero;
+        _recordTimer?.cancel();
+        _recordTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (mounted) {
+            setState(() {
+              _recordDuration += const Duration(seconds: 1);
+            });
+          }
+        });
         setState(() => _isRecording = true);
       }
     } else {
+      _recordTimer?.cancel();
+      _recordTimer = null;
       final recordedPath = await _recorder!.stop();
       if (mounted) {
-        setState(() => _isRecording = false);
+        setState(() {
+          _isRecording = false;
+          _recordDuration = Duration.zero;
+        });
       }
       if (recordedPath != null && recordedPath.isNotEmpty) {
         if (mounted) {
@@ -615,6 +632,41 @@ class _AudioScreenState extends State<AudioScreen> {
             ),
           ],
         ),
+        if (_isRecording) ...[
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.fiber_manual_record,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Recording ${_formatDuration(_recordDuration)}',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
         if (state.asrStatus == AsrStatus.transcribing) ...[
           const SizedBox(height: 24),
           Row(

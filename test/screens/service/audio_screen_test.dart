@@ -452,6 +452,90 @@ void main() {
     },
   );
 
+  testWidgets(
+    'tapping Record starts recording with timer indicator, tapping Stop dispatches transcription',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          audioServiceBloc: audioServiceBloc,
+          audioSettingsBloc: audioSettingsBloc,
+          player: fakePlayer,
+          recorder: fakeRecorder,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Switch to ASR tab
+      await tester.tap(find.text('Speech to Text (ASR)'));
+      await tester.pumpAndSettle();
+
+      // Tap Record
+      await tester.tap(find.text('Record'));
+      await tester.pump();
+
+      expect(fakeRecorder.recording, isTrue);
+      expect(fakeRecorder.lastStartedPath, isNotNull);
+      expect(find.text('Stop & Transcribe'), findsOneWidget);
+      expect(find.text('Recording 00:00'), findsOneWidget);
+
+      // Advance timer by 3 seconds
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.text('Recording 00:03'), findsOneWidget);
+
+      // Tap Stop & Transcribe
+      await tester.tap(find.text('Stop & Transcribe'));
+      await tester.pump();
+
+      expect(fakeRecorder.recording, isFalse);
+      expect(
+        audioServiceBloc.dispatchedEvents,
+        contains(isA<AudioAsrTranscribeFile>()),
+      );
+      final transcribeEvent = audioServiceBloc.dispatchedEvents
+          .whereType<AudioAsrTranscribeFile>()
+          .first;
+      expect(transcribeEvent.filePath, fakeRecorder.stoppedPath);
+    },
+  );
+
+  testWidgets('displays error banner when ttsError or asrError is present', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final errorBloc = _TestAudioServiceBloc(
+      initialState: const AudioServiceState(
+        ttsError: 'TTS synthesis error occurred',
+        asrError: 'ASR transcription error occurred',
+      ),
+    );
+    addTearDown(() => errorBloc.close());
+
+    await tester.pumpWidget(
+      _buildTestApp(
+        audioServiceBloc: errorBloc,
+        audioSettingsBloc: audioSettingsBloc,
+        player: fakePlayer,
+        recorder: fakeRecorder,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify TTS error is shown in TTS tab
+    expect(find.text('TTS synthesis error occurred'), findsOneWidget);
+
+    // Switch to ASR tab
+    await tester.tap(find.text('Speech to Text (ASR)'));
+    await tester.pumpAndSettle();
+
+    // Verify ASR error is shown in ASR tab
+    expect(find.text('ASR transcription error occurred'), findsOneWidget);
+  });
+
   testWidgets('verifies ServiceScreen includes an Audio tile', (tester) async {
     final gitHubBloc = _TestGitHubBloc();
     addTearDown(() => gitHubBloc.close());
