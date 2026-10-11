@@ -26,13 +26,21 @@ class AudioSettingsScreen extends StatefulWidget {
 
 class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   static const _supportedFormats = ['mp3', 'opus', 'aac', 'flac', 'wav', 'pcm'];
+  static const _standardVoices = [
+    'alloy',
+    'echo',
+    'fable',
+    'onyx',
+    'nova',
+    'shimmer',
+  ];
 
   late AudioProviderType _providerType;
   late final TextEditingController _urlController;
   int? _accountId;
   bool _useDummyToken = false;
   late final TextEditingController _ttsModelController;
-  late final TextEditingController _ttsVoiceController;
+  String _ttsVoice = 'alloy';
   double _ttsSpeed = 1.0;
   String _ttsFormat = 'mp3';
   late final TextEditingController _asrModelController;
@@ -47,7 +55,7 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
     _accountId = settings.accountId;
     _useDummyToken = settings.useDummyToken;
     _ttsModelController = TextEditingController(text: settings.ttsModel);
-    _ttsVoiceController = TextEditingController(text: settings.ttsVoice);
+    _ttsVoice = settings.ttsVoice.isNotEmpty ? settings.ttsVoice : 'alloy';
     _ttsSpeed = settings.ttsSpeed;
     _ttsFormat = settings.ttsResponseFormat;
     _asrModelController = TextEditingController(text: settings.asrModel);
@@ -60,7 +68,6 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   void dispose() {
     _urlController.dispose();
     _ttsModelController.dispose();
-    _ttsVoiceController.dispose();
     _asrModelController.dispose();
     _asrLanguageController.dispose();
     super.dispose();
@@ -73,7 +80,7 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
       _accountId = settings.accountId;
       _useDummyToken = settings.useDummyToken;
       _ttsModelController.text = settings.ttsModel;
-      _ttsVoiceController.text = settings.ttsVoice;
+      _ttsVoice = settings.ttsVoice.isNotEmpty ? settings.ttsVoice : 'alloy';
       _ttsSpeed = settings.ttsSpeed;
       _ttsFormat = settings.ttsResponseFormat;
       _asrModelController.text = settings.asrModel;
@@ -88,7 +95,7 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
       accountId: _accountId,
       useDummyToken: _useDummyToken,
       ttsModel: _ttsModelController.text.trim(),
-      ttsVoice: _ttsVoiceController.text.trim(),
+      ttsVoice: _ttsVoice,
       ttsSpeed: _ttsSpeed,
       ttsResponseFormat: _ttsFormat,
       asrModel: _asrModelController.text.trim(),
@@ -134,6 +141,9 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
             final formatItems = _supportedFormats.contains(_ttsFormat)
                 ? _supportedFormats
                 : [_ttsFormat, ..._supportedFormats];
+            final voiceItems = _standardVoices.contains(_ttsVoice)
+                ? _standardVoices
+                : [_ttsVoice, ..._standardVoices];
 
             return CustomScrollView(
               slivers: [
@@ -195,29 +205,32 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
                             onToggle: (value) =>
                                 setState(() => _useDummyToken = value),
                           ),
-                          SettingsTile(
-                            title: Text(context.l10n.audioSettingsAccount),
-                            description: DropdownButton<int?>(
-                              value: selectedAccountExists ? _accountId : null,
-                              isExpanded: true,
-                              hint: Text(context.l10n.backplaneSelectAccount),
-                              items: [
-                                DropdownMenuItem<int?>(
-                                  value: null,
-                                  child: Text(
-                                    context.l10n.backplaneSelectAccount,
-                                  ),
-                                ),
-                                for (final account in accounts)
+                          if (!_useDummyToken)
+                            SettingsTile(
+                              title: Text(context.l10n.audioSettingsAccount),
+                              description: DropdownButton<int?>(
+                                value: selectedAccountExists
+                                    ? _accountId
+                                    : null,
+                                isExpanded: true,
+                                hint: Text(context.l10n.backplaneSelectAccount),
+                                items: [
                                   DropdownMenuItem<int?>(
-                                    value: account.id,
-                                    child: Text(account.name),
+                                    value: null,
+                                    child: Text(
+                                      context.l10n.backplaneSelectAccount,
+                                    ),
                                   ),
-                              ],
-                              onChanged: (id) =>
-                                  setState(() => _accountId = id),
+                                  for (final account in accounts)
+                                    DropdownMenuItem<int?>(
+                                      value: account.id,
+                                      child: Text(account.name),
+                                    ),
+                                ],
+                                onChanged: (id) =>
+                                    setState(() => _accountId = id),
+                              ),
                             ),
-                          ),
                           SettingsTile.navigation(
                             title: Text(context.l10n.backplaneManageAccounts),
                             onPressed: (_) =>
@@ -239,11 +252,23 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
                           ),
                           SettingsTile(
                             title: Text(context.l10n.audioSettingsTtsVoice),
-                            description: TextField(
-                              controller: _ttsVoiceController,
-                              decoration: InputDecoration(
-                                labelText: context.l10n.audioSettingsTtsVoice,
-                              ),
+                            description: DropdownButton<String>(
+                              value: voiceItems.contains(_ttsVoice)
+                                  ? _ttsVoice
+                                  : 'alloy',
+                              isExpanded: true,
+                              items: [
+                                for (final voice in voiceItems)
+                                  DropdownMenuItem(
+                                    value: voice,
+                                    child: Text(voice),
+                                  ),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => _ttsVoice = val);
+                                }
+                              },
                             ),
                           ),
                           SettingsTile(

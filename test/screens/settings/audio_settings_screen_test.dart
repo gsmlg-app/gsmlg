@@ -44,11 +44,15 @@ void main() {
       findsOneWidget,
     );
     expect(find.widgetWithText(TextField, 'tts-1'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'alloy'), findsOneWidget);
+    expect(
+      find.widgetWithText(DropdownButton<String>, 'alloy'),
+      findsOneWidget,
+    );
     expect(find.byType(Slider), findsOneWidget);
     final slider = tester.widget<Slider>(find.byType(Slider));
     expect(slider.value, 1.0);
     expect(find.widgetWithText(TextField, 'whisper-1'), findsOneWidget);
+    expect(find.byType(DropdownButton<int?>), findsOneWidget);
   });
 
   testWidgets(
@@ -73,13 +77,23 @@ void main() {
       );
       await tester.enterText(urlField, 'https://custom-openai.example.com/v1');
 
+      // Toggle dummy token and verify service account dropdown is hidden
+      final dummySwitch = find.byType(Switch);
+      expect(find.byType(DropdownButton<int?>), findsOneWidget);
+      await tester.tap(dummySwitch);
+      await tester.pumpAndSettle();
+      expect(find.byType(DropdownButton<int?>), findsNothing);
+
       // Update TTS model
       final ttsModelField = find.widgetWithText(TextField, 'tts-1');
       await tester.enterText(ttsModelField, 'tts-1-hd');
 
-      // Update TTS voice
-      final ttsVoiceField = find.widgetWithText(TextField, 'alloy');
-      await tester.enterText(ttsVoiceField, 'echo');
+      // Update TTS voice via dropdown
+      final voicePicker = find.widgetWithText(DropdownButton<String>, 'alloy');
+      await tester.tap(voicePicker);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('echo').last);
+      await tester.pumpAndSettle();
 
       // Update ASR model
       final asrModelField = find.widgetWithText(TextField, 'whisper-1');
@@ -105,6 +119,7 @@ void main() {
       final saved = audioSettingsBloc.state.settings;
       expect(saved.providerType, AudioProviderType.customOpenAi);
       expect(saved.baseUrl, 'https://custom-openai.example.com/v1');
+      expect(saved.useDummyToken, isTrue);
       expect(saved.ttsModel, 'tts-1-hd');
       expect(saved.ttsVoice, 'echo');
       expect(saved.asrModel, 'whisper-large');
@@ -115,6 +130,7 @@ void main() {
         AudioSettingsBloc.readSettings(preferences).baseUrl,
         'https://custom-openai.example.com/v1',
       );
+      expect(AudioSettingsBloc.readSettings(preferences).useDummyToken, isTrue);
     },
   );
 
@@ -143,7 +159,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.widgetWithText(TextField, 'custom-tts'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'nova'), findsOneWidget);
+    expect(find.widgetWithText(DropdownButton<String>, 'nova'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'custom-whisper'), findsOneWidget);
 
     // Tap Reset to Backplane Defaults
@@ -162,8 +178,30 @@ void main() {
       findsOneWidget,
     );
     expect(find.widgetWithText(TextField, 'tts-1'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'alloy'), findsOneWidget);
+    expect(
+      find.widgetWithText(DropdownButton<String>, 'alloy'),
+      findsOneWidget,
+    );
     expect(find.widgetWithText(TextField, 'whisper-1'), findsOneWidget);
+  });
+
+  testWidgets('supports custom stored voice in dropdown', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    const customSettings = AudioSettings(ttsVoice: 'custom-voice');
+    await preferences.setString(
+      AudioSettingsBloc.preferencesKey,
+      jsonEncode(customSettings.toJson()),
+    );
+
+    audioSettingsBloc.add(const AudioSettingsLoad());
+    await _pump(tester, audioSettingsBloc, accountsBloc);
+
+    expect(
+      find.widgetWithText(DropdownButton<String>, 'custom-voice'),
+      findsOneWidget,
+    );
   });
 }
 
