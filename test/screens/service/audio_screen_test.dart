@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:app_audio/audio.dart';
 import 'package:app_locale/app_locale.dart';
@@ -677,6 +678,122 @@ void main() {
     expect(find.text('Audio'), findsOneWidget);
     expect(find.byIcon(Icons.graphic_eq), findsOneWidget);
   });
+
+  testWidgets(
+    'verifies audio progress bar synchronizes with parsed audio duration and handles dragging smoothly',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final fourSecWav = _createTestWavBytes(4);
+      final readyBloc = _TestAudioServiceBloc(
+        initialState: AudioServiceState(
+          ttsStatus: TtsStatus.ready,
+          audioBytes: fourSecWav,
+        ),
+      );
+      addTearDown(() => readyBloc.close());
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          audioServiceBloc: readyBloc,
+          audioSettingsBloc: audioSettingsBloc,
+          player: fakePlayer,
+          recorder: fakeRecorder,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Before playback starts, duration is immediately 00:04 from parsed bytes,
+      // position is 00:00, and slider thumb is at 0.0
+      expect(find.text('00:04'), findsOneWidget);
+      expect(find.text('00:00'), findsOneWidget);
+      var slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.value, 0.0);
+      expect(slider.max, 4000.0);
+
+      // Tap Play
+      await tester.tap(find.byIcon(Icons.play_arrow));
+      await tester.pump();
+      expect(fakePlayer.isPlaying, isTrue);
+
+      // Position updates to 1 second during playback
+      fakePlayer.emitPosition(const Duration(seconds: 1));
+      await tester.pump();
+      expect(find.text('00:01'), findsOneWidget);
+      expect(find.text('00:04'), findsOneWidget);
+      slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.value, 1000.0);
+      expect(slider.max, 4000.0);
+
+      // Position updates to 2 seconds
+      fakePlayer.emitPosition(const Duration(seconds: 2));
+      await tester.pump();
+      expect(find.text('00:02'), findsOneWidget);
+      expect(find.text('00:04'), findsOneWidget);
+      slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.value, 2000.0);
+      expect(slider.max, 4000.0);
+
+      // User starts dragging slider to 3.5 seconds
+      slider.onChangeStart!(2000.0);
+      slider.onChanged!(3500.0);
+      await tester.pump();
+      expect(find.text('00:03'), findsOneWidget); // 3500ms is 00:03
+      expect(find.text('00:04'), findsOneWidget);
+
+      // While dragging, stream emits 2.5s position - should be ignored!
+      fakePlayer.emitPosition(const Duration(milliseconds: 2500));
+      await tester.pump();
+      slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.value, 3500.0);
+
+      // User finishes dragging at 3.5s
+      slider.onChangeEnd!(3500.0);
+      await tester.pump();
+      expect(fakePlayer.seekPosition, const Duration(milliseconds: 3500));
+      expect(find.text('00:03'), findsOneWidget);
+    },
+  );
+}
+
+Uint8List _createTestWavBytes(int seconds) {
+  const sampleRate = 16000;
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  final byteRate = sampleRate * numChannels * (bitsPerSample ~/ 8);
+  final blockAlign = numChannels * (bitsPerSample ~/ 8);
+  final dataSize = byteRate * seconds;
+  final totalSize = 36 + dataSize;
+
+  final b = ByteData(44 + dataSize);
+  b.setUint8(0, 0x52);
+  b.setUint8(1, 0x49);
+  b.setUint8(2, 0x46);
+  b.setUint8(3, 0x46);
+  b.setUint32(4, totalSize, Endian.little);
+  b.setUint8(8, 0x57);
+  b.setUint8(9, 0x41);
+  b.setUint8(10, 0x56);
+  b.setUint8(11, 0x45);
+  b.setUint8(12, 0x66);
+  b.setUint8(13, 0x6d);
+  b.setUint8(14, 0x74);
+  b.setUint8(15, 0x20);
+  b.setUint32(16, 16, Endian.little);
+  b.setUint16(20, 1, Endian.little);
+  b.setUint16(22, numChannels, Endian.little);
+  b.setUint32(24, sampleRate, Endian.little);
+  b.setUint32(28, byteRate, Endian.little);
+  b.setUint16(32, blockAlign, Endian.little);
+  b.setUint16(34, bitsPerSample, Endian.little);
+  b.setUint8(36, 0x64);
+  b.setUint8(37, 0x61);
+  b.setUint8(38, 0x74);
+  b.setUint8(39, 0x61);
+  b.setUint32(40, dataSize, Endian.little);
+
+  return b.buffer.asUint8List();
 }
 
 class _TestGitHubBloc extends Bloc<GitHubEvent, GitHubState>

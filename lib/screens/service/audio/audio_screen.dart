@@ -156,6 +156,8 @@ class _AudioScreenState extends State<AudioScreen> {
   StreamSubscription<void>? _playerCompleteSub;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
+  bool _isDragging = false;
+  Duration? _dragPosition;
   PlayerState _playerState = PlayerState.stopped;
   Uint8List? _lastLoadedAudioBytes;
 
@@ -180,6 +182,10 @@ class _AudioScreenState extends State<AudioScreen> {
     try {
       final audioState = context.read<AudioServiceBloc>().state;
       if (audioState.audioBytes != null) {
+        final parsed = parseAudioDuration(audioState.audioBytes!);
+        if (parsed != null && parsed > Duration.zero) {
+          _duration = parsed;
+        }
         _loadAudio(audioState.audioBytes!);
       }
     } catch (_) {}
@@ -213,10 +219,12 @@ class _AudioScreenState extends State<AudioScreen> {
       }
     });
     _positionSub = _player!.onPositionChanged.listen((position) {
-      if (!mounted) return;
+      if (!mounted || _isDragging) return;
       setState(() {
-        _position = position;
-        if (position > _duration) {
+        if (_duration > Duration.zero) {
+          _position = position > _duration ? _duration : position;
+        } else {
+          _position = position;
           _duration = position;
         }
       });
@@ -225,6 +233,8 @@ class _AudioScreenState extends State<AudioScreen> {
       if (!mounted) return;
       setState(() {
         _position = Duration.zero;
+        _isDragging = false;
+        _dragPosition = null;
         _playerState = PlayerState.completed;
       });
     });
@@ -261,7 +271,14 @@ class _AudioScreenState extends State<AudioScreen> {
   Future<void> _loadAudio(Uint8List bytes) async {
     _lastLoadedAudioBytes = bytes;
     _position = Duration.zero;
+    _dragPosition = null;
+    _isDragging = false;
     _initPlayer();
+    final parsed = parseAudioDuration(bytes);
+    if (parsed != null && parsed > Duration.zero) {
+      _duration = parsed;
+      if (mounted) setState(() {});
+    }
     try {
       final source = _createAudioSource(bytes);
       await _player?.setSource(source);
@@ -279,6 +296,11 @@ class _AudioScreenState extends State<AudioScreen> {
       return;
     }
     _lastLoadedAudioBytes = bytes;
+    final parsed = parseAudioDuration(bytes);
+    if (parsed != null && parsed > Duration.zero) {
+      _duration = parsed;
+      if (mounted) setState(() {});
+    }
     final source = _createAudioSource(bytes);
     await _player!.play(source);
     final dur = await _player!.getDuration();
@@ -296,6 +318,8 @@ class _AudioScreenState extends State<AudioScreen> {
     if (mounted) {
       setState(() {
         _position = Duration.zero;
+        _dragPosition = null;
+        _isDragging = false;
         _playerState = PlayerState.stopped;
       });
     }
@@ -303,8 +327,11 @@ class _AudioScreenState extends State<AudioScreen> {
 
   Future<void> _seek(Duration position) async {
     _initPlayer();
-    setState(() => _position = position);
-    await _player?.seek(position);
+    final target = _duration > Duration.zero && position > _duration
+        ? _duration
+        : position;
+    setState(() => _position = target);
+    await _player?.seek(target);
   }
 
   Future<void> _saveAudio(Uint8List bytes) async {
@@ -501,6 +528,15 @@ class _AudioScreenState extends State<AudioScreen> {
                   listener: (context, state) {
                     if (state.audioBytes != null &&
                         state.audioBytes != _lastLoadedAudioBytes) {
+                      final parsed = parseAudioDuration(state.audioBytes!);
+                      if (parsed != null && parsed > Duration.zero) {
+                        setState(() {
+                          _duration = parsed;
+                          _position = Duration.zero;
+                          _dragPosition = null;
+                          _isDragging = false;
+                        });
+                      }
                       _loadAudio(state.audioBytes!);
                     }
                   },
@@ -543,13 +579,13 @@ class _AudioScreenState extends State<AudioScreen> {
     );
   }
 
-  Widget _buildTtsView(
-    BuildContext context,
-    AudioServiceState state,
-  ) {
+  Widget _buildTtsView(BuildContext context, AudioServiceState state) {
     final effectiveDuration = _duration > _position ? _duration : _position;
     final maxDurationMs = effectiveDuration.inMilliseconds.toDouble();
-    final currentPositionMs = _position.inMilliseconds.toDouble().clamp(
+    final displayPosition = _isDragging && _dragPosition != null
+        ? _dragPosition!
+        : _position;
+    final currentPositionMs = displayPosition.inMilliseconds.toDouble().clamp(
       0.0,
       maxDurationMs > 0 ? maxDurationMs : 0.0,
     );
@@ -670,15 +706,47 @@ class _AudioScreenState extends State<AudioScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text(_formatDuration(_position)),
+                      Text(_formatDuration(displayPosition)),
                       Expanded(
                         child: Slider(
                           value: maxDurationMs > 0 ? currentPositionMs : 0.0,
                           min: 0.0,
                           max: maxDurationMs > 0 ? maxDurationMs : 1.0,
+                          onChangeStart: maxDurationMs > 0
+                              ? (val) {
+                                  setState(() {
+                                    _isDragging = true;
+                                    _dragPosition = Duration(
+                                      milliseconds: val.round(),
+                                    );
+                                  });
+                                }
+                              : null,
                           onChanged: maxDurationMs > 0
-                              ? (val) =>
-                                    _seek(Duration(milliseconds: val.round()))
+                              ? (val) {
+                                  setState(() {
+                                    _dragPosition = Duration(
+                                      milliseconds: val.round(),
+                                    );
+                                  });
+                                  if (!_isDragging) {
+                                    _seek(Duration(milliseconds: val.round()));
+                                  }
+                                }
+                              : null,
+                          onChangeEnd: maxDurationMs > 0
+                              ? (val) async {
+                                  final target = Duration(
+                                    milliseconds: val.round(),
+                                  );
+                                  await _seek(target);
+                                  if (mounted) {
+                                    setState(() {
+                                      _isDragging = false;
+                                      _dragPosition = null;
+                                    });
+                                  }
+                                }
                               : null,
                         ),
                       ),
