@@ -18,12 +18,15 @@ class _FakeAudioPlayer implements AudioScreenAudioPlayer {
   final _stateController = StreamController<PlayerState>.broadcast();
   final _durationController = StreamController<Duration>.broadcast();
   final _positionController = StreamController<Duration>.broadcast();
+  final _completeController = StreamController<void>.broadcast();
 
   bool isPlaying = false;
   bool isPaused = false;
   bool isStopped = false;
   Duration? seekPosition;
   Source? playedSource;
+  Source? currentSource;
+  Duration? mockDuration;
 
   @override
   Stream<PlayerState> get onPlayerStateChanged => _stateController.stream;
@@ -35,8 +38,28 @@ class _FakeAudioPlayer implements AudioScreenAudioPlayer {
   Stream<Duration> get onPositionChanged => _positionController.stream;
 
   @override
+  Stream<void> get onPlayerComplete => _completeController.stream;
+
+  @override
+  Future<Duration?> getDuration() async => mockDuration;
+
+  @override
+  Future<void> setSource(Source source) async {
+    currentSource = source;
+  }
+
+  @override
   Future<void> play(Source source) async {
     playedSource = source;
+    currentSource = source;
+    isPlaying = true;
+    isPaused = false;
+    isStopped = false;
+    _stateController.add(PlayerState.playing);
+  }
+
+  @override
+  Future<void> resume() async {
     isPlaying = true;
     isPaused = false;
     isStopped = false;
@@ -63,6 +86,21 @@ class _FakeAudioPlayer implements AudioScreenAudioPlayer {
     _positionController.add(position);
   }
 
+  void emitDuration(Duration duration) {
+    mockDuration = duration;
+    _durationController.add(duration);
+  }
+
+  void emitPosition(Duration position) {
+    _positionController.add(position);
+  }
+
+  void completePlayback() {
+    isPlaying = false;
+    _completeController.add(null);
+    _stateController.add(PlayerState.completed);
+  }
+
   @override
   Future<void> dispose() async {
     if (!_stateController.isClosed) {
@@ -73,6 +111,9 @@ class _FakeAudioPlayer implements AudioScreenAudioPlayer {
     }
     if (!_positionController.isClosed) {
       unawaited(_positionController.close());
+    }
+    if (!_completeController.isClosed) {
+      unawaited(_completeController.close());
     }
   }
 }
@@ -375,7 +416,86 @@ void main() {
     await tester.tap(find.text('Export Audio'));
     await tester.pump();
     expect(saveCalled, isTrue);
+
+    // Test progress bar duration and position updates
+    fakePlayer.emitDuration(const Duration(seconds: 4));
+    await tester.pump();
+    expect(find.text('00:04'), findsOneWidget);
+    expect(find.text('00:00'), findsOneWidget);
+
+    // Position updates to 2 seconds
+    fakePlayer.emitPosition(const Duration(seconds: 2));
+    await tester.pump();
+    expect(find.text('00:02'), findsOneWidget);
+    expect(find.text('00:04'), findsOneWidget);
+    final slider = tester.widget<Slider>(find.byType(Slider));
+    expect(slider.value, 2000.0);
+    expect(slider.max, 4000.0);
+
+    // Seek to 3 seconds
+    slider.onChanged!(3000.0);
+    await tester.pump();
+    expect(fakePlayer.seekPosition, const Duration(seconds: 3));
+    expect(find.text('00:03'), findsOneWidget);
+
+    // Complete playback resets position to 00:00 and retains duration 00:04
+    fakePlayer.completePlayback();
+    await tester.pump();
+    expect(find.text('00:00'), findsOneWidget);
+    expect(find.text('00:04'), findsOneWidget);
+    final completedSlider = tester.widget<Slider>(find.byType(Slider));
+    expect(completedSlider.value, 0.0);
+    expect(completedSlider.max, 4000.0);
   });
+
+  testWidgets(
+    'verifies audio progress bar adapts when duration is not emitted ahead of time',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final readyBloc = _TestAudioServiceBloc(
+        initialState: AudioServiceState(
+          ttsStatus: TtsStatus.ready,
+          audioBytes: Uint8List.fromList([1, 2, 3, 4, 5]),
+        ),
+      );
+      addTearDown(() => readyBloc.close());
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          audioServiceBloc: readyBloc,
+          audioSettingsBloc: audioSettingsBloc,
+          player: fakePlayer,
+          recorder: fakeRecorder,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap Play
+      await tester.tap(find.byIcon(Icons.play_arrow));
+      await tester.pump();
+      expect(fakePlayer.isPlaying, isTrue);
+
+      // Position advances to 4s without duration emitted
+      fakePlayer.emitPosition(const Duration(seconds: 4));
+      await tester.pump();
+      // Effective duration adapts to 4s, position is 4s
+      expect(find.text('00:04'), findsNWidgets(2));
+      final slider = tester.widget<Slider>(find.byType(Slider));
+      expect(slider.value, 4000.0);
+      expect(slider.max, 4000.0);
+
+      // Complete playback resets position to 00:00 while keeping total duration 00:04
+      fakePlayer.completePlayback();
+      await tester.pump();
+      expect(find.text('00:00'), findsOneWidget);
+      expect(find.text('00:04'), findsOneWidget);
+      final resetSlider = tester.widget<Slider>(find.byType(Slider));
+      expect(resetSlider.value, 0.0);
+      expect(resetSlider.max, 4000.0);
+    },
+  );
 
   testWidgets(
     'verifies ASR view renders, transcription result displays with copy button',

@@ -8,6 +8,7 @@ import 'package:audio_bloc/audio_bloc.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -65,7 +66,11 @@ abstract class AudioScreenAudioPlayer {
   Stream<PlayerState> get onPlayerStateChanged;
   Stream<Duration> get onDurationChanged;
   Stream<Duration> get onPositionChanged;
+  Stream<void> get onPlayerComplete;
+  Future<Duration?> getDuration();
+  Future<void> setSource(Source source);
   Future<void> play(Source source);
+  Future<void> resume();
   Future<void> pause();
   Future<void> stop();
   Future<void> seek(Duration position);
@@ -88,7 +93,19 @@ class DefaultAudioScreenAudioPlayer implements AudioScreenAudioPlayer {
   Stream<Duration> get onPositionChanged => _player.onPositionChanged;
 
   @override
+  Stream<void> get onPlayerComplete => _player.onPlayerComplete;
+
+  @override
+  Future<Duration?> getDuration() => _player.getDuration();
+
+  @override
+  Future<void> setSource(Source source) => _player.setSource(source);
+
+  @override
   Future<void> play(Source source) => _player.play(source);
+
+  @override
+  Future<void> resume() => _player.resume();
 
   @override
   Future<void> pause() => _player.pause();
@@ -136,8 +153,11 @@ class _AudioScreenState extends State<AudioScreen> {
   StreamSubscription<PlayerState>? _playerStateSub;
   StreamSubscription<Duration>? _durationSub;
   StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<void>? _playerCompleteSub;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
+  PlayerState _playerState = PlayerState.stopped;
+  Uint8List? _lastLoadedAudioBytes;
 
   AudioScreenAudioRecorder? _recorder;
   bool _isRecording = false;
@@ -147,6 +167,7 @@ class _AudioScreenState extends State<AudioScreen> {
   @override
   void initState() {
     super.initState();
+    _initPlayer();
     var initialVoice = AudioSettings.defaultBackplaneTtsVoice;
     try {
       final settings = context.read<AudioSettingsBloc>().state.settings;
@@ -155,6 +176,13 @@ class _AudioScreenState extends State<AudioScreen> {
       }
     } catch (_) {}
     _voiceController = TextEditingController(text: initialVoice);
+
+    try {
+      final audioState = context.read<AudioServiceBloc>().state;
+      if (audioState.audioBytes != null) {
+        _loadAudio(audioState.audioBytes!);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -162,6 +190,7 @@ class _AudioScreenState extends State<AudioScreen> {
     _playerStateSub?.cancel();
     _durationSub?.cancel();
     _positionSub?.cancel();
+    _playerCompleteSub?.cancel();
     _player?.dispose();
     _recordTimer?.cancel();
     _recorder?.dispose();
@@ -175,15 +204,29 @@ class _AudioScreenState extends State<AudioScreen> {
     _player = widget.playerFactory?.call() ?? DefaultAudioScreenAudioPlayer();
     _playerStateSub = _player!.onPlayerStateChanged.listen((state) {
       if (!mounted) return;
-      setState(() {});
+      setState(() => _playerState = state);
     });
     _durationSub = _player!.onDurationChanged.listen((duration) {
       if (!mounted) return;
-      setState(() => _duration = duration);
+      if (duration > Duration.zero) {
+        setState(() => _duration = duration);
+      }
     });
     _positionSub = _player!.onPositionChanged.listen((position) {
       if (!mounted) return;
-      setState(() => _position = position);
+      setState(() {
+        _position = position;
+        if (position > _duration) {
+          _duration = position;
+        }
+      });
+    });
+    _playerCompleteSub = _player!.onPlayerComplete.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _position = Duration.zero;
+        _playerState = PlayerState.completed;
+      });
     });
   }
 
@@ -192,9 +235,56 @@ class _AudioScreenState extends State<AudioScreen> {
         widget.recorderFactory?.call() ?? DefaultAudioScreenAudioRecorder();
   }
 
+  Source _createAudioSource(Uint8List bytes) {
+    if (!kIsWeb) {
+      try {
+        final isWav =
+            bytes.length >= 4 &&
+            bytes[0] == 0x52 &&
+            bytes[1] == 0x49 &&
+            bytes[2] == 0x46 &&
+            bytes[3] == 0x46;
+        final extension = isWav ? 'wav' : 'mp3';
+        final mimeType = isWav ? 'audio/wav' : 'audio/mpeg';
+        final tempFile = File(
+          p.join(Directory.systemTemp.path, 'gsmlg_tts_preview.$extension'),
+        );
+        tempFile.writeAsBytesSync(bytes, flush: true);
+        return DeviceFileSource(tempFile.path, mimeType: mimeType);
+      } catch (_) {
+        // Fall back to in-memory bytes
+      }
+    }
+    return BytesSource(bytes, mimeType: 'audio/mpeg');
+  }
+
+  Future<void> _loadAudio(Uint8List bytes) async {
+    _lastLoadedAudioBytes = bytes;
+    _position = Duration.zero;
+    _initPlayer();
+    try {
+      final source = _createAudioSource(bytes);
+      await _player?.setSource(source);
+      final dur = await _player?.getDuration();
+      if (dur != null && dur > Duration.zero && mounted) {
+        setState(() => _duration = dur);
+      }
+    } catch (_) {}
+  }
+
   Future<void> _play(Uint8List bytes) async {
     _initPlayer();
-    await _player!.play(BytesSource(bytes, mimeType: 'audio/mpeg'));
+    if (_playerState == PlayerState.paused) {
+      await _player?.resume();
+      return;
+    }
+    _lastLoadedAudioBytes = bytes;
+    final source = _createAudioSource(bytes);
+    await _player!.play(source);
+    final dur = await _player!.getDuration();
+    if (dur != null && dur > Duration.zero && mounted) {
+      setState(() => _duration = dur);
+    }
   }
 
   Future<void> _pause() async {
@@ -204,11 +294,16 @@ class _AudioScreenState extends State<AudioScreen> {
   Future<void> _stop() async {
     await _player?.stop();
     if (mounted) {
-      setState(() => _position = Duration.zero);
+      setState(() {
+        _position = Duration.zero;
+        _playerState = PlayerState.stopped;
+      });
     }
   }
 
   Future<void> _seek(Duration position) async {
+    _initPlayer();
+    setState(() => _position = position);
     await _player?.seek(position);
   }
 
@@ -402,7 +497,13 @@ class _AudioScreenState extends State<AudioScreen> {
             SliverPadding(
               padding: const EdgeInsets.all(Constants.defaultGridGap),
               sliver: SliverToBoxAdapter(
-                child: BlocBuilder<AudioServiceBloc, AudioServiceState>(
+                child: BlocConsumer<AudioServiceBloc, AudioServiceState>(
+                  listener: (context, state) {
+                    if (state.audioBytes != null &&
+                        state.audioBytes != _lastLoadedAudioBytes) {
+                      _loadAudio(state.audioBytes!);
+                    }
+                  },
                   builder: (context, state) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -446,7 +547,8 @@ class _AudioScreenState extends State<AudioScreen> {
     BuildContext context,
     AudioServiceState state,
   ) {
-    final maxDurationMs = _duration.inMilliseconds.toDouble();
+    final effectiveDuration = _duration > _position ? _duration : _position;
+    final maxDurationMs = effectiveDuration.inMilliseconds.toDouble();
     final currentPositionMs = _position.inMilliseconds.toDouble().clamp(
       0.0,
       maxDurationMs > 0 ? maxDurationMs : 0.0,
@@ -580,7 +682,7 @@ class _AudioScreenState extends State<AudioScreen> {
                               : null,
                         ),
                       ),
-                      Text(_formatDuration(_duration)),
+                      Text(_formatDuration(effectiveDuration)),
                     ],
                   ),
                 ],
