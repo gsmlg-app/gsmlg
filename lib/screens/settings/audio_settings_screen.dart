@@ -26,21 +26,13 @@ class AudioSettingsScreen extends StatefulWidget {
 
 class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   static const _supportedFormats = ['mp3', 'opus', 'aac', 'flac', 'wav', 'pcm'];
-  static const _standardVoices = [
-    'alloy',
-    'echo',
-    'fable',
-    'onyx',
-    'nova',
-    'shimmer',
-  ];
 
   late AudioProviderType _providerType;
   late final TextEditingController _urlController;
   int? _accountId;
   bool _useDummyToken = false;
   late final TextEditingController _ttsModelController;
-  String _ttsVoice = 'alloy';
+  late final TextEditingController _ttsVoiceController;
   double _ttsSpeed = 1.0;
   String _ttsFormat = 'mp3';
   late final TextEditingController _asrModelController;
@@ -55,7 +47,7 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
     _accountId = settings.accountId;
     _useDummyToken = settings.useDummyToken;
     _ttsModelController = TextEditingController(text: settings.ttsModel);
-    _ttsVoice = settings.ttsVoice.isNotEmpty ? settings.ttsVoice : 'alloy';
+    _ttsVoiceController = TextEditingController(text: settings.ttsVoice);
     _ttsSpeed = settings.ttsSpeed;
     _ttsFormat = settings.ttsResponseFormat;
     _asrModelController = TextEditingController(text: settings.asrModel);
@@ -68,6 +60,7 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   void dispose() {
     _urlController.dispose();
     _ttsModelController.dispose();
+    _ttsVoiceController.dispose();
     _asrModelController.dispose();
     _asrLanguageController.dispose();
     super.dispose();
@@ -80,7 +73,7 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
       _accountId = settings.accountId;
       _useDummyToken = settings.useDummyToken;
       _ttsModelController.text = settings.ttsModel;
-      _ttsVoice = settings.ttsVoice.isNotEmpty ? settings.ttsVoice : 'alloy';
+      _ttsVoiceController.text = settings.ttsVoice;
       _ttsSpeed = settings.ttsSpeed;
       _ttsFormat = settings.ttsResponseFormat;
       _asrModelController.text = settings.asrModel;
@@ -99,6 +92,11 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
             ? AudioSettings.defaultBackplaneTtsModel
             : 'tts-1')
         : _ttsModelController.text.trim();
+    final ttsVoice = _ttsVoiceController.text.trim().isEmpty
+        ? (_providerType == AudioProviderType.backplane
+            ? AudioSettings.defaultBackplaneTtsVoice
+            : 'female-tianmei')
+        : _ttsVoiceController.text.trim();
     final asrModel = _asrModelController.text.trim().isEmpty
         ? (_providerType == AudioProviderType.backplane
             ? AudioSettings.defaultBackplaneAsrModel
@@ -111,7 +109,7 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
       accountId: _accountId,
       useDummyToken: _useDummyToken,
       ttsModel: ttsModel,
-      ttsVoice: _ttsVoice,
+      ttsVoice: ttsVoice,
       ttsSpeed: _ttsSpeed,
       ttsResponseFormat: _ttsFormat,
       asrModel: asrModel,
@@ -157,9 +155,6 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
             final formatItems = _supportedFormats.contains(_ttsFormat)
                 ? _supportedFormats
                 : [_ttsFormat, ..._supportedFormats];
-            final voiceItems = _standardVoices.contains(_ttsVoice)
-                ? _standardVoices
-                : [_ttsVoice, ..._standardVoices];
 
             return CustomScrollView(
               slivers: [
@@ -268,23 +263,11 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
                           ),
                           SettingsTile(
                             title: Text(context.l10n.audioSettingsTtsVoice),
-                            description: DropdownButton<String>(
-                              value: voiceItems.contains(_ttsVoice)
-                                  ? _ttsVoice
-                                  : 'alloy',
-                              isExpanded: true,
-                              items: [
-                                for (final voice in voiceItems)
-                                  DropdownMenuItem(
-                                    value: voice,
-                                    child: Text(voice),
-                                  ),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _ttsVoice = val);
-                                }
-                              },
+                            description: TextField(
+                              controller: _ttsVoiceController,
+                              decoration: InputDecoration(
+                                labelText: context.l10n.audioSettingsTtsVoice,
+                              ),
                             ),
                           ),
                           SettingsTile(

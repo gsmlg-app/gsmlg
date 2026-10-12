@@ -10,7 +10,7 @@ void main() {
       expect(settings.accountId, isNull);
       expect(settings.useDummyToken, isFalse);
       expect(settings.ttsModel, 'minimax-audio/speech-2.8-turbo');
-      expect(settings.ttsVoice, 'alloy');
+      expect(settings.ttsVoice, 'female-tianmei');
       expect(settings.ttsSpeed, 1.0);
       expect(settings.ttsResponseFormat, 'mp3');
       expect(settings.asrModel, 'minimax-audio/asr-1.0');
@@ -52,7 +52,7 @@ void main() {
       expect(reconstructed.providerType, AudioProviderType.backplane);
       expect(reconstructed.baseUrl, 'https://backplane.gsmlg.net/v1');
       expect(reconstructed.ttsModel, 'minimax-audio/speech-2.8-turbo');
-      expect(reconstructed.ttsVoice, 'alloy');
+      expect(reconstructed.ttsVoice, 'female-tianmei');
       expect(reconstructed.ttsSpeed, 1.0);
       expect(reconstructed.ttsResponseFormat, 'mp3');
       expect(reconstructed.asrModel, 'minimax-audio/asr-1.0');

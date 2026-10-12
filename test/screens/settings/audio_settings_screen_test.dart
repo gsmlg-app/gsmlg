@@ -48,7 +48,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.widgetWithText(DropdownButton<String>, 'alloy'),
+      find.widgetWithText(TextField, 'female-tianmei'),
       findsOneWidget,
     );
     expect(find.byType(Slider), findsOneWidget);
@@ -97,12 +97,12 @@ void main() {
       );
       await tester.enterText(ttsModelField, 'tts-1-hd');
 
-      // Update TTS voice via dropdown
-      final voicePicker = find.widgetWithText(DropdownButton<String>, 'alloy');
-      await tester.tap(voicePicker);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('echo').last);
-      await tester.pumpAndSettle();
+      // Update TTS voice
+      final voiceField = find.widgetWithText(
+        TextField,
+        'female-tianmei',
+      );
+      await tester.enterText(voiceField, 'echo');
 
       // Update ASR model
       final asrModelField = find.widgetWithText(
@@ -171,7 +171,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.widgetWithText(TextField, 'custom-tts'), findsOneWidget);
-    expect(find.widgetWithText(DropdownButton<String>, 'nova'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'nova'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'custom-whisper'), findsOneWidget);
 
     // Tap Reset to Backplane Defaults
@@ -194,7 +194,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.widgetWithText(DropdownButton<String>, 'alloy'),
+      find.widgetWithText(TextField, 'female-tianmei'),
       findsOneWidget,
     );
     expect(
@@ -203,7 +203,7 @@ void main() {
     );
   });
 
-  testWidgets('supports custom stored voice in dropdown', (tester) async {
+  testWidgets('supports custom stored voice in text field', (tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -217,7 +217,7 @@ void main() {
     await _pump(tester, audioSettingsBloc, accountsBloc);
 
     expect(
-      find.widgetWithText(DropdownButton<String>, 'custom-voice'),
+      find.widgetWithText(TextField, 'custom-voice'),
       findsOneWidget,
     );
   });

@@ -289,17 +289,19 @@ void main() {
       await tester.pumpAndSettle();
 
       // Enter text
-      final textField = find.byType(TextField);
-      expect(textField, findsOneWidget);
-      await tester.enterText(textField, 'Hello text to speech');
+      final textInput = find.byWidgetPredicate(
+        (w) =>
+            w is TextField &&
+            w.decoration?.hintText == 'Enter text to convert to speech…',
+      );
+      expect(textInput, findsOneWidget);
+      await tester.enterText(textInput, 'Hello text to speech');
       await tester.pumpAndSettle();
 
       // Change voice to echo
-      final voiceDropdown = find.byType(DropdownButton<String>);
-      expect(voiceDropdown, findsOneWidget);
-      await tester.tap(voiceDropdown);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('echo').last);
+      final voiceInput = find.widgetWithText(TextField, 'female-tianmei');
+      expect(voiceInput, findsOneWidget);
+      await tester.enterText(voiceInput, 'echo');
       await tester.pumpAndSettle();
 
       // Tap Synthesize

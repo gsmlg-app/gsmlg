@@ -107,7 +107,7 @@ void main() {
             final body = jsonDecode(request.body) as Map<String, dynamic>;
             expect(body['model'], 'minimax-audio/speech-2.8-turbo');
             expect(body['input'], 'Hello world');
-            expect(body['voice'], 'alloy');
+            expect(body['voice'], 'female-tianmei');
             expect(body['speed'], 1.0);
             expect(body['response_format'], 'mp3');
 

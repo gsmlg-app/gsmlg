@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
+import 'package:app_audio/audio.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:audio_bloc/audio_bloc.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -126,19 +127,10 @@ class AudioScreen extends StatefulWidget {
 }
 
 class _AudioScreenState extends State<AudioScreen> {
-  static const _standardVoices = [
-    'alloy',
-    'echo',
-    'fable',
-    'onyx',
-    'nova',
-    'shimmer',
-  ];
-
   _AudioTab _selectedTab = _AudioTab.tts;
 
   final TextEditingController _ttsTextController = TextEditingController();
-  late String _selectedVoice;
+  late final TextEditingController _voiceController;
 
   AudioScreenAudioPlayer? _player;
   StreamSubscription<PlayerState>? _playerStateSub;
@@ -155,13 +147,14 @@ class _AudioScreenState extends State<AudioScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedVoice = 'alloy';
+    var initialVoice = AudioSettings.defaultBackplaneTtsVoice;
     try {
       final settings = context.read<AudioSettingsBloc>().state.settings;
       if (settings.ttsVoice.isNotEmpty) {
-        _selectedVoice = settings.ttsVoice;
+        initialVoice = settings.ttsVoice;
       }
     } catch (_) {}
+    _voiceController = TextEditingController(text: initialVoice);
   }
 
   @override
@@ -173,6 +166,7 @@ class _AudioScreenState extends State<AudioScreen> {
     _recordTimer?.cancel();
     _recorder?.dispose();
     _ttsTextController.dispose();
+    _voiceController.dispose();
     super.dispose();
   }
 
@@ -378,8 +372,6 @@ class _AudioScreenState extends State<AudioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final voices = {..._standardVoices, _selectedVoice}.toList();
-
     return AppAdaptiveScaffold(
       navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
@@ -435,7 +427,7 @@ class _AudioScreenState extends State<AudioScreen> {
                         ),
                         const SizedBox(height: 20),
                         if (_selectedTab == _AudioTab.tts)
-                          _buildTtsView(context, state, voices)
+                          _buildTtsView(context, state)
                         else
                           _buildAsrView(context, state),
                       ],
@@ -453,7 +445,6 @@ class _AudioScreenState extends State<AudioScreen> {
   Widget _buildTtsView(
     BuildContext context,
     AudioServiceState state,
-    List<String> voices,
   ) {
     final maxDurationMs = _duration.inMilliseconds.toDouble();
     final currentPositionMs = _position.inMilliseconds.toDouble().clamp(
@@ -485,16 +476,20 @@ class _AudioScreenState extends State<AudioScreen> {
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(width: 8),
-            DropdownButton<String>(
-              value: _selectedVoice,
-              items: voices.map((voice) {
-                return DropdownMenuItem(value: voice, child: Text(voice));
-              }).toList(),
-              onChanged: (newVoice) {
-                if (newVoice != null) {
-                  setState(() => _selectedVoice = newVoice);
-                }
-              },
+            SizedBox(
+              width: 180,
+              child: TextField(
+                controller: _voiceController,
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: context.l10n.audioVoiceLabel,
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                ),
+              ),
             ),
             const Spacer(),
             if (state.ttsStatus == TtsStatus.synthesizing) ...[
@@ -511,9 +506,13 @@ class _AudioScreenState extends State<AudioScreen> {
                 label: Text(context.l10n.audioSynthesizeButton),
                 onPressed: () {
                   final text = _ttsTextController.text.trim();
+                  final voice = _voiceController.text.trim();
                   if (text.isNotEmpty) {
                     context.read<AudioServiceBloc>().add(
-                      AudioTtsSynthesize(text, voice: _selectedVoice),
+                      AudioTtsSynthesize(
+                        text,
+                        voice: voice.isNotEmpty ? voice : null,
+                      ),
                     );
                   }
                 },
