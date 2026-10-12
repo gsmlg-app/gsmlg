@@ -89,16 +89,32 @@ class _AudioSettingsScreenState extends State<AudioSettingsScreen> {
   }
 
   void _save() {
+    final baseUrl = _urlController.text.trim().isEmpty
+        ? (_providerType == AudioProviderType.backplane
+            ? AudioSettings.defaultBackplaneUrl
+            : 'https://api.openai.com/v1')
+        : _urlController.text.trim();
+    final ttsModel = _ttsModelController.text.trim().isEmpty
+        ? (_providerType == AudioProviderType.backplane
+            ? AudioSettings.defaultBackplaneTtsModel
+            : 'tts-1')
+        : _ttsModelController.text.trim();
+    final asrModel = _asrModelController.text.trim().isEmpty
+        ? (_providerType == AudioProviderType.backplane
+            ? AudioSettings.defaultBackplaneAsrModel
+            : 'whisper-1')
+        : _asrModelController.text.trim();
+
     final settings = AudioSettings(
       providerType: _providerType,
-      baseUrl: _urlController.text.trim(),
+      baseUrl: baseUrl,
       accountId: _accountId,
       useDummyToken: _useDummyToken,
-      ttsModel: _ttsModelController.text.trim(),
+      ttsModel: ttsModel,
       ttsVoice: _ttsVoice,
       ttsSpeed: _ttsSpeed,
       ttsResponseFormat: _ttsFormat,
-      asrModel: _asrModelController.text.trim(),
+      asrModel: asrModel,
       asrLanguage: _asrLanguageController.text.trim().isEmpty
           ? null
           : _asrLanguageController.text.trim(),

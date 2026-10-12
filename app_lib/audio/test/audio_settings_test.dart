@@ -9,11 +9,11 @@ void main() {
       expect(settings.baseUrl, 'https://backplane.gsmlg.net/v1');
       expect(settings.accountId, isNull);
       expect(settings.useDummyToken, isFalse);
-      expect(settings.ttsModel, 'tts-1');
+      expect(settings.ttsModel, 'minimax-audio/speech-2.8-turbo');
       expect(settings.ttsVoice, 'alloy');
       expect(settings.ttsSpeed, 1.0);
       expect(settings.ttsResponseFormat, 'mp3');
-      expect(settings.asrModel, 'whisper-1');
+      expect(settings.asrModel, 'minimax-audio/asr-1.0');
       expect(settings.asrLanguage, isNull);
     });
 
@@ -51,11 +51,11 @@ void main() {
       final reconstructed = AudioSettings.fromJson(const {});
       expect(reconstructed.providerType, AudioProviderType.backplane);
       expect(reconstructed.baseUrl, 'https://backplane.gsmlg.net/v1');
-      expect(reconstructed.ttsModel, 'tts-1');
+      expect(reconstructed.ttsModel, 'minimax-audio/speech-2.8-turbo');
       expect(reconstructed.ttsVoice, 'alloy');
       expect(reconstructed.ttsSpeed, 1.0);
       expect(reconstructed.ttsResponseFormat, 'mp3');
-      expect(reconstructed.asrModel, 'whisper-1');
+      expect(reconstructed.asrModel, 'minimax-audio/asr-1.0');
       expect(reconstructed.asrLanguage, isNull);
     });
 

@@ -8,11 +8,11 @@ class AudioSettings extends Equatable {
     this.baseUrl = defaultBackplaneUrl,
     this.accountId,
     this.useDummyToken = false,
-    this.ttsModel = 'tts-1',
+    this.ttsModel = defaultBackplaneTtsModel,
     this.ttsVoice = 'alloy',
     this.ttsSpeed = 1.0,
     this.ttsResponseFormat = 'mp3',
-    this.asrModel = 'whisper-1',
+    this.asrModel = defaultBackplaneAsrModel,
     this.asrLanguage,
   });
 
@@ -28,6 +28,8 @@ class AudioSettings extends Equatable {
   final String? asrLanguage;
 
   static const defaultBackplaneUrl = 'https://backplane.gsmlg.net/v1';
+  static const defaultBackplaneTtsModel = 'minimax-audio/speech-2.8-turbo';
+  static const defaultBackplaneAsrModel = 'minimax-audio/asr-1.0';
 
   AudioSettings copyWith({
     AudioProviderType? providerType,
@@ -79,11 +81,11 @@ class AudioSettings extends Equatable {
       baseUrl: json['baseUrl'] as String? ?? defaultBackplaneUrl,
       accountId: json['accountId'] as int?,
       useDummyToken: json['useDummyToken'] as bool? ?? false,
-      ttsModel: json['ttsModel'] as String? ?? 'tts-1',
+      ttsModel: json['ttsModel'] as String? ?? defaultBackplaneTtsModel,
       ttsVoice: json['ttsVoice'] as String? ?? 'alloy',
       ttsSpeed: (json['ttsSpeed'] as num?)?.toDouble() ?? 1.0,
       ttsResponseFormat: json['ttsResponseFormat'] as String? ?? 'mp3',
-      asrModel: json['asrModel'] as String? ?? 'whisper-1',
+      asrModel: json['asrModel'] as String? ?? defaultBackplaneAsrModel,
       asrLanguage: json['asrLanguage'] as String?,
     );
   }

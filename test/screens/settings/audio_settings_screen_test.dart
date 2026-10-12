@@ -43,7 +43,10 @@ void main() {
       find.widgetWithText(TextField, 'https://backplane.gsmlg.net/v1'),
       findsOneWidget,
     );
-    expect(find.widgetWithText(TextField, 'tts-1'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextField, 'minimax-audio/speech-2.8-turbo'),
+      findsOneWidget,
+    );
     expect(
       find.widgetWithText(DropdownButton<String>, 'alloy'),
       findsOneWidget,
@@ -51,7 +54,10 @@ void main() {
     expect(find.byType(Slider), findsOneWidget);
     final slider = tester.widget<Slider>(find.byType(Slider));
     expect(slider.value, 1.0);
-    expect(find.widgetWithText(TextField, 'whisper-1'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextField, 'minimax-audio/asr-1.0'),
+      findsOneWidget,
+    );
     expect(find.byType(DropdownButton<int?>), findsOneWidget);
   });
 
@@ -85,7 +91,10 @@ void main() {
       expect(find.byType(DropdownButton<int?>), findsNothing);
 
       // Update TTS model
-      final ttsModelField = find.widgetWithText(TextField, 'tts-1');
+      final ttsModelField = find.widgetWithText(
+        TextField,
+        'minimax-audio/speech-2.8-turbo',
+      );
       await tester.enterText(ttsModelField, 'tts-1-hd');
 
       // Update TTS voice via dropdown
@@ -96,7 +105,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Update ASR model
-      final asrModelField = find.widgetWithText(TextField, 'whisper-1');
+      final asrModelField = find.widgetWithText(
+        TextField,
+        'minimax-audio/asr-1.0',
+      );
       await tester.enterText(asrModelField, 'whisper-large');
 
       // Update ASR language
@@ -177,12 +189,18 @@ void main() {
       find.widgetWithText(TextField, 'https://backplane.gsmlg.net/v1'),
       findsOneWidget,
     );
-    expect(find.widgetWithText(TextField, 'tts-1'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextField, 'minimax-audio/speech-2.8-turbo'),
+      findsOneWidget,
+    );
     expect(
       find.widgetWithText(DropdownButton<String>, 'alloy'),
       findsOneWidget,
     );
-    expect(find.widgetWithText(TextField, 'whisper-1'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextField, 'minimax-audio/asr-1.0'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('supports custom stored voice in dropdown', (tester) async {

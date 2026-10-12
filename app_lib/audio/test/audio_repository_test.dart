@@ -105,7 +105,7 @@ void main() {
             expect(request.headers['authorization'], 'Bearer token-abc');
 
             final body = jsonDecode(request.body) as Map<String, dynamic>;
-            expect(body['model'], 'tts-1');
+            expect(body['model'], 'minimax-audio/speech-2.8-turbo');
             expect(body['input'], 'Hello world');
             expect(body['voice'], 'alloy');
             expect(body['speed'], 1.0);
@@ -201,7 +201,7 @@ void main() {
 
             final body = request.body;
             expect(body, contains('name="model"'));
-            expect(body, contains('whisper-1'));
+            expect(body, contains('minimax-audio/asr-1.0'));
             expect(body, contains('name="response_format"'));
             expect(body, contains('json'));
             expect(body, contains('name="language"'));
