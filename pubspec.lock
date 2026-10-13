@@ -45,10 +45,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: "6c5bcd986e06b94e3c40244af471750840a3d2341d1f9763a1100a14add517b4"
+      sha256: f773153144ce0456ae77d96bd247f2efd58efe4f3e5ad42616d0385c031aea11
       url: "https://pub.dev"
     source: hosted
-    version: "4.3.0"
+    version: "4.5.1"
   args:
     dependency: transitive
     description:
@@ -260,10 +260,10 @@ packages:
     dependency: transitive
     description:
       name: camera_platform_interface
-      sha256: "9365babc7488a9e93d0ed6dcccd917619fb12ea6f9e601519e1191d4890ee2fe"
+      sha256: b3083b183ef1daa408d5f0c98c8c7ac0325b490695fb4557ff4210fcf04c5984
       url: "https://pub.dev"
     source: hosted
-    version: "2.14.0"
+    version: "2.15.0"
   camera_web:
     dependency: transitive
     description:
@@ -500,10 +500,10 @@ packages:
     dependency: transitive
     description:
       name: drift
-      sha256: a21a6a7a9e6a0bcabdf47a9af4247c556d38dc9bfe9f05c4fdf72a488bb57eab
+      sha256: ef9598e1785c18db37209e8554fc79aff94632209d384ec98984b9e3184af0f7
       url: "https://pub.dev"
     source: hosted
-    version: "2.35.1"
+    version: "2.35.2"
   drift_dev:
     dependency: transitive
     description:
@@ -524,90 +524,90 @@ packages:
     dependency: "direct main"
     description:
       name: duskmoon_adaptive_scaffold
-      sha256: a6752ad048b572ef99b3817c1b22142d05c95209c31daa081e9f17f1d649f2c2
+      sha256: "81f7f3e9e06be85f0184b0ea7a63d7624b31aed3d30335dd7616f18e1ae7ee0c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_code_engine:
     dependency: transitive
     description:
       name: duskmoon_code_engine
-      sha256: beb8bcbd086af1d369bfb43b92d39dbcbad2d2ba181676f6bd90a8d6f42049af
+      sha256: a300455f40d0c280cefff1bed1740d76c247b0405ee7af184e5af532796a9d61
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_feedback:
     dependency: transitive
     description:
       name: duskmoon_feedback
-      sha256: b9199e03ad6de15bd004c60b89605d10575fc60aef40a7cbf84b3e23aa38bbfe
+      sha256: "4350d2b07340a463b1ed3c07ee03aa3327e01fb60cf7c5907af9c54fbdd4e974"
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_form:
     dependency: "direct main"
     description:
       name: duskmoon_form
-      sha256: "95215f28f490ab5650b08c8b056002edb1c48d6904a9dd0d308dac40292d0e58"
+      sha256: "67b19fb0b28fe072824f547a0f3baf4db62233a8288a66dece7ade49da97d9f0"
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_mermaid_renderer:
     dependency: transitive
     description:
       name: duskmoon_mermaid_renderer
-      sha256: bab0040e4b3098297beaa3513368c824d7f1d59990fadd1b7d0d8abe682fb200
+      sha256: f5ce82e519afefe1775c5a0e763dfbacee327cffc22b0c5fa15c2c40d5a9df78
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_settings:
     dependency: "direct main"
     description:
       name: duskmoon_settings
-      sha256: af5c80a2d245f124199ad937854bc2f21d61bd914482feaf1c3f171b965be5d3
+      sha256: cd13e4056e1b858f4ad13d7b49fe40c3ea9bd69a8015e62c5eab17a96eebffa7
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_theme:
     dependency: transitive
     description:
       name: duskmoon_theme
-      sha256: "4860fb0e48339daa71e552f3460821f5943a430d091dac0bf4e2153d510ace9c"
+      sha256: "6c5e543afbe14a073f72915903c68ad1f6d51645f6c74c9af4e49e489a048283"
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_theme_bloc:
     dependency: transitive
     description:
       name: duskmoon_theme_bloc
-      sha256: "77c872c799e7021adb8b3e38d79c305e274a371a72856200f10e834c67ec6b98"
+      sha256: "9205bdddfa31ebd62ba6105c16fe48698e7af4b848bab266dfff8b4c0b90263b"
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_ui:
     dependency: "direct main"
     description:
       name: duskmoon_ui
-      sha256: "6ab94042290b775c1cb59c1548d393bfbe7737dd2abde2bb0a75d589cc905204"
+      sha256: ddc979fea208e7d34c5ddddcd74df9f07d072e4328981a04523091acb1c33c30
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_visualization:
     dependency: "direct main"
     description:
       name: duskmoon_visualization
-      sha256: eadd18ff75b4fdf1db477fc16af2bac1caa54c2823de835e42775f96f15a9db2
+      sha256: "838df45d05af83f29262a3d487f2bf4ac3966df7952428f13fbe8287013a238c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   duskmoon_widgets:
     dependency: transitive
     description:
       name: duskmoon_widgets
-      sha256: a09839e50a7af68b1802cbec55c578635983c83248548607f68aeeef27e458f2
+      sha256: f62d6f9d6b1c815cd3e66b4a60993b8e15cb611497323bf8bba874dc5ed1e7ff
       url: "https://pub.dev"
     source: hosted
-    version: "1.11.0"
+    version: "1.11.1"
   equatable:
     dependency: "direct main"
     description:
@@ -676,10 +676,10 @@ packages:
     dependency: transitive
     description:
       name: file_picker_darwin
-      sha256: "51aef9f4c80449c736e7cc02198675fda73689f0bd45a84da642cfeab0250d46"
+      sha256: cd4b60bdba061ca5a6cede9141cb6816707eace5618ee469b5f46511eba7897b
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.2"
+    version: "2.2.0"
   file_picker_linux:
     dependency: transitive
     description:
@@ -692,18 +692,18 @@ packages:
     dependency: transitive
     description:
       name: file_picker_platform_interface
-      sha256: bbdc085a6f168e63f147e9ce8988f79fa0800a58e7f25a48f762c60837107ba5
+      sha256: a78bd8ec992ae34ce32f57157422bd532967510d2ebb6fc251756472bbde7160
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.0"
+    version: "4.1.0"
   file_picker_web:
     dependency: transitive
     description:
       name: file_picker_web
-      sha256: "8d69eb18de3c028a49276d6ca317028a1f39fa17c3ec312e132bac8659c8775e"
+      sha256: "32af8262aca907b02b8970b32328b0312db0b42ba6f930be6d27fde179d59b7d"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.1"
+    version: "4.1.0"
   file_selector:
     dependency: "direct main"
     description:
@@ -849,10 +849,10 @@ packages:
     dependency: transitive
     description:
       name: flutter_blue_plus_winrt
-      sha256: "0000b2d818e6f79ad07764206fdd8afb69426fd44453c6254c35828fd16aa09f"
+      sha256: f98bc9182d13d3eb02dfa033568b46dca97f6e2c2cc292705fa53279d07db421
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.20"
+    version: "0.0.22"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -1656,10 +1656,10 @@ packages:
     dependency: "direct main"
     description:
       name: record
-      sha256: "82539d1372e23cf51375fdfcba084f39912bcbf9a953b75d56596691f8f11c0f"
+      sha256: "7c4467dec63435c9206db183f8a4672cf8a62f5e5579e45803ceada8330756e7"
       url: "https://pub.dev"
     source: hosted
-    version: "7.1.1"
+    version: "7.1.2"
   record_android:
     dependency: transitive
     description:
@@ -1680,10 +1680,10 @@ packages:
     dependency: transitive
     description:
       name: record_linux
-      sha256: "766b3ebad3a318a42e06a5924f7eaf4d7e792f9b152d1d749f5b12c2a64bcef5"
+      sha256: "00c847ba25684572674dacfbd4bcabee6c5d9a1fa948778ff34091c71c19250f"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.2"
+    version: "2.1.3"
   record_macos:
     dependency: transitive
     description:

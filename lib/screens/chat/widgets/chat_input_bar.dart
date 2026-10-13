@@ -6,6 +6,7 @@ import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:gsmlg/duo/duo_controller.dart';
 import 'package:record/record.dart';
 
 import 'system_metrics_indicator.dart';
@@ -76,11 +77,51 @@ class _ChatInputBarState extends State<ChatInputBar> {
   final List<DmChatAttachment> _pendingAttachments = [];
   bool _isRecording = false;
   int _inputTokenCount = 0;
+  bool _relayToSecondary = true;
+
+  bool get _isDuoConnected {
+    final duo = DuoDisplayManager.instance;
+    return duo != null && !duo.secondary && duo.connected;
+  }
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_onTextChanged);
+    _setupDuoRelay();
+  }
+
+  void _setupDuoRelay() {
+    final duo = DuoDisplayManager.instance;
+    if (duo == null || duo.secondary) return;
+
+    duo.addListener(_onDuoStateChanged);
+
+    duo.onTextInput = (text) {
+      if (mounted && _controller.text != text) {
+        _controller.value = TextEditingValue(
+          text: text,
+          selection: TextSelection.collapsed(offset: text.length),
+        );
+      }
+    };
+
+    duo.onTextSubmit = (text) {
+      if (mounted) {
+        _handleSend(text, _pendingAttachments);
+        _controller.clear();
+      }
+    };
+
+    duo.onEscKey = () {
+      if (mounted && widget.isStreaming) {
+        widget.onStop();
+      }
+    };
+  }
+
+  void _onDuoStateChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onTextChanged() {
@@ -90,6 +131,10 @@ class _ChatInputBarState extends State<ChatInputBar> {
       setState(() {
         _inputTokenCount = tokens;
       });
+    }
+    final duo = DuoDisplayManager.instance;
+    if (duo != null && !duo.secondary && duo.connected) {
+      duo.syncPrimaryText(text);
     }
   }
 
@@ -299,6 +344,13 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   @override
   void dispose() {
+    final duo = DuoDisplayManager.instance;
+    if (duo != null) {
+      duo.removeListener(_onDuoStateChanged);
+      if (duo.onTextInput != null) duo.onTextInput = null;
+      if (duo.onTextSubmit != null) duo.onTextSubmit = null;
+      if (duo.onEscKey != null) duo.onEscKey = null;
+    }
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _recorder.dispose();
@@ -338,6 +390,27 @@ class _ChatInputBarState extends State<ChatInputBar> {
       alignment: WrapAlignment.end,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        if (_isDuoConnected)
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _relayToSecondary = !_relayToSecondary;
+              });
+            },
+            icon: Icon(
+              _relayToSecondary
+                  ? Icons.keyboard_alt_outlined
+                  : Icons.keyboard_outlined,
+              size: 18,
+              color: _relayToSecondary
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            tooltip: _relayToSecondary
+                ? 'Keyboard relayed to Display 6. Tap to type here.'
+                : 'Keyboard on Display 0. Tap to relay to Display 6.',
+            visualDensity: VisualDensity.compact,
+          ),
         const SystemMetricsIndicator(compact: true),
         ?selectionControl,
       ],
@@ -355,9 +428,11 @@ class _ChatInputBarState extends State<ChatInputBar> {
       onRemoveAttachment: _removeAttachment,
       placeholder: _isRecording
           ? 'Recording...'
-          : widget.enabled
-          ? 'Type a message...'
-          : 'Model not ready',
+          : !widget.enabled
+          ? 'Model not ready'
+          : (_isDuoConnected && _relayToSecondary)
+          ? 'Tap here to type on Display 6...'
+          : 'Type a message...',
       minLines: 1,
       maxLines: 6,
       submitShortcut: DmChatSubmitShortcut.cmdEnter,
@@ -407,11 +482,19 @@ class _ChatInputBarState extends State<ChatInputBar> {
     final inputWidget = Stack(
       clipBehavior: Clip.none,
       children: [
-        IgnorePointer(
-          ignoring: showOverlay,
-          child: Opacity(
-            opacity: widget.enabled || widget.isStreaming ? 1 : 0.62,
-            child: input,
+        Focus(
+          onFocusChange: (hasFocus) {
+            if (hasFocus && _isDuoConnected && _relayToSecondary) {
+              FocusManager.instance.primaryFocus?.unfocus();
+              DuoDisplayManager.instance?.requestSecondaryFocus();
+            }
+          },
+          child: IgnorePointer(
+            ignoring: showOverlay,
+            child: Opacity(
+              opacity: widget.enabled || widget.isStreaming ? 1 : 0.62,
+              child: input,
+            ),
           ),
         ),
         if (showOverlay)

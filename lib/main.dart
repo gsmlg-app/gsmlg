@@ -11,6 +11,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'duo/secondary_app.dart';
+
+@pragma('vm:entry-point')
+void secondaryDisplayMain() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const DuoCompanionApp());
+}
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();

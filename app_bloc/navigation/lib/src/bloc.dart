@@ -9,6 +9,7 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
   NavigationBloc() : super(const NavigationState()) {
     on<NavigationVisibilityChanged>(_onVisibilityChanged);
     on<NavigationRailExtendedChanged>(_onRailExtendedChanged);
+    on<NavigationDuoConnectionChanged>(_onDuoConnectionChanged);
   }
 
   void _onVisibilityChanged(
@@ -23,5 +24,12 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
     Emitter<NavigationState> emit,
   ) {
     emit(state.copyWith(isExtended: event.extended));
+  }
+
+  void _onDuoConnectionChanged(
+    NavigationDuoConnectionChanged event,
+    Emitter<NavigationState> emit,
+  ) {
+    emit(state.copyWith(isDuoConnected: event.isConnected));
   }
 }

@@ -233,6 +233,14 @@ class AppAdaptiveScaffold extends StatefulWidget {
   /// Icon to display when the navigation rail can be expanded.
   final IconData expandIcon;
 
+  /// The Duo screen policy for dual-screen and foldable devices.
+  final DuoScreenPolicy? duoScreenPolicy;
+
+  /// The Duo screen role (single, primary, secondary).
+  /// When null, defaults to [DuoScreenRole.primary] if [NavigationState.isDuoConnected]
+  /// is true, otherwise [DuoScreenRole.single].
+  final DuoScreenRole? duoScreenRole;
+
   const AppAdaptiveScaffold({
     super.key,
     required this.destinations,
@@ -278,6 +286,8 @@ class AppAdaptiveScaffold extends StatefulWidget {
     this.showCollapseToggle = true,
     this.collapseIcon = Icons.chevron_left,
     this.expandIcon = Icons.chevron_right,
+    this.duoScreenPolicy,
+    this.duoScreenRole,
   });
 
   @override
@@ -388,6 +398,14 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
         showCollapseToggle: widget.showCollapseToggle,
         collapseIcon: widget.collapseIcon,
         expandIcon: widget.expandIcon,
+        duoScreenRole: widget.duoScreenRole ??
+            ((navigationState?.isDuoConnected ?? false)
+                ? DuoScreenRole.primary
+                : DuoScreenRole.single),
+        duoScreenPolicy: widget.duoScreenPolicy ??
+            ((navigationState?.isDuoConnected ?? false)
+                ? DuoScreenPolicy.navigationOnSecondary
+                : DuoScreenPolicy.splitBody),
       ),
     );
   }

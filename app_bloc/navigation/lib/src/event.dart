@@ -25,3 +25,12 @@ final class NavigationRailExtendedChanged extends NavigationEvent {
   @override
   List<Object?> get props => [extended];
 }
+
+final class NavigationDuoConnectionChanged extends NavigationEvent {
+  const NavigationDuoConnectionChanged(this.isConnected);
+
+  final bool isConnected;
+
+  @override
+  List<Object?> get props => [isConnected];
+}
