@@ -1,6 +1,11 @@
+import 'dart:io';
+
+import 'package:app_chat/app_chat.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:record/record.dart';
 
 import 'duo_controller.dart';
 
@@ -88,9 +93,12 @@ class DuoCompanionScaffold extends StatefulWidget {
 class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
   final TextEditingController _inputController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final List<ChatAttachment> _pendingAttachments = [];
+  final AudioRecorder _recorder = AudioRecorder();
 
   bool _ctrlActive = false;
   bool _altActive = false;
+  bool _isRecording = false;
 
   static const _quickSymbols = [
     '/',
@@ -155,7 +163,125 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
     widget.manager.onRequestFocus = null;
     _inputController.dispose();
     _focusNode.dispose();
+    _recorder.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAttachments() async {
+    final files = await FilePicker.pickFiles();
+    if (files.isEmpty) return;
+
+    final picked = <ChatAttachment>[];
+    for (final file in files) {
+      Uint8List? bytes;
+      int? size;
+      try {
+        bytes = await file.readAsBytes();
+        size = await file.length();
+      } catch (_) {}
+      if (bytes != null) {
+        final dot = file.name.lastIndexOf('.');
+        final ext = dot != -1 && dot < file.name.length - 1
+            ? file.name.substring(dot + 1)
+            : null;
+        picked.add(
+          ChatAttachment(
+            id: '${file.name}:${DateTime.now().microsecondsSinceEpoch}',
+            name: file.name,
+            sizeBytes: size ?? bytes.length,
+            mimeType: _mimeTypeFor(file.name, ext),
+            bytes: bytes,
+          ),
+        );
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _pendingAttachments.addAll(picked);
+      });
+    }
+  }
+
+  String? _mimeTypeFor(String name, String? extension) {
+    final ext =
+        (extension ?? (name.contains('.') ? name.split('.').last : ''))
+            .toLowerCase();
+    return switch (ext) {
+      'png' => 'image/png',
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'gif' => 'image/gif',
+      'webp' => 'image/webp',
+      'wav' => 'audio/wav',
+      'mp3' => 'audio/mpeg',
+      'm4a' => 'audio/mp4',
+      'txt' => 'text/plain',
+      'json' => 'application/json',
+      'pdf' => 'application/pdf',
+      _ => null,
+    };
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      final path = await _recorder.stop();
+      if (path != null) {
+        final file = File(path);
+        if (await file.exists()) {
+          final bytes = await file.readAsBytes();
+          if (mounted) {
+            setState(() {
+              _pendingAttachments.add(
+                ChatAttachment(
+                  id: 'audio:${DateTime.now().microsecondsSinceEpoch}',
+                  name: 'recording.wav',
+                  sizeBytes: bytes.length,
+                  mimeType: 'audio/wav',
+                  bytes: bytes,
+                ),
+              );
+              _isRecording = false;
+            });
+          }
+          try {
+            await file.delete();
+          } catch (_) {}
+        } else {
+          if (mounted) setState(() => _isRecording = false);
+        }
+      } else {
+        if (mounted) setState(() => _isRecording = false);
+      }
+    } else {
+      if (await _recorder.hasPermission()) {
+        await _recorder.start(
+          const RecordConfig(encoder: AudioEncoder.wav),
+          path: '${Directory.systemTemp.path}/duo_chat_audio.wav',
+        );
+        if (mounted) setState(() => _isRecording = true);
+      }
+    }
+  }
+
+  void _submitChat() {
+    final chatState = widget.manager.chatState;
+    if (chatState?.isStreaming == true) {
+      widget.manager.sendChatStop();
+      return;
+    }
+
+    final text = _inputController.text.trim();
+    if (text.isEmpty && _pendingAttachments.isEmpty) return;
+
+    widget.manager.sendChatSend(
+      text,
+      attachments: List.of(_pendingAttachments),
+    );
+
+    _inputController.clear();
+    setState(() {
+      _pendingAttachments.clear();
+    });
   }
 
   void _insertSymbol(String sym) {
@@ -185,6 +311,10 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
   }
 
   void _handleEsc() {
+    if (widget.manager.chatState?.isStreaming == true) {
+      widget.manager.sendChatStop();
+      return;
+    }
     if (_ctrlActive || _altActive) {
       setState(() {
         _ctrlActive = false;
@@ -414,8 +544,13 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
           children: [
             const Icon(Icons.gamepad_outlined, size: 22),
             const SizedBox(width: 8),
-            const Text('GSMLG Companion Controller'),
-            const Spacer(),
+            const Expanded(
+              child: Text(
+                'GSMLG Companion Controller',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -453,11 +588,24 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
       onSelectedIndexChange: (idx) {
         widget.manager.sendSecondaryIntent(action: 'select', index: idx);
       },
+      body: (_) => _buildControlCenter(context),
+      smallSecondaryBody: (_) => _buildControlCenter(context),
       secondaryBody: (_) => _buildControlCenter(context),
     );
   }
 
   Widget _buildControlCenter(BuildContext context) {
+    final isChatRoute = widget.manager.chatState != null ||
+        widget.manager.currentRoute.startsWith('/chat') ||
+        widget.manager.currentRoute.startsWith('/home') ||
+        (widget.manager.selectedIndex == 0 &&
+            !widget.manager.currentRoute.startsWith('/service') &&
+            !widget.manager.currentRoute.startsWith('/toolbox') &&
+            !widget.manager.currentRoute.startsWith('/settings'));
+    if (isChatRoute) {
+      return _buildChatCompanionPad(context);
+    }
+
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final currentNav = DuoCompanionScaffold._navItems[widget.manager.selectedIndex
@@ -669,6 +817,340 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
           ),
           const SizedBox(height: 8),
           _buildInputRelaySection(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAgentSelector(BuildContext context, DuoChatState? chatState) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final activeAgentName = chatState?.activeAgentName ?? 'Select Agent';
+    final agents = chatState?.agents ?? const [];
+
+    return PopupMenuButton<String>(
+      tooltip: 'Select AI Agent',
+      enabled: agents.isNotEmpty,
+      onSelected: (agentId) {
+        widget.manager.sendChatSelectAgent(agentId);
+      },
+      itemBuilder: (context) => [
+        for (final agent in agents)
+          PopupMenuItem<String>(
+            value: agent.id,
+            child: Row(
+              children: [
+                Icon(
+                  agent.id == chatState?.activeAgentId
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  size: 16,
+                  color: agent.id == chatState?.activeAgentId
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    agent.name,
+                    style: TextStyle(
+                      fontWeight: agent.id == chatState?.activeAgentId
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.smart_toy_outlined, size: 16, color: colorScheme.primary),
+            const SizedBox(width: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 130),
+              child: Text(
+                activeAgentName,
+                style: textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChatCompanionPad(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final chatState = widget.manager.chatState;
+    final isStreaming = chatState?.isStreaming ?? false;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1. Top bar: Agent Selector, Token count, Model badge, Clear draft
+          Row(
+            children: [
+              _buildAgentSelector(context, chatState),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.6,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.toll_outlined,
+                      size: 13,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '~${(chatState?.historyTokens ?? 0) + ((_inputController.text.length) / 4).round()} tokens',
+                      style: textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (chatState?.modelName != null) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    chatState!.modelName!,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ] else
+                const Spacer(),
+              if (_inputController.text.isNotEmpty ||
+                  _pendingAttachments.isNotEmpty)
+                TextButton(
+                  onPressed: () {
+                    _inputController.clear();
+                    setState(() {
+                      _pendingAttachments.clear();
+                    });
+                    widget.manager.sendTextInput('');
+                  },
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: colorScheme.error,
+                  ),
+                  child: const Text('Clear'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          // 2. Pending Attachments list
+          if (_pendingAttachments.isNotEmpty) ...[
+            SizedBox(
+              height: 40,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _pendingAttachments.length,
+                separatorBuilder: (_, index) => const SizedBox(width: 6),
+                itemBuilder: (context, index) {
+                  final att = _pendingAttachments[index];
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          att.isImage
+                              ? Icons.image
+                              : (att.isAudio
+                                  ? Icons.audiotrack
+                                  : Icons.insert_drive_file),
+                          size: 16,
+                          color: colorScheme.onSecondaryContainer,
+                        ),
+                        const SizedBox(width: 6),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 120),
+                          child: Text(
+                            att.name,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSecondaryContainer,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              _pendingAttachments.removeAt(index);
+                            });
+                          },
+                          child: Icon(
+                            Icons.close,
+                            size: 14,
+                            color: colorScheme.onSecondaryContainer,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 6),
+          ],
+
+          // 3. Multiline Input Text Area
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.4,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _focusNode.hasFocus
+                      ? colorScheme.primary
+                      : colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  width: _focusNode.hasFocus ? 1.5 : 1.0,
+                ),
+              ),
+              child: TextField(
+                controller: _inputController,
+                focusNode: _focusNode,
+                maxLines: null,
+                expands: true,
+                textAlignVertical: TextAlignVertical.top,
+                style: textTheme.bodyMedium,
+                onChanged: (text) {
+                  widget.manager.sendTextInput(text);
+                },
+                decoration: InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  hintText: isStreaming
+                      ? 'Display 0 is generating... Tap Stop or ESC to cancel.'
+                      : 'Type a message to Display 0...',
+                  hintStyle: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // 4. Tools & Extra Keys Bar
+          Row(
+            children: [
+              IconButton(
+                onPressed: _pickAttachments,
+                icon: const Icon(Icons.attach_file, size: 20),
+                tooltip: 'Attach file',
+                visualDensity: VisualDensity.compact,
+              ),
+              IconButton(
+                onPressed: _toggleRecording,
+                icon: Icon(
+                  _isRecording ? Icons.stop_circle : Icons.mic,
+                  color: _isRecording ? colorScheme.error : null,
+                  size: 20,
+                ),
+                tooltip: _isRecording ? 'Stop recording' : 'Record audio',
+                visualDensity: VisualDensity.compact,
+              ),
+              Container(
+                height: 20,
+                width: 1,
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+              Expanded(
+                child: _buildExtraKeysBar(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          // 5. Send / Stop Action Button Bar
+          Row(
+            children: [
+              if (_focusNode.hasFocus)
+                TextButton.icon(
+                  onPressed: () => _focusNode.unfocus(),
+                  icon: const Icon(Icons.keyboard_hide, size: 16),
+                  label: const Text('Hide Keyboard'),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              const Spacer(),
+              if (isStreaming)
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.error,
+                    foregroundColor: colorScheme.onError,
+                  ),
+                  onPressed: () => widget.manager.sendChatStop(),
+                  icon: const Icon(Icons.stop_rounded, size: 18),
+                  label: const Text('Stop Generation (ESC)'),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: (chatState?.canSend != false &&
+                          (_inputController.text.trim().isNotEmpty ||
+                              _pendingAttachments.isNotEmpty))
+                      ? _submitChat
+                      : null,
+                  icon: const Icon(Icons.send_rounded, size: 18),
+                  label: const Text('Send to Display 0'),
+                ),
+            ],
+          ),
         ],
       ),
     );

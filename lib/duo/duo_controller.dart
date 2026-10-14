@@ -3,10 +3,130 @@ import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui';
 
+import 'package:app_chat/app_chat.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 const secondaryRouteName = 'secondaryDisplayMain';
+
+/// Represents an agent option for dual-screen chat coordination.
+class DuoChatAgent {
+  const DuoChatAgent({required this.id, required this.name});
+  final String id;
+  final String name;
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
+  factory DuoChatAgent.fromJson(Map<String, dynamic> json) =>
+      DuoChatAgent(id: json['id'] as String, name: json['name'] as String);
+}
+
+/// Serializable attachment data for cross-isolate transfer.
+class DuoChatAttachmentData {
+  const DuoChatAttachmentData({
+    required this.id,
+    required this.name,
+    this.sizeBytes,
+    this.mimeType,
+    this.base64Bytes,
+  });
+
+  final String id;
+  final String name;
+  final int? sizeBytes;
+  final String? mimeType;
+  final String? base64Bytes;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    if (sizeBytes != null) 'sizeBytes': sizeBytes,
+    if (mimeType != null) 'mimeType': mimeType,
+    if (base64Bytes != null) 'base64Bytes': base64Bytes,
+  };
+
+  factory DuoChatAttachmentData.fromJson(Map<String, dynamic> json) =>
+      DuoChatAttachmentData(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        sizeBytes: json['sizeBytes'] as int?,
+        mimeType: json['mimeType'] as String?,
+        base64Bytes: json['base64Bytes'] as String?,
+      );
+
+  ChatAttachment toChatAttachment() {
+    return ChatAttachment(
+      id: id,
+      name: name,
+      sizeBytes: sizeBytes,
+      mimeType: mimeType,
+      bytes: base64Bytes != null ? base64Decode(base64Bytes!) : null,
+    );
+  }
+
+  static DuoChatAttachmentData fromChatAttachment(ChatAttachment attachment) {
+    return DuoChatAttachmentData(
+      id: attachment.id,
+      name: attachment.name,
+      sizeBytes: attachment.sizeBytes,
+      mimeType: attachment.mimeType,
+      base64Bytes:
+          attachment.bytes != null ? base64Encode(attachment.bytes!) : null,
+    );
+  }
+}
+
+/// Chat state synchronized from Primary Display to Secondary Display.
+class DuoChatState {
+  const DuoChatState({
+    this.isStreaming = false,
+    this.canSend = true,
+    this.modelName,
+    this.activeAgentName,
+    this.activeAgentId,
+    this.agents = const [],
+    this.supportsImage = false,
+    this.supportsAudio = false,
+    this.historyTokens = 0,
+  });
+
+  final bool isStreaming;
+  final bool canSend;
+  final String? modelName;
+  final String? activeAgentName;
+  final String? activeAgentId;
+  final List<DuoChatAgent> agents;
+  final bool supportsImage;
+  final bool supportsAudio;
+  final int historyTokens;
+
+  Map<String, dynamic> toJson() => {
+    'isStreaming': isStreaming,
+    'canSend': canSend,
+    if (modelName != null) 'modelName': modelName,
+    if (activeAgentName != null) 'activeAgentName': activeAgentName,
+    if (activeAgentId != null) 'activeAgentId': activeAgentId,
+    'agents': agents.map((a) => a.toJson()).toList(),
+    'supportsImage': supportsImage,
+    'supportsAudio': supportsAudio,
+    'historyTokens': historyTokens,
+  };
+
+  factory DuoChatState.fromJson(Map<String, dynamic> json) => DuoChatState(
+    isStreaming: json['isStreaming'] as bool? ?? false,
+    canSend: json['canSend'] as bool? ?? true,
+    modelName: json['modelName'] as String?,
+    activeAgentName: json['activeAgentName'] as String?,
+    activeAgentId: json['activeAgentId'] as String?,
+    agents:
+        (json['agents'] as List<dynamic>?)
+            ?.map((a) => DuoChatAgent.fromJson(a as Map<String, dynamic>))
+            .toList() ??
+        const [],
+    supportsImage: json['supportsImage'] as bool? ?? false,
+    supportsAudio: json['supportsAudio'] as bool? ?? false,
+    historyTokens: json['historyTokens'] as int? ?? 0,
+  );
+}
 
 /// Platform channel interface for Android secondary presentation displays.
 abstract interface class DuoDisplayPlatform {
@@ -172,6 +292,14 @@ class DuoDisplayManager extends ChangeNotifier {
   VoidCallback? onRequestFocus;
   VoidCallback? onEscKey;
 
+  /// Chat relay callbacks (Primary engine)
+  void Function(String text, {List<ChatAttachment>? attachments})? onChatSend;
+  VoidCallback? onChatStop;
+  void Function(String agentId)? onChatSelectAgent;
+
+  DuoChatState? _chatState;
+  DuoChatState? get chatState => _chatState;
+
   void start() {
     bridge.start();
     _bridgeSub = bridge.messages.listen(_handleBridgeMessage);
@@ -229,6 +357,19 @@ class DuoDisplayManager extends ChangeNotifier {
         'selectedIndex': _selectedIndex,
         'currentRoute': _currentRoute,
         'isDark': _isDark,
+        if (_chatState != null) 'chatState': _chatState!.toJson(),
+      }));
+    }
+  }
+
+  void updateChatState(DuoChatState? state) {
+    if (secondary) return;
+    _chatState = state;
+    notifyListeners();
+    if (_connected) {
+      bridge.send(jsonEncode({
+        'type': 'chat_state',
+        'state': state?.toJson(),
       }));
     }
   }
@@ -260,6 +401,33 @@ class DuoDisplayManager extends ChangeNotifier {
     bridge.send(jsonEncode({
       'type': 'text_submit',
       'text': text,
+    }));
+  }
+
+  void sendChatSend(String text, {List<ChatAttachment>? attachments}) {
+    if (!secondary) return;
+    bridge.send(jsonEncode({
+      'type': 'chat_send',
+      'text': text,
+      if (attachments != null)
+        'attachments': attachments
+            .map((a) => DuoChatAttachmentData.fromChatAttachment(a).toJson())
+            .toList(),
+    }));
+  }
+
+  void sendChatStop() {
+    if (!secondary) return;
+    bridge.send(jsonEncode({
+      'type': 'chat_stop',
+    }));
+  }
+
+  void sendChatSelectAgent(String agentId) {
+    if (!secondary) return;
+    bridge.send(jsonEncode({
+      'type': 'chat_select_agent',
+      'agentId': agentId,
     }));
   }
 
@@ -301,10 +469,20 @@ class DuoDisplayManager extends ChangeNotifier {
           if (map.containsKey('isDark')) {
             _isDark = map['isDark'] as bool;
           }
+          if (map.containsKey('chatState') && map['chatState'] != null) {
+            _chatState = DuoChatState.fromJson(
+              map['chatState'] as Map<String, dynamic>,
+            );
+          }
           notifyListeners();
           if (type == 'welcome') {
             bridge.send(jsonEncode({'type': 'ready'}));
           }
+        } else if (type == 'chat_state') {
+          _chatState = map['state'] != null
+              ? DuoChatState.fromJson(map['state'] as Map<String, dynamic>)
+              : null;
+          notifyListeners();
         } else if (type == 'text_sync' && map.containsKey('text')) {
           onTextSync?.call(map['text'] as String);
         } else if (type == 'request_focus') {
@@ -318,6 +496,7 @@ class DuoDisplayManager extends ChangeNotifier {
             'selectedIndex': _selectedIndex,
             'currentRoute': _currentRoute,
             'isDark': _isDark,
+            if (_chatState != null) 'chatState': _chatState!.toJson(),
           }));
         } else if (type == 'ready') {
           _setConnected(true);
@@ -344,6 +523,27 @@ class DuoDisplayManager extends ChangeNotifier {
           } else {
             onFallbackTextSubmit?.call(text);
           }
+        } else if (type == 'chat_send') {
+          final text = map['text'] as String? ?? '';
+          final rawAttachments = map['attachments'] as List<dynamic>?;
+          final attachments = rawAttachments
+              ?.map(
+                (a) => DuoChatAttachmentData.fromJson(
+                  a as Map<String, dynamic>,
+                ).toChatAttachment(),
+              )
+              .toList();
+          if (onChatSend != null) {
+            onChatSend!(text, attachments: attachments);
+          } else if (onTextSubmit != null) {
+            onTextSubmit!(text);
+          } else {
+            onFallbackTextSubmit?.call(text);
+          }
+        } else if (type == 'chat_stop') {
+          onChatStop?.call();
+        } else if (type == 'chat_select_agent' && map.containsKey('agentId')) {
+          onChatSelectAgent?.call(map['agentId'] as String);
         }
       }
     } catch (_) {}

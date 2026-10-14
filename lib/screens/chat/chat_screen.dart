@@ -7,6 +7,7 @@ import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
+import 'package:gsmlg/duo/duo_controller.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
 
 import 'chat_history_screen.dart';
@@ -27,9 +28,20 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  bool get _isDuoConnected {
+    final duo = DuoDisplayManager.instance;
+    return duo != null && !duo.secondary && duo.connected;
+  }
+
   @override
   void initState() {
     super.initState();
+    final duo = DuoDisplayManager.instance;
+    if (duo != null && !duo.secondary) {
+      duo.addListener(_onDuoStateChanged);
+      _setupDuoHandlers(duo);
+    }
+
     // Initialize model and load settings
     final settingsBloc = context.read<ChatSettingsBloc>();
     final modelBloc = context.read<GemmaModelBloc>();
@@ -42,6 +54,59 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Load conversation history
     context.read<ChatBloc>().add(const ChatLoadHistory());
+  }
+
+  @override
+  void dispose() {
+    final duo = DuoDisplayManager.instance;
+    if (duo != null && !duo.secondary) {
+      duo.removeListener(_onDuoStateChanged);
+      if (duo.onChatSend != null) duo.onChatSend = null;
+      if (duo.onChatStop != null) duo.onChatStop = null;
+      if (duo.onChatSelectAgent != null) duo.onChatSelectAgent = null;
+      if (duo.onEscKey != null) duo.onEscKey = null;
+      duo.updateChatState(null);
+    }
+    super.dispose();
+  }
+
+  void _onDuoStateChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _setupDuoHandlers(DuoDisplayManager duo) {
+    duo.onChatSend = (text, {attachments}) {
+      if (!mounted) return;
+      final settingsState = context.read<ChatSettingsBloc>().state;
+      final chatState = context.read<ChatBloc>().state;
+      if (chatState.isStreaming) return;
+      _sendMessage(
+        settingsState,
+        chatState,
+        text,
+        attachments: attachments ?? const [],
+      );
+    };
+
+    duo.onChatStop = () {
+      if (!mounted) return;
+      context.read<ChatBloc>().add(const ChatStopGeneration());
+    };
+
+    duo.onChatSelectAgent = (agentId) {
+      if (!mounted) return;
+      context.read<ChatSettingsBloc>().add(
+        ChatSettingsSelectAgent(id: agentId),
+      );
+    };
+
+    duo.onEscKey = () {
+      if (!mounted) return;
+      final chatState = context.read<ChatBloc>().state;
+      if (chatState.isStreaming) {
+        context.read<ChatBloc>().add(const ChatStopGeneration());
+      }
+    };
   }
 
   void _startNewConversation() {
@@ -153,6 +218,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
               builder: (context, settingsState) {
+                if (_isDuoConnected) {
+                  return _buildDuoFloatingCapsule(context, settingsState);
+                }
                 if (settingsState.config.inferenceMode ==
                     ChatInferenceMode.remote) {
                   return _buildRemoteInputBar(settingsState);
@@ -345,6 +413,189 @@ class _ChatScreenState extends State<ChatScreen> {
         audioBytes: audioBytes,
         attachments: attachments,
       ),
+    );
+  }
+
+  void _syncDuoChatState({
+    required ChatSettingsState settingsState,
+    required GemmaModelState modelState,
+    required ChatState chatState,
+  }) {
+    final duo = DuoDisplayManager.instance;
+    if (duo == null || duo.secondary || !duo.connected) return;
+
+    final isRemote =
+        settingsState.config.inferenceMode == ChatInferenceMode.remote;
+    final modelName = isRemote
+        ? settingsState.config.remoteModel
+        : _localModelDisplayName(settingsState, modelState);
+
+    final canSend =
+        (isRemote
+            ? settingsState.config.isRemoteConfigured
+            : (modelState.status == GemmaModelStatus.ready)) &&
+        chatState.canSendMessage;
+
+    final gemmaModelInfo = modelState.selectedModelId != null
+        ? GemmaModelInfo.findById(modelState.selectedModelId!)
+        : null;
+
+    final duoState = DuoChatState(
+      isStreaming: chatState.isStreaming,
+      canSend: canSend,
+      modelName: modelName,
+      activeAgentName:
+          settingsState.activeAgent?.name ?? modelName ?? 'Assistant',
+      activeAgentId: settingsState.activeAgentId,
+      agents: settingsState.agents
+          .map((a) => DuoChatAgent(id: a.id, name: a.name))
+          .toList(),
+      supportsImage: isRemote
+          ? true
+          : (gemmaModelInfo?.effectiveSupportsMultimodal ?? false),
+      supportsAudio: isRemote
+          ? false
+          : (gemmaModelInfo?.effectiveSupportsAudio ?? false),
+      historyTokens: _calculateHistoryTokens(chatState.conversation),
+    );
+
+    duo.updateChatState(duoState);
+  }
+
+  Widget _buildDuoFloatingCapsule(
+    BuildContext context,
+    ChatSettingsState settingsState,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return BlocBuilder<GemmaModelBloc, GemmaModelState>(
+      builder: (context, modelState) {
+        return BlocBuilder<ChatBloc, ChatState>(
+          builder: (context, chatState) {
+            _syncDuoChatState(
+              settingsState: settingsState,
+              modelState: modelState,
+              chatState: chatState,
+            );
+
+            final isRemote =
+                settingsState.config.inferenceMode == ChatInferenceMode.remote;
+            final modelName = isRemote
+                ? settingsState.config.remoteModel
+                : _localModelDisplayName(settingsState, modelState);
+            final agentName =
+                settingsState.activeAgent?.name ?? modelName ?? 'Assistant';
+
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Center(
+                  child: Material(
+                    elevation: 2,
+                    shadowColor: colorScheme.shadow.withValues(alpha: 0.15),
+                    color: colorScheme.surfaceContainerHigh,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      side: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () {
+                        DuoDisplayManager.instance?.requestSecondaryFocus();
+                      },
+                      borderRadius: BorderRadius.circular(24),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (chatState.isStreaming) ...[
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '$agentName generating...',
+                                style: textTheme.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                constraints: const BoxConstraints(
+                                  minWidth: 24,
+                                  minHeight: 24,
+                                ),
+                                padding: EdgeInsets.zero,
+                                icon: Icon(
+                                  Icons.stop_circle,
+                                  color: colorScheme.error,
+                                  size: 20,
+                                ),
+                                tooltip: 'Stop generation',
+                                onPressed: () {
+                                  context.read<ChatBloc>().add(
+                                    const ChatStopGeneration(),
+                                  );
+                                },
+                              ),
+                            ] else ...[
+                              Icon(
+                                Icons.keyboard_alt_outlined,
+                                size: 16,
+                                color: colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '$agentName · Input on Display 6',
+                                style: textTheme.labelMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  'Duo Active',
+                                  style: textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onPrimaryContainer,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
