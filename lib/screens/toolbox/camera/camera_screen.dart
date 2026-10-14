@@ -18,15 +18,18 @@ class CameraScreen extends StatefulWidget {
 }
 
 class _CameraScreenState extends State<CameraScreen> {
+  late final CameraBloc _cameraBloc;
+
   @override
   void initState() {
     super.initState();
-    context.read<CameraBloc>().add(const CameraInitCameras());
+    _cameraBloc = context.read<CameraBloc>();
+    _cameraBloc.add(const CameraInitCameras());
   }
 
   @override
   void dispose() {
-    context.read<CameraBloc>().add(const CameraStop());
+    _cameraBloc.add(const CameraStop());
     super.dispose();
   }
 

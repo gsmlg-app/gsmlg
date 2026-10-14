@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
+import 'package:app_logging/app_logging.dart';
 import 'package:camera_macos/camera_macos.dart';
 import 'package:camera_settings_form/camera_settings_form.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,9 @@ class CameraMacosScreen extends StatefulWidget {
 }
 
 class _CameraMacosScreenState extends State<CameraMacosScreen> {
+  // The plugin owns one native session shared by all screen instances.
+  static Future<void>? _cameraTask;
+
   CameraMacOSController? macOSController;
   Uint8List? lastImagePreviewData;
   Uint8List? lastRecordedVideoData;
@@ -28,8 +32,10 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
   List<CameraMacOSDevice> audioDevices = [];
   CameraImageData? streamedImage;
 
-  // Camera key - incremented to force rebuild
-  int _cameraKey = 0;
+  bool _devicesLoaded = false;
+  int _cameraRequest = 0;
+  Widget? _cameraView;
+  Future<CameraMacOSArguments?>? _cameraInitialization;
 
   late CameraSettingsFormBloc _formBloc;
 
@@ -38,7 +44,6 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
     super.initState();
     _formBloc = CameraSettingsFormBloc();
     _loadDevices();
-    _setupFormListeners();
   }
 
   void _setupFormListeners() {
@@ -81,17 +86,55 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
   }
 
   void _rebuildCamera() {
-    // Destroy old controller before rebuild
-    macOSController?.destroy();
-    macOSController = null;
-    setState(() {
-      _cameraKey++;
-    });
+    if (!mounted || !_devicesLoaded) return;
+    final request = ++_cameraRequest;
+    _queueCameraTask(() => _restartCamera(request));
+  }
+
+  void _queueCameraTask(Future<void> Function() operation) {
+    final previous = _cameraTask ?? Future<void>.value();
+    late final Future<void> task;
+    task = previous
+        .then((_) => operation())
+        .catchError(_reportCameraError)
+        .whenComplete(() {
+          // Keep only pending work, without retaining an idle screen or its zone.
+          if (identical(_cameraTask, task)) _cameraTask = null;
+        });
+    _cameraTask = task;
+  }
+
+  Future<void> _restartCamera(int request) async {
+    if (!mounted || request != _cameraRequest) return;
+    setState(() => _cameraView = null);
+    await _destroyCamera();
+    if (!mounted || request != _cameraRequest) return;
+
+    final key = GlobalKey<CameraMacOSViewState>();
+    _cameraInitialization = null;
+    setState(() => _cameraView = _createCameraView(key));
+    await WidgetsBinding.instance.endOfFrame;
+    final initialization =
+        _cameraInitialization ?? key.currentState?.initializeCameraFuture;
+    if (initialization != null) await initialization;
+  }
+
+  Future<void> _destroyCamera() async {
+    final controller = macOSController;
+    if (controller != null) {
+      await controller.destroy();
+      macOSController = null;
+    }
+  }
+
+  void _reportCameraError(Object error, StackTrace stackTrace) {
+    AppLogger().e('Camera lifecycle failed', error, stackTrace);
   }
 
   @override
   void dispose() {
-    macOSController?.destroy();
+    _cameraRequest++;
+    _queueCameraTask(_destroyCamera);
     _formBloc.close();
     super.dispose();
   }
@@ -100,17 +143,23 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
     final videos = await CameraMacOS.instance.listDevices(
       deviceType: CameraMacOSDeviceType.video,
     );
+    if (!mounted) return;
     final audios = await CameraMacOS.instance.listDevices(
       deviceType: CameraMacOSDeviceType.audio,
     );
+    if (!mounted) return;
+
+    _formBloc.updateVideoDevices(videos);
+    _formBloc.updateAudioDevices(audios);
+    _setupFormListeners();
+    _devicesLoaded = true;
 
     setState(() {
       videoDevices = videos;
       audioDevices = audios;
     });
 
-    _formBloc.updateVideoDevices(videos);
-    _formBloc.updateAudioDevices(audios);
+    _rebuildCamera();
   }
 
   @override
@@ -151,8 +200,12 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
   }
 
   Widget _buildCameraView() {
+    return _cameraView ?? const Center(child: CircularProgressIndicator());
+  }
+
+  Widget _createCameraView(GlobalKey<CameraMacOSViewState> key) {
     return CameraMacOSView(
-      key: ValueKey(_cameraKey),
+      key: key,
       fit: BoxFit.contain,
       deviceId: _formBloc.deviceId.value,
       audioDeviceId: _formBloc.audioDeviceId.value,
@@ -161,6 +214,13 @@ class _CameraMacosScreenState extends State<CameraMacosScreen> {
       isVideoMirrored: _formBloc.isVideoMirrored.value,
       orientation:
           _formBloc.orientation.value ?? CameraOrientation.orientation0deg,
+      onCameraLoading: (error) {
+        // Retain the native initialization future if the view is unmounted.
+        _cameraInitialization ??= key.currentState?.initializeCameraFuture;
+        return error == null
+            ? const Center(child: CircularProgressIndicator())
+            : const ColoredBox(color: Colors.black);
+      },
       onCameraInizialized: (CameraMacOSController controller) {
         macOSController = controller;
       },
