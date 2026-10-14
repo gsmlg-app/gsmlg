@@ -40,7 +40,11 @@ class _BluetoothScannerBarState extends State<BluetoothScannerBar> {
           return Container(
             margin: const EdgeInsets.all(12.0),
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text('Error: ${state.error}'),
+            child: Text(
+              'Error: ${state.error}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           );
         }
         if (state is BluetoothLoaded) {
@@ -55,21 +59,27 @@ class _BluetoothScannerBarState extends State<BluetoothScannerBar> {
               children: [
                 Text('BLE: ${isBLESupported ? 'OK' : 'N/A'}'),
                 if (isBLESupported)
-                  StreamBuilder(
-                    stream: adapterStateStream,
-                    builder: (
-                      BuildContext context,
-                      AsyncSnapshot<BluetoothAdapterState> snapshot,
-                    ) {
-                      if (snapshot.hasError) {
-                        return Text('Bluetooth error: ${snapshot.error}');
-                      }
-                      if (!snapshot.hasData) {
-                        return const Text('Bluetooth: ...');
-                      }
-                      final bluetoothState = snapshot.data!;
-                      return Text('Bluetooth: ${bluetoothState.name}');
-                    },
+                  Flexible(
+                    child: StreamBuilder<BluetoothAdapterState>(
+                      initialData: FlutterBluePlus.adapterStateNow,
+                      stream: adapterStateStream,
+                      builder: (
+                        BuildContext context,
+                        AsyncSnapshot<BluetoothAdapterState> snapshot,
+                      ) {
+                        if (snapshot.hasError) {
+                          return const Text('Bluetooth: error');
+                        }
+                        if (!snapshot.hasData) {
+                          return const Text('Bluetooth: ...');
+                        }
+                        final bluetoothState = snapshot.data!;
+                        return Text(
+                          'Bluetooth: ${bluetoothState.name}',
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
+                    ),
                   ),
                 bluetoothScanning
                     ? const _AnimatedScanningIcon()

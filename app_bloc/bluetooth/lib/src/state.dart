@@ -13,22 +13,27 @@ final class BluetoothInitial extends BluetoothBlocState {
 
 final class BluetoothLoaded extends BluetoothBlocState {
   final bool isSupported;
-  final Stream<BluetoothAdapterState> adapterStateStream;
+  final Stream<BluetoothAdapterState>? _adapterStateStream;
   final bool bluetoothScanning;
-  final Stream<List<ScanResult>> scanResults;
+  final Stream<List<ScanResult>>? _scanResults;
 
   const BluetoothLoaded({
     required this.isSupported,
-    required this.adapterStateStream,
-    required this.scanResults,
+    Stream<BluetoothAdapterState>? adapterStateStream,
+    Stream<List<ScanResult>>? scanResults,
     this.bluetoothScanning = false,
-  });
+  })  : _adapterStateStream = adapterStateStream,
+        _scanResults = scanResults;
+
+  Stream<BluetoothAdapterState> get adapterStateStream =>
+      _adapterStateStream ?? FlutterBluePlus.adapterState;
+
+  Stream<List<ScanResult>> get scanResults =>
+      _scanResults ?? FlutterBluePlus.scanResults;
 
   @override
   List<Object?> get props => [
         isSupported,
-        adapterStateStream,
-        scanResults,
         bluetoothScanning,
       ];
 
@@ -40,8 +45,8 @@ final class BluetoothLoaded extends BluetoothBlocState {
   }) {
     return BluetoothLoaded(
       isSupported: isSupported ?? this.isSupported,
-      adapterStateStream: adapterStateStream ?? this.adapterStateStream,
-      scanResults: scanResults ?? this.scanResults,
+      adapterStateStream: adapterStateStream ?? _adapterStateStream,
+      scanResults: scanResults ?? _scanResults,
       bluetoothScanning: bluetoothScanning ?? this.bluetoothScanning,
     );
   }

@@ -15,3 +15,8 @@ final class BluetoothStartScan extends BluetoothEvent {
 final class BluetoothStopScan extends BluetoothEvent {
   const BluetoothStopScan();
 }
+
+final class _BluetoothScanningUpdated extends BluetoothEvent {
+  final bool isScanning;
+  const _BluetoothScanningUpdated(this.isScanning);
+}

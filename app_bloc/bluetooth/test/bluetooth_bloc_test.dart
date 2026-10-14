@@ -46,5 +46,18 @@ void main() {
       final state = BluetoothError(error, stackTrace);
       expect(state.props, [error, stackTrace]);
     });
+
+    test('BluetoothLoaded has correct props and defaults', () {
+      const state = BluetoothLoaded(isSupported: true, bluetoothScanning: true);
+      expect(state.props, [true, true]);
+      expect(state.isSupported, isTrue);
+      expect(state.bluetoothScanning, isTrue);
+      expect(state.scanResults, isNotNull);
+      expect(state.adapterStateStream, isNotNull);
+
+      final copy = state.copyWith(bluetoothScanning: false);
+      expect(copy.bluetoothScanning, isFalse);
+      expect(copy.isSupported, isTrue);
+    });
   });
 }

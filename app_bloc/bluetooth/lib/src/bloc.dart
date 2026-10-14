@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -6,18 +8,29 @@ part 'event.dart';
 part 'state.dart';
 
 class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothBlocState> {
+  StreamSubscription<bool>? _isScanningSubscription;
+
   BluetoothBloc() : super(const BluetoothInitial()) {
     on<BluetoothInitState>(_onBluetoothInitState);
     on<BluetoothStartScan>(_onBluetoothStartScan);
     on<BluetoothStopScan>(_onBluetoothStopScan);
+    on<_BluetoothScanningUpdated>(_onBluetoothScanningUpdated);
+
+    _isScanningSubscription = FlutterBluePlus.isScanning.listen((isScanning) {
+      add(_BluetoothScanningUpdated(isScanning));
+    });
+  }
+
+  @override
+  Future<void> close() async {
+    await _isScanningSubscription?.cancel();
+    return super.close();
   }
 
   Future<BluetoothLoaded> _loadState() async {
     final isSupported = await FlutterBluePlus.isSupported;
     return BluetoothLoaded(
       isSupported: isSupported,
-      adapterStateStream: FlutterBluePlus.adapterState.asBroadcastStream(),
-      scanResults: FlutterBluePlus.scanResults.asBroadcastStream(),
       bluetoothScanning: FlutterBluePlus.isScanningNow,
     );
   }
@@ -39,10 +52,17 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothBlocState> {
       throw StateError('Bluetooth LE is not supported on this device.');
     }
 
-    final adapterState = await FlutterBluePlus.adapterState.first.timeout(
-      const Duration(seconds: 5),
-      onTimeout: () => BluetoothAdapterState.unknown,
-    );
+    if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.on) {
+      return;
+    }
+
+    final adapterState = await FlutterBluePlus.adapterState
+        .where((s) => s == BluetoothAdapterState.on)
+        .first
+        .timeout(
+          const Duration(seconds: 3),
+          onTimeout: () => FlutterBluePlus.adapterStateNow,
+        );
     if (adapterState != BluetoothAdapterState.on) {
       throw StateError(
         'Bluetooth adapter is ${adapterState.name}; turn it on and grant permission before scanning.',
@@ -71,7 +91,9 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothBlocState> {
     try {
       final loadedState = await _ensureLoaded(emit);
       await _ensureReadyToScan(loadedState);
-      await FlutterBluePlus.startScan();
+      if (!FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.startScan();
+      }
       emit(loadedState.copyWith(
           bluetoothScanning: FlutterBluePlus.isScanningNow));
     } catch (e, stackTrace) {
@@ -85,11 +107,25 @@ class BluetoothBloc extends Bloc<BluetoothEvent, BluetoothBlocState> {
   ) async {
     try {
       final loadedState = await _ensureLoaded(emit);
-      await FlutterBluePlus.stopScan();
+      if (FlutterBluePlus.isScanningNow) {
+        await FlutterBluePlus.stopScan();
+      }
       emit(loadedState.copyWith(
           bluetoothScanning: FlutterBluePlus.isScanningNow));
     } catch (e, stackTrace) {
       emit(BluetoothError(e, stackTrace));
+    }
+  }
+
+  void _onBluetoothScanningUpdated(
+    _BluetoothScanningUpdated event,
+    Emitter<BluetoothBlocState> emit,
+  ) {
+    final currentState = state;
+    if (currentState is BluetoothLoaded) {
+      if (currentState.bluetoothScanning != event.isScanning) {
+        emit(currentState.copyWith(bluetoothScanning: event.isScanning));
+      }
     }
   }
 }

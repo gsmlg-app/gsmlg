@@ -11,6 +11,7 @@ import 'destination.dart';
 import 'duo/duo_controller.dart';
 import 'router.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -50,7 +51,11 @@ class _AppState extends State<App> {
 
     _duoManager.onNavigateRoute = (routeName) {
       try {
-        AppRouter.router.goNamed(routeName);
+        final target = switch (routeName) {
+          'Bluetooth' => BluetoothScannerScreen.name,
+          _ => routeName,
+        };
+        AppRouter.router.goNamed(target);
       } catch (_) {}
     };
 

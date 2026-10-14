@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
 import 'duo_controller.dart';
+import '../screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 
 class DuoCompanionApp extends StatefulWidget {
   const DuoCompanionApp({super.key});
@@ -73,7 +74,7 @@ class DuoCompanionScaffold extends StatefulWidget {
     (icon: Icons.dns_outlined, label: 'DNS Zones', route: 'Domain'),
     (icon: Icons.cloud_outlined, label: 'Vultr Servers', route: 'Vultr'),
     (icon: Icons.code, label: 'GitHub', route: 'GitHub'),
-    (icon: Icons.bluetooth, label: 'Bluetooth', route: 'Bluetooth'),
+    (icon: Icons.bluetooth, label: 'Bluetooth', route: BluetoothScannerScreen.name),
     (icon: Icons.search, label: 'WHOIS', route: 'Whois'),
     (icon: Icons.monitor_heart_outlined, label: 'System Monitor', route: 'Monitor'),
     (icon: Icons.explore_outlined, label: 'Compass', route: 'Compass'),
