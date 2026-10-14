@@ -810,4 +810,20 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get audioSettingsSaveButton => 'Save Settings';
+
+  @override
+  String get cameraTitle => 'Camera';
+
+  @override
+  String get cameraNoHardwareTitle => 'No Camera Available';
+
+  @override
+  String get cameraNoHardwareDescription =>
+      'No camera hardware was detected on this device or the camera is currently unavailable.';
+
+  @override
+  String get cameraBackToToolbox => 'Back to Toolbox';
+
+  @override
+  String get cameraErrorTitle => 'Camera Error';
 }

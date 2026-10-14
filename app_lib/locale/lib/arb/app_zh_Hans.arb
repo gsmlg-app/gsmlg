@@ -109,5 +109,10 @@
   "smenuSmenuYellowDog": "关于YellowDog",
   "titleAboutYellowDog": "关于YellowDog",
   "aboutYellowDog": "纪念YellowDog，1988 - 1990",
-  "aboutYellowDog2": "你是一只强壮、聪明、忠诚的狗"
+  "aboutYellowDog2": "你是一只强壮、聪明、忠诚的狗",
+  "cameraTitle": "相机",
+  "cameraNoHardwareTitle": "没有可用相机",
+  "cameraNoHardwareDescription": "当前设备未检测到相机硬件，或相机暂时不可用。",
+  "cameraBackToToolbox": "返回工具箱",
+  "cameraErrorTitle": "相机错误"
 }

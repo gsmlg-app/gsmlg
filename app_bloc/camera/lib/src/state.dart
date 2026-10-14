@@ -19,6 +19,12 @@ final class CameraLoaded extends CameraState {
   });
 }
 
+final class CameraNoHardwareAvailable extends CameraState {
+  final String? message;
+
+  const CameraNoHardwareAvailable({this.message});
+}
+
 final class CameraError extends CameraState {
   final Object error;
   final StackTrace stackTrace;

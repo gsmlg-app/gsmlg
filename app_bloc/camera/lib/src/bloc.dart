@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 part 'event.dart';
 part 'state.dart';
@@ -62,13 +63,28 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     CameraInitCameras event,
     Emitter<CameraState> emitter,
   ) async {
-    if (state is! CameraInitial) {
+    if (state is! CameraInitial && state is! CameraNoHardwareAvailable) {
       emitter(CameraLoaded(cameras: _cameras));
     }
     await _disposeController();
-    _cameras = await availableCameras();
+    try {
+      _cameras = await availableCameras();
+    } catch (e) {
+      if (isNoCameraError(e)) {
+        _cameras = [];
+        if (!emitter.isDone) {
+          emitter(CameraNoHardwareAvailable(message: e.toString()));
+        }
+        return;
+      }
+      rethrow;
+    }
     if (!emitter.isDone) {
-      emitter(CameraLoaded(cameras: _cameras));
+      if (_cameras.isEmpty) {
+        emitter(const CameraNoHardwareAvailable());
+      } else {
+        emitter(CameraLoaded(cameras: _cameras));
+      }
     }
   }
 
@@ -103,7 +119,9 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     CameraStop event,
     Emitter<CameraState> emitter,
   ) async {
-    emitter(CameraLoaded(cameras: _cameras));
+    if (state is CameraLoaded) {
+      emitter(CameraLoaded(cameras: _cameras));
+    }
     await _disposeController();
   }
 
@@ -123,4 +141,47 @@ class CameraBloc extends Bloc<CameraEvent, CameraState> {
     add(const CameraStop());
     return _closeFuture = stopped.future.then((_) => super.close());
   }
+}
+
+/// Checks whether an exception indicates that no camera hardware exists
+/// on the device or the camera is permanently unavailable.
+bool isNoCameraError(Object e) {
+  if (e is CameraException) {
+    final code = e.code.toLowerCase();
+    final desc = (e.description ?? '').toLowerCase();
+    if (code.contains('nocamera') ||
+        code.contains('noavailablecameras') ||
+        code.contains('notfound') ||
+        code.contains('unavailable') ||
+        desc.contains('no camera') ||
+        desc.contains('camera unavailable') ||
+        desc.contains('available cameras: 0') ||
+        desc.contains('expected camera missing')) {
+      return true;
+    }
+  }
+  if (e is PlatformException) {
+    final code = e.code.toLowerCase();
+    final message = (e.message ?? '').toLowerCase();
+    final details = (e.details ?? '').toString().toLowerCase();
+    if (code.contains('nocamera') ||
+        code.contains('noavailablecameras') ||
+        code.contains('unavailable') ||
+        message.contains('cameraunavailableexception') ||
+        message.contains('no camera') ||
+        message.contains('available cameras: 0') ||
+        message.contains('expected camera missing') ||
+        details.contains('cameraunavailableexception') ||
+        details.contains('no available camera') ||
+        details.contains('available cameras: 0') ||
+        details.contains('expected camera missing')) {
+      return true;
+    }
+  }
+  final str = e.toString().toLowerCase();
+  return str.contains('cameraunavailableexception') ||
+      str.contains('available cameras: 0') ||
+      str.contains('no available camera') ||
+      str.contains('expected camera missing') ||
+      str.contains('no cameras available');
 }

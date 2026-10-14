@@ -109,5 +109,10 @@
   "smenuSmenuYellowDog": "關於 YellowDog",
   "titleAboutYellowDog": "關於 YellowDog",
   "aboutYellowDog": "紀念 YellowDog，1988 - 1990",
-  "aboutYellowDog2": "你是一隻強壯、聰明、忠誠的狗"
+  "aboutYellowDog2": "你是一隻強壯、聰明、忠誠的狗",
+  "cameraTitle": "相機",
+  "cameraNoHardwareTitle": "沒有可用相機",
+  "cameraNoHardwareDescription": "目前裝置未偵測到相機硬體，或相機暫時無法使用。",
+  "cameraBackToToolbox": "返回工具箱",
+  "cameraErrorTitle": "相機錯誤"
 }

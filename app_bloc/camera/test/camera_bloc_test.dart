@@ -28,11 +28,46 @@ void main() {
     test('CameraState classes are properly defined', () {
       const initial = CameraInitial();
       const loaded = CameraLoaded(cameras: []);
+      const noHardware = CameraNoHardwareAvailable();
       final error = CameraError(Exception('test'), StackTrace.current);
 
       expect(initial, isA<CameraState>());
       expect(loaded, isA<CameraState>());
+      expect(noHardware, isA<CameraState>());
       expect(error, isA<CameraState>());
+    });
+
+    test('isNoCameraError identifies camera-less hardware exceptions', () {
+      expect(
+        isNoCameraError(
+          CameraException(
+              'noAvailableCameras', 'No cameras available for the device'),
+        ),
+        isTrue,
+      );
+      expect(
+        isNoCameraError(
+          PlatformException(
+            code: 'ExecutionException',
+            message:
+                'CameraUnavailableException: Expected camera missing from device',
+            details: 'Available cameras: 0',
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        isNoCameraError(
+          Exception(
+              'java.lang.IllegalArgumentException: No available camera can be found. Cams:0'),
+        ),
+        isTrue,
+      );
+      expect(
+        isNoCameraError(
+            CameraException('permissionDenied', 'Camera permission denied')),
+        isFalse,
+      );
     });
 
     test('CameraPreviewState extension methods work correctly', () {
@@ -91,6 +126,23 @@ void main() {
 
       expect(loadedStates, hasLength(1));
       expect(loadedStates.single.cameras, [_back, _front]);
+    });
+
+    test('initial discovery with 0 cameras emits CameraNoHardwareAvailable',
+        () async {
+      backend.emptyCameras = true;
+      bloc.add(const CameraInitCameras());
+      await _until(() => bloc.state is CameraNoHardwareAvailable);
+      expect(bloc.state, isA<CameraNoHardwareAvailable>());
+    });
+
+    test(
+        'initial discovery throwing CameraUnavailableException emits CameraNoHardwareAvailable',
+        () async {
+      backend.throwUnavailable = true;
+      bloc.add(const CameraInitCameras());
+      await _until(() => bloc.state is CameraNoHardwareAvailable);
+      expect(bloc.state, isA<CameraNoHardwareAvailable>());
     });
 
     test('detaches and releases old camera before opening replacement',
@@ -243,12 +295,25 @@ class _CameraBackend {
   Completer<void>? disposeGate;
   Completer<void>? initializeGate;
   bool failInitialization = false;
+  bool emptyCameras = false;
+  bool throwUnavailable = false;
   int nextId = 0;
 
   Future<Object?> _handleCall(MethodCall call) async {
     final arguments = call.arguments as Map<Object?, Object?>?;
     switch (call.method) {
       case 'availableCameras':
+        if (throwUnavailable) {
+          throw PlatformException(
+            code: 'ExecutionException',
+            message:
+                'CameraUnavailableException: Expected camera missing from device',
+            details: 'Available cameras: 0',
+          );
+        }
+        if (emptyCameras) {
+          return <Map<String, Object?>>[];
+        }
         return [
           for (final camera in [_back, _front])
             {

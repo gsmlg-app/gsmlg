@@ -1667,6 +1667,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Settings'**
   String get audioSettingsSaveButton;
+
+  /// No description provided for @cameraTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get cameraTitle;
+
+  /// No description provided for @cameraNoHardwareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No Camera Available'**
+  String get cameraNoHardwareTitle;
+
+  /// No description provided for @cameraNoHardwareDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera hardware was detected on this device or the camera is currently unavailable.'**
+  String get cameraNoHardwareDescription;
+
+  /// No description provided for @cameraBackToToolbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Toolbox'**
+  String get cameraBackToToolbox;
+
+  /// No description provided for @cameraErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera Error'**
+  String get cameraErrorTitle;
 }
 
 class _AppLocalizationsDelegate

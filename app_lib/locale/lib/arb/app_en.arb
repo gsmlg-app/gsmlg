@@ -301,5 +301,10 @@
   "audioSettingsAsrModel": "Default ASR Model",
   "audioSettingsAsrLanguage": "Language Code (e.g. en, zh)",
   "audioSettingsResetButton": "Reset to Backplane Defaults",
-  "audioSettingsSaveButton": "Save Settings"
+  "audioSettingsSaveButton": "Save Settings",
+  "cameraTitle": "Camera",
+  "cameraNoHardwareTitle": "No Camera Available",
+  "cameraNoHardwareDescription": "No camera hardware was detected on this device or the camera is currently unavailable.",
+  "cameraBackToToolbox": "Back to Toolbox",
+  "cameraErrorTitle": "Camera Error"
 }

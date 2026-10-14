@@ -93,6 +93,76 @@ void main() {
       }
     },
   );
+
+  testWidgets(
+    'CameraNoHardwareAvailable state displays elegant no camera page',
+    (tester) async {
+      final bloc = _ScreenCameraBloc();
+      try {
+        bloc.publish(const CameraNoHardwareAvailable());
+
+        await tester.pumpWidget(_cameraApp(bloc));
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(Icons.no_photography_outlined), findsOneWidget);
+        expect(find.text('No Camera Available'), findsOneWidget);
+        expect(find.text('Back to Toolbox'), findsOneWidget);
+        expect(find.text('Retry'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        final closing = bloc.close();
+        await tester.pump();
+        await closing;
+      }
+    },
+  );
+
+  testWidgets(
+    'CameraLoaded with empty cameras list displays elegant no camera page',
+    (tester) async {
+      final bloc = _ScreenCameraBloc();
+      try {
+        bloc.publish(const CameraLoaded(cameras: []));
+
+        await tester.pumpWidget(_cameraApp(bloc));
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(Icons.no_photography_outlined), findsOneWidget);
+        expect(find.text('No Camera Available'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        final closing = bloc.close();
+        await tester.pump();
+        await closing;
+      }
+    },
+  );
+
+  testWidgets(
+    'CameraError with CameraUnavailableException displays no camera page',
+    (tester) async {
+      final bloc = _ScreenCameraBloc();
+      try {
+        bloc.publish(
+          CameraError(
+            Exception('CameraUnavailableException: Available cameras: 0'),
+            StackTrace.current,
+          ),
+        );
+
+        await tester.pumpWidget(_cameraApp(bloc));
+        await tester.pumpAndSettle();
+
+        expect(find.byIcon(Icons.no_photography_outlined), findsOneWidget);
+        expect(find.text('No Camera Available'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      } finally {
+        final closing = bloc.close();
+        await tester.pump();
+        await closing;
+      }
+    },
+  );
 }
 
 Widget _cameraApp(CameraBloc bloc) {

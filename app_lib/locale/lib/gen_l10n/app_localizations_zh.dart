@@ -805,6 +805,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get audioSettingsSaveButton => 'Save Settings';
+
+  @override
+  String get cameraTitle => '相机';
+
+  @override
+  String get cameraNoHardwareTitle => '没有可用相机';
+
+  @override
+  String get cameraNoHardwareDescription => '当前设备未检测到相机硬件，或相机暂时不可用。';
+
+  @override
+  String get cameraBackToToolbox => '返回工具箱';
+
+  @override
+  String get cameraErrorTitle => '相机错误';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -1138,6 +1153,21 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get aboutYellowDog2 => '你是一只强壮、聪明、忠诚的狗';
+
+  @override
+  String get cameraTitle => '相机';
+
+  @override
+  String get cameraNoHardwareTitle => '没有可用相机';
+
+  @override
+  String get cameraNoHardwareDescription => '当前设备未检测到相机硬件，或相机暂时不可用。';
+
+  @override
+  String get cameraBackToToolbox => '返回工具箱';
+
+  @override
+  String get cameraErrorTitle => '相机错误';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -1472,4 +1502,19 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get aboutYellowDog2 => '你是一隻強壯、聰明、忠誠的狗';
+
+  @override
+  String get cameraTitle => '相機';
+
+  @override
+  String get cameraNoHardwareTitle => '沒有可用相機';
+
+  @override
+  String get cameraNoHardwareDescription => '目前裝置未偵測到相機硬體，或相機暫時無法使用。';
+
+  @override
+  String get cameraBackToToolbox => '返回工具箱';
+
+  @override
+  String get cameraErrorTitle => '相機錯誤';
 }
