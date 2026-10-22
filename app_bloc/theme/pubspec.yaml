@@ -9,8 +9,8 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  duskmoon_theme_bloc: ^1.11.0
-  duskmoon_theme: ^1.11.0
+  duskmoon_theme_bloc: ^2.2.3
+  duskmoon_theme: ^2.2.3
   flutter_bloc: ^9.1.1
   shared_preferences: ^2.5.6
 

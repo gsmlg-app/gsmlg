@@ -8,7 +8,7 @@ environment:
   sdk: ">=3.12.0 <4.0.0"
 
 dependencies:
-  equatable: ^2.1.0
+  equatable: ^3.0.0
   flutter:
     sdk: flutter
   http: any
