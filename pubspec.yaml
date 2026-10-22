@@ -284,10 +284,8 @@ melos:
       description: Run `dart format` checks for all packages.
 
     upgrade:
-      exec:
-        command: dart pub upgrade --major-versions
-        orderDependents: true
-      description: Run `flutter pub upgrade` update dependencies in all packages.
+      run: dart pub upgrade --major-versions --no-example
+      description: Upgrade dependencies across the Dart workspace.
 
     outdated:
       exec:
