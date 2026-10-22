@@ -1,39 +1,24 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gsmlg/screens/chat/widgets/chat_input_bar.dart';
 import 'package:gsmlg/screens/chat/widgets/system_metrics_indicator.dart';
 
 void main() {
-  const systemMetricsChannel = MethodChannel('app_system_metrics');
   late FilePickerPlatform previousFilePicker;
 
   setUp(() {
     previousFilePicker = FilePickerPlatform.instance;
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(systemMetricsChannel, (call) async {
-          if (call.method != 'getData') return null;
-          return {
-            'platform': 'test',
-            'timestamp': DateTime(2026).toIso8601String(),
-            'cpuUsage': 0.0,
-            'gpuUsage': 0.0,
-            'npuUsage': 0.0,
-            'memoryUsage': 0.0,
-          };
-        });
   });
 
   tearDown(() {
     FilePickerPlatform.instance = previousFilePicker;
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(systemMetricsChannel, null);
   });
 
   testWidgets('selects remote thinking effort from the chat input', (
@@ -215,7 +200,7 @@ void main() {
     expect(selectedAgentId, 'agent2');
   });
 
-  testWidgets('shows system metrics in the chat input controls', (
+  testWidgets('does not show system metrics in the chat input controls', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -229,7 +214,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(SystemMetricsIndicator), findsOneWidget);
+    expect(find.byType(SystemMetricsIndicator), findsNothing);
   });
 }
 

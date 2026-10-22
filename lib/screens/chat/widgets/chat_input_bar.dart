@@ -9,8 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:gsmlg/duo/duo_controller.dart';
 import 'package:record/record.dart';
 
-import 'system_metrics_indicator.dart';
-
 class ChatInputBar extends StatefulWidget {
   const ChatInputBar({
     super.key,
@@ -411,7 +409,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 : 'Keyboard on Display 0. Tap to relay to Display 6.',
             visualDensity: VisualDensity.compact,
           ),
-        const SystemMetricsIndicator(compact: true),
         ?selectionControl,
       ],
     );

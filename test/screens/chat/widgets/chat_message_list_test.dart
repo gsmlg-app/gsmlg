@@ -1,4 +1,5 @@
 import 'package:app_chat/app_chat.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gsmlg/screens/chat/widgets/chat_message_list.dart';
@@ -6,43 +7,157 @@ import 'package:gsmlg/screens/chat/widgets/chat_message_list.dart';
 void main() {
   final timestamp = DateTime(2026);
 
-  testWidgets('renders a gap between visible chat messages', (tester) async {
+  testWidgets('uses native chat navigation without a second input', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: ChatMessageList(
-            messages: [
-              SystemMessage(
-                id: 'system',
-                content: 'system prompt',
-                conversationId: 'conversation',
-                timestamp: DateTime(2026),
-              ),
-              UserMessage(
-                id: 'user',
-                content: 'hello',
-                conversationId: 'conversation',
-                timestamp: DateTime(2026),
-              ),
-              AssistantMessage(
-                id: 'assistant',
-                content: 'hi',
-                conversationId: 'conversation',
-                timestamp: DateTime(2026),
-              ),
-            ],
+      _chatMessageListApp(
+        isStreaming: false,
+        messages: [
+          SystemMessage(
+            id: 'system',
+            content: 'hidden prompt',
+            conversationId: 'conversation',
+            timestamp: timestamp,
           ),
-        ),
+          UserMessage(
+            id: 'user',
+            content: 'hello',
+            conversationId: 'conversation',
+            timestamp: timestamp,
+          ),
+          AssistantMessage(
+            id: 'assistant',
+            content: 'hi',
+            conversationId: 'conversation',
+            timestamp: timestamp,
+          ),
+        ],
       ),
     );
-
-    final gap = tester.widget<SizedBox>(
-      find.byKey(const ValueKey('chat_message_gap_0')),
+    expect(find.byType(DmChatView), findsOneWidget);
+    expect(find.byType(DmChatInput), findsNothing);
+    expect(find.textContaining('hidden prompt'), findsNothing);
+    expect(find.byKey(const ValueKey('chat-navigation-user')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('chat-navigation-assistant')),
+      findsNothing,
     );
-
-    expect(gap.height, chatMessageGap);
-    expect(find.byKey(const ValueKey('chat_message_gap_1')), findsNothing);
+    final view = tester.widget<DmChatView>(find.byType(DmChatView));
+    expect(view.theme!.rowSpacing, chatMessageGap);
+    expect(
+      view.messages.first.blocks.whereType<DmChatTextBlock>().single.text,
+      'hello',
+    );
   });
+
+  testWidgets('navigation reaches an unbuilt turn in variable-height history', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _chatMessageListApp(
+        isStreaming: false,
+        messages: [
+          for (var index = 0; index < 24; index++) ...[
+            UserMessage(
+              id: 'user-$index',
+              content: 'Prompt $index',
+              conversationId: 'conversation',
+              timestamp: timestamp,
+            ),
+            AssistantMessage(
+              id: 'assistant-$index',
+              content: List.filled(
+                index % 3 == 0 ? 30 : 4,
+                'Answer $index.',
+              ).join('\n\n'),
+              conversationId: 'conversation',
+              timestamp: timestamp,
+            ),
+          ],
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+    // The reversed list starts with the newest turn; the target is not mounted.
+    expect(find.byKey(const ValueKey('user-3')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('chat-navigation-user-3')));
+    for (var frame = 0; frame < 60; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    final target = find.byKey(const ValueKey('user-3'));
+    expect(target, findsOneWidget);
+    final viewport = tester.getRect(find.byType(DmChatView));
+    expect(tester.getRect(target).overlaps(viewport), isTrue);
+  });
+
+  testWidgets('touch navigation previews a moving candidate until release', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _chatMessageListApp(
+        isStreaming: false,
+        messages: _navigationMessages(timestamp),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final position = _chatMessageListPosition(tester);
+    final initialOffset = position.pixels;
+    final first = find.byKey(const ValueKey('chat-navigation-user-4'));
+    final last = find.byKey(const ValueKey('chat-navigation-user-8'));
+    final gesture = await tester.startGesture(tester.getCenter(first));
+    await tester.pump();
+
+    expect(_navigationMarkerWidth(tester, first), 20);
+    expect(position.pixels, initialOffset);
+
+    await gesture.moveTo(tester.getCenter(last));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(_navigationMarkerWidth(tester, first), 8);
+    expect(_navigationMarkerWidth(tester, last), 20);
+    expect(position.pixels, initialOffset);
+
+    await gesture.up();
+    for (var frame = 0; frame < 60; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.pumpAndSettle();
+    expect(position.pixels, greaterThan(initialOffset));
+    final target = find.byKey(const ValueKey('user-8'));
+    expect(target, findsOneWidget);
+    expect(
+      tester.getRect(target).overlaps(tester.getRect(find.byType(DmChatView))),
+      isTrue,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'cancelling touch navigation clears the candidate without a jump',
+    (tester) async {
+      await tester.pumpWidget(
+        _chatMessageListApp(
+          isStreaming: false,
+          messages: _navigationMessages(timestamp),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final position = _chatMessageListPosition(tester);
+      final initialOffset = position.pixels;
+      final marker = find.byKey(const ValueKey('chat-navigation-user-4'));
+      final gesture = await tester.startGesture(tester.getCenter(marker));
+      await tester.pump();
+      expect(_navigationMarkerWidth(tester, marker), 20);
+
+      await gesture.cancel();
+      await tester.pumpAndSettle();
+      expect(_navigationMarkerWidth(tester, marker), 8);
+      expect(position.pixels, initialOffset);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('shows copy, edit, and regenerate actions for messages', (
     tester,
@@ -291,9 +406,9 @@ void main() {
     );
 
     final position = _chatMessageListPosition(tester);
-    position.jumpTo(position.maxScrollExtent);
+    position.jumpTo(position.minScrollExtent);
     await tester.pump();
-    position.jumpTo(position.maxScrollExtent - 160);
+    position.jumpTo(position.minScrollExtent + 160);
     await tester.pump();
 
     final scrolledUpOffset = position.pixels;
@@ -311,7 +426,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(position.pixels, scrolledUpOffset);
-    expect(position.pixels, lessThan(position.maxScrollExtent));
+    expect(position.pixels, greaterThan(position.minScrollExtent));
   });
 
   testWidgets('follows streaming output after the user scrolls back to bottom', (
@@ -328,7 +443,7 @@ void main() {
     );
 
     final position = _chatMessageListPosition(tester);
-    position.jumpTo(position.maxScrollExtent);
+    position.jumpTo(position.minScrollExtent);
     await tester.pump();
 
     await tester.pumpWidget(
@@ -343,7 +458,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(position.pixels, position.maxScrollExtent);
+    expect(position.pixels, position.minScrollExtent);
   });
 }
 
@@ -360,6 +475,30 @@ Widget _chatMessageListApp({
     ),
   );
 }
+
+List<Message> _navigationMessages(DateTime timestamp) => [
+  for (var index = 0; index < 24; index++) ...[
+    UserMessage(
+      id: 'user-$index',
+      content: 'Prompt $index',
+      conversationId: 'conversation',
+      timestamp: timestamp,
+    ),
+    AssistantMessage(
+      id: 'assistant-$index',
+      content: List.filled(8, 'Answer $index.').join('\n\n'),
+      conversationId: 'conversation',
+      timestamp: timestamp,
+    ),
+  ],
+];
+
+double _navigationMarkerWidth(WidgetTester tester, Finder marker) => tester
+    .widget<AnimatedContainer>(
+      find.descendant(of: marker, matching: find.byType(AnimatedContainer)),
+    )
+    .constraints!
+    .maxWidth;
 
 List<Message> _streamingMessages({
   required DateTime timestamp,

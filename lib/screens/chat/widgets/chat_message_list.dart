@@ -1,12 +1,12 @@
 import 'package:app_chat/app_chat.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'chat_message_bubble.dart';
 
 const chatMessageGap = 12.0;
-const chatMessageActionGap = 4.0;
-const _bottomFollowTolerance = 24.0;
+const _actionsBlockKind = 'gsmlg.actions';
 
 class ChatMessageList extends StatefulWidget {
   const ChatMessageList({
@@ -29,94 +29,56 @@ class ChatMessageList extends StatefulWidget {
 }
 
 class _ChatMessageListState extends State<ChatMessageList> {
-  final _scrollController = ScrollController();
-
-  @override
-  void didUpdateWidget(ChatMessageList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final messagesChanged = widget.messages.length != oldWidget.messages.length;
-    final shouldFollowStreaming = widget.isStreaming && _isNearBottom();
-    if ((messagesChanged && !widget.isStreaming) || shouldFollowStreaming) {
-      _scrollToBottom();
-    }
-  }
-
-  bool _isNearBottom() {
-    if (!_scrollController.hasClients) return true;
-    final position = _scrollController.position;
-    return position.maxScrollExtent - position.pixels <= _bottomFollowTolerance;
-  }
-
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Filter out system messages from display
     final visibleMessages = _orderedVisibleMessages(widget.messages);
-
-    if (visibleMessages.isEmpty) {
-      return const Center(child: Text('No messages yet'));
-    }
-
-    return ListView.separated(
-      controller: _scrollController,
+    final theme =
+        (Theme.of(context).extension<DmChatTheme>() ??
+                DmChatTheme.withContext(context))
+            .copyWith(
+              rowSpacing: chatMessageGap,
+              customBuilders: {
+                chatTypingBlockKind: buildChatTypingBlock,
+                _actionsBlockKind: (context, block) => block.data! as Widget,
+              },
+            );
+    return DmChatView(
+      messages: [
+        for (var index = 0; index < visibleMessages.length; index++)
+          toDmChatMessage(
+            visibleMessages[index],
+            showThinking: widget.showThinking,
+            showTypingIndicator:
+                index == visibleMessages.length - 1 &&
+                widget.isStreaming &&
+                visibleMessages[index] is AssistantMessage &&
+                (visibleMessages[index] as AssistantMessage).isStreaming,
+            actions: DmChatCustomBlock(
+              kind: _actionsBlockKind,
+              data: _ChatMessageActions(
+                message: visibleMessages[index],
+                enabled: !widget.isStreaming,
+                onCopy: () => _copyMessage(context, visibleMessages[index]),
+                onEdit: visibleMessages[index] is UserMessage
+                    ? () => _showEditMessageDialog(
+                        context,
+                        visibleMessages[index] as UserMessage,
+                      )
+                    : null,
+                onRegenerate: visibleMessages[index] is AssistantMessage
+                    ? () => widget.onRegenerateResponse?.call(
+                        visibleMessages[index] as AssistantMessage,
+                      )
+                    : null,
+              ),
+            ),
+          ),
+      ],
+      showInput: false,
+      isStreaming: widget.isStreaming,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: visibleMessages.length,
-      itemBuilder: (context, index) {
-        final message = visibleMessages[index];
-        final isLast = index == visibleMessages.length - 1;
-        final showTypingIndicator =
-            isLast &&
-            widget.isStreaming &&
-            message is AssistantMessage &&
-            message.isStreaming;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ChatMessageBubble(
-              message: message,
-              showTypingIndicator:
-                  showTypingIndicator && message.content.isEmpty,
-              showThinking: widget.showThinking,
-            ),
-            const SizedBox(height: chatMessageActionGap),
-            _ChatMessageActions(
-              message: message,
-              enabled: !widget.isStreaming,
-              onCopy: () => _copyMessage(context, message),
-              onEdit: message is UserMessage
-                  ? () => _showEditMessageDialog(context, message)
-                  : null,
-              onRegenerate: message is AssistantMessage
-                  ? () => widget.onRegenerateResponse?.call(message)
-                  : null,
-            ),
-          ],
-        );
-      },
-      separatorBuilder: (context, index) {
-        return SizedBox(
-          key: ValueKey('chat_message_gap_$index'),
-          height: chatMessageGap,
-        );
-      },
+      emptyBuilder: (_) => const Text('No messages yet'),
+      theme: theme,
     );
   }
 
