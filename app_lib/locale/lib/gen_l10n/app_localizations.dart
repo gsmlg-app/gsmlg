@@ -1697,6 +1697,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Camera Error'**
   String get cameraErrorTitle;
+
+  /// No description provided for @editorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Editor'**
+  String get editorTitle;
+
+  /// No description provided for @editorNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get editorNew;
+
+  /// No description provided for @editorOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get editorOpen;
+
+  /// No description provided for @editorSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get editorSave;
+
+  /// No description provided for @editorSaveAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Save As'**
+  String get editorSaveAs;
+
+  /// No description provided for @editorUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get editorUndo;
+
+  /// No description provided for @editorRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get editorRedo;
+
+  /// No description provided for @editorUnsaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved changes'**
+  String get editorUnsaved;
+
+  /// No description provided for @editorConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes?'**
+  String get editorConfirmTitle;
+
+  /// No description provided for @editorConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes will be lost if you continue without saving.'**
+  String get editorConfirmMessage;
+
+  /// No description provided for @editorDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get editorDiscard;
+
+  /// No description provided for @editorCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get editorCancel;
+
+  /// No description provided for @editorUnsupportedEncoding.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is not valid UTF-8 text.'**
+  String get editorUnsupportedEncoding;
+
+  /// No description provided for @editorBinaryFile.
+  ///
+  /// In en, this message translates to:
+  /// **'This file contains binary data and cannot be edited.'**
+  String get editorBinaryFile;
+
+  /// No description provided for @editorTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'This file is too large. Open a file smaller than 16 MiB.'**
+  String get editorTooLarge;
+
+  /// No description provided for @editorReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The file could not be opened. Your document has been kept.'**
+  String get editorReadFailed;
+
+  /// No description provided for @editorWriteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The file could not be saved. Your changes have been kept.'**
+  String get editorWriteFailed;
 }
 
 class _AppLocalizationsDelegate

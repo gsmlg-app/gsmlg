@@ -13,6 +13,7 @@ import 'package:gsmlg/screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_macos_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_screen.dart';
 import 'package:gsmlg/screens/toolbox/compass/compass_screen.dart';
+import 'package:gsmlg/screens/toolbox/editor/editor_screen.dart';
 import 'package:gsmlg/screens/toolbox/ip_geo/ip_geo_screen.dart';
 import 'package:gsmlg/screens/toolbox/monitor/monitor_screen.dart';
 import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_screen.dart';
@@ -74,6 +75,10 @@ class ToolboxScreen extends StatelessWidget {
               mainAxisSpacing: Constants.defaultGridGap,
               crossAxisCount: (screenSize.width / 300).ceil(),
               children: <Widget>[
+                AppGridTile(
+                  onTap: () => context.goNamed(EditorScreen.name),
+                  child: Text(context.l10n.editorTitle),
+                ),
                 AppGridTile(
                   onTap: () => context.goNamed(WhoisScreen.name),
                   child: const Text('Whois'),

@@ -3,6 +3,7 @@ import 'package:app_audio/audio.dart';
 import 'package:app_chat/app_chat.dart';
 import 'dart:convert';
 import 'package:app_database/app_database.dart';
+import 'package:app_editor/app_editor.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:audio_bloc/audio_bloc.dart';
 import 'package:auth_bloc/auth_bloc.dart';
@@ -10,6 +11,7 @@ import 'package:bluetooth_bloc/bluetooth_bloc.dart';
 import 'package:camera_bloc/camera_bloc.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:domain_bloc/domain_bloc.dart';
+import 'package:editor_bloc/editor_bloc.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_bloc/github_bloc.dart';
@@ -41,6 +43,10 @@ class MainProvider extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
+        RepositoryProvider<EditorFileService>(
+          create: (context) => EditorFileService(),
+          dispose: (files) => files.dispose(),
+        ),
         RepositoryProvider<SharedPreferences>(create: (context) => sharedPrefs),
         RepositoryProvider<AppDatabase>(create: (context) => database),
         RepositoryProvider<VaultRepository>(create: (context) => vault),
@@ -85,6 +91,9 @@ class MainProvider extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          BlocProvider<EditorCubit>(
+            create: (context) => EditorCubit(context.read<EditorFileService>()),
+          ),
           BlocProvider<NavigationBloc>(create: (context) => NavigationBloc()),
           BlocProvider<DmThemeBloc>(
             create: (context) => DmThemeBloc(prefs: sharedPrefs),

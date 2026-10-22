@@ -4,6 +4,7 @@ import 'package:gsmlg/screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_macos_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_screen.dart';
 import 'package:gsmlg/screens/toolbox/compass/compass_screen.dart';
+import 'package:gsmlg/screens/toolbox/editor/editor_screen.dart';
 import 'package:gsmlg/screens/toolbox/ip_geo/ip_geo_screen.dart';
 import 'package:gsmlg/screens/toolbox/monitor/monitor_screen.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
@@ -25,6 +26,16 @@ GoRoute toolboxRoutes() => GoRoute(
     );
   },
   routes: [
+    GoRoute(
+      name: EditorScreen.name,
+      path: EditorScreen.path,
+      onExit: (context, state) => EditorScreen.confirmExit(context),
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        restorationId: state.pageKey.value,
+        child: const EditorScreen(),
+      ),
+    ),
     // Whois routes
     GoRoute(
       name: WhoisScreen.name,

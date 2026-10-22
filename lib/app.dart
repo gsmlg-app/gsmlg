@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:app_locale/app_locale.dart';
+import 'package:app_editor/app_editor.dart';
+import 'package:app_logging/app_logging.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,9 +15,12 @@ import 'duo/duo_controller.dart';
 import 'router.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
+import 'screens/toolbox/editor/editor_screen.dart';
 
 class App extends StatefulWidget {
-  const App({super.key});
+  const App({super.key, this.arguments = const []});
+
+  final List<String> arguments;
 
   @override
   State<App> createState() => _AppState();
@@ -24,12 +30,39 @@ class _AppState extends State<App> {
   bool isOpenWindow = true;
   late final DuoDisplayManager _duoManager;
   StreamSubscription<DmThemeState>? _themeSub;
+  StreamSubscription<void>? _editorSub;
+  late final AppLifecycleListener _exitListener;
 
   @override
   void initState() {
     super.initState();
     final navBloc = context.read<NavigationBloc>();
     final themeBloc = context.read<DmThemeBloc>();
+    final editorFiles = context.read<EditorFileService>();
+    _editorSub = editorFiles.openRequests.listen((_) => _openEditor());
+    _exitListener = AppLifecycleListener(
+      onExitRequested: () async {
+        final navigationContext = AppRouter.key.currentContext;
+        if (navigationContext == null) return AppExitResponse.exit;
+        return await EditorScreen.confirmExit(navigationContext)
+            ? AppExitResponse.exit
+            : AppExitResponse.cancel;
+      },
+    );
+    unawaited(
+      editorFiles
+          .initialize(widget.arguments)
+          .then((_) {
+            if (editorFiles.hasPendingFiles) _openEditor();
+          })
+          .catchError((Object error, StackTrace stackTrace) {
+            AppLogger().e(
+              'Editor file-open initialization failed',
+              error,
+              stackTrace,
+            );
+          }),
+    );
 
     _duoManager = DuoDisplayManager(
       secondary: false,
@@ -68,7 +101,8 @@ class _AppState extends State<App> {
 
     _duoManager.onToggleTheme = () {
       final mode = themeBloc.state.themeMode;
-      final isDark = mode == ThemeMode.dark ||
+      final isDark =
+          mode == ThemeMode.dark ||
           (mode == ThemeMode.system &&
               WidgetsBinding.instance.platformDispatcher.platformBrightness ==
                   Brightness.dark);
@@ -80,17 +114,30 @@ class _AppState extends State<App> {
     AppRouter.router.routerDelegate.addListener(_syncDuoState);
   }
 
+  void _openEditor() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (AppRouter.router.routeInformationProvider.value.uri.path ==
+          AppRouter.router.namedLocation(EditorScreen.name)) {
+        return;
+      }
+      AppRouter.router.goNamed(EditorScreen.name);
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
   void _syncDuoState() {
     if (!mounted) return;
     final themeBloc = context.read<DmThemeBloc>();
     final mode = themeBloc.state.themeMode;
-    final isDark = mode == ThemeMode.dark ||
+    final isDark =
+        mode == ThemeMode.dark ||
         (mode == ThemeMode.system &&
             WidgetsBinding.instance.platformDispatcher.platformBrightness ==
                 Brightness.dark);
 
-    final route =
-        AppRouter.router.routerDelegate.currentConfiguration.uri.toString();
+    final route = AppRouter.router.routerDelegate.currentConfiguration.uri
+        .toString();
     var idx = 0;
     if (route.startsWith('/service')) {
       idx = 1;
@@ -109,6 +156,8 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    _editorSub?.cancel();
+    _exitListener.dispose();
     _themeSub?.cancel();
     AppRouter.router.routerDelegate.removeListener(_syncDuoState);
     _duoManager.dispose();

@@ -820,6 +820,57 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cameraErrorTitle => '相机错误';
+
+  @override
+  String get editorTitle => '编辑器';
+
+  @override
+  String get editorNew => '新建';
+
+  @override
+  String get editorOpen => '打开';
+
+  @override
+  String get editorSave => '保存';
+
+  @override
+  String get editorSaveAs => '另存为';
+
+  @override
+  String get editorUndo => '撤销';
+
+  @override
+  String get editorRedo => '重做';
+
+  @override
+  String get editorUnsaved => '未保存的修改';
+
+  @override
+  String get editorConfirmTitle => '保存修改？';
+
+  @override
+  String get editorConfirmMessage => '继续而不保存将丢失当前修改。';
+
+  @override
+  String get editorDiscard => '放弃';
+
+  @override
+  String get editorCancel => '取消';
+
+  @override
+  String get editorUnsupportedEncoding => '此文件不是有效的 UTF-8 文本。';
+
+  @override
+  String get editorBinaryFile => '此文件包含二进制数据，无法编辑。';
+
+  @override
+  String get editorTooLarge => '文件过大。请选择小于 16 MiB 的文件。';
+
+  @override
+  String get editorReadFailed => '无法打开文件，已保留当前文档。';
+
+  @override
+  String get editorWriteFailed => '无法保存文件，已保留当前修改。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -1168,6 +1219,57 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get cameraErrorTitle => '相机错误';
+
+  @override
+  String get editorTitle => '编辑器';
+
+  @override
+  String get editorNew => '新建';
+
+  @override
+  String get editorOpen => '打开';
+
+  @override
+  String get editorSave => '保存';
+
+  @override
+  String get editorSaveAs => '另存为';
+
+  @override
+  String get editorUndo => '撤销';
+
+  @override
+  String get editorRedo => '重做';
+
+  @override
+  String get editorUnsaved => '未保存的修改';
+
+  @override
+  String get editorConfirmTitle => '保存修改？';
+
+  @override
+  String get editorConfirmMessage => '继续而不保存将丢失当前修改。';
+
+  @override
+  String get editorDiscard => '放弃';
+
+  @override
+  String get editorCancel => '取消';
+
+  @override
+  String get editorUnsupportedEncoding => '此文件不是有效的 UTF-8 文本。';
+
+  @override
+  String get editorBinaryFile => '此文件包含二进制数据，无法编辑。';
+
+  @override
+  String get editorTooLarge => '文件过大。请选择小于 16 MiB 的文件。';
+
+  @override
+  String get editorReadFailed => '无法打开文件，已保留当前文档。';
+
+  @override
+  String get editorWriteFailed => '无法保存文件，已保留当前修改。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).

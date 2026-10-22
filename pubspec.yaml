@@ -8,6 +8,8 @@ environment:
   sdk: ">=3.12.0 <4.0.0"
 
 workspace:
+  - app_lib/editor
+  - app_bloc/editor
   - app_lib/database
   - app_lib/theme
   - app_lib/locale
@@ -111,6 +113,8 @@ dependencies:
   url_launcher: ^6.3.3
 
   # workspace packages
+  app_editor: any
+  editor_bloc: any
   cloudflare_dns: any
   route53: any
   github_api: any

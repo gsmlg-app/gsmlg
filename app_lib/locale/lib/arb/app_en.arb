@@ -306,5 +306,22 @@
   "cameraNoHardwareTitle": "No Camera Available",
   "cameraNoHardwareDescription": "No camera hardware was detected on this device or the camera is currently unavailable.",
   "cameraBackToToolbox": "Back to Toolbox",
-  "cameraErrorTitle": "Camera Error"
+  "cameraErrorTitle": "Camera Error",
+  "editorTitle": "Editor",
+  "editorNew": "New",
+  "editorOpen": "Open",
+  "editorSave": "Save",
+  "editorSaveAs": "Save As",
+  "editorUndo": "Undo",
+  "editorRedo": "Redo",
+  "editorUnsaved": "Unsaved changes",
+  "editorConfirmTitle": "Save changes?",
+  "editorConfirmMessage": "Your changes will be lost if you continue without saving.",
+  "editorDiscard": "Discard",
+  "editorCancel": "Cancel",
+  "editorUnsupportedEncoding": "This file is not valid UTF-8 text.",
+  "editorBinaryFile": "This file contains binary data and cannot be edited.",
+  "editorTooLarge": "This file is too large. Open a file smaller than 16 MiB.",
+  "editorReadFailed": "The file could not be opened. Your document has been kept.",
+  "editorWriteFailed": "The file could not be saved. Your changes have been kept."
 }

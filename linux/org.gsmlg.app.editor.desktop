@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GSMLG Editor
+Comment=Edit text and source files in GSMLG
+Exec=gsmlg %F
+Icon=accessories-text-editor
+Terminal=false
+Categories=Utility;TextEditor;Development;
+MimeType=text/plain;text/markdown;text/csv;text/tab-separated-values;text/html;text/css;text/javascript;text/x-script.python;text/x-python;text/x-shellscript;text/x-csrc;text/x-chdr;text/x-c++src;text/x-c++hdr;text/x-java;text/x-go;text/x-rust;text/x-dart;text/x-yaml;application/json;application/x-ndjson;application/xml;application/javascript;application/x-yaml;application/yaml;application/toml;application/x-shellscript;application/x-php;
+X-GSMLG-Editor-Registration=true

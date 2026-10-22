@@ -59,7 +59,7 @@ void main(List<String> args) async {
           debugShowCheckedModeBanner: false,
           localizationsDelegates: AppLocale.localizationsDelegates,
           supportedLocales: AppLocale.supportedLocales,
-          home: CrashReportingWidget(child: const App()),
+          home: CrashReportingWidget(child: App(arguments: args)),
         ),
       ),
     );

@@ -114,5 +114,22 @@
   "cameraNoHardwareTitle": "没有可用相机",
   "cameraNoHardwareDescription": "当前设备未检测到相机硬件，或相机暂时不可用。",
   "cameraBackToToolbox": "返回工具箱",
-  "cameraErrorTitle": "相机错误"
+  "cameraErrorTitle": "相机错误",
+  "editorTitle": "编辑器",
+  "editorNew": "新建",
+  "editorOpen": "打开",
+  "editorSave": "保存",
+  "editorSaveAs": "另存为",
+  "editorUndo": "撤销",
+  "editorRedo": "重做",
+  "editorUnsaved": "未保存的修改",
+  "editorConfirmTitle": "保存修改？",
+  "editorConfirmMessage": "继续而不保存将丢失当前修改。",
+  "editorDiscard": "放弃",
+  "editorCancel": "取消",
+  "editorUnsupportedEncoding": "此文件不是有效的 UTF-8 文本。",
+  "editorBinaryFile": "此文件包含二进制数据，无法编辑。",
+  "editorTooLarge": "文件过大。请选择小于 16 MiB 的文件。",
+  "editorReadFailed": "无法打开文件，已保留当前文档。",
+  "editorWriteFailed": "无法保存文件，已保留当前修改。"
 }

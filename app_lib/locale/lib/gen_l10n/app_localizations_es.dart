@@ -825,4 +825,60 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cameraErrorTitle => 'Camera Error';
+
+  @override
+  String get editorTitle => 'Editor';
+
+  @override
+  String get editorNew => 'New';
+
+  @override
+  String get editorOpen => 'Open';
+
+  @override
+  String get editorSave => 'Save';
+
+  @override
+  String get editorSaveAs => 'Save As';
+
+  @override
+  String get editorUndo => 'Undo';
+
+  @override
+  String get editorRedo => 'Redo';
+
+  @override
+  String get editorUnsaved => 'Unsaved changes';
+
+  @override
+  String get editorConfirmTitle => 'Save changes?';
+
+  @override
+  String get editorConfirmMessage =>
+      'Your changes will be lost if you continue without saving.';
+
+  @override
+  String get editorDiscard => 'Discard';
+
+  @override
+  String get editorCancel => 'Cancel';
+
+  @override
+  String get editorUnsupportedEncoding => 'This file is not valid UTF-8 text.';
+
+  @override
+  String get editorBinaryFile =>
+      'This file contains binary data and cannot be edited.';
+
+  @override
+  String get editorTooLarge =>
+      'This file is too large. Open a file smaller than 16 MiB.';
+
+  @override
+  String get editorReadFailed =>
+      'The file could not be opened. Your document has been kept.';
+
+  @override
+  String get editorWriteFailed =>
+      'The file could not be saved. Your changes have been kept.';
 }

@@ -9,6 +9,7 @@ class MainFlutterWindow: NSWindow {
     self.setFrame(windowFrame, display: true)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
+    EditorDocumentBridge.shared.bind(flutterViewController.engine.binaryMessenger)
 
     super.awakeFromNib()
   }

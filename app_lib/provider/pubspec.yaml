@@ -33,6 +33,8 @@ dependencies:
   app_chat: any
   tts_dataset: any
   app_audio: any
+  app_editor: any
+  editor_bloc: any
   audio_bloc: any
 
 dev_dependencies:
