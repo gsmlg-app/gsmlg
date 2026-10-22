@@ -134,6 +134,70 @@ void main() {
       secondary.dispose();
     });
 
+    testWidgets(
+      'publishes chat snapshots during build without rebuilding the sender',
+      (tester) async {
+        await tester.pump();
+        expect(primary.connected, isTrue);
+        expect(secondary.connected, isTrue);
+
+        const chatState = DuoChatState(
+          isStreaming: false,
+          canSend: true,
+          modelName: 'Gemma 2B',
+          activeAgentName: 'Helper',
+        );
+        late StateSetter rebuild;
+        var primaryNotifications = 0;
+        var secondaryNotifications = 0;
+        void onPrimaryChanged() {
+          primaryNotifications++;
+          rebuild(() {});
+        }
+
+        void onSecondaryChanged() {
+          secondaryNotifications++;
+        }
+
+        primary.addListener(onPrimaryChanged);
+        secondary.addListener(onSecondaryChanged);
+        addTearDown(() {
+          primary.removeListener(onPrimaryChanged);
+          secondary.removeListener(onSecondaryChanged);
+        });
+
+        await tester.pumpWidget(
+          StatefulBuilder(
+            builder: (context, setState) {
+              rebuild = setState;
+              return Builder(
+                builder: (context) {
+                  primary.updateChatState(chatState);
+                  return const SizedBox();
+                },
+              );
+            },
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(primaryNotifications, 0);
+        expect(primary.chatState, same(chatState));
+        expect(secondaryNotifications, 1);
+        expect(secondary.chatState?.modelName, 'Gemma 2B');
+        expect(secondary.chatState?.canSend, isTrue);
+
+        primary.updateChatState(null);
+        await tester.pump();
+
+        expect(primaryNotifications, 0);
+        expect(primary.chatState, isNull);
+        expect(secondaryNotifications, 2);
+        expect(secondary.chatState, isNull);
+      },
+    );
+
     test('relays chat state from primary to secondary', () async {
       await Future<void>.delayed(const Duration(milliseconds: 20));
 

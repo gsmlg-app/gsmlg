@@ -365,7 +365,8 @@ class DuoDisplayManager extends ChangeNotifier {
   void updateChatState(DuoChatState? state) {
     if (secondary) return;
     _chatState = state;
-    notifyListeners();
+    // Outbound snapshots must not rebuild the primary widgets publishing them.
+    // The secondary engine notifies its listeners when receiving chat_state.
     if (_connected) {
       bridge.send(jsonEncode({
         'type': 'chat_state',
