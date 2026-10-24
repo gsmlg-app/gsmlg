@@ -369,6 +369,9 @@ class _EditorScreenState extends State<EditorScreen> {
                         ),
                       if (state.busy) const LinearProgressIndicator(),
                       Expanded(
+                        // TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#28
+                        // Mobile touch editing is blocked until the editor
+                        // requests the soft keyboard on initial and repeat taps.
                         // TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#26
                         // WORKAROUND(upstream): duskmoon-dev/flutter-duskmoon-ui#26
                         // Detach a focused IME while file operations are busy.

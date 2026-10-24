@@ -106,7 +106,7 @@ flutter test --no-pub app_lib/editor/test app_bloc/editor/test \
 ```
 
 These cover UTF-8/BOM/newline preservation, cancellation and failed writes,
-read-only Save As, system-open queuing, unsaved-change guards, DuskMoon input,
+read-only Save As, system-open queuing, unsaved-change guards, programmatic IME edits,
 undo/redo, shortcuts, narrow light/dark layouts and splash navigation. Widget
 tests use simulated file access; they do not establish native provider behavior.
 
@@ -117,6 +117,29 @@ observed. The UI automation tool could not focus the editor and later timed out
 reading the save panel, so interactive editing/saving remains unverified there.
 Android/iOS document-provider roundtrips and Windows/Linux application runtime
 still require checks on those platforms.
+
+### Mobile touch editing blocker
+
+On 2026-10-23, testing the installed Release build from `98ad462` on the physical
+Pixel Fold (Android 17 / API 37) reproduced a mobile input failure: tapping the
+Editor body moves the cursor but does not show the software keyboard. The native
+Save As filename input shows the keyboard normally. No document was modified or
+saved during this diagnostic check.
+
+An isolated widget reproduction passes for a normal `TextField` and fails for
+`DmCodeEditor`: the editor connects its input client but sends only
+`TextInput.setClient` and `TextInput.setEditingState`, without `TextInput.show`.
+In `duskmoon_code_engine` 2.2.3, `InputHandler.attach()` attaches and synchronizes
+the input connection without requesting the keyboard; editor taps do not request
+it either. The reproduction and evidence are recorded in
+[flutter-duskmoon-ui#28](https://github.com/duskmoon-dev/flutter-duskmoon-ui/issues/28).
+
+This blocks mobile touch editing. The previous device build, installation and
+standalone launch checks did not verify this workflow. No local workaround is
+applied under the upstream blocker policy. Resume after a published upstream fix
+is adopted, then verify initial tap, dismiss and retap, multiline input, saving
+and reopening on the Pixel Fold. Android and iOS document-provider roundtrips
+remain unverified.
 
 `duskmoon_highlight` 2.2.3 can print `File modified during build. Build must be
 rerun.` and recompile its native grammars on unchanged builds. Generated C sources
