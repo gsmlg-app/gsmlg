@@ -873,6 +873,11 @@ class GemmaRepository {
     _setStatus(GemmaModelStatus.loading);
 
     try {
+      if (!localLlmEnabled) {
+        throw UnsupportedError(
+          'Local model inference is not included in this build.',
+        );
+      }
       if (llamaModelPath == null) {
         _setStatus(GemmaModelStatus.notInstalled);
         return;

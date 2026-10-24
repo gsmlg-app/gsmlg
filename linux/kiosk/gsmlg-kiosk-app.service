@@ -1,0 +1,11 @@
+[Unit]
+Description=GSMLG kiosk application
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/gsmlg/current
+ExecStart=/opt/gsmlg/current/gsmlg
+Environment=GDK_BACKEND=wayland
+Restart=always
+RestartSec=3
+TimeoutStopSec=15

@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+# Sway supplies its display/socket only after the compositor is ready.
+dbus-update-activation-environment --systemd \
+  WAYLAND_DISPLAY SWAYSOCK XDG_CURRENT_DESKTOP XDG_SESSION_TYPE GDK_BACKEND
+systemctl --user restart gsmlg-kiosk-app.service

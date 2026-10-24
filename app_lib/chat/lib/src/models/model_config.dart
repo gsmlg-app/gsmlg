@@ -4,6 +4,12 @@ import 'package:equatable/equatable.dart';
 
 import 'inference.dart';
 
+/// Whether this build includes on-device model inference.
+const localLlmEnabled = bool.fromEnvironment(
+  'GSMLG_ENABLE_LOCAL_LLM',
+  defaultValue: true,
+);
+
 /// The type of Gemma model to use.
 enum GemmaModelType {
   /// Gemma 2B Instruction-tuned model.
@@ -458,7 +464,8 @@ class GemmaModelInfo {
   static const defaultModel = _gemma4e2b;
 
   /// Models for the current platform.
-  static List<GemmaModelInfo> get platformModels => availableModels;
+  static List<GemmaModelInfo> get platformModels =>
+      localLlmEnabled ? availableModels : const [];
 
   /// The default free model that is compatible with the current platform.
   /// Used for auto-download when no models are installed.
