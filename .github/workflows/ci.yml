@@ -113,6 +113,71 @@ jobs:
       - name: Run tests
         run: melos run test
 
+  activity-monitor-native:
+    name: Activity Monitor Native (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+            engine_arch: x64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            engine_arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install native development libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libepoxy-dev libfontconfig-dev pkg-config
+
+      - name: Download Flutter Linux engine
+        shell: python
+        env:
+          ACTIVITY_ENGINE_ARCH: ${{ matrix.engine_arch }}
+        run: |
+          import json
+          import os
+          import pathlib
+          import re
+          import shutil
+          import urllib.request
+          import zipfile
+
+          # These native tests need the matching headers and shared library only.
+          base = "https://storage.googleapis.com/flutter_infra_release"
+          with urllib.request.urlopen(f"{base}/releases/releases_linux.json", timeout=30) as response:
+              framework = json.load(response)["current_release"]["stable"]
+          with urllib.request.urlopen(
+              f"https://raw.githubusercontent.com/flutter/flutter/{framework}/bin/internal/engine.version",
+              timeout=30,
+          ) as response:
+              engine = response.read().decode().strip()
+          assert re.fullmatch(r"[0-9a-f]{40}", engine)
+          arch = os.environ["ACTIVITY_ENGINE_ARCH"]
+          destination = pathlib.Path(os.environ["RUNNER_TEMP"]) / "activity-flutter-engine"
+          destination.mkdir()
+          archive = destination / "engine.zip"
+          url = f"{base}/flutter/{engine}/linux-{arch}-debug/linux-{arch}-flutter-gtk.zip"
+          with urllib.request.urlopen(url, timeout=30) as response, archive.open("wb") as output:
+              shutil.copyfileobj(response, output)
+          with zipfile.ZipFile(archive) as bundle:
+              for entry in bundle.infolist():
+                  assert (destination / entry.filename).resolve().is_relative_to(destination.resolve())
+              bundle.extractall(destination)
+          print(f"Flutter stable engine {engine} ({arch})")
+
+      - name: Test Linux activity collector
+        run: bash app_plugin/system_metrics/system_metrics_linux/test/linux_activity_smoke_test.sh
+
+      - name: Test Linux activity method channel
+        run: |
+          bash app_plugin/system_metrics/system_metrics_linux/test/linux_activity_channel_test.sh \
+            "$RUNNER_TEMP/activity-flutter-engine"
+
   build:
     name: Build Linux
     runs-on: ubuntu-latest

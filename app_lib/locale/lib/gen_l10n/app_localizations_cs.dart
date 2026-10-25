@@ -887,7 +887,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get activityMonitorUnsupported =>
-      'Activity Monitor currently supports macOS on Intel and Apple Silicon.';
+      'Activity Monitor currently supports macOS on Intel and Apple Silicon, and Linux on x86_64 and ARM64.';
 
   @override
   String get activityMonitorLoading => 'Collecting device activity…';

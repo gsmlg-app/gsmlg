@@ -137,7 +137,8 @@ class ActivityMemory {
 
   final int? totalBytes;
 
-  /// Non-purgeable anonymous + wired + compressor memory.
+  /// Linux: physical minus MemAvailable; macOS: non-purgeable anonymous plus
+  /// wired and compressor memory. Missing or invalid counters remain null.
   final int? usedBytes;
   final int? freeBytes;
   final int? activeBytes;
@@ -154,6 +155,7 @@ class ActivityMemory {
 
   factory ActivityMemory._fromMap(Map<String, dynamic> raw) {
     final total = _counter(raw['physical']);
+    final available = _counter(raw['available']);
     final active = _counter(raw['active']);
     final anonymous = _counter(raw['anonymous']);
     final purgeable = _counter(raw['purgeable']);
@@ -163,7 +165,11 @@ class ActivityMemory {
     final app = anonymous != null && purgeable != null
         ? (anonymous > purgeable ? anonymous - purgeable : 0)
         : null;
-    final used = _sum([app, wired, compressed]);
+    final used = raw.containsKey('available')
+        ? (total != null && total > 0 && available != null && available <= total
+            ? total - available
+            : null)
+        : _sum([app, wired, compressed]);
     return ActivityMemory(
       totalBytes: total,
       usedBytes: used,

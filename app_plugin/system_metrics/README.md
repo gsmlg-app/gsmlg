@@ -10,12 +10,13 @@ Retrieve CPU, GPU, NPU, and memory metrics
 - ✅ Built-in caching
 - ✅ Type-safe API
 
-## Activity Monitor (macOS)
+## Activity Monitor (macOS and Linux)
 
 `ActivityMonitor` provides an independent sampling session for macOS Intel and
-Apple Silicon. It reads native Mach, sysctl, IOKit, and network counters through
-the plugin; it does not launch command-line programs or require administrator
-access. Other platforms do not implement this activity API yet.
+Apple Silicon, and Linux x86_64 and arm64. macOS reads native Mach, sysctl, IOKit,
+and network counters; Linux reads `/proc` and `/sys`. Collection runs off the UI
+thread through the plugin, without launching command-line programs or requiring
+administrator access. Other platforms do not implement this activity API yet.
 
 ```dart
 final monitor = ActivityMonitor();
@@ -47,15 +48,29 @@ monotonic clock. The first sample and samples after `reset()` contain no interva
 rates. Missing measurements, counter resets, non-advancing clocks, and incompatible
 CPU/disk topology produce `null`, not zero. Network rates compare interfaces by
 name so a newly connected interface cannot introduce a cumulative-counter spike.
-Memory used follows the reference monitor's accounting:
+On macOS, memory used follows the reference monitor's accounting:
 `max(anonymous - purgeable, 0) + wired + compressor` bytes. Missing terms make
 the result unavailable. Active pages can include file-backed cache and are not
 substituted for anonymous memory. Memory pressure is 1 (normal), 2 (warning), or
-4 (critical). The legacy `getData()` memory formula remains unchanged.
+4 (critical). Linux uses `MemTotal - MemAvailable`, retaining reclaimable cache
+as available memory. Missing or invalid `MemAvailable` makes used memory
+unavailable. Linux does not synthesize macOS wired/compressed memory or pressure
+levels. The legacy `getData()` memory formula remains unchanged.
 
-GPU utilization remains `null` when the driver does not expose it. The activity
-API does not report NPU utilization. The legacy numeric `getData()` API remains
-unchanged for existing callers.
+Linux CPU counters include iowait in idle time and IRQ, softirq, and steal time
+in busy time, without counting guest time twice. Disk I/O sums whole backing
+devices, excluding partitions and stacked/virtual devices that would duplicate
+I/O. Disk sectors are converted using the kernel's fixed 512-byte accounting
+unit. Network I/O excludes loopback. Per-process thread reads can be incomplete
+under `/proc` permission restrictions or when processes exit during collection.
+If `hidepid` hides processes, the system process total is unavailable rather than
+presenting the visible subset as a complete count.
+
+GPU utilization remains `null` when the driver does not expose it. On Linux,
+driver support depends on readable DRM sysfs counters; unavailable GPUs retain
+the dashboard's unavailable state. The activity API does not report NPU
+utilization. The legacy numeric `getData()` API remains unchanged for existing
+callers.
 
 ### App integration and verification
 
@@ -70,7 +85,7 @@ The data path is:
 
 ```text
 ActivityMonitorScreen → ActivityMonitor session → platform method channel
-  → serial macOS collection queue → Mach / sysctl / IOKit / interface MIB
+  → serial native collection → macOS APIs or Linux procfs / sysfs
   → raw cumulative snapshot → Dart interval calculation → dashboard
 ```
 
@@ -86,6 +101,23 @@ Apple M1 Max live sampling was also checked with App Sandbox enabled. macOS
 denies per-process detail reads in that sandbox, while the collector can still
 report complete global Mach process/thread totals. Intel compilation is verified;
 Intel hardware runtime requires a separate device check.
+
+For Linux, run
+`bash app_plugin/system_metrics/system_metrics_linux/test/linux_activity_smoke_test.sh`.
+It compiles the standalone C++17 collector, checks filesystem fixtures, and
+samples the live host when running on Linux. `--sample-json` emits raw snapshots
+for checking the Dart interval calculations against real kernel counters.
+
+With a Flutter Linux engine directory containing `flutter_linux/` and
+`libflutter_linux_gtk.so`, run
+`bash app_plugin/system_metrics/system_metrics_linux/test/linux_activity_channel_test.sh /path/to/engine/linux-x64`
+(use `linux-arm64` on arm64). It requires GTK, epoxy, and fontconfig development
+packages and exercises
+the real Flutter codec, method channel, background task replies, concurrent
+requests, and pending-request teardown without starting a window or engine.
+
+CI runs both native checks on x86_64 and arm64 runners. These checks and the
+Flutter widget tests do not replace launching a full Linux application.
 
 ## Supported Platforms
 

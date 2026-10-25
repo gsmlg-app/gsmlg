@@ -877,7 +877,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get activityMonitorUnsupported =>
-      '活动监视器目前支持 Intel 和 Apple Silicon 的 macOS 设备。';
+      '活动监视器目前支持 Intel 和 Apple Silicon 的 macOS 设备，以及 x86_64 和 ARM64 的 Linux 设备。';
 
   @override
   String get activityMonitorLoading => '正在采集设备活动…';
@@ -1393,7 +1393,7 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get activityMonitorUnsupported =>
-      '活动监视器目前支持 Intel 和 Apple Silicon 的 macOS 设备。';
+      '活动监视器目前支持 Intel 和 Apple Silicon 的 macOS 设备，以及 x86_64 和 ARM64 的 Linux 设备。';
 
   @override
   String get activityMonitorLoading => '正在采集设备活动…';

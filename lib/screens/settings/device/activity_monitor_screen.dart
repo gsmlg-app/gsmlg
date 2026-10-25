@@ -36,7 +36,9 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen>
   int _session = 0;
 
   bool get _supported =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.linux);
 
   @override
   void initState() {

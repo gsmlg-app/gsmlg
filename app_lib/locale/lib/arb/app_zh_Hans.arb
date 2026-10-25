@@ -133,7 +133,7 @@
   "editorReadFailed": "无法打开文件，已保留当前文档。",
   "editorWriteFailed": "无法保存文件，已保留当前修改。",
   "activityMonitorTitle": "活动监视器",
-  "activityMonitorUnsupported": "活动监视器目前支持 Intel 和 Apple Silicon 的 macOS 设备。",
+  "activityMonitorUnsupported": "活动监视器目前支持 Intel 和 Apple Silicon 的 macOS 设备，以及 x86_64 和 ARM64 的 Linux 设备。",
   "activityMonitorLoading": "正在采集设备活动…",
   "activityMonitorFailed": "无法读取设备活动，请重试。",
   "activityMonitorSampling": "实时 · 每秒刷新",

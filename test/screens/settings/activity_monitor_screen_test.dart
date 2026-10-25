@@ -36,15 +36,51 @@ void main() {
         .setMockMethodCallHandler(_channel, null);
   });
 
-  _activityTestWidgets('unsupported device does not call the native plugin', (
+  for (final platform in [
+    TargetPlatform.android,
+    TargetPlatform.iOS,
+    TargetPlatform.windows,
+  ]) {
+    _activityTestWidgets(
+      'unsupported $platform does not call the native plugin',
+      (tester) async {
+        await _start(tester);
+        expect(
+          find.textContaining('Linux on x86_64 and ARM64'),
+          findsOneWidget,
+        );
+        expect(requests, 0);
+        await _dispose(tester);
+      },
+      platforms: [platform],
+    );
+  }
+
+  _activityTestWidgets('Linux samples generic cores and MemAvailable memory', (
     tester,
   ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    handler = (_) async => _linuxSample(requests);
     await _start(tester);
-    expect(find.textContaining('currently supports macOS'), findsOneWidget);
-    expect(requests, 0);
+    expect(requests, 1);
+    expect(find.text('Core 1'), findsOneWidget);
+    expect(find.text('Core 2'), findsOneWidget);
+    expect(find.text('1P · 1E'), findsNothing);
+    expect(find.text('Waiting for next sample'), findsWidgets);
+    final first = tester
+        .widget<ActivityMonitorDashboard>(find.byType(ActivityMonitorDashboard))
+        .snapshot;
+    expect(first.cpuUsage, isNull);
+    expect(first.memory.usedBytes, 12000000000);
+    expect(first.memory.wiredBytes, isNull);
+    expect(first.memory.compressedBytes, isNull);
+    expect(first.memory.pressure, isNull);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(requests, 2);
+    expect(find.text('20.0%'), findsNWidgets(3));
+    expect(find.text('1.0 KiB/s'), findsWidgets);
     await _dispose(tester);
-  });
+  }, platforms: const [TargetPlatform.linux]);
 
   _activityTestWidgets('shows honest baseline and then live interval values', (
     tester,
@@ -361,15 +397,45 @@ Map<String, Object?> _sample(int tick) => {
   'threads_complete': true,
 };
 
-void _activityTestWidgets(String description, WidgetTesterCallback callback) {
-  testWidgets(description, (tester) async {
-    final original = debugDefaultTargetPlatformOverride;
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
-    try {
-      await callback(tester);
-    } finally {
-      await _dispose(tester);
-      debugDefaultTargetPlatformOverride = original;
-    }
-  });
+Map<String, Object?> _linuxSample(int tick) => {
+  ..._sample(tick),
+  'architecture': 'x86_64',
+  'model': 'Linux workstation',
+  'cpu_brand': 'AMD Ryzen',
+  'cores': [
+    for (final core in _sample(tick)['cores']! as List)
+      {...core as Map<String, Object?>, 'type': null},
+  ],
+  'memory': {
+    'physical': 32000000000,
+    'available': 20000000000,
+    'free': 1000000000,
+    'active': 8000000000,
+    'inactive': 12000000000,
+    'swap_used': 0,
+    'swap_total': 0,
+  },
+  'gpu': <Object?>[],
+};
+
+void _activityTestWidgets(
+  String description,
+  WidgetTesterCallback callback, {
+  List<TargetPlatform> platforms = const [
+    TargetPlatform.macOS,
+    TargetPlatform.linux,
+  ],
+}) {
+  for (final platform in platforms) {
+    testWidgets('$description on ${platform.name}', (tester) async {
+      final original = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = platform;
+      try {
+        await callback(tester);
+      } finally {
+        await _dispose(tester);
+        debugDefaultTargetPlatformOverride = original;
+      }
+    });
+  }
 }

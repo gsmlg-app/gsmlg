@@ -325,7 +325,7 @@
   "editorReadFailed": "The file could not be opened. Your document has been kept.",
   "editorWriteFailed": "The file could not be saved. Your changes have been kept.",
   "activityMonitorTitle": "Activity Monitor",
-  "activityMonitorUnsupported": "Activity Monitor currently supports macOS on Intel and Apple Silicon.",
+  "activityMonitorUnsupported": "Activity Monitor currently supports macOS on Intel and Apple Silicon, and Linux on x86_64 and ARM64.",
   "activityMonitorLoading": "Collecting device activity…",
   "activityMonitorFailed": "Could not read device activity. Try again.",
   "activityMonitorSampling": "Live · refreshes every second",

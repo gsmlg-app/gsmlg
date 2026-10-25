@@ -1809,7 +1809,7 @@ abstract class AppLocalizations {
   /// No description provided for @activityMonitorUnsupported.
   ///
   /// In en, this message translates to:
-  /// **'Activity Monitor currently supports macOS on Intel and Apple Silicon.'**
+  /// **'Activity Monitor currently supports macOS on Intel and Apple Silicon, and Linux on x86_64 and ARM64.'**
   String get activityMonitorUnsupported;
 
   /// No description provided for @activityMonitorLoading.
