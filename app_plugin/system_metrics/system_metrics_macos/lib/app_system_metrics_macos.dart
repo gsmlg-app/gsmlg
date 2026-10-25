@@ -24,6 +24,10 @@ class SystemMetricsMacOS extends SystemMetricsPlatform {
   }
 
   @override
+  Future<Map<String, dynamic>> getActivityData() =>
+      MethodChannelSystemMetrics().getActivityData();
+
+  @override
   Future<Map<String, dynamic>> getData() async {
     double cpuVal = 0.0;
     double gpuVal = 0.0;

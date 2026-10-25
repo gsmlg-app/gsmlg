@@ -881,4 +881,124 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get editorWriteFailed =>
       'The file could not be saved. Your changes have been kept.';
+
+  @override
+  String get activityMonitorTitle => 'Activity Monitor';
+
+  @override
+  String get activityMonitorUnsupported =>
+      'Activity Monitor currently supports macOS on Intel and Apple Silicon.';
+
+  @override
+  String get activityMonitorLoading => 'Collecting device activity…';
+
+  @override
+  String get activityMonitorFailed =>
+      'Could not read device activity. Try again.';
+
+  @override
+  String get activityMonitorSampling => 'Live · refreshes every second';
+
+  @override
+  String get activityMonitorPaused => 'Sampling paused';
+
+  @override
+  String get activityMonitorUnavailable => 'Unavailable';
+
+  @override
+  String get activityMonitorWaiting => 'Waiting for next sample';
+
+  @override
+  String get activityMonitorCpu => 'CPU';
+
+  @override
+  String get activityMonitorMemory => 'Memory';
+
+  @override
+  String get activityMonitorDisk => 'Disk Activity';
+
+  @override
+  String get activityMonitorNetwork => 'Network Activity';
+
+  @override
+  String get activityMonitorGpu => 'GPU';
+
+  @override
+  String get activityMonitorProcesses => 'Processes & Threads';
+
+  @override
+  String get activityMonitorUsed => 'Used';
+
+  @override
+  String get activityMonitorTotal => 'Physical memory';
+
+  @override
+  String get activityMonitorWired => 'Wired';
+
+  @override
+  String get activityMonitorCompressed => 'Compressed';
+
+  @override
+  String get activityMonitorSwap => 'Swap used / total';
+
+  @override
+  String get activityMonitorPressure => 'Memory pressure';
+
+  @override
+  String get activityMonitorPressureNormal => 'Normal';
+
+  @override
+  String get activityMonitorPressureWarning => 'Warning';
+
+  @override
+  String get activityMonitorPressureCritical => 'Critical';
+
+  @override
+  String get activityMonitorRead => 'Read';
+
+  @override
+  String get activityMonitorWrite => 'Write';
+
+  @override
+  String get activityMonitorReceived => 'Received';
+
+  @override
+  String get activityMonitorSent => 'Sent';
+
+  @override
+  String get activityMonitorProcessCount => 'Processes';
+
+  @override
+  String get activityMonitorThreadCount => 'Threads';
+
+  @override
+  String get activityMonitorPartialThreads =>
+      'Thread count includes readable processes only.';
+
+  @override
+  String activityMonitorPerformanceCore(int id) {
+    return 'Performance P$id';
+  }
+
+  @override
+  String activityMonitorEfficiencyCore(int id) {
+    return 'Efficiency E$id';
+  }
+
+  @override
+  String activityMonitorCore(int id) {
+    return 'Core $id';
+  }
+
+  @override
+  String get activityMonitorHistory => 'Recent samples';
+
+  @override
+  String activityMonitorUpdated(String time) {
+    return 'Updated $time';
+  }
+
+  @override
+  String get activityMonitorGpuUnavailable =>
+      'GPU activity is not exposed by this device.';
 }

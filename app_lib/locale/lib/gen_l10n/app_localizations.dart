@@ -1799,6 +1799,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The file could not be saved. Your changes have been kept.'**
   String get editorWriteFailed;
+
+  /// No description provided for @activityMonitorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity Monitor'**
+  String get activityMonitorTitle;
+
+  /// No description provided for @activityMonitorUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity Monitor currently supports macOS on Intel and Apple Silicon.'**
+  String get activityMonitorUnsupported;
+
+  /// No description provided for @activityMonitorLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Collecting device activity…'**
+  String get activityMonitorLoading;
+
+  /// No description provided for @activityMonitorFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read device activity. Try again.'**
+  String get activityMonitorFailed;
+
+  /// No description provided for @activityMonitorSampling.
+  ///
+  /// In en, this message translates to:
+  /// **'Live · refreshes every second'**
+  String get activityMonitorSampling;
+
+  /// No description provided for @activityMonitorPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampling paused'**
+  String get activityMonitorPaused;
+
+  /// No description provided for @activityMonitorUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get activityMonitorUnavailable;
+
+  /// No description provided for @activityMonitorWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for next sample'**
+  String get activityMonitorWaiting;
+
+  /// No description provided for @activityMonitorCpu.
+  ///
+  /// In en, this message translates to:
+  /// **'CPU'**
+  String get activityMonitorCpu;
+
+  /// No description provided for @activityMonitorMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get activityMonitorMemory;
+
+  /// No description provided for @activityMonitorDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Disk Activity'**
+  String get activityMonitorDisk;
+
+  /// No description provided for @activityMonitorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network Activity'**
+  String get activityMonitorNetwork;
+
+  /// No description provided for @activityMonitorGpu.
+  ///
+  /// In en, this message translates to:
+  /// **'GPU'**
+  String get activityMonitorGpu;
+
+  /// No description provided for @activityMonitorProcesses.
+  ///
+  /// In en, this message translates to:
+  /// **'Processes & Threads'**
+  String get activityMonitorProcesses;
+
+  /// No description provided for @activityMonitorUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get activityMonitorUsed;
+
+  /// No description provided for @activityMonitorTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Physical memory'**
+  String get activityMonitorTotal;
+
+  /// No description provided for @activityMonitorWired.
+  ///
+  /// In en, this message translates to:
+  /// **'Wired'**
+  String get activityMonitorWired;
+
+  /// No description provided for @activityMonitorCompressed.
+  ///
+  /// In en, this message translates to:
+  /// **'Compressed'**
+  String get activityMonitorCompressed;
+
+  /// No description provided for @activityMonitorSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap used / total'**
+  String get activityMonitorSwap;
+
+  /// No description provided for @activityMonitorPressure.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory pressure'**
+  String get activityMonitorPressure;
+
+  /// No description provided for @activityMonitorPressureNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get activityMonitorPressureNormal;
+
+  /// No description provided for @activityMonitorPressureWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get activityMonitorPressureWarning;
+
+  /// No description provided for @activityMonitorPressureCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get activityMonitorPressureCritical;
+
+  /// No description provided for @activityMonitorRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get activityMonitorRead;
+
+  /// No description provided for @activityMonitorWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Write'**
+  String get activityMonitorWrite;
+
+  /// No description provided for @activityMonitorReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received'**
+  String get activityMonitorReceived;
+
+  /// No description provided for @activityMonitorSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get activityMonitorSent;
+
+  /// No description provided for @activityMonitorProcessCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Processes'**
+  String get activityMonitorProcessCount;
+
+  /// No description provided for @activityMonitorThreadCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Threads'**
+  String get activityMonitorThreadCount;
+
+  /// No description provided for @activityMonitorPartialThreads.
+  ///
+  /// In en, this message translates to:
+  /// **'Thread count includes readable processes only.'**
+  String get activityMonitorPartialThreads;
+
+  /// No description provided for @activityMonitorPerformanceCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance P{id}'**
+  String activityMonitorPerformanceCore(int id);
+
+  /// No description provided for @activityMonitorEfficiencyCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Efficiency E{id}'**
+  String activityMonitorEfficiencyCore(int id);
+
+  /// No description provided for @activityMonitorCore.
+  ///
+  /// In en, this message translates to:
+  /// **'Core {id}'**
+  String activityMonitorCore(int id);
+
+  /// No description provided for @activityMonitorHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent samples'**
+  String get activityMonitorHistory;
+
+  /// No description provided for @activityMonitorUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {time}'**
+  String activityMonitorUpdated(String time);
+
+  /// No description provided for @activityMonitorGpuUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'GPU activity is not exposed by this device.'**
+  String get activityMonitorGpuUnavailable;
 }
 
 class _AppLocalizationsDelegate

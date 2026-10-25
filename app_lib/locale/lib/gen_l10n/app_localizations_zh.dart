@@ -871,6 +871,123 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get editorWriteFailed => '无法保存文件，已保留当前修改。';
+
+  @override
+  String get activityMonitorTitle => '活动监视器';
+
+  @override
+  String get activityMonitorUnsupported =>
+      '活动监视器目前支持 Intel 和 Apple Silicon 的 macOS 设备。';
+
+  @override
+  String get activityMonitorLoading => '正在采集设备活动…';
+
+  @override
+  String get activityMonitorFailed => '无法读取设备活动，请重试。';
+
+  @override
+  String get activityMonitorSampling => '实时 · 每秒刷新';
+
+  @override
+  String get activityMonitorPaused => '采样已暂停';
+
+  @override
+  String get activityMonitorUnavailable => '不可用';
+
+  @override
+  String get activityMonitorWaiting => '等待下一次采样';
+
+  @override
+  String get activityMonitorCpu => 'CPU';
+
+  @override
+  String get activityMonitorMemory => '内存';
+
+  @override
+  String get activityMonitorDisk => '磁盘活动';
+
+  @override
+  String get activityMonitorNetwork => '网络活动';
+
+  @override
+  String get activityMonitorGpu => 'GPU';
+
+  @override
+  String get activityMonitorProcesses => '进程与线程';
+
+  @override
+  String get activityMonitorUsed => '已用';
+
+  @override
+  String get activityMonitorTotal => '物理内存';
+
+  @override
+  String get activityMonitorWired => '不可分页内存';
+
+  @override
+  String get activityMonitorCompressed => '压缩内存';
+
+  @override
+  String get activityMonitorSwap => '交换空间 已用 / 总量';
+
+  @override
+  String get activityMonitorPressure => '内存压力';
+
+  @override
+  String get activityMonitorPressureNormal => '正常';
+
+  @override
+  String get activityMonitorPressureWarning => '警告';
+
+  @override
+  String get activityMonitorPressureCritical => '严重';
+
+  @override
+  String get activityMonitorRead => '读取';
+
+  @override
+  String get activityMonitorWrite => '写入';
+
+  @override
+  String get activityMonitorReceived => '接收';
+
+  @override
+  String get activityMonitorSent => '发送';
+
+  @override
+  String get activityMonitorProcessCount => '进程数';
+
+  @override
+  String get activityMonitorThreadCount => '线程数';
+
+  @override
+  String get activityMonitorPartialThreads => '线程数仅包含可读取的进程。';
+
+  @override
+  String activityMonitorPerformanceCore(int id) {
+    return '性能核心 P$id';
+  }
+
+  @override
+  String activityMonitorEfficiencyCore(int id) {
+    return '能效核心 E$id';
+  }
+
+  @override
+  String activityMonitorCore(int id) {
+    return '核心 $id';
+  }
+
+  @override
+  String get activityMonitorHistory => '最近采样';
+
+  @override
+  String activityMonitorUpdated(String time) {
+    return '更新于 $time';
+  }
+
+  @override
+  String get activityMonitorGpuUnavailable => '此设备未提供 GPU 活动数据。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -1270,6 +1387,123 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get editorWriteFailed => '无法保存文件，已保留当前修改。';
+
+  @override
+  String get activityMonitorTitle => '活动监视器';
+
+  @override
+  String get activityMonitorUnsupported =>
+      '活动监视器目前支持 Intel 和 Apple Silicon 的 macOS 设备。';
+
+  @override
+  String get activityMonitorLoading => '正在采集设备活动…';
+
+  @override
+  String get activityMonitorFailed => '无法读取设备活动，请重试。';
+
+  @override
+  String get activityMonitorSampling => '实时 · 每秒刷新';
+
+  @override
+  String get activityMonitorPaused => '采样已暂停';
+
+  @override
+  String get activityMonitorUnavailable => '不可用';
+
+  @override
+  String get activityMonitorWaiting => '等待下一次采样';
+
+  @override
+  String get activityMonitorCpu => 'CPU';
+
+  @override
+  String get activityMonitorMemory => '内存';
+
+  @override
+  String get activityMonitorDisk => '磁盘活动';
+
+  @override
+  String get activityMonitorNetwork => '网络活动';
+
+  @override
+  String get activityMonitorGpu => 'GPU';
+
+  @override
+  String get activityMonitorProcesses => '进程与线程';
+
+  @override
+  String get activityMonitorUsed => '已用';
+
+  @override
+  String get activityMonitorTotal => '物理内存';
+
+  @override
+  String get activityMonitorWired => '不可分页内存';
+
+  @override
+  String get activityMonitorCompressed => '压缩内存';
+
+  @override
+  String get activityMonitorSwap => '交换空间 已用 / 总量';
+
+  @override
+  String get activityMonitorPressure => '内存压力';
+
+  @override
+  String get activityMonitorPressureNormal => '正常';
+
+  @override
+  String get activityMonitorPressureWarning => '警告';
+
+  @override
+  String get activityMonitorPressureCritical => '严重';
+
+  @override
+  String get activityMonitorRead => '读取';
+
+  @override
+  String get activityMonitorWrite => '写入';
+
+  @override
+  String get activityMonitorReceived => '接收';
+
+  @override
+  String get activityMonitorSent => '发送';
+
+  @override
+  String get activityMonitorProcessCount => '进程数';
+
+  @override
+  String get activityMonitorThreadCount => '线程数';
+
+  @override
+  String get activityMonitorPartialThreads => '线程数仅包含可读取的进程。';
+
+  @override
+  String activityMonitorPerformanceCore(int id) {
+    return '性能核心 P$id';
+  }
+
+  @override
+  String activityMonitorEfficiencyCore(int id) {
+    return '能效核心 E$id';
+  }
+
+  @override
+  String activityMonitorCore(int id) {
+    return '核心 $id';
+  }
+
+  @override
+  String get activityMonitorHistory => '最近采样';
+
+  @override
+  String activityMonitorUpdated(String time) {
+    return '更新于 $time';
+  }
+
+  @override
+  String get activityMonitorGpuUnavailable => '此设备未提供 GPU 活动数据。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).

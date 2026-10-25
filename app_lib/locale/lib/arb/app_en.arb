@@ -323,5 +323,69 @@
   "editorBinaryFile": "This file contains binary data and cannot be edited.",
   "editorTooLarge": "This file is too large. Open a file smaller than 16 MiB.",
   "editorReadFailed": "The file could not be opened. Your document has been kept.",
-  "editorWriteFailed": "The file could not be saved. Your changes have been kept."
+  "editorWriteFailed": "The file could not be saved. Your changes have been kept.",
+  "activityMonitorTitle": "Activity Monitor",
+  "activityMonitorUnsupported": "Activity Monitor currently supports macOS on Intel and Apple Silicon.",
+  "activityMonitorLoading": "Collecting device activity…",
+  "activityMonitorFailed": "Could not read device activity. Try again.",
+  "activityMonitorSampling": "Live · refreshes every second",
+  "activityMonitorPaused": "Sampling paused",
+  "activityMonitorUnavailable": "Unavailable",
+  "activityMonitorWaiting": "Waiting for next sample",
+  "activityMonitorCpu": "CPU",
+  "activityMonitorMemory": "Memory",
+  "activityMonitorDisk": "Disk Activity",
+  "activityMonitorNetwork": "Network Activity",
+  "activityMonitorGpu": "GPU",
+  "activityMonitorProcesses": "Processes & Threads",
+  "activityMonitorUsed": "Used",
+  "activityMonitorTotal": "Physical memory",
+  "activityMonitorWired": "Wired",
+  "activityMonitorCompressed": "Compressed",
+  "activityMonitorSwap": "Swap used / total",
+  "activityMonitorPressure": "Memory pressure",
+  "activityMonitorPressureNormal": "Normal",
+  "activityMonitorPressureWarning": "Warning",
+  "activityMonitorPressureCritical": "Critical",
+  "activityMonitorRead": "Read",
+  "activityMonitorWrite": "Write",
+  "activityMonitorReceived": "Received",
+  "activityMonitorSent": "Sent",
+  "activityMonitorProcessCount": "Processes",
+  "activityMonitorThreadCount": "Threads",
+  "activityMonitorPartialThreads": "Thread count includes readable processes only.",
+  "activityMonitorPerformanceCore": "Performance P{id}",
+  "@activityMonitorPerformanceCore": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "activityMonitorEfficiencyCore": "Efficiency E{id}",
+  "@activityMonitorEfficiencyCore": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "activityMonitorCore": "Core {id}",
+  "@activityMonitorCore": {
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "activityMonitorHistory": "Recent samples",
+  "activityMonitorUpdated": "Updated {time}",
+  "@activityMonitorUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "activityMonitorGpuUnavailable": "GPU activity is not exposed by this device."
 }

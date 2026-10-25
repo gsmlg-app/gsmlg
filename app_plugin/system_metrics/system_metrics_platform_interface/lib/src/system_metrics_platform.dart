@@ -31,6 +31,14 @@ abstract class SystemMetricsPlatform extends PlatformInterface {
     throw UnimplementedError('getData() has not been implemented.');
   }
 
+  /// Read cumulative counters for a session of device activity monitoring.
+  ///
+  /// Currently implemented by the macOS plugin only. This does not refresh or
+  /// alter the legacy [getData] sampler.
+  Future<Map<String, dynamic>> getActivityData() {
+    throw UnimplementedError('getActivityData() has not been implemented.');
+  }
+
   /// Refresh the cached system_metrics data.
   Future<void> refresh() {
     throw UnimplementedError('refresh() has not been implemented.');

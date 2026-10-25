@@ -20,6 +20,20 @@ class MethodChannelSystemMetrics extends SystemMetricsPlatform {
   }
 
   @override
+  Future<Map<String, dynamic>> getActivityData() async {
+    final result = await methodChannel.invokeMapMethod<String, dynamic>(
+      'getActivityData',
+    );
+    if (result == null) {
+      throw PlatformException(
+        code: 'NULL_RESULT',
+        message: 'Platform returned null activity data',
+      );
+    }
+    return result;
+  }
+
+  @override
   Future<void> refresh() async {
     await methodChannel.invokeMethod<void>('refresh');
   }

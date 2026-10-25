@@ -3,6 +3,8 @@ import FlutterMacOS
 
 public class SystemMetricsPlugin: NSObject, FlutterPlugin {
   private let metricsCollector = MacOSSystemMetricsCollector()
+  private let activityCollector = ActivityMonitorCollector()
+  private let activityQueue = DispatchQueue(label: "app_system_metrics.activity", qos: .utility)
 
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(
@@ -26,6 +28,11 @@ public class SystemMetricsPlugin: NSObject, FlutterPlugin {
             message: "Failed to get data: \(error.localizedDescription)",
             details: nil
           ))
+      }
+    case "getActivityData":
+      activityQueue.async { [self] in
+        let data = activityCollector.snapshot()
+        DispatchQueue.main.async { result(data) }
       }
     case "refresh":
       metricsCollector.reset()

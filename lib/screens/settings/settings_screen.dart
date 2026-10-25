@@ -18,6 +18,7 @@ import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
 import 'package:gsmlg/screens/settings/audio_settings_screen.dart';
 import 'package:gsmlg/screens/settings/backplane_settings_screen.dart';
 import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
+import 'package:gsmlg/screens/settings/device/activity_monitor_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:gsmlg/screens/settings/local_tools_settings_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
@@ -288,6 +289,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               title: Text(context.l10n.wifiInfo),
                               onPressed: (context) {
                                 context.goNamed(WifiInfoScreen.name);
+                              },
+                            ),
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.monitor_heart_outlined),
+                              title: Text(context.l10n.activityMonitorTitle),
+                              onPressed: (context) {
+                                context.goNamed(ActivityMonitorScreen.name);
                               },
                             ),
                           ],

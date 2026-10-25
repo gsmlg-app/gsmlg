@@ -216,6 +216,38 @@ void main() {
 
       expect(find.text('AudioSettings route'), findsOneWidget);
     });
+
+    testWidgets('shows Activity Monitor under Device and navigates', (
+      WidgetTester tester,
+    ) async {
+      await _pumpScreen(
+        tester,
+        sharedPreferences: sharedPreferences,
+        toolExecutor: toolExecutor,
+        themeBloc: themeBloc,
+        accountsBloc: accountsBloc,
+        chatSettingsBloc: chatSettingsBloc,
+        gemmaModelBloc: gemmaModelBloc,
+        audioSettingsBloc: audioSettingsBloc,
+      );
+
+      final deviceSection = tester
+          .widget<SettingsList>(find.byType(SettingsList))
+          .sections
+          .last;
+      expect((deviceSection.title as Text).data, 'Device');
+      expect(
+        deviceSection.tiles.cast<SettingsTile>().map(
+          (tile) => (tile.title as Text).data,
+        ),
+        contains('Activity Monitor'),
+      );
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -1200));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Activity Monitor'));
+      await tester.pumpAndSettle();
+      expect(find.text('Activity Monitor route'), findsOneWidget);
+    });
   });
 }
 
@@ -256,6 +288,11 @@ Future<void> _pumpScreen(
         path: '/test/audio',
         name: 'AudioSettings',
         builder: (context, state) => const Text('AudioSettings route'),
+      ),
+      GoRoute(
+        path: '/test/activity-monitor',
+        name: 'Activity Monitor',
+        builder: (context, state) => const Text('Activity Monitor route'),
       ),
     ],
   );
