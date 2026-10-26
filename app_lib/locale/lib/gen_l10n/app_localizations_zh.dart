@@ -988,6 +988,91 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get activityMonitorGpuUnavailable => '此设备未提供 GPU 活动数据。';
+
+  @override
+  String get activityMonitorTelemetry => '系统遥测';
+
+  @override
+  String get activityMonitorThisDevice => '当前设备';
+
+  @override
+  String get activityMonitorLogicalCores => '逻辑核心';
+
+  @override
+  String get activityMonitorSamples => '采样数';
+
+  @override
+  String get activityMonitorCpuHistory => 'CPU 历史';
+
+  @override
+  String get activityMonitorCoreLoad => '核心负载';
+
+  @override
+  String get activityMonitorGpuHistory => 'GPU 历史';
+
+  @override
+  String get activityMonitorUser => '用户';
+
+  @override
+  String get activityMonitorSystem => '系统';
+
+  @override
+  String get activityMonitorIdle => '空闲';
+
+  @override
+  String get activityMonitorAppMemory => '应用内存';
+
+  @override
+  String get activityMonitorCachedFiles => '缓存文件';
+
+  @override
+  String get activityMonitorSwapUsed => '已用交换空间';
+
+  @override
+  String get activityMonitorSwapTotal => '交换空间总量';
+
+  @override
+  String get activityMonitorBytes => '字节';
+
+  @override
+  String get activityMonitorOperations => '次数';
+
+  @override
+  String get activityMonitorPackets => '数据包';
+
+  @override
+  String get activityMonitorEarlier => '较早';
+
+  @override
+  String get activityMonitorNow => '现在';
+
+  @override
+  String get activityMonitorPause => '暂停';
+
+  @override
+  String get activityMonitorResume => '继续';
+
+  @override
+  String get activityMonitorDataSources => '数据来源与统计口径';
+
+  @override
+  String get activityMonitorDataNotes =>
+      '数据来自操作系统原生计数器。CPU 使用率与 I/O 速率根据相邻采样差值和单调时钟计算。首个样本仅建立基线，未知值保持不可用。曲线保留最近 60 个样本，缺失数据或计数器重置后重新开始。核心类型仅在系统提供时显示。暂停或离开此页面会停止采样。';
+
+  @override
+  String get activityMonitorMemoryNotes =>
+      '应用内存与缓存文件按原生 VM 计数估算，可能与其他监视器存在差异。内存压力展示系统报告的等级，并非百分比。';
+
+  @override
+  String get activityMonitorCumulative => '累计';
+
+  @override
+  String get activityMonitorRate => '速率';
+
+  @override
+  String activityMonitorHistoryWindow(int count) {
+    return '最近 $count / 60 个样本 · 每秒采样';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -1504,6 +1589,91 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get activityMonitorGpuUnavailable => '此设备未提供 GPU 活动数据。';
+
+  @override
+  String get activityMonitorTelemetry => '系统遥测';
+
+  @override
+  String get activityMonitorThisDevice => '当前设备';
+
+  @override
+  String get activityMonitorLogicalCores => '逻辑核心';
+
+  @override
+  String get activityMonitorSamples => '采样数';
+
+  @override
+  String get activityMonitorCpuHistory => 'CPU 历史';
+
+  @override
+  String get activityMonitorCoreLoad => '核心负载';
+
+  @override
+  String get activityMonitorGpuHistory => 'GPU 历史';
+
+  @override
+  String get activityMonitorUser => '用户';
+
+  @override
+  String get activityMonitorSystem => '系统';
+
+  @override
+  String get activityMonitorIdle => '空闲';
+
+  @override
+  String get activityMonitorAppMemory => '应用内存';
+
+  @override
+  String get activityMonitorCachedFiles => '缓存文件';
+
+  @override
+  String get activityMonitorSwapUsed => '已用交换空间';
+
+  @override
+  String get activityMonitorSwapTotal => '交换空间总量';
+
+  @override
+  String get activityMonitorBytes => '字节';
+
+  @override
+  String get activityMonitorOperations => '次数';
+
+  @override
+  String get activityMonitorPackets => '数据包';
+
+  @override
+  String get activityMonitorEarlier => '较早';
+
+  @override
+  String get activityMonitorNow => '现在';
+
+  @override
+  String get activityMonitorPause => '暂停';
+
+  @override
+  String get activityMonitorResume => '继续';
+
+  @override
+  String get activityMonitorDataSources => '数据来源与统计口径';
+
+  @override
+  String get activityMonitorDataNotes =>
+      '数据来自操作系统原生计数器。CPU 使用率与 I/O 速率根据相邻采样差值和单调时钟计算。首个样本仅建立基线，未知值保持不可用。曲线保留最近 60 个样本，缺失数据或计数器重置后重新开始。核心类型仅在系统提供时显示。暂停或离开此页面会停止采样。';
+
+  @override
+  String get activityMonitorMemoryNotes =>
+      '应用内存与缓存文件按原生 VM 计数估算，可能与其他监视器存在差异。内存压力展示系统报告的等级，并非百分比。';
+
+  @override
+  String get activityMonitorCumulative => '累计';
+
+  @override
+  String get activityMonitorRate => '速率';
+
+  @override
+  String activityMonitorHistoryWindow(int count) {
+    return '最近 $count / 60 个样本 · 每秒采样';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -1853,4 +2023,89 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get cameraErrorTitle => '相機錯誤';
+
+  @override
+  String get activityMonitorTelemetry => '系統遙測';
+
+  @override
+  String get activityMonitorThisDevice => '目前裝置';
+
+  @override
+  String get activityMonitorLogicalCores => '邏輯核心';
+
+  @override
+  String get activityMonitorSamples => '取樣數';
+
+  @override
+  String get activityMonitorCpuHistory => 'CPU 歷史';
+
+  @override
+  String get activityMonitorCoreLoad => '核心負載';
+
+  @override
+  String get activityMonitorGpuHistory => 'GPU 歷史';
+
+  @override
+  String get activityMonitorUser => '使用者';
+
+  @override
+  String get activityMonitorSystem => '系統';
+
+  @override
+  String get activityMonitorIdle => '閒置';
+
+  @override
+  String get activityMonitorAppMemory => '應用程式記憶體';
+
+  @override
+  String get activityMonitorCachedFiles => '快取檔案';
+
+  @override
+  String get activityMonitorSwapUsed => '已用交換空間';
+
+  @override
+  String get activityMonitorSwapTotal => '交換空間總量';
+
+  @override
+  String get activityMonitorBytes => '位元組';
+
+  @override
+  String get activityMonitorOperations => '次數';
+
+  @override
+  String get activityMonitorPackets => '封包';
+
+  @override
+  String get activityMonitorEarlier => '較早';
+
+  @override
+  String get activityMonitorNow => '現在';
+
+  @override
+  String get activityMonitorPause => '暫停';
+
+  @override
+  String get activityMonitorResume => '繼續';
+
+  @override
+  String get activityMonitorDataSources => '資料來源與統計方式';
+
+  @override
+  String get activityMonitorDataNotes =>
+      '資料來自作業系統原生計數器。CPU 使用率與 I/O 速率根據相鄰取樣差值和單調時鐘計算。首個樣本僅建立基準，未知值維持無法使用。曲線保留最近 60 個樣本，資料缺失或計數器重設後重新開始。核心類型僅在系統提供時顯示。暫停或離開此頁面會停止取樣。';
+
+  @override
+  String get activityMonitorMemoryNotes =>
+      '應用程式記憶體與快取檔案按原生 VM 計數估算，可能與其他監視器存在差異。記憶體壓力顯示系統回報的等級，並非百分比。';
+
+  @override
+  String get activityMonitorCumulative => '累計';
+
+  @override
+  String get activityMonitorRate => '速率';
+
+  @override
+  String activityMonitorHistoryWindow(int count) {
+    return '最近 $count / 60 個樣本 · 每秒取樣';
+  }
 }

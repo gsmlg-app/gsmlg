@@ -191,5 +191,39 @@
   "activityMonitorCore": "核心 {id}",
   "activityMonitorHistory": "最近采样",
   "activityMonitorUpdated": "更新于 {time}",
-  "activityMonitorGpuUnavailable": "此设备未提供 GPU 活动数据。"
+  "activityMonitorGpuUnavailable": "此设备未提供 GPU 活动数据。",
+  "activityMonitorTelemetry": "系统遥测",
+  "activityMonitorThisDevice": "当前设备",
+  "activityMonitorLogicalCores": "逻辑核心",
+  "activityMonitorSamples": "采样数",
+  "activityMonitorCpuHistory": "CPU 历史",
+  "activityMonitorCoreLoad": "核心负载",
+  "activityMonitorGpuHistory": "GPU 历史",
+  "activityMonitorUser": "用户",
+  "activityMonitorSystem": "系统",
+  "activityMonitorIdle": "空闲",
+  "activityMonitorAppMemory": "应用内存",
+  "activityMonitorCachedFiles": "缓存文件",
+  "activityMonitorSwapUsed": "已用交换空间",
+  "activityMonitorSwapTotal": "交换空间总量",
+  "activityMonitorBytes": "字节",
+  "activityMonitorOperations": "次数",
+  "activityMonitorPackets": "数据包",
+  "activityMonitorEarlier": "较早",
+  "activityMonitorNow": "现在",
+  "activityMonitorPause": "暂停",
+  "activityMonitorResume": "继续",
+  "activityMonitorDataSources": "数据来源与统计口径",
+  "activityMonitorDataNotes": "数据来自操作系统原生计数器。CPU 使用率与 I/O 速率根据相邻采样差值和单调时钟计算。首个样本仅建立基线，未知值保持不可用。曲线保留最近 60 个样本，缺失数据或计数器重置后重新开始。核心类型仅在系统提供时显示。暂停或离开此页面会停止采样。",
+  "activityMonitorMemoryNotes": "应用内存与缓存文件按原生 VM 计数估算，可能与其他监视器存在差异。内存压力展示系统报告的等级，并非百分比。",
+  "activityMonitorCumulative": "累计",
+  "activityMonitorRate": "速率",
+  "activityMonitorHistoryWindow": "最近 {count} / 60 个样本 · 每秒采样",
+  "@activityMonitorHistoryWindow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

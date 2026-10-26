@@ -114,5 +114,39 @@
   "cameraNoHardwareTitle": "沒有可用相機",
   "cameraNoHardwareDescription": "目前裝置未偵測到相機硬體，或相機暫時無法使用。",
   "cameraBackToToolbox": "返回工具箱",
-  "cameraErrorTitle": "相機錯誤"
+  "cameraErrorTitle": "相機錯誤",
+  "activityMonitorTelemetry": "系統遙測",
+  "activityMonitorThisDevice": "目前裝置",
+  "activityMonitorLogicalCores": "邏輯核心",
+  "activityMonitorSamples": "取樣數",
+  "activityMonitorCpuHistory": "CPU 歷史",
+  "activityMonitorCoreLoad": "核心負載",
+  "activityMonitorGpuHistory": "GPU 歷史",
+  "activityMonitorUser": "使用者",
+  "activityMonitorSystem": "系統",
+  "activityMonitorIdle": "閒置",
+  "activityMonitorAppMemory": "應用程式記憶體",
+  "activityMonitorCachedFiles": "快取檔案",
+  "activityMonitorSwapUsed": "已用交換空間",
+  "activityMonitorSwapTotal": "交換空間總量",
+  "activityMonitorBytes": "位元組",
+  "activityMonitorOperations": "次數",
+  "activityMonitorPackets": "封包",
+  "activityMonitorEarlier": "較早",
+  "activityMonitorNow": "現在",
+  "activityMonitorPause": "暫停",
+  "activityMonitorResume": "繼續",
+  "activityMonitorDataSources": "資料來源與統計方式",
+  "activityMonitorDataNotes": "資料來自作業系統原生計數器。CPU 使用率與 I/O 速率根據相鄰取樣差值和單調時鐘計算。首個樣本僅建立基準，未知值維持無法使用。曲線保留最近 60 個樣本，資料缺失或計數器重設後重新開始。核心類型僅在系統提供時顯示。暫停或離開此頁面會停止取樣。",
+  "activityMonitorMemoryNotes": "應用程式記憶體與快取檔案按原生 VM 計數估算，可能與其他監視器存在差異。記憶體壓力顯示系統回報的等級，並非百分比。",
+  "activityMonitorCumulative": "累計",
+  "activityMonitorRate": "速率",
+  "activityMonitorHistoryWindow": "最近 {count} / 60 個樣本 · 每秒取樣",
+  "@activityMonitorHistoryWindow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

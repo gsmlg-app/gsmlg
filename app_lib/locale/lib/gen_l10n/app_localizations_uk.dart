@@ -1001,4 +1001,89 @@ class AppLocalizationsUk extends AppLocalizations {
   @override
   String get activityMonitorGpuUnavailable =>
       'GPU activity is not exposed by this device.';
+
+  @override
+  String get activityMonitorTelemetry => 'System telemetry';
+
+  @override
+  String get activityMonitorThisDevice => 'This device';
+
+  @override
+  String get activityMonitorLogicalCores => 'Logical cores';
+
+  @override
+  String get activityMonitorSamples => 'Samples';
+
+  @override
+  String get activityMonitorCpuHistory => 'CPU history';
+
+  @override
+  String get activityMonitorCoreLoad => 'Core load';
+
+  @override
+  String get activityMonitorGpuHistory => 'GPU history';
+
+  @override
+  String get activityMonitorUser => 'User';
+
+  @override
+  String get activityMonitorSystem => 'System';
+
+  @override
+  String get activityMonitorIdle => 'Idle';
+
+  @override
+  String get activityMonitorAppMemory => 'Application memory';
+
+  @override
+  String get activityMonitorCachedFiles => 'Cached files';
+
+  @override
+  String get activityMonitorSwapUsed => 'Swap used';
+
+  @override
+  String get activityMonitorSwapTotal => 'Swap total';
+
+  @override
+  String get activityMonitorBytes => 'Bytes';
+
+  @override
+  String get activityMonitorOperations => 'Operations';
+
+  @override
+  String get activityMonitorPackets => 'Packets';
+
+  @override
+  String get activityMonitorEarlier => 'Earlier';
+
+  @override
+  String get activityMonitorNow => 'Now';
+
+  @override
+  String get activityMonitorPause => 'Pause';
+
+  @override
+  String get activityMonitorResume => 'Resume';
+
+  @override
+  String get activityMonitorDataSources => 'Data sources and measurement notes';
+
+  @override
+  String get activityMonitorDataNotes =>
+      'Metrics come from native OS counters. CPU and I/O rates use differences between consecutive samples and a monotonic clock. The first sample establishes a baseline; unavailable readings remain unavailable. Histories keep the latest 60 samples and restart after missing data or counter resets. Core types are shown only when reported by the OS. Pausing or leaving this page stops sampling.';
+
+  @override
+  String get activityMonitorMemoryNotes =>
+      'Application and cached memory use native VM counters and may differ from other monitors. Memory pressure shows an OS-reported level, not a percentage.';
+
+  @override
+  String get activityMonitorCumulative => 'Cumulative';
+
+  @override
+  String get activityMonitorRate => 'Rate';
+
+  @override
+  String activityMonitorHistoryWindow(int count) {
+    return '$count / 60 samples · 1 s cadence';
+  }
 }

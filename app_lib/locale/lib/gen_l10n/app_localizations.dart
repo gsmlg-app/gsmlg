@@ -2015,6 +2015,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GPU activity is not exposed by this device.'**
   String get activityMonitorGpuUnavailable;
+
+  /// No description provided for @activityMonitorTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'System telemetry'**
+  String get activityMonitorTelemetry;
+
+  /// No description provided for @activityMonitorThisDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get activityMonitorThisDevice;
+
+  /// No description provided for @activityMonitorLogicalCores.
+  ///
+  /// In en, this message translates to:
+  /// **'Logical cores'**
+  String get activityMonitorLogicalCores;
+
+  /// No description provided for @activityMonitorSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Samples'**
+  String get activityMonitorSamples;
+
+  /// No description provided for @activityMonitorCpuHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'CPU history'**
+  String get activityMonitorCpuHistory;
+
+  /// No description provided for @activityMonitorCoreLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Core load'**
+  String get activityMonitorCoreLoad;
+
+  /// No description provided for @activityMonitorGpuHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'GPU history'**
+  String get activityMonitorGpuHistory;
+
+  /// No description provided for @activityMonitorUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get activityMonitorUser;
+
+  /// No description provided for @activityMonitorSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get activityMonitorSystem;
+
+  /// No description provided for @activityMonitorIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get activityMonitorIdle;
+
+  /// No description provided for @activityMonitorAppMemory.
+  ///
+  /// In en, this message translates to:
+  /// **'Application memory'**
+  String get activityMonitorAppMemory;
+
+  /// No description provided for @activityMonitorCachedFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Cached files'**
+  String get activityMonitorCachedFiles;
+
+  /// No description provided for @activityMonitorSwapUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap used'**
+  String get activityMonitorSwapUsed;
+
+  /// No description provided for @activityMonitorSwapTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap total'**
+  String get activityMonitorSwapTotal;
+
+  /// No description provided for @activityMonitorBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'Bytes'**
+  String get activityMonitorBytes;
+
+  /// No description provided for @activityMonitorOperations.
+  ///
+  /// In en, this message translates to:
+  /// **'Operations'**
+  String get activityMonitorOperations;
+
+  /// No description provided for @activityMonitorPackets.
+  ///
+  /// In en, this message translates to:
+  /// **'Packets'**
+  String get activityMonitorPackets;
+
+  /// No description provided for @activityMonitorEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get activityMonitorEarlier;
+
+  /// No description provided for @activityMonitorNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get activityMonitorNow;
+
+  /// No description provided for @activityMonitorPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get activityMonitorPause;
+
+  /// No description provided for @activityMonitorResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get activityMonitorResume;
+
+  /// No description provided for @activityMonitorDataSources.
+  ///
+  /// In en, this message translates to:
+  /// **'Data sources and measurement notes'**
+  String get activityMonitorDataSources;
+
+  /// No description provided for @activityMonitorDataNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Metrics come from native OS counters. CPU and I/O rates use differences between consecutive samples and a monotonic clock. The first sample establishes a baseline; unavailable readings remain unavailable. Histories keep the latest 60 samples and restart after missing data or counter resets. Core types are shown only when reported by the OS. Pausing or leaving this page stops sampling.'**
+  String get activityMonitorDataNotes;
+
+  /// No description provided for @activityMonitorMemoryNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Application and cached memory use native VM counters and may differ from other monitors. Memory pressure shows an OS-reported level, not a percentage.'**
+  String get activityMonitorMemoryNotes;
+
+  /// No description provided for @activityMonitorCumulative.
+  ///
+  /// In en, this message translates to:
+  /// **'Cumulative'**
+  String get activityMonitorCumulative;
+
+  /// No description provided for @activityMonitorRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get activityMonitorRate;
+
+  /// No description provided for @activityMonitorHistoryWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} / 60 samples · 1 s cadence'**
+  String activityMonitorHistoryWindow(int count);
 }
 
 class _AppLocalizationsDelegate

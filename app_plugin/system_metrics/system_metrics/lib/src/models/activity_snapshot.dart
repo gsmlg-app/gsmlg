@@ -6,6 +6,8 @@ class ActivitySnapshot {
     required this.model,
     required this.cpuBrand,
     required this.cpuUsage,
+    this.cpuUserUsage,
+    this.cpuSystemUsage,
     required this.cores,
     required this.memory,
     required this.disk,
@@ -22,6 +24,8 @@ class ActivitySnapshot {
   final String model;
   final String cpuBrand;
   final double? cpuUsage;
+  final double? cpuUserUsage;
+  final double? cpuSystemUsage;
   final List<ActivityCpuCore> cores;
   final ActivityMemory memory;
   final ActivityDisk disk;
@@ -71,6 +75,12 @@ class ActivitySnapshot {
       model: _text(raw['model']),
       cpuBrand: _text(raw['cpu_brand']),
       cpuUsage: cores.isEmpty ? null : _percent(active, total),
+      cpuUserUsage: cores.isEmpty
+          ? null
+          : _percent(_sum(deltas.map((delta) => delta?.$3)), total),
+      cpuSystemUsage: cores.isEmpty
+          ? null
+          : _percent(_sum(deltas.map((delta) => delta?.$4)), total),
       cores: List.unmodifiable([
         for (var index = 0; index < cores.length; index++)
           ActivityCpuCore(
@@ -81,6 +91,8 @@ class ActivitySnapshot {
               _ => null,
             },
             usage: _percent(deltas[index]?.$1, deltas[index]?.$2),
+            userUsage: _percent(deltas[index]?.$3, deltas[index]?.$2),
+            systemUsage: _percent(deltas[index]?.$4, deltas[index]?.$2),
           ),
       ]),
       memory: ActivityMemory._fromMap(_map(raw['memory'])),
@@ -109,7 +121,12 @@ class ActivitySnapshot {
 }
 
 class ActivityCpuCore {
-  const ActivityCpuCore({required this.id, this.type, this.usage});
+  const ActivityCpuCore(
+      {required this.id,
+      this.type,
+      this.usage,
+      this.userUsage,
+      this.systemUsage});
 
   /// Native logical CPU slot, starting at one.
   final int id;
@@ -117,12 +134,16 @@ class ActivityCpuCore {
   /// `performance`, `efficiency`, or null when the OS cannot identify the type.
   final String? type;
   final double? usage;
+  final double? userUsage;
+  final double? systemUsage;
 }
 
 class ActivityMemory {
   const ActivityMemory({
     this.totalBytes,
     this.usedBytes,
+    this.appBytes,
+    this.cachedBytes,
     this.freeBytes,
     this.activeBytes,
     this.inactiveBytes,
@@ -140,6 +161,8 @@ class ActivityMemory {
   /// Linux: physical minus MemAvailable; macOS: non-purgeable anonymous plus
   /// wired and compressor memory. Missing or invalid counters remain null.
   final int? usedBytes;
+  final int? appBytes;
+  final int? cachedBytes;
   final int? freeBytes;
   final int? activeBytes;
   final int? inactiveBytes;
@@ -173,6 +196,8 @@ class ActivityMemory {
     return ActivityMemory(
       totalBytes: total,
       usedBytes: used,
+      appBytes: app,
+      cachedBytes: _sum([_counter(raw['file_backed']), purgeable]),
       freeBytes: _counter(raw['free']),
       activeBytes: active,
       inactiveBytes: _counter(raw['inactive']),
@@ -252,6 +277,10 @@ class ActivityNetwork {
     this.sentBytes,
     this.receivedBytesPerSecond,
     this.sentBytesPerSecond,
+    this.receivedPackets,
+    this.sentPackets,
+    this.receivedPacketsPerSecond,
+    this.sentPacketsPerSecond,
   });
 
   final bool available;
@@ -260,6 +289,10 @@ class ActivityNetwork {
   final int? sentBytes;
   final double? receivedBytesPerSecond;
   final double? sentBytesPerSecond;
+  final int? receivedPackets;
+  final int? sentPackets;
+  final double? receivedPacketsPerSecond;
+  final double? sentPacketsPerSecond;
 
   factory ActivityNetwork._fromSamples(
     Map<String, dynamic> raw,
@@ -280,6 +313,9 @@ class ActivityNetwork {
             name: interface['name'] as String,
             receivedBytes: available ? _counter(interface['rx_bytes']) : null,
             sentBytes: available ? _counter(interface['tx_bytes']) : null,
+            receivedPackets:
+                available ? _counter(interface['rx_packets']) : null,
+            sentPackets: available ? _counter(interface['tx_packets']) : null,
             receivedBytesPerSecond: comparable
                 ? _rate(interface['rx_bytes'],
                     oldInterfaces[interface['name']]?['rx_bytes'], elapsed)
@@ -287,6 +323,14 @@ class ActivityNetwork {
             sentBytesPerSecond: comparable
                 ? _rate(interface['tx_bytes'],
                     oldInterfaces[interface['name']]?['tx_bytes'], elapsed)
+                : null,
+            receivedPacketsPerSecond: comparable
+                ? _rate(interface['rx_packets'],
+                    oldInterfaces[interface['name']]?['rx_packets'], elapsed)
+                : null,
+            sentPacketsPerSecond: comparable
+                ? _rate(interface['tx_packets'],
+                    oldInterfaces[interface['name']]?['tx_packets'], elapsed)
                 : null,
           ),
     ];
@@ -312,6 +356,15 @@ class ActivityNetwork {
       receivedBytesPerSecond:
           rate((interface) => interface.receivedBytesPerSecond),
       sentBytesPerSecond: rate((interface) => interface.sentBytesPerSecond),
+      receivedPackets: interfaces.isEmpty
+          ? null
+          : _sum(interfaces.map((interface) => interface.receivedPackets)),
+      sentPackets: interfaces.isEmpty
+          ? null
+          : _sum(interfaces.map((interface) => interface.sentPackets)),
+      receivedPacketsPerSecond:
+          rate((interface) => interface.receivedPacketsPerSecond),
+      sentPacketsPerSecond: rate((interface) => interface.sentPacketsPerSecond),
     );
   }
 }
@@ -323,6 +376,10 @@ class ActivityNetworkInterface {
     this.sentBytes,
     this.receivedBytesPerSecond,
     this.sentBytesPerSecond,
+    this.receivedPackets,
+    this.sentPackets,
+    this.receivedPacketsPerSecond,
+    this.sentPacketsPerSecond,
   });
 
   final String name;
@@ -330,6 +387,10 @@ class ActivityNetworkInterface {
   final int? sentBytes;
   final double? receivedBytesPerSecond;
   final double? sentBytesPerSecond;
+  final int? receivedPackets;
+  final int? sentPackets;
+  final double? receivedPacketsPerSecond;
+  final double? sentPacketsPerSecond;
 }
 
 class ActivityGpu {
@@ -381,7 +442,7 @@ double? _rate(dynamic value, dynamic previous, double? elapsed) {
       : null;
 }
 
-(int, int)? _cpuDelta(
+(int, int, int, int)? _cpuDelta(
     Map<String, dynamic> core, Map<String, dynamic>? previous) {
   if (previous == null) return null;
   final user = _delta(core['user'], previous['user']);
@@ -393,5 +454,5 @@ double? _rate(dynamic value, dynamic previous, double? elapsed) {
   }
   final active = user + system + nice;
   final total = active + idle;
-  return total > 0 ? (active, total) : null;
+  return total > 0 ? (active, total, user + nice, system) : null;
 }

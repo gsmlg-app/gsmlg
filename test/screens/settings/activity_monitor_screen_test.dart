@@ -10,7 +10,7 @@ import 'package:logging/logging.dart';
 import 'package:gsmlg/screens/settings/device/activity_monitor_dashboard.dart';
 import 'package:gsmlg/screens/settings/device/activity_monitor_screen.dart';
 import 'package:gsmlg/screens/settings/settings_routes.dart';
-import 'package:gsmlg/screens/toolbox/monitor/widgets/sparkline_chart.dart';
+import 'package:gsmlg/screens/settings/device/activity_monitor_charts.dart';
 
 const _channel = MethodChannel('app_system_metrics');
 
@@ -77,7 +77,16 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();
     expect(requests, 2);
-    expect(find.text('20.0%'), findsNWidgets(3));
+    expect(find.text('20.0%'), findsWidgets);
+    expect(
+      tester
+          .widget<ActivityMonitorDashboard>(
+            find.byType(ActivityMonitorDashboard),
+          )
+          .snapshot
+          .cpuUsage,
+      20,
+    );
     expect(find.text('1.0 KiB/s'), findsWidgets);
     await _dispose(tester);
   }, platforms: const [TargetPlatform.linux]);
@@ -88,7 +97,7 @@ void main() {
     await _start(tester);
     expect(find.text('Activity Monitor'), findsOneWidget);
     expect(find.text('Performance P1'), findsOneWidget);
-    expect(find.text('Efficiency E1'), findsOneWidget);
+    expect(find.text('Efficiency E2'), findsOneWidget);
     expect(find.text('1P · 1E'), findsOneWidget);
     expect(find.text('Waiting for next sample'), findsWidgets);
     expect(find.text('20.0%'), findsNothing);
@@ -97,7 +106,16 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();
     expect(requests, 2);
-    expect(find.text('20.0%'), findsNWidgets(3));
+    expect(find.text('20.0%'), findsWidgets);
+    expect(
+      tester
+          .widget<ActivityMonitorDashboard>(
+            find.byType(ActivityMonitorDashboard),
+          )
+          .snapshot
+          .cpuUsage,
+      20,
+    );
     expect(find.text('1.0 KiB/s'), findsWidgets);
     expect(tester.takeException(), isNull);
     await _dispose(tester);
@@ -210,7 +228,16 @@ void main() {
       expect(find.text('Waiting for next sample'), findsWidgets);
       await tester.pump(const Duration(seconds: 1));
       await tester.pump();
-      expect(find.text('20.0%'), findsNWidgets(3));
+      expect(find.text('20.0%'), findsWidgets);
+      expect(
+        tester
+            .widget<ActivityMonitorDashboard>(
+              find.byType(ActivityMonitorDashboard),
+            )
+            .snapshot
+            .cpuUsage,
+        20,
+      );
       expect(errors, isEmpty);
       await _dispose(tester);
     },
@@ -229,6 +256,35 @@ void main() {
     expect(requests, 1);
     expect(tester.takeException(), isNull);
   });
+
+  _activityTestWidgets(
+    'Pause stops polling and Resume establishes a fresh baseline',
+    (tester) async {
+      await _start(tester);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      final before = requests;
+      await tester.ensureVisible(find.text('Pause'));
+      await tester.tap(find.text('Pause'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 3));
+      expect(requests, before);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(requests, before);
+      await tester.tap(find.text('Resume'));
+      await tester.pump();
+      await tester.pump();
+      expect(requests, before + 1);
+      final dashboard = tester.widget<ActivityMonitorDashboard>(
+        find.byType(ActivityMonitorDashboard),
+      );
+      expect(dashboard.history, hasLength(1));
+      expect(dashboard.snapshot.cpuUsage, isNull);
+      await _dispose(tester);
+    },
+  );
 
   _activityTestWidgets('retains at most 60 history samples', (tester) async {
     await _start(tester);
@@ -252,9 +308,11 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
       await tester.pump();
     }
-    Iterable<SparklineChart> cpuCharts() => tester
-        .widgetList<SparklineChart>(find.byType(SparklineChart))
-        .where((chart) => chart.maxValue == 100 && chart.values.contains(20));
+    Iterable<ActivityHistoryChart> cpuCharts() => tester
+        .widgetList<ActivityHistoryChart>(
+          find.byKey(const ValueKey('cpu-total-history')),
+        )
+        .where((chart) => chart.values.length >= 2);
     expect(cpuCharts(), hasLength(1));
     await tester.pump(const Duration(seconds: 1));
     await tester.pump();

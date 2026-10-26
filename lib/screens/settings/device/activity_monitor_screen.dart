@@ -33,6 +33,7 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen>
   bool _running = false;
   bool _inFlight = false;
   bool _failed = false;
+  bool _samplingPaused = false;
   int _session = 0;
 
   bool get _supported =>
@@ -64,7 +65,8 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen>
   }
 
   void _reconcile() {
-    final shouldRun = mounted && _supported && _routeCurrent && _resumed;
+    final shouldRun =
+        mounted && _supported && _routeCurrent && _resumed && !_samplingPaused;
     if (shouldRun == _running) return;
     _running = shouldRun;
     _session++;
@@ -119,6 +121,13 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen>
       _history.clear();
     });
     unawaited(_sample(_session));
+  }
+
+  void _toggleSampling() {
+    setState(() {
+      _samplingPaused = !_samplingPaused;
+      _reconcile();
+    });
   }
 
   @override
@@ -182,6 +191,8 @@ class _ActivityMonitorScreenState extends State<ActivityMonitorScreen>
                 snapshot: _snapshot!,
                 history: _history,
                 running: _running,
+                samplingPaused: _samplingPaused,
+                onToggleSampling: _toggleSampling,
               ),
             ),
         ],
