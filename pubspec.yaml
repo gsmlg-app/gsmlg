@@ -165,7 +165,7 @@ dependencies:
   monitor_agent: any
 
   # data visualization
-  duskmoon_visualization: ^2.2.3
+  duskmoon_visualization: ^2.2.5
   record: ^7.1.1
   wakelock_plus: ^1.8.0
   background_downloader: ^9.6.4

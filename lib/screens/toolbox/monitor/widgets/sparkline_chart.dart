@@ -1,4 +1,5 @@
-import 'package:duskmoon_visualization/duskmoon_visualization_compat.dart' hide Curve;
+import 'package:duskmoon_visualization/duskmoon_visualization_compat.dart'
+    hide Curve;
 import 'package:flutter/material.dart';
 
 class SparklineChart extends StatelessWidget {
