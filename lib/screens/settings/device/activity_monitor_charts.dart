@@ -175,14 +175,17 @@ class ActivityCoreMeter extends StatelessWidget {
     required this.label,
     required this.usage,
     required this.color,
+    this.compact = false,
   });
   final String label;
   final double? usage;
   final Color color;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final value = usage;
+    final segments = compact ? 12 : 24;
     return Semantics(
       label: label,
       value: value == null
@@ -193,40 +196,47 @@ class ActivityCoreMeter extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              value == null ? '—' : '${value.toStringAsFixed(1)}%',
+              value == null
+                  ? '—'
+                  : '${value.toStringAsFixed(compact ? 0 : 1)}%',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: color,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: compact ? 3 : 8),
             SizedBox(
-              width: 28,
-              height: 150,
+              width: compact ? 24 : 28,
+              height: compact ? 32 : 150,
               child: Column(
-                children: List.generate(24, (index) {
+                children: List.generate(segments, (index) {
                   final filled =
                       value != null &&
-                      (24 - index) <= (value.clamp(0, 100) / 100 * 24).ceil();
+                      (segments - index) <=
+                          (value.clamp(0, 100) / 100 * segments).ceil();
                   return Expanded(
                     child: Container(
-                      margin: const EdgeInsets.only(bottom: 2),
+                      margin: EdgeInsets.only(bottom: compact ? 1 : 2),
                       decoration: BoxDecoration(
                         color: filled
                             ? color
                             : Theme.of(
                                 context,
                               ).colorScheme.surfaceContainerHighest,
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
+                        border: compact
+                            ? null
+                            : Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.outlineVariant,
+                              ),
                       ),
                     ),
                   );
                 }),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: compact ? 3 : 8),
             Text(
               label,
               style: Theme.of(
