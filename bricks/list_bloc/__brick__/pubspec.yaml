@@ -11,11 +11,11 @@ dependencies:
     sdk: flutter
   
   # State management
-  bloc: ^9.0.0
-  flutter_bloc: ^9.0.0
+  bloc: ^9.2.1
+  flutter_bloc: ^9.1.1
   
   # Equality comparisons
-  equatable: ^2.0.7
+  equatable: ^3.0.0
   
   # Core dependencies from workspace
   app_logging: any
@@ -27,7 +27,7 @@ dev_dependencies:
   
   # Testing
   bloc_test: ^10.0.0
-  mocktail: ^1.0.0
+  mocktail: ^1.0.5
   
   # Linting
   flutter_lints: ^6.0.0
