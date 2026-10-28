@@ -203,7 +203,8 @@ The separate desktop-engine test confirms a loaded primary engine produces the
 same response after title-engine destruction. Deterministic unit tests cover
 local-resource serialization; the Android hardware run used the title smoke
 fixture, not a concurrently loaded user chat model. iOS adapter type-checking
-passed for device arm64; full iOS, Linux and Windows execution remains pending.
+passed for device arm64; iOS execution and full Linux/Windows application packaging remain unverified;
+the later native-runtime qualification is recorded below.
 CI includes packaged-model native smoke tests for Linux and Windows.
 
 ### CI qualification limits (2026-10-29)
@@ -228,7 +229,10 @@ The repository-wide CI failures are distinct from those title checks:
   no grammar removal or dependency-cache patch is used. Adopt a published fix
   within authorized scope and repeat the Windows app build, content audit and
   installed runtime verification. Source inspection also finds that declaration
-  in 2.2.5, so that version alone is not an evidenced fix.
+  in 2.2.5 and the latest published 2.2.7 (scanner.c:1307). The 2.2.7 hook still
+  selects C11 for Windows; its changelog describes hook API compatibility, not
+  an MSVC VLA fix. This is source inspection, not a new Windows build claim.
+  Neither version alone is an evidenced unblock.
 - The full Melos test job fails because app_system_metrics_linux has a `test/`
   directory without Dart test files, matching the preceding main failure. This
   task does not change that unrelated package or weaken its test command.
