@@ -51,6 +51,7 @@ platform :ios do
     # Build Flutter app without codesigning (Xcode will sign it)
     Dir.chdir("../..") do
       sh("flutter build ios --release --build-name=#{version_name} --build-number=#{version_code} --no-codesign")
+      sh("python3 tools/conversation_title/verify_package.py build/ios/iphoneos/Runner.app")
     end
 
     # Build and sign the IPA

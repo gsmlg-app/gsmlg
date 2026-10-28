@@ -18,3 +18,6 @@ export 'src/repositories/backplane_service_repository.dart';
 // Services
 export 'src/services/dart_mcp_tool_client.dart';
 export 'src/services/tool_executor.dart';
+
+export 'src/services/conversation_title_generator.dart';
+export 'src/services/minicpm_title_backend.dart';

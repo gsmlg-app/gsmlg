@@ -9,11 +9,13 @@ plugins {
 
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
+val bundlesTitleModel = gradle.startParameter.taskNames.any { it.contains("bundle", ignoreCase = true) }
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
+    if (bundlesTitleModel) assetPacks += listOf(":conversation_title")
     namespace = "org.gsmlg.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -70,6 +72,8 @@ android {
         }
     }
 
+    androidResources { noCompress += "gguf" }
+
     buildFeatures {
         viewBinding = true
     }
@@ -77,4 +81,19 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Verify before Flutter packages the install-time model asset.
+val verifyTitleModel by tasks.registering(Exec::class) {
+    workingDir(rootProject.projectDir.parentFile)
+    commandLine("python3", "tools/conversation_title/prepare.py")
+}
+tasks.named("preBuild") { dependsOn(verifyTitleModel) }
+
+// Play delivers the model at install time in its own asset pack. APK builds
+// retain the Flutter asset, so sideloading also works without a download.
+tasks.withType<Copy>().configureEach {
+    if (name.startsWith("copyFlutterAssets") && bundlesTitleModel) {
+        exclude("flutter_assets/assets/models/conversation_title/**")
+    }
 }

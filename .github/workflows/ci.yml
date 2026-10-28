@@ -55,6 +55,9 @@ jobs:
       - name: Install tools
         run: dart pub global activate melos
 
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
+
       - name: Prepare project
         run: melos run prepare
 
@@ -81,6 +84,9 @@ jobs:
       - name: Install tools
         run: dart pub global activate melos
 
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
+
       - name: Prepare project
         run: melos run prepare
 
@@ -106,6 +112,9 @@ jobs:
 
       - name: Install tools
         run: dart pub global activate melos
+
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
 
       - name: Prepare project
         run: melos run prepare
@@ -203,8 +212,39 @@ jobs:
       - name: Install tools
         run: dart pub global activate melos
 
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
+
       - name: Prepare project
         run: melos run prepare
 
       - name: Build Linux
         run: flutter build linux --release
+
+      - name: Verify packaged offline title model and native inference
+        run: |
+          python3 tools/conversation_title/verify_package.py build/linux/x64/release/bundle
+          TITLE_MODEL_PATH="$PWD/build/linux/x64/release/bundle/data/flutter_assets/assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf" \
+          TITLE_LIBRARY_PATH="$PWD/build/linux/x64/release/bundle/lib/liblib_llama_cpp_linux.so" \
+          flutter test --no-pub app_lib/chat/test/minicpm_title_native_smoke_test.dart
+
+  title-windows:
+    name: Qualify Windows offline titles
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: flutter-actions/setup-flutter@v4
+      - name: Install tools
+        run: dart pub global activate melos
+      - name: Prepare bundled title model
+        run: python tools/conversation_title/prepare.py --download
+      - name: Prepare project
+        run: melos run prepare
+      - name: Build Windows
+        run: flutter build windows --release
+      - name: Verify packaged offline title model and native inference
+        run: |
+          python tools/conversation_title/verify_package.py build/windows/x64/runner/Release
+          $env:TITLE_MODEL_PATH = "$pwd/build/windows/x64/runner/Release/data/flutter_assets/assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf"
+          $env:TITLE_LIBRARY_PATH = "$pwd/build/windows/x64/runner/Release/lib_llama_cpp_windows.dll"
+          flutter test --no-pub app_lib/chat/test/minicpm_title_native_smoke_test.dart

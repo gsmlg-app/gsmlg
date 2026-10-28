@@ -65,13 +65,14 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 17;
+  int get schemaVersion => 18;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         await m.createAll();
+        await _installChatRevisionTriggers();
       },
       onUpgrade: (Migrator m, int from, int to) async {
         if (from < 2) {
@@ -215,6 +216,17 @@ class AppDatabase extends _$AppDatabase {
             chatSettingsTable.remoteAuthHeaderName,
           );
         }
+        if (from < 18) {
+          await _addColumnIfMissing(
+              m, chatMessageTable, chatMessageTable.completedSuccessfully);
+          await _addColumnIfMissing(
+              m, chatConversationTable, chatConversationTable.titleSource);
+          await _addColumnIfMissing(
+              m, chatConversationTable, chatConversationTable.titleRevision);
+          await _addColumnIfMissing(
+              m, chatConversationTable, chatConversationTable.contentRevision);
+          await _installChatRevisionTriggers();
+        }
         if (from < 17) {
           await _addColumnIfMissing(
             m,
@@ -224,6 +236,20 @@ class AppDatabase extends _$AppDatabase {
         }
       },
     );
+  }
+
+  Future<void> _installChatRevisionTriggers() async {
+    for (final operation in ['INSERT', 'UPDATE', 'DELETE']) {
+      final row = operation == 'DELETE' ? 'OLD' : 'NEW';
+      final condition = operation == 'UPDATE'
+          ? 'WHEN OLD.content IS NOT NEW.content OR OLD.role IS NOT NEW.role OR OLD.conversation_id IS NOT NEW.conversation_id OR OLD.completed_successfully IS NOT NEW.completed_successfully'
+          : '';
+      await customStatement(
+          '''CREATE TRIGGER IF NOT EXISTS chat_content_revision_${operation.toLowerCase()}
+        AFTER $operation ON chat_message_table $condition BEGIN
+        UPDATE chat_conversation_table SET content_revision = content_revision + 1 WHERE id = $row.conversation_id;
+        END''');
+    }
   }
 
   Future<void> _addColumnIfMissing(

@@ -65,6 +65,8 @@ NativeDatabase _legacyV11DatabaseWithResponseColumns() {
           default_system_prompt TEXT NULL
         );
       ''');
+      database.execute(
+          'CREATE TABLE chat_conversation_table (id TEXT PRIMARY KEY, title TEXT NOT NULL, system_prompt TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)');
       database.execute('PRAGMA user_version = 11');
     },
   );

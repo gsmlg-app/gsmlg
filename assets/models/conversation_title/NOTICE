@@ -1,0 +1,7 @@
+MiniCPM5-1B by OpenBMB
+Copyright the MiniCPM authors.
+Source: https://huggingface.co/openbmb/MiniCPM5-1B-GGUF
+Revision: 3d55fac80935ae6456986ad2384b5cbcc4d6c948
+Artifact: MiniCPM5-1B-Q4_K_M.gguf
+Licensed under the Apache License, Version 2.0. See LICENSE in this directory.
+The official tokenizer and chat template are embedded in the GGUF file.

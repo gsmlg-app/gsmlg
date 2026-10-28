@@ -67,6 +67,7 @@ graphify-out/
 .mcp.json
 
 # Local model downloads & scratch files
-assets/models/
+assets/models/*
+!assets/models/conversation_title/
 scratch/
 

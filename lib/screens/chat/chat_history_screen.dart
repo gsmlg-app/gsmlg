@@ -298,9 +298,50 @@ class _ConversationTile extends StatelessWidget {
           ),
         ],
       ),
-      trailing: IconButton(
-        icon: const Icon(Icons.delete_outline),
-        onPressed: onDelete,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Rename conversation',
+            onPressed: () async {
+              final bloc = context.read<ChatBloc>();
+              var editedTitle = preview.title;
+              final title = await showDialog<String>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Rename conversation'),
+                  content: TextFormField(
+                    initialValue: preview.title,
+                    onChanged: (value) => editedTitle = value,
+                    autofocus: true,
+                    maxLength: 80,
+                    onFieldSubmitted: (value) => Navigator.pop(context, value),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, editedTitle),
+                      child: const Text('Save'),
+                    ),
+                  ],
+                ),
+              );
+              if (title != null && !bloc.isClosed) {
+                bloc.add(
+                  ChatRenameConversation(id: conversation.id, title: title),
+                );
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: onDelete,
+          ),
+        ],
       ),
       onTap: onTap,
     );

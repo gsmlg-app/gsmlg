@@ -151,3 +151,14 @@ final class _ChatFunctionCall extends _ChatRunEvent {
 final class _ChatStartLocal extends _ChatRunEvent {
   const _ChatStartLocal(super.conversationId, super.runId);
 }
+
+final class ChatRenameConversation extends ChatEvent {
+  const ChatRenameConversation({required this.id, required this.title});
+  final String id;
+  final String title;
+}
+
+final class _ChatTitleReady extends ChatEvent {
+  const _ChatTitleReady(this.id);
+  final String id;
+}

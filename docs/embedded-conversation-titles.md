@@ -1,0 +1,207 @@
+# Embedded conversation titles
+
+GSMLG uses a separate MiniCPM5-1B CPU engine for title generation. The selected
+chat provider, model selector, tools, MCP configuration and chat model are not
+used by this transformer. No summarization, memory or Agent Loop behavior is added.
+
+## Model provenance and preparation
+
+- Official repository: https://huggingface.co/openbmb/MiniCPM5-1B-GGUF
+- Revision: `3d55fac80935ae6456986ad2384b5cbcc4d6c948`
+- Artifact: `MiniCPM5-1B-Q4_K_M.gguf`, Q4_K_M, 688,065,920 bytes (656.19 MiB).
+- SHA-256: `81b64d05a23b17b34c475f42b3e72fbde62d4b92cc34541f7a8031d0752deafa`
+- License: Apache-2.0. Bundled LICENSE and NOTICE accompany the weights.
+
+Run before building or root Flutter tests:
+
+```sh
+python3 tools/conversation_title/prepare.py --download
+python3 tools/conversation_title/prepare.py
+```
+
+The manifest is `tools/conversation_title/model.json`; weights are generated into
+`assets/models/conversation_title/` and ignored by Git. Do not commit the binary.
+Only the build-time Python downloader contacts Hugging Face. Every download uses
+an immutable revision, verifies size and SHA-256, and renames a temporary file
+only after verification. Runtime code has no download or inference HTTP client.
+
+Flutter's asset declaration rejects a missing model. Android Gradle, Xcode build
+phases, and desktop CMake also verify its checksum. CI and release/deployment
+workflows prepare the pinned model before Flutter packaging. Never bypass these
+gates to produce a smaller application without titles.
+
+## Ownership and lifecycle
+
+`ConversationTitleGenerator` is injected into ChatBloc by MainProvider.
+`ConversationTitlePolicy` prepares only user and successful assistant **text**;
+it excludes system messages, tools, attachments and assistant reasoning. Input
+contains at most the first and three recent exchanges, with at most 160 UTF-8
+bytes per message. JSON separates the untrusted conversation from task
+instructions; role delimiter strings and common bearer/API-key shapes are
+redacted. This does not guarantee arbitrary free-text secrets can be recognized.
+
+The GGUF contains the official tokenizer and Jinja template. Inference uses
+`lib_llama_cpp` / `lib_llama_cpp_server` 0.7.5, `enable_thinking=false` both directly
+and in template kwargs, temperature zero, seed 42, and a 64-token output cap.
+The context is limited to 2,048 tokens; oversized inputs fail safely. Invalid,
+multiline, reasoning-only or excessive output leaves the fallback unchanged.
+Task instructions follow the conversation language and explicitly preserve both
+technical names and the concrete task; conversation data remains untrusted JSON.
+A generated title is a probabilistic text transformation; title quality is not
+guaranteed for every conversation or adversarial input.
+
+Title work starts only after successful response persistence and completion.
+The immediate first-user-message fallback remains visible and persisted.
+Scheduling considers successful exchange counts 1, 4, 7, etc. Refinement asks the
+model to return KEEP unless the topic materially changes or the existing title
+is inadequate; identical titles and KEEP produce no title write. Attempts for
+the same persisted content revision are deduplicated during the app session.
+Failures are optional: they do not change the chat result or settings.
+
+A serial title queue shares `LocalModelAccess` with foreground local inference.
+New foreground sends, edits and regenerations cancel title inference before
+waiting for the lease. Title engines never load through the mobile chat-model
+singleton, replace a chat model, or start a foreground service. App backgrounding
+cancels current work; native resources are destroyed in the worker before its
+result is delivered. The engine is unloaded immediately after each request to
+minimize resident memory; there is deliberately no warm resident title model.
+Native initialization, streaming SHA-256 checks, polling and teardown happen in
+a worker isolate, not the Flutter UI isolate. CPU inference uses four threads,
+128-token batches and 64-token micro-batches. Execution has a 45-second native
+loop deadline and a 60-second service timeout. Cancellation is cooperative;
+a synchronous native model load must return before the worker can process it.
+Cancelled candidates are requeued and checked against fresh persisted content
+after foreground work or background suspension ends. Ordinary failures are not
+retried in a loop. Diagnostics record failure types without conversation text.
+
+Android skips on low-RAM devices or when less than 2 GiB memory is available.
+iOS requires at least 6 GiB physical RAM and 2 GiB currently available to the
+process. These are conservative admission checks, not an OOM guarantee. Other
+apps can consume memory after the check; devices still need hardware qualification.
+
+## Persistence and UI
+
+Schema 18 adds title source, title revision, content revision, and persisted
+assistant completion status. Existing titles become manual, and existing
+unclassified assistant messages are not counted as successful exchanges.
+Ambiguous custom legacy titles are never automatically replaced.
+
+SQLite message triggers advance the content revision on insert, delete or actual
+text/completion changes. Automatic title persistence is an UPDATE with conversation
+ID, content revision, title revision and automatic-source predicates. It never
+inserts or recreates a deleted conversation. General conversation saves preserve
+existing generated/manual titles, so an old chat snapshot cannot undo a rename.
+Only revision-zero fallbacks can be updated by a general save.
+Title-only writes preserve `updatedAt` and history ordering.
+
+ChatBloc emits title changes to both the cached session and history. Existing
+chat-screen and history builders display them without navigation. The history
+rename action marks a title manual even while generation is running. Edits,
+regeneration, clear, deletion and background transitions invalidate delayed results.
+
+## Packaging and verification
+
+Apple and desktop builds place weights in Flutter assets and use their native
+installed file path directly. They do not copy the model into application data or
+load it with `rootBundle.load()`. Android's path-based GGUF engine cannot map a
+compressed APK asset by file offset, so a native buffered copy installs the model
+in `noBackupFilesDir/conversation_title/<sha256>/`. It verifies SHA-256 before an
+atomic rename and does not allocate a model-sized Dart/JVM buffer. This necessary
+Android private copy adds another 656.19 MiB after first use; all other platforms
+map the installed model. Android GGUF entries are stored without compression.
+
+Standalone APKs include the model in base Flutter assets. Android App Bundles
+instead exclude that base copy and include the `conversation_title` install-time
+asset pack. Its model and notices are available through AssetManager immediately
+after installation. There is no fast-follow/on-demand request or Play Core runtime
+download. Audit both formats; store size limits and Play delivery still require
+qualification with a signed bundle. Fastlane verifies the resulting AAB before
+upload and the iOS application before signing/export.
+
+Audit every built application or archive before distribution:
+
+```sh
+python3 tools/conversation_title/verify_package.py /path/to/application-or-archive
+```
+
+The audit requires exactly one model with the pinned hash, both legal notices,
+and the native llama.cpp library (or exported static iOS engine). Its success
+proves contents, not native execution, signing, store acceptance or device support.
+
+Run deterministic checks using the package working directories:
+
+```sh
+(cd app_lib/chat && flutter test --no-pub)
+flutter test --no-pub app_bloc/chat/test app_lib/database/test test/screens/chat/conversation_titles_test.dart
+flutter analyze --no-pub app_lib/chat app_bloc/chat app_lib/database app_lib/provider
+python3 -m unittest discover -s tools/conversation_title -p 'test_*.py'
+```
+
+`gemma_repository_isolate_registration_test.dart` reads package-relative source;
+running the entire chat package from the repository root gives a working-directory
+failure. It passes when invoked from `app_lib/chat`.
+
+The opt-in actual-engine test accepts `TITLE_MODEL_PATH` and `TITLE_LIBRARY_PATH`
+and runs `app_lib/chat/test/minicpm_title_native_smoke_test.dart`. An installed-app
+smoke test is `integration_test/conversation_title_offline_test.dart`; run it with
+`flutter test -d <device> integration_test/conversation_title_offline_test.dart`.
+It resolves packaged assets and native libraries and disables Dart networking.
+This is not proof that OS-level networking was disabled.
+The equivalent driver is `test_driver/conversation_title.dart`; it also supports
+`flutter drive --use-application-binary=<APK> -d <device>
+--driver=test_driver/conversation_title.dart
+--target=integration_test/conversation_title_offline_test.dart` for a prebuilt
+debug APK. Use physical devices and record networking state separately.
+
+## Qualification record
+
+Qualification host: MacBookPro18,4, Apple M1 Max, 32 GiB RAM, 2026-10-29.
+
+| Platform | Packaging | Native execution |
+| --- | --- | --- |
+| macOS | Release `.app` built and content audit passed | Both tests also pass using the packaged model and packaged native library; independent primary engine survives title-engine teardown |
+| Android | Debug APK and AAB audits passed; device-specific install-time pack installed | Pixel Fold (Android 17, GS201) generated a title with no active default network |
+| iOS | Signed arm64 Debug app built and packaged-model/native-engine audit passed | Device execution not yet qualified |
+| Linux | Installed asset path and CMake verification implemented | No Linux application built or executed in this qualification |
+| Windows | Installed asset path and CMake verification implemented | No Windows application built or executed in this qualification |
+
+Actual native cold title transformation on the Mac host with the final language-aligned
+prompt: 19,978 ms (`可复用 Flutter 组件设计`). An earlier prompt took 17,665 ms, including
+SHA-256, engine loading, prompt processing, decoding and teardown. Generated
+title: `设计可复用 Flutter 组件`. A separate native benchmark using the same model
+and CPU configuration with a shorter fixed prompt measured 3.415 s loading,
+7.025 s first inference, 0.801 s repeated cached inference, and peak process RSS
+1,281,441,792 bytes (1.19 GiB). The cached result is a backend benchmark;
+production unloads immediately and therefore has no resident warm-engine path.
+Repeating the smoke test against the actual Release app's weights and library
+passed with a 27,528 ms cold transformation under concurrent build load. These
+Flutter test processes use the x86-64 tester on the Apple Silicon host; this is
+native-library qualification under Rosetta, not a launched arm64 application UI
+or physical iOS-device measurement.
+
+The macOS Release app is 1,360.1 MB as reported by Flutter (1,328,604 KiB of disk
+blocks). The model contributes exactly 688,065,920 uncompressed bytes plus small
+notices. There is no measured compressed release delta against a matched baseline.
+Package contents do not establish signing, notarization or store acceptance.
+Mock tests are not evidence of native compatibility. Unqualified platforms must
+not be advertised as verified. No release or store deployment was performed.
+
+Physical Android qualification used Pixel Fold `37011FDH8119SS`. Bundletool 1.18.3
+created device-specific APKs from the debug AAB; `pm path` confirmed the
+`split_conversation_title.apk` install-time pack. The previous extracted title
+weight was removed before launch. Wi-Fi and mobile data were disabled and
+`dumpsys connectivity` reported `Active default network: none`. The strict
+installed-app smoke test passed with `可复用 Flutter 组件设计` in **13,774 ms**,
+including verification/extraction, model initialization, inference and teardown.
+Sampled peak process VmHWM was **1,239,672 KiB**, peak VmRSS **1,239,648 KiB**
+(24 samples). Network settings were restored. This is debug/arm64 hardware
+qualification; it does not prove Play acceptance or release signing. The audited
+standalone debug APK was 1,106,602,994 bytes; the earlier audited debug AAB was
+850,462,566 bytes. Exact final bundle size can vary with compiled test code.
+
+The separate desktop-engine test confirms a loaded primary engine produces the
+same response after title-engine destruction. Deterministic unit tests cover
+local-resource serialization; the Android hardware run used the title smoke
+fixture, not a concurrently loaded user chat model. iOS adapter type-checking
+passed for device arm64; full iOS, Linux and Windows execution remains pending.
+CI includes packaged-model native smoke tests for Linux and Windows.

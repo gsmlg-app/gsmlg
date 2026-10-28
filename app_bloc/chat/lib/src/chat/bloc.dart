@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -24,15 +26,32 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     SharedPreferences? preferences,
     BackplaneServiceRepository? backplaneService,
     LocalModelAccess? modelAccess,
+    ConversationTitleGenerator? titleGenerator,
   })  : _gemmaRepository = gemmaRepository,
         _remoteRepository = remoteRepository,
         _storageRepository = storageRepository,
         _toolExecutor = toolExecutor,
+        _titleGenerator = titleGenerator,
         _preferences = preferences,
         _backplaneService = backplaneService,
         _modelAccess =
             modelAccess ?? LocalModelAccess.forResource(gemmaRepository),
         super(const ChatState()) {
+    on<_ChatTitleReady>(_onTitleReady);
+    on<ChatRenameConversation>(_onRenameConversation);
+    if (titleGenerator != null) {
+      _titlesActive = WidgetsBinding.instance.lifecycleState == null ||
+          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+      _titleLifecycle = AppLifecycleListener(onStateChange: (lifecycle) {
+        _titlesActive = lifecycle == AppLifecycleState.resumed;
+        if (!_titlesActive) {
+          ++_titleEpoch;
+          unawaited(_titleGenerator?.cancel());
+        } else {
+          _drainTitles();
+        }
+      });
+    }
     on<ChatLoadConversation>(_onLoadConversation);
     on<ChatNewConversation>(_onNewConversation);
     on<ChatUpdateDraft>(_onUpdateDraft);
@@ -52,6 +71,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<_ChatFunctionCall>(_onFunctionCall);
     on<_ChatStartLocal>(_onStartLocal);
   }
+  final ConversationTitleGenerator? _titleGenerator;
+  AppLifecycleListener? _titleLifecycle;
+  bool _titlesActive = true;
+  bool _titleRunning = false;
+  int _titleEpoch = 0;
+  final _titleCandidates = <String>{};
+  final _titleAttempts = <String, int>{};
+
   final GemmaRepository _gemmaRepository;
   final RemoteLlmRepository _remoteRepository;
   final ChatStorageRepository _storageRepository;
@@ -170,7 +197,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   Conversation _newConversation({String? title, String? systemPrompt}) {
     var conversation = Conversation.create(
-        id: _uuid.v4(), title: title ?? 'New Chat', systemPrompt: systemPrompt);
+        id: _uuid.v4(), title: title, systemPrompt: systemPrompt);
+    if (title == null) conversation = conversation.copyWith(title: 'New Chat');
     if (systemPrompt != null && systemPrompt.isNotEmpty) {
       conversation = conversation.addMessage(SystemMessage(
           id: _uuid.v4(),
@@ -300,15 +328,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (conversation == null && targetId != null) return;
     if (conversation == null) {
       ++_navigationVersion;
-      conversation = _newConversation(
-          title: _generateTitle(event.content),
-          systemPrompt: event.systemPrompt);
+      conversation = _newConversation(systemPrompt: event.systemPrompt)
+          .copyWith(title: _generateTitle(event.content));
       _putSession(
           ChatSessionState(
               conversation: conversation, systemPrompt: event.systemPrompt),
           emit,
           select: true);
     }
+    _pauseTitles();
     final task = _reserve(conversation, emit,
         config: event.config, agentId: event.agentId);
     if (task == null) return;
@@ -332,7 +360,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           audioBytes: event.audioBytes,
           attachments: event.attachments);
       task.conversation = task.conversation.addMessage(user);
-      if (task.conversation.chatMessages.length == 1) {
+      if (task.conversation.hasAutomaticTitle &&
+          task.conversation.chatMessages.length == 1) {
         task.conversation =
             task.conversation.copyWith(title: _generateTitle(event.content));
       }
@@ -407,6 +436,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     task.conversation = Conversation(
         id: conversation.id,
         title: conversation.title,
+        titleSource: conversation.titleSource,
+        titleRevision: conversation.titleRevision,
+        contentRevision: conversation.contentRevision,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
         systemPrompt: prompt,
@@ -713,6 +745,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     task.finishing = true;
     task.timer?.cancel();
     task.stopwatch.stop();
+    _updateStreamingAssistant(
+        task,
+        (m) => m.copyWith(
+            completedSuccessfully:
+                status == ChatStatus.ready && error == null));
     if (error != null && task.messageId != null) {
       task.conversation = markStreamingAssistantError(
               conversation: task.conversation,
@@ -763,6 +800,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
     if (_localRunId == task.runId) _localRunId = null;
     _drainLocalQueue(emit);
+    if (status == ChatStatus.ready && error == null) {
+      _titleCandidates.add(task.id);
+      _drainTitles();
+    }
   }
 
   Future<_GenerationTask?> _cancel(String id) async {
@@ -793,7 +834,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     try {
       final task = await _cancel(id);
       if (task == null || _deleted.contains(id)) return;
-      _updateStreamingAssistant(task, (m) => m.copyWith(isStreaming: false));
+      _updateStreamingAssistant(task,
+          (m) => m.copyWith(isStreaming: false, completedSuccessfully: false));
       task.conversation = task.conversation.copyWith(updatedAt: DateTime.now());
       for (final message in task.conversation.messages) {
         await _storageRepository.saveMessage(message);
@@ -834,6 +876,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final session = state.sessions[id];
     if (session == null) return;
     _mutating.add(id);
+    _pauseTitles();
+    _titleCandidates.remove(id);
     try {
       await _cancel(id);
       await _storageRepository.clearConversationMessages(id);
@@ -872,6 +916,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       return;
     }
     if (_deleted.contains(id) && !state.sessions.containsKey(id)) return;
+    _pauseTitles();
+    _titleCandidates.remove(id);
     _deleted.add(id);
     _mutating.add(id);
     try {
@@ -939,6 +985,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         : messages.indexWhere(
             (m) => m.id == event.messageId && m is AssistantMessage);
     if (index < 0) return;
+    _pauseTitles();
     final task = _reserve(session.conversation, emit);
     if (task == null) return;
     await _restartFromPrefix(task,
@@ -957,13 +1004,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final index =
         messages.indexWhere((m) => m.id == event.messageId && m is UserMessage);
     if (index < 0) return;
+    _pauseTitles();
     final task = _reserve(session.conversation, emit);
     if (task == null) return;
     final user = (messages[index] as UserMessage).copyWith(content: content);
     await _restartFromPrefix(task,
         retainedMessages: [...messages.sublist(0, index), user],
         deleteMessages: messages.sublist(index + 1),
-        title: messages.indexWhere((m) => m is UserMessage) == index
+        title: session.conversation.titleSource == 'fallback' &&
+                messages.indexWhere((m) => m is UserMessage) == index
             ? _generateTitle(content)
             : null,
         emit: emit);
@@ -1058,6 +1107,114 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     return (trimmed.length / 4).ceil();
   }
 
+  void _pauseTitles() {
+    ++_titleEpoch;
+    unawaited(_titleGenerator?.cancel());
+  }
+
+  void _drainTitles() {
+    if (_titleRunning ||
+        _titleGenerator == null ||
+        !_titlesActive ||
+        _closing ||
+        _tasks.isNotEmpty) {
+      return;
+    }
+    _titleRunning = true;
+    unawaited(_runTitles().whenComplete(() {
+      _titleRunning = false;
+      if (_titleCandidates.isNotEmpty) _drainTitles();
+    }));
+  }
+
+  Future<void> _runTitles() async {
+    while (_titleCandidates.isNotEmpty &&
+        _tasks.isEmpty &&
+        _titlesActive &&
+        !_closing) {
+      final id = _titleCandidates.first;
+      _titleCandidates.remove(id);
+      final epoch = _titleEpoch;
+      LocalModelLease? lease;
+      try {
+        lease = await _modelAccess.acquire();
+        if (epoch != _titleEpoch ||
+            _tasks.isNotEmpty ||
+            !_titlesActive ||
+            _closing) {
+          continue;
+        }
+        final snapshot = await _storageRepository.loadConversation(id);
+        if (snapshot == null ||
+            _deleted.contains(id) ||
+            !const ConversationTitlePolicy().shouldGenerate(snapshot) ||
+            _titleAttempts[id] == snapshot.contentRevision) {
+          continue;
+        }
+        _titleAttempts[id] = snapshot.contentRevision;
+        final title = await _titleGenerator!.generate(snapshot);
+        if (title == null ||
+            epoch != _titleEpoch ||
+            _tasks.isNotEmpty ||
+            _deleted.contains(id) ||
+            !_titlesActive ||
+            _closing) {
+          continue;
+        }
+        if (await _storageRepository.updateAutomaticTitle(snapshot, title)) {
+          if (!_closing) add(_ChatTitleReady(id));
+        }
+      } catch (error) {
+        developer.log('Optional title update failed (${error.runtimeType})',
+            name: 'app_chat.title');
+      } finally {
+        lease?.release();
+        // Cancellation defers the request; ordinary inference failure is not
+        // retried in a loop. Re-read content and title ownership on resumption.
+        if (epoch != _titleEpoch && !_closing && !_deleted.contains(id)) {
+          _titleAttempts.remove(id);
+          _titleCandidates.add(id);
+        }
+      }
+    }
+  }
+
+  Future<void> _onTitleReady(
+      _ChatTitleReady event, Emitter<ChatState> emit) async {
+    final stored = await _storageRepository.loadConversation(event.id);
+    if (stored == null || _closing || _deleted.contains(event.id)) return;
+    Conversation sync(Conversation value) => value.copyWith(
+        title: stored.title,
+        titleSource: stored.titleSource,
+        titleRevision: stored.titleRevision,
+        contentRevision: stored.contentRevision);
+    final session = state.sessions[event.id];
+    final task = _tasks[event.id];
+    if (task != null) task.conversation = sync(task.conversation);
+    _publish(emit,
+        sessions: {
+          ...state.sessions,
+          if (session != null)
+            event.id: session.copyWith(conversation: sync(session.conversation))
+        },
+        history: state.conversationHistory
+            .map((c) => c.id == event.id ? sync(c) : c)
+            .toList());
+  }
+
+  Future<void> _onRenameConversation(
+      ChatRenameConversation event, Emitter<ChatState> emit) async {
+    final title = event.title.trim();
+    if (title.isEmpty ||
+        title.runes.length > 80 ||
+        RegExp(r'[\r\n\x00-\x1f]').hasMatch(title)) {
+      return;
+    }
+    _pauseTitles();
+    await _storageRepository.updateConversationTitle(event.id, title);
+    if (!_closing) add(_ChatTitleReady(event.id));
+  }
+
   String _generateTitle(String firstMessage) {
     // Generate a title from the first message
     final trimmed = firstMessage.trim();
@@ -1133,6 +1290,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   @override
   Future<void> close() async {
     _closing = true;
+    ++_titleEpoch;
+    _titleLifecycle?.dispose();
+    _titleCandidates.clear();
+    await _titleGenerator?.dispose();
     for (final task in _tasks.values.toList()) {
       await _cancel(task.id);
     }

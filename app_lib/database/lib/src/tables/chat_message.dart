@@ -17,6 +17,9 @@ class ChatMessageTable extends Table {
   /// The text content of the message.
   TextColumn get content => text()();
 
+  BoolColumn get completedSuccessfully =>
+      boolean().withDefault(const Constant(false))();
+
   /// Number of tokens in the message (null if not computed).
   IntColumn get tokenCount => integer().nullable()();
 

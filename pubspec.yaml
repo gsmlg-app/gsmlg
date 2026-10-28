@@ -108,7 +108,7 @@ dependencies:
   crypto: any
   dio: any
   # TODO(upstream): gsmlg-app/lib_llama_cpp#32 - remove after macOS framework symlink warning is fixed.
-  lib_llama_cpp: ^0.7.3
+  lib_llama_cpp: ^0.7.5
   multicast_dns: any
   url_launcher: ^6.3.3
 
@@ -176,6 +176,8 @@ dependency_overrides:
     path: third_party/camera_macos
 
 dev_dependencies:
+  integration_test:
+    sdk: flutter
   flutter_test:
     sdk: flutter
   test: ^1.31.1
@@ -195,6 +197,9 @@ flutter:
   assets:
     - assets/icon/
     - assets/world.geo.json
+    - assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf
+    - assets/models/conversation_title/NOTICE
+    - assets/models/conversation_title/LICENSE
 
   fonts:
     - family: GSMLG

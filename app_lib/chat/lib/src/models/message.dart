@@ -160,6 +160,7 @@ final class AssistantMessage extends Message {
     required super.conversationId,
     required super.timestamp,
     this.isStreaming = false,
+    this.completedSuccessfully = true,
     this.tokenCount,
     this.thinkingContent,
     this.responseInfo,
@@ -167,6 +168,9 @@ final class AssistantMessage extends Message {
 
   /// Whether the message is currently being streamed.
   final bool isStreaming;
+
+  /// False for interrupted, failed, and legacy unclassified responses.
+  final bool completedSuccessfully;
 
   /// The number of tokens in this message (null if not yet computed).
   final int? tokenCount;
@@ -188,6 +192,7 @@ final class AssistantMessage extends Message {
   List<Object?> get props => [
     ...super.props,
     isStreaming,
+    completedSuccessfully,
     tokenCount,
     thinkingContent,
     responseInfo,
@@ -199,6 +204,7 @@ final class AssistantMessage extends Message {
     String? conversationId,
     DateTime? timestamp,
     bool? isStreaming,
+    bool? completedSuccessfully,
     int? tokenCount,
     String? thinkingContent,
     ChatResponseInfo? responseInfo,
@@ -209,6 +215,8 @@ final class AssistantMessage extends Message {
       conversationId: conversationId ?? this.conversationId,
       timestamp: timestamp ?? this.timestamp,
       isStreaming: isStreaming ?? this.isStreaming,
+      completedSuccessfully:
+          completedSuccessfully ?? this.completedSuccessfully,
       tokenCount: tokenCount ?? this.tokenCount,
       thinkingContent: thinkingContent ?? this.thinkingContent,
       responseInfo: responseInfo ?? this.responseInfo,

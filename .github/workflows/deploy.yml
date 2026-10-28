@@ -113,6 +113,9 @@ jobs:
       - name: Install melos
         run: dart pub global activate melos
 
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
+
       - name: Prepare project
         run: melos run prepare
 
@@ -282,6 +285,9 @@ jobs:
 
       - name: Install melos
         run: dart pub global activate melos
+
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
 
       - name: Prepare project
         run: melos run prepare

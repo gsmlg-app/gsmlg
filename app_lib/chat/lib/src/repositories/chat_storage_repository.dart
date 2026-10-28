@@ -39,29 +39,69 @@ class ChatStorageRepository {
 
   /// Saves a new conversation or updates an existing one.
   Future<void> saveConversation(Conversation conversation) async {
-    await _db
-        .into(_db.chatConversationTable)
-        .insertOnConflictUpdate(
-          ChatConversationTableCompanion(
-            id: Value(conversation.id),
-            title: Value(conversation.title),
-            systemPrompt: Value(conversation.systemPrompt),
-            createdAt: Value(conversation.createdAt),
-            updatedAt: Value(conversation.updatedAt),
-          ),
-        );
+    await _db.transaction(() async {
+      await _db
+          .into(_db.chatConversationTable)
+          .insert(
+            ChatConversationTableCompanion(
+              id: Value(conversation.id),
+              title: Value(conversation.title),
+              titleSource: Value(conversation.titleSource),
+              systemPrompt: Value(conversation.systemPrompt),
+              createdAt: Value(conversation.createdAt),
+              updatedAt: Value(conversation.updatedAt),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+      // Persist immediate fallbacks, but never replace generated/manual titles.
+      if (conversation.titleSource == 'fallback') {
+        await (_db.update(_db.chatConversationTable)..where(
+              (t) =>
+                  t.id.equals(conversation.id) &
+                  t.titleSource.equals('fallback') &
+                  t.titleRevision.equals(0),
+            ))
+            .write(
+              ChatConversationTableCompanion(title: Value(conversation.title)),
+            );
+      }
+      // Existing generated/manual titles belong exclusively to conditional title updates.
+      await (_db.update(
+        _db.chatConversationTable,
+      )..where((t) => t.id.equals(conversation.id))).write(
+        ChatConversationTableCompanion(
+          systemPrompt: Value(conversation.systemPrompt),
+          updatedAt: Value(conversation.updatedAt),
+        ),
+      );
+    });
   }
 
-  /// Updates only the conversation title.
+  /// Manual title writes do not change activity ordering.
   Future<void> updateConversationTitle(String id, String title) async {
-    await (_db.update(
-      _db.chatConversationTable,
-    )..where((t) => t.id.equals(id))).write(
-      ChatConversationTableCompanion(
-        title: Value(title),
-        updatedAt: Value(DateTime.now()),
-      ),
+    await _db.customUpdate(
+      "UPDATE chat_conversation_table SET title = ?, title_source = 'manual', title_revision = title_revision + 1 WHERE id = ?",
+      variables: [Variable.withString(title), Variable.withString(id)],
+      updates: {_db.chatConversationTable},
     );
+  }
+
+  /// Never inserts, and rejects changed content or manually managed titles.
+  Future<bool> updateAutomaticTitle(Conversation snapshot, String title) async {
+    if (!snapshot.hasAutomaticTitle || snapshot.title == title) return false;
+    final changed = await _db.customUpdate(
+      "UPDATE chat_conversation_table SET title = ?, title_source = 'generated', title_revision = title_revision + 1 "
+      "WHERE id = ? AND content_revision = ? AND title_revision = ? AND title_source IN ('fallback', 'generated') AND title != ?",
+      variables: [
+        Variable.withString(title),
+        Variable.withString(snapshot.id),
+        Variable.withInt(snapshot.contentRevision),
+        Variable.withInt(snapshot.titleRevision),
+        Variable.withString(title),
+      ],
+      updates: {_db.chatConversationTable},
+    );
+    return changed == 1;
   }
 
   /// Deletes a conversation and all its messages.
@@ -113,6 +153,11 @@ class ChatStorageRepository {
             role: Value(message.role),
             content: Value(message.content),
             tokenCount: Value(tokenCount),
+            completedSuccessfully: Value(
+              message is AssistantMessage &&
+                  message.completedSuccessfully &&
+                  !message.isStreaming,
+            ),
             responseOutputTokens: Value(responseInfo?.outputTokens),
             responseContextTokens: Value(responseInfo?.contextTokens),
             responseMaxOutputTokens: Value(responseInfo?.maxOutputTokens),
@@ -261,6 +306,9 @@ class ChatStorageRepository {
     return Conversation(
       id: row.id,
       title: row.title,
+      titleSource: row.titleSource,
+      titleRevision: row.titleRevision,
+      contentRevision: row.contentRevision,
       systemPrompt: row.systemPrompt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -277,6 +325,7 @@ class ChatStorageRepository {
         imageBytes: row.imageBytes,
       ),
       'assistant' => AssistantMessage(
+        completedSuccessfully: row.completedSuccessfully,
         id: row.id,
         content: row.content,
         conversationId: row.conversationId,

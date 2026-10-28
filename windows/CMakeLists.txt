@@ -109,3 +109,15 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# The release must be usable offline immediately after installation.
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+execute_process(COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../tools/conversation_title/prepare.py"
+  RESULT_VARIABLE TITLE_MODEL_RESULT)
+if(NOT TITLE_MODEL_RESULT EQUAL 0)
+  message(FATAL_ERROR "Required bundled conversation title model is missing or invalid")
+endif()
+add_custom_target(verify_title_model ALL
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/../tools/conversation_title/prepare.py"
+  VERBATIM)
+add_dependencies(flutter_assemble verify_title_model)

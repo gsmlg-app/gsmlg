@@ -389,6 +389,11 @@ class _FakeBackplaneService implements BackplaneServiceRepository {
 }
 
 class _FakeChatStorageRepository implements ChatStorageRepository {
+  @override
+  Future<bool> updateAutomaticTitle(
+          Conversation snapshot, String title) async =>
+      false;
+
   final _conversations = <String, Conversation>{};
   final _messages = <String, List<Message>>{};
   ModelConfig _settings = ModelConfig.defaultConfig;

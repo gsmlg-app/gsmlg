@@ -44,6 +44,9 @@ jobs:
       - name: Install tools
         run: dart pub global activate melos
 
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
+
       - name: Prepare project
         run: melos run prepare
 
@@ -136,11 +139,17 @@ jobs:
       - name: Install tools
         run: dart pub global activate melos
 
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
+
       - name: Prepare project
         run: melos run prepare
 
       - name: Build APK
         run: flutter build apk --build-name=${{ inputs.build-name }} --release
+
+      - name: Verify offline title model in APK
+        run: python3 tools/conversation_title/verify_package.py build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK to Release
         uses: svenstaro/upload-release-action@v2
@@ -175,11 +184,17 @@ jobs:
       - name: Install tools
         run: dart pub global activate melos
 
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
+
       - name: Prepare project
         run: melos run prepare
 
       - name: Build iOS (no codesign)
         run: flutter build ios --build-name=${{ inputs.build-name }} --release --no-codesign
+
+      - name: Verify offline title model in iOS bundle
+        run: python3 tools/conversation_title/verify_package.py build/ios/iphoneos/Runner.app
 
       - name: Create IPA
         run: |
@@ -227,11 +242,17 @@ jobs:
       - name: Install tools
         run: dart pub global activate melos
 
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
+
       - name: Prepare project
         run: melos run prepare
 
       - name: Build Linux
         run: flutter build linux --build-name=${{ inputs.build-name }} --release
+
+      - name: Verify offline title model in Linux bundle
+        run: python3 tools/conversation_title/verify_package.py build/linux/x64/release/bundle
 
       - name: Package Linux build
         run: |
@@ -271,16 +292,22 @@ jobs:
       - name: Install tools
         run: dart pub global activate melos
 
+      - name: Prepare bundled title model
+        run: python3 tools/conversation_title/prepare.py --download
+
       - name: Prepare project
         run: melos run prepare
 
       - name: Build macOS
         run: flutter build macos --build-name=${{ inputs.build-name }} --release
 
+      - name: Verify offline title model in macOS bundle
+        run: python3 tools/conversation_title/verify_package.py build/macos/Build/Products/Release/gsmlg.app
+
       - name: Package macOS build
         run: |
           cd build/macos/Build/Products/Release
-          zip -r ../../../../../flutter-app-${{ inputs.build-name }}-macos.zip "Flutter App Template.app"
+          zip -r ../../../../../flutter-app-${{ inputs.build-name }}-macos.zip "gsmlg.app"
 
       - name: Upload macOS to Release
         uses: svenstaro/upload-release-action@v2

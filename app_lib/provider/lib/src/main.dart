@@ -144,6 +144,9 @@ class MainProvider extends StatelessWidget {
           ),
           BlocProvider<ChatBloc>(
             create: (context) => ChatBloc(
+              titleGenerator: EmbeddedConversationTitleGenerator(
+                MiniCpmTitleBackend(),
+              ),
               gemmaRepository: context.read<GemmaRepository>(),
               modelAccess: context.read<LocalModelAccess>(),
               remoteRepository: context.read<RemoteLlmRepository>(),

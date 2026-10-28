@@ -32,12 +32,16 @@ void main() {
           VALUES ('legacy', 'conversation', 'assistant', 'saved',
                   42, 42, 512, 2048, 2000, 1767225600)
         ''');
+        sqlite.execute(
+            'CREATE TABLE chat_conversation_table (id TEXT PRIMARY KEY, title TEXT NOT NULL, system_prompt TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)');
+        sqlite.execute(
+            "INSERT INTO chat_conversation_table VALUES ('conversation', 'My legacy custom title', NULL, 1767225600, 1767225600)");
         sqlite.execute('PRAGMA user_version = 16');
       }));
       addTearDown(database.close);
 
       final row = await database.select(database.chatMessageTable).getSingle();
-      expect(database.schemaVersion, 17);
+      expect(database.schemaVersion, 18);
       expect(row.id, 'legacy');
       expect(row.content, 'saved');
       expect(row.tokenCount, 42);
@@ -47,9 +51,16 @@ void main() {
       expect(row.responseDurationMs, 2000);
       expect(row.responseTimeToFirstTokenMs, isNull);
       expect(row.timestamp, DateTime.fromMillisecondsSinceEpoch(1767225600000));
+      final conversation =
+          await database.select(database.chatConversationTable).getSingle();
+      expect(conversation.title, 'My legacy custom title');
+      expect(conversation.titleSource, 'manual');
+      expect(conversation.titleRevision, 0);
+      expect(conversation.contentRevision, 0);
+      expect(row.completedSuccessfully, isFalse);
       final version =
           await database.customSelect('PRAGMA user_version').getSingle();
-      expect(version.read<int>('user_version'), 17);
+      expect(version.read<int>('user_version'), 18);
     });
   }
 }

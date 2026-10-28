@@ -1357,6 +1357,30 @@ class $ChatConversationTableTable extends ChatConversationTable
   late final GeneratedColumn<String> title = GeneratedColumn<String>(
       'title', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _titleSourceMeta =
+      const VerificationMeta('titleSource');
+  @override
+  late final GeneratedColumn<String> titleSource = GeneratedColumn<String>(
+      'title_source', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('manual'));
+  static const VerificationMeta _titleRevisionMeta =
+      const VerificationMeta('titleRevision');
+  @override
+  late final GeneratedColumn<int> titleRevision = GeneratedColumn<int>(
+      'title_revision', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _contentRevisionMeta =
+      const VerificationMeta('contentRevision');
+  @override
+  late final GeneratedColumn<int> contentRevision = GeneratedColumn<int>(
+      'content_revision', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _systemPromptMeta =
       const VerificationMeta('systemPrompt');
   @override
@@ -1380,8 +1404,16 @@ class $ChatConversationTableTable extends ChatConversationTable
       requiredDuringInsert: false,
       defaultValue: currentDateAndTime);
   @override
-  List<GeneratedColumn> get $columns =>
-      [id, title, systemPrompt, createdAt, updatedAt];
+  List<GeneratedColumn> get $columns => [
+        id,
+        title,
+        titleSource,
+        titleRevision,
+        contentRevision,
+        systemPrompt,
+        createdAt,
+        updatedAt
+      ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1403,6 +1435,24 @@ class $ChatConversationTableTable extends ChatConversationTable
           _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
     } else if (isInserting) {
       context.missing(_titleMeta);
+    }
+    if (data.containsKey('title_source')) {
+      context.handle(
+          _titleSourceMeta,
+          titleSource.isAcceptableOrUnknown(
+              data['title_source']!, _titleSourceMeta));
+    }
+    if (data.containsKey('title_revision')) {
+      context.handle(
+          _titleRevisionMeta,
+          titleRevision.isAcceptableOrUnknown(
+              data['title_revision']!, _titleRevisionMeta));
+    }
+    if (data.containsKey('content_revision')) {
+      context.handle(
+          _contentRevisionMeta,
+          contentRevision.isAcceptableOrUnknown(
+              data['content_revision']!, _contentRevisionMeta));
     }
     if (data.containsKey('system_prompt')) {
       context.handle(
@@ -1432,6 +1482,12 @@ class $ChatConversationTableTable extends ChatConversationTable
           .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
       title: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      titleSource: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title_source'])!,
+      titleRevision: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}title_revision'])!,
+      contentRevision: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}content_revision'])!,
       systemPrompt: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}system_prompt']),
       createdAt: attachedDatabase.typeMapping
@@ -1455,6 +1511,11 @@ class ChatConversationTableData extends DataClass
   /// Display title of the conversation.
   final String title;
 
+  /// Legacy and ambiguous custom titles are protected.
+  final String titleSource;
+  final int titleRevision;
+  final int contentRevision;
+
   /// Optional system prompt for this conversation.
   final String? systemPrompt;
 
@@ -1466,6 +1527,9 @@ class ChatConversationTableData extends DataClass
   const ChatConversationTableData(
       {required this.id,
       required this.title,
+      required this.titleSource,
+      required this.titleRevision,
+      required this.contentRevision,
       this.systemPrompt,
       required this.createdAt,
       required this.updatedAt});
@@ -1474,6 +1538,9 @@ class ChatConversationTableData extends DataClass
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['title'] = Variable<String>(title);
+    map['title_source'] = Variable<String>(titleSource);
+    map['title_revision'] = Variable<int>(titleRevision);
+    map['content_revision'] = Variable<int>(contentRevision);
     if (!nullToAbsent || systemPrompt != null) {
       map['system_prompt'] = Variable<String>(systemPrompt);
     }
@@ -1486,6 +1553,9 @@ class ChatConversationTableData extends DataClass
     return ChatConversationTableCompanion(
       id: Value(id),
       title: Value(title),
+      titleSource: Value(titleSource),
+      titleRevision: Value(titleRevision),
+      contentRevision: Value(contentRevision),
       systemPrompt: systemPrompt == null && nullToAbsent
           ? const Value.absent()
           : Value(systemPrompt),
@@ -1500,6 +1570,9 @@ class ChatConversationTableData extends DataClass
     return ChatConversationTableData(
       id: serializer.fromJson<String>(json['id']),
       title: serializer.fromJson<String>(json['title']),
+      titleSource: serializer.fromJson<String>(json['titleSource']),
+      titleRevision: serializer.fromJson<int>(json['titleRevision']),
+      contentRevision: serializer.fromJson<int>(json['contentRevision']),
       systemPrompt: serializer.fromJson<String?>(json['systemPrompt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
@@ -1511,6 +1584,9 @@ class ChatConversationTableData extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'title': serializer.toJson<String>(title),
+      'titleSource': serializer.toJson<String>(titleSource),
+      'titleRevision': serializer.toJson<int>(titleRevision),
+      'contentRevision': serializer.toJson<int>(contentRevision),
       'systemPrompt': serializer.toJson<String?>(systemPrompt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
@@ -1520,12 +1596,18 @@ class ChatConversationTableData extends DataClass
   ChatConversationTableData copyWith(
           {String? id,
           String? title,
+          String? titleSource,
+          int? titleRevision,
+          int? contentRevision,
           Value<String?> systemPrompt = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       ChatConversationTableData(
         id: id ?? this.id,
         title: title ?? this.title,
+        titleSource: titleSource ?? this.titleSource,
+        titleRevision: titleRevision ?? this.titleRevision,
+        contentRevision: contentRevision ?? this.contentRevision,
         systemPrompt:
             systemPrompt.present ? systemPrompt.value : this.systemPrompt,
         createdAt: createdAt ?? this.createdAt,
@@ -1536,6 +1618,14 @@ class ChatConversationTableData extends DataClass
     return ChatConversationTableData(
       id: data.id.present ? data.id.value : this.id,
       title: data.title.present ? data.title.value : this.title,
+      titleSource:
+          data.titleSource.present ? data.titleSource.value : this.titleSource,
+      titleRevision: data.titleRevision.present
+          ? data.titleRevision.value
+          : this.titleRevision,
+      contentRevision: data.contentRevision.present
+          ? data.contentRevision.value
+          : this.contentRevision,
       systemPrompt: data.systemPrompt.present
           ? data.systemPrompt.value
           : this.systemPrompt,
@@ -1549,6 +1639,9 @@ class ChatConversationTableData extends DataClass
     return (StringBuffer('ChatConversationTableData(')
           ..write('id: $id, ')
           ..write('title: $title, ')
+          ..write('titleSource: $titleSource, ')
+          ..write('titleRevision: $titleRevision, ')
+          ..write('contentRevision: $contentRevision, ')
           ..write('systemPrompt: $systemPrompt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -1557,14 +1650,17 @@ class ChatConversationTableData extends DataClass
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, title, systemPrompt, createdAt, updatedAt);
+  int get hashCode => Object.hash(id, title, titleSource, titleRevision,
+      contentRevision, systemPrompt, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ChatConversationTableData &&
           other.id == this.id &&
           other.title == this.title &&
+          other.titleSource == this.titleSource &&
+          other.titleRevision == this.titleRevision &&
+          other.contentRevision == this.contentRevision &&
           other.systemPrompt == this.systemPrompt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -1574,6 +1670,9 @@ class ChatConversationTableCompanion
     extends UpdateCompanion<ChatConversationTableData> {
   final Value<String> id;
   final Value<String> title;
+  final Value<String> titleSource;
+  final Value<int> titleRevision;
+  final Value<int> contentRevision;
   final Value<String?> systemPrompt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
@@ -1581,6 +1680,9 @@ class ChatConversationTableCompanion
   const ChatConversationTableCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
+    this.titleSource = const Value.absent(),
+    this.titleRevision = const Value.absent(),
+    this.contentRevision = const Value.absent(),
     this.systemPrompt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1589,6 +1691,9 @@ class ChatConversationTableCompanion
   ChatConversationTableCompanion.insert({
     required String id,
     required String title,
+    this.titleSource = const Value.absent(),
+    this.titleRevision = const Value.absent(),
+    this.contentRevision = const Value.absent(),
     this.systemPrompt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1598,6 +1703,9 @@ class ChatConversationTableCompanion
   static Insertable<ChatConversationTableData> custom({
     Expression<String>? id,
     Expression<String>? title,
+    Expression<String>? titleSource,
+    Expression<int>? titleRevision,
+    Expression<int>? contentRevision,
     Expression<String>? systemPrompt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -1606,6 +1714,9 @@ class ChatConversationTableCompanion
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (title != null) 'title': title,
+      if (titleSource != null) 'title_source': titleSource,
+      if (titleRevision != null) 'title_revision': titleRevision,
+      if (contentRevision != null) 'content_revision': contentRevision,
       if (systemPrompt != null) 'system_prompt': systemPrompt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1616,6 +1727,9 @@ class ChatConversationTableCompanion
   ChatConversationTableCompanion copyWith(
       {Value<String>? id,
       Value<String>? title,
+      Value<String>? titleSource,
+      Value<int>? titleRevision,
+      Value<int>? contentRevision,
       Value<String?>? systemPrompt,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
@@ -1623,6 +1737,9 @@ class ChatConversationTableCompanion
     return ChatConversationTableCompanion(
       id: id ?? this.id,
       title: title ?? this.title,
+      titleSource: titleSource ?? this.titleSource,
+      titleRevision: titleRevision ?? this.titleRevision,
+      contentRevision: contentRevision ?? this.contentRevision,
       systemPrompt: systemPrompt ?? this.systemPrompt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1638,6 +1755,15 @@ class ChatConversationTableCompanion
     }
     if (title.present) {
       map['title'] = Variable<String>(title.value);
+    }
+    if (titleSource.present) {
+      map['title_source'] = Variable<String>(titleSource.value);
+    }
+    if (titleRevision.present) {
+      map['title_revision'] = Variable<int>(titleRevision.value);
+    }
+    if (contentRevision.present) {
+      map['content_revision'] = Variable<int>(contentRevision.value);
     }
     if (systemPrompt.present) {
       map['system_prompt'] = Variable<String>(systemPrompt.value);
@@ -1659,6 +1785,9 @@ class ChatConversationTableCompanion
     return (StringBuffer('ChatConversationTableCompanion(')
           ..write('id: $id, ')
           ..write('title: $title, ')
+          ..write('titleSource: $titleSource, ')
+          ..write('titleRevision: $titleRevision, ')
+          ..write('contentRevision: $contentRevision, ')
           ..write('systemPrompt: $systemPrompt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1699,6 +1828,16 @@ class $ChatMessageTableTable extends ChatMessageTable
   late final GeneratedColumn<String> content = GeneratedColumn<String>(
       'content', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _completedSuccessfullyMeta =
+      const VerificationMeta('completedSuccessfully');
+  @override
+  late final GeneratedColumn<bool> completedSuccessfully =
+      GeneratedColumn<bool>('completed_successfully', aliasedName, false,
+          type: DriftSqlType.bool,
+          requiredDuringInsert: false,
+          defaultConstraints: GeneratedColumn.constraintIsAlways(
+              'CHECK ("completed_successfully" IN (0, 1))'),
+          defaultValue: const Constant(false));
   static const VerificationMeta _tokenCountMeta =
       const VerificationMeta('tokenCount');
   @override
@@ -1761,6 +1900,7 @@ class $ChatMessageTableTable extends ChatMessageTable
         conversationId,
         role,
         content,
+        completedSuccessfully,
         tokenCount,
         responseOutputTokens,
         responseContextTokens,
@@ -1806,6 +1946,12 @@ class $ChatMessageTableTable extends ChatMessageTable
           content.isAcceptableOrUnknown(data['content']!, _contentMeta));
     } else if (isInserting) {
       context.missing(_contentMeta);
+    }
+    if (data.containsKey('completed_successfully')) {
+      context.handle(
+          _completedSuccessfullyMeta,
+          completedSuccessfully.isAcceptableOrUnknown(
+              data['completed_successfully']!, _completedSuccessfullyMeta));
     }
     if (data.containsKey('token_count')) {
       context.handle(
@@ -1876,6 +2022,8 @@ class $ChatMessageTableTable extends ChatMessageTable
           .read(DriftSqlType.string, data['${effectivePrefix}role'])!,
       content: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
+      completedSuccessfully: attachedDatabase.typeMapping.read(
+          DriftSqlType.bool, data['${effectivePrefix}completed_successfully'])!,
       tokenCount: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}token_count']),
       responseOutputTokens: attachedDatabase.typeMapping.read(
@@ -1918,6 +2066,7 @@ class ChatMessageTableData extends DataClass
 
   /// The text content of the message.
   final String content;
+  final bool completedSuccessfully;
 
   /// Number of tokens in the message (null if not computed).
   final int? tokenCount;
@@ -1948,6 +2097,7 @@ class ChatMessageTableData extends DataClass
       required this.conversationId,
       required this.role,
       required this.content,
+      required this.completedSuccessfully,
       this.tokenCount,
       this.responseOutputTokens,
       this.responseContextTokens,
@@ -1964,6 +2114,7 @@ class ChatMessageTableData extends DataClass
     map['conversation_id'] = Variable<String>(conversationId);
     map['role'] = Variable<String>(role);
     map['content'] = Variable<String>(content);
+    map['completed_successfully'] = Variable<bool>(completedSuccessfully);
     if (!nullToAbsent || tokenCount != null) {
       map['token_count'] = Variable<int>(tokenCount);
     }
@@ -2000,6 +2151,7 @@ class ChatMessageTableData extends DataClass
       conversationId: Value(conversationId),
       role: Value(role),
       content: Value(content),
+      completedSuccessfully: Value(completedSuccessfully),
       tokenCount: tokenCount == null && nullToAbsent
           ? const Value.absent()
           : Value(tokenCount),
@@ -2037,6 +2189,8 @@ class ChatMessageTableData extends DataClass
       conversationId: serializer.fromJson<String>(json['conversationId']),
       role: serializer.fromJson<String>(json['role']),
       content: serializer.fromJson<String>(json['content']),
+      completedSuccessfully:
+          serializer.fromJson<bool>(json['completedSuccessfully']),
       tokenCount: serializer.fromJson<int?>(json['tokenCount']),
       responseOutputTokens:
           serializer.fromJson<int?>(json['responseOutputTokens']),
@@ -2060,6 +2214,7 @@ class ChatMessageTableData extends DataClass
       'conversationId': serializer.toJson<String>(conversationId),
       'role': serializer.toJson<String>(role),
       'content': serializer.toJson<String>(content),
+      'completedSuccessfully': serializer.toJson<bool>(completedSuccessfully),
       'tokenCount': serializer.toJson<int?>(tokenCount),
       'responseOutputTokens': serializer.toJson<int?>(responseOutputTokens),
       'responseContextTokens': serializer.toJson<int?>(responseContextTokens),
@@ -2079,6 +2234,7 @@ class ChatMessageTableData extends DataClass
           String? conversationId,
           String? role,
           String? content,
+          bool? completedSuccessfully,
           Value<int?> tokenCount = const Value.absent(),
           Value<int?> responseOutputTokens = const Value.absent(),
           Value<int?> responseContextTokens = const Value.absent(),
@@ -2093,6 +2249,8 @@ class ChatMessageTableData extends DataClass
         conversationId: conversationId ?? this.conversationId,
         role: role ?? this.role,
         content: content ?? this.content,
+        completedSuccessfully:
+            completedSuccessfully ?? this.completedSuccessfully,
         tokenCount: tokenCount.present ? tokenCount.value : this.tokenCount,
         responseOutputTokens: responseOutputTokens.present
             ? responseOutputTokens.value
@@ -2121,6 +2279,9 @@ class ChatMessageTableData extends DataClass
           : this.conversationId,
       role: data.role.present ? data.role.value : this.role,
       content: data.content.present ? data.content.value : this.content,
+      completedSuccessfully: data.completedSuccessfully.present
+          ? data.completedSuccessfully.value
+          : this.completedSuccessfully,
       tokenCount:
           data.tokenCount.present ? data.tokenCount.value : this.tokenCount,
       responseOutputTokens: data.responseOutputTokens.present
@@ -2152,6 +2313,7 @@ class ChatMessageTableData extends DataClass
           ..write('conversationId: $conversationId, ')
           ..write('role: $role, ')
           ..write('content: $content, ')
+          ..write('completedSuccessfully: $completedSuccessfully, ')
           ..write('tokenCount: $tokenCount, ')
           ..write('responseOutputTokens: $responseOutputTokens, ')
           ..write('responseContextTokens: $responseContextTokens, ')
@@ -2171,6 +2333,7 @@ class ChatMessageTableData extends DataClass
       conversationId,
       role,
       content,
+      completedSuccessfully,
       tokenCount,
       responseOutputTokens,
       responseContextTokens,
@@ -2188,6 +2351,7 @@ class ChatMessageTableData extends DataClass
           other.conversationId == this.conversationId &&
           other.role == this.role &&
           other.content == this.content &&
+          other.completedSuccessfully == this.completedSuccessfully &&
           other.tokenCount == this.tokenCount &&
           other.responseOutputTokens == this.responseOutputTokens &&
           other.responseContextTokens == this.responseContextTokens &&
@@ -2204,6 +2368,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
   final Value<String> conversationId;
   final Value<String> role;
   final Value<String> content;
+  final Value<bool> completedSuccessfully;
   final Value<int?> tokenCount;
   final Value<int?> responseOutputTokens;
   final Value<int?> responseContextTokens;
@@ -2219,6 +2384,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     this.conversationId = const Value.absent(),
     this.role = const Value.absent(),
     this.content = const Value.absent(),
+    this.completedSuccessfully = const Value.absent(),
     this.tokenCount = const Value.absent(),
     this.responseOutputTokens = const Value.absent(),
     this.responseContextTokens = const Value.absent(),
@@ -2235,6 +2401,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     required String conversationId,
     required String role,
     required String content,
+    this.completedSuccessfully = const Value.absent(),
     this.tokenCount = const Value.absent(),
     this.responseOutputTokens = const Value.absent(),
     this.responseContextTokens = const Value.absent(),
@@ -2254,6 +2421,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     Expression<String>? conversationId,
     Expression<String>? role,
     Expression<String>? content,
+    Expression<bool>? completedSuccessfully,
     Expression<int>? tokenCount,
     Expression<int>? responseOutputTokens,
     Expression<int>? responseContextTokens,
@@ -2270,6 +2438,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       if (conversationId != null) 'conversation_id': conversationId,
       if (role != null) 'role': role,
       if (content != null) 'content': content,
+      if (completedSuccessfully != null)
+        'completed_successfully': completedSuccessfully,
       if (tokenCount != null) 'token_count': tokenCount,
       if (responseOutputTokens != null)
         'response_output_tokens': responseOutputTokens,
@@ -2293,6 +2463,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       Value<String>? conversationId,
       Value<String>? role,
       Value<String>? content,
+      Value<bool>? completedSuccessfully,
       Value<int?>? tokenCount,
       Value<int?>? responseOutputTokens,
       Value<int?>? responseContextTokens,
@@ -2308,6 +2479,8 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       conversationId: conversationId ?? this.conversationId,
       role: role ?? this.role,
       content: content ?? this.content,
+      completedSuccessfully:
+          completedSuccessfully ?? this.completedSuccessfully,
       tokenCount: tokenCount ?? this.tokenCount,
       responseOutputTokens: responseOutputTokens ?? this.responseOutputTokens,
       responseContextTokens:
@@ -2338,6 +2511,10 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     }
     if (content.present) {
       map['content'] = Variable<String>(content.value);
+    }
+    if (completedSuccessfully.present) {
+      map['completed_successfully'] =
+          Variable<bool>(completedSuccessfully.value);
     }
     if (tokenCount.present) {
       map['token_count'] = Variable<int>(tokenCount.value);
@@ -2382,6 +2559,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
           ..write('conversationId: $conversationId, ')
           ..write('role: $role, ')
           ..write('content: $content, ')
+          ..write('completedSuccessfully: $completedSuccessfully, ')
           ..write('tokenCount: $tokenCount, ')
           ..write('responseOutputTokens: $responseOutputTokens, ')
           ..write('responseContextTokens: $responseContextTokens, ')
@@ -8522,6 +8700,9 @@ typedef $$ChatConversationTableTableCreateCompanionBuilder
     = ChatConversationTableCompanion Function({
   required String id,
   required String title,
+  Value<String> titleSource,
+  Value<int> titleRevision,
+  Value<int> contentRevision,
   Value<String?> systemPrompt,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
@@ -8531,6 +8712,9 @@ typedef $$ChatConversationTableTableUpdateCompanionBuilder
     = ChatConversationTableCompanion Function({
   Value<String> id,
   Value<String> title,
+  Value<String> titleSource,
+  Value<int> titleRevision,
+  Value<int> contentRevision,
   Value<String?> systemPrompt,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
@@ -8575,6 +8759,16 @@ class $$ChatConversationTableTableFilterComposer
 
   ColumnFilters<String> get title => $composableBuilder(
       column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get titleSource => $composableBuilder(
+      column: $table.titleSource, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get titleRevision => $composableBuilder(
+      column: $table.titleRevision, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get contentRevision => $composableBuilder(
+      column: $table.contentRevision,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get systemPrompt => $composableBuilder(
       column: $table.systemPrompt, builder: (column) => ColumnFilters(column));
@@ -8622,6 +8816,17 @@ class $$ChatConversationTableTableOrderingComposer
   ColumnOrderings<String> get title => $composableBuilder(
       column: $table.title, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get titleSource => $composableBuilder(
+      column: $table.titleSource, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get titleRevision => $composableBuilder(
+      column: $table.titleRevision,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get contentRevision => $composableBuilder(
+      column: $table.contentRevision,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get systemPrompt => $composableBuilder(
       column: $table.systemPrompt,
       builder: (column) => ColumnOrderings(column));
@@ -8647,6 +8852,15 @@ class $$ChatConversationTableTableAnnotationComposer
 
   GeneratedColumn<String> get title =>
       $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get titleSource => $composableBuilder(
+      column: $table.titleSource, builder: (column) => column);
+
+  GeneratedColumn<int> get titleRevision => $composableBuilder(
+      column: $table.titleRevision, builder: (column) => column);
+
+  GeneratedColumn<int> get contentRevision => $composableBuilder(
+      column: $table.contentRevision, builder: (column) => column);
 
   GeneratedColumn<String> get systemPrompt => $composableBuilder(
       column: $table.systemPrompt, builder: (column) => column);
@@ -8708,6 +8922,9 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<String> id = const Value.absent(),
             Value<String> title = const Value.absent(),
+            Value<String> titleSource = const Value.absent(),
+            Value<int> titleRevision = const Value.absent(),
+            Value<int> contentRevision = const Value.absent(),
             Value<String?> systemPrompt = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
@@ -8716,6 +8933,9 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
               ChatConversationTableCompanion(
             id: id,
             title: title,
+            titleSource: titleSource,
+            titleRevision: titleRevision,
+            contentRevision: contentRevision,
             systemPrompt: systemPrompt,
             createdAt: createdAt,
             updatedAt: updatedAt,
@@ -8724,6 +8944,9 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
           createCompanionCallback: ({
             required String id,
             required String title,
+            Value<String> titleSource = const Value.absent(),
+            Value<int> titleRevision = const Value.absent(),
+            Value<int> contentRevision = const Value.absent(),
             Value<String?> systemPrompt = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
@@ -8732,6 +8955,9 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
               ChatConversationTableCompanion.insert(
             id: id,
             title: title,
+            titleSource: titleSource,
+            titleRevision: titleRevision,
+            contentRevision: contentRevision,
             systemPrompt: systemPrompt,
             createdAt: createdAt,
             updatedAt: updatedAt,
@@ -8793,6 +9019,7 @@ typedef $$ChatMessageTableTableCreateCompanionBuilder
   required String conversationId,
   required String role,
   required String content,
+  Value<bool> completedSuccessfully,
   Value<int?> tokenCount,
   Value<int?> responseOutputTokens,
   Value<int?> responseContextTokens,
@@ -8810,6 +9037,7 @@ typedef $$ChatMessageTableTableUpdateCompanionBuilder
   Value<String> conversationId,
   Value<String> role,
   Value<String> content,
+  Value<bool> completedSuccessfully,
   Value<int?> tokenCount,
   Value<int?> responseOutputTokens,
   Value<int?> responseContextTokens,
@@ -8861,6 +9089,10 @@ class $$ChatMessageTableTableFilterComposer
 
   ColumnFilters<String> get content => $composableBuilder(
       column: $table.content, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get completedSuccessfully => $composableBuilder(
+      column: $table.completedSuccessfully,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => ColumnFilters(column));
@@ -8934,6 +9166,10 @@ class $$ChatMessageTableTableOrderingComposer
   ColumnOrderings<String> get content => $composableBuilder(
       column: $table.content, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get completedSuccessfully => $composableBuilder(
+      column: $table.completedSuccessfully,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => ColumnOrderings(column));
 
@@ -9005,6 +9241,9 @@ class $$ChatMessageTableTableAnnotationComposer
 
   GeneratedColumn<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<bool> get completedSuccessfully => $composableBuilder(
+      column: $table.completedSuccessfully, builder: (column) => column);
 
   GeneratedColumn<int> get tokenCount => $composableBuilder(
       column: $table.tokenCount, builder: (column) => column);
@@ -9083,6 +9322,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             Value<String> conversationId = const Value.absent(),
             Value<String> role = const Value.absent(),
             Value<String> content = const Value.absent(),
+            Value<bool> completedSuccessfully = const Value.absent(),
             Value<int?> tokenCount = const Value.absent(),
             Value<int?> responseOutputTokens = const Value.absent(),
             Value<int?> responseContextTokens = const Value.absent(),
@@ -9099,6 +9339,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             conversationId: conversationId,
             role: role,
             content: content,
+            completedSuccessfully: completedSuccessfully,
             tokenCount: tokenCount,
             responseOutputTokens: responseOutputTokens,
             responseContextTokens: responseContextTokens,
@@ -9115,6 +9356,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             required String conversationId,
             required String role,
             required String content,
+            Value<bool> completedSuccessfully = const Value.absent(),
             Value<int?> tokenCount = const Value.absent(),
             Value<int?> responseOutputTokens = const Value.absent(),
             Value<int?> responseContextTokens = const Value.absent(),
@@ -9131,6 +9373,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             conversationId: conversationId,
             role: role,
             content: content,
+            completedSuccessfully: completedSuccessfully,
             tokenCount: tokenCount,
             responseOutputTokens: responseOutputTokens,
             responseContextTokens: responseContextTokens,
@@ -10063,7 +10306,8 @@ class $$MonitorHostTableTableTableManager extends RootTableManager<
                     await $_getPrefetchedData<
                             MonitorHostTableData,
                             $MonitorHostTableTable,
-                            MonitorTrustedCertTableData>(
+                            MonitorTrustedCertTableData,
+                            $MonitorTrustedCertTableTable>(
                         currentTable: table,
                         referencedTable: $$MonitorHostTableTableReferences
                             ._monitorTrustedCertTableRefsTable(db),
@@ -10876,7 +11120,8 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
                     await $_getPrefetchedData<
                             TtsDatasetProjectTableData,
                             $TtsDatasetProjectTableTable,
-                            TtsDatasetSpeakerTableData>(
+                            TtsDatasetSpeakerTableData,
+                            $TtsDatasetSpeakerTableTable>(
                         currentTable: table,
                         referencedTable: $$TtsDatasetProjectTableTableReferences
                             ._ttsDatasetSpeakerTableRefsTable(db),
@@ -10892,7 +11137,8 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
                     await $_getPrefetchedData<
                             TtsDatasetProjectTableData,
                             $TtsDatasetProjectTableTable,
-                            TtsDatasetPromptTableData>(
+                            TtsDatasetPromptTableData,
+                            $TtsDatasetPromptTableTable>(
                         currentTable: table,
                         referencedTable: $$TtsDatasetProjectTableTableReferences
                             ._ttsDatasetPromptTableRefsTable(db),
@@ -10908,7 +11154,8 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
                     await $_getPrefetchedData<
                             TtsDatasetProjectTableData,
                             $TtsDatasetProjectTableTable,
-                            TtsDatasetClipTableData>(
+                            TtsDatasetClipTableData,
+                            $TtsDatasetClipTableTable>(
                         currentTable: table,
                         referencedTable: $$TtsDatasetProjectTableTableReferences
                             ._ttsDatasetClipTableRefsTable(db),
@@ -10924,7 +11171,8 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
                     await $_getPrefetchedData<
                             TtsDatasetProjectTableData,
                             $TtsDatasetProjectTableTable,
-                            TtsDatasetValidationIssueTableData>(
+                            TtsDatasetValidationIssueTableData,
+                            $TtsDatasetValidationIssueTableTable>(
                         currentTable: table,
                         referencedTable: $$TtsDatasetProjectTableTableReferences
                             ._ttsDatasetValidationIssueTableRefsTable(db),
@@ -11379,7 +11627,8 @@ class $$TtsDatasetSpeakerTableTableTableManager extends RootTableManager<
                     await $_getPrefetchedData<
                             TtsDatasetSpeakerTableData,
                             $TtsDatasetSpeakerTableTable,
-                            TtsDatasetClipTableData>(
+                            TtsDatasetClipTableData,
+                            $TtsDatasetClipTableTable>(
                         currentTable: table,
                         referencedTable: $$TtsDatasetSpeakerTableTableReferences
                             ._ttsDatasetClipTableRefsTable(db),
@@ -11827,7 +12076,8 @@ class $$TtsDatasetPromptTableTableTableManager extends RootTableManager<
                     await $_getPrefetchedData<
                             TtsDatasetPromptTableData,
                             $TtsDatasetPromptTableTable,
-                            TtsDatasetClipTableData>(
+                            TtsDatasetClipTableData,
+                            $TtsDatasetClipTableTable>(
                         currentTable: table,
                         referencedTable: $$TtsDatasetPromptTableTableReferences
                             ._ttsDatasetClipTableRefsTable(db),
@@ -12734,7 +12984,8 @@ class $$TtsDatasetClipTableTableTableManager extends RootTableManager<
                     await $_getPrefetchedData<
                             TtsDatasetClipTableData,
                             $TtsDatasetClipTableTable,
-                            TtsDatasetValidationIssueTableData>(
+                            TtsDatasetValidationIssueTableData,
+                            $TtsDatasetValidationIssueTableTable>(
                         currentTable: table,
                         referencedTable: $$TtsDatasetClipTableTableReferences
                             ._ttsDatasetValidationIssueTableRefsTable(db),

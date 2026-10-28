@@ -11,6 +11,9 @@ class Conversation extends Equatable {
     required this.updatedAt,
     this.messages = const [],
     this.systemPrompt,
+    this.titleSource = 'manual',
+    this.titleRevision = 0,
+    this.contentRevision = 0,
   });
 
   /// Creates a new empty conversation.
@@ -22,6 +25,7 @@ class Conversation extends Equatable {
     final now = DateTime.now();
     return Conversation(
       id: id,
+      titleSource: title == null ? 'fallback' : 'manual',
       title: title ?? 'New Conversation',
       createdAt: now,
       updatedAt: now,
@@ -34,6 +38,13 @@ class Conversation extends Equatable {
 
   /// The display title of the conversation.
   final String title;
+
+  /// manual, fallback, or generated. Unknown sources are protected.
+  final String titleSource;
+  final int titleRevision;
+  final int contentRevision;
+  bool get hasAutomaticTitle =>
+      titleSource == 'fallback' || titleSource == 'generated';
 
   /// When the conversation was created.
   final DateTime createdAt;
@@ -55,6 +66,9 @@ class Conversation extends Equatable {
     updatedAt,
     messages,
     systemPrompt,
+    titleSource,
+    titleRevision,
+    contentRevision,
   ];
 
   /// Returns the last message in the conversation, if any.
@@ -77,10 +91,16 @@ class Conversation extends Equatable {
     DateTime? updatedAt,
     List<Message>? messages,
     String? systemPrompt,
+    String? titleSource,
+    int? titleRevision,
+    int? contentRevision,
   }) {
     return Conversation(
       id: id ?? this.id,
       title: title ?? this.title,
+      titleSource: titleSource ?? this.titleSource,
+      titleRevision: titleRevision ?? this.titleRevision,
+      contentRevision: contentRevision ?? this.contentRevision,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       messages: messages ?? this.messages,

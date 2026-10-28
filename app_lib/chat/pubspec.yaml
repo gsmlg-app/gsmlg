@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
   archive: any
   crypto: any
-  lib_llama_cpp: ^0.7.3
+  lib_llama_cpp: ^0.7.5
   equatable: ^3.0.0
   drift: ^2.35.1
   dio: any
@@ -30,8 +30,8 @@ dependencies:
   vultr_api: any
   openai_compatible: any
   anthropic_compatible: any
-  lib_llama_cpp_platform_interface: ^0.7.3
-  lib_llama_cpp_server: ^0.7.3
+  lib_llama_cpp_platform_interface: ^0.7.5
+  lib_llama_cpp_server: ^0.7.5
   dart_mcp: ^0.5.2
   stream_channel: ^2.1.4
   app_local_llm: any

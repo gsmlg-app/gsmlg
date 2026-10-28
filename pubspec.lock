@@ -853,6 +853,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.22"
+  flutter_driver:
+    dependency: transitive
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -972,6 +977,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.0"
+  fuchsia_remote_debug_protocol:
+    dependency: transitive
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   glob:
     dependency: transitive
     description:
@@ -1044,6 +1054,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  integration_test:
+    dependency: "direct dev"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   intl:
     dependency: "direct main"
     description:
@@ -1136,74 +1151,74 @@ packages:
     dependency: "direct main"
     description:
       name: lib_llama_cpp
-      sha256: "94cb9dd4cae4e3138be5fb4a666b565f9030d4d053298520628290dcbdf277c6"
+      sha256: f57853358a307a4330381f43d787ba680c5a66d2a6cbb856f509112109c72792
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "0.7.5"
   lib_llama_cpp_android:
     dependency: transitive
     description:
       name: lib_llama_cpp_android
-      sha256: "2f3f8c185df3eb4ac8e1634706b293f7cf96ea25c97ef43c9f1642d7111d9ba7"
+      sha256: "94f66914b721288cc085b8fd784966156b4ea5690e7efddce55e3682eb315877"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "0.7.5"
   lib_llama_cpp_ffi:
     dependency: transitive
     description:
       name: lib_llama_cpp_ffi
-      sha256: "75352b6b23416150f8c57e4259b053cc704e406c4627beb1d1fd216d1de90c4c"
+      sha256: f656e6dcec3f70f293c32671b9de2614ba3d57c9d3ccd0cc5866fc0f013fb3bb
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "0.7.5"
   lib_llama_cpp_ios:
     dependency: transitive
     description:
       name: lib_llama_cpp_ios
-      sha256: f159c87e864e8c5199d4966cc690b29d451e2461d94cea13f1e66ab274205dcc
+      sha256: b091274f3a8d0f8a2dbf3554c07712ed33558c7831812b8788ef2c74fb322cb5
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "0.7.5"
   lib_llama_cpp_linux:
     dependency: transitive
     description:
       name: lib_llama_cpp_linux
-      sha256: f427d653742c2b1d8b38247d4fece8d4cea7e46024b18c271e914e4b4e8c5eef
+      sha256: c18dd0342927f091b79cef64ac1848774bd76774dbf983f21bee22f9bce2abbd
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "0.7.5"
   lib_llama_cpp_macos:
     dependency: transitive
     description:
       name: lib_llama_cpp_macos
-      sha256: e70100333ce0c573117187e95dbcd2dc0bae122a5aaa37919b971086e8ac94f6
+      sha256: "6b42c0d677601b48de50aec543f456c6d83e5f907e37898ff30e9105a81ad9a3"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "0.7.5"
   lib_llama_cpp_platform_interface:
     dependency: transitive
     description:
       name: lib_llama_cpp_platform_interface
-      sha256: "34347118906c7065aa9ac93746dfc60d61b88aa31cb23c6764dde810b7f1e1e6"
+      sha256: f8f0728ca6e7f3b8c8673b916f9797d83d47c2f56e80a4a45e1c543b20dcd8da
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "0.7.5"
   lib_llama_cpp_server:
     dependency: transitive
     description:
       name: lib_llama_cpp_server
-      sha256: "082b5e658a7dbca42331ddabe81140da1208f8157528b34f24a56f16b51d5aa1"
+      sha256: "91476dd3ecb11ae9022537a8fadc88861b328decff954114e9fbae2b40b8c057"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "0.7.5"
   lib_llama_cpp_windows:
     dependency: transitive
     description:
       name: lib_llama_cpp_windows
-      sha256: cd7250985c38d973e635e8e6c7559c9fd1c72334d44d54d453e28cd7b3e915e6
+      sha256: a29d72b73c0e17e7f4e2c8668daba76b17ad5b66a16857e228ac10dce248bab0
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.3"
+    version: "0.7.5"
   lib_mlx:
     dependency: transitive
     description:
@@ -1929,6 +1944,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.45.0"
+  sync_http:
+    dependency: transitive
+    description:
+      name: sync_http
+      sha256: "7f0cd72eca000d2e026bcd6f990b81d0ca06022ef4e32fb257b30d3d1014a961"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   synchronized:
     dependency: transitive
     description:
@@ -2145,6 +2168,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.3"
+  webdriver:
+    dependency: transitive
+    description:
+      name: webdriver
+      sha256: "28b82ec894fed45dd71c23ba62d1af973ed97dd59a4f5790a4d38b0b13e5657e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.0"
   webkit_inspection_protocol:
     dependency: transitive
     description:

@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import os
 
 public class LocalLlmIosPlugin: NSObject, FlutterPlugin {
     private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
@@ -15,6 +16,18 @@ public class LocalLlmIosPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "prepareTitleModel":
+            guard ProcessInfo.processInfo.physicalMemory >= 6 * 1024 * 1024 * 1024,
+                  os_proc_available_memory() >= 2 * 1024 * 1024 * 1024 else {
+                result(FlutterError(code: "title_model_unavailable", message: "Insufficient available memory for optional title inference", details: nil))
+                return
+            }
+            let path = Bundle.main.bundlePath + "/Frameworks/App.framework/flutter_assets/assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf"
+            guard FileManager.default.fileExists(atPath: path) else {
+                result(FlutterError(code: "title_model_missing", message: "Required bundled title model is missing", details: nil))
+                return
+            }
+            result(path)
         case "startService":
             startService(call: call, result: result)
         case "stopService":
