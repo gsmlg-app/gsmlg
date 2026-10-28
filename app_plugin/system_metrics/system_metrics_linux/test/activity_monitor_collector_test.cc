@@ -172,6 +172,61 @@ void FixtureTests() {
   Throws([&fixture] { fixture.Sample(); }, "unreadable system CPU source throws");
 }
 
+void ArmGpuTests() {
+  Fixture fixture;
+  fs::remove_all(fixture.root / "sys/class/drm");
+  fixture.Write("sys/class/drm/card0/device/uevent", "DRIVER=rockchip-drm\n");
+  fixture.Write("sys/class/drm/card0/device/devfreq/display/load", "100@600000000Hz\n");
+  fixture.Write("sys/class/drm/card1/device/uevent", "DRIVER=RKNPU\n");
+  fixture.Write("sys/class/drm/card1/device/devfreq/fdab0000.npu/load", "100@1000000000Hz\n");
+  fixture.Write("sys/class/devfreq/dmc/load", "100@534000000Hz\n");
+  const std::string gpu = "sys/devices/platform/fb000000.gpu-panthor/";
+  const std::string load = gpu + "devfreq/fb000000.gpu-panthor/load";
+  fixture.Write(gpu + "uevent", "DRIVER=panthor\nOF_NAME=gpu-panthor\n");
+  fixture.Write(load, "26@200000000Hz\n");
+  fs::create_directories(fixture.root / "sys/class/drm/card2");
+  fs::create_directory_symlink(fixture.root / gpu, fixture.root / "sys/class/drm/card2/device");
+  auto sample = fixture.Sample();
+  Check(sample.gpu.size() == 1 && sample.gpu[0].name == "card2 (panthor)" &&
+        sample.gpu[0].utilization == 26,
+        "read ROCK 5 ITX Panthor devfreq through its DRM device, excluding display/NPU/DMC loads");
+  fixture.Write(load, "63@600000000Hz\n");
+  Check(fixture.Sample().gpu[0].utilization == 63, "read fresh GPU load on each snapshot");
+  for (const auto* value : {"0@200000000Hz\n", "100@1000000000Hz\n"}) {
+    fixture.Write(load, value);
+    Check(fixture.Sample().gpu[0].utilization == (value[0] == '0' ? 0 : 100),
+          "preserve real zero and full GPU utilization");
+  }
+  for (const auto* value : {"", "101@200000000Hz\n", "-1@200000000Hz\n", "26\n",
+                           "200000000\n", "26@Hz\n", "26@-1Hz\n", "26@200000000Hzjunk\n",
+                           "26@9223372036854775808Hz\n"}) {
+    fixture.Write(load, value);
+    sample = fixture.Sample();
+    Check(sample.gpu.size() == 1 && !sample.gpu[0].utilization,
+          "malformed devfreq load remains unavailable; frequency is never utilization");
+  }
+  fs::remove(fixture.root / load);
+  fixture.Write(gpu + "devfreq/fb000000.gpu-panthor/cur_freq", "200000000\n");
+  sample = fixture.Sample();
+  Check(sample.gpu.size() == 1 && !sample.gpu[0].utilization,
+        "missing devfreq load keeps the known GPU unavailable without estimating from frequency");
+  fixture.Write(load, "42@200000000Hz\n");
+  fixture.Write(gpu + "devfreq/other/load", "99@600000000Hz\n");
+  Check(!fixture.Sample().gpu[0].utilization, "ambiguous devfreq devices cannot select an arbitrary load");
+  fs::remove_all(fixture.root / (gpu + "devfreq/other"));
+  fixture.Write(gpu + "gpu_busy_percent", "71\n");
+  Check(fixture.Sample().gpu[0].utilization == 71, "prefer the explicit GPU busy percent interface");
+  fs::remove(fixture.root / (gpu + "gpu_busy_percent"));
+  fixture.Write(gpu + "uevent", "DRIVER=panfrost\n");
+  sample = fixture.Sample();
+  Check(sample.gpu.size() == 1 && sample.gpu[0].name == "card2 (panfrost)" &&
+        sample.gpu[0].utilization == 42, "accept the same devfreq ABI on Panfrost");
+  fixture.Write(gpu + "product_name", "Fixture Mali GPU\n");
+  Check(fixture.Sample().gpu[0].name == "Fixture Mali GPU", "preserve the driver's GPU product name");
+  fixture.Write(gpu + "uevent", "DRIVER=unknown\n");
+  Check(fixture.Sample().gpu.empty(), "devfreq load alone does not identify a GPU");
+}
+
 std::string Quote(const std::string& value) {
   std::ostringstream result;
   result << '"';
@@ -267,6 +322,7 @@ int main(int argc, char** argv) {
     else if (mode == "--fixtures") {
       ParserTests();
       FixtureTests();
+      ArmGpuTests();
       std::cout << checks << " native parser/fixture checks passed\n";
     } else throw std::runtime_error("usage: activity_monitor_collector_test [--fixtures|--live|--sample-json]");
     return 0;

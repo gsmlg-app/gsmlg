@@ -199,6 +199,31 @@ ActivityDisk ReadDisks(const fs::path& proc, const fs::path& sys) {
   return result;
 }
 
+std::optional<double> DevfreqGpuUsage(const fs::path& device) {
+  std::error_code error;
+  fs::directory_iterator iterator(device / "devfreq", error);
+  if (error) return std::nullopt;
+  std::optional<fs::path> devfreq;
+  for (const fs::directory_iterator end; iterator != end; iterator.increment(error)) {
+    if (error || devfreq) return std::nullopt;
+    devfreq = iterator->path();
+  }
+  if (error || !devfreq) return std::nullopt;
+  const auto load = ReadFile(*devfreq / "load");
+  if (!load) return std::nullopt;
+  // The devfreq load ABI is "<busy percent>@<frequency>Hz". The frequency
+  // validates the format only; it must never be used to estimate utilization.
+  const auto text = Trim(*load);
+  const auto delimiter = text.find('@');
+  if (delimiter == std::string::npos) return std::nullopt;
+  const auto usage = Number(text.substr(0, delimiter));
+  const auto frequency = text.substr(delimiter + 1);
+  if (!usage || *usage > 100 || frequency.size() <= 2 ||
+      frequency.compare(frequency.size() - 2, 2, "Hz") != 0 ||
+      !Number(frequency.substr(0, frequency.size() - 2))) return std::nullopt;
+  return static_cast<double>(*usage);
+}
+
 std::vector<ActivityGpu> ReadGpus(const fs::path& sys) {
   std::vector<ActivityGpu> result;
   std::error_code error;
@@ -209,26 +234,31 @@ std::vector<ActivityGpu> ReadGpus(const fs::path& sys) {
     const auto card = iterator->path().filename().string();
     if (card.rfind("card", 0) != 0 || !Digits(card.substr(4))) continue;
     const auto device = iterator->path() / "device";
-    // DRM also exposes display-only and NPU cards. Only an explicit GPU busy
-    // interface establishes that this is a GPU we can monitor.
+    std::string driver;
+    const auto uevent = ReadFile(device / "uevent");
+    if (uevent) {
+      std::istringstream lines(*uevent);
+      for (std::string line; std::getline(lines, line);) {
+        if (line.rfind("DRIVER=", 0) == 0) { driver = Trim(line.substr(7)); break; }
+      }
+    }
+    // DRM also exposes display-only and NPU cards. A known Mali GPU driver
+    // allows device-local devfreq sampling without treating other loads as GPU.
+    const bool mali = driver == "panthor" || driver == "panfrost";
     std::error_code busy_error;
-    if (!fs::exists(device / "gpu_busy_percent", busy_error) || busy_error) continue;
+    const bool has_busy = fs::exists(device / "gpu_busy_percent", busy_error) && !busy_error;
+    if (!has_busy && !mali) continue;
     ActivityGpu gpu;
     const auto product = ReadFile(device / "product_name");
     gpu.name = product ? Trim(*product) : card;
-    if (!product) {
-      const auto uevent = ReadFile(device / "uevent");
-      if (uevent) {
-        std::istringstream lines(*uevent);
-        for (std::string line; std::getline(lines, line);) {
-          if (line.rfind("DRIVER=", 0) == 0) gpu.name += " (" + Trim(line.substr(7)) + ")";
-        }
-      }
+    if (!product && !driver.empty()) gpu.name += " (" + driver + ")";
+    if (has_busy) {
+      const auto busy = ReadFile(device / "gpu_busy_percent");
+      const auto usage = busy ? Number(Trim(*busy)) : std::nullopt;
+      if (usage && *usage <= 100) gpu.utilization = static_cast<double>(*usage);
+    } else {
+      gpu.utilization = DevfreqGpuUsage(device);
     }
-    // Explicit driver-exported utilization only. Frequency is not utilization.
-    const auto busy = ReadFile(device / "gpu_busy_percent");
-    const auto usage = busy ? Number(Trim(*busy)) : std::nullopt;
-    if (usage && *usage <= 100) gpu.utilization = static_cast<double>(*usage);
     result.push_back(std::move(gpu));
   }
   std::sort(result.begin(), result.end(), [](const auto& left, const auto& right) {

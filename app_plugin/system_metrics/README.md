@@ -67,10 +67,15 @@ If `hidepid` hides processes, the system process total is unavailable rather tha
 presenting the visible subset as a complete count.
 
 GPU utilization remains `null` when the driver does not expose it. On Linux,
-driver support depends on readable DRM sysfs counters; unavailable GPUs retain
-the dashboard's unavailable state. The activity API does not report NPU
-utilization. The legacy numeric `getData()` API remains unchanged for existing
-callers.
+the collector reads DRM device `gpu_busy_percent` counters. Mali GPUs using
+Panthor or Panfrost can also use the GPU device's `devfreq/*/load` attribute on
+kernels that provide it, in the format `<percentage>@<frequency>Hz`. Only the
+percentage is used; GPU frequency is never treated as utilization. Discovery
+stays within the identified GPU device, excluding display, NPU, and memory
+controller devfreq loads. Missing, malformed, or ambiguous load data stays
+unavailable. ARM64 support alone does not imply support for every ARM GPU driver.
+The activity API does not report NPU utilization. The legacy numeric `getData()`
+API remains unchanged for existing callers.
 
 ### App integration and verification
 
@@ -118,6 +123,12 @@ requests, and pending-request teardown without starting a window or engine.
 
 CI runs both native checks on x86_64 and arm64 runners. These checks and the
 Flutter widget tests do not replace launching a full Linux application.
+
+The Mali devfreq path was also checked on a ROCK 5 ITX (RK3588/Mali-G610,
+Armbian kernel `6.1.115-vendor-rk35xx`, Panthor) using ordinary-user live
+sampling and the real Flutter Linux channel tests. Panfrost's matching load
+format is fixture-tested; other devices and kernels still need hardware checks.
+This check did not replace the installed kiosk app or verify its dashboard UI.
 
 ## Supported Platforms
 
