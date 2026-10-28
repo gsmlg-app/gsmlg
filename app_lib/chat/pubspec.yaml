@@ -15,7 +15,7 @@ dependencies:
   crypto: any
   lib_llama_cpp: ^0.7.5
   equatable: ^3.0.0
-  drift: ^2.35.1
+  drift: ^2.35.3
   dio: any
   html: any
   http: any

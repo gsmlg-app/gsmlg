@@ -10,7 +10,7 @@ dependencies:
   bloc: ^9.2.1
   flutter:
     sdk: flutter
-  camera: ^0.12.1
+  camera: ^0.12.2
   camera_macos: any
 
 dev_dependencies:

@@ -9,7 +9,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  lottie: ^3.6.1
+  lottie: ^3.7.0
   flutter_svg: ^2.3.0
 
 dev_dependencies:

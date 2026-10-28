@@ -8980,8 +8980,11 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (chatMessageTableRefs)
-                    await $_getPrefetchedData<ChatConversationTableData,
-                            $ChatConversationTableTable, ChatMessageTableData>(
+                    await $_getPrefetchedDataByColumns<
+                            ChatConversationTableData,
+                            $ChatConversationTableTable,
+                            ChatMessageTableData,
+                            $ChatMessageTableTable>(
                         currentTable: table,
                         referencedTable: $$ChatConversationTableTableReferences
                             ._chatMessageTableRefsTable(db),
@@ -8989,9 +8992,8 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
                             $$ChatConversationTableTableReferences(
                                     db, table, p0)
                                 .chatMessageTableRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.conversationId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'conversation_id',
                         typedResults: items)
                 ];
               },
@@ -10303,7 +10305,7 @@ class $$MonitorHostTableTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (monitorTrustedCertTableRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                             MonitorHostTableData,
                             $MonitorHostTableTable,
                             MonitorTrustedCertTableData,
@@ -10314,9 +10316,8 @@ class $$MonitorHostTableTableTableManager extends RootTableManager<
                         managerFromTypedResult: (p0) =>
                             $$MonitorHostTableTableReferences(db, table, p0)
                                 .monitorTrustedCertTableRefs,
-                        referencedItemsForCurrentItem: (item,
-                                referencedItems) =>
-                            referencedItems.where((e) => e.hostId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'host_id',
                         typedResults: items)
                 ];
               },
@@ -11117,7 +11118,7 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (ttsDatasetSpeakerTableRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                             TtsDatasetProjectTableData,
                             $TtsDatasetProjectTableTable,
                             TtsDatasetSpeakerTableData,
@@ -11129,12 +11130,11 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
                             $$TtsDatasetProjectTableTableReferences(
                                     db, table, p0)
                                 .ttsDatasetSpeakerTableRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.projectId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'project_id',
                         typedResults: items),
                   if (ttsDatasetPromptTableRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                             TtsDatasetProjectTableData,
                             $TtsDatasetProjectTableTable,
                             TtsDatasetPromptTableData,
@@ -11146,12 +11146,11 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
                             $$TtsDatasetProjectTableTableReferences(
                                     db, table, p0)
                                 .ttsDatasetPromptTableRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.projectId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'project_id',
                         typedResults: items),
                   if (ttsDatasetClipTableRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                             TtsDatasetProjectTableData,
                             $TtsDatasetProjectTableTable,
                             TtsDatasetClipTableData,
@@ -11163,12 +11162,11 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
                             $$TtsDatasetProjectTableTableReferences(
                                     db, table, p0)
                                 .ttsDatasetClipTableRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.projectId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'project_id',
                         typedResults: items),
                   if (ttsDatasetValidationIssueTableRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                             TtsDatasetProjectTableData,
                             $TtsDatasetProjectTableTable,
                             TtsDatasetValidationIssueTableData,
@@ -11180,9 +11178,8 @@ class $$TtsDatasetProjectTableTableTableManager extends RootTableManager<
                             $$TtsDatasetProjectTableTableReferences(
                                     db, table, p0)
                                 .ttsDatasetValidationIssueTableRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.projectId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'project_id',
                         typedResults: items)
                 ];
               },
@@ -11624,7 +11621,7 @@ class $$TtsDatasetSpeakerTableTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (ttsDatasetClipTableRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                             TtsDatasetSpeakerTableData,
                             $TtsDatasetSpeakerTableTable,
                             TtsDatasetClipTableData,
@@ -11636,9 +11633,8 @@ class $$TtsDatasetSpeakerTableTableTableManager extends RootTableManager<
                             $$TtsDatasetSpeakerTableTableReferences(
                                     db, table, p0)
                                 .ttsDatasetClipTableRefs,
-                        referencedItemsForCurrentItem:
-                            (item, referencedItems) => referencedItems
-                                .where((e) => e.speakerId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'speaker_id',
                         typedResults: items)
                 ];
               },
@@ -12073,7 +12069,7 @@ class $$TtsDatasetPromptTableTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (ttsDatasetClipTableRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                             TtsDatasetPromptTableData,
                             $TtsDatasetPromptTableTable,
                             TtsDatasetClipTableData,
@@ -12085,9 +12081,8 @@ class $$TtsDatasetPromptTableTableTableManager extends RootTableManager<
                             $$TtsDatasetPromptTableTableReferences(
                                     db, table, p0)
                                 .ttsDatasetClipTableRefs,
-                        referencedItemsForCurrentItem: (item,
-                                referencedItems) =>
-                            referencedItems.where((e) => e.promptId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'prompt_id',
                         typedResults: items)
                 ];
               },
@@ -12981,7 +12976,7 @@ class $$TtsDatasetClipTableTableTableManager extends RootTableManager<
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (ttsDatasetValidationIssueTableRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                             TtsDatasetClipTableData,
                             $TtsDatasetClipTableTable,
                             TtsDatasetValidationIssueTableData,
@@ -12992,9 +12987,8 @@ class $$TtsDatasetClipTableTableTableManager extends RootTableManager<
                         managerFromTypedResult: (p0) =>
                             $$TtsDatasetClipTableTableReferences(db, table, p0)
                                 .ttsDatasetValidationIssueTableRefs,
-                        referencedItemsForCurrentItem: (item,
-                                referencedItems) =>
-                            referencedItems.where((e) => e.clipId == item.id),
+                        currentColumn: 'id',
+                        referencedColumn: 'clip_id',
                         typedResults: items)
                 ];
               },
