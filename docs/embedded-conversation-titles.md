@@ -159,11 +159,11 @@ Qualification host: MacBookPro18,4, Apple M1 Max, 32 GiB RAM, 2026-10-29.
 
 | Platform | Packaging | Native execution |
 | --- | --- | --- |
-| macOS | Release `.app` built and content audit passed | Both tests also pass using the packaged model and packaged native library; independent primary engine survives title-engine teardown |
+| macOS | Release `.app` and arm64 Debug `.app` content audits passed | arm64 installed-app smoke passed; packaged-engine and two-engine tests also passed |
 | Android | Debug APK and AAB audits passed; device-specific install-time pack installed | Pixel Fold (Android 17, GS201) generated a title with no active default network |
-| iOS | Signed arm64 Debug app built and packaged-model/native-engine audit passed | Device execution not yet qualified |
-| Linux | Installed asset path and CMake verification implemented | No Linux application built or executed in this qualification |
-| Windows | Installed asset path and CMake verification implemented | No Windows application built or executed in this qualification |
+| iOS | Signed arm64 Debug app built and packaged-model/native-engine audit passed | Native execution unverified; further iPad testing excluded by user request |
+| Linux | App build blocked by existing missing GStreamer development packages | x64 native title and independent-engine preservation tests passed on CI |
+| Windows | App build blocked by upstream duskmoon_highlight MSVC failure (#32) | x64 native title and independent-engine preservation tests passed on CI |
 
 Actual native cold title transformation on the Mac host with the final language-aligned
 prompt: 19,978 ms (`可复用 Flutter 组件设计`). An earlier prompt took 17,665 ms, including
@@ -220,8 +220,7 @@ The repository-wide CI failures are distinct from those title checks:
 
 - Linux app packaging stops because the runner lacks `gstreamer-1.0` development
   packages required by the existing audioplayers plugin. This also failed on the
-  preceding main commit. Install the existing application's GStreamer development
-  prerequisites before rerunning the app build and package audit.
+  preceding main commit. Install `libgstreamer1.0-dev` and `libgstreamer-plugins-base1.0-dev` before rerunning the app build and package audit.
 - Windows app packaging stops in duskmoon_highlight 2.2.3's Crystal scanner under
   MSVC (`C2466`/`C2133`, variable-length array `word[max_word_size + 4]`).
   TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#32
@@ -243,5 +242,56 @@ application build.
 The physical iPad Air M3 was reachable over local-network debugging, but was
 locked. An initial transfer failed with CoreDevice 3002 / IXRemoteErrorDomain 6;
 a subsequent Flutter launch stalled waiting for Xcode debugging. iOS model
-execution, offline behavior, latency and memory remain unverified. Unlock and
-preferably USB-connect that device before repeating the installed-app smoke test.
+execution, offline behavior, latency and memory remain unverified. Further iPad testing was stopped at the user's request. The normal `lib/main.dart`
+application was reinstalled successfully, preserving app data; no more iPad tests
+are authorized by this task.
+
+
+### Additional native qualification
+
+On CI commit `1eadb7b` ([run 40735593589](https://github.com/gsmlg-app/gsmlg/actions/runs/40735593589)),
+the independent title package tests passed on both Linux x64 and Windows x64.
+Each ran the actual pinned GGUF and native 0.7.5 library, generated
+`可复用 Flutter 组件设计`, and proved a separately loaded primary engine still
+responded identically after title-engine teardown. Cold transformation times were
+6,676 ms on the Linux CI runner and 11,910 ms on the Windows CI runner. These
+are VM runner measurements, not physical-device claims; peak memory was not
+recorded there. CI format and analyze passed. The three documented full-app /
+repository-wide blockers still failed, and their gates were not weakened.
+
+A separate Debug macOS app was built explicitly for arm64 and passed the package
+audit. The installed-app driver resolved the bundled asset path itself, with Dart
+networking disabled, and passed with `可复用 Flutter 组件设计` in **23,795 ms**.
+The app binary was confirmed `Mach-O 64-bit executable arm64`; this run did not
+use the Rosetta Flutter tester. Sampled peak **app RSS was 1,449,424 KiB** (277
+samples, 250 ms sampling) under concurrent build load. Flutter initially failed
+to foreground the external-volume app, so opening that same built bundle directly
+was necessary before the first test frame. The driver exited zero and closed
+the test app. OS networking was not disabled on the Mac; the physical Android
+run above supplies the OS-offline installation/runtime evidence.
+
+Both Android and iPad test fixtures were replaced with builds using the normal
+`lib/main.dart` entry point, using data-preserving installs. No release was
+published, and unrelated dependency upgrades in the shared checkout remain
+uncommitted by this task.
+
+### Release-mode Android package audit
+
+The normal command `flutter build appbundle --release --target-platform=android-arm64
+--target=lib/main.dart` completed successfully. The resulting
+`build/app/outputs/bundle/release/app-release.aab` is **855,552,337 bytes**.
+Its install-time pack contains exactly one model with the pinned SHA-256, both
+notices, and the package contains the llama.cpp runtime, `libapp.so`,
+`libflutter.so` and Dart AOT symbol metadata. The artifact was signed by the
+repository's Android Debug fallback because no release keystore was configured;
+it is not a production-signed or Play-qualified distribution and was not uploaded.
+
+After running integration fixtures, use the normal Flutter command with pub
+resolution enabled to regenerate release plugin registration. This Flutter
+version's `--no-pub` path retains debug-only plugin registration. Qualification
+also temporarily redirected generated outputs to an external volume for disk
+capacity; after restoring the normal Flutter release intermediate path, its
+stale task-created AOT cache was regenerated. A compile-only and JNI-staging
+diagnostic then confirmed the AOT library before the final standard build.
+No source workaround, SDK patch, disabled stripping check, or modified dependency
+was needed for the successful release-mode Android build.
