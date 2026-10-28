@@ -61,12 +61,11 @@ class _LiteRtLmExampleScreenState extends State<LiteRtLmExampleScreen> {
   }
 
   Future<void> _pickModel() async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: const <String>['litertlm'],
-      allowMultiple: false,
     );
-    final path = result?.files.single.path;
+    final path = result?.path;
     if (path == null) {
       return;
     }
