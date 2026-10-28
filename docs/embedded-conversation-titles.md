@@ -144,14 +144,18 @@ failure. It passes when invoked from `app_lib/chat`.
 The opt-in actual-engine test accepts `TITLE_MODEL_PATH` and `TITLE_LIBRARY_PATH`
 and runs `app_lib/chat/test/minicpm_title_native_smoke_test.dart`. An installed-app
 smoke test is `integration_test/conversation_title_offline_test.dart`; run it with
-`flutter test -d <device> integration_test/conversation_title_offline_test.dart`.
+a disposable test installation on a device without user data. Do not run this
+fixture over a populated `org.gsmlg.app` installation.
 It resolves packaged assets and native libraries and disables Dart networking.
 This is not proof that OS-level networking was disabled.
 The equivalent driver is `test_driver/conversation_title.dart`; it also supports
-`flutter drive --use-application-binary=<APK> -d <device>
+`flutter drive --keep-app-running --use-application-binary=<APK> -d <device>
 --driver=test_driver/conversation_title.dart
 --target=integration_test/conversation_title_offline_test.dart` for a prebuilt
-debug APK. Use physical devices and record networking state separately.
+debug APK. Flutter drive otherwise uninstalls the application on completion,
+including its private data. `--keep-app-running` only avoids that completion
+cleanup; it is not a backup or protection against installation fallback. Use
+disposable test installations and record networking state separately.
 
 ## Qualification record
 
@@ -275,9 +279,17 @@ the test app. OS networking was not disabled on the Mac; the physical Android
 run above supplies the OS-offline installation/runtime evidence.
 
 Both Android and iPad test fixtures were replaced with builds using the normal
-`lib/main.dart` entry point, using data-preserving installs. No release was
-published, and unrelated dependency upgrades in the shared checkout remain
-uncommitted by this task.
+`lib/main.dart` entry point. No release was published.
+
+**Android data-loss correction (2026-10-29):** the earlier Android APK driver
+run omitted `--keep-app-running`. Flutter 3.47.8 calls
+`FlutterDriverService.stop()` on completion, which uninstalls the application
+when a package was supplied. The successful driver log ended at 00:53 local
+time; the device subsequently reported a new first-install time of 01:10:51.
+The user later reported missing data. The previous claim of data preservation
+was incorrect: later replacement installs cannot restore data deleted by the
+driver cleanup. No pre-test application-data backup was recorded. Further
+installations and tests were stopped while recovery sources were investigated.
 
 ### Release-mode Android package audit
 
