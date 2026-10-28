@@ -29,12 +29,16 @@ String? resolveLocalModelId(
 /// Shown only when the active agent uses local inference. Start loads the
 /// agent's own model (falling back to any installed model), Stop unloads it.
 class LocalModelActionButton extends StatelessWidget {
-  const LocalModelActionButton({super.key});
+  const LocalModelActionButton({super.key, this.settings, this.busy = false});
+
+  final ChatSettingsState? settings;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-      builder: (context, settingsState) {
+      builder: (context, globalSettings) {
+        final settingsState = settings ?? globalSettings;
         if (settingsState.config.inferenceMode != ChatInferenceMode.local) {
           return const SizedBox.shrink();
         }
@@ -77,11 +81,13 @@ class LocalModelActionButton extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.stop),
                   label: const Text('Stop'),
-                  onPressed: () {
-                    context.read<GemmaModelBloc>().add(
-                      const GemmaModelUnload(),
-                    );
-                  },
+                  onPressed: busy
+                      ? null
+                      : () {
+                          context.read<GemmaModelBloc>().add(
+                            const GemmaModelUnload(),
+                          );
+                        },
                 ),
               );
             }
@@ -94,14 +100,16 @@ class LocalModelActionButton extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.play_arrow),
                 label: const Text('Start'),
-                onPressed: () {
-                  context.read<GemmaModelBloc>().add(
-                    GemmaModelSelect(
-                      modelId: targetModelId,
-                      config: settingsState.config,
-                    ),
-                  );
-                },
+                onPressed: busy
+                    ? null
+                    : () {
+                        context.read<GemmaModelBloc>().add(
+                          GemmaModelSelect(
+                            modelId: targetModelId,
+                            config: settingsState.config,
+                          ),
+                        );
+                      },
               ),
             );
           },

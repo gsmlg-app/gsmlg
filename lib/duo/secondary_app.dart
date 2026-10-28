@@ -45,7 +45,9 @@ class _DuoCompanionAppState extends State<DuoCompanionApp> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = _manager.isDark ? DmThemeData.moonlight() : DmThemeData.sunshine();
+    final theme = _manager.isDark
+        ? DmThemeData.moonlight()
+        : DmThemeData.sunshine();
 
     return DuskmoonApp(
       platformStyle: DmPlatformStyle.material,
@@ -74,17 +76,33 @@ class DuoCompanionScaffold extends StatefulWidget {
     (icon: Icons.dns_outlined, label: 'DNS Zones', route: 'Domain'),
     (icon: Icons.cloud_outlined, label: 'Vultr Servers', route: 'Vultr'),
     (icon: Icons.code, label: 'GitHub', route: 'GitHub'),
-    (icon: Icons.bluetooth, label: 'Bluetooth', route: BluetoothScannerScreen.name),
+    (
+      icon: Icons.bluetooth,
+      label: 'Bluetooth',
+      route: BluetoothScannerScreen.name,
+    ),
     (icon: Icons.search, label: 'WHOIS', route: 'Whois'),
-    (icon: Icons.monitor_heart_outlined, label: 'System Monitor', route: 'Monitor'),
+    (
+      icon: Icons.monitor_heart_outlined,
+      label: 'System Monitor',
+      route: 'Monitor',
+    ),
     (icon: Icons.explore_outlined, label: 'Compass', route: 'Compass'),
   ];
 
   static const _navItems = [
     (icon: Icons.home_outlined, selectedIcon: Icons.home, label: 'Home'),
-    (icon: Icons.miscellaneous_services_outlined, selectedIcon: Icons.miscellaneous_services, label: 'Service'),
+    (
+      icon: Icons.miscellaneous_services_outlined,
+      selectedIcon: Icons.miscellaneous_services,
+      label: 'Service',
+    ),
     (icon: Icons.build_outlined, selectedIcon: Icons.build, label: 'Toolbox'),
-    (icon: Icons.settings_outlined, selectedIcon: Icons.settings, label: 'Settings'),
+    (
+      icon: Icons.settings_outlined,
+      selectedIcon: Icons.settings,
+      label: 'Settings',
+    ),
   ];
 
   @override
@@ -100,6 +118,10 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
   bool _ctrlActive = false;
   bool _altActive = false;
   bool _isRecording = false;
+  String? _boundConversationId;
+  String? _recordingConversationId;
+  final _attachmentsByConversation = <String?, List<ChatAttachment>>{};
+  bool _boundWasBusy = false;
 
   static const _quickSymbols = [
     '/',
@@ -131,6 +153,9 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
   @override
   void initState() {
     super.initState();
+    _boundConversationId = widget.manager.chatState?.conversationId;
+    _inputController.text = widget.manager.chatState?.draftText ?? '';
+    widget.manager.addListener(_syncSessionDraft);
     _focusNode.addListener(_onFocusChanged);
     _inputController.addListener(_onTextChanged);
     widget.manager.onTextSync = (text) {
@@ -148,6 +173,47 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
     };
   }
 
+  void _syncSessionDraft() {
+    final state = widget.manager.chatState;
+    final id = state?.conversationId;
+    final changed = id != _boundConversationId;
+    if (changed) {
+      _attachmentsByConversation[_boundConversationId] = List.of(
+        _pendingAttachments,
+      );
+      if (_isRecording) _toggleRecording();
+      _boundConversationId = id;
+      _pendingAttachments
+        ..clear()
+        ..addAll(_attachmentsByConversation[id] ?? const []);
+    }
+    final acceptedBusy =
+        state?.isStreaming == true && state?.isPreparing != true;
+    final accepted = !changed && !_boundWasBusy && acceptedBusy;
+    _boundWasBusy = acceptedBusy;
+    if (changed || accepted) {
+      final text = state?.draftText ?? '';
+      _inputController.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+      if (accepted) _pendingAttachments.clear();
+      if (mounted) setState(() {});
+    }
+  }
+
+  void _addAttachmentsToSession(String? id, List<ChatAttachment> attachments) {
+    if (!mounted) return;
+    if (id == _boundConversationId) {
+      setState(() => _pendingAttachments.addAll(attachments));
+    } else {
+      _attachmentsByConversation[id] = [
+        ...?_attachmentsByConversation[id],
+        ...attachments,
+      ];
+    }
+  }
+
   void _onFocusChanged() {
     if (mounted) setState(() {});
   }
@@ -158,6 +224,7 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
 
   @override
   void dispose() {
+    widget.manager.removeListener(_syncSessionDraft);
     _focusNode.removeListener(_onFocusChanged);
     _inputController.removeListener(_onTextChanged);
     widget.manager.onTextSync = null;
@@ -169,6 +236,7 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
   }
 
   Future<void> _pickAttachments() async {
+    final targetId = _boundConversationId;
     final files = await FilePicker.pickFiles();
     if (files.isEmpty) return;
 
@@ -197,17 +265,12 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
       }
     }
 
-    if (mounted) {
-      setState(() {
-        _pendingAttachments.addAll(picked);
-      });
-    }
+    _addAttachmentsToSession(targetId, picked);
   }
 
   String? _mimeTypeFor(String name, String? extension) {
-    final ext =
-        (extension ?? (name.contains('.') ? name.split('.').last : ''))
-            .toLowerCase();
+    final ext = (extension ?? (name.contains('.') ? name.split('.').last : ''))
+        .toLowerCase();
     return switch (ext) {
       'png' => 'image/png',
       'jpg' || 'jpeg' => 'image/jpeg',
@@ -225,24 +288,24 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
 
   Future<void> _toggleRecording() async {
     if (_isRecording) {
+      final targetId = _recordingConversationId;
+      _isRecording = false;
       final path = await _recorder.stop();
       if (path != null) {
         final file = File(path);
         if (await file.exists()) {
           final bytes = await file.readAsBytes();
           if (mounted) {
-            setState(() {
-              _pendingAttachments.add(
-                ChatAttachment(
-                  id: 'audio:${DateTime.now().microsecondsSinceEpoch}',
-                  name: 'recording.wav',
-                  sizeBytes: bytes.length,
-                  mimeType: 'audio/wav',
-                  bytes: bytes,
-                ),
-              );
-              _isRecording = false;
-            });
+            _addAttachmentsToSession(targetId, [
+              ChatAttachment(
+                id: 'audio:${DateTime.now().microsecondsSinceEpoch}',
+                name: 'recording.wav',
+                sizeBytes: bytes.length,
+                mimeType: 'audio/wav',
+                bytes: bytes,
+              ),
+            ]);
+            setState(() => _isRecording = false);
           }
           try {
             await file.delete();
@@ -254,12 +317,22 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
         if (mounted) setState(() => _isRecording = false);
       }
     } else {
+      final targetId = _boundConversationId;
       if (await _recorder.hasPermission()) {
+        if (!mounted || targetId != _boundConversationId) return;
+        _recordingConversationId = targetId;
         await _recorder.start(
           const RecordConfig(encoder: AudioEncoder.wav),
-          path: '${Directory.systemTemp.path}/duo_chat_audio.wav',
+          path:
+              '${Directory.systemTemp.path}/duo_chat_audio_${DateTime.now().microsecondsSinceEpoch}.wav',
         );
-        if (mounted) setState(() => _isRecording = true);
+        if (!mounted) return;
+        _isRecording = true;
+        if (targetId != _boundConversationId) {
+          await _toggleRecording();
+        } else {
+          setState(() {});
+        }
       }
     }
   }
@@ -279,10 +352,8 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
       attachments: List.of(_pendingAttachments),
     );
 
-    _inputController.clear();
-    setState(() {
-      _pendingAttachments.clear();
-    });
+    // The primary acknowledges accepted submissions with a busy snapshot;
+    // retain the draft when preparation/readiness fails.
   }
 
   void _insertSymbol(String sym) {
@@ -416,16 +487,21 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
     final sel = _inputController.selection;
     if (!sel.isValid) return;
     final currentPos = sel.start;
-    final lastNewline =
-        text.lastIndexOf('\n', currentPos > 0 ? currentPos - 1 : 0);
+    final lastNewline = text.lastIndexOf(
+      '\n',
+      currentPos > 0 ? currentPos - 1 : 0,
+    );
     if (lastNewline >= 0) {
-      final prevNewline =
-          text.lastIndexOf('\n', lastNewline > 0 ? lastNewline - 1 : 0);
+      final prevNewline = text.lastIndexOf(
+        '\n',
+        lastNewline > 0 ? lastNewline - 1 : 0,
+      );
       final col = currentPos - (lastNewline + 1);
       final lineLen = lastNewline - (prevNewline + 1);
       final targetCol = col.clamp(0, lineLen);
-      _inputController.selection =
-          TextSelection.collapsed(offset: prevNewline + 1 + targetCol);
+      _inputController.selection = TextSelection.collapsed(
+        offset: prevNewline + 1 + targetCol,
+      );
     } else {
       _inputController.selection = const TextSelection.collapsed(offset: 0);
     }
@@ -444,11 +520,13 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
       final nextLineStart = currentPos + nextNewline + 1;
       final afterNext = text.substring(nextLineStart);
       final endOfNextLine = afterNext.indexOf('\n');
-      final nextLineLen =
-          endOfNextLine == -1 ? afterNext.length : endOfNextLine;
+      final nextLineLen = endOfNextLine == -1
+          ? afterNext.length
+          : endOfNextLine;
       final targetCol = currentLineCol.clamp(0, nextLineLen);
-      _inputController.selection =
-          TextSelection.collapsed(offset: nextLineStart + targetCol);
+      _inputController.selection = TextSelection.collapsed(
+        offset: nextLineStart + targetCol,
+      );
     } else {
       _inputController.selection = TextSelection.collapsed(offset: text.length);
     }
@@ -489,8 +567,7 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
   void _copy() {
     final sel = _inputController.selection;
     if (sel.isValid && !sel.isCollapsed) {
-      final selectedText =
-          _inputController.text.substring(sel.start, sel.end);
+      final selectedText = _inputController.text.substring(sel.start, sel.end);
       Clipboard.setData(ClipboardData(text: selectedText));
     }
     setState(() {
@@ -513,8 +590,7 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
   void _cut() {
     final sel = _inputController.selection;
     if (sel.isValid && !sel.isCollapsed) {
-      final selectedText =
-          _inputController.text.substring(sel.start, sel.end);
+      final selectedText = _inputController.text.substring(sel.start, sel.end);
       Clipboard.setData(ClipboardData(text: selectedText));
       final text = _inputController.text;
       final newText = text.replaceRange(sel.start, sel.end, '');
@@ -561,7 +637,9 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                widget.manager.connected ? '● Linked to Display 0' : '○ Standby',
+                widget.manager.connected
+                    ? '● Linked to Display 0'
+                    : '○ Standby',
                 style: textTheme.labelSmall?.copyWith(
                   color: widget.manager.connected
                       ? colorScheme.onPrimaryContainer
@@ -596,7 +674,8 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
   }
 
   Widget _buildControlCenter(BuildContext context) {
-    final isChatRoute = widget.manager.chatState != null ||
+    final isChatRoute =
+        widget.manager.chatState != null ||
         widget.manager.currentRoute.startsWith('/chat') ||
         widget.manager.currentRoute.startsWith('/home') ||
         (widget.manager.selectedIndex == 0 &&
@@ -609,8 +688,11 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
 
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final currentNav = DuoCompanionScaffold._navItems[widget.manager.selectedIndex
-        .clamp(0, DuoCompanionScaffold._navItems.length - 1)];
+    final currentNav =
+        DuoCompanionScaffold._navItems[widget.manager.selectedIndex.clamp(
+          0,
+          DuoCompanionScaffold._navItems.length - 1,
+        )];
     final isKeyboardActive =
         _focusNode.hasFocus || MediaQuery.of(context).viewInsets.bottom > 0;
 
@@ -877,7 +959,11 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.smart_toy_outlined, size: 16, color: colorScheme.primary),
+            Icon(
+              Icons.smart_toy_outlined,
+              size: 16,
+              color: colorScheme.primary,
+            ),
             const SizedBox(width: 6),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 130),
@@ -1004,8 +1090,8 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
                           att.isImage
                               ? Icons.image
                               : (att.isAudio
-                                  ? Icons.audiotrack
-                                  : Icons.insert_drive_file),
+                                    ? Icons.audiotrack
+                                    : Icons.insert_drive_file),
                           size: 16,
                           color: colorScheme.onSecondaryContainer,
                         ),
@@ -1110,9 +1196,7 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
                 color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                 margin: const EdgeInsets.symmetric(horizontal: 4),
               ),
-              Expanded(
-                child: _buildExtraKeysBar(context),
-              ),
+              Expanded(child: _buildExtraKeysBar(context)),
             ],
           ),
           const SizedBox(height: 6),
@@ -1142,7 +1226,8 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
                 )
               else
                 FilledButton.icon(
-                  onPressed: (chatState?.canSend != false &&
+                  onPressed:
+                      (chatState?.canSend != false &&
                           (_inputController.text.trim().isNotEmpty ||
                               _pendingAttachments.isNotEmpty))
                       ? _submitChat
@@ -1191,16 +1276,15 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
           child: Container(
             constraints: BoxConstraints(minWidth: minWidth, minHeight: 28),
             padding:
-                padding ?? const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                padding ??
+                const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
             alignment: Alignment.center,
             child: DefaultTextStyle(
               style: textTheme.labelSmall!.copyWith(
                 fontFamily: 'monospace',
                 fontWeight: FontWeight.bold,
                 fontSize: 11,
-                color: isActive
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSurface,
+                color: isActive ? colorScheme.onPrimary : colorScheme.onSurface,
               ),
               child: child,
             ),
@@ -1224,10 +1308,7 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
             onTap: _handleEsc,
             isAccent: true,
           ),
-          _buildKeyButton(
-            child: const Text('TAB'),
-            onTap: _handleTab,
-          ),
+          _buildKeyButton(child: const Text('TAB'), onTap: _handleTab),
           _buildKeyButton(
             child: const Text('CTRL'),
             onTap: _toggleCtrl,
@@ -1274,14 +1355,8 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
           ),
 
           // 3. Document/Line Navigation
-          _buildKeyButton(
-            child: const Text('HOME'),
-            onTap: _handleHome,
-          ),
-          _buildKeyButton(
-            child: const Text('END'),
-            onTap: _handleEnd,
-          ),
+          _buildKeyButton(child: const Text('HOME'), onTap: _handleHome),
+          _buildKeyButton(child: const Text('END'), onTap: _handleEnd),
 
           // 4. Ctrl Chord Shortcuts when CTRL is toggled
           if (_ctrlActive) ...[
@@ -1332,10 +1407,7 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
 
           // 5. Developer Quick Symbols
           for (final sym in _quickSymbols)
-            _buildKeyButton(
-              child: Text(sym),
-              onTap: () => _insertSymbol(sym),
-            ),
+            _buildKeyButton(child: Text(sym), onTap: () => _insertSymbol(sym)),
         ],
       ),
     );
@@ -1383,8 +1455,10 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
               if (_ctrlActive) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.primary,
                     borderRadius: BorderRadius.circular(4),
@@ -1402,8 +1476,10 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
               if (_altActive) ...[
                 const SizedBox(width: 4),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.secondary,
                     borderRadius: BorderRadius.circular(4),

@@ -69,8 +69,9 @@ class DuoChatAttachmentData {
       name: attachment.name,
       sizeBytes: attachment.sizeBytes,
       mimeType: attachment.mimeType,
-      base64Bytes:
-          attachment.bytes != null ? base64Encode(attachment.bytes!) : null,
+      base64Bytes: attachment.bytes != null
+          ? base64Encode(attachment.bytes!)
+          : null,
     );
   }
 }
@@ -78,7 +79,10 @@ class DuoChatAttachmentData {
 /// Chat state synchronized from Primary Display to Secondary Display.
 class DuoChatState {
   const DuoChatState({
+    this.conversationId,
+    this.draftText = '',
     this.isStreaming = false,
+    this.isPreparing = false,
     this.canSend = true,
     this.modelName,
     this.activeAgentName,
@@ -89,7 +93,10 @@ class DuoChatState {
     this.historyTokens = 0,
   });
 
+  final String? conversationId;
+  final String draftText;
   final bool isStreaming;
+  final bool isPreparing;
   final bool canSend;
   final String? modelName;
   final String? activeAgentName;
@@ -100,7 +107,10 @@ class DuoChatState {
   final int historyTokens;
 
   Map<String, dynamic> toJson() => {
+    'conversationId': conversationId,
+    'draftText': draftText,
     'isStreaming': isStreaming,
+    'isPreparing': isPreparing,
     'canSend': canSend,
     if (modelName != null) 'modelName': modelName,
     if (activeAgentName != null) 'activeAgentName': activeAgentName,
@@ -112,7 +122,10 @@ class DuoChatState {
   };
 
   factory DuoChatState.fromJson(Map<String, dynamic> json) => DuoChatState(
+    conversationId: json['conversationId'] as String?,
+    draftText: json['draftText'] as String? ?? '',
     isStreaming: json['isStreaming'] as bool? ?? false,
+    isPreparing: json['isPreparing'] as bool? ?? false,
     canSend: json['canSend'] as bool? ?? true,
     modelName: json['modelName'] as String?,
     activeAgentName: json['activeAgentName'] as String?,
@@ -178,8 +191,8 @@ class SingleDisplayPlatform implements DuoDisplayPlatform {
 
 DuoDisplayPlatform defaultDisplayPlatform() =>
     !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-        ? AndroidDuoDisplayPlatform()
-        : const SingleDisplayPlatform();
+    ? AndroidDuoDisplayPlatform()
+    : const SingleDisplayPlatform();
 
 /// Inter-isolate message bridge between Primary and Secondary Flutter engines.
 abstract interface class DuoBridge {
@@ -203,8 +216,8 @@ class SingleDisplayBridge implements DuoBridge {
 
 class IsolateDuoBridge implements DuoBridge {
   IsolateDuoBridge({required bool secondary})
-      : _ownName = secondary ? _secondaryName : _primaryName,
-        _peerName = secondary ? _primaryName : _secondaryName;
+    : _ownName = secondary ? _secondaryName : _primaryName,
+      _peerName = secondary ? _primaryName : _secondaryName;
 
   static const _primaryName = 'org.gsmlg.duo.primary';
   static const _secondaryName = 'org.gsmlg.duo.secondary';
@@ -238,8 +251,8 @@ class IsolateDuoBridge implements DuoBridge {
 
 DuoBridge defaultBridge({required bool secondary}) =>
     !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-        ? IsolateDuoBridge(secondary: secondary)
-        : const SingleDisplayBridge();
+    ? IsolateDuoBridge(secondary: secondary)
+    : const SingleDisplayBridge();
 
 /// Manages dual-screen coordination, heartbeat handshake, and intent routing.
 class DuoDisplayManager extends ChangeNotifier {
@@ -352,13 +365,15 @@ class DuoDisplayManager extends ChangeNotifier {
     _isDark = isDark;
     notifyListeners();
     if (_connected) {
-      bridge.send(jsonEncode({
-        'type': 'snapshot',
-        'selectedIndex': _selectedIndex,
-        'currentRoute': _currentRoute,
-        'isDark': _isDark,
-        if (_chatState != null) 'chatState': _chatState!.toJson(),
-      }));
+      bridge.send(
+        jsonEncode({
+          'type': 'snapshot',
+          'selectedIndex': _selectedIndex,
+          'currentRoute': _currentRoute,
+          'isDark': _isDark,
+          if (_chatState != null) 'chatState': _chatState!.toJson(),
+        }),
+      );
     }
   }
 
@@ -368,10 +383,7 @@ class DuoDisplayManager extends ChangeNotifier {
     // Outbound snapshots must not rebuild the primary widgets publishing them.
     // The secondary engine notifies its listeners when receiving chat_state.
     if (_connected) {
-      bridge.send(jsonEncode({
-        'type': 'chat_state',
-        'state': state?.toJson(),
-      }));
+      bridge.send(jsonEncode({'type': 'chat_state', 'state': state?.toJson()}));
     }
   }
 
@@ -381,73 +393,91 @@ class DuoDisplayManager extends ChangeNotifier {
     String? route,
   }) {
     if (!secondary) return;
-    bridge.send(jsonEncode({
-      'type': 'intent',
-      'action': action,
-      'index': ?index,
-      'route': ?route,
-    }));
+    bridge.send(
+      jsonEncode({
+        'type': 'intent',
+        'action': action,
+        'index': ?index,
+        'route': ?route,
+      }),
+    );
   }
 
   void sendTextInput(String text) {
     if (!secondary) return;
-    bridge.send(jsonEncode({
-      'type': 'text_input',
-      'text': text,
-    }));
+    bridge.send(
+      jsonEncode({
+        'type': 'text_input',
+        'conversationId': _chatState?.conversationId,
+        'text': text,
+      }),
+    );
   }
 
   void sendTextSubmit(String text) {
     if (!secondary) return;
-    bridge.send(jsonEncode({
-      'type': 'text_submit',
-      'text': text,
-    }));
+    bridge.send(
+      jsonEncode({
+        'type': 'text_submit',
+        'conversationId': _chatState?.conversationId,
+        'text': text,
+      }),
+    );
   }
 
   void sendChatSend(String text, {List<ChatAttachment>? attachments}) {
     if (!secondary) return;
-    bridge.send(jsonEncode({
-      'type': 'chat_send',
-      'text': text,
-      if (attachments != null)
-        'attachments': attachments
-            .map((a) => DuoChatAttachmentData.fromChatAttachment(a).toJson())
-            .toList(),
-    }));
+    bridge.send(
+      jsonEncode({
+        'type': 'chat_send',
+        'conversationId': _chatState?.conversationId,
+        'text': text,
+        if (attachments != null)
+          'attachments': attachments
+              .map((a) => DuoChatAttachmentData.fromChatAttachment(a).toJson())
+              .toList(),
+      }),
+    );
   }
 
   void sendChatStop() {
     if (!secondary) return;
-    bridge.send(jsonEncode({
-      'type': 'chat_stop',
-    }));
+    bridge.send(
+      jsonEncode({
+        'type': 'chat_stop',
+        'conversationId': _chatState?.conversationId,
+      }),
+    );
   }
 
   void sendChatSelectAgent(String agentId) {
     if (!secondary) return;
-    bridge.send(jsonEncode({
-      'type': 'chat_select_agent',
-      'agentId': agentId,
-    }));
+    bridge.send(
+      jsonEncode({
+        'type': 'chat_select_agent',
+        'conversationId': _chatState?.conversationId,
+        'agentId': agentId,
+      }),
+    );
   }
 
   void syncPrimaryText(String text) {
     if (secondary) return;
     if (_connected) {
-      bridge.send(jsonEncode({
-        'type': 'text_sync',
-        'text': text,
-      }));
+      bridge.send(
+        jsonEncode({
+          'type': 'text_sync',
+          'conversationId': _chatState?.conversationId,
+          'text': text,
+        }),
+      );
     }
   }
 
   void requestSecondaryFocus() {
     if (secondary) return;
     if (_connected) {
-      bridge.send(jsonEncode({
-        'type': 'request_focus',
-      }));
+      bridge.send(jsonEncode({'type': 'request_focus'}));
     }
   }
 
@@ -456,6 +486,18 @@ class DuoDisplayManager extends ChangeNotifier {
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
       final type = map['type'] as String?;
+      if (const {
+            'text_input',
+            'text_submit',
+            'chat_send',
+            'chat_stop',
+            'chat_select_agent',
+            'text_sync',
+          }.contains(type) &&
+          map['conversationId'] != _chatState?.conversationId) {
+        return;
+      }
+
       _lastPeerSeen = DateTime.now();
 
       if (secondary) {
@@ -492,13 +534,15 @@ class DuoDisplayManager extends ChangeNotifier {
       } else {
         if (type == 'hello') {
           _setConnected(true);
-          bridge.send(jsonEncode({
-            'type': 'welcome',
-            'selectedIndex': _selectedIndex,
-            'currentRoute': _currentRoute,
-            'isDark': _isDark,
-            if (_chatState != null) 'chatState': _chatState!.toJson(),
-          }));
+          bridge.send(
+            jsonEncode({
+              'type': 'welcome',
+              'selectedIndex': _selectedIndex,
+              'currentRoute': _currentRoute,
+              'isDark': _isDark,
+              if (_chatState != null) 'chatState': _chatState!.toJson(),
+            }),
+          );
         } else if (type == 'ready') {
           _setConnected(true);
         } else if (type == 'intent') {

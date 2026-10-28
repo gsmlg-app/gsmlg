@@ -53,6 +53,10 @@ class MainProvider extends StatelessWidget {
         RepositoryProvider<GemmaRepository>(
           create: (context) => GemmaRepository(),
         ),
+        RepositoryProvider<LocalModelAccess>(
+          create: (context) =>
+              LocalModelAccess.forResource(context.read<GemmaRepository>()),
+        ),
         RepositoryProvider<RemoteLlmRepository>(
           create: (context) => RemoteLlmRepository(vault: vault),
         ),
@@ -135,11 +139,13 @@ class MainProvider extends StatelessWidget {
             create: (context) => GemmaModelBloc(
               repository: context.read<GemmaRepository>(),
               preferences: context.read<SharedPreferences>(),
+              modelAccess: context.read<LocalModelAccess>(),
             ),
           ),
           BlocProvider<ChatBloc>(
             create: (context) => ChatBloc(
               gemmaRepository: context.read<GemmaRepository>(),
+              modelAccess: context.read<LocalModelAccess>(),
               remoteRepository: context.read<RemoteLlmRepository>(),
               storageRepository: context.read<ChatStorageRepository>(),
               toolExecutor: context.read<ToolExecutor>(),

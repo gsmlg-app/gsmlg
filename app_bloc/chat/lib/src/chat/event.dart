@@ -1,123 +1,153 @@
 part of 'bloc.dart';
 
-/// Events for the ChatBloc.
 sealed class ChatEvent {
   const ChatEvent();
 }
 
-/// Load an existing conversation by ID.
 final class ChatLoadConversation extends ChatEvent {
   const ChatLoadConversation({required this.id});
-
   final String id;
 }
 
-/// Create a new conversation.
 final class ChatNewConversation extends ChatEvent {
-  const ChatNewConversation({this.title, this.systemPrompt});
-
+  const ChatNewConversation(
+      {this.title,
+      this.systemPrompt,
+      this.config,
+      this.agentId,
+      this.thinkingEnabled});
   final String? title;
+  final String? systemPrompt;
+  final ModelConfig? config;
+  final String? agentId;
+  final bool? thinkingEnabled;
+}
+
+final class ChatUpdateDraft extends ChatEvent {
+  const ChatUpdateDraft(
+      {this.conversationId,
+      required this.text,
+      this.selectionBase = -1,
+      this.selectionExtent = -1,
+      this.attachments = const []});
+  final String? conversationId;
+  final String text;
+  final int selectionBase;
+  final int selectionExtent;
+  final List<ChatAttachment> attachments;
+}
+
+final class ChatConfigureSession extends ChatEvent {
+  const ChatConfigureSession(
+      {this.conversationId,
+      required this.config,
+      this.agentId,
+      this.thinkingEnabled,
+      this.systemPrompt});
+  final String? conversationId;
+  final ModelConfig config;
+  final String? agentId;
+  final bool? thinkingEnabled;
   final String? systemPrompt;
 }
 
-/// Send a message and generate a response.
-///
-/// If no conversation exists, one will be auto-created.
-/// [systemPrompt] is used only when auto-creating the conversation.
-/// [imageBytes] is optional image data for multimodal models.
-/// [attachments] carries files selected from the chat input.
 final class ChatSendMessage extends ChatEvent {
-  const ChatSendMessage({
-    required this.content,
-    this.systemPrompt,
-    this.imageBytes,
-    this.audioBytes,
-    this.attachments = const [],
-  });
-
+  const ChatSendMessage(
+      {required this.content,
+      this.conversationId,
+      this.config,
+      this.agentId,
+      this.systemPrompt,
+      this.imageBytes,
+      this.audioBytes,
+      this.attachments = const []});
   final String content;
+  final String? conversationId;
+  final ModelConfig? config;
+  final String? agentId;
   final String? systemPrompt;
   final Uint8List? imageBytes;
   final Uint8List? audioBytes;
   final List<ChatAttachment> attachments;
 }
 
-/// Stop the current response generation.
 final class ChatStopGeneration extends ChatEvent {
-  const ChatStopGeneration();
+  const ChatStopGeneration({this.conversationId});
+  final String? conversationId;
 }
 
-/// Clear all messages in the current conversation.
 final class ChatClearConversation extends ChatEvent {
-  const ChatClearConversation();
+  const ChatClearConversation({this.conversationId});
+  final String? conversationId;
 }
 
-/// Regenerate the last assistant response.
 final class ChatRegenerateResponse extends ChatEvent {
-  const ChatRegenerateResponse({this.messageId});
-
-  /// Assistant message ID to regenerate. Defaults to the last assistant reply.
+  const ChatRegenerateResponse({this.messageId, this.conversationId});
   final String? messageId;
+  final String? conversationId;
 }
 
-/// Edit a user message and regenerate from that point.
 final class ChatEditUserMessage extends ChatEvent {
-  const ChatEditUserMessage({
-    required this.messageId,
-    required this.content,
-  });
-
+  const ChatEditUserMessage(
+      {required this.messageId, required this.content, this.conversationId});
   final String messageId;
   final String content;
+  final String? conversationId;
 }
 
-/// Delete a conversation by ID.
 final class ChatDeleteConversation extends ChatEvent {
   const ChatDeleteConversation({required this.id});
-
   final String id;
 }
 
-/// Load conversation history.
 final class ChatLoadHistory extends ChatEvent {
   const ChatLoadHistory();
 }
 
-/// Internal event for streaming tokens.
-final class _ChatStreamToken extends ChatEvent {
-  const _ChatStreamToken(this.token);
+sealed class _ChatRunEvent extends ChatEvent {
+  const _ChatRunEvent(this.conversationId, this.runId);
+  final String conversationId;
+  final String runId;
+}
 
+final class _ChatStreamToken extends _ChatRunEvent {
+  const _ChatStreamToken(
+      super.conversationId, super.runId, this.leg, this.token);
+  final int leg;
   final String token;
 }
 
-/// Internal event for thinking/reasoning tokens.
-final class _ChatThinkingToken extends ChatEvent {
-  const _ChatThinkingToken(this.content);
-
+final class _ChatThinkingToken extends _ChatRunEvent {
+  const _ChatThinkingToken(
+      super.conversationId, super.runId, this.leg, this.content);
+  final int leg;
   final String content;
 }
 
-/// Internal event for refreshing live response metrics while streaming.
-final class _ChatResponseMetricsTick extends ChatEvent {
-  const _ChatResponseMetricsTick();
+final class _ChatResponseMetricsTick extends _ChatRunEvent {
+  const _ChatResponseMetricsTick(super.conversationId, super.runId);
 }
 
-/// Internal event for stream completion.
-final class _ChatStreamComplete extends ChatEvent {
-  const _ChatStreamComplete();
+final class _ChatStreamComplete extends _ChatRunEvent {
+  const _ChatStreamComplete(super.conversationId, super.runId, this.leg);
+  final int leg;
 }
 
-/// Internal event for stream errors.
-final class _ChatStreamError extends ChatEvent {
-  const _ChatStreamError(this.error);
-
+final class _ChatStreamError extends _ChatRunEvent {
+  const _ChatStreamError(
+      super.conversationId, super.runId, this.leg, this.error);
+  final int leg;
   final String error;
 }
 
-/// Internal event when the model requests a function call.
-final class _ChatFunctionCall extends ChatEvent {
-  const _ChatFunctionCall({required this.name, required this.args});
-
+final class _ChatFunctionCall extends _ChatRunEvent {
+  const _ChatFunctionCall(super.conversationId, super.runId, this.leg,
+      {required this.name, required this.args});
+  final int leg;
   final String name;
   final Map<String, dynamic> args;
+}
+
+final class _ChatStartLocal extends _ChatRunEvent {
+  const _ChatStartLocal(super.conversationId, super.runId);
 }

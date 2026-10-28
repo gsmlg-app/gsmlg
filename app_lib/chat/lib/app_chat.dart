@@ -10,6 +10,7 @@ export 'src/models/inference.dart';
 
 // Repositories
 export 'src/repositories/gemma_repository.dart';
+export 'src/repositories/local_model_access.dart';
 export 'src/repositories/chat_storage_repository.dart';
 export 'src/repositories/remote_llm_repository.dart';
 export 'src/repositories/backplane_service_repository.dart';

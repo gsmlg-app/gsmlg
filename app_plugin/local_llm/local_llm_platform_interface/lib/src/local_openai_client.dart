@@ -38,29 +38,85 @@ final class LocalOpenAiChatCompletionsClient {
 
   Stream<Map<String, Object?>> streamChatCompletionRequest(
     Map<String, Object?> requestBody,
-  ) async* {
-    final request = await _httpClient.postUrl(_uri('/v1/chat/completions'));
-    request.headers
-      ..contentType = ContentType.json
-      ..set(HttpHeaders.acceptHeader, 'text/event-stream');
+  ) {
+    HttpClientRequest? activeRequest;
+    StreamSubscription<Object?>? responseSubscription;
+    var cancelled = false;
+    late final StreamController<Map<String, Object?>> controller;
 
-    final apiKey = _apiKey;
-    if (apiKey != null && apiKey.isNotEmpty) {
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $apiKey');
+    void forwardError(Object error, StackTrace stackTrace) {
+      if (!cancelled) controller.addError(error, stackTrace);
     }
 
-    request.add(utf8.encode(jsonEncode({...requestBody, 'stream': true})));
-    final response = await request.close();
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw LocalOpenAiHttpException(
-        response.statusCode,
-        await response.transform(utf8.decoder).join(),
-      );
+    void finish() {
+      if (!cancelled) unawaited(controller.close());
     }
 
-    yield* _parseSse(
-      response.transform(utf8.decoder).transform(const LineSplitter()),
+    Future<void> start() async {
+      try {
+        final request = await _httpClient.postUrl(_uri('/v1/chat/completions'));
+        activeRequest = request;
+        if (cancelled) {
+          request.abort();
+          // Observe the abort error even when cancellation won the connection
+          // race before there was a request handle to abort in onCancel.
+          await request.done;
+          return;
+        }
+        request.headers
+          ..contentType = ContentType.json
+          ..set(HttpHeaders.acceptHeader, 'text/event-stream');
+
+        final apiKey = _apiKey;
+        if (apiKey != null && apiKey.isNotEmpty) {
+          request.headers
+              .set(HttpHeaders.authorizationHeader, 'Bearer $apiKey');
+        }
+        request.add(utf8.encode(jsonEncode({...requestBody, 'stream': true})));
+        final response = await request.close();
+        if (cancelled) {
+          await response.listen((_) {}).cancel();
+          return;
+        }
+
+        if (response.statusCode < 200 || response.statusCode >= 300) {
+          final body = StringBuffer();
+          responseSubscription = response.transform(utf8.decoder).listen(
+            body.write,
+            onError: forwardError,
+            onDone: () {
+              if (!cancelled) {
+                controller.addError(LocalOpenAiHttpException(
+                    response.statusCode, body.toString()));
+              }
+              finish();
+            },
+          );
+        } else {
+          responseSubscription = _parseSse(
+            response.transform(utf8.decoder).transform(const LineSplitter()),
+          ).listen(controller.add, onError: forwardError, onDone: finish);
+        }
+        if (controller.isPaused) responseSubscription!.pause();
+      } catch (error, stackTrace) {
+        forwardError(error, stackTrace);
+        finish();
+      }
+    }
+
+    controller = StreamController<Map<String, Object?>>(
+      onListen: () => unawaited(start()),
+      onPause: () => responseSubscription?.pause(),
+      onResume: () => responseSubscription?.resume(),
+      onCancel: () async {
+        cancelled = true;
+        // Cancelling an async* stream cannot interrupt an awaited response
+        // future. Abort the specific request while retaining the shared client.
+        activeRequest?.abort();
+        await responseSubscription?.cancel();
+      },
     );
+    return controller.stream;
   }
 
   void close({bool force = false}) {
@@ -92,8 +148,9 @@ final class LocalOpenAiHttpException implements Exception {
   String toString() => 'LocalOpenAiHttpException($statusCode): $body';
 }
 
-Stream<Map<String, Object?>> _parseSse(Stream<String> lines) async* {
+Stream<Map<String, Object?>> _parseSse(Stream<String> lines) {
   final dataLines = <String>[];
+  var ended = false;
 
   Map<String, Object?>? flush() {
     if (dataLines.isEmpty) return null;
@@ -108,21 +165,49 @@ Stream<Map<String, Object?>> _parseSse(Stream<String> lines) async* {
     return null;
   }
 
-  await for (final line in lines) {
-    if (line.isEmpty) {
-      final event = flush();
-      if (event == null) continue;
-      if (event.isEmpty) return;
-      yield event;
-      continue;
-    }
-    if (line.startsWith('data:')) {
-      dataLines.add(line.substring('data:'.length).trimLeft());
-    }
-  }
-
-  final trailingEvent = flush();
-  if (trailingEvent != null && trailingEvent.isNotEmpty) {
-    yield trailingEvent;
-  }
+  // A transformer forwards cancellation to the native response subscription
+  // immediately, including when no further SSE line is forthcoming.
+  return lines
+      .transform(StreamTransformer<String, Map<String, Object?>>.fromHandlers(
+    handleData: (line, sink) {
+      if (ended) return;
+      try {
+        if (line.isEmpty) {
+          final event = flush();
+          if (event == null) return;
+          if (event.isEmpty) {
+            ended = true;
+            sink.close();
+          } else {
+            sink.add(event);
+          }
+        } else if (line.startsWith('data:')) {
+          dataLines.add(line.substring('data:'.length).trimLeft());
+        }
+      } catch (error, stackTrace) {
+        ended = true;
+        sink.addError(error, stackTrace);
+        sink.close();
+      }
+    },
+    handleError: (Object error, StackTrace stackTrace, sink) {
+      if (ended) return;
+      ended = true;
+      sink.addError(error, stackTrace);
+      sink.close();
+    },
+    handleDone: (sink) {
+      if (ended) return;
+      ended = true;
+      try {
+        final trailingEvent = flush();
+        if (trailingEvent != null && trailingEvent.isNotEmpty) {
+          sink.add(trailingEvent);
+        }
+      } catch (error, stackTrace) {
+        sink.addError(error, stackTrace);
+      }
+      sink.close();
+    },
+  ));
 }

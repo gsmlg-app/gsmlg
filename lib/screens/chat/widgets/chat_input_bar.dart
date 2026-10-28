@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -13,6 +14,11 @@ class ChatInputBar extends StatefulWidget {
   const ChatInputBar({
     super.key,
     this.enabled = true,
+    this.conversationId,
+    this.draft,
+    this.onDraftChanged,
+    this.onAttachmentsAdded,
+    this.isQueued = false,
     this.isStreaming = false,
     this.supportsImage = false,
     this.supportsAudio = false,
@@ -36,6 +42,12 @@ class ChatInputBar extends StatefulWidget {
     this.onAgentSelect,
   });
 
+  final String? conversationId;
+  final ChatDraft? draft;
+  final void Function(String? conversationId, ChatDraft draft)? onDraftChanged;
+  final void Function(String? conversationId, List<ChatAttachment> attachments)?
+  onAttachmentsAdded;
+  final bool isQueued;
   final bool enabled;
   final bool isStreaming;
   final bool supportsImage;
@@ -74,6 +86,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
   final _recorder = AudioRecorder();
   final List<DmChatAttachment> _pendingAttachments = [];
   bool _isRecording = false;
+  String? _recordingConversationId;
+  bool _restoringDraft = false;
+  bool _submittingDraft = false;
   int _inputTokenCount = 0;
   bool _relayToSecondary = true;
 
@@ -85,8 +100,87 @@ class _ChatInputBarState extends State<ChatInputBar> {
   @override
   void initState() {
     super.initState();
+    _restoreDraft();
     _controller.addListener(_onTextChanged);
     _setupDuoRelay();
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatInputBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.conversationId != widget.conversationId) {
+      if (_isRecording) unawaited(_finishRecording());
+      _restoreDraft(force: true);
+      final duo = DuoDisplayManager.instance;
+      duo?.syncPrimaryText(_controller.text);
+    } else if (oldWidget.draft != widget.draft) {
+      _restoreDraft();
+    }
+  }
+
+  void _restoreDraft({bool force = false}) {
+    final draft = widget.draft;
+    if (draft == null) return;
+    _restoringDraft = true;
+    final length = draft.text.length;
+    final selection = TextSelection(
+      baseOffset: draft.selectionBase.clamp(0, length),
+      extentOffset: draft.selectionExtent.clamp(0, length),
+    );
+    // Echoing our own draft must preserve the platform IME composing range.
+    if (force ||
+        _controller.text != draft.text ||
+        _controller.selection != selection) {
+      _controller.value = TextEditingValue(
+        text: draft.text,
+        selection: selection,
+      );
+    }
+    _pendingAttachments
+      ..clear()
+      ..addAll(
+        draft.attachments.map(
+          (a) => DmChatAttachment(
+            id: a.id,
+            name: a.name,
+            bytes: a.bytes,
+            mimeType: a.mimeType,
+            sizeBytes: a.sizeBytes,
+            status: a.bytes == null
+                ? DmChatAttachmentStatus.error
+                : DmChatAttachmentStatus.done,
+            errorMessage: a.bytes == null ? 'Unable to read file' : null,
+          ),
+        ),
+      );
+    _inputTokenCount = (length / 4).round();
+    _restoringDraft = false;
+  }
+
+  ChatDraft _draftSnapshot() => ChatDraft(
+    text: _controller.text,
+    selectionBase: _controller.selection.baseOffset,
+    selectionExtent: _controller.selection.extentOffset,
+    attachments: _pendingAttachments.map(_toChatAttachment).toList(),
+  );
+
+  void _saveDraft() {
+    if (!_restoringDraft && !_submittingDraft) {
+      widget.onDraftChanged?.call(widget.conversationId, _draftSnapshot());
+    }
+  }
+
+  void _addPickedAttachments(
+    String? conversationId,
+    List<DmChatAttachment> attachments,
+  ) {
+    final callback = widget.onAttachmentsAdded;
+    if (callback != null) {
+      callback(conversationId, attachments.map(_toChatAttachment).toList());
+    } else if (mounted && conversationId == widget.conversationId) {
+      setState(() => _pendingAttachments.addAll(attachments));
+      _saveDraft();
+    }
   }
 
   void _setupDuoRelay() {
@@ -105,9 +199,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
     };
 
     duo.onTextSubmit = (text) {
-      if (mounted) {
+      if (mounted && widget.enabled && !widget.isStreaming) {
         _handleSend(text, _pendingAttachments);
-        _controller.clear();
+        if (widget.onDraftChanged == null) _controller.clear();
       }
     };
 
@@ -123,6 +217,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
   }
 
   void _onTextChanged() {
+    if (_restoringDraft || _submittingDraft) return;
+    _saveDraft();
     final text = _controller.text;
     final tokens = (text.length / 4).round();
     if (tokens != _inputTokenCount) {
@@ -174,7 +270,18 @@ class _ChatInputBarState extends State<ChatInputBar> {
       attachments: chatAttachments,
     );
 
-    setState(_pendingAttachments.clear);
+    if (widget.onDraftChanged == null) {
+      setState(_pendingAttachments.clear);
+    } else {
+      // DmChatInput clears its controller synchronously after onSend. Keep the
+      // authoritative draft until the coordinator accepts this submission.
+      _submittingDraft = true;
+      scheduleMicrotask(() {
+        if (!mounted) return;
+        _restoreDraft();
+        _submittingDraft = false;
+      });
+    }
   }
 
   ChatAttachment _toChatAttachment(DmChatAttachment attachment) {
@@ -191,11 +298,13 @@ class _ChatInputBarState extends State<ChatInputBar> {
     setState(() {
       _pendingAttachments.removeWhere((item) => item.id == attachment.id);
     });
+    _saveDraft();
   }
 
   Future<void> _pickAttachments() async {
     if (!widget.enabled || widget.isStreaming) return;
 
+    final targetId = widget.conversationId;
     final files = await FilePicker.pickFiles();
     if (files.isEmpty) return;
 
@@ -226,9 +335,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
       );
     }
 
-    setState(() {
-      _pendingAttachments.addAll(picked);
-    });
+    if (!mounted) return;
+    _addPickedAttachments(targetId, picked);
   }
 
   String _extensionFor(String name, String? mimeType) {
@@ -305,13 +413,15 @@ class _ChatInputBarState extends State<ChatInputBar> {
     }.contains(extension);
   }
 
-  Future<void> _toggleRecording() async {
-    if (_isRecording) {
-      final path = await _recorder.stop();
-      if (path != null) {
+  Future<void> _finishRecording() async {
+    final targetId = _recordingConversationId;
+    _isRecording = false;
+    final path = await _recorder.stop();
+    if (path != null) {
+      try {
         final bytes = await File(path).readAsBytes();
-        setState(() {
-          _pendingAttachments.add(
+        if (mounted) {
+          _addPickedAttachments(targetId, [
             DmChatAttachment(
               id: 'audio:${DateTime.now().microsecondsSinceEpoch}',
               name: 'recording.wav',
@@ -320,21 +430,34 @@ class _ChatInputBarState extends State<ChatInputBar> {
               bytes: bytes,
               status: DmChatAttachmentStatus.done,
             ),
-          );
-          _isRecording = false;
-        });
-        try {
-          await File(path).delete();
-        } catch (_) {}
-      } else {
-        setState(() => _isRecording = false);
+          ]);
+        }
+      } finally {
+        final file = File(path);
+        if (await file.exists()) await file.delete();
       }
-    } else {
-      if (await _recorder.hasPermission()) {
-        await _recorder.start(
-          const RecordConfig(encoder: AudioEncoder.wav),
-          path: '${Directory.systemTemp.path}/chat_audio.wav',
-        );
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _toggleRecording() async {
+    if (_isRecording) {
+      await _finishRecording();
+      return;
+    }
+    final targetId = widget.conversationId;
+    if (await _recorder.hasPermission()) {
+      if (!mounted || targetId != widget.conversationId) return;
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.wav),
+        path:
+            '${Directory.systemTemp.path}/chat_audio_${DateTime.now().microsecondsSinceEpoch}.wav',
+      );
+      _recordingConversationId = targetId;
+      if (!mounted) return;
+      if (targetId != widget.conversationId) {
+        await _finishRecording();
+      } else {
         setState(() => _isRecording = true);
       }
     }
@@ -423,7 +546,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
       isStreaming: widget.isStreaming,
       pendingAttachments: _pendingAttachments,
       onRemoveAttachment: _removeAttachment,
-      placeholder: _isRecording
+      placeholder: widget.isQueued
+          ? 'Queued — you can edit your next draft'
+          : _isRecording
           ? 'Recording...'
           : !widget.enabled
           ? 'Model not ready'

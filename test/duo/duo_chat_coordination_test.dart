@@ -198,6 +198,35 @@ void main() {
       },
     );
 
+    test(
+      'rejects delayed chat commands for a previously selected session',
+      () async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        primary.updateChatState(const DuoChatState(conversationId: 'b'));
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        var stopped = false;
+        String? sent;
+        primary.onChatStop = () => stopped = true;
+        primary.onChatSend = (text, {attachments}) => sent = text;
+        secondaryBridge.send(
+          jsonEncode({'type': 'chat_stop', 'conversationId': 'a'}),
+        );
+        secondaryBridge.send(
+          jsonEncode({
+            'type': 'chat_send',
+            'conversationId': 'a',
+            'text': 'stale',
+          }),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(stopped, isFalse);
+        expect(sent, isNull);
+        secondary.sendChatSend('current');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(sent, 'current');
+      },
+    );
+
     test('relays chat state from primary to secondary', () async {
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
@@ -220,47 +249,53 @@ void main() {
       expect(secondary.chatState?.historyTokens, 100);
     });
 
-    test('relays chat send, stop, and select agent from secondary to primary', () async {
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+    test(
+      'relays chat send, stop, and select agent from secondary to primary',
+      () async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
-      String? sentText;
-      List<ChatAttachment>? sentAttachments;
-      var stopCalled = false;
-      String? selectedAgent;
+        String? sentText;
+        List<ChatAttachment>? sentAttachments;
+        var stopCalled = false;
+        String? selectedAgent;
 
-      primary.onChatSend = (text, {attachments}) {
-        sentText = text;
-        sentAttachments = attachments;
-      };
-      primary.onChatStop = () {
-        stopCalled = true;
-      };
-      primary.onChatSelectAgent = (agentId) {
-        selectedAgent = agentId;
-      };
+        primary.onChatSend = (text, {attachments}) {
+          sentText = text;
+          sentAttachments = attachments;
+        };
+        primary.onChatStop = () {
+          stopCalled = true;
+        };
+        primary.onChatSelectAgent = (agentId) {
+          selectedAgent = agentId;
+        };
 
-      secondary.sendChatSend('Hello Primary', attachments: [
-        ChatAttachment(
-          id: 'test-1',
-          name: 'doc.txt',
-          mimeType: 'text/plain',
-          bytes: Uint8List.fromList(utf8.encode('file contents')),
-        ),
-      ]);
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+        secondary.sendChatSend(
+          'Hello Primary',
+          attachments: [
+            ChatAttachment(
+              id: 'test-1',
+              name: 'doc.txt',
+              mimeType: 'text/plain',
+              bytes: Uint8List.fromList(utf8.encode('file contents')),
+            ),
+          ],
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      expect(sentText, 'Hello Primary');
-      expect(sentAttachments?.length, 1);
-      expect(sentAttachments?.first.name, 'doc.txt');
+        expect(sentText, 'Hello Primary');
+        expect(sentAttachments?.length, 1);
+        expect(sentAttachments?.first.name, 'doc.txt');
 
-      secondary.sendChatStop();
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      expect(stopCalled, isTrue);
+        secondary.sendChatStop();
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        expect(stopCalled, isTrue);
 
-      secondary.sendChatSelectAgent('agent-99');
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      expect(selectedAgent, 'agent-99');
-    });
+        secondary.sendChatSelectAgent('agent-99');
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+        expect(selectedAgent, 'agent-99');
+      },
+    );
   });
 
   group('DuoCompanionScaffold Chat Companion Pad Widget', () {
@@ -286,29 +321,72 @@ void main() {
       manager.dispose();
     });
 
+    testWidgets(
+      'preparing preserves the companion draft until actual acceptance',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(home: DuoCompanionScaffold(manager: manager)),
+        );
+        Future<void> snapshot({
+          bool busy = false,
+          bool preparing = false,
+          String text = 'keep draft',
+        }) async {
+          primaryBridge.send(
+            jsonEncode({
+              'type': 'snapshot',
+              'currentRoute': '/chat',
+              'chatState': DuoChatState(
+                conversationId: 'a',
+                draftText: text,
+                isStreaming: busy,
+                isPreparing: preparing,
+              ).toJson(),
+            }),
+          );
+          await tester.pump();
+        }
+
+        await snapshot();
+        String inputText() => tester
+            .widget<EditableText>(find.byType(EditableText).first)
+            .controller
+            .text;
+        expect(inputText(), 'keep draft');
+        await snapshot(busy: true, preparing: true);
+        expect(inputText(), 'keep draft');
+        await snapshot(); // readiness failure
+        expect(inputText(), 'keep draft');
+        await snapshot(busy: true, preparing: true);
+        await snapshot(busy: true, text: ''); // accepted by primary
+        expect(inputText(), isEmpty);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+
     testWidgets('renders chat companion pad when current route is /chat', (
       tester,
     ) async {
       // Simulate route snapshot from primary
-      primaryBridge.send(jsonEncode({
-        'type': 'snapshot',
-        'selectedIndex': 0,
-        'currentRoute': '/chat',
-        'isDark': false,
-        'chatState': const DuoChatState(
-          isStreaming: false,
-          modelName: 'Gemma 2B Local',
-          activeAgentName: 'Super Agent',
-          activeAgentId: 'agent-42',
-          agents: [DuoChatAgent(id: 'agent-42', name: 'Super Agent')],
-          historyTokens: 50,
-        ).toJson(),
-      }));
+      primaryBridge.send(
+        jsonEncode({
+          'type': 'snapshot',
+          'selectedIndex': 0,
+          'currentRoute': '/chat',
+          'isDark': false,
+          'chatState': const DuoChatState(
+            isStreaming: false,
+            modelName: 'Gemma 2B Local',
+            activeAgentName: 'Super Agent',
+            activeAgentId: 'agent-42',
+            agents: [DuoChatAgent(id: 'agent-42', name: 'Super Agent')],
+            historyTokens: 50,
+          ).toJson(),
+        }),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: DuoCompanionScaffold(manager: manager),
-        ),
+        MaterialApp(home: DuoCompanionScaffold(manager: manager)),
       );
       await tester.pumpAndSettle();
 
@@ -321,23 +399,23 @@ void main() {
     testWidgets('shows stop button when isStreaming is true on /chat', (
       tester,
     ) async {
-      primaryBridge.send(jsonEncode({
-        'type': 'snapshot',
-        'selectedIndex': 0,
-        'currentRoute': '/chat',
-        'isDark': false,
-        'chatState': const DuoChatState(
-          isStreaming: true,
-          modelName: 'Gemma 2B Local',
-          activeAgentName: 'Super Agent',
-          activeAgentId: 'agent-42',
-        ).toJson(),
-      }));
+      primaryBridge.send(
+        jsonEncode({
+          'type': 'snapshot',
+          'selectedIndex': 0,
+          'currentRoute': '/chat',
+          'isDark': false,
+          'chatState': const DuoChatState(
+            isStreaming: true,
+            modelName: 'Gemma 2B Local',
+            activeAgentName: 'Super Agent',
+            activeAgentId: 'agent-42',
+          ).toJson(),
+        }),
+      );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: DuoCompanionScaffold(manager: manager),
-        ),
+        MaterialApp(home: DuoCompanionScaffold(manager: manager)),
       );
       await tester.pumpAndSettle();
 

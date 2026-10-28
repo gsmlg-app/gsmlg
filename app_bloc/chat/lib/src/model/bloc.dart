@@ -18,23 +18,32 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
   GemmaModelBloc({
     required GemmaRepository repository,
     required SharedPreferences preferences,
+    LocalModelAccess? modelAccess,
   })  : _repository = repository,
         _preferences = preferences,
+        _modelAccess = modelAccess ?? LocalModelAccess.forResource(repository),
         super(GemmaModelState(
           selectedModelId: preferences.getString('gemma_selected_model_id'),
         )) {
-    on<GemmaModelInitialize>(_onInitialize);
+    on<GemmaModelInitialize>(
+        (event, emit) => _modelAccess.run(() => _onInitialize(event, emit)));
     on<GemmaModelInstall>(_onInstall);
-    on<GemmaModelImportFromFile>(_onImportFromFile);
+    on<GemmaModelImportFromFile>((event, emit) =>
+        _modelAccess.run(() => _onImportFromFile(event, emit)));
     on<GemmaModelPauseDownload>(_onPauseDownload);
     on<GemmaModelCancelDownload>(_onCancelDownload);
     on<GemmaModelListInstalled>(_onListInstalled);
     on<GemmaModelSetProxy>(_onSetProxy);
-    on<GemmaModelLoad>(_onLoad);
-    on<GemmaModelUnload>(_onUnload);
-    on<GemmaModelSelect>(_onSelect);
-    on<GemmaModelDeselect>(_onDeselect);
-    on<GemmaModelDeleteById>(_onDeleteById);
+    on<GemmaModelLoad>(
+        (event, emit) => _modelAccess.run(() => _onLoad(event, emit)));
+    on<GemmaModelUnload>(
+        (event, emit) => _modelAccess.run(() => _onUnload(event, emit)));
+    on<GemmaModelSelect>(
+        (event, emit) => _modelAccess.run(() => _onSelect(event, emit)));
+    on<GemmaModelDeselect>(
+        (event, emit) => _modelAccess.run(() => _onDeselect(event, emit)));
+    on<GemmaModelDeleteById>(
+        (event, emit) => _modelAccess.run(() => _onDeleteById(event, emit)));
     on<GemmaModelDismissFailure>(_onDismissFailure);
     on<_GemmaModelStatusChanged>(_onStatusChanged);
     on<_GemmaModelDownloadProgress>(_onDownloadProgress);
@@ -56,6 +65,7 @@ class GemmaModelBloc extends Bloc<GemmaModelEvent, GemmaModelState> {
 
   final GemmaRepository _repository;
   final SharedPreferences _preferences;
+  final LocalModelAccess _modelAccess;
   StreamSubscription<GemmaModelStatus>? _statusSubscription;
   StreamSubscription<DownloadProgress>? _progressSubscription;
 

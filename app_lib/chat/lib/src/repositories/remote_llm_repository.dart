@@ -18,8 +18,10 @@ class RemoteLlmRepository {
       _ownsClient = client == null;
 
   final VaultRepository _vault;
-  http.Client _client;
+  final http.Client _client;
   final bool _ownsClient;
+  final Map<Object, Completer<void>> _generationAborts = {};
+  bool _disposed = false;
 
   static const _accountKeyPrefix = 'service_account_';
 
@@ -76,118 +78,162 @@ class RemoteLlmRepository {
     List<Message> messages,
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
+    String? generationId,
   }) async* {
-    final apiType = config.remoteApiType;
-    final apiKey = await _apiKeyFor(config);
-    final request = http.Request('POST', _generationUri(config))
-      ..headers.addAll(_generationHeaders(config, apiKey))
-      ..body = jsonEncode(_requestBody(messages, config, tools: tools));
-
-    final response = await _client.send(request);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final body = await response.stream.bytesToString();
-      throw RemoteLlmException(
-        'Remote LLM request failed (${response.statusCode}): '
-        '${_shortenErrorBody(body)}',
-      );
+    if (_disposed) throw StateError('RemoteLlmRepository is disposed.');
+    final key = generationId ?? Object();
+    if (_generationAborts.containsKey(key)) {
+      throw StateError('Generation $generationId is already running.');
     }
+    final abort = Completer<void>();
+    _generationAborts[key] = abort;
+    try {
+      final apiType = config.remoteApiType;
+      final apiKey = await _apiKeyFor(config);
+      final request =
+          http.AbortableRequest(
+              'POST',
+              _generationUri(config),
+              abortTrigger: abort.future,
+            )
+            ..headers.addAll(_generationHeaders(config, apiKey))
+            ..body = jsonEncode(_requestBody(messages, config, tools: tools));
 
-    if (!config.remoteStreamingEnabled) {
-      final body = await response.stream.bytesToString();
-      final chunks = switch (apiType) {
-        RemoteLlmApiType.openAiChatCompletions =>
-          _chunksFromNonStreamingResponse(body),
-        RemoteLlmApiType.openAiResponses => _chunksFromResponsesResponse(body),
-        RemoteLlmApiType.anthropicMessages => _chunksFromAnthropicResponse(
-          body,
-        ),
-      };
-      for (final chunk in chunks) {
-        yield chunk;
+      final response = await _client.send(request);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final body = await response.stream.bytesToString();
+        throw RemoteLlmException(
+          'Remote LLM request failed (${response.statusCode}): '
+          '${_shortenErrorBody(body)}',
+        );
       }
-      return;
-    }
 
-    switch (apiType) {
-      case RemoteLlmApiType.openAiResponses:
-        yield* _chunksFromStreamingResponses(response.stream);
-        return;
-      case RemoteLlmApiType.anthropicMessages:
-        yield* _chunksFromStreamingAnthropic(response.stream);
-        return;
-      case RemoteLlmApiType.openAiChatCompletions:
-        break;
-    }
-
-    final toolCallBuffers = <int, _RemoteToolCallBuffer>{};
-    final thinkTagParser = _ThinkTagParser();
-    await for (final line
-        in response.stream
-            .transform(utf8.decoder)
-            .transform(const LineSplitter())) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty || !trimmed.startsWith('data:')) continue;
-
-      final data = trimmed.substring(5).trim();
-      if (data == '[DONE]') {
-        for (final chunk in thinkTagParser.close()) {
+      if (!config.remoteStreamingEnabled) {
+        final body = await response.stream.bytesToString();
+        final chunks = switch (apiType) {
+          RemoteLlmApiType.openAiChatCompletions =>
+            _chunksFromNonStreamingResponse(body),
+          RemoteLlmApiType.openAiResponses => _chunksFromResponsesResponse(
+            body,
+          ),
+          RemoteLlmApiType.anthropicMessages => _chunksFromAnthropicResponse(
+            body,
+          ),
+        };
+        for (final chunk in chunks) {
           yield chunk;
         }
-        final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
-        if (toolCall != null) yield toolCall;
         return;
       }
 
-      final decoded = jsonDecode(data);
-      if (decoded is! Map<String, dynamic>) continue;
+      // Filter a requested abort before delegating to nested async* parsers:
+      // their cancellation futures otherwise propagate the transport error.
+      final responseStream = http.ByteStream(
+        response.stream.handleError(
+          (Object _) {},
+          test: (error) =>
+              error is http.RequestAbortedException && abort.isCompleted,
+        ),
+      );
 
-      final choices = decoded['choices'];
-      if (choices is! List || choices.isEmpty) continue;
-      final first = choices.first;
-      if (first is! Map<String, dynamic>) continue;
+      switch (apiType) {
+        case RemoteLlmApiType.openAiResponses:
+          yield* _chunksFromStreamingResponses(responseStream);
+          return;
+        case RemoteLlmApiType.anthropicMessages:
+          yield* _chunksFromStreamingAnthropic(responseStream);
+          return;
+        case RemoteLlmApiType.openAiChatCompletions:
+          break;
+      }
 
-      final finishReason = _stringValue(first['finish_reason']);
-      final delta = first['delta'];
-      if (delta is Map<String, dynamic>) {
-        _collectToolCallDeltas(toolCallBuffers, delta['tool_calls']);
-        _collectLegacyFunctionCallDelta(
-          toolCallBuffers,
-          delta['function_call'],
-        );
+      final toolCallBuffers = <int, _RemoteToolCallBuffer>{};
+      final thinkTagParser = _ThinkTagParser();
+      await for (final line
+          in responseStream
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())) {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty || !trimmed.startsWith('data:')) continue;
 
-        final text = _contentString(delta['content']);
-        if (text != null && text.isNotEmpty) {
-          for (final chunk in thinkTagParser.add(text)) {
+        final data = trimmed.substring(5).trim();
+        if (data == '[DONE]') {
+          for (final chunk in thinkTagParser.close()) {
             yield chunk;
+          }
+          final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
+          if (toolCall != null) yield toolCall;
+          return;
+        }
+
+        final decoded = jsonDecode(data);
+        if (decoded is! Map<String, dynamic>) continue;
+
+        final choices = decoded['choices'];
+        if (choices is! List || choices.isEmpty) continue;
+        final first = choices.first;
+        if (first is! Map<String, dynamic>) continue;
+
+        final finishReason = _stringValue(first['finish_reason']);
+        final delta = first['delta'];
+        if (delta is Map<String, dynamic>) {
+          _collectToolCallDeltas(toolCallBuffers, delta['tool_calls']);
+          _collectLegacyFunctionCallDelta(
+            toolCallBuffers,
+            delta['function_call'],
+          );
+
+          final text = _contentString(delta['content']);
+          if (text != null && text.isNotEmpty) {
+            for (final chunk in thinkTagParser.add(text)) {
+              yield chunk;
+            }
+          }
+
+          final thinking =
+              _stringValue(delta['reasoning_content']) ??
+              _stringValue(delta['reasoning']);
+          if (thinking != null && thinking.isNotEmpty) {
+            yield ChatThinkingChunk(thinking);
           }
         }
 
-        final thinking =
-            _stringValue(delta['reasoning_content']) ??
-            _stringValue(delta['reasoning']);
-        if (thinking != null && thinking.isNotEmpty) {
-          yield ChatThinkingChunk(thinking);
+        if (finishReason == 'tool_calls' || finishReason == 'function_call') {
+          for (final chunk in thinkTagParser.close()) {
+            yield chunk;
+          }
+          final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
+          if (toolCall != null) yield toolCall;
+          return;
         }
       }
-
-      if (finishReason == 'tool_calls' || finishReason == 'function_call') {
-        for (final chunk in thinkTagParser.close()) {
-          yield chunk;
-        }
-        final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
-        if (toolCall != null) yield toolCall;
-        return;
+    } on http.RequestAbortedException {
+      // A requested stop is normal completion, including when subscription
+      // cancellation races with the HTTP abort. Preserve unsolicited aborts.
+      if (!abort.isCompleted) rethrow;
+    } finally {
+      if (identical(_generationAborts[key], abort)) {
+        _generationAborts.remove(key);
       }
     }
   }
 
-  Future<void> stopGeneration() async {
-    if (!_ownsClient) return;
-    _client.close();
-    _client = http.Client();
+  /// Aborts one request, or all requests when [generationId] is omitted.
+  ///
+  /// The shared client stays open so other generations and model discovery can
+  /// continue. Call this before awaiting cancellation of the generation stream.
+  Future<void> stopGeneration({String? generationId}) async {
+    final aborts = generationId == null
+        ? _generationAborts.values.toList()
+        : [?_generationAborts[generationId]];
+    for (final abort in aborts) {
+      if (!abort.isCompleted) abort.complete();
+    }
   }
 
   Future<void> dispose() async {
+    _disposed = true;
+    await stopGeneration();
     if (_ownsClient) _client.close();
   }
 

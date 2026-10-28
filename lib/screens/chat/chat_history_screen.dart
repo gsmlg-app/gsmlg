@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
 
+import 'widgets/chat_session_status.dart';
+
 class ChatHistoryScreen extends StatefulWidget {
   static const name = 'ChatHistory';
   static const path = 'history';
@@ -18,6 +20,7 @@ class ChatHistoryScreen extends StatefulWidget {
 }
 
 class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
+  bool _runningOnly = false;
   @override
   void initState() {
     super.initState();
@@ -36,6 +39,21 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
           restoreNavigation: true,
           title: const Text('Chat History'),
           actions: [
+            BlocSelector<ChatBloc, ChatState, int>(
+              selector: (state) => state.runningCount,
+              builder: (context, count) {
+                if (count == 0 && !_runningOnly) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: FilterChip(
+                    selected: _runningOnly,
+                    label: Text('Running $count'),
+                    avatar: const Icon(Icons.play_circle_outline, size: 18),
+                    onSelected: (value) => setState(() => _runningOnly = value),
+                  ),
+                );
+              },
+            ),
             BlocBuilder<ChatBloc, ChatState>(
               builder: (context, state) {
                 if (state.conversationHistory.isEmpty) {
@@ -51,16 +69,40 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
           ],
         ),
         body: BlocBuilder<ChatBloc, ChatState>(
+          buildWhen: (previous, current) =>
+              previous.conversationHistory != current.conversationHistory ||
+              previous.conversation?.id != current.conversation?.id ||
+              previous.runningCount != current.runningCount ||
+              previous.sessions.entries
+                      .where((e) => e.value.status == ChatStatus.streaming)
+                      .map((e) => e.key)
+                      .join(',') !=
+                  current.sessions.entries
+                      .where((e) => e.value.status == ChatStatus.streaming)
+                      .map((e) => e.key)
+                      .join(','),
           builder: (context, state) {
-            if (state.conversationHistory.isEmpty) {
+            final history = state.conversationHistory
+                .where(
+                  (conversation) =>
+                      !_runningOnly ||
+                      state.sessionFor(conversation.id)?.status ==
+                          ChatStatus.streaming,
+                )
+                .toList();
+            if (_runningOnly && history.isEmpty) {
+              return const Center(child: Text('No running conversations'));
+            }
+            if (history.isEmpty) {
               return _buildEmptyView(context);
             }
 
             return ListView.builder(
-              itemCount: state.conversationHistory.length,
+              itemCount: history.length,
               itemBuilder: (context, index) {
-                final conversation = state.conversationHistory[index];
+                final conversation = history[index];
                 return _ConversationTile(
+                  key: ValueKey(conversation.id),
                   conversation: conversation,
                   isSelected: state.conversation?.id == conversation.id,
                   onTap: () {
@@ -113,12 +155,17 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
   }
 
   void _confirmDelete(BuildContext context, Conversation conversation) {
+    final session = context.read<ChatBloc>().state.sessionFor(conversation.id);
+    final busy = session?.isBusy ?? false;
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Conversation?'),
+        title: Text(
+          busy ? 'Stop and Delete Conversation?' : 'Delete Conversation?',
+        ),
         content: Text(
           'Are you sure you want to delete "${conversation.title}"? '
+          '${busy ? 'Its pending response will be stopped. ' : ''}'
           'This action cannot be undone.',
         ),
         actions: [
@@ -136,7 +183,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
               );
               Navigator.pop(dialogContext);
             },
-            child: const Text('Delete'),
+            child: Text(busy ? 'Stop and Delete' : 'Delete'),
           ),
         ],
       ),
@@ -150,7 +197,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
         title: const Text('Delete All Conversations?'),
         content: const Text(
           'Are you sure you want to delete all conversations? '
-          'This action cannot be undone.',
+          'Pending responses will be stopped. This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -183,6 +230,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
 
 class _ConversationTile extends StatelessWidget {
   const _ConversationTile({
+    super.key,
     required this.conversation,
     required this.isSelected,
     required this.onTap,
@@ -198,6 +246,13 @@ class _ConversationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final dateFormat = DateFormat.MMMd().add_jm();
+    final live = context.select<ChatBloc, ChatSessionState?>(
+      (bloc) => bloc.state.sessionFor(conversation.id),
+    );
+    final draft = context.select<ChatBloc, ChatDraft?>(
+      (bloc) => bloc.state.drafts[conversation.id],
+    );
+    final preview = live?.conversation ?? conversation;
 
     return ListTile(
       selected: isSelected,
@@ -219,9 +274,15 @@ class _ConversationTile extends StatelessWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (conversation.lastMessage != null)
+          ChatSessionStatus(
+            session: live,
+            hasDraft:
+                draft != null &&
+                (draft.text.isNotEmpty || draft.attachments.isNotEmpty),
+          ),
+          if (preview.lastMessage != null)
             Text(
-              conversation.lastMessage!.content,
+              preview.lastMessage!.content,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(

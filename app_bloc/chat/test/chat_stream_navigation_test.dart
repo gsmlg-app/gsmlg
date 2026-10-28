@@ -351,6 +351,7 @@ class _FakeRemoteLlmRepository implements RemoteLlmRepository {
     List<Message> messages,
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
+    String? generationId,
   }) {
     lastConfig = config;
     return _controller.stream;
@@ -361,7 +362,7 @@ class _FakeRemoteLlmRepository implements RemoteLlmRepository {
   }
 
   @override
-  Future<void> stopGeneration() async {}
+  Future<void> stopGeneration({String? generationId}) async {}
 
   @override
   Future<void> dispose() async {

@@ -16,6 +16,7 @@ dependencies:
   app_chat: any
 
 dev_dependencies:
+  app_secure_storage: any
   flutter_test:
     sdk: flutter
   test: ^1.31.1

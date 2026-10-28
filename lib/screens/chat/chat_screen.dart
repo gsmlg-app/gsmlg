@@ -53,7 +53,11 @@ class _ChatScreenState extends State<ChatScreen> {
     modelBloc.add(const GemmaModelInitialize());
 
     // Load conversation history
-    context.read<ChatBloc>().add(const ChatLoadHistory());
+    final chatBloc = context.read<ChatBloc>();
+    chatBloc.add(const ChatLoadHistory());
+    if (chatBloc.state.conversation == null) {
+      chatBloc.add(const ChatNewConversation());
+    }
   }
 
   @override
@@ -62,6 +66,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (duo != null && !duo.secondary) {
       duo.removeListener(_onDuoStateChanged);
       if (duo.onChatSend != null) duo.onChatSend = null;
+      duo.onTextInput = null;
       if (duo.onChatStop != null) duo.onChatStop = null;
       if (duo.onChatSelectAgent != null) duo.onChatSelectAgent = null;
       if (duo.onEscKey != null) duo.onEscKey = null;
@@ -75,11 +80,26 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _setupDuoHandlers(DuoDisplayManager duo) {
+    duo.onTextInput = (text) {
+      if (!mounted) return;
+      final state = context.read<ChatBloc>().state;
+      _updateDraft(
+        state.conversation?.id,
+        ChatDraft(
+          text: text,
+          selectionBase: text.length,
+          selectionExtent: text.length,
+          attachments: state.currentDraft.attachments,
+        ),
+      );
+    };
     duo.onChatSend = (text, {attachments}) {
       if (!mounted) return;
-      final settingsState = context.read<ChatSettingsBloc>().state;
+      final settingsState = _sessionSettings(
+        context.read<ChatSettingsBloc>().state,
+      );
       final chatState = context.read<ChatBloc>().state;
-      if (chatState.isStreaming) return;
+      if (chatState.isBusy) return;
       _sendMessage(
         settingsState,
         chatState,
@@ -90,29 +110,121 @@ class _ChatScreenState extends State<ChatScreen> {
 
     duo.onChatStop = () {
       if (!mounted) return;
-      context.read<ChatBloc>().add(const ChatStopGeneration());
+      context.read<ChatBloc>().add(
+        ChatStopGeneration(
+          conversationId: context.read<ChatBloc>().state.conversation?.id,
+        ),
+      );
     };
 
     duo.onChatSelectAgent = (agentId) {
       if (!mounted) return;
-      context.read<ChatSettingsBloc>().add(
-        ChatSettingsSelectAgent(id: agentId),
-      );
+      _selectAgent(agentId);
     };
 
     duo.onEscKey = () {
       if (!mounted) return;
       final chatState = context.read<ChatBloc>().state;
-      if (chatState.isStreaming) {
-        context.read<ChatBloc>().add(const ChatStopGeneration());
+      if (chatState.isBusy) {
+        context.read<ChatBloc>().add(
+          ChatStopGeneration(
+            conversationId: context.read<ChatBloc>().state.conversation?.id,
+          ),
+        );
       }
     };
+  }
+
+  ChatSettingsState _sessionSettings(ChatSettingsState defaults) {
+    final state = context.read<ChatBloc>().state;
+    final id = state.conversation?.id;
+    final session = id == null ? null : state.sessionFor(id);
+    if (session?.config == null) return defaults;
+    return defaults.copyWith(
+      config: session!.config,
+      activeAgentId: session.agentId,
+      clearActiveAgent: session.agentId == null,
+      thinkingEnabled: session.thinkingEnabled ?? defaults.thinkingEnabled,
+      defaultSystemPrompt: session.systemPrompt,
+      clearSystemPrompt: session.systemPrompt == null,
+    );
+  }
+
+  void _configureSession(
+    ChatSettingsState settings, {
+    ModelConfig? config,
+    bool? thinkingEnabled,
+    String? conversationId,
+  }) {
+    context.read<ChatBloc>().add(
+      ChatConfigureSession(
+        conversationId:
+            conversationId ?? context.read<ChatBloc>().state.conversation?.id,
+        config: config ?? settings.config,
+        agentId: settings.activeAgentId,
+        thinkingEnabled: thinkingEnabled ?? settings.thinkingEnabled,
+        systemPrompt: settings.defaultSystemPrompt,
+      ),
+    );
+  }
+
+  void _selectAgent(String agentId) {
+    if (context.read<ChatBloc>().state.isBusy) return;
+    final settings = context.read<ChatSettingsBloc>().state;
+    final agent = settings.agents.where((a) => a.id == agentId).firstOrNull;
+    if (agent == null) return;
+    context.read<ChatBloc>().add(
+      ChatConfigureSession(
+        conversationId: context.read<ChatBloc>().state.conversation?.id,
+        config: agent.config,
+        agentId: agent.id,
+        thinkingEnabled: agent.thinkingEnabled,
+        systemPrompt: agent.systemPrompt,
+      ),
+    );
+  }
+
+  void _updateDraft(String? conversationId, ChatDraft draft) {
+    if (conversationId == null) return;
+    context.read<ChatBloc>().add(
+      ChatUpdateDraft(
+        conversationId: conversationId,
+        text: draft.text,
+        selectionBase: draft.selectionBase,
+        selectionExtent: draft.selectionExtent,
+        attachments: draft.attachments,
+      ),
+    );
+  }
+
+  void _addAttachments(
+    String? conversationId,
+    List<ChatAttachment> attachments,
+  ) {
+    if (conversationId == null) return;
+    final state = context.read<ChatBloc>().state;
+    if (!state.sessions.containsKey(conversationId)) return;
+    final draft = state.drafts[conversationId] ?? const ChatDraft();
+    _updateDraft(
+      conversationId,
+      ChatDraft(
+        text: draft.text,
+        selectionBase: draft.selectionBase,
+        selectionExtent: draft.selectionExtent,
+        attachments: [...draft.attachments, ...attachments],
+      ),
+    );
   }
 
   void _startNewConversation() {
     final settingsState = context.read<ChatSettingsBloc>().state;
     context.read<ChatBloc>().add(
-      ChatNewConversation(systemPrompt: settingsState.defaultSystemPrompt),
+      ChatNewConversation(
+        systemPrompt: settingsState.defaultSystemPrompt,
+        config: settingsState.config,
+        agentId: settingsState.activeAgentId,
+        thinkingEnabled: settingsState.thinkingEnabled,
+      ),
     );
   }
 
@@ -127,7 +239,9 @@ class _ChatScreenState extends State<ChatScreen> {
         appBar: DmAppBar(
           restoreNavigation: true,
           title: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-            builder: (context, settingsState) {
+            builder: (context, globalSettings) {
+              context.watch<ChatBloc>();
+              final settingsState = _sessionSettings(globalSettings);
               final modelName =
                   settingsState.config.inferenceMode == ChatInferenceMode.remote
                   ? settingsState.config.remoteModel
@@ -159,7 +273,18 @@ class _ChatScreenState extends State<ChatScreen> {
             },
           ),
           actions: [
-            const LocalModelActionButton(),
+            BlocBuilder<ChatBloc, ChatState>(
+              builder: (context, state) => LocalModelActionButton(
+                settings: _sessionSettings(
+                  context.watch<ChatSettingsBloc>().state,
+                ),
+                busy: state.sessions.values.any(
+                  (session) =>
+                      session.isBusy &&
+                      session.config?.inferenceMode == ChatInferenceMode.local,
+                ),
+              ),
+            ),
             IconButton(
               icon: const Icon(Icons.history),
               tooltip: 'History',
@@ -180,7 +305,9 @@ class _ChatScreenState extends State<ChatScreen> {
         body: Column(
           children: [
             BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-              builder: (context, settingsState) {
+              builder: (context, globalSettings) {
+                context.watch<ChatBloc>();
+                final settingsState = _sessionSettings(globalSettings);
                 if (settingsState.config.inferenceMode ==
                     ChatInferenceMode.remote) {
                   return _buildRemoteStatusBanner(settingsState.config);
@@ -194,12 +321,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             Expanded(
               child: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-                buildWhen: (prev, curr) =>
-                    prev.thinkingEnabled != curr.thinkingEnabled ||
-                    prev.config.inferenceMode != curr.config.inferenceMode ||
-                    prev.config.remoteThinkingEffort !=
-                        curr.config.remoteThinkingEffort,
-                builder: (context, settingsState) {
+                builder: (context, globalSettings) {
+                  context.watch<ChatBloc>();
+                  final settingsState = _sessionSettings(globalSettings);
                   if (settingsState.config.inferenceMode ==
                       ChatInferenceMode.local) {
                     return BlocBuilder<GemmaModelBloc, GemmaModelState>(
@@ -217,7 +341,9 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
-              builder: (context, settingsState) {
+              builder: (context, globalSettings) {
+                context.watch<ChatBloc>();
+                final settingsState = _sessionSettings(globalSettings);
                 if (_isDuoConnected) {
                   return _buildDuoFloatingCapsule(context, settingsState);
                 }
@@ -255,12 +381,19 @@ class _ChatScreenState extends State<ChatScreen> {
           showThinking: _shouldShowThinking(settingsState),
           onEditUserMessage: (message, content) {
             context.read<ChatBloc>().add(
-              ChatEditUserMessage(messageId: message.id, content: content),
+              ChatEditUserMessage(
+                conversationId: state.conversation?.id,
+                messageId: message.id,
+                content: content,
+              ),
             );
           },
           onRegenerateResponse: (message) {
             context.read<ChatBloc>().add(
-              ChatRegenerateResponse(messageId: message.id),
+              ChatRegenerateResponse(
+                conversationId: state.conversation?.id,
+                messageId: message.id,
+              ),
             );
           },
         );
@@ -291,10 +424,15 @@ class _ChatScreenState extends State<ChatScreen> {
             selectedId == targetModelId;
         return BlocBuilder<ChatBloc, ChatState>(
           builder: (context, chatState) {
-            final canSend = isCurrentModelLoaded && chatState.canSendMessage;
+            final canSend = isCurrentModelLoaded || targetModelId != null;
             return ChatInputBar(
+              conversationId: chatState.conversation?.id,
+              draft: chatState.currentDraft,
+              onDraftChanged: _updateDraft,
+              onAttachmentsAdded: _addAttachments,
+              isQueued: chatState.status == ChatStatus.queued,
               enabled: canSend,
-              isStreaming: chatState.isStreaming,
+              isStreaming: chatState.isBusy,
               historyTokenCount: _calculateHistoryTokens(
                 chatState.conversation,
               ),
@@ -307,15 +445,11 @@ class _ChatScreenState extends State<ChatScreen> {
               selectedAgentId: settingsState.activeAgentId,
               agents: settingsState.agents,
               onAgentSelect: (agentId) {
-                context.read<ChatSettingsBloc>().add(
-                  ChatSettingsSelectAgent(id: agentId),
-                );
+                _selectAgent(agentId);
               },
               onModelTap: () => context.goNamed(ChatAgentsSettingsScreen.name),
               onThinkingToggle: (enabled) {
-                context.read<ChatSettingsBloc>().add(
-                  ChatSettingsToggleThinking(enabled: enabled),
-                );
+                _configureSession(settingsState, thinkingEnabled: enabled);
               },
               onSend: (message, {imageBytes, audioBytes, attachments}) {
                 _sendMessage(
@@ -328,7 +462,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 );
               },
               onStop: () {
-                context.read<ChatBloc>().add(const ChatStopGeneration());
+                context.read<ChatBloc>().add(
+                  ChatStopGeneration(
+                    conversationId: context
+                        .read<ChatBloc>()
+                        .state
+                        .conversation
+                        ?.id,
+                  ),
+                );
               },
             );
           },
@@ -341,12 +483,16 @@ class _ChatScreenState extends State<ChatScreen> {
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, chatState) {
         final config = settingsState.config;
-        final canSend =
-            settingsState.config.isRemoteConfigured && chatState.canSendMessage;
+        final canSend = settingsState.config.isRemoteConfigured;
         final isDeepSeek = config.remoteProvider == RemoteLlmProvider.deepSeek;
         return ChatInputBar(
+          conversationId: chatState.conversation?.id,
+          draft: chatState.currentDraft,
+          onDraftChanged: _updateDraft,
+          onAttachmentsAdded: _addAttachments,
+          isQueued: chatState.status == ChatStatus.queued,
           enabled: canSend,
-          isStreaming: chatState.isStreaming,
+          isStreaming: chatState.isBusy,
           historyTokenCount: _calculateHistoryTokens(chatState.conversation),
           thinkingEnabled: isDeepSeek
               ? config.remoteThinkingEffort != RemoteThinkingEffort.off
@@ -356,26 +502,21 @@ class _ChatScreenState extends State<ChatScreen> {
           selectedAgentId: settingsState.activeAgentId,
           agents: settingsState.agents,
           onAgentSelect: (agentId) {
-            context.read<ChatSettingsBloc>().add(
-              ChatSettingsSelectAgent(id: agentId),
-            );
+            _selectAgent(agentId);
           },
           onModelTap: () => context.goNamed(ChatAgentsSettingsScreen.name),
           onThinkingEffortChanged: isDeepSeek
               ? (effort) {
-                  context.read<ChatSettingsBloc>().add(
-                    ChatSettingsUpdateConfig(
-                      config: config.copyWith(remoteThinkingEffort: effort),
-                    ),
+                  _configureSession(
+                    settingsState,
+                    config: config.copyWith(remoteThinkingEffort: effort),
                   );
                 }
               : null,
           onThinkingToggle: isDeepSeek
               ? null
               : (enabled) {
-                  context.read<ChatSettingsBloc>().add(
-                    ChatSettingsToggleThinking(enabled: enabled),
-                  );
+                  _configureSession(settingsState, thinkingEnabled: enabled);
                 },
           onSend: (message, {imageBytes, audioBytes, attachments}) {
             _sendMessage(
@@ -388,7 +529,11 @@ class _ChatScreenState extends State<ChatScreen> {
             );
           },
           onStop: () {
-            context.read<ChatBloc>().add(const ChatStopGeneration());
+            context.read<ChatBloc>().add(
+              ChatStopGeneration(
+                conversationId: context.read<ChatBloc>().state.conversation?.id,
+              ),
+            );
           },
         );
       },
@@ -403,12 +548,29 @@ class _ChatScreenState extends State<ChatScreen> {
     Uint8List? audioBytes,
     List<ChatAttachment> attachments = const [],
   }) {
+    if (!chatState.canSendMessage) return;
+    var config = settingsState.config;
+    if (config.inferenceMode == ChatInferenceMode.local &&
+        config.localModelId == null) {
+      config = config.copyWith(
+        localModelId: resolveLocalModelId(
+          settingsState,
+          context.read<GemmaModelBloc>().state,
+        ),
+      );
+    }
+    _configureSession(
+      settingsState,
+      config: config,
+      conversationId: chatState.conversation?.id,
+    );
     context.read<ChatBloc>().add(
       ChatSendMessage(
+        conversationId: chatState.conversation?.id,
+        config: config,
+        agentId: settingsState.activeAgentId,
         content: message,
-        systemPrompt: chatState.conversation == null
-            ? settingsState.defaultSystemPrompt
-            : null,
+        systemPrompt: settingsState.defaultSystemPrompt,
         imageBytes: imageBytes,
         audioBytes: audioBytes,
         attachments: attachments,
@@ -441,7 +603,10 @@ class _ChatScreenState extends State<ChatScreen> {
         : null;
 
     final duoState = DuoChatState(
-      isStreaming: chatState.isStreaming,
+      conversationId: chatState.conversation?.id,
+      draftText: chatState.currentDraft.text,
+      isPreparing: chatState.status == ChatStatus.preparing,
+      isStreaming: chatState.isBusy,
       canSend: canSend,
       modelName: modelName,
       activeAgentName:
@@ -490,7 +655,10 @@ class _ChatScreenState extends State<ChatScreen> {
             return SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Center(
                   child: Material(
                     elevation: 2,
@@ -499,7 +667,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                       side: BorderSide(
-                        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                     ),
                     clipBehavior: Clip.antiAlias,
