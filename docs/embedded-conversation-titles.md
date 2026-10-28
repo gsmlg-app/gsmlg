@@ -205,3 +205,43 @@ local-resource serialization; the Android hardware run used the title smoke
 fixture, not a concurrently loaded user chat model. iOS adapter type-checking
 passed for device arm64; full iOS, Linux and Windows execution remains pending.
 CI includes packaged-model native smoke tests for Linux and Windows.
+
+### CI qualification limits (2026-10-29)
+
+At commit `895e9d3`, CI format and analysis passed. The title checks passed
+locally: chat package 90 tests (three opt-in tests skipped), ChatBloc/database/
+title lifecycle 82 tests, packaging five tests, and two opt-in actual Mac engine
+tests. The final Mac run generated `可复用 Flutter 组件设计` in 22,612 ms and also
+passed the two-engine preservation check. The final audited debug AAB is
+850,464,014 bytes. A signed arm64 iOS debug app was built and its bundled model
+and native framework audited (1,294,476,314 bytes total app-file sizes).
+
+The repository-wide CI failures are distinct from those title checks:
+
+- Linux app packaging stops because the runner lacks `gstreamer-1.0` development
+  packages required by the existing audioplayers plugin. This also failed on the
+  preceding main commit. Install the existing application's GStreamer development
+  prerequisites before rerunning the app build and package audit.
+- Windows app packaging stops in duskmoon_highlight 2.2.3's Crystal scanner under
+  MSVC (`C2466`/`C2133`, variable-length array `word[max_word_size + 4]`).
+  TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#32
+  (https://github.com/duskmoon-dev/flutter-duskmoon-ui/issues/32). This is a blocker;
+  no grammar removal or dependency-cache patch is used. Adopt a published fix
+  within authorized scope and repeat the Windows app build, content audit and
+  installed runtime verification. Source inspection also finds that declaration
+  in 2.2.5, so that version alone is not an evidenced fix.
+- The full Melos test job fails because app_system_metrics_linux has a `test/`
+  directory without Dart test files, matching the preceding main failure. This
+  task does not change that unrelated package or weaken its test command.
+
+CI runs the title package's actual-engine tests independently before the app
+builds. Those tests can qualify the native title runtime even when unrelated
+application plugins prevent packaging; they do not qualify an installed Linux
+or Windows app. The original package audits remain required after a successful
+application build.
+
+The physical iPad Air M3 was reachable over local-network debugging, but was
+locked. An initial transfer failed with CoreDevice 3002 / IXRemoteErrorDomain 6;
+a subsequent Flutter launch stalled waiting for Xcode debugging. iOS model
+execution, offline behavior, latency and memory remain unverified. Unlock and
+preferably USB-connect that device before repeating the installed-app smoke test.

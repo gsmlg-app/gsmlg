@@ -218,6 +218,14 @@ jobs:
       - name: Prepare project
         run: melos run prepare
 
+      - name: Qualify Linux title runtime independently of application plugins
+        working-directory: app_lib/chat
+        run: |
+          export TITLE_MODEL_PATH="$PWD/../../assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf"
+          export TITLE_LIBRARY_PATH="$(find "${PUB_CACHE:-$HOME/.pub-cache}" -path '*/lib_llama_cpp_linux-0.7.5/linux/prebuilt/x64/liblib_llama_cpp_linux.so' -print -quit)"
+          test -f "$TITLE_LIBRARY_PATH"
+          flutter test --no-pub test/minicpm_title_native_smoke_test.dart
+
       - name: Build Linux
         run: flutter build linux --release
 
@@ -240,6 +248,14 @@ jobs:
         run: python tools/conversation_title/prepare.py --download
       - name: Prepare project
         run: melos run prepare
+      - name: Qualify Windows title runtime independently of application plugins
+        working-directory: app_lib/chat
+        run: |
+          $cache = if ($env:PUB_CACHE) { $env:PUB_CACHE } else { "$env:LOCALAPPDATA/Pub/Cache" }
+          $env:TITLE_MODEL_PATH = "$pwd/../../assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf"
+          $env:TITLE_LIBRARY_PATH = "$cache/hosted/pub.dev/lib_llama_cpp_windows-0.7.5/windows/prebuilt/x64/lib_llama_cpp_windows.dll"
+          if (!(Test-Path $env:TITLE_LIBRARY_PATH)) { throw "Bundled native title library missing" }
+          flutter test --no-pub test/minicpm_title_native_smoke_test.dart
       - name: Build Windows
         run: flutter build windows --release
       - name: Verify packaged offline title model and native inference
