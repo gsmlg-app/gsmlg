@@ -265,4 +265,5 @@ jobs:
           $env:TITLE_LIBRARY_PATH = "$pwd/build/windows/x64/runner/Release/lib_llama_cpp_windows.dll"
           flutter test --no-pub app_lib/chat/test/minicpm_title_native_smoke_test.dart
       - name: Launch Windows fixture and verify native platform channels
-        run: flutter drive --no-pub -d windows --keep-app-running --driver=test_driver/conversation_title.dart --target=integration_test/conversation_title_offline_test.dart
+        timeout-minutes: 25
+        run: flutter drive -d windows --keep-app-running --driver=test_driver/conversation_title.dart --target=integration_test/conversation_title_offline_test.dart
