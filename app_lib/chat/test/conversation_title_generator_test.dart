@@ -136,6 +136,27 @@ void main() {
       );
     }
   });
+  test('strips presentation prefixes without changing technical names', () {
+    for (final entry in {
+      "Here's the title: “SSH Key Exchange Debugging”":
+          'SSH Key Exchange Debugging',
+      'Here is a conversation title: Flutter Controller Design':
+          'Flutter Controller Design',
+      '以下是标题：MiniCPM 端侧部署': 'MiniCPM 端侧部署',
+    }.entries) {
+      expect(ConversationTitlePolicy.normalize(entry.key), entry.value);
+    }
+  });
+  test('rejects single-line conversation explanations', () {
+    for (final output in [
+      'This conversation is about Flutter controller design',
+      'This chat discusses SSH key exchange failures',
+      '这段对话主要讨论 Flutter 组件设计',
+      '这个聊天涉及 MiniCPM 端侧部署',
+    ]) {
+      expect(ConversationTitlePolicy.normalize(output), isNull, reason: output);
+    }
+  });
   test(
     'lazy serialized inference, unchanged result and failures are harmless',
     () async {

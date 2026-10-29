@@ -118,7 +118,7 @@ class ConversationTitlePolicy {
     title = title
         .replaceFirst(
           RegExp(
-            r'^(?:title|conversation title|标题|标题名称)\s*[:：]\s*',
+            r"^(?:(?:here is|here's)\s+(?:a|the)\s+)?(?:title|conversation title|(?:以下是|以下为)?标题|标题名称)\s*[:：]\s*",
             caseSensitive: false,
           ),
           '',
@@ -131,6 +131,10 @@ class ConversationTitlePolicy {
         title.toUpperCase() == 'KEEP' ||
         title.runes.length > 80 ||
         title.split(RegExp(r'\s+')).length > 12 ||
+        RegExp(
+          r'^(?:this\s+(?:conversation|chat)\s+(?:is\s+about|discusses)\b|(?:这段对话|这个聊天)(?:主要)?(?:讨论|涉及))',
+          caseSensitive: false,
+        ).hasMatch(title) ||
         RegExp(
           r'[\r\n<>`\x00-\x1f]|^[-*#]|https?://|[.!?。！？]$',
           caseSensitive: false,
