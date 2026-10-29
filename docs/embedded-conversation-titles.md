@@ -311,3 +311,24 @@ stale task-created AOT cache was regenerated. A compile-only and JNI-staging
 diagnostic then confirmed the AOT library before the final standard build.
 No source workaround, SDK patch, disabled stripping check, or modified dependency
 was needed for the successful release-mode Android build.
+
+### Desktop qualification follow-up
+
+The later CI run `40907226521` at `091eb8a2415d42eb0dfeb2426f4679cd2fbf53cc`
+passed formatting, analysis and the independent Linux/Windows title-engine tests.
+Full Linux packaging still failed because `audioplayers_linux` requires
+`gstreamer-1.0`, `gstreamer-app-1.0` and `gstreamer-audio-1.0`; CI and Linux
+release setup now install their development packages (and libsecret).
+Windows packaging still resolved `duskmoon_highlight 2.2.5` and reproduced the
+Crystal scanner error. Upstream issue #32 has since closed with commit
+`89fb41e74fb14ba9e7ecad5287ebe5003bef9cf8`, replacing the variable-length buffer
+with a constant-size buffer while preserving identifier limits. Published
+`duskmoon_highlight 2.2.8` is now resolved in the lockfile; the official archive
+contains the constant-size buffer and its changelog lists the MSVC fixes. Only
+that dependency changed in resolution. Downstream package verification remains
+required before reporting Windows packaging as supported.
+
+That run's full Melos test job still failed because
+`app_system_metrics_linux/test` contains no Dart `*_test.dart` files. This is
+separate from the title runtime checks and remains an unresolved repository test
+gate. No physical-device application was installed or tested in this follow-up.
