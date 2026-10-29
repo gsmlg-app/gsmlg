@@ -164,10 +164,10 @@ Qualification host: MacBookPro18,4, Apple M1 Max, 32 GiB RAM, 2026-10-29.
 | Platform | Packaging | Native execution |
 | --- | --- | --- |
 | macOS | Release `.app` and arm64 Debug `.app` content audits passed | arm64 installed-app smoke passed; packaged-engine and two-engine tests also passed |
-| Android | Debug APK and AAB audits passed; device-specific install-time pack installed | Pixel Fold (Android 17, GS201) generated a title with no active default network |
+| Android | Debug APK/AAB and release-mode AAB audits passed; device-specific install-time pack installed; release-mode bundle is debug-signed | Pixel Fold (Android 17, GS201) generated a title with no active default network |
 | iOS | Signed arm64 Debug app built and packaged-model/native-engine audit passed | Native execution unverified; further iPad testing excluded by user request |
 | Linux | Release bundle built and pinned-model/native-library audit passed on CI | x64 packaged-model title inference and independent-engine preservation tests passed; app UI launch not exercised |
-| Windows | Upstream #32 resolved in 2.2.8; full app now blocked by existing client-info/system-metrics plugin MSVC warnings | x64 native title and independent-engine preservation tests passed; full bundle remains unverified |
+| Windows | x64 Release application built; pinned-model, notices and native-library bundle audit passed | Packaged-engine and independent-engine preservation tests passed; Debug application fixture passed both actual platform channels and bundled title generation with Dart networking disabled |
 
 Actual native cold title transformation on the Mac host with the final language-aligned
 prompt: 19,978 ms (`可复用 Flutter 组件设计`). An earlier prompt took 17,665 ms, including
@@ -314,53 +314,90 @@ was needed for the successful release-mode Android build.
 
 ### Desktop qualification follow-up
 
-The later CI run `40907226521` at `091eb8a2415d42eb0dfeb2426f4679cd2fbf53cc`
-passed formatting, analysis and the independent Linux/Windows title-engine tests.
-Full Linux packaging still failed because `audioplayers_linux` requires
-`gstreamer-1.0`, `gstreamer-app-1.0` and `gstreamer-audio-1.0`; CI and Linux
-release setup now install their development packages (and libsecret).
-Windows packaging still resolved `duskmoon_highlight 2.2.5` and reproduced the
-Crystal scanner error. Upstream issue #32 has since closed with commit
-`89fb41e74fb14ba9e7ecad5287ebe5003bef9cf8`, replacing the variable-length buffer
-with a constant-size buffer while preserving identifier limits. Published
-`duskmoon_highlight 2.2.8` is now resolved in the lockfile; the official archive
-contains the constant-size buffer and its changelog lists the MSVC fixes. Only
-that dependency changed in resolution. Downstream package verification remains
-required before reporting Windows packaging as supported.
+Desktop application builds exposed existing repository/dependency gates. Linux
+CI and release setup now install GStreamer and libsecret development packages.
+The official `duskmoon_highlight 2.2.8` release resolves the MSVC scanner blocker
+tracked in `duskmoon-dev/flutter-duskmoon-ui#32`; the lockfile uses that release,
+without a dependency-cache patch.
 
-That run's full Melos test job still failed because
-`app_system_metrics_linux/test` contains no Dart `*_test.dart` files. This is
-separate from the title runtime checks and remains an unresolved repository test
-gate. No physical-device application was installed or tested in this follow-up.
+With explicit scope approval, `e7be047` repairs Melos test discovery: the runner
+recursively checks for real Dart `*_test.dart` files, skips native-only folders
+and propagates child test exit codes. Three discovery regression tests and
+targeted analysis passed locally. The native-only Linux metrics package also
+correctly skipped its Dart suite; its native tests remain separate CI jobs.
 
-At commit `2b9c0060d3042e9488737fbe41848a5f9e3ea6c6`, the Linux job in
-[CI run 40910576189](https://github.com/gsmlg-app/gsmlg/actions/runs/40910576189)
-built the Release application on Ubuntu 24.04 x64. The bundle audit confirmed
-exactly one 688,065,920-byte model with the pinned SHA-256, notices and native
-library. Both actual-engine tests then passed using the model and library from
-that Release bundle: title generation produced `可复用 Flutter 组件设计` in
-**10,324 ms**, and title-engine teardown preserved the independently loaded
-primary engine. The preceding independent-library check took **10,153 ms**.
-These are real CI-native measurements, not a Linux application UI launch, an
-OS-network-disabled run, a peak-memory measurement or a measured package-size
-delta. The full Melos job again failed on the empty Dart test directory above.
+The Windows plugins `client_info_windows` and `system_metrics_windows` retain
+`/W4 /WX`. Commit `54f7e9a8` replaces `gmtime` with `gmtime_s` and resolves
+`RtlGetVersion` for manifest-independent version data; API errors use the
+existing channel error handler. Their compilation passed in
+[run 40920541320](https://github.com/gsmlg-app/gsmlg/actions/runs/40920541320),
+then the application registrant exposed missing public include paths. Commit
+`0d4b32a9` places both headers in standard `windows/include/<package>/`
+directories and exports that root through CMake. Registration symbols and Dart
+channels are unchanged; the generated registrant is not patched.
 
-The Windows job in that same run passed both independent native tests, generating
-`可复用 Flutter 组件设计` in **30,305 ms** and preserving the primary engine after
-title-engine destruction. `duskmoon_highlight 2.2.8` cleared the previous Crystal
-scanner compilation failure. Full application compilation then failed with
-MSVC `C2220`/`C4996` in these existing in-repository plugins:
+A Windows application fixture checks both actual native channels, UTC timestamp,
+OS version and hardware fields, plus refresh behavior. It runs after the Release
+bundle audit and packaged title tests, on a disposable CI runner. The first
+run's packaged and channel tests were skipped because of the header failure.
+[Run 40923081835](https://github.com/gsmlg-app/gsmlg/actions/runs/40923081835)
+then passed the complete Windows Release build, all-package Linux tests, format,
+analysis and Linux packaged inference (10,281 ms; independent 10,280 ms).
 
-- `app_plugin/client_info/client_info_windows/windows/client_info_plugin.cpp:64,76`
-- `app_plugin/system_metrics/system_metrics_windows/windows/system_metrics_plugin.cpp:64,76`
+Commit `7e8045ff` enables normal pub/plugin refresh before switching from Release
+to the Debug integration fixture, and bounds that step to 25 minutes. Flutter
+3.47.8 skips platform plugin regeneration with `--no-pub`; retaining Release
+registration can omit the integration-test plugin. The preceding run was
+superseded while Windows package verification was running. Its retained log
+revealed that the directory auditor expected POSIX paths and failed to recognize
+Windows backslashes; PowerShell then continued to the next command. Commit
+`6041f215` normalizes audit paths and makes both Python test/audit failures exit
+the step immediately. All seven deterministic packaging tests passed locally,
+including Windows path recognition and rejection of corrupted weights. The same
+tests also run on Windows before the real package audit.
+[Run 40926725925](https://github.com/gsmlg-app/gsmlg/actions/runs/40926725925)
+completed successfully on `6041f215`: all seven jobs passed, including full
+Melos tests, formatting, analysis, both native-monitor architectures and both
+desktop qualification jobs. Earlier cancelled runs are not passing evidence.
 
-Their `gmtime` and deprecated `GetVersionExW` calls are rejected under `/WX`.
-These calls predate the title implementation. No warning suppression, dependency
-cache patch or package-audit bypass was introduced. Windows Release package
-audit and packaged-engine execution were consequently skipped and remain
-unverified. The final CI result is failure because of this application build
-and the separate empty Dart test-directory failure; format, analysis and Linux
-packaged title qualification passed. Repairs to the unrelated plugin methods and
-Melos test discovery require scope confirmation under the repository's
-out-of-scope failure policy. iOS physical inference remains unverified and
-further iPad testing remains excluded by the user's instruction.
+On Windows x64 (OS build 26100), all seven packaging tests passed, the Release
+bundle model/checksum/notices/native-library audit passed, and both actual
+packaged-engine tests passed. Packaged cold title generation took **9,243 ms**;
+independent inference took **9,622 ms**. The launched Debug application fixture
+passed all three tests, including both actual platform channels with correct UTC,
+version/hardware fields and refresh behavior, and bundled title generation in
+**9,247 ms** (`可复用 Flutter 组件设计`). Dart networking was disabled in that title
+fixture; the runner OS network was not disabled. No Windows peak-memory or
+matched-baseline package-size delta was measured. The fixture ran solely on the
+disposable CI runner, with no physical user-device installation.
+
+Linux Release qualification passed in runs `40910576189` and `40920541320`.
+The latter confirmed exactly one 688,065,920-byte model with the pinned checksum,
+notices and native library in the application bundle. Real inference using that
+bundle produced `可复用 Flutter 组件设计` in **10,434 ms**, and destroying the
+title engine preserved an independently loaded primary engine. Independent
+inference took **10,468 ms**. These are Ubuntu 24.04 x64 CI measurements, not an
+application UI launch, OS-network-disabled run, peak-memory measurement or
+package-size delta. Earlier independent Windows inference took **30,305 ms**
+in run `40910576189` and also passed primary-engine preservation.
+
+Full-suite results remain distinct from title qualification:
+
+- The first local rerun exhausted system temporary storage during generated
+  Vultr API test compilation. Its unused 3.8 GiB kernel directory was moved to
+  the external qualification volume; later tests used an external `TMPDIR`.
+- That rerun passed all ten pure Dart suites, including 1,991 Vultr API cases,
+  then failed the unchanged xterm `htop golden test` with a **2-pixel** difference
+  on macOS. Test-generated failure images were restored; no golden was replaced.
+- The independent chat rerun passed **90 app_chat tests (3 skipped)** and
+  **62 chat_bloc tests**. Explicit build/model prerequisites account for skips;
+  mocked/unit tests do not establish native runtime compatibility.
+- Run `40920541320` passed format and analysis, but its full-suite job failed
+  the unchanged SSH `SshKey with null salt handles gracefully` assertion: it
+  expected an exception but received text. The 103-case SSH suite passed locally.
+  This stability issue and the golden failure require separate scope approval;
+  neither assertion nor credential behavior was changed to bypass them.
+
+No physical user device was installed, cleared or tested by this follow-up.
+iOS physical inference remains unverified, and further iPad testing remains
+excluded by the user's instruction. No production release was created.
