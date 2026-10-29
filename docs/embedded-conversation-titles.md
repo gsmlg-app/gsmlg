@@ -166,7 +166,7 @@ Qualification host: MacBookPro18,4, Apple M1 Max, 32 GiB RAM, 2026-10-29.
 | macOS | Release `.app` and arm64 Debug `.app` content audits passed | arm64 installed-app smoke passed; packaged-engine and two-engine tests also passed |
 | Android | Debug APK and AAB audits passed; device-specific install-time pack installed | Pixel Fold (Android 17, GS201) generated a title with no active default network |
 | iOS | Signed arm64 Debug app built and packaged-model/native-engine audit passed | Native execution unverified; further iPad testing excluded by user request |
-| Linux | App build blocked by existing missing GStreamer development packages | x64 native title and independent-engine preservation tests passed on CI |
+| Linux | Release bundle built and pinned-model/native-library audit passed on CI | x64 packaged-model title inference and independent-engine preservation tests passed; app UI launch not exercised |
 | Windows | App build blocked by upstream duskmoon_highlight MSVC failure (#32) | x64 native title and independent-engine preservation tests passed on CI |
 
 Actual native cold title transformation on the Mac host with the final language-aligned
@@ -207,7 +207,7 @@ The separate desktop-engine test confirms a loaded primary engine produces the
 same response after title-engine destruction. Deterministic unit tests cover
 local-resource serialization; the Android hardware run used the title smoke
 fixture, not a concurrently loaded user chat model. iOS adapter type-checking
-passed for device arm64; iOS execution and full Linux/Windows application packaging remain unverified;
+passed for device arm64; iOS execution and full Windows application packaging remain unverified;
 the later native-runtime qualification is recorded below.
 CI includes packaged-model native smoke tests for Linux and Windows.
 
@@ -332,3 +332,15 @@ That run's full Melos test job still failed because
 `app_system_metrics_linux/test` contains no Dart `*_test.dart` files. This is
 separate from the title runtime checks and remains an unresolved repository test
 gate. No physical-device application was installed or tested in this follow-up.
+
+At commit `2b9c0060d3042e9488737fbe41848a5f9e3ea6c6`, the Linux job in
+[CI run 40910576189](https://github.com/gsmlg-app/gsmlg/actions/runs/40910576189)
+built the Release application on Ubuntu 24.04 x64. The bundle audit confirmed
+exactly one 688,065,920-byte model with the pinned SHA-256, notices and native
+library. Both actual-engine tests then passed using the model and library from
+that Release bundle: title generation produced `可复用 Flutter 组件设计` in
+**10,324 ms**, and title-engine teardown preserved the independently loaded
+primary engine. The preceding independent-library check took **10,153 ms**.
+These are real CI-native measurements, not a Linux application UI launch, an
+OS-network-disabled run, a peak-memory measurement or a measured package-size
+delta. The full Melos job again failed on the empty Dart test directory above.
