@@ -167,7 +167,7 @@ Qualification host: MacBookPro18,4, Apple M1 Max, 32 GiB RAM, 2026-10-29.
 | Android | Debug APK and AAB audits passed; device-specific install-time pack installed | Pixel Fold (Android 17, GS201) generated a title with no active default network |
 | iOS | Signed arm64 Debug app built and packaged-model/native-engine audit passed | Native execution unverified; further iPad testing excluded by user request |
 | Linux | Release bundle built and pinned-model/native-library audit passed on CI | x64 packaged-model title inference and independent-engine preservation tests passed; app UI launch not exercised |
-| Windows | App build blocked by upstream duskmoon_highlight MSVC failure (#32) | x64 native title and independent-engine preservation tests passed on CI |
+| Windows | Upstream #32 resolved in 2.2.8; full app now blocked by existing client-info/system-metrics plugin MSVC warnings | x64 native title and independent-engine preservation tests passed; full bundle remains unverified |
 
 Actual native cold title transformation on the Mac host with the final language-aligned
 prompt: 19,978 ms (`可复用 Flutter 组件设计`). An earlier prompt took 17,665 ms, including
@@ -228,8 +228,8 @@ The repository-wide CI failures are distinct from those title checks:
   preceding main commit. Install `libgstreamer1.0-dev` and `libgstreamer-plugins-base1.0-dev` before rerunning the app build and package audit.
 - Windows app packaging stops in duskmoon_highlight 2.2.3's Crystal scanner under
   MSVC (`C2466`/`C2133`, variable-length array `word[max_word_size + 4]`).
-  TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#32
-  (https://github.com/duskmoon-dev/flutter-duskmoon-ui/issues/32). This is a blocker;
+  Historical upstream blocker: duskmoon-dev/flutter-duskmoon-ui#32
+  (https://github.com/duskmoon-dev/flutter-duskmoon-ui/issues/32). This blocked that run;
   no grammar removal or dependency-cache patch is used. Adopt a published fix
   within authorized scope and repeat the Windows app build, content audit and
   installed runtime verification. Source inspection also finds that declaration
@@ -344,3 +344,23 @@ primary engine. The preceding independent-library check took **10,153 ms**.
 These are real CI-native measurements, not a Linux application UI launch, an
 OS-network-disabled run, a peak-memory measurement or a measured package-size
 delta. The full Melos job again failed on the empty Dart test directory above.
+
+The Windows job in that same run passed both independent native tests, generating
+`可复用 Flutter 组件设计` in **30,305 ms** and preserving the primary engine after
+title-engine destruction. `duskmoon_highlight 2.2.8` cleared the previous Crystal
+scanner compilation failure. Full application compilation then failed with
+MSVC `C2220`/`C4996` in these existing in-repository plugins:
+
+- `app_plugin/client_info/client_info_windows/windows/client_info_plugin.cpp:64,76`
+- `app_plugin/system_metrics/system_metrics_windows/windows/system_metrics_plugin.cpp:64,76`
+
+Their `gmtime` and deprecated `GetVersionExW` calls are rejected under `/WX`.
+These calls predate the title implementation. No warning suppression, dependency
+cache patch or package-audit bypass was introduced. Windows Release package
+audit and packaged-engine execution were consequently skipped and remain
+unverified. The final CI result is failure because of this application build
+and the separate empty Dart test-directory failure; format, analysis and Linux
+packaged title qualification passed. Repairs to the unrelated plugin methods and
+Melos test discovery require scope confirmation under the repository's
+out-of-scope failure policy. iOS physical inference remains unverified and
+further iPad testing remains excluded by the user's instruction.
