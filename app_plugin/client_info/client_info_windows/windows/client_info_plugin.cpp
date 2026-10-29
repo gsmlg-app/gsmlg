@@ -1,4 +1,4 @@
-#include "client_info_plugin.h"
+#include "include/app_client_info_windows/client_info_plugin.h"
 
 #include <flutter/method_channel.h>
 #include <flutter/plugin_registrar_windows.h>

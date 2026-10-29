@@ -1,4 +1,4 @@
-#include "system_metrics_plugin.h"
+#include "include/app_system_metrics_windows/system_metrics_plugin.h"
 
 #include <flutter/method_channel.h>
 #include <flutter/plugin_registrar_windows.h>
