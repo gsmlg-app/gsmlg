@@ -350,15 +350,14 @@ melos:
       description: Run `dart run dependency_validator` check dependencies usage.
 
     test:
-      run: melos exec --order-dependents --fail-fast flutter test || true
-      description: Run Flutter tests for all packages (ignores packages without tests).
+      description: Run Dart and Flutter tests for packages containing Dart test files.
       steps:
         - melos run test:dart
         - melos run test:flutter
 
     test:dart:
       exec:
-        command: dart test
+        command: dart "$MELOS_ROOT_PATH/tools/run_package_tests.dart" dart
         orderDependents: true
         failFast: true
       packageFilters:
@@ -367,7 +366,7 @@ melos:
 
     test:flutter:
       exec:
-        command: flutter test
+        command: dart "$MELOS_ROOT_PATH/tools/run_package_tests.dart" flutter
         orderDependents: true
         failFast: true
       packageFilters:
