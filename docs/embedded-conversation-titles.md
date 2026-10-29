@@ -108,7 +108,8 @@ compressed APK asset by file offset, so a native buffered copy installs the mode
 in `noBackupFilesDir/conversation_title/<sha256>/`. It verifies SHA-256 before an
 atomic rename and does not allocate a model-sized Dart/JVM buffer. This necessary
 Android private copy adds another 656.19 MiB after first use; all other platforms
-map the installed model. Android GGUF entries are stored without compression.
+map the installed model. Standalone APK GGUF entries are stored without
+compression; the AAB ZIP container can compress its asset-pack entries.
 
 Standalone APKs include the model in base Flutter assets. Android App Bundles
 instead exclude that base copy and include the `conversation_title` install-time
@@ -179,9 +180,11 @@ and CPU configuration with a shorter fixed prompt measured 3.415 s loading,
 production unloads immediately and therefore has no resident warm-engine path.
 Repeating the smoke test against the actual Release app's weights and library
 passed with a 27,528 ms cold transformation under concurrent build load. These
-Flutter test processes use the x86-64 tester on the Apple Silicon host; this is
-native-library qualification under Rosetta, not a launched arm64 application UI
-or physical iOS-device measurement.
+figures qualify native inference in a Flutter test process, not a launched
+application UI or physical iOS device. The earlier Rosetta attribution was not
+backed by a retained binary architecture check; the engine directory name is
+not architecture evidence. The later test below explicitly verifies the tester
+as Mach-O arm64.
 
 The macOS Release app is 1,360.1 MB as reported by Flutter (1,328,604 KiB of disk
 blocks). The model contributes exactly 688,065,920 uncompressed bytes plus small
@@ -401,3 +404,96 @@ Full-suite results remain distinct from title qualification:
 No physical user device was installed, cleared or tested by this follow-up.
 iOS physical inference remains unverified, and further iPad testing remains
 excluded by the user's instruction. No production release was created.
+
+### Repeat-request latency and process memory
+
+The real native smoke tests and installed-app fixture also record
+`ProcessInfo.maxRss` and `currentRss` in bytes, plus logical CPU count. Peak RSS
+is the process high-water mark, including Flutter/Dart, native allocations and
+mapped/shared pages; it is not the model's incremental memory cost. Current RSS
+is sampled after generation/engine teardown. Platform accounting differs.
+
+A second identical request checks deterministic output and measures the
+production path with filesystem caches warmed: it still verifies the artifact,
+loads a fresh engine, generates and unloads. This `repeat_total_ms` is not
+resident-engine warm inference. The separate cached-engine benchmark above is
+not representative of production's immediate-unload policy. No global OS cache
+flush is performed, so first-request figures mean cold engine initialization,
+not guaranteed cold disk/OS caches.
+
+On the MacBookPro18,4 host (M1 Max, 10 logical CPUs), native smoke tests on
+`c50df87a` passed both cases. The tester binary was verified with `file` as
+Mach-O arm64, despite its `darwin-x64` artifact-directory name. It measured
+17,984 ms initially and 17,554 ms for the repeated request. Initial peak process
+RSS was 1,518,436,352 bytes; after both requests it was 1,533,493,248 bytes, with
+current RSS 277,905,408 bytes after teardown. The independent-primary-engine
+preservation case reached 2,680,995,840 bytes peak for the whole process. These
+are tester-process results, distinct from the earlier installed arm64 app.
+
+[CI run 40936597581](https://github.com/gsmlg-app/gsmlg/actions/runs/40936597581)
+passed Linux Release qualification on a 4-logical-CPU Ubuntu runner. Using the
+Release bundle, the tester measured 10,248 ms initially and 10,050 ms repeated.
+Initial peak RSS was 1,316,585,472 bytes; peak after both requests was
+1,328,812,032 bytes and current RSS after teardown was 263,106,560 bytes. The
+two-engine preservation case reached 2,440,658,944 bytes. iOS physical
+execution and device performance remain unverified; no iPad testing is authorized.
+These gaps prevent a claim of complete five-platform hardware qualification.
+
+The same run passed Windows x64 qualification on a 4-logical-CPU runner
+(OS build 26100, 17,174,360,064 bytes reported physical memory). The Release
+bundle tester measured 11,747 ms initially and 11,393 ms repeated. Initial peak
+RSS was 1,187,872,768 bytes; peak after both requests was 1,193,775,104 bytes and
+current RSS after teardown was 191,488,000 bytes. The two-engine preservation
+case reached 2,191,282,176 bytes. The launched Debug application fixture passed
+both real platform channels and title generation: 11,724 ms initially and
+11,392 ms repeated, with initial peak RSS 1,358,544,896 bytes and peak after both
+requests 1,363,107,840 bytes. Output remained `可复用 Flutter 组件设计`. Dart
+networking was disabled for both application requests; OS networking remained
+available. These numbers do not establish performance on arbitrary Windows PCs.
+
+The retained release-mode AAB was re-audited with the current verifier. It is
+855,552,337 bytes; its sole model ZIP entry is 673,409,327 compressed bytes
+(688,065,920 uncompressed, ZIP DEFLATE). This measures the model entry's actual
+contribution within that container, not a matched-baseline whole-app size delta.
+The standalone Debug APK's model entry is ZIP STORED at 688,065,920 bytes.
+Container compression is distinct from APK installation/extraction behavior. The
+AAB remains debug-signed and is not a production/store-qualified release.
+
+### Windows app-local runtime closure
+
+Import-table inspection of `lib_llama_cpp_windows 0.7.5` identified
+`MSVCP140.dll`, `VCRUNTIME140.dll` and `VCRUNTIME140_1.dll`, in addition to Windows
+system/UCRT APIs. A development runner having those DLLs does not prove a fresh
+offline installation can load the engine. Commit `cf25727b` uses CMake's standard
+`InstallRequiredSystemLibraries` module to install compiler redistributables
+next to the executable/inference DLL as part of the Runtime component. Modern
+Windows supplies the system/UCRT APIs; no online redistributable installer is
+invoked. Linux ELF dependencies were limited to the standard libc, libm,
+libstdc++, libgcc and dynamic loader, with no extra inference/backend library.
+
+The distribution audit now rejects a Windows bundle/archive missing any of the
+three MSVC DLLs in the inference DLL's directory. Regression tests first showed
+the old audit allowed missing or misplaced runtimes; all ten packaging tests now
+pass, including nested archive prefixes and case-insensitive Windows filenames.
+[CI run 40936597581](https://github.com/gsmlg-app/gsmlg/actions/runs/40936597581)
+passed the actual CMake installation, ten packaging regression tests, package
+audit with all three runtime DLLs, and both packaged native inference cases.
+A runner check is not a clean stock-Windows VM qualification.
+
+### Output-validation regression checks
+
+Commit `e6208e81` strips common English/Chinese presentation prefixes, preserving
+technical names, and rejects explicit single-line conversation explanations
+such as "This conversation is about ...". It does not attempt a semantic proof
+that an arbitrary string is a relevant title. The eight policy/generator tests,
+14 application title-lifecycle tests, ten packaging tests and targeted analysis
+passed locally. Existing model/native qualification remains separate from these
+deterministic tests.
+
+Final code qualification on `e6208e81` completed successfully in
+[run 40936597581](https://github.com/gsmlg-app/gsmlg/actions/runs/40936597581):
+all seven jobs passed, including full Melos tests, formatting, analysis, both
+native-monitor architectures, Linux Release qualification and Windows Release
+qualification plus the launched Debug fixture. Documentation-only follow-ups
+do not trigger CI. No production release was created; iOS runtime acceptance
+and clean-stock-Windows offline installation remain unverified.
