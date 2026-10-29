@@ -11,6 +11,7 @@ MANIFEST = json.loads(Path(__file__).with_name('model.json').read_text())
 
 
 def audit(entries):
+    entries = [(name.replace('\\', '/'), read) for name, read in entries]
     weights = [(n, read) for n, read in entries if n.endswith('/' + MANIFEST['filename'])]
     if len(weights) != 1:
         raise ValueError(f'Expected exactly one bundled title model; found {len(weights)}')

@@ -260,7 +260,10 @@ jobs:
         run: flutter build windows --release
       - name: Verify packaged offline title model and native inference
         run: |
+          python -m unittest discover -s tools/conversation_title -p 'test_*.py'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/conversation_title/verify_package.py build/windows/x64/runner/Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:TITLE_MODEL_PATH = "$pwd/build/windows/x64/runner/Release/data/flutter_assets/assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf"
           $env:TITLE_LIBRARY_PATH = "$pwd/build/windows/x64/runner/Release/lib_llama_cpp_windows.dll"
           flutter test --no-pub app_lib/chat/test/minicpm_title_native_smoke_test.dart

@@ -28,6 +28,18 @@ class PackageAuditTest(unittest.TestCase):
     def test_valid_package(self):
         self.audit()
 
+    def test_windows_directory_package(self):
+        del self.files['lib/arm64-v8a/liblib_llama_cpp_android.so']
+        self.files['lib_llama_cpp_windows.dll'] = b'native fixture'
+        self.files = {name.replace('/', '\\'): data for name, data in self.files.items()}
+        self.audit()
+
+    def test_windows_corruption_still_fails(self):
+        self.files['assets/models/fixture.gguf'] = b'x' * len(self.model)
+        self.files = {name.replace('/', '\\'): data for name, data in self.files.items()}
+        with self.assertRaisesRegex(ValueError, 'SHA-256 mismatch'):
+            self.audit()
+
     def test_missing_or_duplicate_model(self):
         del self.files['assets/models/fixture.gguf']
         with self.assertRaisesRegex(ValueError, 'exactly one'):
