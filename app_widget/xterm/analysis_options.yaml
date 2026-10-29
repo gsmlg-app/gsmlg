@@ -1,0 +1,15 @@
+include: ../../analysis_options.yaml
+
+# Suppress warnings for this third-party fork
+analyzer:
+  errors:
+    avoid_print: ignore
+    deprecated_member_use: ignore
+    sort_child_properties_last: ignore
+    strict_top_level_inference: ignore
+    prefer_const_constructors_in_immutables: ignore
+    sized_box_for_whitespace: ignore
+    avoid_unnecessary_containers: ignore
+    use_key_in_widget_constructors: ignore
+  exclude:
+    - build/**

@@ -131,21 +131,31 @@
   "monitorLoadAvg": "Load: {one}, {five}, {fifteen}",
   "@monitorLoadAvg": {
     "placeholders": {
-      "one": {"type": "String"},
-      "five": {"type": "String"},
-      "fifteen": {"type": "String"}
+      "one": {
+        "type": "String"
+      },
+      "five": {
+        "type": "String"
+      },
+      "fifteen": {
+        "type": "String"
+      }
     }
   },
   "monitorSwap": "Swap: {percent}%",
   "@monitorSwap": {
     "placeholders": {
-      "percent": {"type": "String"}
+      "percent": {
+        "type": "String"
+      }
     }
   },
   "monitorGpuTemp": "{temp}°C",
   "@monitorGpuTemp": {
     "placeholders": {
-      "temp": {"type": "String"}
+      "temp": {
+        "type": "String"
+      }
     }
   },
   "monitorHostIp": "IP Address",
@@ -155,7 +165,9 @@
   "monitorRemoveHostConfirm": "Remove {hostname} from the list?",
   "@monitorRemoveHostConfirm": {
     "placeholders": {
-      "hostname": {"type": "String"}
+      "hostname": {
+        "type": "String"
+      }
     }
   },
   "monitorTrustTitle": "Trust this agent?",
@@ -167,7 +179,9 @@
   "monitorVersionWarning": "Agent v{version} — update available",
   "@monitorVersionWarning": {
     "placeholders": {
-      "version": {"type": "String"}
+      "version": {
+        "type": "String"
+      }
     }
   },
   "ttsDatasetTitle": "TTS Dataset",
@@ -186,7 +200,9 @@
   "ttsDatasetRemoveProjectConfirm": "Remove {name} from the TTS dataset projects?",
   "@ttsDatasetRemoveProjectConfirm": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "ttsDatasetNoProjectSelected": "No project selected",
@@ -194,7 +210,9 @@
   "ttsDatasetValidationBlocking": "{count} blocking",
   "@ttsDatasetValidationBlocking": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
   "ttsDatasetReady": "Ready",
@@ -263,8 +281,12 @@
   "compassHeadingReadout": "{degrees}° · {direction}",
   "@compassHeadingReadout": {
     "placeholders": {
-      "degrees": {"type": "int"},
-      "direction": {"type": "String"}
+      "degrees": {
+        "type": "int"
+      },
+      "direction": {
+        "type": "String"
+      }
     }
   },
   "audioServiceTitle": "Audio",
@@ -421,5 +443,71 @@
         "type": "int"
       }
     }
-  }
+  },
+  "show": "Show",
+  "hide": "Hide",
+  "exit": "Exit",
+  "add": "Add",
+  "edit": "Edit",
+  "delete": "Delete",
+  "save": "Save",
+  "close": "Close",
+  "reload": "Reload",
+  "copy": "Copy",
+  "destinationTerminal": "Terminal",
+  "destinationWebTerminal": "Web Terminal",
+  "destinationSetting": "Setting",
+  "smenuSSH": "SSH",
+  "sshHost": "Host",
+  "titleSSHHost": "SSH Host",
+  "addSshHost": "Add SSH Host",
+  "editSshHost": "Edit SSH Host",
+  "sshKey": "SSH Key",
+  "titleSSHKey": "SSH Key",
+  "addSshKey": "Add SSH Key",
+  "showPublicKey": "Show Public Key",
+  "sshKeyNameLabel": "Name",
+  "sshKeyNameHint": "Name of your SSH Key",
+  "sshKeyContentLabel": "Key Content",
+  "sshKeyGenerate": "Generate SSH Key",
+  "sshKeyImport": "Import from file",
+  "sshKeyImportError": "Unable to read the private key file. Choose a non-empty UTF-8 text file.",
+  "deleteSshKeyMessage": "Are you sure you want to delete this SSH Key?",
+  "publicKey": "Public Key",
+  "sshHostHostLabel": "Host",
+  "sshHostHostnameLabel": "Hostname",
+  "sshHostPortLabel": "Port",
+  "sshHostUsernameLabel": "Username",
+  "sshHostIdentifyTypeLabel": "Identify Type",
+  "sshHostIdentityTypePassword": "Password",
+  "sshHostIdentityTypePrivateKey": "Private Key",
+  "sshHostPasswordLabel": "Password",
+  "sshHostPrivateKeyLabel": "Private Key",
+  "deleteSshHostMessage": "Are you sure you want to delete this SSH Host?",
+  "sshHostKeyTitle": "Trust SSH host key?",
+  "sshHostKeyTrust": "Trust and connect",
+  "sshHostKeyPrompt": "The identity of {hostname}:{port} is not yet trusted.\n\n{type}\n{fingerprint}\n\nCompare this fingerprint with the server administrator before trusting it.",
+  "@sshHostKeyPrompt": {
+    "description": "First connection requires explicitly accepting the server host key.",
+    "placeholders": {
+      "hostname": {
+        "type": "String"
+      },
+      "port": {
+        "type": "int"
+      },
+      "type": {
+        "type": "String"
+      },
+      "fingerprint": {
+        "type": "String"
+      }
+    }
+  },
+  "terminalTitle": "Terminal",
+  "terminalConfigurationTitle": "Terminal Configuration",
+  "terminalPreferencesTitle": "Terminal Preferences",
+  "terminalEnvironmentTitle": "Environment Variables",
+  "shellProfilesTitle": "Shell Profiles",
+  "terminalBrowserUnsupported": "Terminal is available in the Android, iOS, macOS, Linux, and Windows apps."
 }

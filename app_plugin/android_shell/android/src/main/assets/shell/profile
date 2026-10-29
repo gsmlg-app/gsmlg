@@ -1,0 +1,24 @@
+# Web Terminal - Android Shell Profile
+# Sourced on login shell startup
+
+# Change to home directory on login
+# This is necessary because Android's /data restrictions may prevent
+# the PTY from setting the initial working directory correctly
+cd "$HOME" 2>/dev/null || cd /
+
+# Set prompt - busybox ash uses limited escapes
+# Show username and short path
+PS1='${PWD##*/} $ '
+
+# Aliases for common commands
+alias ll='ls -la'
+alias la='ls -A'
+alias l='ls -CF'
+
+# Make sure we have a sane umask
+umask 022
+
+# Source user's bashrc if running bash and it exists
+if [ -n "${BASH_VERSION:-}" ] && [ -f "$HOME/.bashrc" ]; then
+    . "$HOME/.bashrc"
+fi

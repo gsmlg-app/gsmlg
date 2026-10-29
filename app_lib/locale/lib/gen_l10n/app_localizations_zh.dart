@@ -1073,6 +1073,159 @@ class AppLocalizationsZh extends AppLocalizations {
   String activityMonitorHistoryWindow(int count) {
     return '最近 $count / 60 个样本 · 每秒采样';
   }
+
+  @override
+  String get show => '显示';
+
+  @override
+  String get hide => '隐藏';
+
+  @override
+  String get exit => '退出';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get edit => '编辑';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get reload => 'Reload';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get destinationTerminal => 'Terminal';
+
+  @override
+  String get destinationWebTerminal => 'Web Terminal';
+
+  @override
+  String get destinationSetting => '设置';
+
+  @override
+  String get smenuSSH => 'SSH';
+
+  @override
+  String get sshHost => 'Host';
+
+  @override
+  String get titleSSHHost => 'SSH Host';
+
+  @override
+  String get addSshHost => 'Add SSH Host';
+
+  @override
+  String get editSshHost => 'Edit SSH Host';
+
+  @override
+  String get sshKey => 'SSH Key';
+
+  @override
+  String get titleSSHKey => 'SSH Key';
+
+  @override
+  String get addSshKey => 'Add SSH Key';
+
+  @override
+  String get showPublicKey => 'Show Public Key';
+
+  @override
+  String get sshKeyNameLabel => 'Name';
+
+  @override
+  String get sshKeyNameHint => 'Name of your SSH Key';
+
+  @override
+  String get sshKeyContentLabel => 'Key Content';
+
+  @override
+  String get sshKeyGenerate => 'Generate SSH Key';
+
+  @override
+  String get sshKeyImport => '从文件导入';
+
+  @override
+  String get sshKeyImportError => '无法读取私钥文件。请选择非空的 UTF-8 文本文件。';
+
+  @override
+  String get deleteSshKeyMessage =>
+      'Are you sure you want to delete this SSH Key?';
+
+  @override
+  String get publicKey => 'Public Key';
+
+  @override
+  String get sshHostHostLabel => 'Host';
+
+  @override
+  String get sshHostHostnameLabel => 'Hostname';
+
+  @override
+  String get sshHostPortLabel => 'Port';
+
+  @override
+  String get sshHostUsernameLabel => 'Username';
+
+  @override
+  String get sshHostIdentifyTypeLabel => 'Identify Type';
+
+  @override
+  String get sshHostIdentityTypePassword => 'Password';
+
+  @override
+  String get sshHostIdentityTypePrivateKey => 'Private Key';
+
+  @override
+  String get sshHostPasswordLabel => 'Password';
+
+  @override
+  String get sshHostPrivateKeyLabel => 'Private Key';
+
+  @override
+  String get deleteSshHostMessage =>
+      'Are you sure you want to delete this SSH Host?';
+
+  @override
+  String get sshHostKeyTitle => '信任 SSH 主机密钥？';
+
+  @override
+  String get sshHostKeyTrust => '信任并连接';
+
+  @override
+  String sshHostKeyPrompt(
+      String hostname, int port, String type, String fingerprint) {
+    return '尚未信任 $hostname:$port 的身份。\n\n$type\n$fingerprint\n\n请先与服务器管理员核对指纹，再确认信任。';
+  }
+
+  @override
+  String get terminalTitle => '终端';
+
+  @override
+  String get terminalConfigurationTitle => '终端配置';
+
+  @override
+  String get terminalPreferencesTitle => '终端偏好';
+
+  @override
+  String get terminalEnvironmentTitle => '环境变量';
+
+  @override
+  String get shellProfilesTitle => 'Shell 配置';
+
+  @override
+  String get terminalBrowserUnsupported =>
+      '请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -1674,6 +1827,61 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   String activityMonitorHistoryWindow(int count) {
     return '最近 $count / 60 个样本 · 每秒采样';
   }
+
+  @override
+  String get show => '显示';
+
+  @override
+  String get hide => '隐藏';
+
+  @override
+  String get exit => '退出';
+
+  @override
+  String get edit => '编辑';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get destinationSetting => '设置';
+
+  @override
+  String get sshKeyImport => '从文件导入';
+
+  @override
+  String get sshKeyImportError => '无法读取私钥文件。请选择非空的 UTF-8 文本文件。';
+
+  @override
+  String get sshHostKeyTitle => '信任 SSH 主机密钥？';
+
+  @override
+  String get sshHostKeyTrust => '信任并连接';
+
+  @override
+  String sshHostKeyPrompt(
+      String hostname, int port, String type, String fingerprint) {
+    return '尚未信任 $hostname:$port 的身份。\n\n$type\n$fingerprint\n\n请先与服务器管理员核对指纹，再确认信任。';
+  }
+
+  @override
+  String get terminalTitle => '终端';
+
+  @override
+  String get terminalConfigurationTitle => '终端配置';
+
+  @override
+  String get terminalPreferencesTitle => '终端偏好';
+
+  @override
+  String get terminalEnvironmentTitle => '环境变量';
+
+  @override
+  String get shellProfilesTitle => 'Shell 配置';
+
+  @override
+  String get terminalBrowserUnsupported =>
+      '请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -2108,4 +2316,59 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   String activityMonitorHistoryWindow(int count) {
     return '最近 $count / 60 個樣本 · 每秒取樣';
   }
+
+  @override
+  String get show => '顯示';
+
+  @override
+  String get hide => '隱藏';
+
+  @override
+  String get exit => '退出';
+
+  @override
+  String get edit => '編輯';
+
+  @override
+  String get delete => '刪除';
+
+  @override
+  String get destinationSetting => '設定';
+
+  @override
+  String get sshKeyImport => '從檔案匯入';
+
+  @override
+  String get sshKeyImportError => '無法讀取私鑰檔案。請選擇非空白的 UTF-8 文字檔案。';
+
+  @override
+  String get sshHostKeyTitle => '信任 SSH 主機金鑰？';
+
+  @override
+  String get sshHostKeyTrust => '信任並連線';
+
+  @override
+  String sshHostKeyPrompt(
+      String hostname, int port, String type, String fingerprint) {
+    return '尚未信任 $hostname:$port 的身分。\n\n$type\n$fingerprint\n\n請先與伺服器管理員核對指紋，再確認信任。';
+  }
+
+  @override
+  String get terminalTitle => '终端';
+
+  @override
+  String get terminalConfigurationTitle => '终端配置';
+
+  @override
+  String get terminalPreferencesTitle => '终端偏好';
+
+  @override
+  String get terminalEnvironmentTitle => '环境变量';
+
+  @override
+  String get shellProfilesTitle => 'Shell 配置';
+
+  @override
+  String get terminalBrowserUnsupported =>
+      '请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。';
 }

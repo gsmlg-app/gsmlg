@@ -107,5 +107,112 @@
   "smenuSmenuYellowDog": "Про YellowDog",
   "titleAboutYellowDog": "Про YellowDog",
   "aboutYellowDog": "В пам'ять про YellowDog, 1988 - 1990",
-  "aboutYellowDog2": "Ти сильний, розумний та вірний пес"
+  "aboutYellowDog2": "Ти сильний, розумний та вірний пес",
+  "show": "Показати",
+  "hide": "Приховати",
+  "exit": "Вийти",
+  "destinationProject": "Проект",
+  "destinationSetting": "Налаштування",
+  "smenuAnsibleSemaphore": "Ansible Semaphore",
+  "smenuAnsibleSemaphoreServer": "Сервер",
+  "titleSelectServer": "Виберіть сервер",
+  "addServer": "Додати сервер",
+  "serverNameLabel": "Назва сервера",
+  "serverNameHint": "Введіть назву для сервера",
+  "serverUrlLabel": "URL сервера",
+  "serverUrlHint": "Введіть URL сервера, включаючи /api частину, наприклад https://semaphore.example.com/api",
+  "usernameLabel": "Ім'я користувача",
+  "usernameHint": "Введіть ім'я користувача для автентифікації на сервері",
+  "passwordLabel": "Пароль",
+  "passwordHint": "Введіть пароль для автентифікації на сервері",
+  "buttonDelete": "Видалити",
+  "buttonCancel": "Скасувати",
+  "buttonSave": "Зберегти",
+  "smenuAnsibleSemaphoreServerProject": "Проект",
+  "noServerActivated": "[Немає активних серверів]",
+  "accidentallyDeleted": "Випадково видалено?",
+  "delete": "Видалити",
+  "refresh": "Оновити",
+  "autoRefresh": "Автоматичне оновлення",
+  "rename": "Перейменувати",
+  "serverAdded": "Сервер додано",
+  "renameServer": "Перейменувати сервер",
+  "serverRenamed": "Сервер перейменовано на {serverName}",
+  "@serverRenamed": {
+    "placeholders": {
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "clickToSelect": "[Натисніть, щоб вибрати]",
+  "titleSelectProject": "Виберіть проект",
+  "addProject": "Додати проект",
+  "projectNameLabel": "Назва проекту",
+  "projectNameHint": "Введіть назву для проекту",
+  "projectAlertLabel": "Дозволити сповіщення для цього проекту",
+  "alertChatLabel": "ID Telegram-чату (необов'язково)",
+  "maxParallelTasksLabel": "Максимальна кількість паралельних завдань (необов'язково)",
+  "maxParallelTasksHint": "Повинно бути 0 або більше, 0 - необмежено.",
+  "projectPageTitle": "Проект",
+  "titleTemplate": "Шаблон",
+  "titleHistory": "Історія",
+  "titleActivity": "Активність",
+  "titleTask": "Завдання",
+  "rerunTask": "Запустити завдання повторно",
+  "runTask": "Запустити завдання",
+  "edit": "Редагувати",
+  "statusSuccess": "Успішно",
+  "statusFailed": "Помилка",
+  "statusRunning": "Виконується",
+  "statusWaiting": "Очікує",
+  "statusStopped": "Зупинено",
+  "statusUnknown": "Невідомо",
+  "taskOutput": "Вивід завдання",
+  "taskNoOutput": "Н/Д",
+  "taskLabelMessage": "Повідомлення",
+  "taskLabelDryRun": "Сухий запуск",
+  "taskLabelDebug": "Налагодження",
+  "taskLabelDiff": "Відмінності",
+  "taskCreated": "Завдання #{taskId} створено!",
+  "@taskCreated": {
+    "placeholders": {
+      "taskId": {
+        "type": "int"
+      }
+    }
+  },
+  "taskStartedAt": "Розпочато о {time}",
+  "@taskStartedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "taskRunning": "Виконується...",
+  "taskDuration": "Тривалість: {duration}",
+  "@taskDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "byUser": "користовачем {user}",
+  "@byUser": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
+  "sshKeyImport": "Імпортувати з файлу",
+  "sshKeyImportError": "Не вдалося прочитати файл приватного ключа. Виберіть непорожній текстовий файл у кодуванні UTF-8.",
+  "terminalTitle": "Terminal",
+  "terminalConfigurationTitle": "Terminal Configuration",
+  "terminalPreferencesTitle": "Terminal Preferences",
+  "terminalEnvironmentTitle": "Environment Variables",
+  "shellProfilesTitle": "Shell Profiles",
+  "terminalBrowserUnsupported": "Terminal is available in the Android, iOS, macOS, Linux, and Windows apps."
 }

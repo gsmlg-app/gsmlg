@@ -1,0 +1,28 @@
+PODS:
+  - Flutter (1.0.0)
+  - flutter_pty (0.0.1):
+    - Flutter
+  - ios_shell (1.0.0):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - flutter_pty (from `.symlinks/plugins/flutter_pty/ios`)
+  - ios_shell (from `.symlinks/plugins/ios_shell/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  flutter_pty:
+    :path: ".symlinks/plugins/flutter_pty/ios"
+  ios_shell:
+    :path: ".symlinks/plugins/ios_shell/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
+  flutter_pty: 206742da6092b413cb683de17436c16d1f3c7997
+  ios_shell: b3a1d22640a448bc6daffff63315d31c24eeb92b
+
+PODFILE CHECKSUM: 786f844e28c29c5bd5bcceeb75809620970619b6
+
+COCOAPODS: 1.16.2

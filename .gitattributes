@@ -1,3 +1,13 @@
 *.mmdb filter=lfs diff=lfs merge=lfs -text
 *.tar filter=lfs diff=lfs merge=lfs -text
 *.jar filter=lfs diff=lfs merge=lfs -text
+
+# Web Terminal native resources (preserve upstream LFS storage).
+# Git LFS tracking for large binary files
+
+# Android shell busybox binaries
+app_plugin/android_shell/android/src/main/assets/shell/*/busybox filter=lfs diff=lfs merge=lfs -text
+app_plugin/android_shell/android/src/main/assets/shell/*/rootfs.tgz filter=lfs diff=lfs merge=lfs -text
+
+# iOS shell XCFramework binaries
+app_plugin/ios_shell/ios/Frameworks/*.xcframework/**/* filter=lfs diff=lfs merge=lfs -text

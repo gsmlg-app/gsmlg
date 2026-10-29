@@ -1,0 +1,24 @@
+name: shell_profile_bloc
+description: Shell profile state management bloc for local shell configuration
+version: 1.0.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  bloc: ^9.2.1
+  drift: ^2.35.2
+  flutter:
+    sdk: flutter
+  meta: ^1.19.0
+  app_database: any
+  equatable: ^3.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.5
+  flutter_lints: ^6.0.0

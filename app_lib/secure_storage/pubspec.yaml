@@ -10,6 +10,9 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
+  app_database: any
+  app_security: any
+  drift: ^2.35.3
   # 10.3.0+ fixes macOS usesDataProtectionKeychain option propagation.
   flutter_secure_storage: ^11.2.0
 

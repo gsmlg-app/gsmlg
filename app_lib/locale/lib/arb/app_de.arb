@@ -107,5 +107,112 @@
   "smenuSmenuYellowDog": "Über YellowDog",
   "titleAboutYellowDog": "Über YellowDog",
   "aboutYellowDog": "In Erinnerung an YellowDog, 1988 - 1990",
-  "aboutYellowDog2": "Du bist ein starker, cleverer und loyaler Hund"
+  "aboutYellowDog2": "Du bist ein starker, cleverer und loyaler Hund",
+  "show": "Anzeigen",
+  "hide": "Ausblenden",
+  "exit": "Beenden",
+  "destinationProject": "Projekt",
+  "destinationSetting": "Einstellung",
+  "smenuAnsibleSemaphore": "Ansible Semaphore",
+  "smenuAnsibleSemaphoreServer": "Server",
+  "titleSelectServer": "Server auswählen",
+  "addServer": "Server hinzufügen",
+  "serverNameLabel": "Servername",
+  "serverNameHint": "Geben Sie einen Namen für den Server ein",
+  "serverUrlLabel": "Server-URL",
+  "serverUrlHint": "Geben Sie die URL des Servers ein, muss den /api-Teil enthalten, z. B. https://semaphore.example.com/api",
+  "usernameLabel": "Benutzername",
+  "usernameHint": "Geben Sie den Benutzernamen ein, mit dem Sie sich beim Server authentifizieren",
+  "passwordLabel": "Passwort",
+  "passwordHint": "Geben Sie das Passwort ein, mit dem Sie sich beim Server authentifizieren",
+  "buttonDelete": "Löschen",
+  "buttonCancel": "Abbrechen",
+  "buttonSave": "Speichern",
+  "smenuAnsibleSemaphoreServerProject": "Projekt",
+  "noServerActivated": "[Kein Server ist aktiviert]",
+  "accidentallyDeleted": "Unbeabsichtigt gelöscht?",
+  "delete": "Löschen",
+  "refresh": "Aktualisieren",
+  "autoRefresh": "Automatisch aktualisieren",
+  "rename": "Umbenennen",
+  "serverAdded": "Server hinzugefügt",
+  "renameServer": "Server umbenennen",
+  "serverRenamed": "Server umbenannt in {serverName}",
+  "@serverRenamed": {
+    "placeholders": {
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "clickToSelect": "[Zum Auswählen klicken]",
+  "titleSelectProject": "Projekt auswählen",
+  "addProject": "Projekt hinzufügen",
+  "projectNameLabel": "Projektname",
+  "projectNameHint": "Geben Sie einen Namen für das Projekt ein",
+  "projectAlertLabel": "Benachrichtigungen für dieses Projekt zulassen",
+  "alertChatLabel": "Telegram Chat ID (Optional)",
+  "maxParallelTasksLabel": "Maximale Anzahl paralleler Aufgaben (Optional)",
+  "maxParallelTasksHint": "Sollte 0 oder größer sein, 0 - unbegrenzt.",
+  "projectPageTitle": "Projekt",
+  "titleTemplate": "Vorlage",
+  "titleHistory": "Verlauf",
+  "titleActivity": "Aktivität",
+  "titleTask": "Aufgabe",
+  "rerunTask": "Aufgabe erneut ausführen",
+  "runTask": "Aufgabe ausführen",
+  "edit": "Bearbeiten",
+  "statusSuccess": "Erfolg",
+  "statusFailed": "Fehler",
+  "statusRunning": "Läuft",
+  "statusWaiting": "Wartend",
+  "statusStopped": "Gestoppt",
+  "statusUnknown": "Unbekannt",
+  "taskOutput": "Aufgaben-Ausgabe",
+  "taskNoOutput": "N/A",
+  "taskLabelMessage": "Nachricht",
+  "taskLabelDryRun": "Testlauf",
+  "taskLabelDebug": "Debug",
+  "taskLabelDiff": "Differenz",
+  "taskCreated": "Aufgabe #{taskId} erstellt!",
+  "@taskCreated": {
+    "placeholders": {
+      "taskId": {
+        "type": "int"
+      }
+    }
+  },
+  "taskStartedAt": "Gestartet um {time}",
+  "@taskStartedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "taskRunning": "Läuft...",
+  "taskDuration": "Dauer: {duration}",
+  "@taskDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "byUser": "von {user}",
+  "@byUser": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
+  "sshKeyImport": "Aus Datei importieren",
+  "sshKeyImportError": "Die Datei mit dem privaten Schlüssel konnte nicht gelesen werden. Wählen Sie eine nicht leere UTF-8-Textdatei aus.",
+  "terminalTitle": "Terminal",
+  "terminalConfigurationTitle": "Terminal Configuration",
+  "terminalPreferencesTitle": "Terminal Preferences",
+  "terminalEnvironmentTitle": "Environment Variables",
+  "shellProfilesTitle": "Shell Profiles",
+  "terminalBrowserUnsupported": "Terminal is available in the Android, iOS, macOS, Linux, and Windows apps."
 }

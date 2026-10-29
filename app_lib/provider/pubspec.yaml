@@ -15,6 +15,12 @@ dependencies:
   shared_preferences: ^2.5.6
 
   accounts_bloc: any
+  shell_profile_bloc: any
+  ssh_host_bloc: any
+  ssh_key_bloc: any
+  terminal_hosts: any
+  terminal_tab_bloc: any
+  terminal_settings_bloc: any
   navigation_bloc: any
   theme_bloc: any
   auth_bloc: any
@@ -38,6 +44,7 @@ dependencies:
   audio_bloc: any
 
 dev_dependencies:
+  flex_tabs: any
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0

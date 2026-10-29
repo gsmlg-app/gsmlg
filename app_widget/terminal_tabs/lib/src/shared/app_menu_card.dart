@@ -1,0 +1,59 @@
+import 'package:flutter/material.dart';
+
+class AppMenuCard extends StatelessWidget {
+  const AppMenuCard({
+    super.key,
+    required this.children,
+    this.borderRadius,
+    this.bgColor,
+    this.border,
+    this.shadows,
+    this.padding,
+  });
+
+  final List<Widget> children;
+  final Border? border;
+  final BorderRadius? borderRadius;
+  final Color? bgColor;
+  final List<BoxShadow>? shadows;
+  final EdgeInsets? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final shadowColor = Theme.of(context).shadowColor;
+    final radius = borderRadius ?? BorderRadius.circular(4);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 250),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Container(
+          padding: padding ?? const EdgeInsets.symmetric(vertical: 5),
+          decoration: BoxDecoration(
+            color: bgColor ?? Theme.of(context).cardColor,
+            border: border ?? Border.all(color: Colors.grey),
+            borderRadius: radius,
+            boxShadow:
+                shadows ??
+                [
+                  BoxShadow(
+                    color: shadowColor.withValues(alpha: .05),
+                    blurRadius: 4,
+                    offset: const Offset(2, 2),
+                  ),
+                  BoxShadow(
+                    color: shadowColor.withValues(alpha: .02),
+                    blurRadius: 2,
+                    offset: const Offset(2, 2),
+                  ),
+                ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -17,6 +17,9 @@ import 'tables/tts_dataset_prompt.dart';
 import 'tables/tts_dataset_speaker.dart';
 import 'tables/tts_dataset_validation_issue.dart';
 import 'tables/whois_history.dart';
+import 'tables/ssh_keys.dart';
+import 'tables/ssh_hosts.dart';
+import 'tables/shell_profiles.dart';
 import 'type_converter.dart';
 
 export 'tables/chat_conversation.dart';
@@ -33,6 +36,9 @@ export 'tables/tts_dataset_prompt.dart';
 export 'tables/tts_dataset_speaker.dart';
 export 'tables/tts_dataset_validation_issue.dart';
 export 'tables/whois_history.dart';
+export 'tables/ssh_keys.dart' show SshKeyAlgorithm;
+export 'tables/ssh_hosts.dart' show SshIdentityType;
+export 'tables/shell_profiles.dart' show ShellType, CursorStyleType;
 export 'type_converter.dart';
 
 part 'database.g.dart';
@@ -52,6 +58,9 @@ part 'database.g.dart';
   TtsDatasetPromptTable,
   TtsDatasetClipTable,
   TtsDatasetValidationIssueTable,
+  SshKeys,
+  SshHosts,
+  ShellProfiles,
 ])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
@@ -65,7 +74,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration {
@@ -75,6 +84,11 @@ class AppDatabase extends _$AppDatabase {
         await _installChatRevisionTriggers();
       },
       onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 19) {
+          await m.createTable(sshKeys);
+          await m.createTable(sshHosts);
+          await m.createTable(shellProfiles);
+        }
         if (from < 2) {
           await m.createTable(dnsZoneTable);
         }

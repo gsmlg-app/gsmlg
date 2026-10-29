@@ -9,6 +9,7 @@ import 'package:audio_bloc/audio_bloc.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
@@ -17,13 +18,18 @@ import 'package:gsmlg/screens/settings/app_settings_screen.dart';
 import 'package:gsmlg/screens/settings/appearance_settings_screen.dart';
 import 'package:gsmlg/screens/settings/audio_settings_screen.dart';
 import 'package:gsmlg/screens/settings/backplane_settings_screen.dart';
-import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/activity_monitor_screen.dart';
+import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:gsmlg/screens/settings/local_tools_settings_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
 import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
 import 'package:gsmlg/screens/settings/remote_tools_settings_screen.dart';
+import 'package:gsmlg/screens/settings/terminal/host_management.dart';
+import 'package:gsmlg/screens/settings/terminal/shell_profile_screen.dart';
+import 'package:gsmlg/screens/settings/terminal/ssh_key_management.dart';
+import 'package:gsmlg/screens/settings/terminal/terminal_env_screen.dart';
+import 'package:gsmlg/screens/settings/terminal/terminal_preferences_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:duskmoon_settings/duskmoon_settings.dart';
@@ -241,6 +247,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ],
                         ),
+                        if (!kIsWeb)
+                          SettingsSection(
+                            title: Text(
+                              context.l10n.terminalConfigurationTitle,
+                            ),
+                            tiles: <SettingsTile>[
+                              SettingsTile.navigation(
+                                leading: const Icon(Icons.terminal),
+                                title: Text(
+                                  context.l10n.terminalPreferencesTitle,
+                                ),
+                                onPressed: (context) => context.goNamed(
+                                  TerminalPreferencesScreen.name,
+                                ),
+                              ),
+                              SettingsTile.navigation(
+                                leading: const Icon(
+                                  Icons.settings_applications,
+                                ),
+                                title: Text(
+                                  context.l10n.terminalEnvironmentTitle,
+                                ),
+                                onPressed: (context) =>
+                                    context.goNamed(TerminalEnvScreen.name),
+                              ),
+                              SettingsTile.navigation(
+                                leading: const Icon(Icons.person_outline),
+                                title: Text(context.l10n.shellProfilesTitle),
+                                onPressed: (context) =>
+                                    context.goNamed(ShellProfileScreen.name),
+                              ),
+                              SettingsTile.navigation(
+                                leading: const Icon(Icons.dns_outlined),
+                                title: Text(context.l10n.titleSSHHost),
+                                onPressed: (context) =>
+                                    context.goNamed(SettingsHost.name),
+                              ),
+                              SettingsTile.navigation(
+                                leading: const Icon(Icons.vpn_key_outlined),
+                                title: Text(context.l10n.titleSSHKey),
+                                onPressed: (context) =>
+                                    context.goNamed(SettingsSSHKey.name),
+                              ),
+                            ],
+                          ),
                         SettingsSection(
                           title: Text('App Setting'),
                           tiles: <SettingsTile>[

@@ -74,6 +74,13 @@ android {
 
     androidResources { noCompress += "gguf" }
 
+    // Android's bundled shell executes binaries from nativeLibraryDir.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildFeatures {
         viewBinding = true
     }

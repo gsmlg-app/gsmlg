@@ -7,6 +7,7 @@ import 'package:gsmlg/screens/toolbox/compass/compass_screen.dart';
 import 'package:gsmlg/screens/toolbox/editor/editor_screen.dart';
 import 'package:gsmlg/screens/toolbox/ip_geo/ip_geo_screen.dart';
 import 'package:gsmlg/screens/toolbox/monitor/monitor_screen.dart';
+import 'package:gsmlg/screens/toolbox/terminal/terminal_screen.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_project_screen.dart';
 import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_screen.dart';
@@ -26,6 +27,15 @@ GoRoute toolboxRoutes() => GoRoute(
     );
   },
   routes: [
+    GoRoute(
+      name: TerminalScreen.name,
+      path: TerminalScreen.path,
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        restorationId: state.pageKey.value,
+        child: const TerminalScreen(),
+      ),
+    ),
     GoRoute(
       name: EditorScreen.name,
       path: EditorScreen.path,

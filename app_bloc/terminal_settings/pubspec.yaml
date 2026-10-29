@@ -1,0 +1,25 @@
+name: terminal_settings_bloc
+description: BLoC for managing terminal settings including environment variables
+publish_to: "none"
+
+version: 1.0.0
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+  flutter: ">=3.29.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  bloc: ^9.2.1
+  equatable: ^3.0.0
+  meta: ^1.19.0
+  app_secure_storage: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  bloc_test: ^10.0.0
+  flutter_lints: ^6.0.0
+
+resolution: workspace

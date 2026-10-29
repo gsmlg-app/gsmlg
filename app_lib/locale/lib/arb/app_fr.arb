@@ -107,5 +107,112 @@
   "smenuSmenuYellowDog": "À propos de YellowDog",
   "titleAboutYellowDog": "À propos de YellowDog",
   "aboutYellowDog": "À la mémoire de YellowDog, 1988 - 1990",
-  "aboutYellowDog2": "Vous êtes un chien fort, intelligent et loyal"
+  "aboutYellowDog2": "Vous êtes un chien fort, intelligent et loyal",
+  "show": "Afficher",
+  "hide": "Masquer",
+  "exit": "Quitter",
+  "destinationProject": "Projet",
+  "destinationSetting": "Paramètre",
+  "smenuAnsibleSemaphore": "Ansible Semaphore",
+  "smenuAnsibleSemaphoreServer": "Serveur",
+  "titleSelectServer": "Sélectionner le serveur",
+  "addServer": "Ajouter un serveur",
+  "serverNameLabel": "Nom du serveur",
+  "serverNameHint": "Entrez un nom pour le serveur",
+  "serverUrlLabel": "URL du serveur",
+  "serverUrlHint": "Entrez l'URL du serveur, doit inclure la partie /api, par exemple https://semaphore.example.com/api",
+  "usernameLabel": "Nom d'utilisateur",
+  "usernameHint": "Entrez le nom d'utilisateur pour vous authentifier auprès du serveur",
+  "passwordLabel": "Mot de passe",
+  "passwordHint": "Entrez le mot de passe pour vous authentifier auprès du serveur",
+  "buttonDelete": "Supprimer",
+  "buttonCancel": "Annuler",
+  "buttonSave": "Enregistrer",
+  "smenuAnsibleSemaphoreServerProject": "Projet",
+  "noServerActivated": "[Aucun serveur n'est activé]",
+  "accidentallyDeleted": "Supprimé par erreur ?",
+  "delete": "Supprimer",
+  "refresh": "Rafraîchir",
+  "autoRefresh": "Rafraîchissement automatique",
+  "rename": "Renommer",
+  "serverAdded": "Serveur ajouté",
+  "renameServer": "Renommer le serveur",
+  "serverRenamed": "Serveur renommé en {serverName}",
+  "@serverRenamed": {
+    "placeholders": {
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "clickToSelect": "[Cliquez pour sélectionner]",
+  "titleSelectProject": "Sélectionner le projet",
+  "addProject": "Ajouter un projet",
+  "projectNameLabel": "Nom du projet",
+  "projectNameHint": "Entrez un nom pour le projet",
+  "projectAlertLabel": "Autoriser les alertes pour ce projet",
+  "alertChatLabel": "Identifiant du chat Telegram (facultatif)",
+  "maxParallelTasksLabel": "Nombre maximal de tâches parallèles (facultatif)",
+  "maxParallelTasksHint": "Doit être 0 ou supérieur, 0 - illimité.",
+  "projectPageTitle": "Projet",
+  "titleTemplate": "Modèle",
+  "titleHistory": "Historique",
+  "titleActivity": "Activité",
+  "titleTask": "Tâche",
+  "rerunTask": "Relancer la tâche",
+  "runTask": "Exécuter la tâche",
+  "edit": "Modifier",
+  "statusSuccess": "Réussi",
+  "statusFailed": "Échoué",
+  "statusRunning": "En cours d'exécution",
+  "statusWaiting": "En attente",
+  "statusStopped": "Arrêté",
+  "statusUnknown": "Inconnu",
+  "taskOutput": "Sortie de la tâche",
+  "taskNoOutput": "N/A",
+  "taskLabelMessage": "Message",
+  "taskLabelDryRun": "Exécution à blanc",
+  "taskLabelDebug": "Débogage",
+  "taskLabelDiff": "Différentiel",
+  "taskCreated": "Tâche #{taskId} créée !",
+  "@taskCreated": {
+    "placeholders": {
+      "taskId": {
+        "type": "int"
+      }
+    }
+  },
+  "taskStartedAt": "Démarré à {time}",
+  "@taskStartedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "taskRunning": "En cours d'exécution...",
+  "taskDuration": "Durée : {duration}",
+  "@taskDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "byUser": "par {user}",
+  "@byUser": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
+  "sshKeyImport": "Importer depuis un fichier",
+  "sshKeyImportError": "Impossible de lire le fichier de clé privée. Choisissez un fichier texte UTF-8 non vide.",
+  "terminalTitle": "Terminal",
+  "terminalConfigurationTitle": "Terminal Configuration",
+  "terminalPreferencesTitle": "Terminal Preferences",
+  "terminalEnvironmentTitle": "Environment Variables",
+  "shellProfilesTitle": "Shell Profiles",
+  "terminalBrowserUnsupported": "Terminal is available in the Android, iOS, macOS, Linux, and Windows apps."
 }

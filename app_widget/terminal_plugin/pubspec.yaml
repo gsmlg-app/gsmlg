@@ -1,0 +1,25 @@
+name: terminal_plugin
+description: Terminal plugin widget for web_terminal app.
+version: 1.0.0
+homepage: none
+publish_to: none
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^9.1.1
+  app_locale: any
+  terminal_core: any
+  xterm: any
+  context_menus: ^2.0.0+1
+  starter_plugin: any
+  file_manager_plugin: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

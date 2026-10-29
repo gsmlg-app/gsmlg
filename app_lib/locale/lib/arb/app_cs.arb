@@ -107,5 +107,112 @@
   "smenuSmenuYellowDog": "O aplikaci YellowDog",
   "titleAboutYellowDog": "O aplikaci YellowDog",
   "aboutYellowDog": "Na památku YellowDog, 1988-1990",
-  "aboutYellowDog2": "Jsi silný, chytrý a věrný pes"
+  "aboutYellowDog2": "Jsi silný, chytrý a věrný pes",
+  "show": "Zobrazit",
+  "hide": "Skrýt",
+  "exit": "Ukončit",
+  "destinationProject": "Projekt",
+  "destinationSetting": "Nastavení",
+  "smenuAnsibleSemaphore": "Ansible Semaphore",
+  "smenuAnsibleSemaphoreServer": "Server",
+  "titleSelectServer": "Vyberte server",
+  "addServer": "Přidat server",
+  "serverNameLabel": "Název serveru",
+  "serverNameHint": "Zadejte název pro server",
+  "serverUrlLabel": "URL serveru",
+  "serverUrlHint": "Zadejte URL serveru, musí obsahovat část /api, například https://semaphore.example.com/api",
+  "usernameLabel": "Uživatelské jméno",
+  "usernameHint": "Zadejte uživatelské jméno pro ověření na serveru",
+  "passwordLabel": "Heslo",
+  "passwordHint": "Zadejte heslo pro ověření na serveru",
+  "buttonDelete": "Smazat",
+  "buttonCancel": "Zrušit",
+  "buttonSave": "Uložit",
+  "smenuAnsibleSemaphoreServerProject": "Projekt",
+  "noServerActivated": "[Žádný server není aktivován]",
+  "accidentallyDeleted": "Náhodně smazáno?",
+  "delete": "Smazat",
+  "refresh": "Obnovit",
+  "autoRefresh": "Automatická obnova",
+  "rename": "Přejmenovat",
+  "serverAdded": "Server přidán",
+  "renameServer": "Přejmenovat server",
+  "serverRenamed": "Server přejmenován na {serverName}",
+  "@serverRenamed": {
+    "placeholders": {
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "clickToSelect": "[Klikněte pro výběr]",
+  "titleSelectProject": "Vyberte projekt",
+  "addProject": "Přidat projekt",
+  "projectNameLabel": "Název projektu",
+  "projectNameHint": "Zadejte název pro projekt",
+  "projectAlertLabel": "Povolit upozornění pro tento projekt",
+  "alertChatLabel": "Telegram Chat ID (volitelné)",
+  "maxParallelTasksLabel": "Maximální počet paralelních úloh (volitelné)",
+  "maxParallelTasksHint": "Musí být 0 nebo větší, 0 - neomezeno.",
+  "projectPageTitle": "Projekt",
+  "titleTemplate": "Šablona",
+  "titleHistory": "Historie",
+  "titleActivity": "Aktivita",
+  "titleTask": "Úloha",
+  "rerunTask": "Znovu spustit úlohu",
+  "runTask": "Spustit úlohu",
+  "edit": "Upravit",
+  "statusSuccess": "Úspěch",
+  "statusFailed": "Chyba",
+  "statusRunning": "Běží",
+  "statusWaiting": "Čeká",
+  "statusStopped": "Zastaveno",
+  "statusUnknown": "Neznámý",
+  "taskOutput": "Výstup úlohy",
+  "taskNoOutput": "N/A",
+  "taskLabelMessage": "Zpráva",
+  "taskLabelDryRun": "Suchý běh",
+  "taskLabelDebug": "Ladění",
+  "taskLabelDiff": "Rozdíl",
+  "taskCreated": "Úloha #{taskId} vytvořena!",
+  "@taskCreated": {
+    "placeholders": {
+      "taskId": {
+        "type": "int"
+      }
+    }
+  },
+  "taskStartedAt": "Spuštěno v {time}",
+  "@taskStartedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "taskRunning": "Běží...",
+  "taskDuration": "Trvání: {duration}",
+  "@taskDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "byUser": "od {user}",
+  "@byUser": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
+  "sshKeyImport": "Importovat ze souboru",
+  "sshKeyImportError": "Soubor soukromého klíče nelze přečíst. Vyberte neprázdný textový soubor v kódování UTF-8.",
+  "terminalTitle": "Terminal",
+  "terminalConfigurationTitle": "Terminal Configuration",
+  "terminalPreferencesTitle": "Terminal Preferences",
+  "terminalEnvironmentTitle": "Environment Variables",
+  "shellProfilesTitle": "Shell Profiles",
+  "terminalBrowserUnsupported": "Terminal is available in the Android, iOS, macOS, Linux, and Windows apps."
 }

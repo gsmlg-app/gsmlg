@@ -1,0 +1,14 @@
+{
+  "lrzsz": {
+    "version": "0.13.1",
+    "url": "https://deb.debian.org/debian/pool/main/l/lrzsz/lrzsz_0.13.1.orig.tar.gz",
+    "sha256": "112f91059fbd118e016d800c1a5c5a1702e965d8b9bfbda6015e44e20bfb93c9",
+    "file": "lrzsz.tar.gz"
+  },
+  "lrzsz-debian": {
+    "version": "0.13.1-1",
+    "url": "https://deb.debian.org/debian/pool/main/l/lrzsz/lrzsz_0.13.1-1.debian.tar.xz",
+    "sha256": "0cede4418e5c3a2a0043f74913564fa366812c7479764c33351db7e08d762a8f",
+    "file": "lrzsz-debian.tar.xz"
+  }
+}

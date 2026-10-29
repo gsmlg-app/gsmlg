@@ -41,7 +41,7 @@ void main() {
       addTearDown(database.close);
 
       final row = await database.select(database.chatMessageTable).getSingle();
-      expect(database.schemaVersion, 18);
+      expect(database.schemaVersion, 19);
       expect(row.id, 'legacy');
       expect(row.content, 'saved');
       expect(row.tokenCount, 42);
@@ -60,7 +60,7 @@ void main() {
       expect(row.completedSuccessfully, isFalse);
       final version =
           await database.customSelect('PRAGMA user_version').getSingle();
-      expect(version.read<int>('user_version'), 18);
+      expect(version.read<int>('user_version'), 19);
     });
   }
 }

@@ -2177,6 +2177,301 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} / 60 samples · 1 s cadence'**
   String activityMonitorHistoryWindow(int count);
+
+  /// No description provided for @show.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get show;
+
+  /// No description provided for @hide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get hide;
+
+  /// No description provided for @exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get exit;
+
+  /// No description provided for @add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @reload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get reload;
+
+  /// No description provided for @copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get copy;
+
+  /// No description provided for @destinationTerminal.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal'**
+  String get destinationTerminal;
+
+  /// No description provided for @destinationWebTerminal.
+  ///
+  /// In en, this message translates to:
+  /// **'Web Terminal'**
+  String get destinationWebTerminal;
+
+  /// No description provided for @destinationSetting.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting'**
+  String get destinationSetting;
+
+  /// No description provided for @smenuSSH.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH'**
+  String get smenuSSH;
+
+  /// No description provided for @sshHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get sshHost;
+
+  /// No description provided for @titleSSHHost.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH Host'**
+  String get titleSSHHost;
+
+  /// No description provided for @addSshHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Add SSH Host'**
+  String get addSshHost;
+
+  /// No description provided for @editSshHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit SSH Host'**
+  String get editSshHost;
+
+  /// No description provided for @sshKey.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH Key'**
+  String get sshKey;
+
+  /// No description provided for @titleSSHKey.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH Key'**
+  String get titleSSHKey;
+
+  /// No description provided for @addSshKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Add SSH Key'**
+  String get addSshKey;
+
+  /// No description provided for @showPublicKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Public Key'**
+  String get showPublicKey;
+
+  /// No description provided for @sshKeyNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get sshKeyNameLabel;
+
+  /// No description provided for @sshKeyNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name of your SSH Key'**
+  String get sshKeyNameHint;
+
+  /// No description provided for @sshKeyContentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Key Content'**
+  String get sshKeyContentLabel;
+
+  /// No description provided for @sshKeyGenerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate SSH Key'**
+  String get sshKeyGenerate;
+
+  /// No description provided for @sshKeyImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from file'**
+  String get sshKeyImport;
+
+  /// No description provided for @sshKeyImportError.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to read the private key file. Choose a non-empty UTF-8 text file.'**
+  String get sshKeyImportError;
+
+  /// No description provided for @deleteSshKeyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this SSH Key?'**
+  String get deleteSshKeyMessage;
+
+  /// No description provided for @publicKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Public Key'**
+  String get publicKey;
+
+  /// No description provided for @sshHostHostLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get sshHostHostLabel;
+
+  /// No description provided for @sshHostHostnameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Hostname'**
+  String get sshHostHostnameLabel;
+
+  /// No description provided for @sshHostPortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get sshHostPortLabel;
+
+  /// No description provided for @sshHostUsernameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get sshHostUsernameLabel;
+
+  /// No description provided for @sshHostIdentifyTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Identify Type'**
+  String get sshHostIdentifyTypeLabel;
+
+  /// No description provided for @sshHostIdentityTypePassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get sshHostIdentityTypePassword;
+
+  /// No description provided for @sshHostIdentityTypePrivateKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Key'**
+  String get sshHostIdentityTypePrivateKey;
+
+  /// No description provided for @sshHostPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get sshHostPasswordLabel;
+
+  /// No description provided for @sshHostPrivateKeyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Private Key'**
+  String get sshHostPrivateKeyLabel;
+
+  /// No description provided for @deleteSshHostMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this SSH Host?'**
+  String get deleteSshHostMessage;
+
+  /// No description provided for @sshHostKeyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trust SSH host key?'**
+  String get sshHostKeyTitle;
+
+  /// No description provided for @sshHostKeyTrust.
+  ///
+  /// In en, this message translates to:
+  /// **'Trust and connect'**
+  String get sshHostKeyTrust;
+
+  /// First connection requires explicitly accepting the server host key.
+  ///
+  /// In en, this message translates to:
+  /// **'The identity of {hostname}:{port} is not yet trusted.\n\n{type}\n{fingerprint}\n\nCompare this fingerprint with the server administrator before trusting it.'**
+  String sshHostKeyPrompt(
+      String hostname, int port, String type, String fingerprint);
+
+  /// No description provided for @terminalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal'**
+  String get terminalTitle;
+
+  /// No description provided for @terminalConfigurationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal Configuration'**
+  String get terminalConfigurationTitle;
+
+  /// No description provided for @terminalPreferencesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal Preferences'**
+  String get terminalPreferencesTitle;
+
+  /// No description provided for @terminalEnvironmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Environment Variables'**
+  String get terminalEnvironmentTitle;
+
+  /// No description provided for @shellProfilesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shell Profiles'**
+  String get shellProfilesTitle;
+
+  /// No description provided for @terminalBrowserUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal is available in the Android, iOS, macOS, Linux, and Windows apps.'**
+  String get terminalBrowserUnsupported;
 }
 
 class _AppLocalizationsDelegate

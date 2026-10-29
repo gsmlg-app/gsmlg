@@ -11,10 +11,13 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_blue_plus_winrt
   flutter_secure_storage_windows
   record_windows
+  screen_retriever_windows
   url_launcher_windows
+  window_manager
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  flutter_pty
   jni
   lib_llama_cpp_windows
 )

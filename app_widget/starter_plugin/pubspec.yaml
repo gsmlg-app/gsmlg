@@ -1,0 +1,19 @@
+name: starter_plugin
+description: Starter plugin widget for web_terminal app.
+version: 1.0.0
+homepage: none
+publish_to: none
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  terminal_core: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0

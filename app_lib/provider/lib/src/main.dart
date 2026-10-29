@@ -1,3 +1,5 @@
+import 'terminal_dependencies_stub.dart'
+    if (dart.library.io) 'terminal_dependencies_native.dart';
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_audio/audio.dart';
 import 'package:app_chat/app_chat.dart';
@@ -43,6 +45,7 @@ class MainProvider extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
+        ...terminalRepositories(database),
         RepositoryProvider<EditorFileService>(
           create: (context) => EditorFileService(),
           dispose: (files) => files.dispose(),
@@ -95,6 +98,7 @@ class MainProvider extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          ...terminalBlocs(database),
           BlocProvider<EditorCubit>(
             create: (context) => EditorCubit(context.read<EditorFileService>()),
           ),

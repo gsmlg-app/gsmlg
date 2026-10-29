@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "user": {
+    "name": "gao",
+    "uid": 1000,
+    "gid": 1000,
+    "home": "/home/gao",
+    "shell": "/bin/zsh"
+  },
+  "packages": ["neovim", "bash", "zsh", "ripgrep", "gawk", "sed", "openssh", "openssl"],
+  "sourcePackages": ["lrzsz"]
+}

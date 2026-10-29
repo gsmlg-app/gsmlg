@@ -1,0 +1,13 @@
+include: ../../analysis_options.yaml
+
+# Suppress warnings for this third-party fork (flutter_pty)
+analyzer:
+  errors:
+    deprecated_member_use: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - windows/**
+    - macos/**
+    - linux/**
