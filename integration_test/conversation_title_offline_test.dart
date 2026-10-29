@@ -38,52 +38,67 @@ void main() {
         );
         // ignore: avoid_print
         print(
-          'WINDOWS_PLATFORM_SMOKE channel=$name build=${details['buildNumber']} utc=$timestamp',
+          'WINDOWS_PLATFORM_SMOKE channel=$name build=${details['buildNumber']} utc=$timestamp '
+          'cpu_count=${details['numberOfProcessors']} total_memory_bytes=${details['totalPhysicalMemory']}',
         );
       }
     });
   }
-  testWidgets(
-    'installed bundle generates a title with Dart networking disabled',
-    (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(body: Text('Offline title smoke test')),
+  testWidgets('installed bundle generates a title with Dart networking disabled', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: Text('Offline title smoke test'))),
+    );
+    final backend = MiniCpmTitleBackend();
+    final generator = EmbeddedConversationTitleGenerator(backend);
+    addTearDown(generator.dispose);
+    final conversation = Conversation.create(id: 'offline').copyWith(
+      messages: [
+        UserMessage(
+          id: 'u',
+          content: '如何设计可复用的 Flutter 手柄组件？',
+          conversationId: 'offline',
+          timestamp: DateTime(2026),
         ),
-      );
-      final backend = MiniCpmTitleBackend();
-      final generator = EmbeddedConversationTitleGenerator(backend);
-      addTearDown(generator.dispose);
-      final conversation = Conversation.create(id: 'offline').copyWith(
-        messages: [
-          UserMessage(
-            id: 'u',
-            content: '如何设计可复用的 Flutter 手柄组件？',
-            conversationId: 'offline',
-            timestamp: DateTime(2026),
-          ),
-          AssistantMessage(
-            id: 'a',
-            content: '用独立 controller 管理状态，自定义 Widget 展示手柄按钮。',
-            conversationId: 'offline',
-            timestamp: DateTime(2026),
-          ),
-        ],
-      );
-      final timer = Stopwatch()..start();
-      final title = await HttpOverrides.runZoned(
-        () => generator.generate(conversation),
-        createHttpClient: (_) =>
-            throw StateError('Networking is disabled in this smoke test'),
-      );
-      expect(title, isNotNull);
-      expect(title, contains('Flutter'));
-      expect(title, anyOf(contains('组件'), contains('手柄')));
-      expect(title, isNot(contains('\n')));
-      // ignore: avoid_print
-      print(
-        'BUNDLED_TITLE_SMOKE platform=${Platform.operatingSystem} title=$title total_ms=${timer.elapsedMilliseconds}',
-      );
-    },
-  );
+        AssistantMessage(
+          id: 'a',
+          content: '用独立 controller 管理状态，自定义 Widget 展示手柄按钮。',
+          conversationId: 'offline',
+          timestamp: DateTime(2026),
+        ),
+      ],
+    );
+    final timer = Stopwatch()..start();
+    final title = await HttpOverrides.runZoned(
+      () => generator.generate(conversation),
+      createHttpClient: (_) =>
+          throw StateError('Networking is disabled in this smoke test'),
+    );
+    expect(title, isNotNull);
+    expect(title, contains('Flutter'));
+    expect(title, anyOf(contains('组件'), contains('手柄')));
+    expect(title, isNot(contains('\n')));
+    timer.stop();
+    expect(ProcessInfo.maxRss, greaterThan(0));
+    // ignore: avoid_print
+    print(
+      'BUNDLED_TITLE_SMOKE platform=${Platform.operatingSystem} title=$title total_ms=${timer.elapsedMilliseconds} '
+      'peak_rss_bytes=${ProcessInfo.maxRss} current_rss_bytes=${ProcessInfo.currentRss} '
+      'cpu_count=${Platform.numberOfProcessors}',
+    );
+    final repeated = Stopwatch()..start();
+    final repeatedTitle = await HttpOverrides.runZoned(
+      () => generator.generate(conversation),
+      createHttpClient: (_) =>
+          throw StateError('Networking is disabled in this smoke test'),
+    );
+    repeated.stop();
+    expect(repeatedTitle, title);
+    // ignore: avoid_print
+    print(
+      'BUNDLED_TITLE_REPEAT platform=${Platform.operatingSystem} repeat_total_ms=${repeated.elapsedMilliseconds} '
+      'peak_rss_bytes=${ProcessInfo.maxRss} current_rss_bytes=${ProcessInfo.currentRss}',
+    );
+  });
 }

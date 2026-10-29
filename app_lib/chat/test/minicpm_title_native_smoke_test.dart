@@ -45,9 +45,24 @@ void main() {
       expect(title, contains('Flutter'));
       expect(title, anyOf(contains('组件'), contains('手柄')));
       expect(title, isNot(contains('\n')));
+      timer.stop();
+      expect(ProcessInfo.maxRss, greaterThan(0));
       // ignore: avoid_print
       print(
-        'MiniCPM native title=$title cold_total_ms=${timer.elapsedMilliseconds}',
+        'MiniCPM native title=$title cold_total_ms=${timer.elapsedMilliseconds} '
+        'peak_rss_bytes=${ProcessInfo.maxRss} current_rss_bytes=${ProcessInfo.currentRss} '
+        'platform=${Platform.operatingSystem} cpu_count=${Platform.numberOfProcessors}',
+      );
+      // Production unloads after every request. This measures a repeated
+      // request with filesystem caches warmed, not a resident warm engine.
+      final repeated = Stopwatch()..start();
+      final repeatedTitle = await generator.generate(conversation);
+      repeated.stop();
+      expect(repeatedTitle, title);
+      // ignore: avoid_print
+      print(
+        'MiniCPM repeated title=$repeatedTitle repeat_total_ms=${repeated.elapsedMilliseconds} '
+        'peak_rss_bytes=${ProcessInfo.maxRss} current_rss_bytes=${ProcessInfo.currentRss}',
       );
     },
     skip: model == null || library == null,
@@ -107,6 +122,9 @@ void main() {
       expect(title, isNotEmpty);
       await backend.dispose();
       expect(await reply(), before);
+      // Includes the independent primary engine and temporary title engine.
+      // ignore: avoid_print
+      print('MiniCPM two-engine peak_rss_bytes=${ProcessInfo.maxRss}');
     },
     skip: model == null || library == null,
     timeout: const Timeout(Duration(minutes: 3)),
