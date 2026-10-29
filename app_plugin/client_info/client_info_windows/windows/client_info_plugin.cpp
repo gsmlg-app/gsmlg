@@ -5,6 +5,9 @@
 #include <flutter/standard_method_codec.h>
 
 #include <windows.h>
+#include <cstring>
+#include <ctime>
+#include <stdexcept>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -60,8 +63,12 @@ ClientInfoPlugin::~ClientInfoPlugin() {}
 std::string ClientInfoPlugin::GetCurrentTimestamp() {
   auto now = std::chrono::system_clock::now();
   auto itt = std::chrono::system_clock::to_time_t(now);
+  std::tm utc{};
+  if (gmtime_s(&utc, &itt) != 0) {
+    throw std::runtime_error("Failed to convert the current time to UTC");
+  }
   std::ostringstream ss;
-  ss << std::put_time(gmtime(&itt), "%FT%TZ");
+  ss << std::put_time(&utc, "%FT%TZ");
   return ss.str();
 }
 
@@ -73,7 +80,20 @@ flutter::EncodableMap ClientInfoPlugin::GetData() {
   OSVERSIONINFOW osvi;
   ZeroMemory(&osvi, sizeof(OSVERSIONINFOW));
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-  GetVersionExW(&osvi);
+  // RtlGetVersion returns the actual version independently of app manifests.
+  const auto ntdll = GetModuleHandleW(L"ntdll.dll");
+  const auto address = ntdll ? GetProcAddress(ntdll, "RtlGetVersion") : nullptr;
+  if (!address) {
+    throw std::runtime_error("Windows version API is unavailable");
+  }
+  using RtlGetVersionFunction = LONG(WINAPI*)(OSVERSIONINFOW*);
+  RtlGetVersionFunction get_version = nullptr;
+  // Avoid MSVC C4191 from casting FARPROC to a different function signature.
+  static_assert(sizeof(get_version) == sizeof(address));
+  std::memcpy(&get_version, &address, sizeof(get_version));
+  if (get_version(&osvi) != 0) {
+    throw std::runtime_error("Failed to read the Windows version");
+  }
 
   SYSTEM_INFO siSysInfo;
   GetSystemInfo(&siSysInfo);

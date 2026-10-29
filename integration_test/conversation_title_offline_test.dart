@@ -1,11 +1,48 @@
 import 'dart:io';
 import 'package:app_chat/app_chat.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows) {
+    testWidgets('Windows platform plugins return real UTC and version data', (
+      tester,
+    ) async {
+      for (final name in ['app_client_info', 'app_system_metrics']) {
+        final channel = MethodChannel(name);
+        final data = await channel.invokeMapMethod<String, dynamic>('getData');
+        expect(data, isNotNull);
+        expect(data!['platform'], 'windows');
+        final timestamp = DateTime.parse(data['timestamp'] as String);
+        expect(timestamp.isUtc, isTrue);
+        expect(
+          DateTime.now().difference(timestamp).abs(),
+          lessThan(const Duration(minutes: 1)),
+        );
+        final details = data['additionalData'] as Map;
+        expect(details['majorVersion'], greaterThanOrEqualTo(10));
+        expect(details['minorVersion'], greaterThanOrEqualTo(0));
+        expect(details['buildNumber'], greaterThan(0));
+        expect(details['numberOfProcessors'], greaterThan(0));
+        expect(details['totalPhysicalMemory'], greaterThan(0));
+        await channel.invokeMethod<void>('refresh');
+        final refreshed = await channel.invokeMapMethod<String, dynamic>(
+          'getData',
+        );
+        expect(
+          (refreshed!['additionalData'] as Map)['buildNumber'],
+          details['buildNumber'],
+        );
+        // ignore: avoid_print
+        print(
+          'WINDOWS_PLATFORM_SMOKE channel=$name build=${details['buildNumber']} utc=$timestamp',
+        );
+      }
+    });
+  }
   testWidgets(
     'installed bundle generates a title with Dart networking disabled',
     (tester) async {
