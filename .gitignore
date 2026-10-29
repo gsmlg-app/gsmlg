@@ -71,3 +71,10 @@ assets/models/*
 !assets/models/conversation_title/
 scratch/
 
+# Keep the project-specific terminal synchronization skill in this repository.
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/sync-web-terminal/
+!/.agents/skills/sync-web-terminal/**
+/.agents/skills/sync-web-terminal/**/__pycache__/
+/.agents/skills/sync-web-terminal/**/*.pyc
