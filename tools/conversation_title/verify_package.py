@@ -42,6 +42,14 @@ def audit(entries):
                         previous = block[-64:]
     if not native:
         raise ValueError('Packaged llama.cpp native library or exported iOS engine not found')
+    lower_names = {n.lower() for n in names}
+    for library in lower_names:
+        if library.rsplit('/', 1)[-1] == 'lib_llama_cpp_windows.dll':
+            parent = library.rpartition('/')[0]
+            prefix = parent + '/' if parent else ''
+            for runtime in ['msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll']:
+                if prefix + runtime not in lower_names:
+                    raise ValueError(f'Missing bundled Windows runtime next to inference library: {runtime}')
     print(f'Verified {name}: {size} bytes, SHA-256 {digest.hexdigest()}')
 
 
