@@ -166,7 +166,7 @@ Qualification host: MacBookPro18,4, Apple M1 Max, 32 GiB RAM, 2026-10-29.
 | --- | --- | --- |
 | macOS | Release `.app` and arm64 Debug `.app` content audits passed | arm64 installed-app smoke passed; packaged-engine and two-engine tests also passed |
 | Android | Debug APK/AAB and release-mode AAB audits passed; device-specific install-time pack installed; release-mode bundle is debug-signed | Pixel Fold (Android 17, GS201) generated a title with no active default network |
-| iOS | Signed arm64 Debug app built and packaged-model/native-engine audit passed | Native execution unverified; further iPad testing excluded by user request |
+| iOS | Signed arm64 device Debug app and arm64 simulator app built; packaged-model/native-engine audits passed | Simulator app launched, but memory admission rejected inference; native inference remains unverified; further iPad testing excluded by user request |
 | Linux | Release bundle built and pinned-model/native-library audit passed on CI | x64 packaged-model title inference and independent-engine preservation tests passed; app UI launch not exercised |
 | Windows | x64 Release application built; pinned-model, notices and native-library bundle audit passed | Packaged-engine and independent-engine preservation tests passed; Debug application fixture passed both actual platform channels and bundled title generation with Dart networking disabled |
 
@@ -497,3 +497,41 @@ native-monitor architectures, Linux Release qualification and Windows Release
 qualification plus the launched Debug fixture. Documentation-only follow-ups
 do not trigger CI. No production release was created; iOS runtime acceptance
 and clean-stock-Windows offline installation remain unverified.
+
+### iOS simulator qualification attempt
+
+On 2026-10-30, a newly created, disposable iPhone 18 Pro simulator running
+iOS 27.0 (24A434) was used on the M1 Max host. Existing simulators and physical
+devices were left untouched. The arm64 application containing the real model
+passed the package audit, installed and launched. The VM service confirmed the
+entry point was `integration_test/conversation_title_offline_test.dart`.
+
+The real application test **failed** at its non-null-title assertion. Inspection
+of the actual `prepareTitleModel` result returned `PlatformException` with code
+`title_model_unavailable` and message `Insufficient available memory for optional
+title inference`. The native admission check rejected the environment before
+model loading. This establishes that the memory gate is enforced; it does not
+establish MiniCPM inference compatibility or performance on iOS. Neither memory
+guard was disabled, and the test assertion was not weakened. A disposable iOS
+device meeting both the 6 GiB physical-RAM and 2 GiB available-memory requirements
+is still needed for the intended application-path qualification. The user has
+excluded further iPad testing.
+
+Initial simulator builds encountered duplicate Flutter modules in the shared
+module cache. A build with isolated DerivedData/module caches avoided that
+diagnostic. Mixing a symlink output path with its resolved external-volume path
+also produced empty generated asset/framework directories; rebuilding with
+one consistent output path and fresh attempt-specific Flutter build state
+produced a valid package. These are local build observations, not confirmed
+upstream defects. No dependency, project setting or framework metadata was
+patched to bypass them.
+
+Evidence is retained under
+`/Volumes/Storage/gsmlg-title-qualification.z4ftg0ps/ios-simulator-qualification/`:
+`consistent-path-build.log`, `unified-runtime.log` and `path-diagnostic.json`.
+The temporary simulator was shut down and deleted; the application entry point
+was restored to `lib/main.dart`, and the tool-generated `Package.resolved`
+deletion was restored. Previous iOS build contents are preserved in
+`preserved-build-ios/`, with the ignored `build/ios` path pointing there because
+the system disk cannot hold another complete copy. The failed/qualified temporary
+builds remain on the external qualification volume, not in Git history.
