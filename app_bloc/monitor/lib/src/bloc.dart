@@ -127,6 +127,20 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
               hostInfo: message.hostInfo,
             ),
           );
+        } else if (message.type == MonitorMessageType.history) {
+          add(
+            _MonitorMetricsReceived(
+              hostId: hostId,
+              history: message.historySnapshots,
+            ),
+          );
+        } else if (message.type == MonitorMessageType.metricsDelta) {
+          add(
+            _MonitorMetricsReceived(
+              hostId: hostId,
+              delta: message.payload,
+            ),
+          );
         } else if (message.type == MonitorMessageType.metrics) {
           if (message.payload.containsKey('cores')) {
             add(
@@ -342,6 +356,55 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     final hosts = Map<String, MonitorHost>.from(currentState.hosts);
     final host = hosts[event.hostId];
     if (host == null) return;
+
+    if (event.history != null && event.history!.isNotEmpty) {
+      final history = event.history!;
+      final latest = history.last;
+
+      var cpuHistory = host.cpuHistory;
+      var memoryHistory = host.memoryHistory;
+      for (final s in history) {
+        if (s.cpuUsage != null) cpuHistory = cpuHistory.add(s.cpuUsage!);
+        if (s.memory.usage != null) {
+          memoryHistory = memoryHistory.add(s.memory.usage!);
+        }
+      }
+
+      hosts[event.hostId] = host.copyWith(
+        snapshot: latest,
+        history: history,
+        cpuHistory: cpuHistory,
+        memoryHistory: memoryHistory,
+      );
+      emit(MonitorLoaded(hosts: hosts));
+      return;
+    }
+
+    if (event.delta != null) {
+      final base = host.snapshot;
+      if (base == null) return;
+      final s = base.applyDelta(event.delta!);
+      final newHistory = List<ActivitySnapshot>.from(host.history)..add(s);
+      if (newHistory.length > 60) newHistory.removeAt(0);
+
+      var cpuHistory = host.cpuHistory;
+      if (s.cpuUsage != null) {
+        cpuHistory = cpuHistory.add(s.cpuUsage!);
+      }
+      var memoryHistory = host.memoryHistory;
+      if (s.memory.usage != null) {
+        memoryHistory = memoryHistory.add(s.memory.usage!);
+      }
+
+      hosts[event.hostId] = host.copyWith(
+        snapshot: s,
+        history: newHistory,
+        cpuHistory: cpuHistory,
+        memoryHistory: memoryHistory,
+      );
+      emit(MonitorLoaded(hosts: hosts));
+      return;
+    }
 
     if (event.snapshot != null) {
       final s = event.snapshot!;

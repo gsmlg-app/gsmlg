@@ -20,6 +20,7 @@ class WsServer {
   final String bind;
   final SecurityContext? securityContext;
   final String? fingerprint;
+  void Function(WebSocketChannel client)? onClientConnected;
 
   bool get useTls => securityContext != null;
 
@@ -31,40 +32,44 @@ class WsServer {
   int get currentClientCount => _clients.length;
 
   Future<void> start() async {
-    final wsHandler = webSocketHandler((WebSocketChannel channel, String? _) {
-      _clients.add(channel);
-      _clientsController.add(_clients.length);
+    final wsHandler = webSocketHandler(
+      (WebSocketChannel channel, String? _) {
+        _clients.add(channel);
+        _clientsController.add(_clients.length);
+        onClientConnected?.call(channel);
 
-      channel.stream.listen(
-        (data) {
-          try {
-            final msg = MonitorMessage.fromJson(
-              jsonDecode(data as String) as Map<String, dynamic>,
-            );
-            if (msg.type == MonitorMessageType.ping) {
-              channel.sink.add(
-                jsonEncode(
-                  const MonitorMessage(
-                    type: MonitorMessageType.pong,
-                    payload: {},
-                  ).toJson(),
-                ),
+        channel.stream.listen(
+          (data) {
+            try {
+              final msg = MonitorMessage.fromJson(
+                jsonDecode(data as String) as Map<String, dynamic>,
               );
+              if (msg.type == MonitorMessageType.ping) {
+                channel.sink.add(
+                  jsonEncode(
+                    const MonitorMessage(
+                      type: MonitorMessageType.pong,
+                      payload: {},
+                    ).toJson(),
+                  ),
+                );
+              }
+            } catch (_) {
+              // Ignore malformed messages
             }
-          } catch (_) {
-            // Ignore malformed messages
-          }
-        },
-        onDone: () {
-          _clients.remove(channel);
-          _clientsController.add(_clients.length);
-        },
-        onError: (_) {
-          _clients.remove(channel);
-          _clientsController.add(_clients.length);
-        },
-      );
-    });
+          },
+          onDone: () {
+            _clients.remove(channel);
+            _clientsController.add(_clients.length);
+          },
+          onError: (_) {
+            _clients.remove(channel);
+            _clientsController.add(_clients.length);
+          },
+        );
+      },
+      pingInterval: const Duration(seconds: 5),
+    );
 
     // Build handler pipeline with fingerprint endpoint
     shelf.Handler handler;
@@ -96,6 +101,15 @@ class WsServer {
         }
         return innerHandler(request);
       };
+
+  void sendTo(WebSocketChannel client, MonitorMessage message) {
+    try {
+      client.sink.add(jsonEncode(message.toJson()));
+    } catch (_) {
+      _clients.remove(client);
+      _clientsController.add(_clients.length);
+    }
+  }
 
   void broadcast(MonitorMessage message) {
     final data = jsonEncode(message.toJson());

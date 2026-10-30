@@ -61,10 +61,14 @@ final class _MonitorMetricsReceived extends MonitorEvent {
     required this.hostId,
     this.metrics,
     this.snapshot,
+    this.delta,
+    this.history,
   });
   final String hostId;
   final SystemMetrics? metrics;
   final ActivitySnapshot? snapshot;
+  final Map<String, dynamic>? delta;
+  final List<ActivitySnapshot>? history;
 }
 
 final class _MonitorConnectionStatusChanged extends MonitorEvent {

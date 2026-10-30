@@ -6,9 +6,12 @@ abstract final class Protocol {
   // Message types
   static const String hostInfo = 'host_info';
   static const String metrics = 'metrics';
+  static const String metricsDelta = 'metrics_delta';
+  static const String history = 'history';
   static const String ping = 'ping';
   static const String pong = 'pong';
   static const String setInterval = 'set_interval';
+  static const String snapshots = 'snapshots';
 
   // Host info keys
   static const String hostname = 'hostname';

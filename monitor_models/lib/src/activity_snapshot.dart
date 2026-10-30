@@ -137,6 +137,90 @@ class ActivitySnapshot {
     'thread_count_complete': threadCountComplete,
   };
 
+  /// Compact incremental delta representation (omits static host info).
+  Map<String, dynamic> toDeltaJson() => {
+    'timestamp': timestamp.toIso8601String(),
+    if (cpuUsage != null) 'cpu_usage': cpuUsage,
+    if (cpuUserUsage != null) 'cpu_user_usage': cpuUserUsage,
+    if (cpuSystemUsage != null) 'cpu_system_usage': cpuSystemUsage,
+    'cores': cores.map((c) => {
+      'id': c.id,
+      if (c.usage != null) 'usage': c.usage,
+      if (c.userUsage != null) 'user_usage': c.userUsage,
+      if (c.systemUsage != null) 'system_usage': c.systemUsage,
+    }).toList(),
+    'memory': memory.toDeltaJson(),
+    'disk': disk.toDeltaJson(),
+    'network': network.toDeltaJson(),
+    'gpus': gpus.map((g) => g.toJson()).toList(),
+    if (processCount != null) 'process_count': processCount,
+    if (threadCount != null) 'thread_count': threadCount,
+    if (readableProcessCount != null)
+      'readable_process_count': readableProcessCount,
+    'thread_count_complete': threadCountComplete,
+  };
+
+  /// Apply an incremental delta on top of this snapshot, preserving static metadata.
+  ActivitySnapshot applyDelta(Map<String, dynamic> delta) {
+    final deltaCores = _maps(delta['cores']);
+    final coresById = {
+      for (final c in deltaCores) _counter(c['id']): c,
+    };
+    final updatedCores = cores.map((core) {
+      final dc = coresById[core.id];
+      if (dc == null) return core;
+      return ActivityCpuCore(
+        id: core.id,
+        type: core.type,
+        usage: (dc['usage'] as num?)?.toDouble() ?? core.usage,
+        userUsage: (dc['user_usage'] as num?)?.toDouble() ?? core.userUsage,
+        systemUsage:
+            (dc['system_usage'] as num?)?.toDouble() ?? core.systemUsage,
+      );
+    }).toList();
+
+    return ActivitySnapshot(
+      timestamp: delta['timestamp'] != null
+          ? DateTime.parse(delta['timestamp'] as String)
+          : DateTime.now(),
+      architecture: architecture,
+      model: model,
+      cpuBrand: cpuBrand,
+      cpuUsage: delta.containsKey('cpu_usage')
+          ? (delta['cpu_usage'] as num?)?.toDouble()
+          : cpuUsage,
+      cpuUserUsage: delta.containsKey('cpu_user_usage')
+          ? (delta['cpu_user_usage'] as num?)?.toDouble()
+          : cpuUserUsage,
+      cpuSystemUsage: delta.containsKey('cpu_system_usage')
+          ? (delta['cpu_system_usage'] as num?)?.toDouble()
+          : cpuSystemUsage,
+      cores: List.unmodifiable(updatedCores),
+      memory: memory.applyDelta(_map(delta['memory'])),
+      disk: disk.applyDelta(_map(delta['disk'])),
+      network: network.applyDelta(_map(delta['network'])),
+      gpus: delta.containsKey('gpus')
+          ? List.unmodifiable([
+              for (final g in _maps(delta['gpus']))
+                ActivityGpu(
+                  name: _text(g['name']),
+                  usage: (g['usage'] as num?)?.toDouble(),
+                ),
+            ])
+          : gpus,
+      processCount: delta.containsKey('process_count')
+          ? _counter(delta['process_count'])
+          : processCount,
+      threadCount: delta.containsKey('thread_count')
+          ? _counter(delta['thread_count'])
+          : threadCount,
+      readableProcessCount: delta.containsKey('readable_process_count')
+          ? _counter(delta['readable_process_count'])
+          : readableProcessCount,
+      threadCountComplete: delta['thread_count_complete'] == true,
+    );
+  }
+
   factory ActivitySnapshot.fromJson(Map<String, dynamic> json) {
     return ActivitySnapshot(
       timestamp: DateTime.parse(json['timestamp'] as String),
@@ -281,6 +365,39 @@ class ActivityMemory {
     if (usage != null) 'usage': usage,
   };
 
+  Map<String, dynamic> toDeltaJson() => {
+    if (usedBytes != null) 'used_bytes': usedBytes,
+    if (appBytes != null) 'app_bytes': appBytes,
+    if (cachedBytes != null) 'cached_bytes': cachedBytes,
+    if (freeBytes != null) 'free_bytes': freeBytes,
+    if (activeBytes != null) 'active_bytes': activeBytes,
+    if (inactiveBytes != null) 'inactive_bytes': inactiveBytes,
+    if (wiredBytes != null) 'wired_bytes': wiredBytes,
+    if (compressedBytes != null) 'compressed_bytes': compressedBytes,
+    if (purgeableBytes != null) 'purgeable_bytes': purgeableBytes,
+    if (swapUsedBytes != null) 'swap_used_bytes': swapUsedBytes,
+    if (swapTotalBytes != null) 'swap_total_bytes': swapTotalBytes,
+    if (pressure != null) 'pressure': pressure,
+    if (usage != null) 'usage': usage,
+  };
+
+  ActivityMemory applyDelta(Map<String, dynamic> delta) => ActivityMemory(
+    totalBytes: totalBytes,
+    usedBytes: _counter(delta['used_bytes']) ?? usedBytes,
+    appBytes: _counter(delta['app_bytes']) ?? appBytes,
+    cachedBytes: _counter(delta['cached_bytes']) ?? cachedBytes,
+    freeBytes: _counter(delta['free_bytes']) ?? freeBytes,
+    activeBytes: _counter(delta['active_bytes']) ?? activeBytes,
+    inactiveBytes: _counter(delta['inactive_bytes']) ?? inactiveBytes,
+    wiredBytes: _counter(delta['wired_bytes']) ?? wiredBytes,
+    compressedBytes: _counter(delta['compressed_bytes']) ?? compressedBytes,
+    purgeableBytes: _counter(delta['purgeable_bytes']) ?? purgeableBytes,
+    swapUsedBytes: _counter(delta['swap_used_bytes']) ?? swapUsedBytes,
+    swapTotalBytes: _counter(delta['swap_total_bytes']) ?? swapTotalBytes,
+    pressure: _counter(delta['pressure']) ?? pressure,
+    usage: (delta['usage'] as num?)?.toDouble() ?? usage,
+  );
+
   factory ActivityMemory.fromJson(Map<String, dynamic> json) => ActivityMemory(
     totalBytes: _counter(json['total_bytes']),
     usedBytes: _counter(json['used_bytes']),
@@ -371,6 +488,37 @@ class ActivityDisk {
     if (writeOperationsPerSecond != null)
       'write_operations_per_second': writeOperationsPerSecond,
   };
+
+  Map<String, dynamic> toDeltaJson() => {
+    'available': available,
+    if (readBytes != null) 'read_bytes': readBytes,
+    if (writeBytes != null) 'write_bytes': writeBytes,
+    if (readOperations != null) 'read_operations': readOperations,
+    if (writeOperations != null) 'write_operations': writeOperations,
+    if (readBytesPerSecond != null)
+      'read_bytes_per_second': readBytesPerSecond,
+    if (writeBytesPerSecond != null)
+      'write_bytes_per_second': writeBytesPerSecond,
+    if (readOperationsPerSecond != null)
+      'read_operations_per_second': readOperationsPerSecond,
+    if (writeOperationsPerSecond != null)
+      'write_operations_per_second': writeOperationsPerSecond,
+  };
+
+  ActivityDisk applyDelta(Map<String, dynamic> delta) => ActivityDisk(
+    available: delta['available'] == true,
+    devices: devices,
+    readBytes: _counter(delta['read_bytes']),
+    writeBytes: _counter(delta['write_bytes']),
+    readOperations: _counter(delta['read_operations']),
+    writeOperations: _counter(delta['write_operations']),
+    readBytesPerSecond: (delta['read_bytes_per_second'] as num?)?.toDouble(),
+    writeBytesPerSecond: (delta['write_bytes_per_second'] as num?)?.toDouble(),
+    readOperationsPerSecond:
+        (delta['read_operations_per_second'] as num?)?.toDouble(),
+    writeOperationsPerSecond:
+        (delta['write_operations_per_second'] as num?)?.toDouble(),
+  );
 
   factory ActivityDisk.fromJson(Map<String, dynamic> json) => ActivityDisk(
     available: json['available'] == true,
@@ -503,6 +651,52 @@ class ActivityNetwork {
     if (sentPacketsPerSecond != null)
       'sent_packets_per_second': sentPacketsPerSecond,
   };
+
+  Map<String, dynamic> toDeltaJson() => {
+    'available': available,
+    'interfaces': interfaces.map((i) => i.toJson()).toList(),
+    if (receivedBytes != null) 'received_bytes': receivedBytes,
+    if (sentBytes != null) 'sent_bytes': sentBytes,
+    if (receivedBytesPerSecond != null)
+      'received_bytes_per_second': receivedBytesPerSecond,
+    if (sentBytesPerSecond != null)
+      'sent_bytes_per_second': sentBytesPerSecond,
+    if (receivedPackets != null) 'received_packets': receivedPackets,
+    if (sentPackets != null) 'sent_packets': sentPackets,
+    if (receivedPacketsPerSecond != null)
+      'received_packets_per_second': receivedPacketsPerSecond,
+    if (sentPacketsPerSecond != null)
+      'sent_packets_per_second': sentPacketsPerSecond,
+  };
+
+  ActivityNetwork applyDelta(Map<String, dynamic> delta) {
+    final deltaInterfaces = _maps(delta['interfaces']);
+    final mapByName = {
+      for (final iface in deltaInterfaces) iface['name']: iface,
+    };
+    final updatedInterfaces = interfaces.map((i) {
+      final di = mapByName[i.name];
+      if (di == null) return i;
+      return ActivityNetworkInterface.fromJson(di);
+    }).toList();
+
+    return ActivityNetwork(
+      available: delta['available'] == true,
+      interfaces: List.unmodifiable(updatedInterfaces),
+      receivedBytes: _counter(delta['received_bytes']),
+      sentBytes: _counter(delta['sent_bytes']),
+      receivedBytesPerSecond:
+          (delta['received_bytes_per_second'] as num?)?.toDouble(),
+      sentBytesPerSecond:
+          (delta['sent_bytes_per_second'] as num?)?.toDouble(),
+      receivedPackets: _counter(delta['received_packets']),
+      sentPackets: _counter(delta['sent_packets']),
+      receivedPacketsPerSecond:
+          (delta['received_packets_per_second'] as num?)?.toDouble(),
+      sentPacketsPerSecond:
+          (delta['sent_packets_per_second'] as num?)?.toDouble(),
+    );
+  }
 
   factory ActivityNetwork.fromJson(Map<String, dynamic> json) =>
       ActivityNetwork(

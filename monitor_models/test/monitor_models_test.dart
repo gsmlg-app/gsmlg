@@ -368,6 +368,39 @@ void main() {
       );
       final msgDecoded = MonitorMessage.fromJson(msg.toJson());
       expect(msgDecoded.activitySnapshot.model, 'MacBookPro18,2');
+
+      // Test Delta extraction and application
+      final deltaJson = snapshot.toDeltaJson();
+      expect(deltaJson.containsKey('architecture'), isFalse);
+      expect(deltaJson.containsKey('model'), isFalse);
+      expect(deltaJson.containsKey('cpu_brand'), isFalse);
+
+      final merged = decoded.applyDelta(deltaJson);
+      expect(merged.architecture, 'arm64');
+      expect(merged.model, 'MacBookPro18,2');
+      expect(merged.cpuBrand, 'Apple M1 Max');
+      expect(merged.cores[0].type, 'efficiency');
+      expect(merged.cores[1].type, 'performance');
+      expect(merged.cpuUsage, snapshot.cpuUsage);
+
+      // Verify history and metricsDelta message types
+      final historyMsg = MonitorMessage(
+        type: MonitorMessageType.history,
+        payload: {
+          'snapshots': [snapshot.toJson()],
+        },
+      );
+      final historyDecoded = MonitorMessage.fromJson(historyMsg.toJson());
+      expect(historyDecoded.type, MonitorMessageType.history);
+      expect(historyDecoded.historySnapshots.length, 1);
+      expect(historyDecoded.historySnapshots.first.model, 'MacBookPro18,2');
+
+      final deltaMsg = MonitorMessage(
+        type: MonitorMessageType.metricsDelta,
+        payload: deltaJson,
+      );
+      final deltaDecoded = MonitorMessage.fromJson(deltaMsg.toJson());
+      expect(deltaDecoded.type, MonitorMessageType.metricsDelta);
     });
   });
 }

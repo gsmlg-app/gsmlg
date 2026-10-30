@@ -7,6 +7,7 @@ import 'package:monitor_agent/src/server/cert_manager.dart';
 import 'package:monitor_agent/src/server/mdns_service.dart';
 import 'package:monitor_agent/src/server/ws_server.dart';
 import 'package:monitor_models/monitor_models.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class MonitorAgent {
   MonitorAgent(this.config);
@@ -17,6 +18,7 @@ class MonitorAgent {
   Timer? _timer;
   late final RawCollector _rawCollector;
   Map<String, dynamic>? _previousSample;
+  final List<ActivitySnapshot> _history = [];
 
   Future<void> start() async {
     // TLS setup
@@ -52,22 +54,27 @@ class MonitorAgent {
 
     _rawCollector = createRawCollector();
 
-    _server.clientCount.listen((count) {
-      if (count > 0) {
-        _sendHostInfo();
+    // When a client connects, immediately send host info and full history
+    _server.onClientConnected = (client) {
+      _sendHostInfoTo(client);
+      if (_history.isNotEmpty) {
+        _sendHistoryTo(client);
       }
-    });
+    };
+
+    // Warm up the first sample immediately so subsequent ticks have baseline
+    try {
+      _previousSample = await _rawCollector.collectRaw();
+    } catch (_) {}
 
     _timer = Timer.periodic(Duration(seconds: config.interval), (_) async {
-      if (_server.currentClientCount > 0) {
-        await _collectAndBroadcast();
-      }
+      await _collectAndTick();
     });
 
     print('Collecting metrics every ${config.interval}s');
   }
 
-  void _sendHostInfo() {
+  void _sendHostInfoTo(WebSocketChannel client) {
     final info = HostInfo(
       hostname: Platform.localHostname,
       os: Platform.operatingSystem,
@@ -78,12 +85,25 @@ class MonitorAgent {
       agentVersion: '2.0.0',
     );
 
-    _server.broadcast(
+    _server.sendTo(
+      client,
       MonitorMessage(type: MonitorMessageType.hostInfo, payload: info.toJson()),
     );
   }
 
-  Future<void> _collectAndBroadcast() async {
+  void _sendHistoryTo(WebSocketChannel client) {
+    _server.sendTo(
+      client,
+      MonitorMessage(
+        type: MonitorMessageType.history,
+        payload: {
+          Protocol.snapshots: _history.map((s) => s.toJson()).toList(),
+        },
+      ),
+    );
+  }
+
+  Future<void> _collectAndTick() async {
     try {
       final raw = await _rawCollector.collectRaw();
       final snapshot = ActivitySnapshot.fromSamples(
@@ -92,12 +112,17 @@ class MonitorAgent {
       );
       _previousSample = raw;
 
-      _server.broadcast(
-        MonitorMessage(
-          type: MonitorMessageType.metrics,
-          payload: snapshot.toJson(),
-        ),
-      );
+      _history.add(snapshot);
+      if (_history.length > 60) _history.removeAt(0);
+
+      if (_server.currentClientCount > 0) {
+        _server.broadcast(
+          MonitorMessage(
+            type: MonitorMessageType.metricsDelta,
+            payload: snapshot.toDeltaJson(),
+          ),
+        );
+      }
     } catch (e, stack) {
       print('Error collecting metrics: $e\n$stack');
     }

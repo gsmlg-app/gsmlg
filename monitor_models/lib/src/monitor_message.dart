@@ -12,6 +12,8 @@ import 'package:monitor_models/src/protocol.dart';
 enum MonitorMessageType {
   hostInfo,
   metrics,
+  metricsDelta,
+  history,
   ping,
   pong,
   setInterval;
@@ -19,6 +21,8 @@ enum MonitorMessageType {
   static MonitorMessageType fromString(String value) => switch (value) {
     Protocol.hostInfo => MonitorMessageType.hostInfo,
     Protocol.metrics => MonitorMessageType.metrics,
+    Protocol.metricsDelta => MonitorMessageType.metricsDelta,
+    Protocol.history => MonitorMessageType.history,
     Protocol.ping => MonitorMessageType.ping,
     Protocol.pong => MonitorMessageType.pong,
     Protocol.setInterval => MonitorMessageType.setInterval,
@@ -28,6 +32,8 @@ enum MonitorMessageType {
   String toJsonString() => switch (this) {
     MonitorMessageType.hostInfo => Protocol.hostInfo,
     MonitorMessageType.metrics => Protocol.metrics,
+    MonitorMessageType.metricsDelta => Protocol.metricsDelta,
+    MonitorMessageType.history => Protocol.history,
     MonitorMessageType.ping => Protocol.ping,
     MonitorMessageType.pong => Protocol.pong,
     MonitorMessageType.setInterval => Protocol.setInterval,
@@ -106,6 +112,11 @@ final class MonitorMessage extends Equatable {
   HostInfo get hostInfo => HostInfo.fromJson(payload);
   SystemMetrics get systemMetrics => SystemMetrics.fromJson(payload);
   ActivitySnapshot get activitySnapshot => ActivitySnapshot.fromJson(payload);
+  List<ActivitySnapshot> get historySnapshots =>
+      (payload[Protocol.snapshots] as List<dynamic>?)
+          ?.map((e) => ActivitySnapshot.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [];
 
   @override
   List<Object?> get props => [type, payload];
