@@ -3,7 +3,7 @@ import 'package:args/args.dart';
 class AgentConfig {
   const AgentConfig({
     this.port = 9723,
-    this.interval = 3,
+    this.interval = 1,
     this.bind = '0.0.0.0',
     this.enableMdns = true,
     this.useTls = true,

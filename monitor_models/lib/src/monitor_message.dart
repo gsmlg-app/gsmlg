@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:monitor_models/src/activity_snapshot.dart';
 import 'package:monitor_models/src/cpu_metrics.dart';
 import 'package:monitor_models/src/disk_metrics.dart';
 import 'package:monitor_models/src/gpu_metrics.dart';
@@ -104,6 +105,7 @@ final class MonitorMessage extends Equatable {
 
   HostInfo get hostInfo => HostInfo.fromJson(payload);
   SystemMetrics get systemMetrics => SystemMetrics.fromJson(payload);
+  ActivitySnapshot get activitySnapshot => ActivitySnapshot.fromJson(payload);
 
   @override
   List<Object?> get props => [type, payload];

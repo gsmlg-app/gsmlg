@@ -7,8 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:gsmlg/destination.dart';
+import 'package:gsmlg/screens/settings/device/activity_monitor_dashboard.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/add_host_dialog.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/cert_mismatch_dialog.dart';
+import 'package:gsmlg/screens/toolbox/monitor/widgets/host_activity_converter.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/host_list_tile.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/metrics_dashboard.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/trust_dialog.dart';
@@ -401,15 +403,28 @@ class _MonitorScreenState extends State<MonitorScreen> {
       );
     }
 
-    return MetricsDashboard(
-      host: host,
-      cpuHistory: host.cpuHistory,
-      memoryHistory: host.memoryHistory,
-      rxHistory: host.rxHistory,
-      txHistory: host.txHistory,
-      readHistory: host.readHistory,
-      writeHistory: host.writeHistory,
-    );
+    if (host.snapshot != null) {
+      return ActivityMonitorDashboard(
+        snapshot: toAppMetricsSnapshot(host.snapshot!),
+        history: host.history.map(toAppMetricsSnapshot).toList(),
+        running: host.status == ConnectionStatus.connected,
+        deviceName: host.displayName,
+      );
+    }
+
+    if (host.metrics != null) {
+      return MetricsDashboard(
+        host: host,
+        cpuHistory: host.cpuHistory,
+        memoryHistory: host.memoryHistory,
+        rxHistory: host.rxHistory,
+        txHistory: host.txHistory,
+        readHistory: host.readHistory,
+        writeHistory: host.writeHistory,
+      );
+    }
+
+    return const Center(child: CircularProgressIndicator.adaptive());
   }
 
   void _showTrustDialog(BuildContext context, MonitorHost host) {

@@ -1,7 +1,6 @@
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:monitor_bloc/monitor_bloc.dart';
-import 'package:monitor_models/monitor_models.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/cpu_gauge.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/cpu_per_core_chart.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/disk_chart.dart';

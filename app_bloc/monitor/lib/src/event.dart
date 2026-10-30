@@ -57,9 +57,14 @@ final class MonitorPingHost extends MonitorEvent {
 
 // Internal events
 final class _MonitorMetricsReceived extends MonitorEvent {
-  const _MonitorMetricsReceived({required this.hostId, required this.metrics});
+  const _MonitorMetricsReceived({
+    required this.hostId,
+    this.metrics,
+    this.snapshot,
+  });
   final String hostId;
-  final SystemMetrics metrics;
+  final SystemMetrics? metrics;
+  final ActivitySnapshot? snapshot;
 }
 
 final class _MonitorConnectionStatusChanged extends MonitorEvent {

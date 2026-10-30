@@ -1,17 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:monitor_models/monitor_models.dart';
-import 'package:monitor_agent/src/collectors/collector.dart';
-import 'package:monitor_agent/src/collectors/cpu_collector.dart';
-import 'package:monitor_agent/src/collectors/disk_collector.dart';
-import 'package:monitor_agent/src/collectors/gpu_collector.dart';
-import 'package:monitor_agent/src/collectors/memory_collector.dart';
-import 'package:monitor_agent/src/collectors/network_collector.dart';
+import 'package:monitor_agent/src/collectors/raw_collector.dart';
 import 'package:monitor_agent/src/config.dart';
 import 'package:monitor_agent/src/server/cert_manager.dart';
 import 'package:monitor_agent/src/server/mdns_service.dart';
 import 'package:monitor_agent/src/server/ws_server.dart';
+import 'package:monitor_models/monitor_models.dart';
 
 class MonitorAgent {
   MonitorAgent(this.config);
@@ -20,11 +15,8 @@ class MonitorAgent {
   late final WsServer _server;
   MdnsService? _mdnsService;
   Timer? _timer;
-  MetricsCollector<CpuMetrics>? _cpuCollector;
-  MetricsCollector<MemoryMetrics>? _memoryCollector;
-  MetricsCollector<List<GpuMetrics>>? _gpuCollector;
-  MetricsCollector<List<NetworkMetrics>>? _networkCollector;
-  MetricsCollector<List<DiskMetrics>>? _diskCollector;
+  late final RawCollector _rawCollector;
+  Map<String, dynamic>? _previousSample;
 
   Future<void> start() async {
     // TLS setup
@@ -52,17 +44,13 @@ class MonitorAgent {
         serviceName: 'GSMLG Monitor (${Platform.localHostname})',
         port: config.port,
         hostname: Platform.localHostname,
-        agentVersion: '1.0.0',
+        agentVersion: '2.0.0',
         fingerprint: fingerprint ?? '',
       );
       await _mdnsService!.register();
     }
 
-    _cpuCollector = _tryCreate('CPU', createCpuCollector);
-    _memoryCollector = _tryCreate('Memory', createMemoryCollector);
-    _gpuCollector = _tryCreate('GPU', createGpuCollector);
-    _networkCollector = _tryCreate('Network', createNetworkCollector);
-    _diskCollector = _tryCreate('Disk', createDiskCollector);
+    _rawCollector = createRawCollector();
 
     _server.clientCount.listen((count) {
       if (count > 0) {
@@ -79,15 +67,6 @@ class MonitorAgent {
     print('Collecting metrics every ${config.interval}s');
   }
 
-  T? _tryCreate<T>(String name, T Function() factory) {
-    try {
-      return factory();
-    } catch (_) {
-      print('Warning: $name collector not available on this platform');
-      return null;
-    }
-  }
-
   void _sendHostInfo() {
     final info = HostInfo(
       hostname: Platform.localHostname,
@@ -96,7 +75,7 @@ class MonitorAgent {
       cpuModel: '',
       cpuCores: Platform.numberOfProcessors,
       totalMemory: 0,
-      agentVersion: '1.0.0',
+      agentVersion: '2.0.0',
     );
 
     _server.broadcast(
@@ -105,28 +84,23 @@ class MonitorAgent {
   }
 
   Future<void> _collectAndBroadcast() async {
-    final results = await Future.wait([
-      _cpuCollector?.collect() ?? Future.value(null),
-      _memoryCollector?.collect() ?? Future.value(null),
-      _gpuCollector?.collect() ?? Future.value(null),
-      _networkCollector?.collect() ?? Future.value(null),
-      _diskCollector?.collect() ?? Future.value(null),
-    ]);
+    try {
+      final raw = await _rawCollector.collectRaw();
+      final snapshot = ActivitySnapshot.fromSamples(
+        raw,
+        previous: _previousSample,
+      );
+      _previousSample = raw;
 
-    final metrics = SystemMetrics(
-      cpu: results[0] as CpuMetrics?,
-      memory: results[1] as MemoryMetrics?,
-      gpus: (results[2] as List<GpuMetrics>?) ?? const [],
-      networks: (results[3] as List<NetworkMetrics>?) ?? const [],
-      disks: (results[4] as List<DiskMetrics>?) ?? const [],
-    );
-
-    _server.broadcast(
-      MonitorMessage(
-        type: MonitorMessageType.metrics,
-        payload: metrics.toJson(),
-      ),
-    );
+      _server.broadcast(
+        MonitorMessage(
+          type: MonitorMessageType.metrics,
+          payload: snapshot.toJson(),
+        ),
+      );
+    } catch (e, stack) {
+      print('Error collecting metrics: $e\n$stack');
+    }
   }
 
   Future<void> stop() async {

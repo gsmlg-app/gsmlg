@@ -22,6 +22,7 @@ class HostListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final dmColors = Theme.of(context).extension<DmColorExtension>()!;
     final colorScheme = Theme.of(context).colorScheme;
+    final cpuUsage = host.snapshot?.cpuUsage ?? host.metrics?.cpu?.usagePercent;
 
     return ListTile(
       selected: selected,
@@ -60,12 +61,12 @@ class HostListTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (host.metrics?.cpu != null)
+          if (cpuUsage != null)
             Text(
-              '${host.metrics!.cpu!.usagePercent.toStringAsFixed(0)}%',
+              '${cpuUsage.toStringAsFixed(0)}%',
               style: TextStyle(
                 color: _cpuColor(
-                  host.metrics!.cpu!.usagePercent,
+                  cpuUsage,
                   dmColors,
                   colorScheme,
                 ),

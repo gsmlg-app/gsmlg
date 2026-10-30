@@ -128,12 +128,21 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
             ),
           );
         } else if (message.type == MonitorMessageType.metrics) {
-          add(
-            _MonitorMetricsReceived(
-              hostId: hostId,
-              metrics: message.systemMetrics,
-            ),
-          );
+          if (message.payload.containsKey('cores')) {
+            add(
+              _MonitorMetricsReceived(
+                hostId: hostId,
+                snapshot: message.activitySnapshot,
+              ),
+            );
+          } else {
+            add(
+              _MonitorMetricsReceived(
+                hostId: hostId,
+                metrics: message.systemMetrics,
+              ),
+            );
+          }
         }
       case MonitorConnectionStatusChanged(:final status, :final error):
         add(
@@ -334,7 +343,32 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
     final host = hosts[event.hostId];
     if (host == null) return;
 
+    if (event.snapshot != null) {
+      final s = event.snapshot!;
+      final newHistory = List<ActivitySnapshot>.from(host.history)..add(s);
+      if (newHistory.length > 60) newHistory.removeAt(0);
+
+      var cpuHistory = host.cpuHistory;
+      if (s.cpuUsage != null) {
+        cpuHistory = cpuHistory.add(s.cpuUsage!);
+      }
+      var memoryHistory = host.memoryHistory;
+      if (s.memory.usage != null) {
+        memoryHistory = memoryHistory.add(s.memory.usage!);
+      }
+
+      hosts[event.hostId] = host.copyWith(
+        snapshot: s,
+        history: newHistory,
+        cpuHistory: cpuHistory,
+        memoryHistory: memoryHistory,
+      );
+      emit(MonitorLoaded(hosts: hosts));
+      return;
+    }
+
     final m = event.metrics;
+    if (m == null) return;
 
     // Update history ring buffers
     var cpuHistory = host.cpuHistory;

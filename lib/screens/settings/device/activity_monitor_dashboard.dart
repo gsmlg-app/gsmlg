@@ -15,6 +15,7 @@ class ActivityMonitorDashboard extends StatefulWidget {
     required this.running,
     this.onToggleSampling,
     this.samplingPaused = false,
+    this.deviceName,
   });
 
   final ActivitySnapshot snapshot;
@@ -22,6 +23,7 @@ class ActivityMonitorDashboard extends StatefulWidget {
   final bool running;
   final VoidCallback? onToggleSampling;
   final bool samplingPaused;
+  final String? deviceName;
 
   @override
   State<ActivityMonitorDashboard> createState() =>
@@ -119,13 +121,13 @@ class _ActivityMonitorDashboardState extends State<ActivityMonitorDashboard> {
                 SizedBox(height: compact ? 2 : 8),
                 if (!compact) ...[
                   Text(
-                    l10n.activityMonitorThisDevice,
+                    widget.deviceName ?? l10n.activityMonitorThisDevice,
                     style: theme.textTheme.headlineLarge,
                   ),
                   const SizedBox(height: 8),
                 ],
                 Text(
-                  '${compact ? '${l10n.activityMonitorThisDevice} · ' : ''}${snapshot.model} · ${snapshot.architecture}',
+                  '${compact ? '${widget.deviceName ?? l10n.activityMonitorThisDevice} · ' : ''}${snapshot.model} · ${snapshot.architecture}',
                   style: _numeric(context),
                 ),
                 Text(

@@ -34,9 +34,12 @@ class LinuxDiskCollector extends MetricsCollector<List<DiskMetrics>> {
           continue;
         }
         // Skip partitions: sda1, vdb2, etc. Keep sda, nvme0n1
-        if (RegExp(r'^(sd|vd)[a-z]\d').hasMatch(device)) continue;
-        if (RegExp(r'p\d+$').hasMatch(device) && device.startsWith('nvme'))
+        if (RegExp(r'^(sd|vd)[a-z]\d').hasMatch(device)) {
           continue;
+        }
+        if (RegExp(r'p\d+$').hasMatch(device) && device.startsWith('nvme')) {
+          continue;
+        }
 
         deviceNames.add(device);
         // Fields: sectors read (index 5), sectors written (index 9)

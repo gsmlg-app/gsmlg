@@ -100,6 +100,50 @@ void main() {
 
       expect(host.metrics, isNull);
     });
+
+    test('receiving ActivitySnapshot updates snapshot and history', () async {
+      bloc.add(const MonitorAddManualHost(ip: '192.0.2.10', port: 9723));
+      await _waitForHost(bloc, _hostId);
+
+      final snapshot = ActivitySnapshot(
+        timestamp: DateTime.now(),
+        architecture: 'arm64',
+        model: 'MacBookPro',
+        cpuBrand: 'Apple M1',
+        cpuUsage: 15.5,
+        cores: const [
+          ActivityCpuCore(id: 1, type: 'performance', usage: 20.0),
+        ],
+        memory: const ActivityMemory(
+          totalBytes: 16000000000,
+          usedBytes: 8000000000,
+          usage: 50.0,
+        ),
+        disk: const ActivityDisk(),
+        network: const ActivityNetwork(),
+        gpus: const [],
+      );
+
+      repository.add(
+        MonitorMessageReceived(
+          MonitorMessage(
+            type: MonitorMessageType.metrics,
+            payload: snapshot.toJson(),
+          ),
+        ),
+      );
+
+      await _waitUntil(() {
+        final state = bloc.state;
+        return state is MonitorLoaded && state.hosts[_hostId]?.snapshot != null;
+      });
+
+      final host = (bloc.state as MonitorLoaded).hosts[_hostId]!;
+      expect(host.snapshot?.model, 'MacBookPro');
+      expect(host.snapshot?.cpuUsage, 15.5);
+      expect(host.history.length, 1);
+      expect(host.cpuHistory.items, [15.5]);
+    });
   });
 }
 

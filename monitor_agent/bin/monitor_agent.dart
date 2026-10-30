@@ -8,7 +8,7 @@ Future<void> main(List<String> args) async {
     ..addOption('port', defaultsTo: '9723', help: 'WebSocket server port')
     ..addOption(
       'interval',
-      defaultsTo: '3',
+      defaultsTo: '1',
       help: 'Metrics push interval (seconds)',
     )
     ..addOption('bind', defaultsTo: '0.0.0.0', help: 'Bind address')

@@ -10,19 +10,22 @@ final class MonitorHost extends Equatable {
     required this.status,
     this.hostInfo,
     this.metrics,
+    this.snapshot,
     this.label,
     this.isManual = true,
     this.trustStatus = TrustStatus.unknown,
     this.certFingerprint,
     this.versionWarning = false,
-    this.interval = 3,
+    this.interval = 1,
+    List<ActivitySnapshot>? history,
     RingBuffer<double>? cpuHistory,
     RingBuffer<double>? memoryHistory,
     Map<String, RingBuffer<double>>? rxHistory,
     Map<String, RingBuffer<double>>? txHistory,
     Map<String, RingBuffer<double>>? readHistory,
     Map<String, RingBuffer<double>>? writeHistory,
-  }) : cpuHistory = cpuHistory ?? RingBuffer<double>(),
+  }) : history = history ?? const [],
+       cpuHistory = cpuHistory ?? RingBuffer<double>(),
        memoryHistory = memoryHistory ?? RingBuffer<double>(),
        rxHistory = rxHistory ?? const {},
        txHistory = txHistory ?? const {},
@@ -35,6 +38,8 @@ final class MonitorHost extends Equatable {
   final ConnectionStatus status;
   final HostInfo? hostInfo;
   final SystemMetrics? metrics;
+  final ActivitySnapshot? snapshot;
+  final List<ActivitySnapshot> history;
   final String? label;
   final bool isManual;
   final TrustStatus trustStatus;
@@ -55,6 +60,8 @@ final class MonitorHost extends Equatable {
     ConnectionStatus? status,
     HostInfo? hostInfo,
     SystemMetrics? metrics,
+    ActivitySnapshot? snapshot,
+    List<ActivitySnapshot>? history,
     String? label,
     TrustStatus? trustStatus,
     String? certFingerprint,
@@ -74,6 +81,8 @@ final class MonitorHost extends Equatable {
     status: status ?? this.status,
     hostInfo: hostInfo ?? this.hostInfo,
     metrics: clearMetrics ? null : metrics ?? this.metrics,
+    snapshot: clearMetrics ? null : snapshot ?? this.snapshot,
+    history: clearMetrics ? const [] : history ?? this.history,
     label: label ?? this.label,
     isManual: isManual,
     trustStatus: trustStatus ?? this.trustStatus,
@@ -100,6 +109,8 @@ final class MonitorHost extends Equatable {
     status,
     hostInfo,
     metrics,
+    snapshot,
+    history,
     label,
     isManual,
     trustStatus,
