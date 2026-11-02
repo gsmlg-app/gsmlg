@@ -61,10 +61,10 @@ packages:
     dependency: transitive
     description:
       name: asn1lib
-      sha256: "1dde50d4a33db4794651221cca7a192d605de2003c03407b4c8f50a8cd28ff42"
+      sha256: cfb3cf6a53158918d52dda61bc26f0cc8612a0d3b9dc29e87eaa3423902ca636
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.7"
+    version: "1.6.8"
   async:
     dependency: transitive
     description:
@@ -149,10 +149,10 @@ packages:
     dependency: "direct main"
     description:
       name: background_downloader
-      sha256: "41173cfbb759c9c41b7ea98372f18e36bcb0add1a0754484e38f17c890cc9fc6"
+      sha256: "4df9b2a2d5b78b883ebd4b6338cbc1b541ea3482da24112339468a66a7492b43"
       url: "https://pub.dev"
     source: hosted
-    version: "9.6.4"
+    version: "9.6.5"
   bloc:
     dependency: "direct main"
     description:
@@ -245,10 +245,10 @@ packages:
     dependency: transitive
     description:
       name: camera_android_camerax
-      sha256: faf885ca8140f22df8dc05d1839afc702d0329dd9b0b2f0bc6f9b05f3f20e10c
+      sha256: b5e0a2a8e63f2788139379926a9abc3a64eed5e309c1384e5db25b74f15b7307
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.6"
+    version: "0.7.6+1"
   camera_avfoundation:
     dependency: transitive
     description:
@@ -452,10 +452,10 @@ packages:
     dependency: transitive
     description:
       name: cupertino_ui
-      sha256: a47c4e7c66fd7444a063a602597fceb238f705c3f6b1322bc0053d0a2638ee6e
+      sha256: e003b87afde18cb396ec15928c7894063d64af04462c68df9a1404c461316dd2
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.4"
+    version: "1.1.5"
   dart_code_metrics_presets:
     dependency: transitive
     description:
@@ -548,98 +548,98 @@ packages:
     dependency: "direct main"
     description:
       name: duskmoon_adaptive_scaffold
-      sha256: "986df8fa12309a43f05ba4c8b7fd0ae1685d568e4077148886e05c1c345231db"
+      sha256: "16b677d6d1c8fd6913c0e0eb808855aa8521ae362852c977cccc0e1db29f3dd1"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_code_engine:
     dependency: transitive
     description:
       name: duskmoon_code_engine
-      sha256: d9a58cdaab53ff592ae968853391920531480c931c74998f77d5d8ecbf6f0d81
+      sha256: "4e9f268b2a93889255633def7839b2859fd969a6658ae32299d9f66019ee89db"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_feedback:
     dependency: transitive
     description:
       name: duskmoon_feedback
-      sha256: a1d1d96ed0401123d1bc75ecc276af3a5d77b014923370db1935913efdecad24
+      sha256: "812aba07c1aab0624ef2a1b187195f5bab6677b2616e2fecacd31fa393a40d61"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_form:
     dependency: "direct main"
     description:
       name: duskmoon_form
-      sha256: "117f003a887203565ab6c0970bd3b4cbee933092f0f9eb8a09ea41917563eda3"
+      sha256: be933ec223f6b7c7274a7acd73ab6132f7025754063ebbafe4f46e2d6b90e4b4
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_highlight:
     dependency: transitive
     description:
       name: duskmoon_highlight
-      sha256: d3131dd476d0cc5e0a44d935153b015960ea6ddfb27f4e9d669b777272f33a06
+      sha256: a509ea31d58f2fbd31e621dfd3b35693449da106a927108adae79ef117e739f4
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.8"
+    version: "2.2.9"
   duskmoon_mermaid_renderer:
     dependency: transitive
     description:
       name: duskmoon_mermaid_renderer
-      sha256: "54c818b658458bb260f4efe65ad6aae790a9b5385d49acff54d4731c54940b8d"
+      sha256: "2d61e87e9ee74d10c15d3271f1ab9e963550a63dda9af5fd7cecff13aedf64c7"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_settings:
     dependency: "direct main"
     description:
       name: duskmoon_settings
-      sha256: db144eec2f5c9933ee8c4c91504571cbd77f044ff791f50c2b48a8d5d059cc41
+      sha256: "1122c000eef824a91941e4fe343cbf357aa4c7bcfac04e7a9398dddaeddaeb73"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_theme:
     dependency: transitive
     description:
       name: duskmoon_theme
-      sha256: "391a449346f36262115243c886402ae07fafb66df2f678fd3af61d3f96f99b0f"
+      sha256: "477f5c8d075224475cec92c6a1a29172d363dec62835eade9908a14d4becd701"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_theme_bloc:
     dependency: transitive
     description:
       name: duskmoon_theme_bloc
-      sha256: "856b83fa1f761a78643435aee121221af152b1760dde23dd096474802518a2a2"
+      sha256: "23f55dd8cca03bf38dc0c2922cc81755032f8cf825b0e2d47c9ab0611ef5ce12"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_ui:
     dependency: "direct main"
     description:
       name: duskmoon_ui
-      sha256: "5c7baf8c3bf331aaf79d54842ab46c602775655ed1e5d0caa813b52d08334de2"
+      sha256: "655058d09ff5996949d179907467c52d73582e7702efb801340444c4c7bdd2f1"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_visualization:
     dependency: "direct main"
     description:
       name: duskmoon_visualization
-      sha256: "95433853f58897dd965869293e4756265fd5476b674792f4423f68e8d469ab57"
+      sha256: "3b07e10416c6151ab9ac63416fed2367f16a2f03d877f58e46d8a91f77040879"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   duskmoon_widgets:
     dependency: transitive
     description:
       name: duskmoon_widgets
-      sha256: "0793149a7886196e52ff3e17266d71317b77e6be6ea685e52368cc3331eca907"
+      sha256: feb4dd4ef36bed919edfd8a450b1c9acefab8f0b4431bddba7eb37eb1687b394
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.5"
+    version: "2.2.9"
   equatable:
     dependency: "direct main"
     description:
@@ -987,10 +987,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_svg
-      sha256: "35882981abcbfb8c15b286f0cd690ff25bac12d95eff3e25ee207f37d4c42e7f"
+      sha256: "100c19dcc4ff60083e95a44a6f44f3a1bb887d353c5d86f6a9b688aa3cb46236"
       url: "https://pub.dev"
     source: hosted
-    version: "2.3.0"
+    version: "2.3.2"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -1050,10 +1050,10 @@ packages:
     dependency: "direct main"
     description:
       name: go_router
-      sha256: "07089be6dc124eb9596a51b5e359c657f30a59929287f11b126c2cd13eaaece0"
+      sha256: f1c2d3c2b0b2096b435d7af033dd4e586fa31f51d988c5985e64495cd926d872
       url: "https://pub.dev"
     source: hosted
-    version: "18.1.1"
+    version: "18.1.2"
   google_fonts:
     dependency: transitive
     description:
@@ -1335,10 +1335,10 @@ packages:
     dependency: "direct main"
     description:
       name: lottie
-      sha256: d20f4d75fcab2f27e039c33d6d0ee923a9da3dc8579d59454188a2714a5cce84
+      sha256: "245b0659d48384165b073415ebe14d82b3b2862b90b756cd413e8d058aae3645"
       url: "https://pub.dev"
     source: hosted
-    version: "3.7.0"
+    version: "3.8.1"
   markdown:
     dependency: transitive
     description:
@@ -1383,10 +1383,10 @@ packages:
     dependency: transitive
     description:
       name: material_ui
-      sha256: e4031746f96c8316864d9b92bce375f1320a36ed56e166307e1e1bda9d90b4ab
+      sha256: feb289df1e5f9ed9522f9fe3d909432a7f7bc76943f16abad09f80a16cd25196
       url: "https://pub.dev"
     source: hosted
-    version: "1.8.0"
+    version: "1.9.0"
   math_expressions:
     dependency: transitive
     description:
@@ -2076,10 +2076,10 @@ packages:
     dependency: transitive
     description:
       name: swagger_parser
-      sha256: "9cfecfad00a2671c35b66ccde7a38435bc9099f58891d4feba4f6ecc03b440b6"
+      sha256: "63cfd702a20a21fdef86d431c18353fb3e8de0781a816ffbbedd8b5caa93a0b7"
       url: "https://pub.dev"
     source: hosted
-    version: "1.45.0"
+    version: "1.45.1"
   sync_http:
     dependency: transitive
     description:
@@ -2236,10 +2236,10 @@ packages:
     dependency: transitive
     description:
       name: vector_graphics
-      sha256: "0964703d02677ac8636b4aef95de0b7e816224ff0082908c2c950529cb9a2f5e"
+      sha256: "4e5f106dfc6f0e4e7efe11603e38c34352d912905320b930128a9b1ad61363f4"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.4"
+    version: "1.2.5"
   vector_graphics_codec:
     dependency: transitive
     description:
@@ -2252,10 +2252,10 @@ packages:
     dependency: transitive
     description:
       name: vector_graphics_compiler
-      sha256: "40c92d6de05024a337a6f25feff931e1480c76cb0bb35fc37553c48951526b2f"
+      sha256: "4c9d2e7121eea8b4f160e6e435900a0ae7214cfc97c2d6cf84c25532b789b50d"
       url: "https://pub.dev"
     source: hosted
-    version: "1.3.3"
+    version: "1.3.4"
   vector_math:
     dependency: transitive
     description:
