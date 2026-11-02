@@ -135,12 +135,7 @@ class MonitorBloc extends Bloc<MonitorEvent, MonitorState> {
             ),
           );
         } else if (message.type == MonitorMessageType.metricsDelta) {
-          add(
-            _MonitorMetricsReceived(
-              hostId: hostId,
-              delta: message.payload,
-            ),
-          );
+          add(_MonitorMetricsReceived(hostId: hostId, delta: message.payload));
         } else if (message.type == MonitorMessageType.metrics) {
           if (message.payload.containsKey('cores')) {
             add(

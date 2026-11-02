@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:monitor_bloc/monitor_bloc.dart';
-import 'package:monitor_models/monitor_models.dart';
 
 void main() {
   group('MonitorBloc', () {
@@ -111,9 +110,7 @@ void main() {
         model: 'MacBookPro',
         cpuBrand: 'Apple M1',
         cpuUsage: 15.5,
-        cores: const [
-          ActivityCpuCore(id: 1, type: 'performance', usage: 20.0),
-        ],
+        cores: const [ActivityCpuCore(id: 1, type: 'performance', usage: 20.0)],
         memory: const ActivityMemory(
           totalBytes: 16000000000,
           usedBytes: 8000000000,
@@ -155,9 +152,7 @@ void main() {
         model: 'MacBookPro',
         cpuBrand: 'Apple M1',
         cpuUsage: 10.0,
-        cores: const [
-          ActivityCpuCore(id: 1, type: 'performance', usage: 10.0),
-        ],
+        cores: const [ActivityCpuCore(id: 1, type: 'performance', usage: 10.0)],
         memory: const ActivityMemory(totalBytes: 16000000000, usage: 40.0),
         disk: const ActivityDisk(),
         network: const ActivityNetwork(),
@@ -170,9 +165,7 @@ void main() {
         model: 'MacBookPro',
         cpuBrand: 'Apple M1',
         cpuUsage: 20.0,
-        cores: const [
-          ActivityCpuCore(id: 1, type: 'performance', usage: 20.0),
-        ],
+        cores: const [ActivityCpuCore(id: 1, type: 'performance', usage: 20.0)],
         memory: const ActivityMemory(totalBytes: 16000000000, usage: 42.0),
         disk: const ActivityDisk(),
         network: const ActivityNetwork(),
@@ -208,10 +201,7 @@ void main() {
 
       repository.add(
         MonitorMessageReceived(
-          MonitorMessage(
-            type: MonitorMessageType.metricsDelta,
-            payload: delta,
-          ),
+          MonitorMessage(type: MonitorMessageType.metricsDelta, payload: delta),
         ),
       );
 

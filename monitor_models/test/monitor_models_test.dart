@@ -256,8 +256,22 @@ void main() {
         'model': 'MacBookPro18,2',
         'cpu_brand': 'Apple M1 Max',
         'cores': [
-          {'id': 1, 'type': 'efficiency', 'user': 100, 'system': 50, 'nice': 0, 'idle': 850},
-          {'id': 2, 'type': 'performance', 'user': 200, 'system': 50, 'nice': 0, 'idle': 750},
+          {
+            'id': 1,
+            'type': 'efficiency',
+            'user': 100,
+            'system': 50,
+            'nice': 0,
+            'idle': 850,
+          },
+          {
+            'id': 2,
+            'type': 'performance',
+            'user': 200,
+            'system': 50,
+            'nice': 0,
+            'idle': 750,
+          },
         ],
         'memory': {
           'physical': 16000000000,
@@ -281,7 +295,13 @@ void main() {
         'network': {
           'available': true,
           'interfaces': [
-            {'name': 'en0', 'rx_bytes': 50000, 'tx_bytes': 25000, 'rx_packets': 50, 'tx_packets': 25},
+            {
+              'name': 'en0',
+              'rx_bytes': 50000,
+              'tx_bytes': 25000,
+              'rx_packets': 50,
+              'tx_packets': 25,
+            },
           ],
         },
         'gpu': [
@@ -298,8 +318,22 @@ void main() {
         'model': 'MacBookPro18,2',
         'cpu_brand': 'Apple M1 Max',
         'cores': [
-          {'id': 1, 'type': 'efficiency', 'user': 120, 'system': 60, 'nice': 0, 'idle': 920},
-          {'id': 2, 'type': 'performance', 'user': 250, 'system': 70, 'nice': 0, 'idle': 780},
+          {
+            'id': 1,
+            'type': 'efficiency',
+            'user': 120,
+            'system': 60,
+            'nice': 0,
+            'idle': 920,
+          },
+          {
+            'id': 2,
+            'type': 'performance',
+            'user': 250,
+            'system': 70,
+            'nice': 0,
+            'idle': 780,
+          },
         ],
         'memory': {
           'physical': 16000000000,
@@ -323,7 +357,13 @@ void main() {
         'network': {
           'available': true,
           'interfaces': [
-            {'name': 'en0', 'rx_bytes': 60000, 'tx_bytes': 30000, 'rx_packets': 60, 'tx_packets': 30},
+            {
+              'name': 'en0',
+              'rx_bytes': 60000,
+              'tx_bytes': 30000,
+              'rx_packets': 60,
+              'tx_packets': 30,
+            },
           ],
         },
         'gpu': [
@@ -356,7 +396,10 @@ void main() {
       expect(decoded.cores[0].type, snapshot.cores[0].type);
       expect(decoded.cores[0].usage, snapshot.cores[0].usage);
       expect(decoded.disk.readBytesPerSecond, snapshot.disk.readBytesPerSecond);
-      expect(decoded.network.receivedBytesPerSecond, snapshot.network.receivedBytesPerSecond);
+      expect(
+        decoded.network.receivedBytesPerSecond,
+        snapshot.network.receivedBytesPerSecond,
+      );
       expect(decoded.gpus.first.name, snapshot.gpus.first.name);
       expect(decoded.gpus.first.usage, snapshot.gpus.first.usage);
       expect(decoded.processCount, snapshot.processCount);

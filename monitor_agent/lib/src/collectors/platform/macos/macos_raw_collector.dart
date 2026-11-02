@@ -99,13 +99,14 @@ base class ProcessorSetLoadInfo extends Struct {
   external int machFactor3;
 }
 
-typedef SysctlByNameC = Int32 Function(
-  Pointer<Utf8> name,
-  Pointer<Void> oldp,
-  Pointer<IntPtr> oldlenp,
-  Pointer<Void> newp,
-  IntPtr newlen,
-);
+typedef SysctlByNameC =
+    Int32 Function(
+      Pointer<Utf8> name,
+      Pointer<Void> oldp,
+      Pointer<IntPtr> oldlenp,
+      Pointer<Void> newp,
+      IntPtr newlen,
+    );
 
 class MacosRawCollector implements RawCollector {
   MacosRawCollector() {
@@ -116,21 +117,29 @@ class MacosRawCollector implements RawCollector {
   late final int Function() _machHostSelf;
   late final int Function() _machTaskSelf;
   late final int Function(
-    int, int, Pointer<Uint32>, Pointer<Pointer<Int32>>, Pointer<Uint32>,
-  ) _hostProcessorInfo;
+    int,
+    int,
+    Pointer<Uint32>,
+    Pointer<Pointer<Int32>>,
+    Pointer<Uint32>,
+  )
+  _hostProcessorInfo;
   late final int Function(int, Pointer<Void>, int) _vmDeallocate;
-  late final int Function(
-    int, int, Pointer<VmStatistics64>, Pointer<Uint32>,
-  ) _hostStatistics64;
+  late final int Function(int, int, Pointer<VmStatistics64>, Pointer<Uint32>)
+  _hostStatistics64;
   late final int Function(int, Pointer<IntPtr>) _hostPageSize;
   late final int Function(
-    Pointer<Utf8>, Pointer<Void>, Pointer<IntPtr>, Pointer<Void>, int,
-  ) _sysctlbyname;
+    Pointer<Utf8>,
+    Pointer<Void>,
+    Pointer<IntPtr>,
+    Pointer<Void>,
+    int,
+  )
+  _sysctlbyname;
   late final int Function(int) _clockGettimeNsecNp;
   late final int Function(int, Pointer<Int32>) _processorSetDefault;
-  late final int Function(
-    int, int, Pointer<Void>, Pointer<Uint32>,
-  ) _processorSetStatistics;
+  late final int Function(int, int, Pointer<Void>, Pointer<Uint32>)
+  _processorSetStatistics;
 
   String? _architecture;
   String? _model;
@@ -139,40 +148,74 @@ class MacosRawCollector implements RawCollector {
 
   void _initDylib() {
     _dylib = DynamicLibrary.process();
-    _machHostSelf = _dylib.lookupFunction<Int32 Function(), int Function()>('mach_host_self');
-    _machTaskSelf = _dylib.lookupFunction<Int32 Function(), int Function()>('mach_task_self');
-    _hostProcessorInfo = _dylib.lookupFunction<
-      Int32 Function(Int32, Int32, Pointer<Uint32>, Pointer<Pointer<Int32>>, Pointer<Uint32>),
-      int Function(int, int, Pointer<Uint32>, Pointer<Pointer<Int32>>, Pointer<Uint32>)
-    >('host_processor_info');
-    _vmDeallocate = _dylib.lookupFunction<
-      Int32 Function(Int32, Pointer<Void>, IntPtr),
-      int Function(int, Pointer<Void>, int)
-    >('vm_deallocate');
-    _hostStatistics64 = _dylib.lookupFunction<
-      Int32 Function(Int32, Int32, Pointer<VmStatistics64>, Pointer<Uint32>),
-      int Function(int, int, Pointer<VmStatistics64>, Pointer<Uint32>)
-    >('host_statistics64');
-    _hostPageSize = _dylib.lookupFunction<
-      Int32 Function(Int32, Pointer<IntPtr>),
-      int Function(int, Pointer<IntPtr>)
-    >('host_page_size');
-    _sysctlbyname = _dylib.lookupFunction<
-      SysctlByNameC,
-      int Function(Pointer<Utf8>, Pointer<Void>, Pointer<IntPtr>, Pointer<Void>, int)
-    >('sysctlbyname');
-    _clockGettimeNsecNp = _dylib.lookupFunction<
-      Uint64 Function(Uint32),
-      int Function(int)
-    >('clock_gettime_nsec_np');
-    _processorSetDefault = _dylib.lookupFunction<
-      Int32 Function(Int32, Pointer<Int32>),
-      int Function(int, Pointer<Int32>)
-    >('processor_set_default');
-    _processorSetStatistics = _dylib.lookupFunction<
-      Int32 Function(Int32, Int32, Pointer<Void>, Pointer<Uint32>),
-      int Function(int, int, Pointer<Void>, Pointer<Uint32>)
-    >('processor_set_statistics');
+    _machHostSelf = _dylib.lookupFunction<Int32 Function(), int Function()>(
+      'mach_host_self',
+    );
+    _machTaskSelf = _dylib.lookupFunction<Int32 Function(), int Function()>(
+      'mach_task_self',
+    );
+    _hostProcessorInfo = _dylib
+        .lookupFunction<
+          Int32 Function(
+            Int32,
+            Int32,
+            Pointer<Uint32>,
+            Pointer<Pointer<Int32>>,
+            Pointer<Uint32>,
+          ),
+          int Function(
+            int,
+            int,
+            Pointer<Uint32>,
+            Pointer<Pointer<Int32>>,
+            Pointer<Uint32>,
+          )
+        >('host_processor_info');
+    _vmDeallocate = _dylib
+        .lookupFunction<
+          Int32 Function(Int32, Pointer<Void>, IntPtr),
+          int Function(int, Pointer<Void>, int)
+        >('vm_deallocate');
+    _hostStatistics64 = _dylib
+        .lookupFunction<
+          Int32 Function(
+            Int32,
+            Int32,
+            Pointer<VmStatistics64>,
+            Pointer<Uint32>,
+          ),
+          int Function(int, int, Pointer<VmStatistics64>, Pointer<Uint32>)
+        >('host_statistics64');
+    _hostPageSize = _dylib
+        .lookupFunction<
+          Int32 Function(Int32, Pointer<IntPtr>),
+          int Function(int, Pointer<IntPtr>)
+        >('host_page_size');
+    _sysctlbyname = _dylib
+        .lookupFunction<
+          SysctlByNameC,
+          int Function(
+            Pointer<Utf8>,
+            Pointer<Void>,
+            Pointer<IntPtr>,
+            Pointer<Void>,
+            int,
+          )
+        >('sysctlbyname');
+    _clockGettimeNsecNp = _dylib
+        .lookupFunction<Uint64 Function(Uint32), int Function(int)>(
+          'clock_gettime_nsec_np',
+        );
+    _processorSetDefault = _dylib
+        .lookupFunction<
+          Int32 Function(Int32, Pointer<Int32>),
+          int Function(int, Pointer<Int32>)
+        >('processor_set_default');
+    _processorSetStatistics = _dylib
+        .lookupFunction<
+          Int32 Function(Int32, Int32, Pointer<Void>, Pointer<Uint32>),
+          int Function(int, int, Pointer<Void>, Pointer<Uint32>)
+        >('processor_set_statistics');
 
     using((arena) {
       final sizePtr = arena<IntPtr>();
@@ -244,7 +287,8 @@ class MacosRawCollector implements RawCollector {
     return using((arena) {
       final namePtr = name.toNativeUtf8(allocator: arena);
       final sizePtr = arena<IntPtr>();
-      if (_sysctlbyname(namePtr, nullptr, sizePtr, nullptr, 0) != 0) return null;
+      if (_sysctlbyname(namePtr, nullptr, sizePtr, nullptr, 0) != 0)
+        return null;
       final buf = arena<Uint8>(sizePtr.value);
       if (_sysctlbyname(namePtr, buf.cast<Void>(), sizePtr, nullptr, 0) == 0) {
         return buf.cast<Utf8>().toDartString();
@@ -259,7 +303,8 @@ class MacosRawCollector implements RawCollector {
       final valPtr = arena<Int64>();
       final sizePtr = arena<IntPtr>();
       sizePtr.value = sizeOf<Int64>();
-      if (_sysctlbyname(namePtr, valPtr.cast<Void>(), sizePtr, nullptr, 0) == 0) {
+      if (_sysctlbyname(namePtr, valPtr.cast<Void>(), sizePtr, nullptr, 0) ==
+          0) {
         return valPtr.value;
       }
       return null;
@@ -272,7 +317,8 @@ class MacosRawCollector implements RawCollector {
       final valPtr = arena<Int32>();
       final sizePtr = arena<IntPtr>();
       sizePtr.value = sizeOf<Int32>();
-      if (_sysctlbyname(namePtr, valPtr.cast<Void>(), sizePtr, nullptr, 0) == 0) {
+      if (_sysctlbyname(namePtr, valPtr.cast<Void>(), sizePtr, nullptr, 0) ==
+          0) {
         return valPtr.value;
       }
       return null;
@@ -306,14 +352,19 @@ class MacosRawCollector implements RawCollector {
           final nice = info[base + cpuStateNice];
           result.add({
             'id': i + 1,
-            'type': null, // On macOS Silicon, ActivityMonitorCollector detects P/E via IODeviceTree
+            'type':
+                null, // On macOS Silicon, ActivityMonitorCollector detects P/E via IODeviceTree
             'user': user >= 0 ? user : 0,
             'system': sys >= 0 ? sys : 0,
             'nice': nice >= 0 ? nice : 0,
             'idle': idle >= 0 ? idle : 0,
           });
         }
-        _vmDeallocate(task, info.cast<Void>(), infoCountPtr.value * sizeOf<Int32>());
+        _vmDeallocate(
+          task,
+          info.cast<Void>(),
+          infoCountPtr.value * sizeOf<Int32>(),
+        );
       }
     });
     return result;
@@ -330,7 +381,8 @@ class MacosRawCollector implements RawCollector {
       final swapPtr = arena<XswUsage>();
       final sizePtr = arena<IntPtr>();
       sizePtr.value = sizeOf<XswUsage>();
-      if (_sysctlbyname(namePtr, swapPtr.cast<Void>(), sizePtr, nullptr, 0) == 0) {
+      if (_sysctlbyname(namePtr, swapPtr.cast<Void>(), sizePtr, nullptr, 0) ==
+          0) {
         swapUsed = swapPtr.ref.xsuUsed;
         swapTotal = swapPtr.ref.xsuTotal;
       }
@@ -374,7 +426,8 @@ class MacosRawCollector implements RawCollector {
       'anonymous': ?anonymousBytes,
       'swap_used': ?swapUsed,
       'swap_total': ?swapTotal,
-      if (pressure != null && [1, 2, 4].contains(pressure)) 'pressure': pressure,
+      if (pressure != null && [1, 2, 4].contains(pressure))
+        'pressure': pressure,
     };
   }
 
@@ -386,7 +439,13 @@ class MacosRawCollector implements RawCollector {
         final info = arena<ProcessorSetLoadInfo>();
         final count = arena<Uint32>();
         count.value = sizeOf<ProcessorSetLoadInfo>() ~/ sizeOf<Int32>();
-        if (_processorSetStatistics(pset.value, processorSetLoadInfo, info.cast<Void>(), count) == 0) {
+        if (_processorSetStatistics(
+              pset.value,
+              processorSetLoadInfo,
+              info.cast<Void>(),
+              count,
+            ) ==
+            0) {
           final tasks = info.ref.taskCount;
           final threads = info.ref.threadCount;
           return (tasks > 0 ? tasks : null, threads > 0 ? threads : null);
@@ -428,10 +487,7 @@ class MacosRawCollector implements RawCollector {
       }
     } catch (_) {}
 
-    return {
-      'available': interfaces.isNotEmpty,
-      'interfaces': interfaces,
-    };
+    return {'available': interfaces.isNotEmpty, 'interfaces': interfaces};
   }
 
   Future<Map<String, dynamic>> _readDisks() async {
@@ -482,14 +538,22 @@ class MacosRawCollector implements RawCollector {
   Future<List<Map<String, dynamic>>> _readGpu() async {
     final gpus = <Map<String, dynamic>>[];
     try {
-      final result = await runProcess('ioreg', ['-rc', 'IOAccelerator', '-d', '2']);
+      final result = await runProcess('ioreg', [
+        '-rc',
+        'IOAccelerator',
+        '-d',
+        '2',
+      ]);
       if (result.exitCode == 0) {
         final stdout = result.stdout as String;
         final blocks = stdout.split('+-o ');
         for (final block in blocks) {
           if (block.trim().isEmpty) continue;
           final nameMatch = RegExp(r'^(\S+)').firstMatch(block.trim());
-          final name = nameMatch?.group(1)?.replaceAll('<', '').replaceAll('>', '');
+          final name = nameMatch
+              ?.group(1)
+              ?.replaceAll('<', '')
+              .replaceAll('>', '');
           if (name == null || name == 'IOAccelerator') continue;
           if (name.contains('Context') ||
               name.contains('Client') ||
@@ -499,13 +563,14 @@ class MacosRawCollector implements RawCollector {
             continue;
           }
 
-          final utilMatch = RegExp(r'"Device Utilization %"\s*=\s*(\d+)').firstMatch(block);
-          final util = utilMatch != null ? double.tryParse(utilMatch.group(1)!) : null;
+          final utilMatch = RegExp(
+            r'"Device Utilization %"\s*=\s*(\d+)',
+          ).firstMatch(block);
+          final util = utilMatch != null
+              ? double.tryParse(utilMatch.group(1)!)
+              : null;
           if (util != null) {
-            gpus.add({
-              'name': name,
-              'utilization': util,
-            });
+            gpus.add({'name': name, 'utilization': util});
           }
         }
       }

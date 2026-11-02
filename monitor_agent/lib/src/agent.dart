@@ -96,9 +96,7 @@ class MonitorAgent {
       client,
       MonitorMessage(
         type: MonitorMessageType.history,
-        payload: {
-          Protocol.snapshots: _history.map((s) => s.toJson()).toList(),
-        },
+        payload: {Protocol.snapshots: _history.map((s) => s.toJson()).toList()},
       ),
     );
   }

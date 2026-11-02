@@ -32,44 +32,41 @@ class WsServer {
   int get currentClientCount => _clients.length;
 
   Future<void> start() async {
-    final wsHandler = webSocketHandler(
-      (WebSocketChannel channel, String? _) {
-        _clients.add(channel);
-        _clientsController.add(_clients.length);
-        onClientConnected?.call(channel);
+    final wsHandler = webSocketHandler((WebSocketChannel channel, String? _) {
+      _clients.add(channel);
+      _clientsController.add(_clients.length);
+      onClientConnected?.call(channel);
 
-        channel.stream.listen(
-          (data) {
-            try {
-              final msg = MonitorMessage.fromJson(
-                jsonDecode(data as String) as Map<String, dynamic>,
+      channel.stream.listen(
+        (data) {
+          try {
+            final msg = MonitorMessage.fromJson(
+              jsonDecode(data as String) as Map<String, dynamic>,
+            );
+            if (msg.type == MonitorMessageType.ping) {
+              channel.sink.add(
+                jsonEncode(
+                  const MonitorMessage(
+                    type: MonitorMessageType.pong,
+                    payload: {},
+                  ).toJson(),
+                ),
               );
-              if (msg.type == MonitorMessageType.ping) {
-                channel.sink.add(
-                  jsonEncode(
-                    const MonitorMessage(
-                      type: MonitorMessageType.pong,
-                      payload: {},
-                    ).toJson(),
-                  ),
-                );
-              }
-            } catch (_) {
-              // Ignore malformed messages
             }
-          },
-          onDone: () {
-            _clients.remove(channel);
-            _clientsController.add(_clients.length);
-          },
-          onError: (_) {
-            _clients.remove(channel);
-            _clientsController.add(_clients.length);
-          },
-        );
-      },
-      pingInterval: const Duration(seconds: 5),
-    );
+          } catch (_) {
+            // Ignore malformed messages
+          }
+        },
+        onDone: () {
+          _clients.remove(channel);
+          _clientsController.add(_clients.length);
+        },
+        onError: (_) {
+          _clients.remove(channel);
+          _clientsController.add(_clients.length);
+        },
+      );
+    }, pingInterval: const Duration(seconds: 5));
 
     // Build handler pipeline with fingerprint endpoint
     shelf.Handler handler;

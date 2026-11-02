@@ -159,11 +159,13 @@ class LinuxRawCollector implements RawCollector {
         final maxFreqs = <int, int>{};
         for (final entry in entries) {
           final name = entry.uri.pathSegments.where((s) => s.isNotEmpty).last;
-          if (name.startsWith('cpu') && int.tryParse(name.substring(3)) != null) {
+          if (name.startsWith('cpu') &&
+              int.tryParse(name.substring(3)) != null) {
             final id = int.parse(name.substring(3));
             final maxFreqFile = File('${entry.path}/cpufreq/cpuinfo_max_freq');
             if (maxFreqFile.existsSync()) {
-              maxFreqs[id] = int.tryParse(maxFreqFile.readAsStringSync().trim()) ?? 0;
+              maxFreqs[id] =
+                  int.tryParse(maxFreqFile.readAsStringSync().trim()) ?? 0;
             }
           }
         }
@@ -204,7 +206,9 @@ class LinuxRawCollector implements RawCollector {
     final cached = values['Cached'] ?? 0;
     final swapTotal = values['SwapTotal'];
     final swapFree = values['SwapFree'];
-    final swapUsed = (swapTotal != null && swapFree != null) ? swapTotal - swapFree : null;
+    final swapUsed = (swapTotal != null && swapFree != null)
+        ? swapTotal - swapFree
+        : null;
 
     return {
       'physical': ?total,
@@ -234,7 +238,9 @@ class LinuxRawCollector implements RawCollector {
         final dev = parts[2];
 
         // Skip loops, ram, partitions
-        if (dev.startsWith('loop') || dev.startsWith('ram') || dev.startsWith('zram')) {
+        if (dev.startsWith('loop') ||
+            dev.startsWith('ram') ||
+            dev.startsWith('zram')) {
           continue;
         }
         if (RegExp(r'^(sd|vd)[a-z]\d').hasMatch(dev)) continue;
@@ -293,10 +299,7 @@ class LinuxRawCollector implements RawCollector {
       }
     } catch (_) {}
 
-    return {
-      'available': interfaces.isNotEmpty,
-      'interfaces': interfaces,
-    };
+    return {'available': interfaces.isNotEmpty, 'interfaces': interfaces};
   }
 
   Future<List<Map<String, dynamic>>> _readGpus() async {
@@ -332,7 +335,10 @@ class LinuxRawCollector implements RawCollector {
           pCount++;
           try {
             final status = File('${entry.path}/status').readAsStringSync();
-            final match = RegExp(r'^Threads:\s+(\d+)', multiLine: true).firstMatch(status);
+            final match = RegExp(
+              r'^Threads:\s+(\d+)',
+              multiLine: true,
+            ).firstMatch(status);
             if (match != null) {
               tCount += int.tryParse(match.group(1)!) ?? 1;
             } else {

@@ -7,7 +7,8 @@ class WindowsRawCollector implements RawCollector {
   Future<Map<String, dynamic>> collectRaw() async {
     final now = DateTime.now().millisecondsSinceEpoch;
     final arch = Platform.version.contains('arm64') ? 'arm64' : 'x86_64';
-    final cpuBrand = Platform.environment['PROCESSOR_IDENTIFIER'] ?? 'Windows Processor';
+    final cpuBrand =
+        Platform.environment['PROCESSOR_IDENTIFIER'] ?? 'Windows Processor';
     final coreCount = Platform.numberOfProcessors;
 
     final cores = <Map<String, dynamic>>[];
@@ -29,17 +30,9 @@ class WindowsRawCollector implements RawCollector {
       'model': 'Windows PC',
       'cpu_brand': cpuBrand,
       'cores': cores,
-      'memory': {
-        'physical': 16 * 1024 * 1024 * 1024,
-      },
-      'disk': {
-        'available': false,
-        'devices': <String>[],
-      },
-      'network': {
-        'available': false,
-        'interfaces': <Map<String, dynamic>>[],
-      },
+      'memory': {'physical': 16 * 1024 * 1024 * 1024},
+      'disk': {'available': false, 'devices': <String>[]},
+      'network': {'available': false, 'interfaces': <Map<String, dynamic>>[]},
       'gpu': <Map<String, dynamic>>[],
     };
   }

@@ -54,7 +54,8 @@ class ActivitySnapshot {
     final oldCores = _maps(previous?['cores']);
     final ids = cores.map((core) => _counter(core['id'])).toList();
     final oldById = {for (final core in oldCores) core['id']: core};
-    final comparable = elapsed != null &&
+    final comparable =
+        elapsed != null &&
         ids.isNotEmpty &&
         ids.every((id) => id != null && id > 0) &&
         ids.toSet().length == ids.length &&
@@ -143,12 +144,16 @@ class ActivitySnapshot {
     if (cpuUsage != null) 'cpu_usage': cpuUsage,
     if (cpuUserUsage != null) 'cpu_user_usage': cpuUserUsage,
     if (cpuSystemUsage != null) 'cpu_system_usage': cpuSystemUsage,
-    'cores': cores.map((c) => {
-      'id': c.id,
-      if (c.usage != null) 'usage': c.usage,
-      if (c.userUsage != null) 'user_usage': c.userUsage,
-      if (c.systemUsage != null) 'system_usage': c.systemUsage,
-    }).toList(),
+    'cores': cores
+        .map(
+          (c) => {
+            'id': c.id,
+            if (c.usage != null) 'usage': c.usage,
+            if (c.userUsage != null) 'user_usage': c.userUsage,
+            if (c.systemUsage != null) 'system_usage': c.systemUsage,
+          },
+        )
+        .toList(),
     'memory': memory.toDeltaJson(),
     'disk': disk.toDeltaJson(),
     'network': network.toDeltaJson(),
@@ -163,9 +168,7 @@ class ActivitySnapshot {
   /// Apply an incremental delta on top of this snapshot, preserving static metadata.
   ActivitySnapshot applyDelta(Map<String, dynamic> delta) {
     final deltaCores = _maps(delta['cores']);
-    final coresById = {
-      for (final c in deltaCores) _counter(c['id']): c,
-    };
+    final coresById = {for (final c in deltaCores) _counter(c['id']): c};
     final updatedCores = cores.map((core) {
       final dc = coresById[core.id];
       if (dc == null) return core;
@@ -327,8 +330,8 @@ class ActivityMemory {
         : null;
     final used = raw.containsKey('available')
         ? (total != null && total > 0 && available != null && available <= total
-            ? total - available
-            : null)
+              ? total - available
+              : null)
         : _sum([app, wired, compressed]);
     return ActivityMemory(
       totalBytes: total,
@@ -449,7 +452,8 @@ class ActivityDisk {
     final devices = _strings(raw['devices']);
     final previousDevices = _strings(previous['devices']);
     final available = raw['available'] == true;
-    final comparable = available &&
+    final comparable =
+        available &&
         previous['available'] == true &&
         devices.isNotEmpty &&
         devices.toSet().length == devices.length &&
@@ -479,8 +483,7 @@ class ActivityDisk {
     if (writeBytes != null) 'write_bytes': writeBytes,
     if (readOperations != null) 'read_operations': readOperations,
     if (writeOperations != null) 'write_operations': writeOperations,
-    if (readBytesPerSecond != null)
-      'read_bytes_per_second': readBytesPerSecond,
+    if (readBytesPerSecond != null) 'read_bytes_per_second': readBytesPerSecond,
     if (writeBytesPerSecond != null)
       'write_bytes_per_second': writeBytesPerSecond,
     if (readOperationsPerSecond != null)
@@ -495,8 +498,7 @@ class ActivityDisk {
     if (writeBytes != null) 'write_bytes': writeBytes,
     if (readOperations != null) 'read_operations': readOperations,
     if (writeOperations != null) 'write_operations': writeOperations,
-    if (readBytesPerSecond != null)
-      'read_bytes_per_second': readBytesPerSecond,
+    if (readBytesPerSecond != null) 'read_bytes_per_second': readBytesPerSecond,
     if (writeBytesPerSecond != null)
       'write_bytes_per_second': writeBytesPerSecond,
     if (readOperationsPerSecond != null)
@@ -514,10 +516,10 @@ class ActivityDisk {
     writeOperations: _counter(delta['write_operations']),
     readBytesPerSecond: (delta['read_bytes_per_second'] as num?)?.toDouble(),
     writeBytesPerSecond: (delta['write_bytes_per_second'] as num?)?.toDouble(),
-    readOperationsPerSecond:
-        (delta['read_operations_per_second'] as num?)?.toDouble(),
-    writeOperationsPerSecond:
-        (delta['write_operations_per_second'] as num?)?.toDouble(),
+    readOperationsPerSecond: (delta['read_operations_per_second'] as num?)
+        ?.toDouble(),
+    writeOperationsPerSecond: (delta['write_operations_per_second'] as num?)
+        ?.toDouble(),
   );
 
   factory ActivityDisk.fromJson(Map<String, dynamic> json) => ActivityDisk(
@@ -529,10 +531,10 @@ class ActivityDisk {
     writeOperations: _counter(json['write_operations']),
     readBytesPerSecond: (json['read_bytes_per_second'] as num?)?.toDouble(),
     writeBytesPerSecond: (json['write_bytes_per_second'] as num?)?.toDouble(),
-    readOperationsPerSecond:
-        (json['read_operations_per_second'] as num?)?.toDouble(),
-    writeOperationsPerSecond:
-        (json['write_operations_per_second'] as num?)?.toDouble(),
+    readOperationsPerSecond: (json['read_operations_per_second'] as num?)
+        ?.toDouble(),
+    writeOperationsPerSecond: (json['write_operations_per_second'] as num?)
+        ?.toDouble(),
   );
 }
 
@@ -580,24 +582,37 @@ class ActivityNetwork {
             name: interface['name'] as String,
             receivedBytes: available ? _counter(interface['rx_bytes']) : null,
             sentBytes: available ? _counter(interface['tx_bytes']) : null,
-            receivedPackets:
-                available ? _counter(interface['rx_packets']) : null,
+            receivedPackets: available
+                ? _counter(interface['rx_packets'])
+                : null,
             sentPackets: available ? _counter(interface['tx_packets']) : null,
             receivedBytesPerSecond: comparable
-                ? _rate(interface['rx_bytes'],
-                    oldInterfaces[interface['name']]?['rx_bytes'], elapsed)
+                ? _rate(
+                    interface['rx_bytes'],
+                    oldInterfaces[interface['name']]?['rx_bytes'],
+                    elapsed,
+                  )
                 : null,
             sentBytesPerSecond: comparable
-                ? _rate(interface['tx_bytes'],
-                    oldInterfaces[interface['name']]?['tx_bytes'], elapsed)
+                ? _rate(
+                    interface['tx_bytes'],
+                    oldInterfaces[interface['name']]?['tx_bytes'],
+                    elapsed,
+                  )
                 : null,
             receivedPacketsPerSecond: comparable
-                ? _rate(interface['rx_packets'],
-                    oldInterfaces[interface['name']]?['rx_packets'], elapsed)
+                ? _rate(
+                    interface['rx_packets'],
+                    oldInterfaces[interface['name']]?['rx_packets'],
+                    elapsed,
+                  )
                 : null,
             sentPacketsPerSecond: comparable
-                ? _rate(interface['tx_packets'],
-                    oldInterfaces[interface['name']]?['tx_packets'], elapsed)
+                ? _rate(
+                    interface['tx_packets'],
+                    oldInterfaces[interface['name']]?['tx_packets'],
+                    elapsed,
+                  )
                 : null,
           ),
     ];
@@ -620,8 +635,9 @@ class ActivityNetwork {
       sentBytes: interfaces.isEmpty
           ? null
           : _sum(interfaces.map((interface) => interface.sentBytes)),
-      receivedBytesPerSecond:
-          rate((interface) => interface.receivedBytesPerSecond),
+      receivedBytesPerSecond: rate(
+        (interface) => interface.receivedBytesPerSecond,
+      ),
       sentBytesPerSecond: rate((interface) => interface.sentBytesPerSecond),
       receivedPackets: interfaces.isEmpty
           ? null
@@ -629,8 +645,9 @@ class ActivityNetwork {
       sentPackets: interfaces.isEmpty
           ? null
           : _sum(interfaces.map((interface) => interface.sentPackets)),
-      receivedPacketsPerSecond:
-          rate((interface) => interface.receivedPacketsPerSecond),
+      receivedPacketsPerSecond: rate(
+        (interface) => interface.receivedPacketsPerSecond,
+      ),
       sentPacketsPerSecond: rate((interface) => interface.sentPacketsPerSecond),
     );
   }
@@ -642,8 +659,7 @@ class ActivityNetwork {
     if (sentBytes != null) 'sent_bytes': sentBytes,
     if (receivedBytesPerSecond != null)
       'received_bytes_per_second': receivedBytesPerSecond,
-    if (sentBytesPerSecond != null)
-      'sent_bytes_per_second': sentBytesPerSecond,
+    if (sentBytesPerSecond != null) 'sent_bytes_per_second': sentBytesPerSecond,
     if (receivedPackets != null) 'received_packets': receivedPackets,
     if (sentPackets != null) 'sent_packets': sentPackets,
     if (receivedPacketsPerSecond != null)
@@ -659,8 +675,7 @@ class ActivityNetwork {
     if (sentBytes != null) 'sent_bytes': sentBytes,
     if (receivedBytesPerSecond != null)
       'received_bytes_per_second': receivedBytesPerSecond,
-    if (sentBytesPerSecond != null)
-      'sent_bytes_per_second': sentBytesPerSecond,
+    if (sentBytesPerSecond != null) 'sent_bytes_per_second': sentBytesPerSecond,
     if (receivedPackets != null) 'received_packets': receivedPackets,
     if (sentPackets != null) 'sent_packets': sentPackets,
     if (receivedPacketsPerSecond != null)
@@ -685,16 +700,15 @@ class ActivityNetwork {
       interfaces: List.unmodifiable(updatedInterfaces),
       receivedBytes: _counter(delta['received_bytes']),
       sentBytes: _counter(delta['sent_bytes']),
-      receivedBytesPerSecond:
-          (delta['received_bytes_per_second'] as num?)?.toDouble(),
-      sentBytesPerSecond:
-          (delta['sent_bytes_per_second'] as num?)?.toDouble(),
+      receivedBytesPerSecond: (delta['received_bytes_per_second'] as num?)
+          ?.toDouble(),
+      sentBytesPerSecond: (delta['sent_bytes_per_second'] as num?)?.toDouble(),
       receivedPackets: _counter(delta['received_packets']),
       sentPackets: _counter(delta['sent_packets']),
-      receivedPacketsPerSecond:
-          (delta['received_packets_per_second'] as num?)?.toDouble(),
-      sentPacketsPerSecond:
-          (delta['sent_packets_per_second'] as num?)?.toDouble(),
+      receivedPacketsPerSecond: (delta['received_packets_per_second'] as num?)
+          ?.toDouble(),
+      sentPacketsPerSecond: (delta['sent_packets_per_second'] as num?)
+          ?.toDouble(),
     );
   }
 
@@ -702,20 +716,21 @@ class ActivityNetwork {
       ActivityNetwork(
         available: json['available'] == true,
         interfaces: List.unmodifiable(
-          _maps(json['interfaces']).map((i) => ActivityNetworkInterface.fromJson(i)),
+          _maps(
+            json['interfaces'],
+          ).map((i) => ActivityNetworkInterface.fromJson(i)),
         ),
         receivedBytes: _counter(json['received_bytes']),
         sentBytes: _counter(json['sent_bytes']),
-        receivedBytesPerSecond:
-            (json['received_bytes_per_second'] as num?)?.toDouble(),
-        sentBytesPerSecond:
-            (json['sent_bytes_per_second'] as num?)?.toDouble(),
+        receivedBytesPerSecond: (json['received_bytes_per_second'] as num?)
+            ?.toDouble(),
+        sentBytesPerSecond: (json['sent_bytes_per_second'] as num?)?.toDouble(),
         receivedPackets: _counter(json['received_packets']),
         sentPackets: _counter(json['sent_packets']),
-        receivedPacketsPerSecond:
-            (json['received_packets_per_second'] as num?)?.toDouble(),
-        sentPacketsPerSecond:
-            (json['sent_packets_per_second'] as num?)?.toDouble(),
+        receivedPacketsPerSecond: (json['received_packets_per_second'] as num?)
+            ?.toDouble(),
+        sentPacketsPerSecond: (json['sent_packets_per_second'] as num?)
+            ?.toDouble(),
       );
 }
 
@@ -748,8 +763,7 @@ class ActivityNetworkInterface {
     if (sentBytes != null) 'sent_bytes': sentBytes,
     if (receivedBytesPerSecond != null)
       'received_bytes_per_second': receivedBytesPerSecond,
-    if (sentBytesPerSecond != null)
-      'sent_bytes_per_second': sentBytesPerSecond,
+    if (sentBytesPerSecond != null) 'sent_bytes_per_second': sentBytesPerSecond,
     if (receivedPackets != null) 'received_packets': receivedPackets,
     if (sentPackets != null) 'sent_packets': sentPackets,
     if (receivedPacketsPerSecond != null)
@@ -763,16 +777,15 @@ class ActivityNetworkInterface {
         name: _text(json['name']),
         receivedBytes: _counter(json['received_bytes']),
         sentBytes: _counter(json['sent_bytes']),
-        receivedBytesPerSecond:
-            (json['received_bytes_per_second'] as num?)?.toDouble(),
-        sentBytesPerSecond:
-            (json['sent_bytes_per_second'] as num?)?.toDouble(),
+        receivedBytesPerSecond: (json['received_bytes_per_second'] as num?)
+            ?.toDouble(),
+        sentBytesPerSecond: (json['sent_bytes_per_second'] as num?)?.toDouble(),
         receivedPackets: _counter(json['received_packets']),
         sentPackets: _counter(json['sent_packets']),
-        receivedPacketsPerSecond:
-            (json['received_packets_per_second'] as num?)?.toDouble(),
-        sentPacketsPerSecond:
-            (json['sent_packets_per_second'] as num?)?.toDouble(),
+        receivedPacketsPerSecond: (json['received_packets_per_second'] as num?)
+            ?.toDouble(),
+        sentPacketsPerSecond: (json['sent_packets_per_second'] as num?)
+            ?.toDouble(),
       );
 }
 
@@ -797,9 +810,9 @@ Map<String, dynamic> _map(dynamic value) =>
     value is Map ? Map<String, dynamic>.from(value) : const {};
 List<Map<String, dynamic>> _maps(dynamic value) => value is List
     ? value
-        .whereType<Map>()
-        .map((value) => Map<String, dynamic>.from(value))
-        .toList()
+          .whereType<Map>()
+          .map((value) => Map<String, dynamic>.from(value))
+          .toList()
     : const [];
 List<String> _strings(dynamic value) =>
     value is List ? value.whereType<String>().toList() : const [];
@@ -822,12 +835,12 @@ int? _sum(Iterable<int?> values) {
 
 double? _percent(int? value, int? total) =>
     value != null && total != null && total > 0
-        ? (value / total * 100).clamp(0.0, 100.0)
-        : null;
+    ? (value / total * 100).clamp(0.0, 100.0)
+    : null;
 double? _utilization(dynamic value) =>
     value is num && value.isFinite && value >= 0 && value <= 100
-        ? value.toDouble()
-        : null;
+    ? value.toDouble()
+    : null;
 double? _rate(dynamic value, dynamic previous, double? elapsed) {
   final delta = _delta(value, previous);
   return delta != null && elapsed != null && elapsed > 0
@@ -836,7 +849,9 @@ double? _rate(dynamic value, dynamic previous, double? elapsed) {
 }
 
 (int, int, int, int)? _cpuDelta(
-    Map<String, dynamic> core, Map<String, dynamic>? previous) {
+  Map<String, dynamic> core,
+  Map<String, dynamic>? previous,
+) {
   if (previous == null) return null;
   final user = _delta(core['user'], previous['user']);
   final system = _delta(core['system'], previous['system']);
