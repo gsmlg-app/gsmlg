@@ -2,20 +2,20 @@ import 'dart:io';
 
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
+import 'package:app_system_metrics/app_system_metrics.dart' as sys;
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/device/activity_monitor_dashboard.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/add_host_dialog.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/cert_mismatch_dialog.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/host_activity_converter.dart';
-import 'package:gsmlg/screens/toolbox/monitor/widgets/host_list_tile.dart';
-import 'package:gsmlg/screens/toolbox/monitor/widgets/metrics_dashboard.dart';
+import 'package:gsmlg/screens/toolbox/monitor/widgets/host_card.dart';
 import 'package:gsmlg/screens/toolbox/monitor/widgets/trust_dialog.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 import 'package:monitor_bloc/monitor_bloc.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 class MonitorScreen extends StatefulWidget {
   static const name = 'Monitor';
@@ -127,14 +127,17 @@ class _MonitorScreenState extends State<MonitorScreen> {
           if (isWide) {
             return Row(
               children: [
-                SizedBox(width: 280, child: _buildHostList(context, hosts)),
+                SizedBox(
+                  width: 360,
+                  child: _buildHostList(context, hosts, isSidePane: true),
+                ),
                 const VerticalDivider(width: 1),
                 Expanded(
                   child:
                       _selectedHostId != null &&
-                          hosts.containsKey(_selectedHostId)
-                      ? _buildMetricsDetail(context, hosts[_selectedHostId]!)
-                      : _buildEmptyDetail(context),
+                              hosts.containsKey(_selectedHostId)
+                          ? _buildMetricsDetail(context, hosts[_selectedHostId]!)
+                          : _buildEmptyDetail(context),
                 ),
               ],
             );
@@ -146,13 +149,17 @@ class _MonitorScreenState extends State<MonitorScreen> {
               hosts[_selectedHostId]!,
             );
           }
-          return _buildHostList(context, hosts);
+          return _buildHostList(context, hosts, isSidePane: false);
         },
       ),
     );
   }
 
-  Widget _buildHostList(BuildContext context, Map<String, MonitorHost> hosts) {
+  Widget _buildHostList(
+    BuildContext context,
+    Map<String, MonitorHost> hosts, {
+    bool isSidePane = false,
+  }) {
     return SafeArea(
       minimum: Platform.isMacOS
           ? const EdgeInsets.all(kDefaultGridGap)
@@ -163,9 +170,10 @@ class _MonitorScreenState extends State<MonitorScreen> {
           slivers: [
             DmNavigationHeader(
               builder: (context, header) => SliverAppBar(
-                leading: header.leading,
-                leadingWidth: header.leadingWidth,
-                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                leading: isSidePane ? null : header.leading,
+                leadingWidth: isSidePane ? null : header.leadingWidth,
+                automaticallyImplyLeading:
+                    !isSidePane && header.automaticallyImplyLeading,
                 floating: true,
                 title: const Text('Monitor'),
                 actions: [
@@ -193,238 +201,603 @@ class _MonitorScreenState extends State<MonitorScreen> {
             ),
             if (hosts.isEmpty)
               SliverFillRemaining(
+                hasScrollBody: false,
                 child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.monitor_heart_outlined,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.secondary,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outlineVariant
+                              .withValues(alpha: 0.5),
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _isScanning ? 'Scanning network...' : 'No hosts found',
-                        style: Theme.of(context).textTheme.titleLarge,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 36,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer
+                                    .withValues(alpha: 0.4),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.monitor_heart_outlined,
+                                size: 32,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _isScanning
+                                  ? 'Scanning network...'
+                                  : 'No hosts found',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add a host manually or start an agent on your local network.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            FilledButton.icon(
+                              onPressed: () => _showAddHostDialog(context),
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('Add Host'),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Add a host manually or start an agent on your network.',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      FilledButton.icon(
-                        onPressed: () => _showAddHostDialog(context),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Host'),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               )
             else
-              SliverList.builder(
-                itemCount: hosts.length,
-                itemBuilder: (context, index) {
-                  final host = hosts.values.elementAt(index);
-                  return HostListTile(
-                    host: host,
-                    selected: host.id == _selectedHostId,
-                    onTap: () {
-                      if (host.trustStatus == TrustStatus.pending &&
-                          host.certFingerprint != null) {
-                        _showTrustDialog(context, host);
-                      } else {
-                        setState(() => _selectedHostId = host.id);
-                      }
-                    },
-                    onRemove: () {
-                      context.read<MonitorBloc>().add(
-                        MonitorRemoveHost(hostId: host.id),
-                      );
-                      if (_selectedHostId == host.id) {
-                        setState(() => _selectedHostId = null);
-                      }
-                    },
-                  );
-                },
-              ),
+              _buildResponsiveHostGrid(context, hosts, isSidePane: isSidePane),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildResponsiveHostGrid(
+    BuildContext context,
+    Map<String, MonitorHost> hosts, {
+    required bool isSidePane,
+  }) {
+    if (isSidePane) {
+      return SliverPadding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        sliver: SliverList.separated(
+          itemCount: hosts.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final host = hosts.values.elementAt(index);
+            return HostCard(
+              host: host,
+              selected: host.id == _selectedHostId,
+              onTap: () => _onHostTap(host),
+              onRemove: () => _onHostRemove(host),
+              onConnect: () => _monitorBloc.add(
+                MonitorConnectHost(hostId: host.id),
+              ),
+              onDisconnect: () => _monitorBloc.add(
+                MonitorDisconnectHost(hostId: host.id),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.crossAxisExtent;
+        const padding = 16.0;
+        const gap = 16.0;
+        final contentWidth = availableWidth - padding * 2;
+        final cols = (contentWidth / 360).floor().clamp(1, 4);
+
+        if (cols == 1) {
+          return SliverPadding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: padding,
+              vertical: 12,
+            ),
+            sliver: SliverList.separated(
+              itemCount: hosts.length,
+              separatorBuilder: (_, _) => const SizedBox(height: gap),
+              itemBuilder: (context, index) {
+                final host = hosts.values.elementAt(index);
+                return HostCard(
+                  host: host,
+                  selected: host.id == _selectedHostId,
+                  onTap: () => _onHostTap(host),
+                  onRemove: () => _onHostRemove(host),
+                  onConnect: () => _monitorBloc.add(
+                    MonitorConnectHost(hostId: host.id),
+                  ),
+                  onDisconnect: () => _monitorBloc.add(
+                    MonitorDisconnectHost(hostId: host.id),
+                  ),
+                );
+              },
+            ),
+          );
+        }
+
+        final cardWidth = (contentWidth - (cols - 1) * gap) / cols;
+        return SliverPadding(
+          padding: const EdgeInsets.all(padding),
+          sliver: SliverToBoxAdapter(
+            child: Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              children: hosts.values.map((host) {
+                return SizedBox(
+                  width: cardWidth,
+                  child: HostCard(
+                    host: host,
+                    selected: host.id == _selectedHostId,
+                    onTap: () => _onHostTap(host),
+                    onRemove: () => _onHostRemove(host),
+                    onConnect: () => _monitorBloc.add(
+                      MonitorConnectHost(hostId: host.id),
+                    ),
+                    onDisconnect: () => _monitorBloc.add(
+                      MonitorDisconnectHost(hostId: host.id),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _onHostTap(MonitorHost host) {
+    if (host.trustStatus == TrustStatus.pending &&
+        host.certFingerprint != null) {
+      _showTrustDialog(context, host);
+    } else {
+      if (host.status == ConnectionStatus.disconnected) {
+        _monitorBloc.add(MonitorConnectHost(hostId: host.id));
+      }
+      setState(() => _selectedHostId = host.id);
+    }
+  }
+
+  void _onHostRemove(MonitorHost host) {
+    _monitorBloc.add(MonitorRemoveHost(hostId: host.id));
+    if (_selectedHostId == host.id) {
+      setState(() => _selectedHostId = null);
+    }
+  }
+
   Widget _buildEmptyDetail(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.arrow_back,
-            size: 48,
-            color: Theme.of(context).colorScheme.secondary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Select a host to view metrics',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.computer_outlined,
+                size: 44,
+                color: colorScheme.secondary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No Host Selected',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Select a host from the list to view real-time CPU, memory, disk, and network activity.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMetricsDetailWithBack(BuildContext context, MonitorHost host) {
-    return Column(
-      children: [
-        DmAppBar(
-          restoreNavigation: true,
-          title: Text(host.displayName),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            tooltip: 'Back to host list',
-            onPressed: () => setState(() => _selectedHostId = null),
+    return SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to host list',
+              onPressed: () => setState(() => _selectedHostId = null),
+            ),
+            title: _buildHostTitle(context, host),
+            actions: _buildHostActions(context, host),
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Ping agent',
-              onPressed: () => context.read<MonitorBloc>().add(
-                MonitorPingHost(hostId: host.id),
-              ),
-            ),
-            IconButton(
-              icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
-              tooltip: _isPinned ? 'Unpin' : 'Pin fullscreen',
-              onPressed: _togglePin,
-            ),
-          ],
-        ),
-        Expanded(child: _buildMetricsContent(context, host)),
-      ],
+          ..._buildMetricsSlivers(context, host),
+        ],
+      ),
     );
   }
 
   Widget _buildMetricsDetail(BuildContext context, MonitorHost host) {
+    return SafeArea(
+      child: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            automaticallyImplyLeading: false,
+            title: _buildHostTitle(context, host),
+            actions: _buildHostActions(context, host),
+          ),
+          ..._buildMetricsSlivers(context, host),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHostTitle(BuildContext context, MonitorHost host) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final osText = host.hostInfo?.os != null && host.hostInfo!.os.isNotEmpty
+        ? ' • ${host.hostInfo!.os}'
+        : '';
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        DmAppBar(
-          title: Text(host.displayName),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Ping agent',
-              onPressed: () => context.read<MonitorBloc>().add(
-                MonitorPingHost(hostId: host.id),
-              ),
-            ),
-            IconButton(
-              icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
-              tooltip: _isPinned ? 'Unpin' : 'Pin fullscreen',
-              onPressed: _togglePin,
-            ),
-          ],
+        Text(
+          host.displayName,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        Expanded(child: _buildMetricsContent(context, host)),
+        Text(
+          '${host.ip}:${host.port}$osText',
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontFamily: 'monospace',
+            color: colorScheme.onSurfaceVariant,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ],
     );
   }
 
-  Widget _buildMetricsContent(BuildContext context, MonitorHost host) {
-    if (host.trustStatus == TrustStatus.pending) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.lock_outline,
-              size: 48,
-              color: Theme.of(context).extension<DmColorExtension>()!.warning,
-            ),
-            const SizedBox(height: 16),
-            const Text('Waiting for trust verification'),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => _showTrustDialog(context, host),
-              child: const Text('Verify Fingerprint'),
-            ),
-          ],
+  List<Widget> _buildHostActions(BuildContext context, MonitorHost host) {
+    return [
+      if (host.status == ConnectionStatus.connected)
+        IconButton(
+          icon: const Icon(Icons.refresh),
+          tooltip: 'Ping host',
+          onPressed: () => _monitorBloc.add(
+            MonitorPingHost(hostId: host.id),
+          ),
         ),
-      );
+      IconButton(
+        icon: Icon(_isPinned ? Icons.push_pin : Icons.push_pin_outlined),
+        tooltip: _isPinned ? 'Unpin' : 'Pin fullscreen',
+        onPressed: _togglePin,
+      ),
+      PopupMenuButton<String>(
+        onSelected: (action) {
+          switch (action) {
+            case 'connect':
+              _monitorBloc.add(MonitorConnectHost(hostId: host.id));
+            case 'disconnect':
+              _monitorBloc.add(MonitorDisconnectHost(hostId: host.id));
+            case 'remove':
+              _onHostRemove(host);
+          }
+        },
+        itemBuilder: (context) => [
+          if (host.status != ConnectionStatus.connected)
+            const PopupMenuItem(
+              value: 'connect',
+              child: Row(
+                children: [
+                  Icon(Icons.link, size: 18),
+                  SizedBox(width: 8),
+                  Text('Connect'),
+                ],
+              ),
+            )
+          else
+            const PopupMenuItem(
+              value: 'disconnect',
+              child: Row(
+                children: [
+                  Icon(Icons.link_off, size: 18),
+                  SizedBox(width: 8),
+                  Text('Disconnect'),
+                ],
+              ),
+            ),
+          const PopupMenuItem(
+            value: 'remove',
+            child: Row(
+              children: [
+                Icon(Icons.delete_outline, size: 18),
+                SizedBox(width: 8),
+                Text('Remove Host'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _buildMetricsSlivers(BuildContext context, MonitorHost host) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final dmColors = theme.extension<DmColorExtension>();
+    final warningColor = dmColors?.warning ?? colorScheme.secondary;
+
+    if (host.trustStatus == TrustStatus.pending) {
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: warningColor),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock_outline, size: 48, color: warningColor),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Certificate Verification Required',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'This host is presenting a new TLS certificate. Verify its fingerprint to establish trust.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      FilledButton.icon(
+                        onPressed: () => _showTrustDialog(context, host),
+                        icon: const Icon(Icons.verified_user),
+                        label: const Text('Verify Fingerprint'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ];
     }
 
     if (host.status == ConnectionStatus.connecting) {
-      return const Center(child: CircularProgressIndicator.adaptive());
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator.adaptive(),
+                const SizedBox(height: 16),
+                Text(
+                  'Connecting to ${host.displayName}...',
+                  style: theme.textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${host.ip}:${host.port}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontFamily: 'monospace',
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
     }
 
     if (host.status == ConnectionStatus.error) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            const Text('Unable to connect'),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => context.read<MonitorBloc>().add(
-                MonitorConnectHost(hostId: host.id),
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: colorScheme.error,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Connection Error',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Unable to connect to host agent at ${host.ip}:${host.port}',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: () => _monitorBloc.add(
+                      MonitorConnectHost(hostId: host.id),
+                    ),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry Connection'),
+                  ),
+                ],
               ),
-              child: const Text('Retry'),
             ),
-          ],
+          ),
         ),
-      );
+      ];
     }
 
     if (host.status == ConnectionStatus.disconnected) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.cloud_off, size: 48),
-            const SizedBox(height: 16),
-            const Text('Disconnected'),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => context.read<MonitorBloc>().add(
-                MonitorConnectHost(hostId: host.id),
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.cloud_off,
+                    size: 48,
+                    color: colorScheme.outline,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Host Offline',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Host is disconnected. Connect to resume live telemetry monitoring.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: () => _monitorBloc.add(
+                      MonitorConnectHost(hostId: host.id),
+                    ),
+                    icon: const Icon(Icons.link),
+                    label: const Text('Connect Host'),
+                  ),
+                ],
               ),
-              child: const Text('Connect'),
             ),
-          ],
+          ),
         ),
-      );
+      ];
     }
 
-    if (host.snapshot != null) {
-      return ActivityMonitorDashboard(
-        snapshot: toAppMetricsSnapshot(host.snapshot!),
-        history: host.history.map(toAppMetricsSnapshot).toList(),
-        running: host.status == ConnectionStatus.connected,
-        deviceName: host.displayName,
-      );
+    final sysSnapshot = host.snapshot != null
+        ? toAppMetricsSnapshot(host.snapshot!)
+        : (host.metrics != null
+            ? systemMetricsToActivitySnapshot(host.metrics!, host.hostInfo)
+            : null);
+
+    if (sysSnapshot != null) {
+      final sysHistory = host.history.isNotEmpty
+          ? host.history.map(toAppMetricsSnapshot).toList()
+          : <sys.ActivitySnapshot>[sysSnapshot];
+
+      return [
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          sliver: SliverToBoxAdapter(
+            child: ActivityMonitorDashboard(
+              snapshot: sysSnapshot,
+              history: sysHistory,
+              running: host.status == ConnectionStatus.connected,
+              deviceName: host.displayName,
+            ),
+          ),
+        ),
+      ];
     }
 
-    if (host.metrics != null) {
-      return MetricsDashboard(
-        host: host,
-        cpuHistory: host.cpuHistory,
-        memoryHistory: host.memoryHistory,
-        rxHistory: host.rxHistory,
-        txHistory: host.txHistory,
-        readHistory: host.readHistory,
-        writeHistory: host.writeHistory,
-      );
-    }
-
-    return const Center(child: CircularProgressIndicator.adaptive());
+    return [
+      SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator.adaptive(),
+              const SizedBox(height: 16),
+              Text(
+                'Waiting for telemetry from ${host.displayName}...',
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
   }
 
   void _showTrustDialog(BuildContext context, MonitorHost host) {

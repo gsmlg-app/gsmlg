@@ -77,3 +77,87 @@ sys.ActivitySnapshot toAppMetricsSnapshot(m.ActivitySnapshot s) {
     threadCountComplete: s.threadCountComplete,
   );
 }
+
+sys.ActivitySnapshot systemMetricsToActivitySnapshot(
+  m.SystemMetrics metrics,
+  m.HostInfo? hostInfo, {
+  DateTime? timestamp,
+}) {
+  final now = timestamp ?? DateTime.now();
+  final cpu = metrics.cpu;
+  final memory = metrics.memory;
+  return sys.ActivitySnapshot(
+    timestamp: now,
+    architecture: hostInfo?.os ?? '',
+    model: hostInfo?.hostname ?? '',
+    cpuBrand: hostInfo?.cpuModel.isNotEmpty == true ? hostInfo!.cpuModel : 'CPU',
+    cpuUsage: cpu?.usagePercent,
+    cores: [
+      if (cpu != null)
+        for (var i = 0; i < cpu.perCore.length; i++)
+          sys.ActivityCpuCore(
+            id: i + 1,
+            type: 'performance',
+            usage: cpu.perCore[i],
+          ),
+    ],
+    memory: sys.ActivityMemory(
+      totalBytes: memory?.totalBytes,
+      usedBytes: memory?.usedBytes,
+      freeBytes: memory != null && memory.totalBytes >= memory.usedBytes
+          ? (memory.totalBytes - memory.usedBytes)
+          : null,
+      swapTotalBytes: memory?.swapTotalBytes,
+      swapUsedBytes: memory?.swapUsedBytes,
+      pressure: 1,
+      usage: memory?.usagePercent,
+    ),
+    disk: sys.ActivityDisk(
+      available: metrics.disks.isNotEmpty,
+      devices: metrics.disks.map((d) => d.device).toList(),
+      readBytes: metrics.disks.fold<int>(0, (sum, d) => sum + d.readBytesPerSec),
+      writeBytes: metrics.disks.fold<int>(0, (sum, d) => sum + d.writeBytesPerSec),
+      readBytesPerSecond: metrics.disks.fold<double>(
+        0.0,
+        (sum, d) => sum + d.readBytesPerSec.toDouble(),
+      ),
+      writeBytesPerSecond: metrics.disks.fold<double>(
+        0.0,
+        (sum, d) => sum + d.writeBytesPerSec.toDouble(),
+      ),
+    ),
+    network: sys.ActivityNetwork(
+      available: metrics.networks.isNotEmpty,
+      interfaces: metrics.networks
+          .map(
+            (n) => sys.ActivityNetworkInterface(
+              name: n.interface_,
+              receivedBytes: n.rxBytesPerSec,
+              sentBytes: n.txBytesPerSec,
+              receivedBytesPerSecond: n.rxBytesPerSec.toDouble(),
+              sentBytesPerSecond: n.txBytesPerSec.toDouble(),
+            ),
+          )
+          .toList(),
+      receivedBytes:
+          metrics.networks.fold<int>(0, (sum, n) => sum + n.rxBytesPerSec),
+      sentBytes: metrics.networks.fold<int>(0, (sum, n) => sum + n.txBytesPerSec),
+      receivedBytesPerSecond: metrics.networks.fold<double>(
+        0.0,
+        (sum, n) => sum + n.rxBytesPerSec.toDouble(),
+      ),
+      sentBytesPerSecond: metrics.networks.fold<double>(
+        0.0,
+        (sum, n) => sum + n.txBytesPerSec.toDouble(),
+      ),
+    ),
+    gpus: metrics.gpus
+        .map(
+          (g) => sys.ActivityGpu(
+            name: g.name,
+            usage: g.usagePercent,
+          ),
+        )
+        .toList(),
+  );
+}
