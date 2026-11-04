@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../Vendor/md5/ios_error.h"
+#include "Vendor/md5/ios_error.h"
 
 static void md5Diagnostic(int includeError, const char *format, ...) {
     int error = errno;
@@ -28,4 +28,4 @@ static void md5Diagnostic(int includeError, const char *format, ...) {
 #define md5_rflag webterminal_md5_rflag
 #define md5_sflag webterminal_md5_sflag
 #define Algorithm webterminal_md5_algorithms
-#include "../Vendor/md5/md5.c"
+#include "Vendor/md5/md5.c"

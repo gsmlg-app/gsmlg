@@ -2,11 +2,6 @@
 
 import PackageDescription
 
-let frameworks = [
-    "ios_system", "shell", "files", "text", "tar", "awk", "openssl",
-    "libssh2", "curl_ios", "network_ios", "lua_ios", "lg2", "Python",
-]
-
 let package = Package(
     name: "ios_shell",
     platforms: [.iOS("14.0")],
@@ -20,17 +15,42 @@ let package = Package(
         .target(
             name: "ios_shell",
             dependencies: [
-                .product(name: "FlutterFramework", package: "FlutterFramework"),
                 "ios_shell_native",
-            ] + frameworks.map { .target(name: $0) }
+                "ios_system",
+                "shell",
+                "files",
+                "text",
+                "tar",
+                "awk",
+                "openssl",
+                "libssh2",
+                "curl_ios",
+                "network_ios",
+                "lua_ios",
+                "lg2",
+                "Python",
+                .product(name: "FlutterFramework", package: "FlutterFramework")
+            ],
+            resources: [.process("Resources")]
         ),
         .target(
             name: "ios_shell_native",
-            dependencies: frameworks.map { .target(name: $0) },
-            exclude: ["IosShellPlugin.swift", "commandDictionary.plist", "ios_shell-Bridging-Header.h"],
-            publicHeadersPath: "."
+            dependencies: ["ios_system", "Python"],
+            exclude: ["Vendor"],
+            publicHeadersPath: "include"
         ),
-    ] + frameworks.map {
-        .binaryTarget(name: $0, path: "Frameworks/\($0).xcframework")
-    }
+        .binaryTarget(name: "ios_system", path: "Frameworks/ios_system.xcframework"),
+        .binaryTarget(name: "shell", path: "Frameworks/shell.xcframework"),
+        .binaryTarget(name: "files", path: "Frameworks/files.xcframework"),
+        .binaryTarget(name: "text", path: "Frameworks/text.xcframework"),
+        .binaryTarget(name: "tar", path: "Frameworks/tar.xcframework"),
+        .binaryTarget(name: "awk", path: "Frameworks/awk.xcframework"),
+        .binaryTarget(name: "openssl", path: "Frameworks/openssl.xcframework"),
+        .binaryTarget(name: "libssh2", path: "Frameworks/libssh2.xcframework"),
+        .binaryTarget(name: "curl_ios", path: "Frameworks/curl_ios.xcframework"),
+        .binaryTarget(name: "network_ios", path: "Frameworks/network_ios.xcframework"),
+        .binaryTarget(name: "lua_ios", path: "Frameworks/lua_ios.xcframework"),
+        .binaryTarget(name: "lg2", path: "Frameworks/lg2.xcframework"),
+        .binaryTarget(name: "Python", path: "Frameworks/Python.xcframework")
+    ]
 )

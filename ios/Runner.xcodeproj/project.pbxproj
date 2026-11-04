@@ -266,15 +266,17 @@
 			inputFileListPaths = (
 			);
 			inputPaths = (
+				"${SRCROOT}/../app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/commandDictionary.plist",
 			);
 			name = "Copy ios_system Command Dictionary";
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/commandDictionary.plist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -eu\nSHELL_ROOT=\"${SRCROOT}/../app_plugin/ios_shell/ios\"\nRESOURCES=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}\"\ncp \"${SHELL_ROOT}/Classes/commandDictionary.plist\" \"${RESOURCES}/\"\ncp \"${SHELL_ROOT}/Resources/cacert.pem\" \"${RESOURCES}/\"\nmkdir -p \"${RESOURCES}/Notices\"\ncp \"${SHELL_ROOT}/Resources/Notices/\"* \"${RESOURCES}/Notices/\"\n";
+			shellScript = "set -eu\ncp \"${SRCROOT}/../app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/commandDictionary.plist\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/commandDictionary.plist\"\n";
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;

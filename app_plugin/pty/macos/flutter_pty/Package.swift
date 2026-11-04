@@ -4,16 +4,14 @@ import PackageDescription
 
 let package = Package(
     name: "flutter_pty",
-    platforms: [.macOS("10.14")],
+    platforms: [.macOS("10.11")],
     products: [
         .library(name: "flutter-pty", type: .dynamic, targets: ["flutter_pty"])
     ],
     targets: [
         .target(
             name: "flutter_pty",
-            exclude: ["CMakeLists.txt", "flutter_pty_win.c", "flutter_pty_unix.c", "forkpty.c", "include/dart_api_dl.c"],
-            sources: ["flutter_pty.c"],
-            publicHeadersPath: "include"
+            cSettings: [.define("DART_SHARED_LIB")]
         )
     ]
 )

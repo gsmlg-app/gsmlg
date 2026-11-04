@@ -87,8 +87,8 @@ The native build systems that are invoked by FFI (and method channel) plugins ar
 * For Android: Gradle, which invokes the Android NDK for native builds.
   * See the documentation in android/build.gradle.
 * For iOS and macOS: Xcode, via Swift Package Manager.
-  * See the documentation in ios/flutter_pty.podspec.
-  * See the documentation in macos/flutter_pty.podspec.
+  * See `ios/flutter_pty/Package.swift` and `macos/flutter_pty/Package.swift`.
+  * The dynamic `flutter-pty` product preserves the native symbols loaded by Dart FFI.
 * For Linux and Windows: CMake.
   * See the documentation in linux/CMakeLists.txt.
   * See the documentation in windows/CMakeLists.txt.

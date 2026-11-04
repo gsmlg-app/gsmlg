@@ -1,6 +1,6 @@
 # Terminal integration and upstream synchronization
 
-Last checked: 2026-10-29. Uncommitted implementation on GSMLG `main`, starting at `1d1fbfbe4fe3427b927aed8debf8b565404cc037`. Imported Web Terminal baseline: `67f4a5afb335849852da972cfb71cb5fe725c7ff`.
+Last checked: 2026-11-05. SwiftPM migration base: GSMLG `main` at `e66b9900`; the original terminal integration started at `1d1fbfbe4fe3427b927aed8debf8b565404cc037`. Imported Web Terminal baseline: `67f4a5afb335849852da972cfb71cb5fe725c7ff`.
 
 ## Ownership and behavior
 
@@ -14,7 +14,7 @@ The application database advances from schema 18 to 19, adding the source SSH ke
 
 Terminal-owned packages, native inputs and package/vendor notices retain source paths where practical. Constraints align to GSMLG's existing Equatable 3, Duskmoon 2 and secure-storage 11 ecosystem. The source whole-app Settings root, duplicate theme/device settings, unrelated macOS developer UI and their tests are excluded; no required terminal tests were removed to hide failures. Drift/localization/plugin registrants are generated from the integrated sources.
 
-Android's host Gradle configuration enables legacy JNI extraction because bundled shell executables run from nativeLibraryDir. Apple hosts now use Swift Package Manager. The local `ios_shell` package separates Swift registration from the Objective-C/C bridge and declares its vendored XCFrameworks as binary targets; `flutter_pty` provides a dynamic `flutter-pty` product using the shared C sources. iOS Runner phases copy the command dictionary, CA bundle and notices and embed Python directly from `app_plugin/ios_shell`. The earlier CocoaPods build results below predate this migration and do not validate the current SwiftPM configuration. Existing macOS sandbox entitlements have not been changed; the built app reproduces an App Sandbox incompatibility in upstream PTY child setup (issue #8 below).
+Android's host Gradle configuration enables legacy JNI extraction because bundled shell executables run from nativeLibraryDir. The Apple plugins now use Swift Package Manager. Runner's Xcode build phases copy the iOS Shell command dictionary to the main bundle and embed Python using workspace-relative paths. The shell package separates Swift and C/Objective-C targets, bundles certificates/notices through `Bundle.module`, and links the existing downloaded XCFrameworks. PTY uses a dynamic `flutter-pty` product and loads `flutter-pty.framework/flutter-pty`. The earlier macOS Debug, Android ARM64 Debug and iOS simulator Debug builds passed; platform runtime acceptance is separate. Existing macOS sandbox entitlements have not been changed; the built app reproduces an App Sandbox incompatibility in upstream PTY child setup (issue #8 below).
 
 ## Synchronization
 
@@ -38,6 +38,7 @@ These are source limitations, not local implementations. Per repository policy, 
 
 Passed:
 
+- SwiftPM migration: macOS Debug and iOS simulator Debug app builds, actual embedded macOS PTY library loading and Dart/native lifecycle checks, scoped PTY Dart analysis, and the 22 sync-helper tests. These checks do not establish application runtime acceptance or resolve the existing macOS sandbox boundary.
 - Scoped Dart analysis of imported terminal/core/shared/UI/provider sources and added UI tests.
 - Database: 8 Flutter tests, including schema 18→19 upgrade preserving a real chat record, SSH/profile persistence after reopen, fresh creation, and existing earlier migration tests.
 - Vault/SSH credential storage: 36 Flutter tests, including reference storage, failure behavior and existing platform-vault compatibility coverage.
@@ -67,4 +68,4 @@ Failures/blockers:
 - Session creation/switch/close, Settings navigation, direct soft-keyboard typing and folded outer-display behavior were not accepted in this run. No extra terminal session or test filesystem data was created. Mobile cold-start local-tab restoration remains blocked by upstream #7.
 - Updated app and existing data retained. Installation log: `/tmp/gsmlg-pixel-fold-install.txt`.
 
-No branch/worktree, commit, push, release or deployment was performed.
+No release or deployment was performed during the SwiftPM migration.

@@ -5385,7 +5385,7 @@
     {
       "source": "ios/Podfile",
       "destination": "ios/Runner.xcodeproj/project.pbxproj",
-      "reason": "GSMLG uses Swift Package Manager. Manually merge upstream ios_system command dictionary and Python embedding requirements into Runner build phases; do not restore the CocoaPods Podfile."
+      "reason": "Manually merge upstream ios_system command dictionary and Python embedding hooks into Runner Xcode build phases using workspace-relative paths. GSMLG uses Swift Package Manager; do not restore the upstream Podfile or CocoaPods integration."
     },
     {
       "source": "android/app/build.gradle.kts",
@@ -5559,20 +5559,13 @@
     {
       "paths": [
         "ios/Runner.xcodeproj/project.pbxproj",
-        "android/app/build.gradle.kts"
-      ],
-      "description": "Application native build files remain manual merges: iOS Runner phases copy the command dictionary, CA bundle and notices and embed Python from app_plugin/ios_shell without CocoaPods; Android jniLibs.useLegacyPackaging=true enables executable extraction."
-    },
-    {
-      "paths": [
         "app_plugin/ios_shell/ios/ios_shell",
-        "app_plugin/ios_shell/ios/Classes/IosShellPlugin.swift",
         "app_plugin/pty/ios/flutter_pty",
         "app_plugin/pty/macos/flutter_pty",
         "app_plugin/pty/lib/flutter_pty.dart",
-        "app_plugin/pty/test/test_native_lifecycle.py"
+        "android/app/build.gradle.kts"
       ],
-      "description": "GSMLG owns SwiftPM packaging for ios_shell and flutter_pty. Reuse native sources through relative symlinks, keep the Objective-C shell bridge in a separate target, and load flutter-pty.framework/flutter-pty on Apple platforms. The plugins' old podspecs and CocoaPods-only C forwarders were removed; preserve these adaptations during upstream merges."
+      "description": "Apple native builds use SwiftPM. Preserve the separate ios_shell Swift/native targets, relocated resources and Vendor files, local XCFramework symlink, Runner command dictionary/Python build phases, and dynamic flutter-pty framework loader. Upstream changes to relocated files require manual reconciliation; do not recreate the removed Classes/Resources/Vendor layout or podspecs. Android jniLibs.useLegacyPackaging=true enables executable extraction."
     }
   ],
   "licenses": [
@@ -5588,42 +5581,42 @@
     },
     {
       "source": "app_plugin/ios_shell/ios/Resources/Notices/curl.txt",
-      "destination": "app_plugin/ios_shell/ios/Resources/Notices/curl.txt",
+      "destination": "app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/Notices/curl.txt",
       "review": "Preserve original license/notice bytes and inspect upstream changes."
     },
     {
       "source": "app_plugin/ios_shell/ios/Resources/Notices/libgit2.txt",
-      "destination": "app_plugin/ios_shell/ios/Resources/Notices/libgit2.txt",
+      "destination": "app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/Notices/libgit2.txt",
       "review": "Preserve original license/notice bytes and inspect upstream changes."
     },
     {
       "source": "app_plugin/ios_shell/ios/Resources/Notices/libssh2.txt",
-      "destination": "app_plugin/ios_shell/ios/Resources/Notices/libssh2.txt",
+      "destination": "app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/Notices/libssh2.txt",
       "review": "Preserve original license/notice bytes and inspect upstream changes."
     },
     {
       "source": "app_plugin/ios_shell/ios/Resources/Notices/lua.txt",
-      "destination": "app_plugin/ios_shell/ios/Resources/Notices/lua.txt",
+      "destination": "app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/Notices/lua.txt",
       "review": "Preserve original license/notice bytes and inspect upstream changes."
     },
     {
       "source": "app_plugin/ios_shell/ios/Resources/Notices/mozilla-ca.txt",
-      "destination": "app_plugin/ios_shell/ios/Resources/Notices/mozilla-ca.txt",
+      "destination": "app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/Notices/mozilla-ca.txt",
       "review": "Preserve original license/notice bytes and inspect upstream changes."
     },
     {
       "source": "app_plugin/ios_shell/ios/Resources/Notices/network-tools.txt",
-      "destination": "app_plugin/ios_shell/ios/Resources/Notices/network-tools.txt",
+      "destination": "app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/Notices/network-tools.txt",
       "review": "Preserve original license/notice bytes and inspect upstream changes."
     },
     {
       "source": "app_plugin/ios_shell/ios/Resources/Notices/openssl.txt",
-      "destination": "app_plugin/ios_shell/ios/Resources/Notices/openssl.txt",
+      "destination": "app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/Notices/openssl.txt",
       "review": "Preserve original license/notice bytes and inspect upstream changes."
     },
     {
       "source": "app_plugin/ios_shell/ios/Resources/Notices/python.txt",
-      "destination": "app_plugin/ios_shell/ios/Resources/Notices/python.txt",
+      "destination": "app_plugin/ios_shell/ios/ios_shell/Sources/ios_shell/Resources/Notices/python.txt",
       "review": "Preserve original license/notice bytes and inspect upstream changes."
     },
     {

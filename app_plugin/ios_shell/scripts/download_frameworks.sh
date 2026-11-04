@@ -3,7 +3,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 frameworks_dir="$script_dir/../ios/Frameworks"
-resources_dir="$script_dir/../ios/Resources"
+resources_dir="$script_dir/../ios/ios_shell/Sources/ios_shell/Resources"
 download_dir="$(mktemp -d "${TMPDIR:-/tmp}/ios-shell-frameworks.XXXXXX")"
 trap 'rm -rf "$download_dir"' EXIT
 mkdir -p "$download_dir/Frameworks"
