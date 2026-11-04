@@ -274,6 +274,11 @@ jobs:
           bundler-cache: true
           working-directory: ios
 
+      - name: Prepare iOS terminal frameworks
+        run: |
+          git lfs pull --include='app_plugin/ios_shell/ios/Frameworks/**'
+          bash app_plugin/ios_shell/scripts/download_python.sh
+
       - name: Cache Flutter dependencies
         uses: actions/cache@v6
         with:
@@ -291,11 +296,6 @@ jobs:
 
       - name: Prepare project
         run: melos run prepare
-
-      - name: Install CocoaPods dependencies
-        run: |
-          cd ios
-          bundle exec pod install --repo-update
 
       - name: Deploy to TestFlight
         env:

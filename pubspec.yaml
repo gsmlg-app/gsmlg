@@ -236,6 +236,9 @@ dev_dependencies:
   dependency_validator: ^5.1.0
 
 flutter:
+  config:
+    enable-swift-package-manager: true
+
   uses-material-design: true
 
   assets:

@@ -6,6 +6,7 @@ import shell
 import text
 import tar
 import awk
+import ios_shell_native
 
 // Direct function references to command main functions from external frameworks
 @_silgen_name("ls_main") func ls_main(_ argc: Int32, _ argv: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>?) -> Int32

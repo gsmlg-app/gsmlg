@@ -67,6 +67,14 @@ melos bootstrap && mason get
 melos run prepare
 ```
 
+Apple builds use Swift Package Manager, enabled in `pubspec.yaml`; no CocoaPods
+installation or `pod install` is needed. The local `ios_shell` and `flutter_pty`
+plugins include Swift packages. Before building iOS, hydrate the terminal's native
+frameworks with `git lfs pull --include='app_plugin/ios_shell/ios/Frameworks/**'`
+and run `bash app_plugin/ios_shell/scripts/download_python.sh` to provision the
+pinned Python support files. The iOS Runner build phases copy terminal resources
+and embed Python directly from `app_plugin/ios_shell`.
+
 ### Run
 
 ```bash

@@ -36,7 +36,7 @@ class NativeLifecycleTest(unittest.TestCase):
     def test_dart_native_lifecycle(self):
         root = pathlib.Path(__file__).resolve().parents[3]
         if sys.platform == 'darwin':
-            library = pathlib.Path(self.directory.name) / 'flutter_pty.framework' / 'flutter_pty'
+            library = pathlib.Path(self.directory.name) / 'flutter-pty.framework' / 'flutter-pty'
             library.parent.mkdir(exist_ok=True)
         else:
             library = pathlib.Path(self.directory.name) / 'lib' / 'libflutter_pty.so'

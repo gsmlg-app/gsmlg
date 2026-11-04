@@ -11,7 +11,7 @@ const _libName = 'flutter_pty';
 
 final DynamicLibrary _dylib = () {
   if (Platform.isMacOS || Platform.isIOS) {
-    return DynamicLibrary.open('$_libName.framework/$_libName');
+    return DynamicLibrary.open('flutter-pty.framework/flutter-pty');
   }
   if (Platform.isAndroid) {
     return DynamicLibrary.open('lib$_libName.so');

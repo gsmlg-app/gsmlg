@@ -5384,8 +5384,8 @@
     },
     {
       "source": "ios/Podfile",
-      "destination": "ios/Podfile",
-      "reason": "Manually merge upstream post_install ios_system command dictionary and Python embedding hooks into the GSMLG Podfile initialized from Flutter defaults; preserve application settings."
+      "destination": "ios/Runner.xcodeproj/project.pbxproj",
+      "reason": "GSMLG uses Swift Package Manager. Manually merge upstream ios_system command dictionary and Python embedding requirements into Runner build phases; do not restore the CocoaPods Podfile."
     },
     {
       "source": "android/app/build.gradle.kts",
@@ -5558,10 +5558,21 @@
     },
     {
       "paths": [
-        "ios/Podfile",
+        "ios/Runner.xcodeproj/project.pbxproj",
         "android/app/build.gradle.kts"
       ],
-      "description": "Application native build files remain manual merges: Flutter default Podfile plus ios_system command dictionary/Python embedding post_install hooks; Android jniLibs.useLegacyPackaging=true enables executable extraction."
+      "description": "Application native build files remain manual merges: iOS Runner phases copy the command dictionary, CA bundle and notices and embed Python from app_plugin/ios_shell without CocoaPods; Android jniLibs.useLegacyPackaging=true enables executable extraction."
+    },
+    {
+      "paths": [
+        "app_plugin/ios_shell/ios/ios_shell",
+        "app_plugin/ios_shell/ios/Classes/IosShellPlugin.swift",
+        "app_plugin/pty/ios/flutter_pty",
+        "app_plugin/pty/macos/flutter_pty",
+        "app_plugin/pty/lib/flutter_pty.dart",
+        "app_plugin/pty/test/test_native_lifecycle.py"
+      ],
+      "description": "GSMLG owns SwiftPM packaging for ios_shell and flutter_pty. Reuse native sources through relative symlinks, keep the Objective-C shell bridge in a separate target, and load flutter-pty.framework/flutter-pty on Apple platforms. The plugins' old podspecs and CocoaPods-only C forwarders were removed; preserve these adaptations during upstream merges."
     }
   ],
   "licenses": [

@@ -172,6 +172,11 @@ jobs:
 
       - uses: flutter-actions/setup-flutter@v4
 
+      - name: Prepare iOS terminal frameworks
+        run: |
+          git lfs pull --include='app_plugin/ios_shell/ios/Frameworks/**'
+          bash app_plugin/ios_shell/scripts/download_python.sh
+
       - name: Cache dependencies
         uses: actions/cache@v6
         with:
