@@ -68,6 +68,7 @@ class _AppState extends State<App> {
       secondary: false,
       platform: defaultDisplayPlatform(),
       bridge: defaultBridge(secondary: false),
+      routeKeyboard: true,
     );
 
     _duoManager.onConnectionChanged = (connected) {

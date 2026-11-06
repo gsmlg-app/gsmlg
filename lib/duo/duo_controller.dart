@@ -7,6 +7,8 @@ import 'package:app_chat/app_chat.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'duo_keyboard.dart';
+
 const secondaryRouteName = 'secondaryDisplayMain';
 
 /// Represents an agent option for dual-screen chat coordination.
@@ -260,9 +262,13 @@ class DuoDisplayManager extends ChangeNotifier {
     required this.secondary,
     required this.platform,
     required this.bridge,
+    bool routeKeyboard = false,
   }) {
     if (!secondary) {
       instance = this;
+      if (routeKeyboard) {
+        _keyboardRouter = DuoKeyboardRouter(sendKeyboardMessage);
+      }
     }
   }
 
@@ -309,6 +315,14 @@ class DuoDisplayManager extends ChangeNotifier {
   void Function(String text, {List<ChatAttachment>? attachments})? onChatSend;
   VoidCallback? onChatStop;
   void Function(String agentId)? onChatSelectAgent;
+
+  /// Software keyboard relay messages (see [DuoKeyboardMessages]). On the
+  /// primary engine they are consumed by the keyboard router when enabled.
+  void Function(Map<String, dynamic> message)? onKeyboardMessage;
+
+  /// Primary-only router that shows the software keyboard on the secondary
+  /// display while the companion is connected.
+  DuoKeyboardRouter? _keyboardRouter;
 
   DuoChatState? _chatState;
   DuoChatState? get chatState => _chatState;
@@ -474,6 +488,11 @@ class DuoDisplayManager extends ChangeNotifier {
     }
   }
 
+  void sendKeyboardMessage(Map<String, dynamic> message) {
+    if (!_connected) return;
+    bridge.send(jsonEncode(message));
+  }
+
   void requestSecondaryFocus() {
     if (secondary) return;
     if (_connected) {
@@ -499,6 +518,12 @@ class DuoDisplayManager extends ChangeNotifier {
       }
 
       _lastPeerSeen = DateTime.now();
+
+      if (DuoKeyboardMessages.all.contains(type)) {
+        _keyboardRouter?.handleMessage(map);
+        onKeyboardMessage?.call(map);
+        return;
+      }
 
       if (secondary) {
         if (type == 'welcome' || type == 'snapshot') {
@@ -597,6 +622,11 @@ class DuoDisplayManager extends ChangeNotifier {
   void _setConnected(bool value) {
     if (_connected != value) {
       _connected = value;
+      if (value) {
+        _keyboardRouter?.install();
+      } else {
+        _keyboardRouter?.uninstall();
+      }
       notifyListeners();
       onConnectionChanged?.call(value);
     }
@@ -608,6 +638,7 @@ class DuoDisplayManager extends ChangeNotifier {
     _platformSub?.cancel();
     _bridgeSub?.cancel();
     _heartbeatTimer?.cancel();
+    _keyboardRouter?.uninstall();
     if (!secondary && _activeDisplayId != null) {
       platform.hide(_activeDisplayId!);
     }

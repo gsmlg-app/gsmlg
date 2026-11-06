@@ -105,6 +105,8 @@
               />
         </activity>
 
+        <!-- Flutter's SurfaceView has its own GPU surface. Avoid a second HWUI
+             buffer queue: IME resizing can stall it on Pocket DS. -->
         <activity
             android:name=".CompanionActivity"
             android:exported="true"
@@ -113,7 +115,7 @@
             android:excludeFromRecents="true"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-            android:hardwareAccelerated="true"
+            android:hardwareAccelerated="false"
             android:windowSoftInputMode="adjustResize">
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"

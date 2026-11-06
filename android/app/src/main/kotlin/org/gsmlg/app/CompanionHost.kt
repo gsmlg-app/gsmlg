@@ -27,6 +27,7 @@ internal object CompanionHost {
     private var sink: EventChannel.EventSink? = null
     private val closed = mutableListOf<() -> Unit>()
     private var requestedDisplay: Int? = null
+    private var companionChannel: MethodChannel? = null
     private var releaseEngine = false
     var engine: FlutterEngine? = null
         private set
@@ -103,6 +104,7 @@ internal object CompanionHost {
                         it.dartExecutor.executeDartEntrypoint(DartExecutor.DartEntrypoint(
                             loader.findAppBundlePath(), "secondaryDisplayMain"))
                         FlutterEngineCache.getInstance().put(ENGINE_ID, it)
+                        bindCompanionChannel(it)
                     }
                 }
                 launch(activity, displayId, generation)
@@ -111,6 +113,7 @@ internal object CompanionHost {
                 requestedDisplay = null
                 engine?.destroy()
                 engine = null
+                companionChannel = null
                 FlutterEngineCache.getInstance().remove(ENGINE_ID)
                 throw error
             }
@@ -155,10 +158,52 @@ internal object CompanionHost {
         if (lifecycle.displayId() == null) finishClose()
     }
 
+    /** Companion-engine channel used to route the IME to the companion display. */
+    private fun bindCompanionChannel(companionEngine: FlutterEngine) {
+        companionChannel = MethodChannel(companionEngine.dartExecutor.binaryMessenger,
+            "dev.duskmoon.duo/companion").also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "focusWindow" -> result.success(focusCompanionWindow())
+                    else -> result.notImplemented()
+                }
+            }
+        }
+    }
+
+    /**
+     * Android shows the IME only on the display owning window focus. Returns
+     * true when the companion already has focus; otherwise re-fronts its task
+     * on the companion display and reports focus via [windowFocusChanged].
+     */
+    private fun focusCompanionWindow(): Boolean {
+        val activity = companion.get() ?: return false
+        if (activity.hasWindowFocus()) return true
+        if (lifecycle.isClosing()) return false
+        val displayId = lifecycle.displayId() ?: return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+        val intent = Intent(activity, CompanionActivity::class.java)
+            .putExtra("generation", lifecycle.generation())
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        val options = ActivityOptions.makeBasic().setLaunchDisplayId(displayId)
+        return try {
+            activity.startActivity(intent, options.toBundle())
+            false
+        } catch (error: Exception) {
+            false
+        }
+    }
+
+    fun windowFocusChanged(activity: CompanionActivity, hasFocus: Boolean) {
+        if (companion.get() !== activity) return
+        companionChannel?.invokeMethod("windowFocusChanged", hasFocus)
+    }
+
     private fun finishClose() {
         if (releaseEngine) {
             engine?.destroy()
             engine = null
+            companionChannel = null
             FlutterEngineCache.getInstance().remove(ENGINE_ID)
         }
         val callbacks = closed.toList()

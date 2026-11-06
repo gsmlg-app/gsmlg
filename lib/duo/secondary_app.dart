@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
 import 'duo_controller.dart';
+import 'duo_keyboard.dart';
 import '../screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 
 class DuoCompanionApp extends StatefulWidget {
@@ -19,6 +20,8 @@ class DuoCompanionApp extends StatefulWidget {
 
 class _DuoCompanionAppState extends State<DuoCompanionApp> {
   late final DuoDisplayManager _manager;
+  late final CompanionWindowFocus _windowFocus;
+  late final DuoKeyboardProxy _keyboardProxy;
 
   @override
   void initState() {
@@ -28,17 +31,36 @@ class _DuoCompanionAppState extends State<DuoCompanionApp> {
       platform: defaultDisplayPlatform(),
       bridge: defaultBridge(secondary: true),
     );
+    _windowFocus = CompanionWindowFocus();
+    _keyboardProxy = DuoKeyboardProxy(
+      _manager.sendKeyboardMessage,
+      window: _windowFocus,
+    );
+    _manager.onKeyboardMessage = _onKeyboardMessage;
     _manager.addListener(_onStateChanged);
     _manager.start();
   }
 
+  void _onKeyboardMessage(Map<String, dynamic> message) {
+    if (message['type'] == DuoKeyboardMessages.attach) {
+      // The proxy takes over the secondary IME connection; drop any local
+      // text focus so its field does not appear to be the typing target.
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
+    _keyboardProxy.handleMessage(message);
+  }
+
   void _onStateChanged() {
+    if (!_manager.connected) _keyboardProxy.close();
     if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _manager.removeListener(_onStateChanged);
+    _manager.onKeyboardMessage = null;
+    _keyboardProxy.dispose();
+    _windowFocus.dispose();
     _manager.dispose();
     super.dispose();
   }
@@ -57,9 +79,15 @@ class _DuoCompanionAppState extends State<DuoCompanionApp> {
         theme: theme,
         darkTheme: DmThemeData.moonlight(),
         themeMode: _manager.isDark ? ThemeMode.dark : ThemeMode.light,
-        home: DuoCompanionScaffold(manager: _manager),
+        home: DuoCompanionScaffold(
+          manager: _manager,
+          windowFocus: _windowFocus,
+        ),
         routes: {
-          secondaryRouteName: (_) => DuoCompanionScaffold(manager: _manager),
+          secondaryRouteName: (_) => DuoCompanionScaffold(
+            manager: _manager,
+            windowFocus: _windowFocus,
+          ),
         },
       ),
     );
@@ -67,9 +95,16 @@ class _DuoCompanionAppState extends State<DuoCompanionApp> {
 }
 
 class DuoCompanionScaffold extends StatefulWidget {
-  const DuoCompanionScaffold({super.key, required this.manager});
+  const DuoCompanionScaffold({
+    super.key,
+    required this.manager,
+    this.windowFocus,
+  });
 
   final DuoDisplayManager manager;
+
+  /// Moves Android focus to this display so the IME can show here.
+  final CompanionWindowFocus? windowFocus;
 
   static const _quickTools = [
     (icon: Icons.chat_bubble_outline, label: 'AI Chat', route: 'Chat'),
@@ -169,6 +204,7 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
     widget.manager.onRequestFocus = () {
       if (mounted) {
         _focusNode.requestFocus();
+        widget.windowFocus?.requestKeyboard();
       }
     };
   }
@@ -215,6 +251,9 @@ class _DuoCompanionScaffoldState extends State<DuoCompanionScaffold> {
   }
 
   void _onFocusChanged() {
+    // A tap that moves Android focus from the primary display can drop the
+    // first IME show request; re-request once this window owns focus.
+    if (_focusNode.hasFocus) widget.windowFocus?.requestKeyboard();
     if (mounted) setState(() {});
   }
 

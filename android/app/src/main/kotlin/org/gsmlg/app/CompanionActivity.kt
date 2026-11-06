@@ -36,6 +36,11 @@ class CompanionActivity : FragmentActivity() {
         flutter?.onPostResume()
     }
 
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        CompanionHost.windowFocusChanged(this, hasFocus)
+    }
+
     override fun onNewIntent(intent: Intent) {
         flutter?.onNewIntent(intent)
         super.onNewIntent(intent)
