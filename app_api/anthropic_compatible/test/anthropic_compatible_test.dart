@@ -101,10 +101,7 @@ void main() {
         const AnthropicMessage(
           role: 'assistant',
           content: [
-            {
-              'type': 'text',
-              'text': 'Checking weather...',
-            },
+            {'type': 'text', 'text': 'Checking weather...'},
             {
               'type': 'tool_use',
               'id': 'toolu_1',
@@ -146,6 +143,58 @@ void main() {
               'type': 'tool_result',
               'tool_use_id': 'toolu_1',
               'content': 'Sunny, 22C',
+            },
+          ],
+        },
+      ]);
+    });
+
+    test('serializes typed AnthropicContentBlock instances in messages', () {
+      final messages = [
+        const AnthropicMessage(
+          role: 'assistant',
+          content: [
+            AnthropicContentBlock.text('Running query...'),
+            AnthropicContentBlock.toolUse(
+              id: 'tool_call_99',
+              name: 'query_api',
+              input: {'endpoint': '/users'},
+            ),
+          ],
+        ),
+        const AnthropicMessage(
+          role: 'user',
+          content: [
+            AnthropicContentBlock.toolResult(
+              toolUseId: 'tool_call_99',
+              content: '{"users": []}',
+              isError: false,
+            ),
+          ],
+        ),
+      ];
+
+      expect(messages.map((m) => m.toJson()).toList(), [
+        {
+          'role': 'assistant',
+          'content': [
+            {'type': 'text', 'text': 'Running query...'},
+            {
+              'type': 'tool_use',
+              'id': 'tool_call_99',
+              'name': 'query_api',
+              'input': {'endpoint': '/users'},
+            },
+          ],
+        },
+        {
+          'role': 'user',
+          'content': [
+            {
+              'type': 'tool_result',
+              'tool_use_id': 'tool_call_99',
+              'content': '{"users": []}',
+              'is_error': false,
             },
           ],
         },

@@ -30,7 +30,89 @@ class AnthropicMessage {
   final String role;
   final Object content;
 
-  Map<String, dynamic> toJson() => {'role': role, 'content': content};
+  Map<String, dynamic> toJson() => {
+    'role': role,
+    'content': content is List
+        ? (content as List).map((block) {
+            if (block is AnthropicContentBlock) return block.toJson();
+            if (block is Map<String, dynamic>) return block;
+            return block;
+          }).toList()
+        : content,
+  };
+}
+
+/// Content block types in Anthropic Messages API.
+sealed class AnthropicContentBlock {
+  const AnthropicContentBlock();
+
+  Map<String, dynamic> toJson();
+
+  /// Create a plain text content block.
+  const factory AnthropicContentBlock.text(String text) = AnthropicTextBlock;
+
+  /// Create a tool use content block (assistant requesting a tool).
+  const factory AnthropicContentBlock.toolUse({
+    required String id,
+    required String name,
+    required Map<String, dynamic> input,
+  }) = AnthropicToolUseBlock;
+
+  /// Create a tool result content block (user providing the tool result).
+  const factory AnthropicContentBlock.toolResult({
+    required String toolUseId,
+    required dynamic content,
+    bool? isError,
+  }) = AnthropicToolResultBlock;
+}
+
+class AnthropicTextBlock extends AnthropicContentBlock {
+  const AnthropicTextBlock(this.text);
+
+  final String text;
+
+  @override
+  Map<String, dynamic> toJson() => {'type': 'text', 'text': text};
+}
+
+class AnthropicToolUseBlock extends AnthropicContentBlock {
+  const AnthropicToolUseBlock({
+    required this.id,
+    required this.name,
+    required this.input,
+  });
+
+  final String id;
+  final String name;
+  final Map<String, dynamic> input;
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'tool_use',
+    'id': id,
+    'name': name,
+    'input': input,
+  };
+}
+
+class AnthropicToolResultBlock extends AnthropicContentBlock {
+  const AnthropicToolResultBlock({
+    required this.toolUseId,
+    required this.content,
+    this.isError,
+  });
+
+  final String toolUseId;
+  final dynamic content;
+  final bool? isError;
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': 'tool_result',
+    'tool_use_id': toolUseId,
+    'content': content,
+    if (isError != null) 'is_error': isError,
+  };
 }
 
 /// A client tool definition for Anthropic Messages.
