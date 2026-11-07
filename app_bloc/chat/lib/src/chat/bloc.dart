@@ -23,6 +23,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     required RemoteLlmRepository remoteRepository,
     required ChatStorageRepository storageRepository,
     required ToolExecutor toolExecutor,
+    ChatAgentRuntime? agentRuntime,
     SharedPreferences? preferences,
     BackplaneServiceRepository? backplaneService,
     LocalModelAccess? modelAccess,
@@ -36,6 +37,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         _backplaneService = backplaneService,
         _modelAccess =
             modelAccess ?? LocalModelAccess.forResource(gemmaRepository),
+        _agentRuntime = agentRuntime ??
+            ChatAgentRuntime(
+              toolExecutor: toolExecutor,
+              remoteRepository: remoteRepository,
+              gemmaRepository: gemmaRepository,
+              storageRepository: storageRepository,
+            ),
         super(const ChatState()) {
     on<_ChatTitleReady>(_onTitleReady);
     on<ChatRenameConversation>(_onRenameConversation);
@@ -70,6 +78,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<_ChatStreamError>(_onStreamError);
     on<_ChatFunctionCall>(_onFunctionCall);
     on<_ChatStartLocal>(_onStartLocal);
+    on<_ChatAgentEventWrapper>(_onChatAgentEvent);
   }
   final ConversationTitleGenerator? _titleGenerator;
   AppLifecycleListener? _titleLifecycle;
@@ -83,6 +92,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final RemoteLlmRepository _remoteRepository;
   final ChatStorageRepository _storageRepository;
   final ToolExecutor _toolExecutor;
+  final ChatAgentRuntime _agentRuntime;
   final SharedPreferences? _preferences;
   final BackplaneServiceRepository? _backplaneService;
   final LocalModelAccess _modelAccess;
@@ -395,12 +405,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   Future<void> _prepareAssistant(
       _GenerationTask task, Emitter<ChatState> emit) async {
-    final assistant = AssistantMessage(
+    final rawAssistant = AssistantMessage(
         id: _uuid.v4(),
         content: '',
         conversationId: task.id,
         timestamp: DateTime.now(),
         isStreaming: true);
+    final assistant = _withResponseInfo(task, rawAssistant);
     task.messageId = assistant.id;
     task.contextTokens = _estimateContextTokens(task.conversation.messages);
     task.conversation = task.conversation.addMessage(assistant);
@@ -587,38 +598,147 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   void _startStreaming(_GenerationTask task) {
     if (!_isCurrent(task)) return;
     final leg = ++task.leg;
-    var sawFunctionCall = false;
     final config = task.config!;
-    final stream = config.inferenceMode == ChatInferenceMode.remote
-        ? _remoteRepository.generateResponse(task.conversation.messages, config,
-            tools: task.tools, generationId: task.runId)
-        : _gemmaRepository.generateResponse(task.conversation.messages,
-            tools: task.tools, config: config);
-    task.subscription = stream.listen((chunk) {
+    final cancelToken = CancelToken();
+    task.cancelToken = cancelToken;
+
+    final history = task.conversation.messages.where((m) => m.id != task.messageId).toList();
+    final userMsg = history.reversed.whereType<UserMessage>().firstOrNull?.content ?? '';
+
+    final stream = _agentRuntime.runStream(
+      runId: task.runId,
+      sessionId: task.id,
+      generationId: task.runId,
+      modelConfig: config,
+      historyMessages: history,
+      userPrompt: userMsg,
+      cancelToken: cancelToken,
+      onFirstToken: () {
+        task.timeToFirstToken ??= task.stopwatch.elapsed;
+      },
+    );
+
+    task.subscription = stream.listen((event) {
       if (!_isCurrent(task) || task.leg != leg || task.finishing) return;
-      switch (chunk) {
-        case ChatTextChunk(:final text):
-          if (text.isNotEmpty) task.timeToFirstToken ??= task.stopwatch.elapsed;
-          add(_ChatStreamToken(task.id, task.runId, leg, text));
-        case ChatThinkingChunk(:final content):
-          if (content.isNotEmpty) {
-            task.timeToFirstToken ??= task.stopwatch.elapsed;
-          }
-          add(_ChatThinkingToken(task.id, task.runId, leg, content));
-        case ChatFunctionCallChunk(:final name, :final args):
-          sawFunctionCall = true;
-          add(_ChatFunctionCall(task.id, task.runId, leg,
-              name: name, args: args));
+      if (event is ModelChunkReceivedEvent) {
+        if ((event.textChunk != null && event.textChunk!.isNotEmpty) ||
+            (event.thoughtChunk != null && event.thoughtChunk!.isNotEmpty)) {
+          task.timeToFirstToken ??= task.stopwatch.elapsed;
+        }
       }
-    }, onDone: () {
-      if (!sawFunctionCall && _isCurrent(task)) {
-        add(_ChatStreamComplete(task.id, task.runId, leg));
-      }
+      add(_ChatAgentEventWrapper(task.id, task.runId, leg, event));
     }, onError: (Object error) {
       if (_isCurrent(task)) {
         add(_ChatStreamError(task.id, task.runId, leg, error.toString()));
       }
-    }, cancelOnError: true);
+    });
+  }
+
+  Future<void> _onChatAgentEvent(
+      _ChatAgentEventWrapper event, Emitter<ChatState> emit) async {
+    final task = _taskFor(event, event.leg);
+    if (task == null || task.finishing) return;
+
+    switch (event.event) {
+      case ModelChunkReceivedEvent(:final textChunk, :final thoughtChunk):
+        if (textChunk != null) {
+          if (textChunk.isNotEmpty) {
+            task.timeToFirstToken ??= task.stopwatch.elapsed;
+          }
+          _updateStreamingAssistant(
+              task, (m) => m.copyWith(content: m.content + textChunk));
+          _emitTask(task, emit,
+              activity: textChunk.isEmpty ? null : 'Generating');
+        }
+        if (thoughtChunk != null) {
+          if (thoughtChunk.isNotEmpty) {
+            task.timeToFirstToken ??= task.stopwatch.elapsed;
+          }
+          _updateStreamingAssistant(
+              task,
+              (m) => m.copyWith(
+                  thinkingContent: (m.thinkingContent ?? '') + thoughtChunk));
+          _emitTask(task, emit,
+              activity: thoughtChunk.isEmpty ? null : 'Thinking');
+        }
+      case ToolCallPreparedEvent(:final toolName):
+        _emitTask(task, emit, activity: 'Preparing tool: $toolName');
+      case ToolCallStartedEvent(:final toolName):
+        _emitTask(task, emit, activity: 'Calling tool: $toolName');
+      case ToolCallCompletedEvent(:final toolName, :final callId, :final receipt, :final acknowledgement):
+        final result = receipt.result;
+        final resultString = result is String ? result : jsonEncode(result);
+        final message = ToolResponseMessage(
+          id: _uuid.v4(),
+          toolName: toolName,
+          toolCallId: callId,
+          content: resultString,
+          isError: receipt.isError,
+          conversationId: task.id,
+          timestamp: DateTime.now(),
+        );
+        task.conversation = task.conversation.addMessage(message);
+        await _write(task, () => _storageRepository.saveMessage(message));
+        _emitTask(task, emit, activity: 'Tool finished: $toolName');
+        if (!acknowledgement.isCompleted) {
+          acknowledgement.complete();
+        }
+      case ModelTurnCompletedEvent(:final modelMessage, :final acknowledgement):
+        final metadata = AgentMessageMetadata(
+          version: 1,
+          toolCalls: modelMessage.functionCalls.map((fc) => {
+            'id': fc.id,
+            'name': fc.name,
+            'arguments': fc.arguments,
+          }).toList(),
+          thought: modelMessage.thought,
+          thoughtSignature: modelMessage.thoughtSignature,
+        );
+        _updateStreamingAssistant(
+          task,
+          (m) => m.copyWith(
+            content: modelMessage.textOutput ?? m.content,
+            thinkingContent: modelMessage.thought ?? m.thinkingContent,
+            agentMetadata: metadata.encode(),
+          ),
+        );
+        final assistant = task.conversation.messages
+            .whereType<AssistantMessage>()
+            .where((m) => m.id == task.messageId)
+            .firstOrNull;
+        if (assistant != null) {
+          await _write(task, () => _storageRepository.saveMessage(assistant));
+        }
+        if (!acknowledgement.isCompleted) {
+          acknowledgement.complete();
+        }
+      case AgentRunCompletedEvent():
+        final assistant = task.conversation.messages
+            .whereType<AssistantMessage>()
+            .where((m) => m.id == task.messageId)
+            .firstOrNull;
+        final hasContent = assistant != null &&
+            (assistant.content.trim().isNotEmpty ||
+                (assistant.thinkingContent?.trim().isNotEmpty ?? false));
+        await _finish(
+            task,
+            emit,
+            hasContent ? ChatStatus.ready : ChatStatus.error,
+            error: hasContent
+                ? null
+                : 'Model generated an empty response. Try a different model or backend.');
+      case AgentRunFailedEvent(:final error):
+        final msg = error is AgentException && error.error != null
+            ? error.error.toString()
+            : (error is AgentException ? error.message : error.toString());
+        await _finish(task, emit, ChatStatus.error, error: msg);
+      case AgentRunCancelledEvent():
+        await _finish(task, emit, ChatStatus.ready);
+      case AgentRunStartedEvent():
+        _emitTask(task, emit, activity: 'Waiting for response');
+      case ModelTurnStartedEvent():
+        _emitTask(task, emit, activity: 'Waiting for response');
+    }
   }
 
   void _onStreamToken(_ChatStreamToken event, Emitter<ChatState> emit) {
@@ -812,6 +932,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     task.cancelled = true;
     task.timer?.cancel();
     task.stopwatch.stop();
+    task.cancelToken?.cancel('Generation cancelled');
     _localQueue.remove(task);
     if (task.config?.inferenceMode == ChatInferenceMode.remote) {
       await _remoteRepository.stopGeneration(generationId: task.runId);
@@ -1324,7 +1445,8 @@ class _GenerationTask {
   ModelConfig? config;
   final List<Map<String, dynamic>> tools;
   String? messageId;
-  StreamSubscription<ChatGenerationChunk>? subscription;
+  StreamSubscription<dynamic>? subscription;
+  CancelToken? cancelToken;
   Timer? timer;
   final stopwatch = Stopwatch();
   Duration? timeToFirstToken;

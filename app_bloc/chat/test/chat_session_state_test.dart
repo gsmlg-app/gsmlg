@@ -536,7 +536,9 @@ class _Remote implements RemoteLlmRepository {
   Future<void> dispose() async {}
   Future<void> closeControllers() async {
     for (final c in controllers.values) {
-      if (!c.isClosed) await c.close();
+      if (!c.isClosed) {
+        await c.close().timeout(const Duration(milliseconds: 100), onTimeout: () {});
+      }
     }
   }
 
@@ -603,9 +605,12 @@ class _Local extends GemmaRepository {
   }
 
   @override
+  @override
   Future<void> dispose() async {
     for (final c in controllers.values) {
-      if (!c.isClosed) await c.close();
+      if (!c.isClosed) {
+        await c.close().timeout(const Duration(milliseconds: 100), onTimeout: () {});
+      }
     }
   }
 }
@@ -613,6 +618,14 @@ class _Local extends GemmaRepository {
 class _Tools extends ToolExecutor {
   final started = Completer<void>();
   final result = Completer<Map<String, dynamic>>();
+  @override
+  List<ChatToolDefinition> get toolDefinitions => [
+        const ChatToolDefinition(
+          name: 'wait',
+          description: 'Wait tool for test',
+          parameters: {},
+        ),
+      ];
   @override
   Future<Map<String, dynamic>> execute(String name, Map<String, dynamic> args) {
     started.complete();

@@ -330,6 +330,12 @@ class _WaitingTools extends ToolExecutor {
   Completer<Map<String, dynamic>>? result;
 
   @override
+  List<ChatToolDefinition> get toolDefinitions => const [
+        ChatToolDefinition(
+            name: 'tool', description: 'test tool', parameters: {}),
+      ];
+
+  @override
   Future<Map<String, dynamic>> execute(String name, Map<String, dynamic> args) {
     result = Completer<Map<String, dynamic>>();
     started.add(null);

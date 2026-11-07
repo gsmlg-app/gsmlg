@@ -148,6 +148,17 @@ final class _ChatFunctionCall extends _ChatRunEvent {
   final Map<String, dynamic> args;
 }
 
+final class _ChatAgentEventWrapper extends _ChatRunEvent {
+  const _ChatAgentEventWrapper(
+    super.conversationId,
+    super.runId,
+    this.leg,
+    this.event,
+  );
+  final int leg;
+  final ChatAgentEvent event;
+}
+
 final class _ChatStartLocal extends _ChatRunEvent {
   const _ChatStartLocal(super.conversationId, super.runId);
 }
