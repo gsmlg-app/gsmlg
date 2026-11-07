@@ -22,7 +22,9 @@ void main() {
         toolName: 'exec_command',
         arguments: {
           'command': Platform.isWindows ? 'cmd.exe' : '/bin/sh',
-          'args': Platform.isWindows ? ['/c', 'echo GSMLG_SHELL_OK'] : ['-c', 'echo GSMLG_SHELL_OK'],
+          'args': Platform.isWindows
+              ? ['/c', 'echo GSMLG_SHELL_OK']
+              : ['-c', 'echo GSMLG_SHELL_OK'],
           'waitForOutput': 3000,
         },
         runId: 'test_run',
@@ -37,24 +39,27 @@ void main() {
       expect(map['isRunning'], isFalse);
     });
 
-    test('mobile capability override rejects local execution with explicit error', () async {
-      final mobileService = ShellExecutionService(isMobileOverride: true);
+    test(
+      'mobile capability override rejects local execution with explicit error',
+      () async {
+        final mobileService = ShellExecutionService(isMobileOverride: true);
 
-      final res = await mobileService.executeTool(
-        toolName: 'exec_command',
-        arguments: {
-          'command': 'ls',
-          'host': 'local',
-        },
-        runId: 'mobile_run',
-        sessionId: 'session_1',
-      );
+        final res = await mobileService.executeTool(
+          toolName: 'exec_command',
+          arguments: {'command': 'ls', 'host': 'local'},
+          runId: 'mobile_run',
+          sessionId: 'session_1',
+        );
 
-      expect(res, isA<Map<String, dynamic>>());
-      final map = res as Map<String, dynamic>;
-      expect(map['supported'], isFalse);
-      expect(map['error'], contains('Local shell execution is not supported on mobile'));
-    });
+        expect(res, isA<Map<String, dynamic>>());
+        final map = res as Map<String, dynamic>;
+        expect(map['supported'], isFalse);
+        expect(
+          map['error'],
+          contains('Local shell execution is not supported on mobile'),
+        );
+      },
+    );
 
     test('supports incremental output reading via cursor', () async {
       if (Platform.isAndroid || Platform.isIOS) return;
@@ -64,7 +69,9 @@ void main() {
         toolName: 'exec_command',
         arguments: {
           'command': Platform.isWindows ? 'cmd.exe' : '/bin/sh',
-          'args': Platform.isWindows ? ['/c', 'echo line1 && echo line2'] : ['-c', 'echo line1 && echo line2'],
+          'args': Platform.isWindows
+              ? ['/c', 'echo line1 && echo line2']
+              : ['-c', 'echo line1 && echo line2'],
           'waitForOutput': 3000,
         },
         runId: 'test_run',
@@ -76,10 +83,7 @@ void main() {
 
       final readRes = await service.executeTool(
         toolName: 'read_process_output',
-        arguments: {
-          'sessionId': sessionId,
-          'cursor': 0,
-        },
+        arguments: {'sessionId': sessionId, 'cursor': 0},
         runId: 'test_run',
         sessionId: 'session_1',
       );
@@ -96,7 +100,9 @@ void main() {
         toolName: 'exec_command',
         arguments: {
           'command': Platform.isWindows ? 'cmd.exe' : '/bin/sh',
-          'args': Platform.isWindows ? ['/c', 'ping -n 10 127.0.0.1'] : ['-c', 'sleep 10'],
+          'args': Platform.isWindows
+              ? ['/c', 'ping -n 10 127.0.0.1']
+              : ['-c', 'sleep 10'],
           'waitForOutput': 100, // Background it quickly
         },
         runId: 'test_run',
@@ -108,9 +114,7 @@ void main() {
 
       final termRes = await service.executeTool(
         toolName: 'terminate_session',
-        arguments: {
-          'sessionId': sessionId,
-        },
+        arguments: {'sessionId': sessionId},
         runId: 'test_run',
         sessionId: 'session_1',
       );

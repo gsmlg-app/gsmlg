@@ -66,15 +66,17 @@ class ShellSession {
         onError: (err) => _onError(err),
         onDone: () => _checkProcessExit(),
       );
-      proc.exitCode.then((code) {
-        _exitCode = code;
-        if (!_exitCompleter.isCompleted) {
-          _exitCompleter.complete(code);
-        }
-        _notifyWaiters();
-      }).catchError((err) {
-        _onError(err);
-      });
+      proc.exitCode
+          .then((code) {
+            _exitCode = code;
+            if (!_exitCompleter.isCompleted) {
+              _exitCompleter.complete(code);
+            }
+            _notifyWaiters();
+          })
+          .catchError((err) {
+            _onError(err);
+          });
     } else if (pty != null) {
       pty.output.listen(
         (data) {
@@ -84,15 +86,17 @@ class ShellSession {
         onError: (err) => _onError(err),
         onDone: () => _checkPtyExit(),
       );
-      pty.exitCode.then((code) {
-        _exitCode = code;
-        if (!_exitCompleter.isCompleted) {
-          _exitCompleter.complete(code);
-        }
-        _notifyWaiters();
-      }).catchError((err) {
-        _onError(err);
-      });
+      pty.exitCode
+          .then((code) {
+            _exitCode = code;
+            if (!_exitCompleter.isCompleted) {
+              _exitCompleter.complete(code);
+            }
+            _notifyWaiters();
+          })
+          .catchError((err) {
+            _onError(err);
+          });
     } else {
       // Completed / mock session
       if (!_exitCompleter.isCompleted) {
@@ -145,7 +149,9 @@ class ShellSession {
     }
   }
 
-  Future<void> waitForNewOutput({Duration timeout = const Duration(milliseconds: 3000)}) async {
+  Future<void> waitForNewOutput({
+    Duration timeout = const Duration(milliseconds: 3000),
+  }) async {
     if (isCompleted) return;
     final completer = Completer<void>();
     _outputWaiters.add(completer);
@@ -161,12 +167,20 @@ class ShellSession {
   /// Reads buffered output starting from the given character cursor.
   Map<String, dynamic> read({int cursor = 0, int maxLength = 16000}) {
     final currentText = _buffer.toString();
-    final effectiveStart = (cursor - _droppedChars).clamp(0, currentText.length);
+    final effectiveStart = (cursor - _droppedChars).clamp(
+      0,
+      currentText.length,
+    );
     final available = currentText.length - effectiveStart;
     final toRead = available > maxLength ? maxLength : available;
-    final output = currentText.substring(effectiveStart, effectiveStart + toRead);
+    final output = currentText.substring(
+      effectiveStart,
+      effectiveStart + toRead,
+    );
     final nextCursor = _droppedChars + effectiveStart + toRead;
-    final isTruncated = (available > maxLength) || (_droppedChars > 0 && cursor < _droppedChars);
+    final isTruncated =
+        (available > maxLength) ||
+        (_droppedChars > 0 && cursor < _droppedChars);
 
     return {
       'sessionId': sessionId,
@@ -208,9 +222,13 @@ class ShellSession {
       try {
         // Kill process and descendants using process_run on desktop
         if (Platform.isLinux || Platform.isMacOS || Platform.isWindows) {
-          pr.Shell().kill(signal == 'SIGKILL' ? ProcessSignal.sigkill : ProcessSignal.sigterm);
+          pr.Shell().kill(
+            signal == 'SIGKILL' ? ProcessSignal.sigkill : ProcessSignal.sigterm,
+          );
         }
-        proc.kill(signal == 'SIGKILL' ? ProcessSignal.sigkill : ProcessSignal.sigterm);
+        proc.kill(
+          signal == 'SIGKILL' ? ProcessSignal.sigkill : ProcessSignal.sigterm,
+        );
         terminated = true;
       } catch (_) {
         try {
@@ -239,11 +257,9 @@ class ShellSession {
 
 /// Service managing shell execution sessions and tools.
 class ShellExecutionService {
-  ShellExecutionService({
-    Map<String, Host>? hosts,
-    bool? isMobileOverride,
-  }) : _hosts = hosts ?? {},
-       _isMobileOverride = isMobileOverride;
+  ShellExecutionService({Map<String, Host>? hosts, bool? isMobileOverride})
+    : _hosts = hosts ?? {},
+      _isMobileOverride = isMobileOverride;
 
   final Map<String, Host> _hosts;
   final bool? _isMobileOverride;
@@ -254,7 +270,8 @@ class ShellExecutionService {
   /// Session IDs grouped by runId for run-scoped cleanup.
   final Map<String, List<String>> _sessionsByRunId = {};
 
-  bool get _isMobile => _isMobileOverride ?? (Platform.isAndroid || Platform.isIOS);
+  bool get _isMobile =>
+      _isMobileOverride ?? (Platform.isAndroid || Platform.isIOS);
 
   static const _execCommandTool = 'exec_command';
   static const _writeStdinTool = 'write_stdin';
@@ -271,7 +288,8 @@ class ShellExecutionService {
   List<ChatToolDefinition> get toolDefinitions => [
     const ChatToolDefinition(
       name: _execCommandTool,
-      description: 'Execute a shell command locally or on a configured remote host. '
+      description:
+          'Execute a shell command locally or on a configured remote host. '
           'Short tasks finish and return output directly; long-running tasks return a session handle.',
       parameters: {
         'type': 'object',
@@ -291,15 +309,18 @@ class ShellExecutionService {
           },
           'host': {
             'type': 'string',
-            'description': 'Target host ID ("local" or configured SSH host). Defaults to "local".',
+            'description':
+                'Target host ID ("local" or configured SSH host). Defaults to "local".',
           },
           'pty': {
             'type': 'boolean',
-            'description': 'Whether to run in an interactive PTY session. Defaults to false.',
+            'description':
+                'Whether to run in an interactive PTY session. Defaults to false.',
           },
           'waitForOutput': {
             'type': 'integer',
-            'description': 'Milliseconds to wait for execution to complete before backgrounding (default 3000ms).',
+            'description':
+                'Milliseconds to wait for execution to complete before backgrounding (default 3000ms).',
           },
           'timeout': {
             'type': 'integer',
@@ -311,7 +332,8 @@ class ShellExecutionService {
     ),
     const ChatToolDefinition(
       name: _writeStdinTool,
-      description: 'Write input data to standard input of an active shell session.',
+      description:
+          'Write input data to standard input of an active shell session.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -325,7 +347,8 @@ class ShellExecutionService {
           },
           'waitForOutput': {
             'type': 'integer',
-            'description': 'Milliseconds to wait for response output after writing (default 1000ms).',
+            'description':
+                'Milliseconds to wait for response output after writing (default 1000ms).',
           },
         },
         'required': ['sessionId', 'input'],
@@ -333,7 +356,8 @@ class ShellExecutionService {
     ),
     const ChatToolDefinition(
       name: _readOutputTool,
-      description: 'Read incremental output from an active or completed shell session using an output cursor.',
+      description:
+          'Read incremental output from an active or completed shell session using an output cursor.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -343,15 +367,18 @@ class ShellExecutionService {
           },
           'cursor': {
             'type': 'integer',
-            'description': 'Character cursor offset from which to read output (default 0).',
+            'description':
+                'Character cursor offset from which to read output (default 0).',
           },
           'maxLength': {
             'type': 'integer',
-            'description': 'Maximum characters of output to return (default 16000).',
+            'description':
+                'Maximum characters of output to return (default 16000).',
           },
           'waitForOutput': {
             'type': 'integer',
-            'description': 'Milliseconds to wait for new output if buffer is empty.',
+            'description':
+                'Milliseconds to wait for new output if buffer is empty.',
           },
         },
         'required': ['sessionId'],
@@ -359,7 +386,8 @@ class ShellExecutionService {
     ),
     const ChatToolDefinition(
       name: _terminateSessionTool,
-      description: 'Terminate an active shell execution session and cleanup its process tree.',
+      description:
+          'Terminate an active shell execution session and cleanup its process tree.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -415,7 +443,8 @@ class ShellExecutionService {
     // Check mobile capability restriction
     if (_isMobile && (host == 'local' || host.isEmpty)) {
       return {
-        'error': 'Local shell execution is not supported on mobile platforms. '
+        'error':
+            'Local shell execution is not supported on mobile platforms. '
             'Use remote SSH hosts instead.',
         'host': host,
         'supported': false,
@@ -434,17 +463,17 @@ class ShellExecutionService {
         if (isPty) {
           ptySession = await remoteHost.shell();
           if (command.isNotEmpty) {
-            await ptySession.write(Uint8List.fromList(utf8.encode('$command\n')));
+            await ptySession.write(
+              Uint8List.fromList(utf8.encode('$command\n')),
+            );
           }
         } else {
-          final res = await remoteHost.execute(
-            command,
-            args: cmdArgs ?? [],
-          );
+          final res = await remoteHost.execute(command, args: cmdArgs ?? []);
           return {
             'sessionId': newSessionId,
             'status': 'completed',
-            'output': res.stdout + (res.stderr.isNotEmpty ? '\n${res.stderr}' : ''),
+            'output':
+                res.stdout + (res.stderr.isNotEmpty ? '\n${res.stderr}' : ''),
             'exitCode': res.exitCode,
             'isTruncated': false,
             'isRunning': false,
@@ -456,12 +485,18 @@ class ShellExecutionService {
           final localHost = LocalHost(workingDirectory: workingDir);
           ptySession = await localHost.shell();
           if (command.isNotEmpty) {
-            await ptySession.write(Uint8List.fromList(utf8.encode('$command\n')));
+            await ptySession.write(
+              Uint8List.fromList(utf8.encode('$command\n')),
+            );
           }
         } else {
           // Standard process execution
-          final executable = cmdArgs != null && cmdArgs.isNotEmpty ? command : (Platform.isWindows ? 'cmd.exe' : '/bin/sh');
-          final runArgs = cmdArgs != null && cmdArgs.isNotEmpty ? cmdArgs : (Platform.isWindows ? ['/c', command] : ['-c', command]);
+          final executable = cmdArgs != null && cmdArgs.isNotEmpty
+              ? command
+              : (Platform.isWindows ? 'cmd.exe' : '/bin/sh');
+          final runArgs = cmdArgs != null && cmdArgs.isNotEmpty
+              ? cmdArgs
+              : (Platform.isWindows ? ['/c', command] : ['-c', command]);
 
           process = await Process.start(
             executable,
@@ -506,7 +541,9 @@ class ShellExecutionService {
       // Wait up to waitForOutputMs for process to complete or produce initial output
       if (waitForOutputMs > 0) {
         final waitFuture = session.done;
-        final timeoutFuture = Future.delayed(Duration(milliseconds: waitForOutputMs));
+        final timeoutFuture = Future.delayed(
+          Duration(milliseconds: waitForOutputMs),
+        );
         await Future.any([waitFuture, timeoutFuture]);
       }
 
@@ -586,7 +623,9 @@ class ShellExecutionService {
       return {'error': 'Shell session $sessionId belongs to a different run'};
     }
 
-    if (waitForOutputMs != null && waitForOutputMs > 0 && !session.isCompleted) {
+    if (waitForOutputMs != null &&
+        waitForOutputMs > 0 &&
+        !session.isCompleted) {
       await session.waitForNewOutput(
         timeout: Duration(milliseconds: waitForOutputMs),
       );
@@ -595,7 +634,10 @@ class ShellExecutionService {
     return session.read(cursor: cursor, maxLength: maxLength);
   }
 
-  Future<dynamic> _terminateSession(Map<String, dynamic> args, String runId) async {
+  Future<dynamic> _terminateSession(
+    Map<String, dynamic> args,
+    String runId,
+  ) async {
     final sessionId = args['sessionId'] as String;
     final signal = args['signal'] as String?;
 

@@ -72,7 +72,8 @@ void main() {
     final inserted = await (database.select(database.chatMessageTable)
           ..where((t) => t.id.equals('agent_msg_2')))
         .getSingle();
-    expect(inserted.agentMetadata, '{"toolCalls":[{"id":"c1","name":"lookup"}]}');
+    expect(
+        inserted.agentMetadata, '{"toolCalls":[{"id":"c1","name":"lookup"}]}');
 
     final version =
         await database.customSelect('PRAGMA user_version').getSingle();

@@ -22,7 +22,8 @@ export 'src/agent/sub_agent_supervisor.dart';
 export 'src/agent/tool_gateway.dart';
 
 export 'package:dio/dio.dart' show CancelToken;
-export 'package:dart_agent_core/dart_agent_core.dart' show AgentException, AgentExceptionCode;
+export 'package:dart_agent_core/dart_agent_core.dart'
+    show AgentException, AgentExceptionCode;
 
 // Repositories
 export 'src/repositories/gemma_repository.dart';

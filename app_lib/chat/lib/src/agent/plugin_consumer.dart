@@ -129,9 +129,11 @@ class PluginConsumer {
   /// Pinned plugin snapshots for active runs: runId -> map of plugin name to package.
   final Map<String, Map<String, PluginPackage>> _pinnedRunPlugins = {};
 
-  bool get _isMobile => _isMobileOverride ?? (Platform.isAndroid || Platform.isIOS);
+  bool get _isMobile =>
+      _isMobileOverride ?? (Platform.isAndroid || Platform.isIOS);
 
-  List<PluginPackage> get installedPlugins => _installedPlugins.values.toList(growable: false);
+  List<PluginPackage> get installedPlugins =>
+      _installedPlugins.values.toList(growable: false);
 
   /// Loads and validates a Plugin 1.0 directory.
   Future<PluginPackage> loadFromDirectory(String pluginDirectory) async {
@@ -148,14 +150,16 @@ class PluginConsumer {
       throw FormatException('Missing plugin.json in $canonicalRoot');
     }
 
-    final manifestJson = jsonDecode(await manifestFile.readAsString()) as Map<String, dynamic>;
+    final manifestJson =
+        jsonDecode(await manifestFile.readAsString()) as Map<String, dynamic>;
     final manifest = PluginManifest.fromJson(manifestJson);
 
     // 2. Parse mcp.json if present with ${PLUGIN_ROOT} variable expansion
     final mcpServers = <String, PluginMcpServerConfig>{};
     final mcpFile = File(p.join(canonicalRoot, 'mcp.json'));
     if (mcpFile.existsSync()) {
-      final mcpJson = jsonDecode(await mcpFile.readAsString()) as Map<String, dynamic>;
+      final mcpJson =
+          jsonDecode(await mcpFile.readAsString()) as Map<String, dynamic>;
       final serversMap = mcpJson['mcpServers'] as Map<String, dynamic>? ?? {};
 
       for (final entry in serversMap.entries) {
@@ -164,11 +168,16 @@ class PluginConsumer {
         final type = (serverData['type'] as String?) ?? 'stdio';
         final rawCommand = (serverData['command'] as String?) ?? '';
         final rawArgs = (serverData['args'] as List?)?.cast<String>() ?? [];
-        final rawEnv = (serverData['env'] as Map?)?.cast<String, dynamic>() ?? {};
+        final rawEnv =
+            (serverData['env'] as Map?)?.cast<String, dynamic>() ?? {};
 
         final expandedCommand = _expandPluginRoot(rawCommand, canonicalRoot);
-        final expandedArgs = rawArgs.map((a) => _expandPluginRoot(a, canonicalRoot)).toList();
-        final expandedEnv = rawEnv.map((k, v) => MapEntry(k, _expandPluginRoot(v.toString(), canonicalRoot)));
+        final expandedArgs = rawArgs
+            .map((a) => _expandPluginRoot(a, canonicalRoot))
+            .toList();
+        final expandedEnv = rawEnv.map(
+          (k, v) => MapEntry(k, _expandPluginRoot(v.toString(), canonicalRoot)),
+        );
 
         mcpServers[serverName] = PluginMcpServerConfig(
           serverName: serverName,
@@ -184,18 +193,24 @@ class PluginConsumer {
     final skills = <SkillEntry>[];
     final skillsDir = Directory(p.join(canonicalRoot, 'skills'));
     if (skillsDir.existsSync()) {
-      await for (final entity in skillsDir.list(recursive: true, followLinks: false)) {
-        if (entity is File && p.basename(entity.path).toLowerCase() == 'skill.md') {
+      await for (final entity in skillsDir.list(
+        recursive: true,
+        followLinks: false,
+      )) {
+        if (entity is File &&
+            p.basename(entity.path).toLowerCase() == 'skill.md') {
           final skillCanonical = p.canonicalize(entity.path);
           if (p.isWithin(canonicalRoot, skillCanonical)) {
             final name = p.basename(p.dirname(skillCanonical));
-            skills.add(SkillEntry(
-              name: name,
-              description: 'Skill from plugin ${manifest.name}',
-              pathToSkillMd: skillCanonical,
-              source: 'plugin:${manifest.name}',
-              version: manifest.version,
-            ));
+            skills.add(
+              SkillEntry(
+                name: name,
+                description: 'Skill from plugin ${manifest.name}',
+                pathToSkillMd: skillCanonical,
+                source: 'plugin:${manifest.name}',
+                version: manifest.version,
+              ),
+            );
           }
         }
       }
@@ -206,7 +221,8 @@ class PluginConsumer {
     if (_isMobile && mcpServers.isNotEmpty) {
       final hasStdio = mcpServers.values.any((s) => s.type == 'stdio');
       if (hasStdio) {
-        unsupportedReason = 'Stdio MCP servers are not supported on mobile platforms';
+        unsupportedReason =
+            'Stdio MCP servers are not supported on mobile platforms';
       }
     }
 

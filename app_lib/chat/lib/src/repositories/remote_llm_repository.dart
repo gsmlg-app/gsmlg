@@ -6,6 +6,7 @@ import 'package:app_secure_storage/vault_repository.dart';
 import 'package:http/http.dart' as http;
 import 'package:openai_compatible/openai_compatible.dart' as openai;
 
+import '../models/agent_metadata.dart';
 import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
@@ -432,28 +433,61 @@ class RemoteLlmRepository {
     for (final message in messages) {
       if (message is AssistantMessage && message.isStreaming) continue;
 
-      final role = switch (message) {
-        SystemMessage() => 'system',
-        UserMessage() => 'user',
-        AssistantMessage() => 'assistant',
-        ToolResponseMessage() => 'tool',
-      };
-
-      if (role == 'tool') {
-        final toolName = message is ToolResponseMessage
-            ? ' for ${message.toolName}'
-            : '';
+      if (message is SystemMessage) {
+        result.add(
+          openai.OpenAiMessage(role: 'system', content: message.content),
+        );
+      } else if (message is UserMessage) {
         result.add(
           openai.OpenAiMessage(
             role: 'user',
-            content: 'Tool result$toolName: ${message.content}',
+            content: message.contentWithAttachments(),
           ),
         );
-      } else {
-        final content = message is UserMessage
-            ? message.contentWithAttachments()
-            : message.content;
-        result.add(openai.OpenAiMessage(role: role, content: content));
+      } else if (message is AssistantMessage) {
+        final meta = message.agentMetadata != null
+            ? AgentMessageMetadata.decode(message.agentMetadata)
+            : null;
+
+        List<Map<String, dynamic>>? toolCalls;
+        if (meta != null && meta.toolCalls.isNotEmpty) {
+          toolCalls = meta.toolCalls.map((tc) {
+            final id = tc['id'] as String? ?? '';
+            final name = tc['name'] as String? ?? '';
+            final rawArgs = tc['arguments'];
+            final args = rawArgs is String
+                ? rawArgs
+                : jsonEncode(rawArgs ?? const <String, dynamic>{});
+            return {
+              'id': id,
+              'type': 'function',
+              'function': {'name': name, 'arguments': args},
+            };
+          }).toList();
+        }
+
+        final content = message.content.trim().isNotEmpty
+            ? message.content
+            : null;
+
+        if (content != null || (toolCalls != null && toolCalls.isNotEmpty)) {
+          result.add(
+            openai.OpenAiMessage(
+              role: 'assistant',
+              content: content,
+              toolCalls: toolCalls,
+            ),
+          );
+        }
+      } else if (message is ToolResponseMessage) {
+        result.add(
+          openai.OpenAiMessage(
+            role: 'tool',
+            toolCallId: message.toolCallId ?? message.id,
+            name: message.toolName,
+            content: message.content,
+          ),
+        );
       }
     }
     return result;
@@ -462,6 +496,38 @@ class RemoteLlmRepository {
   _AnthropicMessagePayload _toAnthropicMessages(List<Message> messages) {
     final system = StringBuffer();
     final result = <anthropic.AnthropicMessage>[];
+
+    void appendUserContent(Object content) {
+      if (result.isNotEmpty && result.last.role == 'user') {
+        final last = result.removeLast();
+        final blocks = <dynamic>[];
+        if (last.content is List) {
+          blocks.addAll(last.content as List);
+        } else {
+          blocks.add(
+            anthropic.AnthropicContentBlock.text(last.content.toString()),
+          );
+        }
+        if (content is List) {
+          blocks.addAll(content);
+        } else if (content is anthropic.AnthropicContentBlock) {
+          blocks.add(content);
+        } else {
+          blocks.add(anthropic.AnthropicContentBlock.text(content.toString()));
+        }
+        result.add(anthropic.AnthropicMessage(role: 'user', content: blocks));
+      } else {
+        result.add(
+          anthropic.AnthropicMessage(
+            role: 'user',
+            content: content is anthropic.AnthropicContentBlock
+                ? [content]
+                : content,
+          ),
+        );
+      }
+    }
+
     for (final message in messages) {
       if (message is AssistantMessage && message.isStreaming) continue;
       switch (message) {
@@ -469,27 +535,67 @@ class RemoteLlmRepository {
           if (system.isNotEmpty) system.write('\n\n');
           system.write(message.content);
         case UserMessage():
-          result.add(
-            anthropic.AnthropicMessage(
-              role: 'user',
-              content: message.contentWithAttachments(),
-            ),
-          );
+          appendUserContent(message.contentWithAttachments());
         case AssistantMessage():
-          result.add(
-            anthropic.AnthropicMessage(
-              role: 'assistant',
-              content: message.content,
-            ),
-          );
+          final meta = message.agentMetadata != null
+              ? AgentMessageMetadata.decode(message.agentMetadata)
+              : null;
+          final toolCalls = meta?.toolCalls ?? const [];
+
+          if (toolCalls.isNotEmpty) {
+            final blocks = <anthropic.AnthropicContentBlock>[];
+            final text = message.content.trim();
+            if (text.isNotEmpty) {
+              blocks.add(anthropic.AnthropicContentBlock.text(text));
+            }
+            for (final tc in toolCalls) {
+              final id = tc['id'] as String? ?? '';
+              final name = tc['name'] as String? ?? '';
+              final rawArgs = tc['arguments'];
+              Map<String, dynamic> input;
+              if (rawArgs is Map<String, dynamic>) {
+                input = rawArgs;
+              } else if (rawArgs is String && rawArgs.trim().isNotEmpty) {
+                try {
+                  final decoded = jsonDecode(rawArgs);
+                  input = decoded is Map<String, dynamic>
+                      ? decoded
+                      : {'value': decoded};
+                } catch (_) {
+                  input = {'raw': rawArgs};
+                }
+              } else {
+                input = const {};
+              }
+              blocks.add(
+                anthropic.AnthropicContentBlock.toolUse(
+                  id: id,
+                  name: name,
+                  input: input,
+                ),
+              );
+            }
+            result.add(
+              anthropic.AnthropicMessage(role: 'assistant', content: blocks),
+            );
+          } else {
+            final text = message.content.trim();
+            if (text.isNotEmpty) {
+              result.add(
+                anthropic.AnthropicMessage(
+                  role: 'assistant',
+                  content: message.content,
+                ),
+              );
+            }
+          }
         case ToolResponseMessage():
-          result.add(
-            anthropic.AnthropicMessage(
-              role: 'user',
-              content:
-                  'Tool result for ${message.toolName}: ${message.content}',
-            ),
+          final block = anthropic.AnthropicContentBlock.toolResult(
+            toolUseId: message.toolCallId ?? message.id,
+            content: message.content,
+            isError: message.isError ? true : null,
           );
+          appendUserContent(block);
       }
     }
     return _AnthropicMessagePayload(
@@ -756,7 +862,9 @@ class RemoteLlmRepository {
         for (final chunk in thinkTagParser.close()) {
           yield chunk;
         }
-        for (final toolCall in _toolCallChunksFromAnthropicBuffers(toolCallBuffers)) {
+        for (final toolCall in _toolCallChunksFromAnthropicBuffers(
+          toolCallBuffers,
+        )) {
           yield toolCall;
         }
         return;
@@ -815,7 +923,9 @@ class RemoteLlmRepository {
           for (final chunk in thinkTagParser.close()) {
             yield chunk;
           }
-          for (final toolCall in _toolCallChunksFromAnthropicBuffers(toolCallBuffers)) {
+          for (final toolCall in _toolCallChunksFromAnthropicBuffers(
+            toolCallBuffers,
+          )) {
             yield toolCall;
           }
           return;
@@ -835,7 +945,9 @@ class RemoteLlmRepository {
     for (final chunk in thinkTagParser.close()) {
       yield chunk;
     }
-    for (final toolCall in _toolCallChunksFromAnthropicBuffers(toolCallBuffers)) {
+    for (final toolCall in _toolCallChunksFromAnthropicBuffers(
+      toolCallBuffers,
+    )) {
       yield toolCall;
     }
   }

@@ -20,7 +20,10 @@ void main() {
       expect(echo.command, equals('python3'));
       expect(echo.args.first, contains('/examples/plugin/scripts/server.py'));
       expect(echo.args.first, isNot(contains('\${PLUGIN_ROOT}')));
-      expect(echo.env['MARKER'], contains('/examples/plugin/skills/plugin-hello/references/marker.txt'));
+      expect(
+        echo.env['MARKER'],
+        contains('/examples/plugin/skills/plugin-hello/references/marker.txt'),
+      );
       expect(echo.env['MARKER'], isNot(contains('\${PLUGIN_ROOT}')));
     });
 

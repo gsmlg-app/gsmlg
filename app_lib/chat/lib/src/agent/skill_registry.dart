@@ -35,9 +35,7 @@ class SkillEntry {
 
 /// Registry that discovers, indexes, and loads skills on demand.
 class SkillRegistry {
-  SkillRegistry({
-    List<String>? rootPaths,
-  }) : _rootPaths = rootPaths ?? [];
+  SkillRegistry({List<String>? rootPaths}) : _rootPaths = rootPaths ?? [];
 
   final List<String> _rootPaths;
   final Map<String, SkillEntry> _skills = {};
@@ -47,15 +45,14 @@ class SkillRegistry {
   static const _readSkillTool = 'read_skill';
   static const _listSkillsTool = 'list_skills';
 
-  bool handlesTool(String toolName) => {
-    _readSkillTool,
-    _listSkillsTool,
-  }.contains(toolName);
+  bool handlesTool(String toolName) =>
+      {_readSkillTool, _listSkillsTool}.contains(toolName);
 
   List<ChatToolDefinition> get toolDefinitions => [
     const ChatToolDefinition(
       name: _readSkillTool,
-      description: 'Read detailed instructions for a skill from its SKILL.md file on demand.',
+      description:
+          'Read detailed instructions for a skill from its SKILL.md file on demand.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -69,11 +66,9 @@ class SkillRegistry {
     ),
     const ChatToolDefinition(
       name: _listSkillsTool,
-      description: 'List all available skills with their names and descriptions.',
-      parameters: {
-        'type': 'object',
-        'properties': {},
-      },
+      description:
+          'List all available skills with their names and descriptions.',
+      parameters: {'type': 'object', 'properties': {}},
     ),
   ];
 
@@ -85,17 +80,22 @@ class SkillRegistry {
   }
 
   /// Indexes skills in a given directory safely.
-  Future<void> indexDirectory(String directoryPath, {String source = 'directory'}) async {
+  Future<void> indexDirectory(
+    String directoryPath, {
+    String source = 'directory',
+  }) async {
     final dir = Directory(directoryPath);
     if (!dir.existsSync()) return;
 
     final canonicalRoot = p.canonicalize(directoryPath);
 
     await for (final entity in dir.list(recursive: true, followLinks: false)) {
-      if (entity is File && p.basename(entity.path).toLowerCase() == 'skill.md') {
+      if (entity is File &&
+          p.basename(entity.path).toLowerCase() == 'skill.md') {
         final canonicalPath = p.canonicalize(entity.path);
         // Guard against directory traversal escaping the root
-        if (!p.isWithin(canonicalRoot, canonicalPath) && canonicalPath != canonicalRoot) {
+        if (!p.isWithin(canonicalRoot, canonicalPath) &&
+            canonicalPath != canonicalRoot) {
           continue;
         }
 
@@ -148,19 +148,27 @@ class SkillRegistry {
         }
       case _listSkillsTool:
         return {
-          'skills': _skills.values.map((s) => {
-            'name': s.name,
-            'description': s.description,
-            'source': s.source,
-            'version': s.version,
-          }).toList(),
+          'skills': _skills.values
+              .map(
+                (s) => {
+                  'name': s.name,
+                  'description': s.description,
+                  'source': s.source,
+                  'version': s.version,
+                },
+              )
+              .toList(),
         };
       default:
         return {'error': 'Unknown skill tool: $toolName'};
     }
   }
 
-  SkillEntry? _parseSkillFile(String filePath, String content, {required String source}) {
+  SkillEntry? _parseSkillFile(
+    String filePath,
+    String content, {
+    required String source,
+  }) {
     String? name;
     String? description;
     String? version;
@@ -181,13 +189,21 @@ class SkillRegistry {
         final colonIdx = line.indexOf(':');
         if (colonIdx > 0) {
           final key = line.substring(0, colonIdx).trim().toLowerCase();
-          final val = line.substring(colonIdx + 1).trim().replaceAll('"', '').replaceAll("'", '');
+          final val = line
+              .substring(colonIdx + 1)
+              .trim()
+              .replaceAll('"', '')
+              .replaceAll("'", '');
           if (key == 'name') name = val;
           if (key == 'description') description = val;
           if (key == 'version') version = val;
           if (key == 'platform') platform = val;
           if (key == 'tools' || key == 'allowed-tools') {
-            allowedTools = val.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toSet();
+            allowedTools = val
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toSet();
           }
         }
       }

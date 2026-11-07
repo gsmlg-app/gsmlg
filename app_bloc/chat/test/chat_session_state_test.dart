@@ -537,7 +537,9 @@ class _Remote implements RemoteLlmRepository {
   Future<void> closeControllers() async {
     for (final c in controllers.values) {
       if (!c.isClosed) {
-        await c.close().timeout(const Duration(milliseconds: 100), onTimeout: () {});
+        await c
+            .close()
+            .timeout(const Duration(milliseconds: 100), onTimeout: () {});
       }
     }
   }
@@ -609,7 +611,9 @@ class _Local extends GemmaRepository {
   Future<void> dispose() async {
     for (final c in controllers.values) {
       if (!c.isClosed) {
-        await c.close().timeout(const Duration(milliseconds: 100), onTimeout: () {});
+        await c
+            .close()
+            .timeout(const Duration(milliseconds: 100), onTimeout: () {});
       }
     }
   }

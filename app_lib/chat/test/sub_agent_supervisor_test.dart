@@ -41,77 +41,76 @@ void main() {
   });
 
   group('AgentSupervisor', () {
-    test('spawns child worker, executes runner, and waits for result', () async {
-      final supervisor = AgentSupervisor(
-        childRunner: ({
-          required String childRunId,
-          required String role,
-          required String prompt,
-          required Set<String>? allowedTools,
-          required CancelToken cancelToken,
-          required TreeBudget budget,
-          required int depth,
-        }) async {
-          return 'Result for $role: done $prompt';
-        },
-      );
+    test(
+      'spawns child worker, executes runner, and waits for result',
+      () async {
+        final supervisor = AgentSupervisor(
+          childRunner:
+              ({
+                required String childRunId,
+                required String role,
+                required String prompt,
+                required Set<String>? allowedTools,
+                required CancelToken cancelToken,
+                required TreeBudget budget,
+                required int depth,
+              }) async {
+                return 'Result for $role: done $prompt';
+              },
+        );
 
-      final spawnRes = await supervisor.executeTool(
-        toolName: 'spawn_agent',
-        arguments: {
-          'name': 'researcher',
-          'goal': 'investigate protocol',
-        },
-        parentRunId: 'parent_1',
-        sessionId: 'session_1',
-      );
+        final spawnRes = await supervisor.executeTool(
+          toolName: 'spawn_agent',
+          arguments: {'name': 'researcher', 'goal': 'investigate protocol'},
+          parentRunId: 'parent_1',
+          sessionId: 'session_1',
+        );
 
-      expect(spawnRes['status'], equals('spawned'));
-      final taskId = spawnRes['taskId'] as String;
+        expect(spawnRes['status'], equals('spawned'));
+        final taskId = spawnRes['taskId'] as String;
 
-      final waitRes = await supervisor.executeTool(
-        toolName: 'wait_agent',
-        arguments: {'taskId': taskId, 'timeout': 5000},
-        parentRunId: 'parent_1',
-        sessionId: 'session_1',
-      );
+        final waitRes = await supervisor.executeTool(
+          toolName: 'wait_agent',
+          arguments: {'taskId': taskId, 'timeout': 5000},
+          parentRunId: 'parent_1',
+          sessionId: 'session_1',
+        );
 
-      expect(waitRes['status'], equals('succeeded'));
-      expect(waitRes['result'], contains('Result for researcher'));
-    });
+        expect(waitRes['status'], equals('succeeded'));
+        expect(waitRes['result'], contains('Result for researcher'));
+      },
+    );
 
     test('propagates parent cancellation to child worker', () async {
       final parentCancelToken = CancelToken();
 
       final supervisor = AgentSupervisor(
-        childRunner: ({
-          required String childRunId,
-          required String role,
-          required String prompt,
-          required Set<String>? allowedTools,
-          required CancelToken cancelToken,
-          required TreeBudget budget,
-          required int depth,
-        }) async {
-          final completer = Completer<String>();
-          if (cancelToken.isCancelled) {
-            throw cancelToken.cancelError!;
-          }
-          cancelToken.whenCancel.then((_) {
-            if (!completer.isCompleted) {
-              completer.completeError(cancelToken.cancelError!);
-            }
-          });
-          return completer.future;
-        },
+        childRunner:
+            ({
+              required String childRunId,
+              required String role,
+              required String prompt,
+              required Set<String>? allowedTools,
+              required CancelToken cancelToken,
+              required TreeBudget budget,
+              required int depth,
+            }) async {
+              final completer = Completer<String>();
+              if (cancelToken.isCancelled) {
+                throw cancelToken.cancelError!;
+              }
+              cancelToken.whenCancel.then((_) {
+                if (!completer.isCompleted) {
+                  completer.completeError(cancelToken.cancelError!);
+                }
+              });
+              return completer.future;
+            },
       );
 
       final spawnRes = await supervisor.executeTool(
         toolName: 'spawn_agent',
-        arguments: {
-          'name': 'worker',
-          'goal': 'long task',
-        },
+        arguments: {'name': 'worker', 'goal': 'long task'},
         parentRunId: 'parent_cancel',
         sessionId: 'session_1',
         cancelToken: parentCancelToken,

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:dio/dio.dart';
 
+import '../models/agent_metadata.dart';
 import '../models/inference.dart';
 import '../models/message.dart' as app_msg;
 import '../models/model_config.dart' as app_cfg;
@@ -41,8 +42,12 @@ class RepositoryAgentLlmClient implements LLMClient {
   StreamController<ChatGenerationChunk>? _primedBuffer;
   StreamSubscription<ChatGenerationChunk>? _primedSub;
 
-  void _primeFirstTurn(List<app_msg.Message> messages, List<Map<String, dynamic>> tools) {
-    final effectiveGenId = generationId ?? 'gen_${DateTime.now().microsecondsSinceEpoch}';
+  void _primeFirstTurn(
+    List<app_msg.Message> messages,
+    List<Map<String, dynamic>> tools,
+  ) {
+    final effectiveGenId =
+        generationId ?? 'gen_${DateTime.now().microsecondsSinceEpoch}';
     final Stream<ChatGenerationChunk> raw;
     if (_isLocal && gemmaRepository != null) {
       raw = gemmaRepository!.generateResponse(
@@ -140,14 +145,18 @@ class RepositoryAgentLlmClient implements LLMClient {
   }) async {
     final appMessages = _convertToAppMessages(messages);
     final openAiTools = tools != null
-        ? tools.map((t) => {
-            'type': 'function',
-            'function': {
-              'name': t.name,
-              'description': t.description,
-              'parameters': t.parameters,
-            },
-          }).toList(growable: false)
+        ? tools
+              .map(
+                (t) => {
+                  'type': 'function',
+                  'function': {
+                    'name': t.name,
+                    'description': t.description,
+                    'parameters': t.parameters,
+                  },
+                },
+              )
+              .toList(growable: false)
         : const <Map<String, dynamic>>[];
 
     LocalModelLease? lease;
@@ -163,7 +172,8 @@ class RepositoryAgentLlmClient implements LLMClient {
         _primedBuffer = null;
         _primedSub = null;
       } else {
-        final effectiveGenId = generationId ?? 'gen_${DateTime.now().microsecondsSinceEpoch}';
+        final effectiveGenId =
+            generationId ?? 'gen_${DateTime.now().microsecondsSinceEpoch}';
         if (_isLocal && gemmaRepository != null) {
           rawStream = gemmaRepository!.generateResponse(
             appMessages,
@@ -206,7 +216,9 @@ class RepositoryAgentLlmClient implements LLMClient {
         cancelToken.whenCancel.then((_) async {
           await cleanup();
           if (!controller.isClosed) {
-            controller.addError(cancelToken.cancelError ?? Exception('Cancelled'));
+            controller.addError(
+              cancelToken.cancelError ?? Exception('Cancelled'),
+            );
             controller.close();
           }
         });
@@ -222,38 +234,49 @@ class RepositoryAgentLlmClient implements LLMClient {
               if (text.isNotEmpty) {
                 onFirstToken?.call();
               }
-              controller.add(StreamingMessage(
-                modelMessage: ModelMessage(
-                  model: modelConfig.model,
-                  textOutput: text,
+              controller.add(
+                StreamingMessage(
+                  modelMessage: ModelMessage(
+                    model: modelConfig.model,
+                    textOutput: text,
+                  ),
                 ),
-              ));
+              );
             case ChatThinkingChunk(:final content):
               if (content.isNotEmpty) {
                 onFirstToken?.call();
               }
-              controller.add(StreamingMessage(
-                modelMessage: ModelMessage(
-                  model: modelConfig.model,
-                  thought: content,
+              controller.add(
+                StreamingMessage(
+                  modelMessage: ModelMessage(
+                    model: modelConfig.model,
+                    thought: content,
+                  ),
                 ),
-              ));
-            case ChatFunctionCallChunk(:final name, :final args, :final id, :final index):
+              );
+            case ChatFunctionCallChunk(
+              :final name,
+              :final args,
+              :final id,
+              :final index,
+            ):
               hasFunctionCalls = true;
               final callId = id ?? 'call_${index ?? callIndex++}';
-              controller.add(StreamingMessage(
-                modelMessage: ModelMessage(
-                  model: modelConfig.model,
-                  functionCalls: [
-                    FunctionCall(
-                      id: callId,
-                      name: name,
-                      arguments: jsonEncode(args),
-                    ),
-                  ],
-                  stopReason: 'tool_calls',
+              controller.add(
+                StreamingMessage(
+                  modelMessage: ModelMessage(
+                    model: modelConfig.model,
+                    functionCalls: [
+                      FunctionCall(
+                        id: callId,
+                        name: name,
+                        arguments: jsonEncode(args),
+                      ),
+                    ],
+                    stopReason: 'tool_calls',
+                  ),
                 ),
-              ));
+              );
               // In tool-calling turns, function calls complete the model turn.
               // Closing in a microtask ensures all concurrent function calls in the turn
               // are collected before unblocking tool execution in StatefulAgent.
@@ -273,12 +296,14 @@ class RepositoryAgentLlmClient implements LLMClient {
         },
         onDone: () {
           if (!controller.isClosed) {
-            controller.add(StreamingMessage(
-              modelMessage: ModelMessage(
-                model: modelConfig.model,
-                stopReason: hasFunctionCalls ? 'tool_calls' : 'stop',
+            controller.add(
+              StreamingMessage(
+                modelMessage: ModelMessage(
+                  model: modelConfig.model,
+                  stopReason: hasFunctionCalls ? 'tool_calls' : 'stop',
+                ),
               ),
-            ));
+            );
             scheduleMicrotask(() {
               if (!controller.isClosed) {
                 controller.close();
@@ -306,12 +331,14 @@ class RepositoryAgentLlmClient implements LLMClient {
     for (final msg in messages) {
       final msgId = 'msg_${now.millisecondsSinceEpoch}_${idx++}';
       if (msg is SystemMessage) {
-        result.add(app_msg.UserMessage(
-          id: msgId,
-          conversationId: targetConvId,
-          timestamp: now,
-          content: 'System instruction: ${msg.content}',
-        ));
+        result.add(
+          app_msg.UserMessage(
+            id: msgId,
+            conversationId: targetConvId,
+            timestamp: now,
+            content: 'System instruction: ${msg.content}',
+          ),
+        );
       } else if (msg is UserMessage) {
         final textParts = <String>[];
         for (final part in msg.contents) {
@@ -319,20 +346,39 @@ class RepositoryAgentLlmClient implements LLMClient {
             textParts.add(part.text);
           }
         }
-        result.add(app_msg.UserMessage(
-          id: msgId,
-          conversationId: targetConvId,
-          timestamp: now,
-          content: textParts.join('\n'),
-        ));
+        result.add(
+          app_msg.UserMessage(
+            id: msgId,
+            conversationId: targetConvId,
+            timestamp: now,
+            content: textParts.join('\n'),
+          ),
+        );
       } else if (msg is ModelMessage) {
-        result.add(app_msg.AssistantMessage(
-          id: msgId,
-          conversationId: targetConvId,
-          timestamp: now,
-          content: msg.textOutput ?? '',
-          thinkingContent: msg.thought,
-        ));
+        final toolCalls = msg.functionCalls
+            .map(
+              (fc) => {'id': fc.id, 'name': fc.name, 'arguments': fc.arguments},
+            )
+            .toList(growable: false);
+
+        final metadata = toolCalls.isNotEmpty
+            ? AgentMessageMetadata(
+                version: 1,
+                toolCalls: toolCalls,
+                thoughtSignature: msg.thoughtSignature,
+              ).encode()
+            : null;
+
+        result.add(
+          app_msg.AssistantMessage(
+            id: msgId,
+            conversationId: targetConvId,
+            timestamp: now,
+            content: msg.textOutput ?? '',
+            thinkingContent: msg.thought,
+            agentMetadata: metadata,
+          ),
+        );
       } else if (msg is FunctionExecutionResultMessage) {
         for (final res in msg.results) {
           final textParts = <String>[];
@@ -341,15 +387,19 @@ class RepositoryAgentLlmClient implements LLMClient {
               textParts.add(part.text);
             }
           }
-          result.add(app_msg.ToolResponseMessage(
-            id: 'tool_${now.millisecondsSinceEpoch}_${idx++}',
-            conversationId: targetConvId,
-            timestamp: now,
-            toolName: res.name,
-            toolCallId: res.id,
-            content: textParts.isNotEmpty ? textParts.join('\n') : jsonEncode(res.toJson()),
-            isError: res.isError,
-          ));
+          result.add(
+            app_msg.ToolResponseMessage(
+              id: 'tool_${now.millisecondsSinceEpoch}_${idx++}',
+              conversationId: targetConvId,
+              timestamp: now,
+              toolName: res.name,
+              toolCallId: res.id,
+              content: textParts.isNotEmpty
+                  ? textParts.join('\n')
+                  : jsonEncode(res.toJson()),
+              isError: res.isError,
+            ),
+          );
         }
       }
     }

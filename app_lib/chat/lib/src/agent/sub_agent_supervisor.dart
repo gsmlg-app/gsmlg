@@ -102,23 +102,22 @@ class SubAgentTask {
 }
 
 /// Runner function signature to execute a child agent run.
-typedef ChildAgentRunner = Future<dynamic> Function({
-  required String childRunId,
-  required String role,
-  required String prompt,
-  required Set<String>? allowedTools,
-  required CancelToken cancelToken,
-  required TreeBudget budget,
-  required int depth,
-});
+typedef ChildAgentRunner =
+    Future<dynamic> Function({
+      required String childRunId,
+      required String role,
+      required String prompt,
+      required Set<String>? allowedTools,
+      required CancelToken cancelToken,
+      required TreeBudget budget,
+      required int depth,
+    });
 
 /// Supervisor managing named sub-agent workers with shared budgets and tree hierarchy.
 class AgentSupervisor {
-  AgentSupervisor({
-    ChildAgentRunner? childRunner,
-    TreeBudget? budget,
-  }) : _childRunner = childRunner,
-       _budget = budget ?? TreeBudget();
+  AgentSupervisor({ChildAgentRunner? childRunner, TreeBudget? budget})
+    : _childRunner = childRunner,
+      _budget = budget ?? TreeBudget();
 
   final ChildAgentRunner? _childRunner;
   final TreeBudget _budget;
@@ -135,26 +134,26 @@ class AgentSupervisor {
   static const _waitTool = 'wait_agent';
   static const _cancelTool = 'cancel_agent';
 
-  bool handlesTool(String toolName) => {
-    _spawnTool,
-    _waitTool,
-    _cancelTool,
-  }.contains(toolName);
+  bool handlesTool(String toolName) =>
+      {_spawnTool, _waitTool, _cancelTool}.contains(toolName);
 
   List<ChatToolDefinition> get toolDefinitions => [
     const ChatToolDefinition(
       name: _spawnTool,
-      description: 'Spawn a named sub-agent worker with a specific goal, context, and capability subset.',
+      description:
+          'Spawn a named sub-agent worker with a specific goal, context, and capability subset.',
       parameters: {
         'type': 'object',
         'properties': {
           'name': {
             'type': 'string',
-            'description': 'Worker role or type (e.g., researcher, coder, reviewer).',
+            'description':
+                'Worker role or type (e.g., researcher, coder, reviewer).',
           },
           'goal': {
             'type': 'string',
-            'description': 'The detailed objective or prompt for the sub-agent.',
+            'description':
+                'The detailed objective or prompt for the sub-agent.',
           },
           'context': {
             'type': 'string',
@@ -163,7 +162,8 @@ class AgentSupervisor {
           'tools': {
             'type': 'array',
             'items': {'type': 'string'},
-            'description': 'Optional list of allowed tool names for the sub-agent.',
+            'description':
+                'Optional list of allowed tool names for the sub-agent.',
           },
         },
         'required': ['name', 'goal'],
@@ -171,7 +171,8 @@ class AgentSupervisor {
     ),
     const ChatToolDefinition(
       name: _waitTool,
-      description: 'Wait for a spawned sub-agent worker to finish and retrieve its result.',
+      description:
+          'Wait for a spawned sub-agent worker to finish and retrieve its result.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -181,7 +182,8 @@ class AgentSupervisor {
           },
           'timeout': {
             'type': 'integer',
-            'description': 'Milliseconds to wait before returning status (default 30000ms).',
+            'description':
+                'Milliseconds to wait before returning status (default 30000ms).',
           },
         },
         'required': ['taskId'],
@@ -237,7 +239,8 @@ class AgentSupervisor {
 
     if (!_budget.tryAcquireWorker(depth)) {
       return {
-        'error': 'Tree budget exceeded: cannot spawn worker. '
+        'error':
+            'Tree budget exceeded: cannot spawn worker. '
             'Active workers: ${_budget.activeConcurrency}/${_budget.maxConcurrency}, '
             'Depth: $depth/${_budget.maxDepth}',
         'status': 'budget_exceeded',
@@ -263,7 +266,9 @@ class AgentSupervisor {
     // Propagate parent cancellation to child
     if (parentCancelToken != null) {
       if (parentCancelToken.isCancelled) {
-        childCancelToken.cancel(parentCancelToken.cancelError ?? 'Parent run already cancelled');
+        childCancelToken.cancel(
+          parentCancelToken.cancelError ?? 'Parent run already cancelled',
+        );
       } else {
         parentCancelToken.whenCancel.then((_) {
           if (!childCancelToken.isCancelled) {
@@ -375,7 +380,10 @@ class AgentSupervisor {
     return task.toSummary();
   }
 
-  Future<dynamic> _cancelAgent(Map<String, dynamic> args, String parentRunId) async {
+  Future<dynamic> _cancelAgent(
+    Map<String, dynamic> args,
+    String parentRunId,
+  ) async {
     final taskId = args['taskId'] as String;
     final task = _tasks[taskId];
     if (task == null) {
@@ -389,10 +397,7 @@ class AgentSupervisor {
       task.cancelToken.cancel('Cancelled by parent request');
     }
     task.status = 'cancelled';
-    return {
-      'taskId': taskId,
-      'status': 'cancelled',
-    };
+    return {'taskId': taskId, 'status': 'cancelled'};
   }
 
   /// Cancels and cleans up all sub-agents spawned by the parent run.

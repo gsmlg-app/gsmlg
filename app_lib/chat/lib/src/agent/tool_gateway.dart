@@ -12,7 +12,8 @@ import 'skill_registry.dart';
 import 'sub_agent_supervisor.dart';
 
 /// Callback to persist or handle an audited tool receipt immediately.
-typedef ToolReceiptHandler = Future<void> Function(ToolInvocationReceipt receipt);
+typedef ToolReceiptHandler =
+    Future<void> Function(ToolInvocationReceipt receipt);
 
 /// A single application-owned gateway for tool discovery, validation,
 /// capability enforcement, execution journaling, and serial/concurrent dispatch.
@@ -73,13 +74,15 @@ class ToolExecutionGateway {
     if (_toolExecutor != null) {
       for (final def in _toolExecutor.toolDefinitions) {
         if (_isToolAllowed(def.name)) {
-          definitions.add(_createTool(
-            runId: runId,
-            sessionId: sessionId,
-            name: def.name,
-            description: def.description,
-            parameters: def.parameters,
-          ));
+          definitions.add(
+            _createTool(
+              runId: runId,
+              sessionId: sessionId,
+              name: def.name,
+              description: def.description,
+              parameters: def.parameters,
+            ),
+          );
         }
       }
     }
@@ -88,13 +91,15 @@ class ToolExecutionGateway {
     if (_shellService != null) {
       for (final def in _shellService.toolDefinitions) {
         if (_isToolAllowed(def.name)) {
-          definitions.add(_createTool(
-            runId: runId,
-            sessionId: sessionId,
-            name: def.name,
-            description: def.description,
-            parameters: def.parameters,
-          ));
+          definitions.add(
+            _createTool(
+              runId: runId,
+              sessionId: sessionId,
+              name: def.name,
+              description: def.description,
+              parameters: def.parameters,
+            ),
+          );
         }
       }
     }
@@ -103,13 +108,15 @@ class ToolExecutionGateway {
     if (_subAgentSupervisor != null) {
       for (final def in _subAgentSupervisor.toolDefinitions) {
         if (_isToolAllowed(def.name)) {
-          definitions.add(_createTool(
-            runId: runId,
-            sessionId: sessionId,
-            name: def.name,
-            description: def.description,
-            parameters: def.parameters,
-          ));
+          definitions.add(
+            _createTool(
+              runId: runId,
+              sessionId: sessionId,
+              name: def.name,
+              description: def.description,
+              parameters: def.parameters,
+            ),
+          );
         }
       }
     }
@@ -118,13 +125,15 @@ class ToolExecutionGateway {
     if (_memoryProvider != null) {
       for (final def in _memoryProvider.toolDefinitions) {
         if (_isToolAllowed(def.name)) {
-          definitions.add(_createTool(
-            runId: runId,
-            sessionId: sessionId,
-            name: def.name,
-            description: def.description,
-            parameters: def.parameters,
-          ));
+          definitions.add(
+            _createTool(
+              runId: runId,
+              sessionId: sessionId,
+              name: def.name,
+              description: def.description,
+              parameters: def.parameters,
+            ),
+          );
         }
       }
     }
@@ -133,13 +142,15 @@ class ToolExecutionGateway {
     if (_skillRegistry != null) {
       for (final def in _skillRegistry.toolDefinitions) {
         if (_isToolAllowed(def.name)) {
-          definitions.add(_createTool(
-            runId: runId,
-            sessionId: sessionId,
-            name: def.name,
-            description: def.description,
-            parameters: def.parameters,
-          ));
+          definitions.add(
+            _createTool(
+              runId: runId,
+              sessionId: sessionId,
+              name: def.name,
+              description: def.description,
+              parameters: def.parameters,
+            ),
+          );
         }
       }
     }
@@ -184,13 +195,15 @@ class ToolExecutionGateway {
     final key = '$runId:${call.id}';
     _preparedCalls[key] = call;
 
-    onEvent?.call(ToolCallPreparedEvent(
-      runId: runId,
-      sessionId: sessionId,
-      callId: call.id,
-      toolName: call.name,
-      arguments: call.arguments,
-    ));
+    onEvent?.call(
+      ToolCallPreparedEvent(
+        runId: runId,
+        sessionId: sessionId,
+        callId: call.id,
+        toolName: call.name,
+        arguments: call.arguments,
+      ),
+    );
   }
 
   /// Executes a tool call within the gateway.
@@ -226,7 +239,14 @@ class ToolExecutionGateway {
         result: 'Cancelled before execution',
         timestamp: DateTime.now(),
       );
-      await _recordReceipt(receipt, runId, sessionId, callId, toolName, rawArguments);
+      await _recordReceipt(
+        receipt,
+        runId,
+        sessionId,
+        callId,
+        toolName,
+        rawArguments,
+      );
       throw cancelToken!.cancelError!;
     }
 
@@ -243,7 +263,14 @@ class ToolExecutionGateway {
         result: 'Tool $toolName is not allowed in current capability scope',
         timestamp: DateTime.now(),
       );
-      await _recordReceipt(receipt, runId, sessionId, callId, toolName, rawArguments);
+      await _recordReceipt(
+        receipt,
+        runId,
+        sessionId,
+        callId,
+        toolName,
+        rawArguments,
+      );
       return AgentToolResult(
         content: TextPart('Error: Tool $toolName is not allowed'),
         metadata: {'isError': true},
@@ -274,17 +301,26 @@ class ToolExecutionGateway {
           result: 'Cancelled before dispatch',
           timestamp: DateTime.now(),
         );
-        await _recordReceipt(receipt, runId, sessionId, callId, toolName, rawArguments);
+        await _recordReceipt(
+          receipt,
+          runId,
+          sessionId,
+          callId,
+          toolName,
+          rawArguments,
+        );
         throw cancelToken!.cancelError!;
       }
 
-      onEvent?.call(ToolCallStartedEvent(
-        runId: runId,
-        sessionId: sessionId,
-        callId: callId,
-        toolName: toolName,
-        arguments: rawArguments,
-      ));
+      onEvent?.call(
+        ToolCallStartedEvent(
+          runId: runId,
+          sessionId: sessionId,
+          callId: callId,
+          toolName: toolName,
+          arguments: rawArguments,
+        ),
+      );
 
       // Execute through registered backend
       dynamic rawResult;
@@ -331,7 +367,9 @@ class ToolExecutionGateway {
         isError = true;
       }
 
-      final resultString = rawResult is String ? rawResult : jsonEncode(rawResult);
+      final resultString = rawResult is String
+          ? rawResult
+          : jsonEncode(rawResult);
       final receipt = ToolInvocationReceipt(
         runId: runId,
         callId: callId,
@@ -344,7 +382,14 @@ class ToolExecutionGateway {
         timestamp: DateTime.now(),
       );
 
-      await _recordReceipt(receipt, runId, sessionId, callId, toolName, rawArguments);
+      await _recordReceipt(
+        receipt,
+        runId,
+        sessionId,
+        callId,
+        toolName,
+        rawArguments,
+      );
 
       return AgentToolResult(
         content: TextPart(resultString),
@@ -367,7 +412,14 @@ class ToolExecutionGateway {
         result: e.toString(),
         timestamp: DateTime.now(),
       );
-      await _recordReceipt(receipt, runId, sessionId, callId, toolName, rawArguments);
+      await _recordReceipt(
+        receipt,
+        runId,
+        sessionId,
+        callId,
+        toolName,
+        rawArguments,
+      );
       if (isCancel) rethrow;
       return AgentToolResult(
         content: TextPart('Tool execution failed: $e'),
@@ -387,15 +439,17 @@ class ToolExecutionGateway {
     String arguments,
   ) async {
     final completer = Completer<void>();
-    onEvent?.call(ToolCallCompletedEvent(
-      runId: runId,
-      sessionId: sessionId,
-      callId: callId,
-      toolName: toolName,
-      arguments: arguments,
-      receipt: receipt,
-      acknowledgement: completer,
-    ));
+    onEvent?.call(
+      ToolCallCompletedEvent(
+        runId: runId,
+        sessionId: sessionId,
+        callId: callId,
+        toolName: toolName,
+        arguments: arguments,
+        receipt: receipt,
+        acknowledgement: completer,
+      ),
+    );
 
     if (onReceipt != null) {
       await onReceipt!(receipt);

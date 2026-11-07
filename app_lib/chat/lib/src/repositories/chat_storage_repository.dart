@@ -176,8 +176,8 @@ class ChatStorageRepository {
               message is AssistantMessage
                   ? message.agentMetadata
                   : (message is ToolResponseMessage
-                      ? message.agentMetadata
-                      : null),
+                        ? message.agentMetadata
+                        : null),
             ),
             timestamp: Value(message.timestamp),
           ),

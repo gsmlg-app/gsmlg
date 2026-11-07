@@ -82,10 +82,7 @@ void main() {
     test('deletes memory entry by id', () async {
       final storeRes = await provider.executeTool(
         toolName: 'memory_store',
-        arguments: {
-          'content': 'Temporary note',
-          'scope': 'global',
-        },
+        arguments: {'content': 'Temporary note', 'scope': 'global'},
         sessionId: 'session_1',
       );
       final id = storeRes['id'] as String;

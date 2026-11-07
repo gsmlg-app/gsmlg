@@ -37,7 +37,8 @@ class _FakeVault implements VaultRepository {
   final Map<String, String> _storage = {};
 
   @override
-  Future<void> write({required String key, required String value}) async => _storage[key] = value;
+  Future<void> write({required String key, required String value}) async =>
+      _storage[key] = value;
 
   @override
   Future<String?> read({required String key}) async => _storage[key];
@@ -46,7 +47,8 @@ class _FakeVault implements VaultRepository {
   Future<void> delete({required String key}) async => _storage.remove(key);
 
   @override
-  Future<bool> containsKey({required String key}) async => _storage.containsKey(key);
+  Future<bool> containsKey({required String key}) async =>
+      _storage.containsKey(key);
 
   @override
   Future<void> deleteAll() async => _storage.clear();
@@ -57,52 +59,55 @@ class _FakeVault implements VaultRepository {
 
 void main() {
   group('ChatAgentRuntime', () {
-    test('executes multi-turn agent loop with tool calls and emits typed events', () async {
-      final fakeRemote = _FakeRemoteLlmRepository();
-      final memoryProvider = ScopedMemoryProvider(
-        initialEntries: [
-          MemoryEntry.create(
-            scope: 'global',
-            content: 'test query information is all clear',
+    test(
+      'executes multi-turn agent loop with tool calls and emits typed events',
+      () async {
+        final fakeRemote = _FakeRemoteLlmRepository();
+        final memoryProvider = ScopedMemoryProvider(
+          initialEntries: [
+            MemoryEntry.create(
+              scope: 'global',
+              content: 'test query information is all clear',
+            ),
+          ],
+        );
+
+        final runtime = ChatAgentRuntime(
+          toolExecutor: ToolExecutor(),
+          remoteRepository: fakeRemote,
+          memoryProvider: memoryProvider,
+        );
+
+        final events = <ChatAgentEvent>[];
+        final stream = runtime.runStream(
+          runId: 'test_run_1',
+          sessionId: 'session_1',
+          modelConfig: const ModelConfig(
+            inferenceMode: ChatInferenceMode.remote,
+            remoteModel: 'test-model',
           ),
-        ],
-      );
+          historyMessages: [],
+          userPrompt: 'Please test the memory search',
+        );
 
-      final runtime = ChatAgentRuntime(
-        toolExecutor: ToolExecutor(),
-        remoteRepository: fakeRemote,
-        memoryProvider: memoryProvider,
-      );
+        await for (final event in stream) {
+          events.add(event);
+        }
 
-      final events = <ChatAgentEvent>[];
-      final stream = runtime.runStream(
-        runId: 'test_run_1',
-        sessionId: 'session_1',
-        modelConfig: const ModelConfig(
-          inferenceMode: ChatInferenceMode.remote,
-          remoteModel: 'test-model',
-        ),
-        historyMessages: [],
-        userPrompt: 'Please test the memory search',
-      );
+        // Verify event sequence
+        expect(events.any((e) => e is AgentRunStartedEvent), isTrue);
+        expect(events.any((e) => e is ModelChunkReceivedEvent), isTrue);
+        expect(events.any((e) => e is ToolCallPreparedEvent), isTrue);
+        expect(events.any((e) => e is ToolCallStartedEvent), isTrue);
+        expect(events.any((e) => e is ToolCallCompletedEvent), isTrue);
+        expect(events.any((e) => e is ModelTurnCompletedEvent), isTrue);
+        expect(events.any((e) => e is AgentRunCompletedEvent), isTrue);
 
-      await for (final event in stream) {
-        events.add(event);
-      }
-
-      // Verify event sequence
-      expect(events.any((e) => e is AgentRunStartedEvent), isTrue);
-      expect(events.any((e) => e is ModelChunkReceivedEvent), isTrue);
-      expect(events.any((e) => e is ToolCallPreparedEvent), isTrue);
-      expect(events.any((e) => e is ToolCallStartedEvent), isTrue);
-      expect(events.any((e) => e is ToolCallCompletedEvent), isTrue);
-      expect(events.any((e) => e is ModelTurnCompletedEvent), isTrue);
-      expect(events.any((e) => e is AgentRunCompletedEvent), isTrue);
-
-      final toolEvent = events.whereType<ToolCallCompletedEvent>().first;
-      expect(toolEvent.toolName, equals('memory_search'));
-      expect(toolEvent.receipt.isError, isFalse);
-    });
+        final toolEvent = events.whereType<ToolCallCompletedEvent>().first;
+        expect(toolEvent.toolName, equals('memory_search'));
+        expect(toolEvent.receipt.isError, isFalse);
+      },
+    );
 
     test('respects cancelToken and terminates run cleanly', () async {
       final fakeRemote = _FakeRemoteLlmRepository();

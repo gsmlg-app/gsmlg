@@ -38,20 +38,26 @@ class _AgentGatewayHook extends dac.AgentHook {
   int _turnIndex = 0;
 
   @override
-  FutureOr<dac.ToolCallHookResult> beforeToolCall(dac.ToolCallHookContext context) async {
+  FutureOr<dac.ToolCallHookResult> beforeToolCall(
+    dac.ToolCallHookContext context,
+  ) async {
     await gateway.onPreparedCall(runId, sessionId, context.call);
     return dac.ToolCallHookResult.proceed(context.call);
   }
 
   @override
-  FutureOr<dac.ModelResponseHookResult> afterModelCall(dac.ModelResponseHookContext context) {
+  FutureOr<dac.ModelResponseHookResult> afterModelCall(
+    dac.ModelResponseHookContext context,
+  ) {
     if (!eventController.isClosed) {
-      eventController.add(ModelTurnCompletedEvent(
-        runId: runId,
-        sessionId: sessionId,
-        turnIndex: _turnIndex++,
-        modelMessage: context.response,
-      ));
+      eventController.add(
+        ModelTurnCompletedEvent(
+          runId: runId,
+          sessionId: sessionId,
+          turnIndex: _turnIndex++,
+          modelMessage: context.response,
+        ),
+      );
     }
     return dac.ModelResponseHookResult.proceed(context.response);
   }
@@ -137,14 +143,18 @@ class ChatAgentRuntime {
 
     // 2. Discover tools
     final tools = gateway.getTools(runId: runId, sessionId: sessionId);
-    final openAiTools = tools.map((t) => {
-      'type': 'function',
-      'function': {
-        'name': t.name,
-        'description': t.description,
-        'parameters': t.parameters,
-      },
-    }).toList(growable: false);
+    final openAiTools = tools
+        .map(
+          (t) => {
+            'type': 'function',
+            'function': {
+              'name': t.name,
+              'description': t.description,
+              'parameters': t.parameters,
+            },
+          },
+        )
+        .toList(growable: false);
 
     // 3. Setup LLM client with primed first turn
     final llmClient = RepositoryAgentLlmClient(
@@ -183,51 +193,65 @@ class ChatAgentRuntime {
       tools: tools,
       hooks: [gatewayHook],
       state: dac.AgentState(sessionId: sessionId),
-      disableSubAgents: true, // We use AgentSupervisor delegation instead of generic cloning
+      disableSubAgents:
+          true, // We use AgentSupervisor delegation instead of generic cloning
     );
 
     // 6. Convert conversation history to dart_agent_core LLMMessages
-    final inputMessages = _convertHistoryToLLMMessages(historyMessages, userPrompt);
+    final inputMessages = _convertHistoryToLLMMessages(
+      historyMessages,
+      userPrompt,
+    );
 
     // Pin plugins for this active run if pluginConsumer available
     pluginConsumer?.pinPluginsForRun(runId);
 
     // Emit initial run start
-    eventController.add(AgentRunStartedEvent(
-      runId: runId,
-      sessionId: sessionId,
-      inputMessages: inputMessages,
-    ));
+    eventController.add(
+      AgentRunStartedEvent(
+        runId: runId,
+        sessionId: sessionId,
+        inputMessages: inputMessages,
+      ),
+    );
 
     // Stream agent execution
-    final agentStream = agent.runStream(
-      inputMessages,
-      cancelToken: cancelToken,
-      useStream: true,
-      maxTurns: maxTurns,
-    ).handleError((err, st) {
-      final isCancelled = (cancelToken?.isCancelled ?? false) ||
-          (err is dac.AgentException && err.code == dac.AgentExceptionCode.cancelled) ||
-          (err is DioException && err.type == DioExceptionType.cancel);
+    final agentStream = agent
+        .runStream(
+          inputMessages,
+          cancelToken: cancelToken,
+          useStream: true,
+          maxTurns: maxTurns,
+        )
+        .handleError((err, st) {
+          final isCancelled =
+              (cancelToken?.isCancelled ?? false) ||
+              (err is dac.AgentException &&
+                  err.code == dac.AgentExceptionCode.cancelled) ||
+              (err is DioException && err.type == DioExceptionType.cancel);
 
-      if (!eventController.isClosed) {
-        if (isCancelled) {
-          eventController.add(AgentRunCancelledEvent(
-            runId: runId,
-            sessionId: sessionId,
-            reason: err.toString(),
-          ));
-        } else {
-          eventController.add(AgentRunFailedEvent(
-            runId: runId,
-            sessionId: sessionId,
-            error: err,
-          ));
-        }
-        eventController.close();
-      }
-      cleanup();
-    });
+          if (!eventController.isClosed) {
+            if (isCancelled) {
+              eventController.add(
+                AgentRunCancelledEvent(
+                  runId: runId,
+                  sessionId: sessionId,
+                  reason: err.toString(),
+                ),
+              );
+            } else {
+              eventController.add(
+                AgentRunFailedEvent(
+                  runId: runId,
+                  sessionId: sessionId,
+                  error: err,
+                ),
+              );
+            }
+            eventController.close();
+          }
+          cleanup();
+        });
 
     agentStream.listen(
       (event) {
@@ -241,13 +265,15 @@ class ChatAgentRuntime {
               final text = modelMsg.textOutput;
               final thought = modelMsg.thought;
               if (text != null || thought != null) {
-                eventController.add(ModelChunkReceivedEvent(
-                  runId: runId,
-                  sessionId: sessionId,
-                  turnIndex: gatewayHook._turnIndex,
-                  textChunk: text,
-                  thoughtChunk: thought,
-                ));
+                eventController.add(
+                  ModelChunkReceivedEvent(
+                    runId: runId,
+                    sessionId: sessionId,
+                    turnIndex: gatewayHook._turnIndex,
+                    textChunk: text,
+                    thoughtChunk: thought,
+                  ),
+                );
               }
             }
           case dac.StreamingEventType.fullModelMessage:
@@ -268,11 +294,13 @@ class ChatAgentRuntime {
       },
       onDone: () {
         if (!eventController.isClosed) {
-          eventController.add(AgentRunCompletedEvent(
-            runId: runId,
-            sessionId: sessionId,
-            finalResponse: null,
-          ));
+          eventController.add(
+            AgentRunCompletedEvent(
+              runId: runId,
+              sessionId: sessionId,
+              finalResponse: null,
+            ),
+          );
           eventController.close();
         }
         cleanup();
@@ -297,39 +325,55 @@ class ChatAgentRuntime {
             ? AgentMessageMetadata.decode(msg.agentMetadata!)
             : null;
 
-        final functionCalls = metadata?.toolCalls.map((tc) => dac.FunctionCall(
-          id: (tc['id'] as String?) ?? 'call_unknown',
-          name: (tc['name'] as String?) ?? '',
-          arguments: tc['arguments'] is String ? tc['arguments'] as String : jsonEncode(tc['arguments'] ?? {}),
-        )).toList() ?? const <dac.FunctionCall>[];
+        final functionCalls =
+            metadata?.toolCalls
+                .map(
+                  (tc) => dac.FunctionCall(
+                    id: (tc['id'] as String?) ?? 'call_unknown',
+                    name: (tc['name'] as String?) ?? '',
+                    arguments: tc['arguments'] is String
+                        ? tc['arguments'] as String
+                        : jsonEncode(tc['arguments'] ?? {}),
+                  ),
+                )
+                .toList() ??
+            const <dac.FunctionCall>[];
 
-        messages.add(dac.ModelMessage(
-          textOutput: msg.content.isNotEmpty ? msg.content : null,
-          thought: msg.thinkingContent,
-          thoughtSignature: metadata?.thoughtSignature,
-          functionCalls: functionCalls,
-          model: 'assistant',
-        ));
+        messages.add(
+          dac.ModelMessage(
+            textOutput: msg.content.isNotEmpty ? msg.content : null,
+            thought: msg.thinkingContent,
+            thoughtSignature: metadata?.thoughtSignature,
+            functionCalls: functionCalls,
+            model: 'assistant',
+          ),
+        );
       } else if (msg is app_msg.ToolResponseMessage) {
-        messages.add(dac.FunctionExecutionResultMessage(
-          results: [
-            dac.FunctionExecutionResult(
-              id: msg.toolCallId ?? 'call_unknown',
-              name: msg.toolName,
-              arguments: '',
-              isError: msg.isError,
-              content: [dac.TextPart(msg.content)],
-            ),
-          ],
-        ));
+        messages.add(
+          dac.FunctionExecutionResultMessage(
+            results: [
+              dac.FunctionExecutionResult(
+                id: msg.toolCallId ?? 'call_unknown',
+                name: msg.toolName,
+                arguments: '',
+                isError: msg.isError,
+                content: [dac.TextPart(msg.content)],
+              ),
+            ],
+          ),
+        );
       }
     }
 
     if (newUserPrompt.isNotEmpty) {
-      messages.add(dac.UserMessage([dac.TextPart(newUserPrompt)]));
+      final lastMsg = history.lastOrNull;
+      final alreadyPresent =
+          lastMsg is app_msg.UserMessage && lastMsg.content == newUserPrompt;
+      if (!alreadyPresent) {
+        messages.add(dac.UserMessage([dac.TextPart(newUserPrompt)]));
+      }
     }
 
     return messages;
   }
 }
-

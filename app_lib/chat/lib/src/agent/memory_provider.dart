@@ -65,9 +65,7 @@ class MemoryEntry {
 
 /// Provider for scoped, provenance-tracked memory retrieval and updates.
 class ScopedMemoryProvider {
-  ScopedMemoryProvider({
-    List<MemoryEntry>? initialEntries,
-  }) {
+  ScopedMemoryProvider({List<MemoryEntry>? initialEntries}) {
     if (initialEntries != null) {
       for (final e in initialEntries) {
         _entries[e.id] = e;
@@ -81,26 +79,26 @@ class ScopedMemoryProvider {
   static const _storeTool = 'memory_store';
   static const _deleteTool = 'memory_delete';
 
-  bool handlesTool(String toolName) => {
-    _searchTool,
-    _storeTool,
-    _deleteTool,
-  }.contains(toolName);
+  bool handlesTool(String toolName) =>
+      {_searchTool, _storeTool, _deleteTool}.contains(toolName);
 
   List<ChatToolDefinition> get toolDefinitions => [
     const ChatToolDefinition(
       name: _searchTool,
-      description: 'Search persistent memory within allowed scopes with text keyword ranking and provenance.',
+      description:
+          'Search persistent memory within allowed scopes with text keyword ranking and provenance.',
       parameters: {
         'type': 'object',
         'properties': {
           'query': {
             'type': 'string',
-            'description': 'The search keywords or query to find relevant memories.',
+            'description':
+                'The search keywords or query to find relevant memories.',
           },
           'scope': {
             'type': 'string',
-            'description': 'Optional scope filter (e.g., "conversation:123", "global").',
+            'description':
+                'Optional scope filter (e.g., "conversation:123", "global").',
           },
           'limit': {
             'type': 'integer',
@@ -112,7 +110,8 @@ class ScopedMemoryProvider {
     ),
     const ChatToolDefinition(
       name: _storeTool,
-      description: 'Store a new fact, observation, or inference into persistent memory with scope and provenance.',
+      description:
+          'Store a new fact, observation, or inference into persistent memory with scope and provenance.',
       parameters: {
         'type': 'object',
         'properties': {
@@ -122,12 +121,14 @@ class ScopedMemoryProvider {
           },
           'scope': {
             'type': 'string',
-            'description': 'Target scope (e.g., "conversation:123", "global"). Defaults to "global".',
+            'description':
+                'Target scope (e.g., "conversation:123", "global"). Defaults to "global".',
           },
           'provenance': {
             'type': 'string',
             'enum': ['user_fact', 'agent_inference', 'tool_observation'],
-            'description': 'Source type of the memory (default "agent_inference").',
+            'description':
+                'Source type of the memory (default "agent_inference").',
           },
         },
         'required': ['content'],
@@ -172,7 +173,10 @@ class ScopedMemoryProvider {
     final limit = (args['limit'] as num?)?.toInt() ?? 10;
 
     final sessionScope = 'conversation:$sessionId';
-    final queryTokens = query.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+    final queryTokens = query
+        .split(RegExp(r'\s+'))
+        .where((t) => t.isNotEmpty)
+        .toList();
 
     // 1. Visibility filtering: only include allowed scopes (requested scope or session scope + global)
     final candidateEntries = _entries.values.where((entry) {
@@ -194,26 +198,21 @@ class ScopedMemoryProvider {
         }
       }
       if (score > 0 || queryTokens.isEmpty) {
-        scored.add({
-          'entry': entry.toSummary(),
-          'score': score,
-        });
+        scored.add({'entry': entry.toSummary(), 'score': score});
       }
     }
 
     scored.sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
     final results = scored.take(limit).map((s) => s['entry']).toList();
 
-    return {
-      'query': query,
-      'total': results.length,
-      'results': results,
-    };
+    return {'query': query, 'total': results.length, 'results': results};
   }
 
   Future<dynamic> _store(Map<String, dynamic> args, String sessionId) async {
     final content = args['content'] as String;
-    final scope = (args['scope'] as String?) ?? (sessionId.isNotEmpty ? 'conversation:$sessionId' : 'global');
+    final scope =
+        (args['scope'] as String?) ??
+        (sessionId.isNotEmpty ? 'conversation:$sessionId' : 'global');
     final provenance = (args['provenance'] as String?) ?? 'agent_inference';
 
     final entry = MemoryEntry.create(
@@ -237,9 +236,6 @@ class ScopedMemoryProvider {
   Future<dynamic> _delete(Map<String, dynamic> args) async {
     final id = args['id'] as String;
     final removed = _entries.remove(id);
-    return {
-      'id': id,
-      'deleted': removed != null,
-    };
+    return {'id': id, 'deleted': removed != null};
   }
 }

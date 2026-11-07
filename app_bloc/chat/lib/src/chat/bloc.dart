@@ -602,8 +602,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final cancelToken = CancelToken();
     task.cancelToken = cancelToken;
 
-    final history = task.conversation.messages.where((m) => m.id != task.messageId).toList();
-    final userMsg = history.reversed.whereType<UserMessage>().firstOrNull?.content ?? '';
+    final history = task.conversation.messages
+        .where((m) => m.id != task.messageId)
+        .toList();
+    final userMsg =
+        history.reversed.whereType<UserMessage>().firstOrNull?.content ?? '';
 
     final stream = _agentRuntime.runStream(
       runId: task.runId,
@@ -665,7 +668,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         _emitTask(task, emit, activity: 'Preparing tool: $toolName');
       case ToolCallStartedEvent(:final toolName):
         _emitTask(task, emit, activity: 'Calling tool: $toolName');
-      case ToolCallCompletedEvent(:final toolName, :final callId, :final receipt, :final acknowledgement):
+      case ToolCallCompletedEvent(
+          :final toolName,
+          :final callId,
+          :final receipt,
+          :final acknowledgement
+        ):
         final result = receipt.result;
         final resultString = result is String ? result : jsonEncode(result);
         final message = ToolResponseMessage(
@@ -686,11 +694,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       case ModelTurnCompletedEvent(:final modelMessage, :final acknowledgement):
         final metadata = AgentMessageMetadata(
           version: 1,
-          toolCalls: modelMessage.functionCalls.map((fc) => {
-            'id': fc.id,
-            'name': fc.name,
-            'arguments': fc.arguments,
-          }).toList(),
+          toolCalls: modelMessage.functionCalls
+              .map((fc) => {
+                    'id': fc.id,
+                    'name': fc.name,
+                    'arguments': fc.arguments,
+                  })
+              .toList(),
           thought: modelMessage.thought,
           thoughtSignature: modelMessage.thoughtSignature,
         );
@@ -721,9 +731,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             (assistant.content.trim().isNotEmpty ||
                 (assistant.thinkingContent?.trim().isNotEmpty ?? false));
         await _finish(
-            task,
-            emit,
-            hasContent ? ChatStatus.ready : ChatStatus.error,
+            task, emit, hasContent ? ChatStatus.ready : ChatStatus.error,
             error: hasContent
                 ? null
                 : 'Model generated an empty response. Try a different model or backend.');

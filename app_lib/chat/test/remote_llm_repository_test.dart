@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:app_chat/src/models/agent_metadata.dart';
 import 'package:app_chat/src/models/inference.dart';
 import 'package:app_chat/src/models/message.dart';
 import 'package:app_chat/src/models/model_config.dart';
@@ -302,6 +303,284 @@ void main() {
         ),
       ]);
     });
+
+    test(
+      'serializes multi-turn tool calls and outputs for OpenAI Responses API',
+      () async {
+        Map<String, dynamic>? body;
+        final repository = RemoteLlmRepository(
+          vault: _MemoryVaultRepository(),
+          client: MockClient((request) async {
+            body = jsonDecode(request.body) as Map<String, dynamic>;
+            return http.Response(
+              jsonEncode({
+                'output': [
+                  {
+                    'type': 'message',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Google was founded in 1998.',
+                      },
+                    ],
+                  },
+                ],
+              }),
+              200,
+            );
+          }),
+        );
+
+        final metadata = const AgentMessageMetadata(
+          version: 1,
+          toolCalls: [
+            {
+              'id': 'call_whois_123',
+              'name': 'whois_lookup',
+              'arguments': '{"domain":"google.com"}',
+            },
+          ],
+        ).encode();
+
+        await repository.generateResponse(
+          [
+            UserMessage(
+              id: 'u1',
+              content: 'Check google.com whois',
+              conversationId: 'c1',
+              timestamp: DateTime(2026),
+            ),
+            AssistantMessage(
+              id: 'a1',
+              content: '',
+              conversationId: 'c1',
+              timestamp: DateTime(2026),
+              agentMetadata: metadata,
+            ),
+            ToolResponseMessage(
+              id: 't1',
+              content: 'Creation Date: 1997-09-15',
+              conversationId: 'c1',
+              timestamp: DateTime(2026),
+              toolName: 'whois_lookup',
+              toolCallId: 'call_whois_123',
+            ),
+          ],
+          const ModelConfig(
+            inferenceMode: ChatInferenceMode.remote,
+            remoteProvider: RemoteLlmProvider.openAi,
+            remoteAccountId: ModelConfig.dummyRemoteAccountId,
+            remoteBaseUrl: 'https://api.openai.com/v1',
+            remoteModel: 'gpt-5',
+            remoteStreamingEnabled: false,
+          ),
+        ).toList();
+
+        expect(body!['input'], [
+          {'role': 'user', 'content': 'Check google.com whois'},
+          {
+            'type': 'function_call',
+            'call_id': 'call_whois_123',
+            'name': 'whois_lookup',
+            'arguments': '{"domain":"google.com"}',
+          },
+          {
+            'type': 'function_call_output',
+            'call_id': 'call_whois_123',
+            'output': 'Creation Date: 1997-09-15',
+          },
+        ]);
+      },
+    );
+
+    test(
+      'serializes multi-turn tool calls and outputs for OpenAI Chat Completions',
+      () async {
+        Map<String, dynamic>? body;
+        final repository = RemoteLlmRepository(
+          vault: _MemoryVaultRepository(),
+          client: MockClient((request) async {
+            body = jsonDecode(request.body) as Map<String, dynamic>;
+            return http.Response(
+              jsonEncode({
+                'choices': [
+                  {
+                    'message': {'content': 'done'},
+                  },
+                ],
+              }),
+              200,
+            );
+          }),
+        );
+
+        final metadata = const AgentMessageMetadata(
+          version: 1,
+          toolCalls: [
+            {
+              'id': 'call_whois_123',
+              'name': 'whois_lookup',
+              'arguments': '{"domain":"google.com"}',
+            },
+          ],
+        ).encode();
+
+        await repository.generateResponse(
+          [
+            UserMessage(
+              id: 'u1',
+              content: 'Check google.com whois',
+              conversationId: 'c1',
+              timestamp: DateTime(2026),
+            ),
+            AssistantMessage(
+              id: 'a1',
+              content: '',
+              conversationId: 'c1',
+              timestamp: DateTime(2026),
+              agentMetadata: metadata,
+            ),
+            ToolResponseMessage(
+              id: 't1',
+              content: 'Creation Date: 1997-09-15',
+              conversationId: 'c1',
+              timestamp: DateTime(2026),
+              toolName: 'whois_lookup',
+              toolCallId: 'call_whois_123',
+            ),
+          ],
+          const ModelConfig(
+            inferenceMode: ChatInferenceMode.remote,
+            remoteProvider: RemoteLlmProvider.openAi,
+            remoteApiType: RemoteLlmApiType.openAiChatCompletions,
+            remoteAccountId: ModelConfig.dummyRemoteAccountId,
+            remoteBaseUrl: 'https://api.openai.com/v1',
+            remoteModel: 'gpt-4o',
+            remoteStreamingEnabled: false,
+          ),
+        ).toList();
+
+        expect(body!['messages'], [
+          {'role': 'user', 'content': 'Check google.com whois'},
+          {
+            'role': 'assistant',
+            'tool_calls': [
+              {
+                'id': 'call_whois_123',
+                'type': 'function',
+                'function': {
+                  'name': 'whois_lookup',
+                  'arguments': '{"domain":"google.com"}',
+                },
+              },
+            ],
+          },
+          {
+            'role': 'tool',
+            'tool_call_id': 'call_whois_123',
+            'name': 'whois_lookup',
+            'content': 'Creation Date: 1997-09-15',
+          },
+        ]);
+      },
+    );
+
+    test(
+      'serializes multi-turn tool calls and outputs for Anthropic Messages',
+      () async {
+        Map<String, dynamic>? body;
+        final repository = RemoteLlmRepository(
+          vault: _MemoryVaultRepository(),
+          client: MockClient((request) async {
+            body = jsonDecode(request.body) as Map<String, dynamic>;
+            return http.Response(
+              jsonEncode({
+                'id': 'msg_123',
+                'type': 'message',
+                'role': 'assistant',
+                'content': [
+                  {'type': 'text', 'text': 'done'},
+                ],
+                'model': 'claude-sonnet-4-5',
+              }),
+              200,
+            );
+          }),
+        );
+
+        final metadata = const AgentMessageMetadata(
+          version: 1,
+          toolCalls: [
+            {
+              'id': 'toolu_whois_123',
+              'name': 'whois_lookup',
+              'arguments': {'domain': 'google.com'},
+            },
+          ],
+        ).encode();
+
+        await repository.generateResponse(
+          [
+            UserMessage(
+              id: 'u1',
+              content: 'Check google.com whois',
+              conversationId: 'c1',
+              timestamp: DateTime(2026),
+            ),
+            AssistantMessage(
+              id: 'a1',
+              content: '',
+              conversationId: 'c1',
+              timestamp: DateTime(2026),
+              agentMetadata: metadata,
+            ),
+            ToolResponseMessage(
+              id: 't1',
+              content: 'Creation Date: 1997-09-15',
+              conversationId: 'c1',
+              timestamp: DateTime(2026),
+              toolName: 'whois_lookup',
+              toolCallId: 'toolu_whois_123',
+            ),
+          ],
+          const ModelConfig(
+            inferenceMode: ChatInferenceMode.remote,
+            remoteProvider: RemoteLlmProvider.anthropic,
+            remoteApiType: RemoteLlmApiType.anthropicMessages,
+            remoteAccountId: ModelConfig.dummyRemoteAccountId,
+            remoteBaseUrl: 'https://api.anthropic.com/v1',
+            remoteModel: 'claude-sonnet-4-5',
+            remoteStreamingEnabled: false,
+          ),
+        ).toList();
+
+        expect(body!['messages'], [
+          {'role': 'user', 'content': 'Check google.com whois'},
+          {
+            'role': 'assistant',
+            'content': [
+              {
+                'type': 'tool_use',
+                'id': 'toolu_whois_123',
+                'name': 'whois_lookup',
+                'input': {'domain': 'google.com'},
+              },
+            ],
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'tool_result',
+                'tool_use_id': 'toolu_whois_123',
+                'content': 'Creation Date: 1997-09-15',
+              },
+            ],
+          },
+        ]);
+      },
+    );
 
     test(
       'uses configured x-api-key auth for OpenAI-compatible requests',

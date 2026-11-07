@@ -52,11 +52,13 @@ class AgentMessageMetadata {
   factory AgentMessageMetadata.fromJson(Map<String, dynamic> json) {
     return AgentMessageMetadata(
       version: json['version'] as int? ?? 1,
-      toolCalls: (json['toolCalls'] as List?)
+      toolCalls:
+          (json['toolCalls'] as List?)
               ?.map((e) => Map<String, dynamic>.from(e as Map))
               .toList() ??
           const [],
-      contentBlocks: (json['contentBlocks'] as List?)
+      contentBlocks:
+          (json['contentBlocks'] as List?)
               ?.map((e) => Map<String, dynamic>.from(e as Map))
               .toList() ??
           const [],
