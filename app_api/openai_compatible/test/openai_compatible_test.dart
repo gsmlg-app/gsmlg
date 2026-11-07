@@ -94,91 +94,170 @@ void main() {
       });
     });
 
-    test('serializes assistant message with tool calls and tool result message', () {
-      final assistantMsg = OpenAiMessage(
-        role: 'assistant',
-        content: 'I will lookup the data.',
-        toolCalls: [
-          {
-            'id': 'call_123',
-            'type': 'function',
-            'function': {
-              'name': 'lookup',
-              'arguments': '{"query":"test"}',
-            },
-          },
-        ],
-      );
-
-      final toolMsg = OpenAiMessage(
-        role: 'tool',
-        toolCallId: 'call_123',
-        content: '{"result":"found"}',
-      );
-
-      expect(assistantMsg.toJson(), {
-        'role': 'assistant',
-        'content': 'I will lookup the data.',
-        'tool_calls': [
-          {
-            'id': 'call_123',
-            'type': 'function',
-            'function': {
-              'name': 'lookup',
-              'arguments': '{"query":"test"}',
-            },
-          },
-        ],
-      });
-
-      expect(toolMsg.toJson(), {
-        'role': 'tool',
-        'tool_call_id': 'call_123',
-        'content': '{"result":"found"}',
-      });
-    });
-
-    test('maps messages to Responses input format via OpenAiResponsesInput', () {
-      final messages = [
-        const OpenAiMessage(role: 'user', content: 'hello'),
-        const OpenAiMessage(
+    test(
+      'serializes assistant message with tool calls and tool result message',
+      () {
+        final assistantMsg = OpenAiMessage(
           role: 'assistant',
-          content: 'calling tool',
+          content: 'I will lookup the data.',
           toolCalls: [
             {
-              'id': 'call_abc',
+              'id': 'call_123',
               'type': 'function',
-              'function': {
-                'name': 'query_dns',
-                'arguments': '{"zone":"example.com"}',
-              },
+              'function': {'name': 'lookup', 'arguments': '{"query":"test"}'},
             },
           ],
-        ),
-        const OpenAiMessage(
+        );
+
+        final toolMsg = OpenAiMessage(
           role: 'tool',
-          toolCallId: 'call_abc',
-          content: 'zone records...',
-        ),
-      ];
+          toolCallId: 'call_123',
+          content: '{"result":"found"}',
+        );
 
-      final input = OpenAiResponsesInput.fromMessages(messages);
+        expect(assistantMsg.toJson(), {
+          'role': 'assistant',
+          'content': 'I will lookup the data.',
+          'tool_calls': [
+            {
+              'id': 'call_123',
+              'type': 'function',
+              'function': {'name': 'lookup', 'arguments': '{"query":"test"}'},
+            },
+          ],
+        });
 
-      expect(input, [
-        {'role': 'user', 'content': 'hello'},
-        {'role': 'assistant', 'content': 'calling tool'},
-        {
-          'type': 'function_call',
-          'call_id': 'call_abc',
-          'name': 'query_dns',
-          'arguments': '{"zone":"example.com"}',
-        },
-        {
-          'type': 'function_call_output',
-          'call_id': 'call_abc',
-          'output': 'zone records...',
-        },
-      ]);
-    });
+        expect(toolMsg.toJson(), {
+          'role': 'tool',
+          'tool_call_id': 'call_123',
+          'content': '{"result":"found"}',
+        });
+      },
+    );
+
+    test(
+      'maps messages to Responses input format via OpenAiResponsesInput',
+      () {
+        final messages = [
+          const OpenAiMessage(role: 'user', content: 'hello'),
+          const OpenAiMessage(
+            role: 'assistant',
+            content: 'calling tool',
+            toolCalls: [
+              {
+                'id': 'call_abc',
+                'type': 'function',
+                'function': {
+                  'name': 'query_dns',
+                  'arguments': '{"zone":"example.com"}',
+                },
+              },
+            ],
+          ),
+          const OpenAiMessage(
+            role: 'tool',
+            toolCallId: 'call_abc',
+            content: 'zone records...',
+          ),
+        ];
+
+        final input = OpenAiResponsesInput.fromMessages(messages);
+
+        expect(input, [
+          {'role': 'user', 'content': 'hello'},
+          {'role': 'assistant', 'content': 'calling tool'},
+          {
+            'type': 'function_call',
+            'call_id': 'call_abc',
+            'name': 'query_dns',
+            'arguments': '{"zone":"example.com"}',
+          },
+          {
+            'type': 'function_call_output',
+            'call_id': 'call_abc',
+            'output': 'zone records...',
+          },
+        ]);
+      },
+    );
+
+    test(
+      'omits empty assistant message when assistant only made tool calls',
+      () {
+        final messages = [
+          const OpenAiMessage(role: 'user', content: 'check status'),
+          const OpenAiMessage(
+            role: 'assistant',
+            content: '',
+            toolCalls: [
+              {
+                'id': 'call_xyz',
+                'type': 'function',
+                'function': {'name': 'check_status', 'arguments': '{}'},
+              },
+            ],
+          ),
+          const OpenAiMessage(
+            role: 'tool',
+            toolCallId: 'call_xyz',
+            content: 'all systems normal',
+          ),
+        ];
+
+        final input = OpenAiResponsesInput.fromMessages(messages);
+
+        expect(input, [
+          {'role': 'user', 'content': 'check status'},
+          {
+            'type': 'function_call',
+            'call_id': 'call_xyz',
+            'name': 'check_status',
+            'arguments': '{}',
+          },
+          {
+            'type': 'function_call_output',
+            'call_id': 'call_xyz',
+            'output': 'all systems normal',
+          },
+        ]);
+      },
+    );
+
+    test(
+      'OpenAiResponsesRequest automatically encodes OpenAiMessage list with OpenAiResponsesInput',
+      () {
+        final request = OpenAiResponsesRequest(
+          model: 'gpt-6-luna',
+          input: const [
+            OpenAiMessage(role: 'user', content: 'ping'),
+            OpenAiMessage(
+              role: 'assistant',
+              toolCalls: [
+                {'id': 'call_1', 'name': 'ping_tool', 'arguments': '{}'},
+              ],
+            ),
+            OpenAiMessage(role: 'tool', toolCallId: 'call_1', content: 'pong'),
+          ],
+          stream: true,
+          temperature: 0.5,
+        );
+
+        final json = request.toJson();
+        expect(json['input'], [
+          {'role': 'user', 'content': 'ping'},
+          {
+            'type': 'function_call',
+            'call_id': 'call_1',
+            'name': 'ping_tool',
+            'arguments': '{}',
+          },
+          {
+            'type': 'function_call_output',
+            'call_id': 'call_1',
+            'output': 'pong',
+          },
+        ]);
+      },
+    );
   });
 }

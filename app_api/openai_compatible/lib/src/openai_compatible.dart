@@ -96,13 +96,25 @@ class OpenAiResponsesRequest {
   final Map<String, dynamic> extra;
 
   Map<String, dynamic> toJson() {
-    return {
-      'model': model,
-      'input': input.map((message) {
-        if (message is OpenAiMessage) return message.toJson();
+    final List<dynamic> mappedInput;
+    if (input.every((item) => item is OpenAiMessage)) {
+      mappedInput = OpenAiResponsesInput.fromMessages(
+        input.cast<OpenAiMessage>(),
+      );
+    } else {
+      mappedInput = input.map((message) {
+        if (message is OpenAiMessage) {
+          final mapped = OpenAiResponsesInput.fromMessages([message]);
+          return mapped.isNotEmpty ? mapped.first : message.toJson();
+        }
         if (message is Map<String, dynamic>) return message;
         return (message as dynamic).toJson();
-      }).toList(),
+      }).toList();
+    }
+
+    return {
+      'model': model,
+      'input': mappedInput,
       'stream': stream,
       'temperature': temperature,
       'store': store,
@@ -128,22 +140,25 @@ final class OpenAiResponsesInput {
       } else if (message.role == 'assistant' &&
           message.toolCalls != null &&
           message.toolCalls!.isNotEmpty) {
-        if (message.content != null && message.content.toString().isNotEmpty) {
-          result.add({
-            'role': 'assistant',
-            'content': message.content,
-          });
+        final text = message.content?.toString().trim();
+        if (text != null && text.isNotEmpty) {
+          result.add({'role': 'assistant', 'content': message.content});
         }
         for (final call in message.toolCalls!) {
           final function = call['function'] as Map<String, dynamic>? ?? {};
           result.add({
             'type': 'function_call',
-            'call_id': call['id'],
-            'name': function['name'] ?? call['name'],
+            'call_id': call['id'] ?? '',
+            'name': function['name'] ?? call['name'] ?? '',
             'arguments': function['arguments'] ?? call['arguments'] ?? '',
           });
         }
       } else {
+        // Discard empty assistant messages with no tool calls to protect against 500 errors
+        if (message.role == 'assistant') {
+          final text = message.content?.toString().trim();
+          if (text == null || text.isEmpty) continue;
+        }
         result.add(message.toJson());
       }
     }
