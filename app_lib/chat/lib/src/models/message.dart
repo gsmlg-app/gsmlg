@@ -164,6 +164,7 @@ final class AssistantMessage extends Message {
     this.tokenCount,
     this.thinkingContent,
     this.responseInfo,
+    this.agentMetadata,
   });
 
   /// Whether the message is currently being streamed.
@@ -181,6 +182,9 @@ final class AssistantMessage extends Message {
   /// Generation metrics for this response, when available.
   final ChatResponseInfo? responseInfo;
 
+  /// Serialized agent and tool execution metadata.
+  final String? agentMetadata;
+
   /// Whether this message has thinking/reasoning content.
   bool get hasThinking =>
       thinkingContent != null && thinkingContent!.isNotEmpty;
@@ -196,6 +200,7 @@ final class AssistantMessage extends Message {
     tokenCount,
     thinkingContent,
     responseInfo,
+    agentMetadata,
   ];
 
   AssistantMessage copyWith({
@@ -208,6 +213,7 @@ final class AssistantMessage extends Message {
     int? tokenCount,
     String? thinkingContent,
     ChatResponseInfo? responseInfo,
+    String? agentMetadata,
   }) {
     return AssistantMessage(
       id: id ?? this.id,
@@ -220,6 +226,7 @@ final class AssistantMessage extends Message {
       tokenCount: tokenCount ?? this.tokenCount,
       thinkingContent: thinkingContent ?? this.thinkingContent,
       responseInfo: responseInfo ?? this.responseInfo,
+      agentMetadata: agentMetadata ?? this.agentMetadata,
     );
   }
 }
@@ -410,16 +417,34 @@ final class ToolResponseMessage extends Message {
     required super.conversationId,
     required super.timestamp,
     required this.toolName,
+    this.toolCallId,
+    this.isError = false,
+    this.agentMetadata,
   });
 
   /// The name of the tool that produced this response.
   final String toolName;
 
+  /// The tool call ID that produced this response.
+  final String? toolCallId;
+
+  /// Whether the tool execution resulted in an error.
+  final bool isError;
+
+  /// Serialized agent and tool execution metadata.
+  final String? agentMetadata;
+
   @override
   String get role => 'tool_response';
 
   @override
-  List<Object?> get props => [...super.props, toolName];
+  List<Object?> get props => [
+    ...super.props,
+    toolName,
+    toolCallId,
+    isError,
+    agentMetadata,
+  ];
 
   ToolResponseMessage copyWith({
     String? id,
@@ -427,6 +452,9 @@ final class ToolResponseMessage extends Message {
     String? conversationId,
     DateTime? timestamp,
     String? toolName,
+    String? toolCallId,
+    bool? isError,
+    String? agentMetadata,
   }) {
     return ToolResponseMessage(
       id: id ?? this.id,
@@ -434,6 +462,9 @@ final class ToolResponseMessage extends Message {
       conversationId: conversationId ?? this.conversationId,
       timestamp: timestamp ?? this.timestamp,
       toolName: toolName ?? this.toolName,
+      toolCallId: toolCallId ?? this.toolCallId,
+      isError: isError ?? this.isError,
+      agentMetadata: agentMetadata ?? this.agentMetadata,
     );
   }
 }

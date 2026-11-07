@@ -161,8 +161,9 @@ class RemoteLlmRepository {
           for (final chunk in thinkTagParser.close()) {
             yield chunk;
           }
-          final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
-          if (toolCall != null) yield toolCall;
+          for (final toolCall in _toolCallChunksFromBuffers(toolCallBuffers)) {
+            yield toolCall;
+          }
           return;
         }
 
@@ -202,8 +203,9 @@ class RemoteLlmRepository {
           for (final chunk in thinkTagParser.close()) {
             yield chunk;
           }
-          final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
-          if (toolCall != null) yield toolCall;
+          for (final toolCall in _toolCallChunksFromBuffers(toolCallBuffers)) {
+            yield toolCall;
+          }
           return;
         }
       }
@@ -530,8 +532,7 @@ class RemoteLlmRepository {
     final buffers = <int, _RemoteToolCallBuffer>{};
     _collectToolCallDeltas(buffers, message['tool_calls']);
     _collectLegacyFunctionCallDelta(buffers, message['function_call']);
-    final toolCall = _toolCallChunkFromBuffers(buffers);
-    if (toolCall != null) chunks.add(toolCall);
+    chunks.addAll(_toolCallChunksFromBuffers(buffers));
 
     return chunks;
   }
@@ -615,10 +616,12 @@ class RemoteLlmRepository {
           final name = _stringValue(item['name'])?.trim();
           if (name == null || name.isEmpty) continue;
           final input = item['input'];
+          final id = _stringValue(item['id']);
           chunks.add(
             ChatFunctionCallChunk(
               name: name,
               args: input is Map<String, dynamic> ? input : const {},
+              id: id,
             ),
           );
       }
@@ -643,8 +646,9 @@ class RemoteLlmRepository {
         for (final chunk in thinkTagParser.close()) {
           yield chunk;
         }
-        final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
-        if (toolCall != null) yield toolCall;
+        for (final toolCall in _toolCallChunksFromBuffers(toolCallBuffers)) {
+          yield toolCall;
+        }
         return;
       }
 
@@ -700,8 +704,9 @@ class RemoteLlmRepository {
           for (final chunk in thinkTagParser.close()) {
             yield chunk;
           }
-          final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
-          if (toolCall != null) yield toolCall;
+          for (final toolCall in _toolCallChunksFromBuffers(toolCallBuffers)) {
+            yield toolCall;
+          }
           return;
         case 'response.failed':
           final response = decoded['response'];
@@ -730,8 +735,9 @@ class RemoteLlmRepository {
     for (final chunk in thinkTagParser.close()) {
       yield chunk;
     }
-    final toolCall = _toolCallChunkFromBuffers(toolCallBuffers);
-    if (toolCall != null) yield toolCall;
+    for (final toolCall in _toolCallChunksFromBuffers(toolCallBuffers)) {
+      yield toolCall;
+    }
   }
 
   Stream<ChatGenerationChunk> _chunksFromStreamingAnthropic(
@@ -750,8 +756,9 @@ class RemoteLlmRepository {
         for (final chunk in thinkTagParser.close()) {
           yield chunk;
         }
-        final toolCall = _toolCallChunkFromAnthropicBuffers(toolCallBuffers);
-        if (toolCall != null) yield toolCall;
+        for (final toolCall in _toolCallChunksFromAnthropicBuffers(toolCallBuffers)) {
+          yield toolCall;
+        }
         return;
       }
 
@@ -768,6 +775,8 @@ class RemoteLlmRepository {
               index,
               _AnthropicToolCallBuffer.new,
             );
+            final id = _stringValue(contentBlock['id']);
+            if (id != null && id.isNotEmpty) buffer.id = id;
             final name = _stringValue(contentBlock['name']);
             if (name != null && name.isNotEmpty) buffer.name = name;
             final input = contentBlock['input'];
@@ -806,8 +815,9 @@ class RemoteLlmRepository {
           for (final chunk in thinkTagParser.close()) {
             yield chunk;
           }
-          final toolCall = _toolCallChunkFromAnthropicBuffers(toolCallBuffers);
-          if (toolCall != null) yield toolCall;
+          for (final toolCall in _toolCallChunksFromAnthropicBuffers(toolCallBuffers)) {
+            yield toolCall;
+          }
           return;
         case 'error':
           final error = decoded['error'];
@@ -825,8 +835,9 @@ class RemoteLlmRepository {
     for (final chunk in thinkTagParser.close()) {
       yield chunk;
     }
-    final toolCall = _toolCallChunkFromAnthropicBuffers(toolCallBuffers);
-    if (toolCall != null) yield toolCall;
+    for (final toolCall in _toolCallChunksFromAnthropicBuffers(toolCallBuffers)) {
+      yield toolCall;
+    }
   }
 
   String _vaultKey(int id) => '$_accountKeyPrefix$id';
@@ -871,6 +882,9 @@ class RemoteLlmRepository {
       final index = _intValue(rawToolCall['index']) ?? fallbackIndex;
       final buffer = buffers.putIfAbsent(index, _RemoteToolCallBuffer.new);
 
+      final id = _stringValue(rawToolCall['id']);
+      if (id != null && id.isNotEmpty) buffer.id = id;
+
       final function = rawToolCall['function'];
       if (function is! Map<String, dynamic>) continue;
 
@@ -889,6 +903,8 @@ class RemoteLlmRepository {
     if (rawFunctionCall is! Map<String, dynamic>) return;
 
     final buffer = buffers.putIfAbsent(0, _RemoteToolCallBuffer.new);
+    final id = _stringValue(rawFunctionCall['id']);
+    if (id != null && id.isNotEmpty) buffer.id = id;
     final name = _stringValue(rawFunctionCall['name']);
     if (name != null && name.isNotEmpty) buffer.name = name;
 
@@ -896,20 +912,25 @@ class RemoteLlmRepository {
     if (arguments != null) buffer.arguments.write(arguments);
   }
 
-  ChatFunctionCallChunk? _toolCallChunkFromBuffers(
+  List<ChatFunctionCallChunk> _toolCallChunksFromBuffers(
     Map<int, _RemoteToolCallBuffer> buffers,
   ) {
+    final result = <ChatFunctionCallChunk>[];
     final indexes = buffers.keys.toList()..sort();
     for (final index in indexes) {
       final buffer = buffers[index]!;
       final name = buffer.name?.trim();
       if (name == null || name.isEmpty) continue;
-      return ChatFunctionCallChunk(
-        name: name,
-        args: _decodeToolArgs(buffer.arguments.toString()),
+      result.add(
+        ChatFunctionCallChunk(
+          name: name,
+          args: _decodeToolArgs(buffer.arguments.toString()),
+          id: buffer.id,
+          index: index,
+        ),
       );
     }
-    return null;
+    return result;
   }
 
   ChatFunctionCallChunk? _toolCallChunkFromResponsesItem(
@@ -917,27 +938,34 @@ class RemoteLlmRepository {
   ) {
     final name = _stringValue(item['name'])?.trim();
     if (name == null || name.isEmpty) return null;
+    final id = _stringValue(item['call_id']) ?? _stringValue(item['id']);
 
     return ChatFunctionCallChunk(
       name: name,
       args: _decodeToolArgs(_stringValue(item['arguments']) ?? ''),
+      id: id,
     );
   }
 
-  ChatFunctionCallChunk? _toolCallChunkFromAnthropicBuffers(
+  List<ChatFunctionCallChunk> _toolCallChunksFromAnthropicBuffers(
     Map<int, _AnthropicToolCallBuffer> buffers,
   ) {
+    final result = <ChatFunctionCallChunk>[];
     final indexes = buffers.keys.toList()..sort();
     for (final index in indexes) {
       final buffer = buffers[index]!;
       final name = buffer.name?.trim();
       if (name == null || name.isEmpty) continue;
-      return ChatFunctionCallChunk(
-        name: name,
-        args: _decodeToolArgs(buffer.arguments.toString()),
+      result.add(
+        ChatFunctionCallChunk(
+          name: name,
+          args: _decodeToolArgs(buffer.arguments.toString()),
+          id: buffer.id,
+          index: index,
+        ),
       );
     }
-    return null;
+    return result;
   }
 
   void _collectResponsesToolCallItem(
@@ -949,6 +977,9 @@ class RemoteLlmRepository {
 
     final index = outputIndex ?? 0;
     final buffer = buffers.putIfAbsent(index, _RemoteToolCallBuffer.new);
+
+    final id = _stringValue(item['call_id']) ?? _stringValue(item['id']);
+    if (id != null && id.isNotEmpty) buffer.id = id;
 
     final name = _stringValue(item['name']);
     if (name != null && name.isNotEmpty) buffer.name = name;
@@ -1054,11 +1085,13 @@ class _ThinkTagParser {
 }
 
 class _RemoteToolCallBuffer {
+  String? id;
   String? name;
   final arguments = StringBuffer();
 }
 
 class _AnthropicToolCallBuffer {
+  String? id;
   String? name;
   final arguments = StringBuffer();
 }

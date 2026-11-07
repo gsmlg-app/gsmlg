@@ -150,11 +150,18 @@ final class ChatThinkingChunk extends ChatGenerationChunk {
 
 /// A model-requested tool call.
 final class ChatFunctionCallChunk extends ChatGenerationChunk {
-  const ChatFunctionCallChunk({required this.name, required this.args});
+  const ChatFunctionCallChunk({
+    required this.name,
+    required this.args,
+    this.id,
+    this.index,
+  });
 
   final String name;
   final Map<String, dynamic> args;
+  final String? id;
+  final int? index;
 
   @override
-  List<Object?> get props => [name, args];
+  List<Object?> get props => [name, args, id, index];
 }

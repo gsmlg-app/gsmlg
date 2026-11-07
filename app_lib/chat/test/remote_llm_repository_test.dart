@@ -295,7 +295,11 @@ void main() {
       ]);
       expect(chunks, [
         const ChatTextChunk('hello from claude'),
-        const ChatFunctionCallChunk(name: 'lookup', args: {'query': 'dart'}),
+        const ChatFunctionCallChunk(
+          name: 'lookup',
+          args: {'query': 'dart'},
+          id: 'toolu_123',
+        ),
       ]);
     });
 
@@ -491,7 +495,12 @@ void main() {
 
       expect(chunks, [
         const ChatTextChunk('hello'),
-        const ChatFunctionCallChunk(name: 'lookup', args: {'query': 'dart'}),
+        const ChatFunctionCallChunk(
+          name: 'lookup',
+          args: {'query': 'dart'},
+          id: 'toolu_123',
+          index: 1,
+        ),
       ]);
     });
 
@@ -536,7 +545,11 @@ void main() {
       ).toList();
 
       expect(chunks, [
-        const ChatFunctionCallChunk(name: 'lookup', args: {'query': 'dart'}),
+        const ChatFunctionCallChunk(
+          name: 'lookup',
+          args: {'query': 'dart'},
+          id: 'call_123',
+        ),
       ]);
     });
 
@@ -618,7 +631,11 @@ void main() {
       ).toList();
 
       expect(chunks, [
-        const ChatFunctionCallChunk(name: 'lookup', args: {'query': 'dart'}),
+        const ChatFunctionCallChunk(
+          name: 'lookup',
+          args: {'query': 'dart'},
+          index: 0,
+        ),
       ]);
     });
 

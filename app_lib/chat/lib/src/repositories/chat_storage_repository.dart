@@ -1,6 +1,7 @@
 import 'package:app_database/app_database.dart';
 import 'package:drift/drift.dart';
 
+import '../models/agent_metadata.dart';
 import '../models/conversation.dart';
 import '../models/inference.dart';
 import '../models/message.dart';
@@ -171,6 +172,13 @@ class ChatStorageRepository {
             toolName: Value(
               message is ToolResponseMessage ? message.toolName : null,
             ),
+            agentMetadata: Value(
+              message is AssistantMessage
+                  ? message.agentMetadata
+                  : (message is ToolResponseMessage
+                      ? message.agentMetadata
+                      : null),
+            ),
             timestamp: Value(message.timestamp),
           ),
         );
@@ -324,28 +332,39 @@ class ChatStorageRepository {
         timestamp: row.timestamp,
         imageBytes: row.imageBytes,
       ),
-      'assistant' => AssistantMessage(
-        completedSuccessfully: row.completedSuccessfully,
-        id: row.id,
-        content: row.content,
-        conversationId: row.conversationId,
-        timestamp: row.timestamp,
-        tokenCount: row.tokenCount,
-        responseInfo: _responseInfoFromRow(row),
-      ),
+      'assistant' => () {
+        final meta = AgentMessageMetadata.decode(row.agentMetadata);
+        return AssistantMessage(
+          completedSuccessfully: row.completedSuccessfully,
+          id: row.id,
+          content: row.content,
+          conversationId: row.conversationId,
+          timestamp: row.timestamp,
+          tokenCount: row.tokenCount,
+          thinkingContent: meta?.thought,
+          responseInfo: _responseInfoFromRow(row),
+          agentMetadata: row.agentMetadata,
+        );
+      }(),
       'system' => SystemMessage(
         id: row.id,
         content: row.content,
         conversationId: row.conversationId,
         timestamp: row.timestamp,
       ),
-      'tool_response' => ToolResponseMessage(
-        id: row.id,
-        content: row.content,
-        conversationId: row.conversationId,
-        timestamp: row.timestamp,
-        toolName: row.toolName ?? 'unknown',
-      ),
+      'tool_response' => () {
+        final meta = AgentMessageMetadata.decode(row.agentMetadata);
+        return ToolResponseMessage(
+          id: row.id,
+          content: row.content,
+          conversationId: row.conversationId,
+          timestamp: row.timestamp,
+          toolName: row.toolName ?? meta?.toolName ?? 'unknown',
+          toolCallId: meta?.toolCallId,
+          isError: meta?.isError ?? false,
+          agentMetadata: row.agentMetadata,
+        );
+      }(),
       _ => UserMessage(
         id: row.id,
         content: row.content,

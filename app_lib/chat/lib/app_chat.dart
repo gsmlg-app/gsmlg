@@ -7,6 +7,22 @@ export 'src/models/conversation.dart';
 export 'src/models/model_config.dart';
 export 'src/models/backplane_settings.dart';
 export 'src/models/inference.dart';
+export 'src/models/agent_metadata.dart';
+
+// Agent Runtime
+export 'src/agent/agent_event.dart';
+export 'src/agent/agent_invocation.dart';
+export 'src/agent/chat_agent_runtime.dart';
+export 'src/agent/memory_provider.dart';
+export 'src/agent/plugin_consumer.dart';
+export 'src/agent/repository_agent_llm_client.dart';
+export 'src/agent/shell_service.dart';
+export 'src/agent/skill_registry.dart';
+export 'src/agent/sub_agent_supervisor.dart';
+export 'src/agent/tool_gateway.dart';
+
+export 'package:dio/dio.dart' show CancelToken;
+export 'package:dart_agent_core/dart_agent_core.dart' show AgentException, AgentExceptionCode;
 
 // Repositories
 export 'src/repositories/gemma_repository.dart';
