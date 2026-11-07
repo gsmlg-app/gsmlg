@@ -74,7 +74,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration {
@@ -88,6 +88,13 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(sshKeys);
           await m.createTable(sshHosts);
           await m.createTable(shellProfiles);
+        }
+        if (from < 20) {
+          await _addColumnIfMissing(
+            m,
+            chatMessageTable,
+            chatMessageTable.agentMetadata,
+          );
         }
         if (from < 2) {
           await m.createTable(dnsZoneTable);
@@ -256,7 +263,7 @@ class AppDatabase extends _$AppDatabase {
     for (final operation in ['INSERT', 'UPDATE', 'DELETE']) {
       final row = operation == 'DELETE' ? 'OLD' : 'NEW';
       final condition = operation == 'UPDATE'
-          ? 'WHEN OLD.content IS NOT NEW.content OR OLD.role IS NOT NEW.role OR OLD.conversation_id IS NOT NEW.conversation_id OR OLD.completed_successfully IS NOT NEW.completed_successfully'
+          ? 'WHEN OLD.content IS NOT NEW.content OR OLD.role IS NOT NEW.role OR OLD.conversation_id IS NOT NEW.conversation_id OR OLD.completed_successfully IS NOT NEW.completed_successfully OR OLD.agent_metadata IS NOT NEW.agent_metadata'
           : '';
       await customStatement(
           '''CREATE TRIGGER IF NOT EXISTS chat_content_revision_${operation.toLowerCase()}

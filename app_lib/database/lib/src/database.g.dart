@@ -1886,6 +1886,12 @@ class $ChatMessageTableTable extends ChatMessageTable
   late final GeneratedColumn<String> toolName = GeneratedColumn<String>(
       'tool_name', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _agentMetadataMeta =
+      const VerificationMeta('agentMetadata');
+  @override
+  late final GeneratedColumn<String> agentMetadata = GeneratedColumn<String>(
+      'agent_metadata', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _timestampMeta =
       const VerificationMeta('timestamp');
   @override
@@ -1909,6 +1915,7 @@ class $ChatMessageTableTable extends ChatMessageTable
         responseTimeToFirstTokenMs,
         imageBytes,
         toolName,
+        agentMetadata,
         timestamp
       ];
   @override
@@ -2001,6 +2008,12 @@ class $ChatMessageTableTable extends ChatMessageTable
       context.handle(_toolNameMeta,
           toolName.isAcceptableOrUnknown(data['tool_name']!, _toolNameMeta));
     }
+    if (data.containsKey('agent_metadata')) {
+      context.handle(
+          _agentMetadataMeta,
+          agentMetadata.isAcceptableOrUnknown(
+              data['agent_metadata']!, _agentMetadataMeta));
+    }
     if (data.containsKey('timestamp')) {
       context.handle(_timestampMeta,
           timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta));
@@ -2042,6 +2055,8 @@ class $ChatMessageTableTable extends ChatMessageTable
           .read(DriftSqlType.blob, data['${effectivePrefix}image_bytes']),
       toolName: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}tool_name']),
+      agentMetadata: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}agent_metadata']),
       timestamp: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
     );
@@ -2090,6 +2105,9 @@ class ChatMessageTableData extends DataClass
   /// Tool name for tool_response messages (null for other roles).
   final String? toolName;
 
+  /// Serialized agent and tool metadata (calls, native blocks, receipts, thinking).
+  final String? agentMetadata;
+
   /// Timestamp when the message was created.
   final DateTime timestamp;
   const ChatMessageTableData(
@@ -2106,6 +2124,7 @@ class ChatMessageTableData extends DataClass
       this.responseTimeToFirstTokenMs,
       this.imageBytes,
       this.toolName,
+      this.agentMetadata,
       required this.timestamp});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2140,6 +2159,9 @@ class ChatMessageTableData extends DataClass
     }
     if (!nullToAbsent || toolName != null) {
       map['tool_name'] = Variable<String>(toolName);
+    }
+    if (!nullToAbsent || agentMetadata != null) {
+      map['agent_metadata'] = Variable<String>(agentMetadata);
     }
     map['timestamp'] = Variable<DateTime>(timestamp);
     return map;
@@ -2177,6 +2199,9 @@ class ChatMessageTableData extends DataClass
       toolName: toolName == null && nullToAbsent
           ? const Value.absent()
           : Value(toolName),
+      agentMetadata: agentMetadata == null && nullToAbsent
+          ? const Value.absent()
+          : Value(agentMetadata),
       timestamp: Value(timestamp),
     );
   }
@@ -2203,6 +2228,7 @@ class ChatMessageTableData extends DataClass
           serializer.fromJson<int?>(json['responseTimeToFirstTokenMs']),
       imageBytes: serializer.fromJson<Uint8List?>(json['imageBytes']),
       toolName: serializer.fromJson<String?>(json['toolName']),
+      agentMetadata: serializer.fromJson<String?>(json['agentMetadata']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
     );
   }
@@ -2225,6 +2251,7 @@ class ChatMessageTableData extends DataClass
           serializer.toJson<int?>(responseTimeToFirstTokenMs),
       'imageBytes': serializer.toJson<Uint8List?>(imageBytes),
       'toolName': serializer.toJson<String?>(toolName),
+      'agentMetadata': serializer.toJson<String?>(agentMetadata),
       'timestamp': serializer.toJson<DateTime>(timestamp),
     };
   }
@@ -2243,6 +2270,7 @@ class ChatMessageTableData extends DataClass
           Value<int?> responseTimeToFirstTokenMs = const Value.absent(),
           Value<Uint8List?> imageBytes = const Value.absent(),
           Value<String?> toolName = const Value.absent(),
+          Value<String?> agentMetadata = const Value.absent(),
           DateTime? timestamp}) =>
       ChatMessageTableData(
         id: id ?? this.id,
@@ -2269,6 +2297,8 @@ class ChatMessageTableData extends DataClass
             : this.responseTimeToFirstTokenMs,
         imageBytes: imageBytes.present ? imageBytes.value : this.imageBytes,
         toolName: toolName.present ? toolName.value : this.toolName,
+        agentMetadata:
+            agentMetadata.present ? agentMetadata.value : this.agentMetadata,
         timestamp: timestamp ?? this.timestamp,
       );
   ChatMessageTableData copyWithCompanion(ChatMessageTableCompanion data) {
@@ -2302,6 +2332,9 @@ class ChatMessageTableData extends DataClass
       imageBytes:
           data.imageBytes.present ? data.imageBytes.value : this.imageBytes,
       toolName: data.toolName.present ? data.toolName.value : this.toolName,
+      agentMetadata: data.agentMetadata.present
+          ? data.agentMetadata.value
+          : this.agentMetadata,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
     );
   }
@@ -2322,6 +2355,7 @@ class ChatMessageTableData extends DataClass
           ..write('responseTimeToFirstTokenMs: $responseTimeToFirstTokenMs, ')
           ..write('imageBytes: $imageBytes, ')
           ..write('toolName: $toolName, ')
+          ..write('agentMetadata: $agentMetadata, ')
           ..write('timestamp: $timestamp')
           ..write(')'))
         .toString();
@@ -2342,6 +2376,7 @@ class ChatMessageTableData extends DataClass
       responseTimeToFirstTokenMs,
       $driftBlobEquality.hash(imageBytes),
       toolName,
+      agentMetadata,
       timestamp);
   @override
   bool operator ==(Object other) =>
@@ -2360,6 +2395,7 @@ class ChatMessageTableData extends DataClass
           other.responseTimeToFirstTokenMs == this.responseTimeToFirstTokenMs &&
           $driftBlobEquality.equals(other.imageBytes, this.imageBytes) &&
           other.toolName == this.toolName &&
+          other.agentMetadata == this.agentMetadata &&
           other.timestamp == this.timestamp);
 }
 
@@ -2377,6 +2413,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
   final Value<int?> responseTimeToFirstTokenMs;
   final Value<Uint8List?> imageBytes;
   final Value<String?> toolName;
+  final Value<String?> agentMetadata;
   final Value<DateTime> timestamp;
   final Value<int> rowid;
   const ChatMessageTableCompanion({
@@ -2393,6 +2430,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     this.responseTimeToFirstTokenMs = const Value.absent(),
     this.imageBytes = const Value.absent(),
     this.toolName = const Value.absent(),
+    this.agentMetadata = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2410,6 +2448,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     this.responseTimeToFirstTokenMs = const Value.absent(),
     this.imageBytes = const Value.absent(),
     this.toolName = const Value.absent(),
+    this.agentMetadata = const Value.absent(),
     this.timestamp = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
@@ -2430,6 +2469,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     Expression<int>? responseTimeToFirstTokenMs,
     Expression<Uint8List>? imageBytes,
     Expression<String>? toolName,
+    Expression<String>? agentMetadata,
     Expression<DateTime>? timestamp,
     Expression<int>? rowid,
   }) {
@@ -2453,6 +2493,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
         'response_time_to_first_token_ms': responseTimeToFirstTokenMs,
       if (imageBytes != null) 'image_bytes': imageBytes,
       if (toolName != null) 'tool_name': toolName,
+      if (agentMetadata != null) 'agent_metadata': agentMetadata,
       if (timestamp != null) 'timestamp': timestamp,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2472,6 +2513,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
       Value<int?>? responseTimeToFirstTokenMs,
       Value<Uint8List?>? imageBytes,
       Value<String?>? toolName,
+      Value<String?>? agentMetadata,
       Value<DateTime>? timestamp,
       Value<int>? rowid}) {
     return ChatMessageTableCompanion(
@@ -2492,6 +2534,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
           responseTimeToFirstTokenMs ?? this.responseTimeToFirstTokenMs,
       imageBytes: imageBytes ?? this.imageBytes,
       toolName: toolName ?? this.toolName,
+      agentMetadata: agentMetadata ?? this.agentMetadata,
       timestamp: timestamp ?? this.timestamp,
       rowid: rowid ?? this.rowid,
     );
@@ -2543,6 +2586,9 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
     if (toolName.present) {
       map['tool_name'] = Variable<String>(toolName.value);
     }
+    if (agentMetadata.present) {
+      map['agent_metadata'] = Variable<String>(agentMetadata.value);
+    }
     if (timestamp.present) {
       map['timestamp'] = Variable<DateTime>(timestamp.value);
     }
@@ -2568,6 +2614,7 @@ class ChatMessageTableCompanion extends UpdateCompanion<ChatMessageTableData> {
           ..write('responseTimeToFirstTokenMs: $responseTimeToFirstTokenMs, ')
           ..write('imageBytes: $imageBytes, ')
           ..write('toolName: $toolName, ')
+          ..write('agentMetadata: $agentMetadata, ')
           ..write('timestamp: $timestamp, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -10749,6 +10796,7 @@ typedef $$ChatMessageTableTableCreateCompanionBuilder
   Value<int?> responseTimeToFirstTokenMs,
   Value<Uint8List?> imageBytes,
   Value<String?> toolName,
+  Value<String?> agentMetadata,
   Value<DateTime> timestamp,
   Value<int> rowid,
 });
@@ -10767,6 +10815,7 @@ typedef $$ChatMessageTableTableUpdateCompanionBuilder
   Value<int?> responseTimeToFirstTokenMs,
   Value<Uint8List?> imageBytes,
   Value<String?> toolName,
+  Value<String?> agentMetadata,
   Value<DateTime> timestamp,
   Value<int> rowid,
 });
@@ -10844,6 +10893,9 @@ class $$ChatMessageTableTableFilterComposer
   ColumnFilters<String> get toolName => $composableBuilder(
       column: $table.toolName, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get agentMetadata => $composableBuilder(
+      column: $table.agentMetadata, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnFilters(column));
 
@@ -10920,6 +10972,10 @@ class $$ChatMessageTableTableOrderingComposer
   ColumnOrderings<String> get toolName => $composableBuilder(
       column: $table.toolName, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get agentMetadata => $composableBuilder(
+      column: $table.agentMetadata,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get timestamp => $composableBuilder(
       column: $table.timestamp, builder: (column) => ColumnOrderings(column));
 
@@ -10990,6 +11046,9 @@ class $$ChatMessageTableTableAnnotationComposer
   GeneratedColumn<String> get toolName =>
       $composableBuilder(column: $table.toolName, builder: (column) => column);
 
+  GeneratedColumn<String> get agentMetadata => $composableBuilder(
+      column: $table.agentMetadata, builder: (column) => column);
+
   GeneratedColumn<DateTime> get timestamp =>
       $composableBuilder(column: $table.timestamp, builder: (column) => column);
 
@@ -11052,6 +11111,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             Value<int?> responseTimeToFirstTokenMs = const Value.absent(),
             Value<Uint8List?> imageBytes = const Value.absent(),
             Value<String?> toolName = const Value.absent(),
+            Value<String?> agentMetadata = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -11069,6 +11129,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             responseTimeToFirstTokenMs: responseTimeToFirstTokenMs,
             imageBytes: imageBytes,
             toolName: toolName,
+            agentMetadata: agentMetadata,
             timestamp: timestamp,
             rowid: rowid,
           ),
@@ -11086,6 +11147,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             Value<int?> responseTimeToFirstTokenMs = const Value.absent(),
             Value<Uint8List?> imageBytes = const Value.absent(),
             Value<String?> toolName = const Value.absent(),
+            Value<String?> agentMetadata = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
@@ -11103,6 +11165,7 @@ class $$ChatMessageTableTableTableManager extends RootTableManager<
             responseTimeToFirstTokenMs: responseTimeToFirstTokenMs,
             imageBytes: imageBytes,
             toolName: toolName,
+            agentMetadata: agentMetadata,
             timestamp: timestamp,
             rowid: rowid,
           ),

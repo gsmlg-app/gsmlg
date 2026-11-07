@@ -43,6 +43,9 @@ class ChatMessageTable extends Table {
   /// Tool name for tool_response messages (null for other roles).
   TextColumn get toolName => text().nullable()();
 
+  /// Serialized agent and tool metadata (calls, native blocks, receipts, thinking).
+  TextColumn get agentMetadata => text().nullable()();
+
   /// Timestamp when the message was created.
   DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
 
