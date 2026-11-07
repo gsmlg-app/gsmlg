@@ -1240,4 +1240,7 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get terminalBrowserUnsupported =>
       'Terminal is available in the Android, iOS, macOS, Linux, and Windows apps.';
+
+  @override
+  String get jsonLogInspectorTitle => 'JSON Log Inspector';
 }

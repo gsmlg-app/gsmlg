@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/screens/toolbox/compass/compass_screen.dart';
+import 'package:gsmlg/screens/toolbox/log_viewer/log_viewer_screen.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_routes.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 
@@ -117,6 +118,38 @@ void main() {
       );
       expect(channelCalls, isEmpty);
       expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'JSON Log Inspector tile opens its production Toolbox child route',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(900, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final router = GoRouter(
+        initialLocation: ToolboxScreen.path,
+        routes: [toolboxRoutes()],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(_localizedRouterApp(router));
+      await tester.pump();
+      final tile = find.ancestor(
+        of: find.text('JSON Log Inspector'),
+        matching: find.byType(AppGridTile),
+      );
+      expect(tile, findsOneWidget);
+      await tester.ensureVisible(tile);
+      await tester.tap(tile);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/toolbox/log-viewer',
+      );
+      expect(router.namedLocation(LogViewerScreen.name), '/toolbox/log-viewer');
+      expect(find.byType(LogViewerScreen), findsOneWidget);
     },
   );
 }

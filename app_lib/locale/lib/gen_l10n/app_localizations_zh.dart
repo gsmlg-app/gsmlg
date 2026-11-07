@@ -1226,6 +1226,9 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get terminalBrowserUnsupported =>
       '请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。';
+
+  @override
+  String get jsonLogInspectorTitle => 'JSON 日志检查器';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -1882,6 +1885,9 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get terminalBrowserUnsupported =>
       '请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。';
+
+  @override
+  String get jsonLogInspectorTitle => 'JSON 日志检查器';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -2371,4 +2377,7 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get terminalBrowserUnsupported =>
       '请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。';
+
+  @override
+  String get jsonLogInspectorTitle => 'JSON 日誌檢查器';
 }

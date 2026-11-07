@@ -2472,6 +2472,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Terminal is available in the Android, iOS, macOS, Linux, and Windows apps.'**
   String get terminalBrowserUnsupported;
+
+  /// No description provided for @jsonLogInspectorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'JSON Log Inspector'**
+  String get jsonLogInspectorTitle;
 }
 
 class _AppLocalizationsDelegate

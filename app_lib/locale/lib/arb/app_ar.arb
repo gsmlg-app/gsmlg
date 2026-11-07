@@ -214,5 +214,6 @@
   "terminalPreferencesTitle": "Terminal Preferences",
   "terminalEnvironmentTitle": "Environment Variables",
   "shellProfilesTitle": "Shell Profiles",
-  "terminalBrowserUnsupported": "Terminal is available in the Android, iOS, macOS, Linux, and Windows apps."
+  "terminalBrowserUnsupported": "Terminal is available in the Android, iOS, macOS, Linux, and Windows apps.",
+  "jsonLogInspectorTitle": "JSON Log Inspector"
 }

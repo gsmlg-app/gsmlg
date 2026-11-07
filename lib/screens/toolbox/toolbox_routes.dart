@@ -6,6 +6,7 @@ import 'package:gsmlg/screens/toolbox/camera/camera_screen.dart';
 import 'package:gsmlg/screens/toolbox/compass/compass_screen.dart';
 import 'package:gsmlg/screens/toolbox/editor/editor_screen.dart';
 import 'package:gsmlg/screens/toolbox/ip_geo/ip_geo_screen.dart';
+import 'package:gsmlg/screens/toolbox/log_viewer/log_viewer_screen.dart';
 import 'package:gsmlg/screens/toolbox/monitor/monitor_screen.dart';
 import 'package:gsmlg/screens/toolbox/terminal/terminal_screen.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
@@ -196,6 +197,16 @@ GoRoute toolboxRoutes() => GoRoute(
           },
         ),
       ],
+    ),
+    // JSON log inspector route
+    GoRoute(
+      name: LogViewerScreen.name,
+      path: LogViewerScreen.path,
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        restorationId: state.pageKey.value,
+        child: const LogViewerScreen(),
+      ),
     ),
   ],
 );

@@ -30,6 +30,10 @@ workspace:
   - third_party/flex_tabs
   - app_lib/editor
   - app_bloc/editor
+  - app_lib/log_models
+  - app_lib/log_parser
+  - app_bloc/log_viewer
+  - app_widget/log_viewer
   - app_lib/database
   - app_lib/theme
   - app_lib/locale
@@ -155,6 +159,10 @@ dependencies:
   url_launcher: ^6.3.3
 
   # workspace packages
+  log_models: any
+  log_parser: any
+  log_viewer_bloc: any
+  log_viewer_widgets: any
   app_editor: any
   editor_bloc: any
   cloudflare_dns: any

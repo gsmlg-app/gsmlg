@@ -258,5 +258,6 @@
   "terminalPreferencesTitle": "终端偏好",
   "terminalEnvironmentTitle": "环境变量",
   "shellProfilesTitle": "Shell 配置",
-  "terminalBrowserUnsupported": "请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。"
+  "terminalBrowserUnsupported": "请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。",
+  "jsonLogInspectorTitle": "JSON 日誌檢查器"
 }
