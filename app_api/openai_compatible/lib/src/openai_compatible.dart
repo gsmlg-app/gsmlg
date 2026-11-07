@@ -22,12 +22,27 @@ extension OpenAiCompatibleApiTypeX on OpenAiCompatibleApiType {
 
 /// A text chat message accepted by OpenAI-compatible APIs.
 class OpenAiMessage {
-  const OpenAiMessage({required this.role, required this.content});
+  const OpenAiMessage({
+    required this.role,
+    this.content,
+    this.toolCalls,
+    this.toolCallId,
+    this.name,
+  });
 
   final String role;
-  final String content;
+  final dynamic content;
+  final List<Map<String, dynamic>>? toolCalls;
+  final String? toolCallId;
+  final String? name;
 
-  Map<String, dynamic> toJson() => {'role': role, 'content': content};
+  Map<String, dynamic> toJson() => {
+    'role': role,
+    if (content != null) 'content': content,
+    if (toolCalls != null && toolCalls!.isNotEmpty) 'tool_calls': toolCalls,
+    if (toolCallId != null) 'tool_call_id': toolCallId,
+    if (name != null) 'name': name,
+  };
 }
 
 /// Request body for OpenAI-compatible Chat Completions.
@@ -73,7 +88,7 @@ class OpenAiResponsesRequest {
   });
 
   final String model;
-  final List<OpenAiMessage> input;
+  final List<dynamic> input;
   final bool stream;
   final double temperature;
   final bool store;
@@ -83,13 +98,56 @@ class OpenAiResponsesRequest {
   Map<String, dynamic> toJson() {
     return {
       'model': model,
-      'input': input.map((message) => message.toJson()).toList(),
+      'input': input.map((message) {
+        if (message is OpenAiMessage) return message.toJson();
+        if (message is Map<String, dynamic>) return message;
+        return (message as dynamic).toJson();
+      }).toList(),
       'stream': stream,
       'temperature': temperature,
       'store': store,
       ...extra,
       if (tools.isNotEmpty) 'tools': tools,
     };
+  }
+}
+
+/// Helpers for mapping messages to OpenAI Responses API input format.
+final class OpenAiResponsesInput {
+  const OpenAiResponsesInput._();
+
+  static List<Map<String, dynamic>> fromMessages(List<OpenAiMessage> messages) {
+    final result = <Map<String, dynamic>>[];
+    for (final message in messages) {
+      if (message.role == 'tool' && message.toolCallId != null) {
+        result.add({
+          'type': 'function_call_output',
+          'call_id': message.toolCallId,
+          'output': message.content?.toString() ?? '',
+        });
+      } else if (message.role == 'assistant' &&
+          message.toolCalls != null &&
+          message.toolCalls!.isNotEmpty) {
+        if (message.content != null && message.content.toString().isNotEmpty) {
+          result.add({
+            'role': 'assistant',
+            'content': message.content,
+          });
+        }
+        for (final call in message.toolCalls!) {
+          final function = call['function'] as Map<String, dynamic>? ?? {};
+          result.add({
+            'type': 'function_call',
+            'call_id': call['id'],
+            'name': function['name'] ?? call['name'],
+            'arguments': function['arguments'] ?? call['arguments'] ?? '',
+          });
+        }
+      } else {
+        result.add(message.toJson());
+      }
+    }
+    return result;
   }
 }
 

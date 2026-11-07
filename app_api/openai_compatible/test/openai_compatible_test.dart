@@ -93,5 +93,92 @@ void main() {
         ],
       });
     });
+
+    test('serializes assistant message with tool calls and tool result message', () {
+      final assistantMsg = OpenAiMessage(
+        role: 'assistant',
+        content: 'I will lookup the data.',
+        toolCalls: [
+          {
+            'id': 'call_123',
+            'type': 'function',
+            'function': {
+              'name': 'lookup',
+              'arguments': '{"query":"test"}',
+            },
+          },
+        ],
+      );
+
+      final toolMsg = OpenAiMessage(
+        role: 'tool',
+        toolCallId: 'call_123',
+        content: '{"result":"found"}',
+      );
+
+      expect(assistantMsg.toJson(), {
+        'role': 'assistant',
+        'content': 'I will lookup the data.',
+        'tool_calls': [
+          {
+            'id': 'call_123',
+            'type': 'function',
+            'function': {
+              'name': 'lookup',
+              'arguments': '{"query":"test"}',
+            },
+          },
+        ],
+      });
+
+      expect(toolMsg.toJson(), {
+        'role': 'tool',
+        'tool_call_id': 'call_123',
+        'content': '{"result":"found"}',
+      });
+    });
+
+    test('maps messages to Responses input format via OpenAiResponsesInput', () {
+      final messages = [
+        const OpenAiMessage(role: 'user', content: 'hello'),
+        const OpenAiMessage(
+          role: 'assistant',
+          content: 'calling tool',
+          toolCalls: [
+            {
+              'id': 'call_abc',
+              'type': 'function',
+              'function': {
+                'name': 'query_dns',
+                'arguments': '{"zone":"example.com"}',
+              },
+            },
+          ],
+        ),
+        const OpenAiMessage(
+          role: 'tool',
+          toolCallId: 'call_abc',
+          content: 'zone records...',
+        ),
+      ];
+
+      final input = OpenAiResponsesInput.fromMessages(messages);
+
+      expect(input, [
+        {'role': 'user', 'content': 'hello'},
+        {'role': 'assistant', 'content': 'calling tool'},
+        {
+          'type': 'function_call',
+          'call_id': 'call_abc',
+          'name': 'query_dns',
+          'arguments': '{"zone":"example.com"}',
+        },
+        {
+          'type': 'function_call_output',
+          'call_id': 'call_abc',
+          'output': 'zone records...',
+        },
+      ]);
+    });
   });
 }

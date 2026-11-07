@@ -94,5 +94,62 @@ void main() {
         },
       ]);
     });
+
+    test('serializes tool_use and tool_result blocks in messages', () {
+      final messages = [
+        const AnthropicMessage(role: 'user', content: 'What is the weather?'),
+        const AnthropicMessage(
+          role: 'assistant',
+          content: [
+            {
+              'type': 'text',
+              'text': 'Checking weather...',
+            },
+            {
+              'type': 'tool_use',
+              'id': 'toolu_1',
+              'name': 'get_weather',
+              'input': {'location': 'Tokyo'},
+            },
+          ],
+        ),
+        const AnthropicMessage(
+          role: 'user',
+          content: [
+            {
+              'type': 'tool_result',
+              'tool_use_id': 'toolu_1',
+              'content': 'Sunny, 22C',
+            },
+          ],
+        ),
+      ];
+
+      expect(messages.map((m) => m.toJson()).toList(), [
+        {'role': 'user', 'content': 'What is the weather?'},
+        {
+          'role': 'assistant',
+          'content': [
+            {'type': 'text', 'text': 'Checking weather...'},
+            {
+              'type': 'tool_use',
+              'id': 'toolu_1',
+              'name': 'get_weather',
+              'input': {'location': 'Tokyo'},
+            },
+          ],
+        },
+        {
+          'role': 'user',
+          'content': [
+            {
+              'type': 'tool_result',
+              'tool_use_id': 'toolu_1',
+              'content': 'Sunny, 22C',
+            },
+          ],
+        },
+      ]);
+    });
   });
 }
