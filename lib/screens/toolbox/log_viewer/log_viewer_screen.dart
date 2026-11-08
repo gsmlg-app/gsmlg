@@ -61,6 +61,10 @@ class LogViewerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_hasAncestorBlocs(context)) {
+      return const _LogViewerBody();
+    }
+
     SharedPreferences? sharedPrefs;
     try {
       sharedPrefs = context.read<SharedPreferences?>();
@@ -75,10 +79,56 @@ class LogViewerScreen extends StatelessWidget {
       child: const _LogViewerBody(),
     );
   }
+
+  static bool _hasAncestorBlocs(BuildContext context) {
+    try {
+      context.read<LogFileBloc>();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
-class _LogViewerBody extends StatelessWidget {
+class _LogViewerBody extends StatefulWidget {
   const _LogViewerBody();
+
+  @override
+  State<_LogViewerBody> createState() => _LogViewerBodyState();
+}
+
+class _LogViewerBodyState extends State<_LogViewerBody> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restoreLastOpenedFile();
+    });
+  }
+
+  void _restoreLastOpenedFile() {
+    if (!mounted) return;
+    final logBloc = context.read<LogFileBloc>();
+    if (logBloc.state.status == LogFileStatus.initial) {
+      try {
+        final prefs = context.read<SharedPreferences>();
+        final lastPath = prefs.getString('last_opened_log_file_path');
+        if (lastPath != null &&
+            lastPath.isNotEmpty &&
+            File(lastPath).existsSync()) {
+          logBloc.add(FileOpened(lastPath));
+        }
+      } catch (_) {}
+    }
+  }
+
+  void _handleFileOpened(BuildContext context, String path) {
+    try {
+      final prefs = context.read<SharedPreferences>();
+      prefs.setString('last_opened_log_file_path', path);
+    } catch (_) {}
+    context.read<LogFileBloc>().add(FileOpened(path));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,9 +156,7 @@ class _LogViewerBody extends StatelessWidget {
                 builder: (context, fileState) {
                   if (fileState.status == LogFileStatus.initial) {
                     return _InitialView(
-                      onFileOpened: (path) {
-                        context.read<LogFileBloc>().add(FileOpened(path));
-                      },
+                      onFileOpened: (path) => _handleFileOpened(context, path),
                     );
                   }
 
@@ -143,6 +191,11 @@ class _LogViewerBody extends StatelessWidget {
                               const SizedBox(height: 16),
                               FilledButton(
                                 onPressed: () {
+                                  try {
+                                    final prefs = context
+                                        .read<SharedPreferences>();
+                                    prefs.remove('last_opened_log_file_path');
+                                  } catch (_) {}
                                   context.read<LogFileBloc>().add(
                                     const Cleared(),
                                   );
@@ -543,7 +596,12 @@ class _ToolbarState extends State<_Toolbar> {
           : ['jsonl', 'json', 'log'],
     );
     if (files.isNotEmpty && files.first.path != null && context.mounted) {
-      context.read<LogFileBloc>().add(FileOpened(files.first.path!));
+      final path = files.first.path!;
+      try {
+        final prefs = context.read<SharedPreferences>();
+        prefs.setString('last_opened_log_file_path', path);
+      } catch (_) {}
+      context.read<LogFileBloc>().add(FileOpened(path));
     }
   }
 
@@ -942,26 +1000,26 @@ class _LogList extends StatefulWidget {
 }
 
 class _LogListState extends State<_LogList> {
-  final _futureCache = <int, Future<String>>{};
+  final _recordCache = <int, Future<LogRecord?>>{};
 
   @override
   void didUpdateWidget(_LogList oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.entryReader != widget.entryReader ||
         oldWidget.displayIndices != widget.displayIndices) {
-      _futureCache.clear();
+      _recordCache.clear();
     }
   }
 
-  Future<String> _getCachedFuture(int lineIndex) {
-    return _futureCache.putIfAbsent(lineIndex, () {
-      if (_futureCache.length > 500) {
-        final keysToRemove = _futureCache.keys.take(100).toList();
+  Future<LogRecord?> _getCachedRecord(int lineIndex) {
+    return _recordCache.putIfAbsent(lineIndex, () {
+      if (_recordCache.length > 500) {
+        final keysToRemove = _recordCache.keys.take(100).toList();
         for (final key in keysToRemove) {
-          _futureCache.remove(key);
+          _recordCache.remove(key);
         }
       }
-      return widget.entryReader.readRawLine(lineIndex);
+      return widget.entryReader.readEntry(lineIndex);
     });
   }
 
@@ -970,19 +1028,22 @@ class _LogListState extends State<_LogList> {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
       itemCount: widget.displayIndices.length,
-      itemExtent: 78,
+      itemExtent: 94,
       itemBuilder: (context, i) {
         final lineIndex = widget.displayIndices[i];
-        return FutureBuilder<String>(
-          future: _getCachedFuture(lineIndex),
+        return FutureBuilder<LogRecord?>(
+          future: _getCachedRecord(lineIndex),
           builder: (context, snapshot) {
-            final raw = snapshot.data ?? '...';
-            final rawLine = raw.length > 400 ? '${raw.substring(0, 400)}...' : raw;
+            final record = snapshot.data;
+            final raw = record?.rawLine ?? '...';
+            final rawLine =
+                raw.length > 400 ? '${raw.substring(0, 400)}...' : raw;
             return LogListTile(
               rawLine: rawLine,
+              record: record,
               index: lineIndex,
               isSelected: lineIndex == widget.selectedLineIndex,
-              onTap: () => _selectEntry(lineIndex),
+              onTap: () => _selectEntry(lineIndex, cachedRecord: record),
             );
           },
         );
@@ -990,8 +1051,9 @@ class _LogListState extends State<_LogList> {
     );
   }
 
-  Future<void> _selectEntry(int lineIndex) async {
-    final record = await widget.entryReader.readEntry(lineIndex);
+  Future<void> _selectEntry(int lineIndex, {LogRecord? cachedRecord}) async {
+    final record =
+        cachedRecord ?? await widget.entryReader.readEntry(lineIndex);
     if (record == null || !mounted) return;
 
     LogRecord? paired;
@@ -1007,6 +1069,7 @@ class _LogListState extends State<_LogList> {
       }
     }
 
+    if (!mounted) return;
     context.read<SelectionBloc>().add(
       EntrySelected(index: lineIndex, record: record, pairedRecord: paired),
     );

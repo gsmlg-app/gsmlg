@@ -42,6 +42,7 @@ dependencies:
   app_editor: any
   editor_bloc: any
   audio_bloc: any
+  log_viewer_bloc: any
 
 dev_dependencies:
   flex_tabs: any

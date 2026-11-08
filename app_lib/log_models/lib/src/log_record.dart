@@ -55,6 +55,34 @@ class LogRecord extends Equatable {
   /// The original parsed JSON map.
   final Map<String, dynamic> json;
 
+  /// Helper getters for structured display and inspectability.
+  String? get method => request?.method ?? json['method'] as String?;
+  int? get statusCode =>
+      response?.status ??
+      (json['status'] as num?)?.toInt() ??
+      (json['status_code'] as num?)?.toInt() ??
+      (json['statusCode'] as num?)?.toInt();
+  String? get path {
+    final uri = request?.uri;
+    if (uri != null && uri.isNotEmpty) return uri;
+    final host = request?.host;
+    if (host != null && host.isNotEmpty) return host;
+    return json['path'] as String? ??
+        json['uri'] as String? ??
+        json['url'] as String?;
+  }
+  String? get message =>
+      json['msg'] as String? ??
+      json['message'] as String? ??
+      json['log'] as String? ??
+      json['content'] as String?;
+  bool get isHttp =>
+      request != null || response != null || method != null || statusCode != null;
+  bool get isError =>
+      (statusCode != null && statusCode! >= 400) ||
+      recordType.toLowerCase() == 'error' ||
+      (json['level'] as String?)?.toLowerCase() == 'error';
+
   LogRecord copyWith({
     String? ts,
     String? requestId,

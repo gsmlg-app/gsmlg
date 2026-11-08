@@ -9,10 +9,12 @@ class JsonTreeView extends StatefulWidget {
     super.key,
     required this.data,
     this.initiallyExpanded = false,
+    this.maxInitialDepth = 1,
   });
 
   final dynamic data;
   final bool initiallyExpanded;
+  final int maxInitialDepth;
 
   @override
   State<JsonTreeView> createState() => _JsonTreeViewState();
@@ -25,7 +27,8 @@ class _JsonTreeViewState extends State<JsonTreeView> {
       child: _JsonNode(
         keyName: null,
         value: widget.data,
-        initiallyExpanded: widget.initiallyExpanded,
+        depth: 0,
+        maxInitialDepth: widget.initiallyExpanded ? widget.maxInitialDepth : 0,
       ),
     );
   }
@@ -35,12 +38,14 @@ class _JsonNode extends StatefulWidget {
   const _JsonNode({
     required this.keyName,
     required this.value,
-    this.initiallyExpanded = false,
+    required this.depth,
+    required this.maxInitialDepth,
   });
 
   final String? keyName;
   final dynamic value;
-  final bool initiallyExpanded;
+  final int depth;
+  final int maxInitialDepth;
 
   @override
   State<_JsonNode> createState() => _JsonNodeState();
@@ -52,7 +57,7 @@ class _JsonNodeState extends State<_JsonNode> {
   @override
   void initState() {
     super.initState();
-    _isExpanded = widget.initiallyExpanded;
+    _isExpanded = widget.depth < widget.maxInitialDepth;
   }
 
   @override
@@ -67,12 +72,13 @@ class _JsonNodeState extends State<_JsonNode> {
         badgeColor: statusColors.warningContainer,
         labelColor: statusColors.onWarningContainer,
         preview: '{${value.length}}',
-        children: value.entries
+        buildChildren: () => value.entries
             .map(
               (entry) => _JsonNode(
                 keyName: entry.key.toString(),
                 value: entry.value,
-                initiallyExpanded: widget.initiallyExpanded,
+                depth: widget.depth + 1,
+                maxInitialDepth: widget.maxInitialDepth,
               ),
             )
             .toList(),
@@ -86,12 +92,13 @@ class _JsonNodeState extends State<_JsonNode> {
         badgeColor: statusColors.infoContainer,
         labelColor: statusColors.onInfoContainer,
         preview: '[${value.length}]',
-        children: List.generate(
+        buildChildren: () => List.generate(
           value.length,
           (index) => _JsonNode(
             keyName: '[$index]',
             value: value[index],
-            initiallyExpanded: widget.initiallyExpanded,
+            depth: widget.depth + 1,
+            maxInitialDepth: widget.maxInitialDepth,
           ),
         ),
       );
@@ -106,7 +113,7 @@ class _JsonNodeState extends State<_JsonNode> {
     required Color badgeColor,
     required Color labelColor,
     required String preview,
-    required List<Widget> children,
+    required List<Widget> Function() buildChildren,
   }) {
     final theme = Theme.of(context);
     final keyWidget = widget.keyName != null
@@ -172,7 +179,7 @@ class _JsonNodeState extends State<_JsonNode> {
             padding: const EdgeInsets.only(left: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: children,
+              children: buildChildren(),
             ),
           ),
       ],

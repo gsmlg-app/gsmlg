@@ -25,6 +25,7 @@ import 'package:tts_dataset_bloc/tts_dataset_bloc.dart';
 import 'package:vultr_bloc/vultr_bloc.dart';
 import 'package:whois_bloc/whois_bloc.dart';
 import 'package:monitor_bloc/monitor_bloc.dart';
+import 'package:log_viewer_bloc/log_viewer_bloc.dart';
 import 'package:whois_history_bloc/whois_history_bloc.dart';
 
 class MainProvider extends StatelessWidget {
@@ -183,6 +184,9 @@ class MainProvider extends StatelessWidget {
                   context.read<AudioSettingsBloc>().state.settings,
             ),
           ),
+          BlocProvider<LogFileBloc>(create: (context) => LogFileBloc()),
+          BlocProvider<FilterBloc>(create: (context) => FilterBloc()),
+          BlocProvider<SelectionBloc>(create: (context) => SelectionBloc()),
         ],
         child: child,
       ),
