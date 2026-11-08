@@ -17,6 +17,7 @@ class FilterBar extends StatelessWidget {
     this.activeRules = const [],
     this.onRuleToggled,
     this.onRuleRemoved,
+    this.showStructuredInput = true,
   });
 
   final void Function(FilterRule rule) onFilterAdded;
@@ -24,6 +25,7 @@ class FilterBar extends StatelessWidget {
   final List<FilterRule> activeRules;
   final void Function(String ruleId)? onRuleToggled;
   final void Function(String ruleId)? onRuleRemoved;
+  final bool showStructuredInput;
 
   @override
   Widget build(BuildContext context) {
@@ -41,11 +43,13 @@ class FilterBar extends StatelessWidget {
             if (compact) {
               return Column(
                 children: [
-                  _InputShell(
-                    label: 'Structured filter',
-                    child: _FilterInput(onFilterAdded: onFilterAdded),
-                  ),
-                  const SizedBox(height: 10),
+                  if (showStructuredInput) ...[
+                    _InputShell(
+                      label: 'Structured filter',
+                      child: _FilterInput(onFilterAdded: onFilterAdded),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   _InputShell(
                     label: 'Full text search',
                     child: _SearchInput(onSearchChanged: onSearchChanged),
@@ -56,13 +60,15 @@ class FilterBar extends StatelessWidget {
 
             return Row(
               children: [
-                Expanded(
-                  child: _InputShell(
-                    label: 'Structured filter',
-                    child: _FilterInput(onFilterAdded: onFilterAdded),
+                if (showStructuredInput) ...[
+                  Expanded(
+                    child: _InputShell(
+                      label: 'Structured filter',
+                      child: _FilterInput(onFilterAdded: onFilterAdded),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
+                  const SizedBox(width: 12),
+                ],
                 Expanded(
                   child: _InputShell(
                     label: 'Full text search',
@@ -133,10 +139,10 @@ class _InputShell extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Column(
@@ -144,11 +150,11 @@ class _InputShell extends StatelessWidget {
         children: [
           Text(
             label,
-            style: theme.textTheme.labelMedium?.copyWith(
+            style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           child,
         ],
       ),

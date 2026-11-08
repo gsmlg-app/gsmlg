@@ -287,14 +287,16 @@ class _LoadedViewState extends State<_LoadedView> {
     final isWide = screenWidth > 920;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      padding: isWide
+          ? const EdgeInsets.fromLTRB(16, 16, 16, 12)
+          : const EdgeInsets.fromLTRB(12, 12, 12, 8),
       child: Column(
         children: [
           _Toolbar(
             fileState: widget.fileState,
             displayCount: displayIndices.length,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isWide ? 16 : 10),
           Expanded(
             child: isWide
                 ? _DesktopLayout(
@@ -319,13 +321,15 @@ class _LoadedViewState extends State<_LoadedView> {
                     index: index,
                   ),
           ),
-          const SizedBox(height: 12),
-          _StatusBar(
-            filePath: widget.fileState.filePath ?? '',
-            totalLines: index.totalLines,
-            validLines: index.validLines,
-            shownLines: displayIndices.length,
-          ),
+          if (isWide) ...[
+            const SizedBox(height: 12),
+            _StatusBar(
+              filePath: widget.fileState.filePath ?? '',
+              totalLines: index.totalLines,
+              validLines: index.validLines,
+              shownLines: displayIndices.length,
+            ),
+          ],
         ],
       ),
     );
@@ -344,6 +348,7 @@ class _Toolbar extends StatefulWidget {
 
 class _ToolbarState extends State<_Toolbar> {
   int _filterGeneration = 0;
+  bool _showAdvancedFilters = false;
 
   @override
   Widget build(BuildContext context) {
@@ -360,20 +365,92 @@ class _ToolbarState extends State<_Toolbar> {
 
         return Container(
           decoration: _panelDecoration(theme, emphasized: true),
-          padding: const EdgeInsets.all(16),
+          padding: compact
+              ? const EdgeInsets.symmetric(horizontal: 14, vertical: 10)
+              : const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (compact) ...[
-                _ToolbarHeader(
-                  fileName: fileName,
-                  displayCount: widget.displayCount,
-                  activeFilterCount: filterState.rules
-                      .where((e) => e.enabled)
-                      .length,
+                Row(
+                  children: [
+                    Icon(
+                      Icons.description_outlined,
+                      size: 18,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            fileName.isEmpty ? 'No file loaded' : fileName,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            '${widget.displayCount} visible • ${filterState.rules.where((e) => e.enabled).length} active',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'Open File',
+                      icon: const Icon(Icons.folder_open, size: 20),
+                      onPressed: () => _openFile(context),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'Add Filter Rule',
+                      icon: const Icon(Icons.add_circle_outline, size: 20),
+                      onPressed: () => _showFilterRuleBuilder(context),
+                    ),
+                    _PresetsDropdown(
+                      compact: true,
+                      presets: filterState.presets,
+                      onPresetApplied: (preset) {
+                        context.read<FilterBloc>().add(PresetApplied(preset));
+                      },
+                      onPresetSaved: () {
+                        _showSavePresetDialog(context);
+                      },
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: _showAdvancedFilters
+                          ? 'Hide rule syntax'
+                          : 'Show rule syntax',
+                      icon: Icon(
+                        _showAdvancedFilters
+                            ? Icons.tune
+                            : Icons.tune_outlined,
+                        size: 20,
+                      ),
+                      color: (_showAdvancedFilters ||
+                              filterState.rules.isNotEmpty)
+                          ? theme.colorScheme.primary
+                          : null,
+                      onPressed: () {
+                        setState(() {
+                          _showAdvancedFilters = !_showAdvancedFilters;
+                        });
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 FilterBar(
+                  showStructuredInput: _showAdvancedFilters,
                   onFilterAdded: (rule) {
                     context.read<FilterBloc>().add(RuleAdded(rule));
                   },
@@ -387,32 +464,6 @@ class _ToolbarState extends State<_Toolbar> {
                   onRuleRemoved: (id) {
                     context.read<FilterBloc>().add(RuleRemoved(id));
                   },
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () => _openFile(context),
-                      icon: const Icon(Icons.folder_open),
-                      label: const Text('Open File'),
-                    ),
-                    FilledButton.tonalIcon(
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Filter'),
-                      onPressed: () => _showFilterRuleBuilder(context),
-                    ),
-                    _PresetsDropdown(
-                      presets: filterState.presets,
-                      onPresetApplied: (preset) {
-                        context.read<FilterBloc>().add(PresetApplied(preset));
-                      },
-                      onPresetSaved: () {
-                        _showSavePresetDialog(context);
-                      },
-                    ),
-                  ],
                 ),
               ] else ...[
                 Row(
@@ -733,9 +784,9 @@ class _MobileLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SurfacePanel(
-      title: 'Timeline',
-      subtitle: '${displayIndices.length} matching entries',
+    return Container(
+      decoration: _panelDecoration(Theme.of(context)),
+      clipBehavior: Clip.antiAlias,
       child: _LogList(
         displayIndices: displayIndices,
         entryReader: entryReader,
@@ -781,31 +832,43 @@ class _SurfacePanel extends StatelessWidget {
 
     return Container(
       decoration: _panelDecoration(theme),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+      clipBehavior: Clip.antiAlias,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final showHeader = constraints.maxHeight >= 120;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (showHeader) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  color: theme.colorScheme.outlineVariant.withValues(
+                    alpha: 0.72,
                   ),
                 ),
               ],
-            ),
-          ),
-          Divider(
-            height: 1,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.72),
-          ),
-          Expanded(child: child),
-        ],
+              Expanded(child: child),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1032,11 +1095,13 @@ class _PresetsDropdown extends StatelessWidget {
     required this.presets,
     required this.onPresetApplied,
     required this.onPresetSaved,
+    this.compact = false,
   });
 
   final List<FilterPreset> presets;
   final void Function(FilterPreset preset) onPresetApplied;
   final VoidCallback onPresetSaved;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -1044,30 +1109,33 @@ class _PresetsDropdown extends StatelessWidget {
 
     return PopupMenuButton<Object>(
       tooltip: 'Filter Presets',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.bookmark_border,
-              size: 18,
-              color: theme.colorScheme.onSecondaryContainer,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Presets',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSecondaryContainer,
+      icon: compact ? const Icon(Icons.bookmark_border, size: 20) : null,
+      child: compact
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.bookmark_border,
+                    size: 18,
+                    color: theme.colorScheme.onSecondaryContainer,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Presets',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
       itemBuilder: (context) {
         return [
           ...presets.map(
