@@ -58,7 +58,7 @@ void main() {
         await tester.pumpWidget(_cameraApp(bloc));
         await tester.pumpAndSettle();
         expect(
-          tester.widget<CameraPreview>(find.byType(CameraPreview)).controller,
+          tester.widget<CameraViewfinder>(find.byType(CameraViewfinder)).controller,
           same(oldController),
         );
 
@@ -71,7 +71,7 @@ void main() {
         await oldController.dispose();
         await tester.pump();
 
-        expect(find.byType(CameraPreview), findsNothing);
+        expect(find.byType(CameraViewfinder), findsNothing);
         expect(tester.takeException(), isNull);
 
         bloc.publish(
@@ -79,7 +79,7 @@ void main() {
         );
         await tester.pump();
         expect(
-          tester.widget<CameraPreview>(find.byType(CameraPreview)).controller,
+          tester.widget<CameraViewfinder>(find.byType(CameraViewfinder)).controller,
           same(newController),
         );
         expect(tester.takeException(), isNull);
