@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show DisplayFeatureType;
 
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_components/app_components.dart';
@@ -16,6 +17,56 @@ import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 enum CameraFitMode {
   contain,
   cover,
+}
+
+/// Fold posture perception for foldable devices like Google Pixel Fold.
+enum FoldPosture {
+  folded,
+  unfolded,
+}
+
+extension FoldPostureExtension on FoldPosture {
+  bool get isFolded => this == FoldPosture.folded;
+  bool get isUnfolded => this == FoldPosture.unfolded;
+}
+
+FoldPosture resolveFoldPosture(BuildContext context) {
+  final mq = MediaQuery.of(context);
+  final hasFoldFeature = mq.displayFeatures.any(
+    (f) =>
+        f.type == DisplayFeatureType.fold ||
+        f.type == DisplayFeatureType.hinge,
+  );
+  if (hasFoldFeature) return FoldPosture.unfolded;
+  // Cover screen on foldables (e.g. Pixel Fold cover is 411dp) has shortestSide < 600dp.
+  // Inner unfolded screen (Pixel Fold inner is ~701dp) has shortestSide >= 600dp.
+  return mq.size.shortestSide >= 600 ? FoldPosture.unfolded : FoldPosture.folded;
+}
+
+String getCameraDisplayName(CameraDescription camera, BuildContext context) {
+  if (camera.lensDirection == CameraLensDirection.front) {
+    final posture = resolveFoldPosture(context);
+    return posture.isUnfolded ? 'Front (Inner)' : 'Front (Cover)';
+  }
+  return camera.title;
+}
+
+IconData getCameraDisplayIcon(CameraDescription camera, BuildContext context) {
+  if (camera.lensDirection == CameraLensDirection.front) {
+    final posture = resolveFoldPosture(context);
+    return posture.isUnfolded ? Icons.devices_fold : Icons.phone_android;
+  }
+  return Icons.camera_rear;
+}
+
+String getCameraBadgeTitle(CameraDescription camera, BuildContext context) {
+  if (camera.lensDirection == CameraLensDirection.front) {
+    final posture = resolveFoldPosture(context);
+    return posture.isUnfolded
+        ? 'Front Camera (Inner · 展开内屏)'
+        : 'Front Camera (Cover · 外屏)';
+  }
+  return '${camera.title} Camera';
 }
 
 /// Viewfinder widget that renders the camera preview stream with exact
@@ -44,9 +95,38 @@ class CameraViewfinder extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final isRotated90 = (quarterTurns % 2 == 1);
-    final visualWidth = isRotated90 ? previewSize.height : previewSize.width;
-    final visualHeight = isRotated90 ? previewSize.width : previewSize.height;
+    final isUnfoldedWide = resolveFoldPosture(context).isUnfolded;
+
+    // On standard portrait screens (Folded cover screen or regular phones),
+    // CameraX already maps the native stream to portrait orientation, so the
+    // stream width is min(width, height) and stream height is max(width, height).
+    // On unfolded wide screens (e.g. Pixel Fold inner landscape panel), CameraX
+    // outputs a landscape buffer which is then rotated by 3 quarter turns (270°).
+    final double streamWidth;
+    final double streamHeight;
+
+    if (isUnfoldedWide) {
+      streamWidth = previewSize.width;
+      streamHeight = previewSize.height;
+    } else {
+      final isPortrait =
+          controller.value.deviceOrientation == DeviceOrientation.portraitUp ||
+              controller.value.deviceOrientation ==
+                  DeviceOrientation.portraitDown;
+      if (isPortrait) {
+        final w = previewSize.width;
+        final h = previewSize.height;
+        streamWidth = w < h ? w : h;
+        streamHeight = w > h ? w : h;
+      } else {
+        streamWidth = previewSize.width;
+        streamHeight = previewSize.height;
+      }
+    }
+
+    final isSwapped = (quarterTurns % 2 == 1);
+    final visualWidth = isSwapped ? streamHeight : streamWidth;
+    final visualHeight = isSwapped ? streamWidth : streamHeight;
     final visualAspectRatio = visualWidth / visualHeight;
 
     final childWidget = SizedBox(
@@ -55,8 +135,8 @@ class CameraViewfinder extends StatelessWidget {
       child: RotatedBox(
         quarterTurns: quarterTurns,
         child: SizedBox(
-          width: previewSize.width,
-          height: previewSize.height,
+          width: streamWidth,
+          height: streamHeight,
           child: controller.buildPreview(),
         ),
       ),
@@ -85,6 +165,11 @@ class CameraViewfinder extends StatelessWidget {
   }
 }
 
+bool _isSameCamera(CameraDescription? a, CameraDescription? b) {
+  if (a == null || b == null) return false;
+  return a.name == b.name && a.lensDirection == b.lensDirection;
+}
+
 class CameraScreen extends StatefulWidget {
   static const name = 'Camera';
   static const path = 'camera';
@@ -95,23 +180,68 @@ class CameraScreen extends StatefulWidget {
   State<CameraScreen> createState() => _CameraScreenState();
 }
 
-class _CameraScreenState extends State<CameraScreen> {
+class _CameraScreenState extends State<CameraScreen>
+    with WidgetsBindingObserver {
   late final CameraBloc _cameraBloc;
   bool _hasRequestedInitialCamera = false;
   int _manualRotationQuarterTurns = 0;
   CameraFitMode _fitMode = CameraFitMode.contain;
   Timer? _recordingTimer;
   int _recordingSeconds = 0;
+  FoldPosture? _lastPosture;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _cameraBloc = context.read<CameraBloc>();
     _cameraBloc.add(const CameraInitCameras());
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _lastPosture ??= resolveFoldPosture(context);
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (!mounted) return;
+    final newPosture = resolveFoldPosture(context);
+    if (_lastPosture != null && _lastPosture != newPosture) {
+      _lastPosture = newPosture;
+      setState(() {});
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                newPosture.isUnfolded
+                    ? Icons.devices_fold
+                    : Icons.phone_android,
+                color: Colors.white,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                newPosture.isUnfolded
+                    ? '折叠已展开：自动切换至内屏前摄'
+                    : '折叠已合上：自动切换至外屏前摄',
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _stopRecordingTimer();
     _cameraBloc.add(const CameraStop());
     super.dispose();
@@ -157,13 +287,19 @@ class _CameraScreenState extends State<CameraScreen> {
 
     // Pixel Fold inner screen and landscape tablets compensation:
     // Natural orientation panel is landscape (width > height) with ROTATION_90
-    // hardware installation, offsetting CameraX preview by 270 degrees (3 quarter turns).
-    final size = MediaQuery.sizeOf(context);
-    final isWide = size.width > size.height;
-    if (isWide &&
+    // hardware installation.
+    // - Back camera sensor orientation is 90°, so it needs +3 turns (270°).
+    // - Inner front camera sensor orientation is 0° (unlike outer front 270°),
+    //   so it needs +1 turn (90°) instead of +3 turns (270°) to avoid being 180° upside-down.
+    final isUnfoldedWide = resolveFoldPosture(context).isUnfolded;
+    if (isUnfoldedWide &&
         (orientation == DeviceOrientation.portraitUp ||
             orientation == DeviceOrientation.portraitDown)) {
-      baseTurns = (baseTurns + 3) % 4;
+      if (controller.description.lensDirection == CameraLensDirection.front) {
+        baseTurns = (baseTurns + 1) % 4;
+      } else {
+        baseTurns = (baseTurns + 3) % 4;
+      }
     }
 
     return baseTurns;
@@ -270,8 +406,9 @@ class _CameraScreenState extends State<CameraScreen> {
   ) {
     if (cameras.length <= 1) return;
     final currentIndex =
-        cameras.indexWhere((c) => c == controller?.description);
-    final nextIndex = (currentIndex + 1) % cameras.length;
+        cameras.indexWhere((c) => _isSameCamera(c, controller?.description));
+    final nextIndex =
+        currentIndex >= 0 ? (currentIndex + 1) % cameras.length : 0;
     context.read<CameraBloc>().add(CameraSwitched(cameras[nextIndex]));
   }
 
@@ -367,21 +504,18 @@ class _CameraScreenState extends State<CameraScreen> {
                               padding: const EdgeInsets.only(right: 6),
                               child: ChoiceChip(
                                 selected:
-                                    controller?.description == camera,
+                                    _isSameCamera(controller?.description, camera),
                                 avatar: Icon(
-                                  camera.lensDirection ==
-                                          CameraLensDirection.front
-                                      ? Icons.camera_front
-                                      : Icons.camera_rear,
+                                  getCameraDisplayIcon(camera, context),
                                   size: 16,
                                 ),
-                                label: Text(camera.title),
+                                label: Text(getCameraDisplayName(camera, context)),
                                 visualDensity: VisualDensity.compact,
                                 materialTapTargetSize:
                                     MaterialTapTargetSize.shrinkWrap,
                                 onSelected: (selected) {
                                   if (selected &&
-                                      controller?.description != camera) {
+                                      !_isSameCamera(controller?.description, camera)) {
                                     context.read<CameraBloc>().add(
                                           CameraSwitched(camera),
                                         );
@@ -406,14 +540,11 @@ class _CameraScreenState extends State<CameraScreen> {
                                   child: Row(
                                     children: [
                                       Icon(
-                                        camera.lensDirection ==
-                                                CameraLensDirection.front
-                                            ? Icons.camera_front
-                                            : Icons.camera_rear,
+                                        getCameraDisplayIcon(camera, context),
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(camera.title),
+                                      Text(getCameraDisplayName(camera, context)),
                                       const Spacer(),
                                       Text(
                                         '${camera.sensorOrientation}°',
@@ -637,15 +768,13 @@ class _CameraScreenState extends State<CameraScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            controller.description.lensDirection == CameraLensDirection.front
-                ? Icons.camera_front
-                : Icons.camera_rear,
+            getCameraDisplayIcon(controller.description, context),
             color: Colors.white,
             size: 14,
           ),
           const SizedBox(width: 6),
           Text(
-            '${controller.description.title} Camera',
+            getCameraBadgeTitle(controller.description, context),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 12,
