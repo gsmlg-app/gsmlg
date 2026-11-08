@@ -913,7 +913,8 @@ class _LogListState extends State<_LogList> {
         return FutureBuilder<String>(
           future: _getCachedFuture(lineIndex),
           builder: (context, snapshot) {
-            final rawLine = snapshot.data ?? '...';
+            final raw = snapshot.data ?? '...';
+            final rawLine = raw.length > 400 ? '${raw.substring(0, 400)}...' : raw;
             return LogListTile(
               rawLine: rawLine,
               index: lineIndex,

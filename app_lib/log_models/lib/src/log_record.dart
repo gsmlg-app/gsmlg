@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
 
@@ -89,30 +91,40 @@ class LogRecord extends Equatable {
 
   static RequestData _parseRequest(Map<String, dynamic> json) {
     return RequestData(
-      method: json['method'] as String,
-      scheme: json['scheme'] as String,
-      host: json['host'] as String,
-      uri: json['uri'] as String,
-      proto: json['proto'] as String,
-      remoteAddr: json['remote_addr'] as String,
+      method: json['method'] as String? ?? 'GET',
+      scheme: json['scheme'] as String? ?? 'http',
+      host: json['host'] as String? ?? '',
+      uri: json['uri'] as String? ?? '',
+      proto: json['proto'] as String? ?? '',
+      remoteAddr: json['remote_addr'] as String? ?? '',
       headers: _parseHeaders(json['headers']),
-      body: json['body'] as String?,
+      body: _parseBody(json['body']),
       bodyEncoding: json['body_encoding'] as String?,
       bodyTruncated: json['body_truncated'] as bool? ?? false,
       contentType: json['content_type'] as String?,
-      contentLength: json['content_length'] as int?,
+      contentLength: (json['content_length'] as num?)?.toInt(),
     );
   }
 
   static ResponseData _parseResponse(Map<String, dynamic> json) {
     return ResponseData(
-      status: json['status'] as int,
+      status: (json['status'] as num?)?.toInt() ?? 0,
       headers: _parseHeaders(json['headers']),
-      body: json['body'] as String?,
+      body: _parseBody(json['body']),
       bodyEncoding: json['body_encoding'] as String?,
       bodyTruncated: json['body_truncated'] as bool? ?? false,
       contentType: json['content_type'] as String?,
     );
+  }
+
+  static String? _parseBody(dynamic body) {
+    if (body == null) return null;
+    if (body is String) return body;
+    try {
+      return jsonEncode(body);
+    } catch (_) {
+      return body.toString();
+    }
   }
 
   static Map<String, List<String>> _parseHeaders(dynamic headers) {
