@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 import 'package:log_models/log_models.dart';
@@ -79,8 +82,6 @@ class _LogViewerBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return AppAdaptiveScaffold(
       navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(
@@ -89,79 +90,77 @@ class _LogViewerBody extends StatelessWidget {
       ),
       onSelectedIndexChange: (idx) => Destinations.changeHandler(idx, context),
       destinations: Destinations.navs(context),
-      appBarBreakpoint: Breakpoints.standard,
-      appBar: AppBar(
-        toolbarHeight: 78,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: (context) => SafeArea(
+        child: Column(
           children: [
-            const Text('JSON Log Inspector'),
-            const SizedBox(height: 2),
-            Text(
-              'Open, filter, and inspect structured request traces',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            DmNavigationHeader(
+              builder: (context, header) => AppBar(
+                leading: header.leading,
+                leadingWidth: header.leadingWidth,
+                automaticallyImplyLeading: header.automaticallyImplyLeading,
+                title: Text(context.l10n.jsonLogInspectorTitle),
+              ),
+            ),
+            Expanded(
+              child: BlocBuilder<LogFileBloc, LogFileState>(
+                builder: (context, fileState) {
+                  if (fileState.status == LogFileStatus.initial) {
+                    return _InitialView(
+                      onFileOpened: (path) {
+                        context.read<LogFileBloc>().add(FileOpened(path));
+                      },
+                    );
+                  }
+
+                  if (fileState.status == LogFileStatus.loading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (fileState.status == LogFileStatus.error) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 420),
+                          padding: const EdgeInsets.all(24),
+                          decoration: _panelDecoration(
+                            Theme.of(context),
+                            emphasized: true,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                fileState.errorMessage ?? 'Unknown error',
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              FilledButton(
+                                onPressed: () {
+                                  context.read<LogFileBloc>().add(
+                                    const Cleared(),
+                                  );
+                                },
+                                child: const Text('Try Again'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return _LoadedView(fileState: fileState);
+                },
               ),
             ),
           ],
-        ),
-      ),
-      body: (context) => SafeArea(
-        child: BlocBuilder<LogFileBloc, LogFileState>(
-          builder: (context, fileState) {
-            if (fileState.status == LogFileStatus.initial) {
-              return _InitialView(
-                onFileOpened: (path) {
-                  context.read<LogFileBloc>().add(FileOpened(path));
-                },
-              );
-            }
-
-            if (fileState.status == LogFileStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (fileState.status == LogFileStatus.error) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    padding: const EdgeInsets.all(24),
-                    decoration: _panelDecoration(
-                      Theme.of(context),
-                      emphasized: true,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          fileState.errorMessage ?? 'Unknown error',
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: () {
-                            context.read<LogFileBloc>().add(const Cleared());
-                          },
-                          child: const Text('Try Again'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            return _LoadedView(fileState: fileState);
-          },
         ),
       ),
     );
@@ -249,8 +248,12 @@ class _InitialView extends StatelessWidget {
 
   Future<void> _pickFile(BuildContext context) async {
     final files = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jsonl', 'json', 'log'],
+      type: !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+          ? FileType.any
+          : FileType.custom,
+      allowedExtensions: !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+          ? null
+          : ['jsonl', 'json', 'log'],
     );
 
     if (files.isNotEmpty && files.first.path != null) {
@@ -481,8 +484,12 @@ class _ToolbarState extends State<_Toolbar> {
 
   Future<void> _openFile(BuildContext context) async {
     final files = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jsonl', 'json', 'log'],
+      type: !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+          ? FileType.any
+          : FileType.custom,
+      allowedExtensions: !kIsWeb && (Platform.isAndroid || Platform.isIOS)
+          ? null
+          : ['jsonl', 'json', 'log'],
     );
     if (files.isNotEmpty && files.first.path != null && context.mounted) {
       context.read<LogFileBloc>().add(FileOpened(files.first.path!));

@@ -35,9 +35,7 @@ void main() {
         child: RepositoryProvider<SharedPreferences>.value(
           value: sharedPrefs,
           child: MultiBlocProvider(
-            providers: [
-              BlocProvider<DmThemeBloc>.value(value: themeBloc),
-            ],
+            providers: [BlocProvider<DmThemeBloc>.value(value: themeBloc)],
             child: MaterialApp(
               localizationsDelegates: AppLocale.localizationsDelegates,
               supportedLocales: AppLocale.supportedLocales,
@@ -98,6 +96,17 @@ void main() {
 
       // FilledButton.icon wraps with _FilledButtonWithIcon
       expect(find.text('Open File'), findsOneWidget);
+    });
+
+    testWidgets('renders AppBar with DmNavigationHeader inside body', (
+      tester,
+    ) async {
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppBar), findsOneWidget);
+      expect(find.byType(DmNavigationHeader), findsOneWidget);
+      expect(find.text('JSON Log Inspector'), findsOneWidget);
     });
   });
 }
