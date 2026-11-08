@@ -14,16 +14,10 @@ import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 
-enum CameraFitMode {
-  contain,
-  cover,
-}
+enum CameraFitMode { contain, cover }
 
 /// Fold posture perception for foldable devices like Google Pixel Fold.
-enum FoldPosture {
-  folded,
-  unfolded,
-}
+enum FoldPosture { folded, unfolded }
 
 extension FoldPostureExtension on FoldPosture {
   bool get isFolded => this == FoldPosture.folded;
@@ -34,13 +28,14 @@ FoldPosture resolveFoldPosture(BuildContext context) {
   final mq = MediaQuery.of(context);
   final hasFoldFeature = mq.displayFeatures.any(
     (f) =>
-        f.type == DisplayFeatureType.fold ||
-        f.type == DisplayFeatureType.hinge,
+        f.type == DisplayFeatureType.fold || f.type == DisplayFeatureType.hinge,
   );
   if (hasFoldFeature) return FoldPosture.unfolded;
   // Cover screen on foldables (e.g. Pixel Fold cover is 411dp) has shortestSide < 600dp.
   // Inner unfolded screen (Pixel Fold inner is ~701dp) has shortestSide >= 600dp.
-  return mq.size.shortestSide >= 600 ? FoldPosture.unfolded : FoldPosture.folded;
+  return mq.size.shortestSide >= 600
+      ? FoldPosture.unfolded
+      : FoldPosture.folded;
 }
 
 String getCameraDisplayName(CameraDescription camera, BuildContext context) {
@@ -111,8 +106,7 @@ class CameraViewfinder extends StatelessWidget {
     } else {
       final isPortrait =
           controller.value.deviceOrientation == DeviceOrientation.portraitUp ||
-              controller.value.deviceOrientation ==
-                  DeviceOrientation.portraitDown;
+          controller.value.deviceOrientation == DeviceOrientation.portraitDown;
       if (isPortrait) {
         final w = previewSize.width;
         final h = previewSize.height;
@@ -145,10 +139,7 @@ class CameraViewfinder extends StatelessWidget {
     if (fitMode == CameraFitMode.cover) {
       return ClipRect(
         child: SizedBox.expand(
-          child: FittedBox(
-            fit: BoxFit.cover,
-            child: childWidget,
-          ),
+          child: FittedBox(fit: BoxFit.cover, child: childWidget),
         ),
       );
     }
@@ -156,10 +147,7 @@ class CameraViewfinder extends StatelessWidget {
     return Center(
       child: AspectRatio(
         aspectRatio: visualAspectRatio,
-        child: FittedBox(
-          fit: BoxFit.contain,
-          child: childWidget,
-        ),
+        child: FittedBox(fit: BoxFit.contain, child: childWidget),
       ),
     );
   }
@@ -226,9 +214,7 @@ class _CameraScreenState extends State<CameraScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                newPosture.isUnfolded
-                    ? '折叠已展开：自动切换至内屏前摄'
-                    : '折叠已合上：自动切换至外屏前摄',
+                newPosture.isUnfolded ? '折叠已展开：自动切换至内屏前摄' : '折叠已合上：自动切换至外屏前摄',
               ),
             ],
           ),
@@ -274,8 +260,8 @@ class _CameraScreenState extends State<CameraScreen>
     final orientation = controller.value.isRecordingVideo
         ? controller.value.recordingOrientation!
         : (controller.value.previewPauseOrientation ??
-            controller.value.lockedCaptureOrientation ??
-            controller.value.deviceOrientation);
+              controller.value.lockedCaptureOrientation ??
+              controller.value.deviceOrientation);
 
     final turns = <DeviceOrientation, int>{
       DeviceOrientation.portraitUp: 0,
@@ -287,19 +273,15 @@ class _CameraScreenState extends State<CameraScreen>
 
     // Pixel Fold inner screen and landscape tablets compensation:
     // Natural orientation panel is landscape (width > height) with ROTATION_90
-    // hardware installation.
-    // - Back camera sensor orientation is 90°, so it needs +3 turns (270°).
-    // - Inner front camera sensor orientation is 0° (unlike outer front 270°),
-    //   so it needs +1 turn (90°) instead of +3 turns (270°) to avoid being 180° upside-down.
+    // hardware installation:
+    // - In natural book hold (DeviceOrientation.landscapeLeft), back camera needs 270° (3 turns),
+    //   while inner front camera needs 90° (1 turn).
+    // - Inner front camera is always 180° (2 quarter turns) offset from the back camera
+    //   due to opposite mounting and 0° vs 90° sensor orientation.
     final isUnfoldedWide = resolveFoldPosture(context).isUnfolded;
     if (isUnfoldedWide &&
-        (orientation == DeviceOrientation.portraitUp ||
-            orientation == DeviceOrientation.portraitDown)) {
-      if (controller.description.lensDirection == CameraLensDirection.front) {
-        baseTurns = (baseTurns + 1) % 4;
-      } else {
-        baseTurns = (baseTurns + 3) % 4;
-      }
+        controller.description.lensDirection == CameraLensDirection.front) {
+      baseTurns = (baseTurns + 2) % 4;
     }
 
     return baseTurns;
@@ -405,10 +387,13 @@ class _CameraScreenState extends State<CameraScreen>
     CameraController? controller,
   ) {
     if (cameras.length <= 1) return;
-    final currentIndex =
-        cameras.indexWhere((c) => _isSameCamera(c, controller?.description));
-    final nextIndex =
-        currentIndex >= 0 ? (currentIndex + 1) % cameras.length : 0;
+    final currentIndex = cameras.indexWhere(
+      (c) => _isSameCamera(c, controller?.description),
+    );
+    final nextIndex = currentIndex >= 0
+        ? (currentIndex + 1) % cameras.length
+        : 0;
+    setState(() => _manualRotationQuarterTurns = 0);
     context.read<CameraBloc>().add(CameraSwitched(cameras[nextIndex]));
   }
 
@@ -469,10 +454,7 @@ class _CameraScreenState extends State<CameraScreen>
               if (isNoCameraError(state.error)) {
                 return _NoCameraView(title: title);
               }
-              return _CameraErrorView(
-                title: title,
-                error: state.error,
-              );
+              return _CameraErrorView(title: title, error: state.error);
             }
 
             if (state is CameraLoaded) {
@@ -503,22 +485,32 @@ class _CameraScreenState extends State<CameraScreen>
                             Padding(
                               padding: const EdgeInsets.only(right: 6),
                               child: ChoiceChip(
-                                selected:
-                                    _isSameCamera(controller?.description, camera),
+                                selected: _isSameCamera(
+                                  controller?.description,
+                                  camera,
+                                ),
                                 avatar: Icon(
                                   getCameraDisplayIcon(camera, context),
                                   size: 16,
                                 ),
-                                label: Text(getCameraDisplayName(camera, context)),
+                                label: Text(
+                                  getCameraDisplayName(camera, context),
+                                ),
                                 visualDensity: VisualDensity.compact,
                                 materialTapTargetSize:
                                     MaterialTapTargetSize.shrinkWrap,
                                 onSelected: (selected) {
                                   if (selected &&
-                                      !_isSameCamera(controller?.description, camera)) {
+                                      !_isSameCamera(
+                                        controller?.description,
+                                        camera,
+                                      )) {
+                                    setState(
+                                      () => _manualRotationQuarterTurns = 0,
+                                    );
                                     context.read<CameraBloc>().add(
-                                          CameraSwitched(camera),
-                                        );
+                                      CameraSwitched(camera),
+                                    );
                                   }
                                 },
                               ),
@@ -529,9 +521,10 @@ class _CameraScreenState extends State<CameraScreen>
                             initialValue: controller?.description,
                             icon: const Icon(Icons.cameraswitch_outlined),
                             onSelected: (camera) {
+                              setState(() => _manualRotationQuarterTurns = 0);
                               context.read<CameraBloc>().add(
-                                    CameraSwitched(camera),
-                                  );
+                                CameraSwitched(camera),
+                              );
                             },
                             itemBuilder: (context) => [
                               for (final camera in cameras)
@@ -544,13 +537,15 @@ class _CameraScreenState extends State<CameraScreen>
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
-                                      Text(getCameraDisplayName(camera, context)),
+                                      Text(
+                                        getCameraDisplayName(camera, context),
+                                      ),
                                       const Spacer(),
                                       Text(
                                         '${camera.sensorOrientation}°',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
                                       ),
                                     ],
                                   ),
@@ -561,8 +556,11 @@ class _CameraScreenState extends State<CameraScreen>
                         if (controller != null) ...[
                           // Flash Mode
                           IconButton(
-                            icon: Icon(_getFlashIcon(controller.value.flashMode)),
-                            tooltip: 'Flash: ${controller.value.flashMode.name}',
+                            icon: Icon(
+                              _getFlashIcon(controller.value.flashMode),
+                            ),
+                            tooltip:
+                                'Flash: ${controller.value.flashMode.name}',
                             onPressed: () => _cycleFlashMode(controller),
                           ),
                           // Aspect Ratio Mode
@@ -585,11 +583,12 @@ class _CameraScreenState extends State<CameraScreen>
                           ),
                           // Rotation Menu
                           PopupMenuButton<int>(
-                            tooltip:
-                                'Rotate (${effectiveTurns * 90}°)',
+                            tooltip: 'Rotate (${effectiveTurns * 90}°)',
                             icon: Badge(
                               isLabelVisible: _manualRotationQuarterTurns != 0,
-                              label: Text('${_manualRotationQuarterTurns * 90}°'),
+                              label: Text(
+                                '${_manualRotationQuarterTurns * 90}°',
+                              ),
                               child: const Icon(
                                 Icons.rotate_90_degrees_cw_outlined,
                               ),
@@ -616,9 +615,9 @@ class _CameraScreenState extends State<CameraScreen>
                                         const Spacer(),
                                         Icon(
                                           Icons.check,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
                                           size: 20,
                                         ),
                                       ],
@@ -630,18 +629,22 @@ class _CameraScreenState extends State<CameraScreen>
                                     value: i,
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.rotate_right, size: 20),
+                                        const Icon(
+                                          Icons.rotate_right,
+                                          size: 20,
+                                        ),
                                         const SizedBox(width: 8),
                                         Text(
                                           '+${i * 90}° (${((baseTurns + i) % 4) * 90}°)',
                                         ),
-                                        if (_manualRotationQuarterTurns == i) ...[
+                                        if (_manualRotationQuarterTurns ==
+                                            i) ...[
                                           const Spacer(),
                                           Icon(
                                             Icons.check,
-                                            color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
                                             size: 20,
                                           ),
                                         ],
@@ -667,10 +670,9 @@ class _CameraScreenState extends State<CameraScreen>
                         color: Colors.black,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .outlineVariant
-                              .withValues(alpha: 0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.outlineVariant.withValues(alpha: 0.3),
                           width: 1.5,
                         ),
                         boxShadow: [
@@ -698,8 +700,7 @@ class _CameraScreenState extends State<CameraScreen>
                           IgnorePointer(
                             child: CustomPaint(
                               painter: _ViewfinderReticlePainter(
-                                color:
-                                    Colors.white.withValues(alpha: 0.35),
+                                color: Colors.white.withValues(alpha: 0.35),
                               ),
                             ),
                           ),
@@ -1027,7 +1028,10 @@ class _NoCameraView extends StatelessWidget {
         SliverFillRemaining(
           hasScrollBody: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 32.0,
+            ),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
@@ -1104,10 +1108,7 @@ class _NoCameraView extends StatelessWidget {
 }
 
 class _CameraErrorView extends StatelessWidget {
-  const _CameraErrorView({
-    required this.title,
-    required this.error,
-  });
+  const _CameraErrorView({required this.title, required this.error});
 
   final String title;
   final Object error;
@@ -1132,7 +1133,10 @@ class _CameraErrorView extends StatelessWidget {
         SliverFillRemaining(
           hasScrollBody: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 32.0,
+            ),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 460),
