@@ -82,7 +82,9 @@ void main() {
       task.recordRetry('worker-4', 3);
 
       expect(
-          task.triedWorkers, containsAll(['worker-1', 'worker-2', 'worker-3']));
+        task.triedWorkers,
+        containsAll(['worker-1', 'worker-2', 'worker-3']),
+      );
       expect(task.triedWorkers, isNot(contains('worker-4'))); // Current worker
       expect(task.retryCount, equals(3));
     });
@@ -206,27 +208,31 @@ void main() {
       final completer1 = Completer<TaskResult<String>>();
       final completer2 = Completer<TaskResult<String>>();
 
-      registry.register(PendingTask<String>(
-        id: 'task-1',
-        correlationId: 'corr-1',
-        task: Task<String>(data: 'test'),
-        completer: completer1,
-        replyPort: replyPort.sendPort,
-        sentTo: 'worker-1',
-        sentAt: DateTime.now().microsecondsSinceEpoch,
-        timerBucket: 0,
-      ));
+      registry.register(
+        PendingTask<String>(
+          id: 'task-1',
+          correlationId: 'corr-1',
+          task: Task<String>(data: 'test'),
+          completer: completer1,
+          replyPort: replyPort.sendPort,
+          sentTo: 'worker-1',
+          sentAt: DateTime.now().microsecondsSinceEpoch,
+          timerBucket: 0,
+        ),
+      );
 
-      registry.register(PendingTask<String>(
-        id: 'task-2',
-        correlationId: 'corr-2',
-        task: Task<String>(data: 'test'),
-        completer: completer2,
-        replyPort: replyPort.sendPort,
-        sentTo: 'worker-1',
-        sentAt: DateTime.now().microsecondsSinceEpoch,
-        timerBucket: 0,
-      ));
+      registry.register(
+        PendingTask<String>(
+          id: 'task-2',
+          correlationId: 'corr-2',
+          task: Task<String>(data: 'test'),
+          completer: completer2,
+          replyPort: replyPort.sendPort,
+          sentTo: 'worker-1',
+          sentAt: DateTime.now().microsecondsSinceEpoch,
+          timerBucket: 0,
+        ),
+      );
 
       final error = Exception('Pool shutdown');
       registry.completeAllWithError(error);
@@ -241,16 +247,18 @@ void main() {
       final completer = Completer<TaskResult<String>>();
       completer.complete(TaskResult(data: 'completed'));
 
-      registry.register(PendingTask<String>(
-        id: 'task-1',
-        correlationId: 'corr-1',
-        task: Task<String>(data: 'test'),
-        completer: completer,
-        replyPort: replyPort.sendPort,
-        sentTo: 'worker-1',
-        sentAt: DateTime.now().microsecondsSinceEpoch,
-        timerBucket: 0,
-      ));
+      registry.register(
+        PendingTask<String>(
+          id: 'task-1',
+          correlationId: 'corr-1',
+          task: Task<String>(data: 'test'),
+          completer: completer,
+          replyPort: replyPort.sendPort,
+          sentTo: 'worker-1',
+          sentAt: DateTime.now().microsecondsSinceEpoch,
+          timerBucket: 0,
+        ),
+      );
 
       // Should not throw
       registry.completeAllWithError(Exception('error'));

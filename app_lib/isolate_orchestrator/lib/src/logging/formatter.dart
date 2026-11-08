@@ -89,12 +89,12 @@ class LogFormatter {
 /// ```
 class CompactLogFormatter extends LogFormatter {
   const CompactLogFormatter()
-      : super(
-          includeTimestamp: true,
-          includeLevel: true,
-          includeIsolateId: false,
-          includeLoggerName: false,
-        );
+    : super(
+        includeTimestamp: true,
+        includeLevel: true,
+        includeIsolateId: false,
+        includeLoggerName: false,
+      );
 }
 
 /// Detailed formatter for debugging.
@@ -107,12 +107,12 @@ class CompactLogFormatter extends LogFormatter {
 /// ```
 class DetailedLogFormatter extends LogFormatter {
   const DetailedLogFormatter()
-      : super(
-          includeTimestamp: true,
-          includeLevel: true,
-          includeIsolateId: true,
-          includeLoggerName: true,
-        );
+    : super(
+        includeTimestamp: true,
+        includeLevel: true,
+        includeIsolateId: true,
+        includeLoggerName: true,
+      );
 }
 
 /// Simple formatter with minimal decoration.
@@ -125,12 +125,12 @@ class DetailedLogFormatter extends LogFormatter {
 /// ```
 class SimpleLogFormatter extends LogFormatter {
   const SimpleLogFormatter()
-      : super(
-          includeTimestamp: false,
-          includeLevel: true,
-          includeIsolateId: false,
-          includeLoggerName: false,
-        );
+    : super(
+        includeTimestamp: false,
+        includeLevel: true,
+        includeIsolateId: false,
+        includeLoggerName: false,
+      );
 }
 
 /// Colored formatter for terminal output.

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:isolate';
 
 import 'package:isolate_orchestrator/isolate_orchestrator.dart';
@@ -8,11 +9,7 @@ import 'package:test/test.dart';
 void main() {
   group('SerializableLogRecord', () {
     test('creates from LogRecord', () {
-      final logRecord = LogRecord(
-        Level.INFO,
-        'Test message',
-        'test.logger',
-      );
+      final logRecord = LogRecord(Level.INFO, 'Test message', 'test.logger');
 
       final serializable = SerializableLogRecord.fromLogRecord(
         logRecord,
@@ -236,6 +233,73 @@ void main() {
       expect(records1, equals(['formatted']));
       expect(records2, equals(['formatted']));
     });
+
+    test(
+      'BufferedLogOutput auto-flushes after maxBufferTime via timer',
+      () async {
+        final flushed = <String>[];
+        final buffered = BufferedLogOutput(
+          CallbackLogOutput((_, formatted) => flushed.add(formatted)),
+          maxBufferSize: 100,
+          maxBufferTime: const Duration(milliseconds: 40),
+        );
+
+        final record = SerializableLogRecord(
+          level: 800,
+          levelName: 'INFO',
+          message: 'Buffered message',
+          loggerName: 'test',
+          time: DateTime.now().microsecondsSinceEpoch,
+          isolateId: 'test',
+        );
+
+        buffered.write(record, 'Buffered message');
+        expect(flushed, isEmpty);
+
+        // Wait for timer to flush without writing any more records
+        await Future.delayed(const Duration(milliseconds: 80));
+        expect(flushed, equals(['Buffered message']));
+
+        await buffered.close();
+      },
+    );
+
+    test('FileLogOutput writes UTF-8 and rotates synchronously', () async {
+      final tempDir = await Directory.systemTemp.createTemp('log_test_');
+      try {
+        final logPath = '${tempDir.path}/app.log';
+        final fileOutput = FileLogOutput(
+          path: logPath,
+          maxSizeBytes: 50,
+          maxFiles: 3,
+        );
+
+        final record = SerializableLogRecord(
+          level: 800,
+          levelName: 'INFO',
+          message: '日志消息测试-1234567890',
+          loggerName: 'test',
+          time: DateTime.now().microsecondsSinceEpoch,
+          isolateId: 'test',
+        );
+
+        // Each line is ~31 UTF-8 bytes; 2 writes exceed 50 bytes and trigger rotation
+        fileOutput.write(record, '日志消息测试-1234567890');
+        fileOutput.write(record, '日志消息测试-1234567890');
+        fileOutput.write(record, '第三条日志');
+
+        await fileOutput.close();
+
+        final rotatedFile = File('$logPath.1');
+        final currentFile = File(logPath);
+        expect(rotatedFile.existsSync(), isTrue);
+        expect(currentFile.existsSync(), isTrue);
+        expect(rotatedFile.readAsStringSync(), contains('日志消息测试-1234567890'));
+        expect(currentFile.readAsStringSync(), contains('第三条日志'));
+      } finally {
+        await tempDir.delete(recursive: true);
+      }
+    });
   });
 
   group('CentralLogger', () {
@@ -245,33 +309,35 @@ void main() {
       final logger = CentralLogger(
         config: CentralLoggerConfig(
           level: Level.WARNING,
-          outputs: [
-            CallbackLogOutput((record, _) => records.add(record)),
-          ],
+          outputs: [CallbackLogOutput((record, _) => records.add(record))],
         ),
       );
 
       logger.start();
 
       // Below threshold
-      logger.log(SerializableLogRecord(
-        level: 800, // INFO
-        levelName: 'INFO',
-        message: 'Info',
-        loggerName: 'test',
-        time: DateTime.now().microsecondsSinceEpoch,
-        isolateId: 'test',
-      ));
+      logger.log(
+        SerializableLogRecord(
+          level: 800, // INFO
+          levelName: 'INFO',
+          message: 'Info',
+          loggerName: 'test',
+          time: DateTime.now().microsecondsSinceEpoch,
+          isolateId: 'test',
+        ),
+      );
 
       // Above threshold
-      logger.log(SerializableLogRecord(
-        level: 900, // WARNING
-        levelName: 'WARNING',
-        message: 'Warning',
-        loggerName: 'test',
-        time: DateTime.now().microsecondsSinceEpoch,
-        isolateId: 'test',
-      ));
+      logger.log(
+        SerializableLogRecord(
+          level: 900, // WARNING
+          levelName: 'WARNING',
+          message: 'Warning',
+          loggerName: 'test',
+          time: DateTime.now().microsecondsSinceEpoch,
+          isolateId: 'test',
+        ),
+      );
 
       expect(records.length, equals(1));
       expect(records.first.message, equals('Warning'));
@@ -285,36 +351,36 @@ void main() {
       final logger = CentralLogger(
         config: CentralLoggerConfig(
           level: Level.WARNING,
-          loggerLevels: {
-            'debug.component': Level.FINE,
-          },
-          outputs: [
-            CallbackLogOutput((record, _) => records.add(record)),
-          ],
+          loggerLevels: {'debug.component': Level.FINE},
+          outputs: [CallbackLogOutput((record, _) => records.add(record))],
         ),
       );
 
       logger.start();
 
       // Regular logger at INFO - should be filtered
-      logger.log(SerializableLogRecord(
-        level: 800,
-        levelName: 'INFO',
-        message: 'Regular info',
-        loggerName: 'regular.component',
-        time: DateTime.now().microsecondsSinceEpoch,
-        isolateId: 'test',
-      ));
+      logger.log(
+        SerializableLogRecord(
+          level: 800,
+          levelName: 'INFO',
+          message: 'Regular info',
+          loggerName: 'regular.component',
+          time: DateTime.now().microsecondsSinceEpoch,
+          isolateId: 'test',
+        ),
+      );
 
       // Debug logger at FINE - should pass due to override
-      logger.log(SerializableLogRecord(
-        level: 500,
-        levelName: 'FINE',
-        message: 'Debug fine',
-        loggerName: 'debug.component.sub',
-        time: DateTime.now().microsecondsSinceEpoch,
-        isolateId: 'test',
-      ));
+      logger.log(
+        SerializableLogRecord(
+          level: 500,
+          levelName: 'FINE',
+          message: 'Debug fine',
+          loggerName: 'debug.component.sub',
+          time: DateTime.now().microsecondsSinceEpoch,
+          isolateId: 'test',
+        ),
+      );
 
       expect(records.length, equals(1));
       expect(records.first.message, equals('Debug fine'));
@@ -324,9 +390,7 @@ void main() {
       final config = CentralLoggerConfig.fromMap({
         'level': 'DEBUG',
         'console': true,
-        'logger_levels': {
-          'worker.dns': 'DEBUG',
-        },
+        'logger_levels': {'worker.dns': 'DEBUG'},
       });
 
       expect(config.level, equals(Level.FINE));
@@ -375,6 +439,26 @@ void main() {
 
       final logger = bridge.getLogger('cache');
       expect(logger.fullName, equals('worker.dns.cache'));
+    });
+  });
+
+  group('LoggingSetup', () {
+    test('supports isolate-based central logger via hub', () async {
+      final hub = IsolateHub();
+      await hub.start();
+
+      final setup = LoggingSetup(hub: hub, useIsolate: true);
+      await setup.start(
+        const CentralLoggerConfig(level: Level.INFO, outputs: []),
+      );
+
+      expect(setup.loggerPort, isNotNull);
+      expect(hub.getByRole('logger').length, equals(1));
+
+      await setup.stop();
+      expect(hub.getByRole('logger'), isEmpty);
+
+      await hub.stop();
     });
   });
 }

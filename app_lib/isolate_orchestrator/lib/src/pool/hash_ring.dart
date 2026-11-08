@@ -89,13 +89,15 @@ class HashRing {
   /// Get all workers.
   List<WorkerPort> get allWorkers {
     return _workers.values
-        .map((w) => WorkerPort(
-              id: w.id,
-              port: w.port,
-              healthy: w.healthy,
-              pendingCount: w.pendingCount,
-              avgLatencyUs: w.avgLatencyUs,
-            ))
+        .map(
+          (w) => WorkerPort(
+            id: w.id,
+            port: w.port,
+            healthy: w.healthy,
+            pendingCount: w.pendingCount,
+            avgLatencyUs: w.avgLatencyUs,
+          ),
+        )
         .toList();
   }
 

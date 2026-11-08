@@ -51,10 +51,7 @@ class RestartTracker {
   DateTime? _lastAttempt;
   Timer? _pendingRestart;
 
-  RestartTracker({
-    required this.policy,
-    required this.isolateId,
-  });
+  RestartTracker({required this.policy, required this.isolateId});
 
   /// Get current attempt count.
   int get attempts => _attempts;
@@ -113,16 +110,14 @@ class LifecycleManager {
   final RestartPolicy defaultPolicy;
 
   LifecycleManager({RestartPolicy? policy})
-      : defaultPolicy = policy ?? const RestartPolicy();
+    : defaultPolicy = policy ?? const RestartPolicy();
 
   /// Get or create tracker for isolate.
   RestartTracker getTracker(String isolateId, {RestartPolicy? policy}) {
     return _trackers.putIfAbsent(
       isolateId,
-      () => RestartTracker(
-        policy: policy ?? defaultPolicy,
-        isolateId: isolateId,
-      ),
+      () =>
+          RestartTracker(policy: policy ?? defaultPolicy, isolateId: isolateId),
     );
   }
 
@@ -130,6 +125,14 @@ class LifecycleManager {
   void removeTracker(String isolateId) {
     final tracker = _trackers.remove(isolateId);
     tracker?.cancel();
+  }
+
+  /// Transfer tracker state from an old isolate ID to a newly respawned isolate ID.
+  void transferTracker(String fromIsolateId, String toIsolateId) {
+    final tracker = _trackers.remove(fromIsolateId);
+    if (tracker != null) {
+      _trackers[toIsolateId] = tracker;
+    }
   }
 
   /// Reset tracker on successful recovery.

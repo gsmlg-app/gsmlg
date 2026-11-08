@@ -1,10 +1,10 @@
 name: isolate_orchestrator
 description: A generic Dart package that provides a managed pool of long-running isolates with centralized Hub for lifecycle management, type-safe message protocol, health monitoring and automatic restart, consistent hashing router, and request-response correlation with timeout handling.
 version: 1.0.0
-repository: https://github.com/gsmlg-app/yellow-dog
+publish_to: "none"
 
 environment:
-  sdk: ">=3.6.0 <4.0.0"
+  sdk: ">=3.8.0 <4.0.0"
 resolution: workspace
 
 dependencies:
@@ -13,4 +13,4 @@ dependencies:
 
 dev_dependencies:
   test: any
-  lints: any
+  flutter_lints: ^6.0.0

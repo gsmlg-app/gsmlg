@@ -35,6 +35,9 @@ abstract class Router<T> {
   /// Record timeout/failure.
   void recordFailure(String workerId);
 
+  /// Update health status of a worker directly (e.g. from health monitor events).
+  void setWorkerHealth(String workerId, bool healthy) {}
+
   /// Get all workers.
   List<WorkerPort> get workers;
 }
@@ -54,10 +57,12 @@ class RoundRobinRouter<T> implements Router<T> {
 
     if (healthyWorkers.isEmpty) {
       // Fall back to any worker
-      final available =
-          _workers.where((w) => !(exclude?.contains(w.id) ?? false)).toList();
+      final available = _workers
+          .where((w) => !(exclude?.contains(w.id) ?? false))
+          .toList();
       if (available.isEmpty) return null;
-      return available.first.toWorkerPort();
+      _currentIndex = (_currentIndex + 1) % available.length;
+      return available[_currentIndex].toWorkerPort();
     }
 
     _currentIndex = (_currentIndex + 1) % healthyWorkers.length;
@@ -72,30 +77,39 @@ class RoundRobinRouter<T> implements Router<T> {
     // Add new workers
     for (final port in workers) {
       if (!_workers.any((w) => w.id == port.id)) {
-        _workers.add(_WorkerEntry(
-          id: port.id,
-          port: port.port,
-        ));
+        _workers.add(_WorkerEntry(id: port.id, port: port.port));
       }
     }
   }
 
   @override
   void recordSuccess(String workerId, Duration latency) {
-    final worker = _workers.firstWhere(
-      (w) => w.id == workerId,
-      orElse: () => throw StateError('Worker not found'),
-    );
-    worker.recordSuccess(latency);
+    for (final worker in _workers) {
+      if (worker.id == workerId) {
+        worker.recordSuccess(latency);
+        break;
+      }
+    }
   }
 
   @override
   void recordFailure(String workerId) {
-    final worker = _workers.firstWhere(
-      (w) => w.id == workerId,
-      orElse: () => throw StateError('Worker not found'),
-    );
-    worker.recordFailure();
+    for (final worker in _workers) {
+      if (worker.id == workerId) {
+        worker.recordFailure();
+        break;
+      }
+    }
+  }
+
+  @override
+  void setWorkerHealth(String workerId, bool healthy) {
+    for (final worker in _workers) {
+      if (worker.id == workerId) {
+        worker.healthy = healthy;
+        break;
+      }
+    }
   }
 
   @override
@@ -151,6 +165,11 @@ class ConsistentHashRouter<T> implements Router<T> {
   }
 
   @override
+  void setWorkerHealth(String workerId, bool healthy) {
+    _ring.setHealthy(workerId, healthy);
+  }
+
+  @override
   List<WorkerPort> get workers => _ring.allWorkers;
 }
 
@@ -167,11 +186,15 @@ class LeastConnectionsRouter<T> implements Router<T> {
         .toList();
 
     if (healthyWorkers.isEmpty) {
-      // Fall back to any worker
-      final available =
-          _workers.where((w) => !(exclude?.contains(w.id) ?? false)).toList();
+      // Fall back to any worker with fewest pending connections
+      final available = _workers
+          .where((w) => !(exclude?.contains(w.id) ?? false))
+          .toList();
       if (available.isEmpty) return null;
-      return available.first.toWorkerPort();
+      available.sort((a, b) => a.pendingCount.compareTo(b.pendingCount));
+      final selected = available.first;
+      selected.pendingCount++;
+      return selected.toWorkerPort();
     }
 
     // Sort by pending count
@@ -189,32 +212,45 @@ class LeastConnectionsRouter<T> implements Router<T> {
     // Add new workers
     for (final port in workers) {
       if (!_workers.any((w) => w.id == port.id)) {
-        _workers.add(_WorkerEntry(
-          id: port.id,
-          port: port.port,
-        ));
+        _workers.add(_WorkerEntry(id: port.id, port: port.port));
       }
     }
   }
 
   @override
   void recordSuccess(String workerId, Duration latency) {
-    final worker = _workers.firstWhere(
-      (w) => w.id == workerId,
-      orElse: () => throw StateError('Worker not found'),
-    );
-    worker.pendingCount--;
-    worker.recordSuccess(latency);
+    for (final worker in _workers) {
+      if (worker.id == workerId) {
+        if (worker.pendingCount > 0) {
+          worker.pendingCount--;
+        }
+        worker.recordSuccess(latency);
+        break;
+      }
+    }
   }
 
   @override
   void recordFailure(String workerId) {
-    final worker = _workers.firstWhere(
-      (w) => w.id == workerId,
-      orElse: () => throw StateError('Worker not found'),
-    );
-    worker.pendingCount--;
-    worker.recordFailure();
+    for (final worker in _workers) {
+      if (worker.id == workerId) {
+        if (worker.pendingCount > 0) {
+          worker.pendingCount--;
+        }
+        worker.recordFailure();
+        break;
+      }
+    }
+  }
+
+  @override
+  void setWorkerHealth(String workerId, bool healthy) {
+    for (final worker in _workers) {
+      if (worker.id == workerId) {
+        worker.healthy = healthy;
+        break;
+      }
+    }
   }
 
   @override
@@ -231,10 +267,7 @@ class _WorkerEntry {
   int totalLatencyUs = 0;
   int successCount = 0;
 
-  _WorkerEntry({
-    required this.id,
-    required this.port,
-  });
+  _WorkerEntry({required this.id, required this.port});
 
   int get avgLatencyUs => successCount > 0 ? totalLatencyUs ~/ successCount : 0;
 
@@ -249,10 +282,10 @@ class _WorkerEntry {
   }
 
   WorkerPort toWorkerPort() => WorkerPort(
-        id: id,
-        port: port,
-        healthy: healthy,
-        pendingCount: pendingCount,
-        avgLatencyUs: avgLatencyUs,
-      );
+    id: id,
+    port: port,
+    healthy: healthy,
+    pendingCount: pendingCount,
+    avgLatencyUs: avgLatencyUs,
+  );
 }

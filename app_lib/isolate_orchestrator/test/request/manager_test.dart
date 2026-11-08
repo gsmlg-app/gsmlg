@@ -34,16 +34,21 @@ class MockRouter<T> implements Router<T> {
   }
 
   @override
+  void setWorkerHealth(String workerId, bool healthy) {}
+
+  @override
   void updateWorkers(List<PortInfo> workers) {
     _workers.clear();
     for (final w in workers) {
-      _workers.add(WorkerPort(
-        id: w.id,
-        port: w.port,
-        healthy: true,
-        pendingCount: 0,
-        avgLatencyUs: 0,
-      ));
+      _workers.add(
+        WorkerPort(
+          id: w.id,
+          port: w.port,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
     }
   }
 
@@ -99,13 +104,15 @@ void main() {
     test('submit sends task to worker and waits for response', () async {
       // Set up worker
       final workerReceivePort = ReceivePort();
-      router.addWorker(WorkerPort(
-        id: 'worker-1',
-        port: workerReceivePort.sendPort,
-        healthy: true,
-        pendingCount: 0,
-        avgLatencyUs: 0,
-      ));
+      router.addWorker(
+        WorkerPort(
+          id: 'worker-1',
+          port: workerReceivePort.sendPort,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
       router.selectReturns = 'worker-1';
 
       // Listen for task on worker side
@@ -132,13 +139,15 @@ void main() {
 
     test('handleResponse completes task with TaskResult', () async {
       final workerReceivePort = ReceivePort();
-      router.addWorker(WorkerPort(
-        id: 'worker-1',
-        port: workerReceivePort.sendPort,
-        healthy: true,
-        pendingCount: 0,
-        avgLatencyUs: 0,
-      ));
+      router.addWorker(
+        WorkerPort(
+          id: 'worker-1',
+          port: workerReceivePort.sendPort,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
       router.selectReturns = 'worker-1';
 
       String? correlationId;
@@ -174,13 +183,15 @@ void main() {
 
     test('handleResponse records success in router', () async {
       final workerReceivePort = ReceivePort();
-      router.addWorker(WorkerPort(
-        id: 'worker-1',
-        port: workerReceivePort.sendPort,
-        healthy: true,
-        pendingCount: 0,
-        avgLatencyUs: 0,
-      ));
+      router.addWorker(
+        WorkerPort(
+          id: 'worker-1',
+          port: workerReceivePort.sendPort,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
       router.selectReturns = 'worker-1';
 
       String? correlationId;
@@ -210,13 +221,15 @@ void main() {
 
     test('handleResponse completes with error on TaskError', () async {
       final workerReceivePort = ReceivePort();
-      router.addWorker(WorkerPort(
-        id: 'worker-1',
-        port: workerReceivePort.sendPort,
-        healthy: true,
-        pendingCount: 0,
-        avgLatencyUs: 0,
-      ));
+      router.addWorker(
+        WorkerPort(
+          id: 'worker-1',
+          port: workerReceivePort.sendPort,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
       router.selectReturns = 'worker-1';
 
       String? correlationId;
@@ -238,10 +251,7 @@ void main() {
       );
       manager.handleResponse(responseEnvelope);
 
-      expect(
-        resultFuture,
-        throwsA(isA<TaskError>()),
-      );
+      expect(resultFuture, throwsA(isA<TaskError>()));
       expect(router.failureCount['worker-1'], equals(1));
 
       workerReceivePort.close();
@@ -261,13 +271,15 @@ void main() {
 
     test('cancel removes pending task and completes with error', () async {
       final workerReceivePort = ReceivePort();
-      router.addWorker(WorkerPort(
-        id: 'worker-1',
-        port: workerReceivePort.sendPort,
-        healthy: true,
-        pendingCount: 0,
-        avgLatencyUs: 0,
-      ));
+      router.addWorker(
+        WorkerPort(
+          id: 'worker-1',
+          port: workerReceivePort.sendPort,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
       router.selectReturns = 'worker-1';
 
       String? taskId;
@@ -285,23 +297,22 @@ void main() {
       manager.cancel(taskId!);
 
       expect(manager.pendingCount, equals(0));
-      expect(
-        resultFuture,
-        throwsA(isA<TaskCancelledException>()),
-      );
+      expect(resultFuture, throwsA(isA<TaskCancelledException>()));
 
       workerReceivePort.close();
     });
 
     test('cancelAll cancels all pending tasks', () async {
       final workerReceivePort = ReceivePort();
-      router.addWorker(WorkerPort(
-        id: 'worker-1',
-        port: workerReceivePort.sendPort,
-        healthy: true,
-        pendingCount: 0,
-        avgLatencyUs: 0,
-      ));
+      router.addWorker(
+        WorkerPort(
+          id: 'worker-1',
+          port: workerReceivePort.sendPort,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
       router.selectReturns = 'worker-1';
 
       workerReceivePort.listen((_) {}); // consume messages
@@ -358,13 +369,15 @@ void main() {
 
     test('timeout triggers TaskTimeoutException when no retries', () async {
       final workerReceivePort = ReceivePort();
-      router.addWorker(WorkerPort(
-        id: 'worker-1',
-        port: workerReceivePort.sendPort,
-        healthy: true,
-        pendingCount: 0,
-        avgLatencyUs: 0,
-      ));
+      router.addWorker(
+        WorkerPort(
+          id: 'worker-1',
+          port: workerReceivePort.sendPort,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
       router.selectReturns = 'worker-1';
 
       workerReceivePort.listen((_) {}); // consume but don't respond
@@ -378,6 +391,68 @@ void main() {
       );
 
       workerReceivePort.close();
+    });
+
+    test('retry preserves per-request custom timeout', () async {
+      final retryManager = RequestManager<int>(
+        defaultTimeout: const Duration(seconds: 10), // Long default timeout
+        maxRetries: 1,
+        router: router,
+        idGenerator: idGenerator,
+        replyPort: replyPort.sendPort,
+        tickDuration: const Duration(milliseconds: 20),
+        wheelSize: 16,
+      );
+
+      final port1 = ReceivePort();
+      final port2 = ReceivePort();
+      router.addWorker(
+        WorkerPort(
+          id: 'worker-1',
+          port: port1.sendPort,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
+      router.addWorker(
+        WorkerPort(
+          id: 'worker-2',
+          port: port2.sendPort,
+          healthy: true,
+          pendingCount: 0,
+          avgLatencyUs: 0,
+        ),
+      );
+      router.selectReturns = 'worker-1';
+
+      port1.listen((_) {
+        // When worker-1 receives task, switch mock router to return worker-2 on retry
+        router.selectReturns = 'worker-2';
+      });
+      port2.listen((_) {}); // worker-2 also does not respond
+
+      // Submit with short custom timeout (60ms). Both initial attempt and retry
+      // should use 60ms (total ~150ms), NOT the 10s defaultTimeout.
+      await expectLater(
+        retryManager
+            .submit(
+              Task<int>(data: 42),
+              timeout: const Duration(milliseconds: 60),
+            )
+            .timeout(const Duration(milliseconds: 500)),
+        throwsA(
+          isA<TaskTimeoutException>().having(
+            (e) => e.retryCount,
+            'retryCount',
+            equals(1),
+          ),
+        ),
+      );
+
+      retryManager.dispose();
+      port1.close();
+      port2.close();
     });
   });
 }

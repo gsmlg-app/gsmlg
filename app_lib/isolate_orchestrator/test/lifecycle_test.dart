@@ -53,9 +53,7 @@ void main() {
     });
 
     test('delayForAttempt handles zero or negative attempt', () {
-      const policy = RestartPolicy(
-        initialDelay: Duration(seconds: 1),
-      );
+      const policy = RestartPolicy(initialDelay: Duration(seconds: 1));
 
       expect(policy.delayForAttempt(0), equals(Duration(seconds: 1)));
       expect(policy.delayForAttempt(-1), equals(Duration(seconds: 1)));

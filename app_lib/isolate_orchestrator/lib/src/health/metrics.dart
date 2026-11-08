@@ -33,12 +33,12 @@ class IsolateMetrics {
 
   /// Create empty metrics.
   factory IsolateMetrics.empty() => const IsolateMetrics(
-        uptimeMs: 0,
-        processedCount: 0,
-        pendingCount: 0,
-        errorCount: 0,
-        avgLatencyUs: 0,
-      );
+    uptimeMs: 0,
+    processedCount: 0,
+    pendingCount: 0,
+    errorCount: 0,
+    avgLatencyUs: 0,
+  );
 
   /// Calculate error rate.
   double get errorRate {

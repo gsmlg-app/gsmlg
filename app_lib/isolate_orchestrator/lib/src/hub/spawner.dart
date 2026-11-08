@@ -12,6 +12,7 @@ import 'registry.dart';
 class SpawnConfig {
   final String role;
   final String name;
+  final String? path;
   final void Function(SendPort) entryPoint;
   final Map<String, dynamic>? config;
   final List<String> capabilities;
@@ -21,6 +22,7 @@ class SpawnConfig {
   const SpawnConfig({
     required this.role,
     required this.name,
+    this.path,
     required this.entryPoint,
     this.config,
     this.capabilities = const [],
@@ -35,26 +37,21 @@ class SpawnResult {
   final bool success;
   final String? error;
 
-  SpawnResult.success(this.entry)
-      : success = true,
-        error = null;
+  SpawnResult.success(this.entry) : success = true, error = null;
 
   SpawnResult.failure(this.error)
-      : success = false,
-        entry = throw StateError('No entry on failure');
+    : success = false,
+      entry = throw StateError('No entry on failure');
 }
 
 /// Spawns and initializes isolates.
 class IsolateSpawner {
-  final SendPort hubPort;
+  final SendPort? hubPort;
   final MessageIdGenerator idGenerator;
 
   int _spawnCounter = 0;
 
-  IsolateSpawner({
-    required this.hubPort,
-    required this.idGenerator,
-  });
+  IsolateSpawner({this.hubPort, required this.idGenerator});
 
   /// Spawn a new isolate with the given configuration.
   Future<IsolateEntry> spawn(SpawnConfig config) async {
@@ -74,17 +71,24 @@ class IsolateSpawner {
     subscription = broadcastStream.listen((message) {
       if (message is Envelope && message.payload is Register) {
         final reg = message.payload as Register;
+        final capabilities = reg.capabilities.isNotEmpty
+            ? reg.capabilities
+            : config.capabilities;
+        final subscribesTo = reg.subscribesTo.isNotEmpty
+            ? reg.subscribesTo
+            : config.subscribesTo;
 
         final entry = IsolateEntry(
           id: id,
           name: config.name,
           role: config.role,
+          path: config.path,
           isolate: Isolate.current, // Will be replaced
           sendPort: reg.port,
           controlPort: controlPort,
           broadcastStream: broadcastStream,
-          capabilities: reg.capabilities,
-          subscribesTo: reg.subscribesTo,
+          capabilities: capabilities,
+          subscribesTo: subscribesTo,
         );
 
         entry.state = IsolateState.starting;
@@ -102,6 +106,9 @@ class IsolateSpawner {
         id: id,
         name: config.name,
         role: config.role,
+        path: config.path ?? '/${config.name}',
+        capabilities: config.capabilities,
+        subscribesTo: config.subscribesTo,
       ),
       debugName: config.name,
     );
@@ -115,6 +122,7 @@ class IsolateSpawner {
         id: entry.id,
         name: entry.name,
         role: entry.role,
+        path: entry.path,
         isolate: isolate,
         sendPort: entry.sendPort,
         controlPort: entry.controlPort,
@@ -163,10 +171,7 @@ class IsolateSpawner {
       id: idGenerator.next(),
       source: IsolateAddress.hub,
       target: IsolateAddress.of(entry.role, entry.id),
-      payload: Init(
-        config: config ?? {},
-        dependencies: dependencies ?? {},
-      ),
+      payload: Init(config: config ?? {}, dependencies: dependencies ?? {}),
     );
 
     entry.sendPort.send(initEnvelope);
@@ -189,6 +194,9 @@ class _SpawnData {
   final String id;
   final String name;
   final String role;
+  final String path;
+  final List<String> capabilities;
+  final List<String> subscribesTo;
 
   _SpawnData({
     required this.entryPoint,
@@ -196,10 +204,25 @@ class _SpawnData {
     required this.id,
     required this.name,
     required this.role,
+    required this.path,
+    this.capabilities = const [],
+    this.subscribesTo = const [],
   });
 }
 
 /// Wrapper entry point that sets up communication.
 void _isolateEntryWrapper(_SpawnData data) {
-  data.entryPoint(data.hubPort);
+  runZoned(
+    () => data.entryPoint(data.hubPort),
+    zoneValues: {
+      #isolateSpawnMeta: <String, Object>{
+        'id': data.id,
+        'name': data.name,
+        'role': data.role,
+        'path': data.path,
+        'capabilities': data.capabilities,
+        'subscribesTo': data.subscribesTo,
+      },
+    },
+  );
 }

@@ -30,9 +30,9 @@ class RequestManager<TData> {
     Duration tickDuration = const Duration(milliseconds: 100),
     int wheelSize = 64,
   }) : _timerWheel = TimerWheel(
-          tickDuration: tickDuration,
-          wheelSize: wheelSize,
-        ) {
+         tickDuration: tickDuration,
+         wheelSize: wheelSize,
+       ) {
     _timerWheel.start(_handleTimeout);
   }
 
@@ -67,6 +67,7 @@ class RequestManager<TData> {
       sentTo: worker.id,
       sentAt: DateTime.now().microsecondsSinceEpoch,
       timerBucket: timerBucket,
+      timeout: effectiveTimeout,
     );
 
     _registry.register(pending);
@@ -108,10 +109,12 @@ class RequestManager<TData> {
       // Record success - cast to TaskResult<TData> after matching
       // (generic type info is lost after SendPort transfer)
       router.recordSuccess(pending.sentTo, pending.elapsed);
-      pending.completer.complete(TaskResult<TData>(
-        data: payload.data as TData,
-        metadata: payload.metadata,
-      ));
+      pending.completer.complete(
+        TaskResult<TData>(
+          data: payload.data as TData,
+          metadata: payload.metadata,
+        ),
+      );
     } else if (payload is TaskError) {
       // Record failure but don't retry for errors
       router.recordFailure(pending.sentTo);
@@ -164,8 +167,9 @@ class RequestManager<TData> {
     final oldTimerBucket = pending.timerBucket;
     _timerWheel.remove(pending.id, oldTimerBucket);
 
-    // Update pending task with new timer bucket
-    final newTimerBucket = _timerWheel.add(pending.id, defaultTimeout);
+    // Update pending task with new timer bucket using its effective timeout
+    final effectiveTimeout = pending.timeout ?? defaultTimeout;
+    final newTimerBucket = _timerWheel.add(pending.id, effectiveTimeout);
     pending.recordRetry(worker.id, newTimerBucket);
 
     // Resend task
@@ -185,9 +189,7 @@ class RequestManager<TData> {
     final pending = _registry.remove(taskId);
     if (pending != null) {
       _timerWheel.remove(taskId, pending.timerBucket);
-      pending.completer.completeError(
-        TaskCancelledException(taskId),
-      );
+      pending.completer.completeError(TaskCancelledException(taskId));
     }
   }
 

@@ -80,16 +80,16 @@ class SerializableLogRecord {
 
   /// Serialize to Map for SendPort transport.
   Map<String, dynamic> toMap() => {
-        'level': level,
-        'levelName': levelName,
-        'message': message,
-        'loggerName': loggerName,
-        'time': time,
-        'error': error,
-        'stackTrace': stackTrace,
-        'isolateId': isolateId,
-        'context': context,
-      };
+    'level': level,
+    'levelName': levelName,
+    'message': message,
+    'loggerName': loggerName,
+    'time': time,
+    'error': error,
+    'stackTrace': stackTrace,
+    'isolateId': isolateId,
+    'context': context,
+  };
 
   /// Deserialize from Map.
   factory SerializableLogRecord.fromMap(Map<String, dynamic> map) {

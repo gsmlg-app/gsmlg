@@ -73,17 +73,10 @@ class MockWorkerFactory<TData> {
   final Future<TData> Function(TData, String?, Map<String, dynamic>?) handler;
   final Duration? delay;
 
-  MockWorkerFactory({
-    required this.handler,
-    this.delay,
-  });
+  MockWorkerFactory({required this.handler, this.delay});
 
   MockWorker<TData> create(WorkerContext context) {
-    return MockWorker<TData>(
-      context: context,
-      handler: handler,
-      delay: delay,
-    );
+    return MockWorker<TData>(context: context, handler: handler, delay: delay);
   }
 }
 
@@ -142,10 +135,7 @@ class FailingWorker<TData> extends Worker<TData> {
   int _count = 0;
   int _errors = 0;
 
-  FailingWorker({
-    required this.failAfter,
-    required this.transform,
-  });
+  FailingWorker({required this.failAfter, required this.transform});
 
   @override
   WorkerContext get context => _context;
@@ -199,10 +189,7 @@ class SlowWorker<TData> extends Worker<TData> {
   DateTime? _startTime;
   int _count = 0;
 
-  SlowWorker({
-    required this.latency,
-    required this.transform,
-  });
+  SlowWorker({required this.latency, required this.transform});
 
   @override
   WorkerContext get context => _context;
