@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  duskmoon_feedback: ^2.2.5
+  duskmoon_feedback: ^2.2.10
   app_locale: any
 
 dev_dependencies:

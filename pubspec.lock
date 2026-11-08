@@ -556,98 +556,98 @@ packages:
     dependency: "direct main"
     description:
       name: duskmoon_adaptive_scaffold
-      sha256: "16b677d6d1c8fd6913c0e0eb808855aa8521ae362852c977cccc0e1db29f3dd1"
+      sha256: "211f260439e6a1709713fd177fde27425cb11c7223c3a8f81d4cb88ed99ec780"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_code_engine:
     dependency: transitive
     description:
       name: duskmoon_code_engine
-      sha256: "4e9f268b2a93889255633def7839b2859fd969a6658ae32299d9f66019ee89db"
+      sha256: "416e1dd43f3a87189d1fa51f4c7fa06d41eb4bd48075ea20e322ea0cc0644cd6"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_feedback:
     dependency: transitive
     description:
       name: duskmoon_feedback
-      sha256: "812aba07c1aab0624ef2a1b187195f5bab6677b2616e2fecacd31fa393a40d61"
+      sha256: "478ee605e48630eb1d62299b654ebfa0964d892bc2e547f5d4910c8bc9561e5a"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_form:
     dependency: "direct main"
     description:
       name: duskmoon_form
-      sha256: be933ec223f6b7c7274a7acd73ab6132f7025754063ebbafe4f46e2d6b90e4b4
+      sha256: "2f2b6f05fb06774f11b2ed2ccc62731e1d73d1aebe2a36ca03fc9b51f60db02a"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_highlight:
     dependency: transitive
     description:
       name: duskmoon_highlight
-      sha256: a509ea31d58f2fbd31e621dfd3b35693449da106a927108adae79ef117e739f4
+      sha256: dfa85f4bc156d1c2a0d200eee993e26e6e98fa61b840b02710f1f110e267cac5
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_mermaid_renderer:
     dependency: transitive
     description:
       name: duskmoon_mermaid_renderer
-      sha256: "2d61e87e9ee74d10c15d3271f1ab9e963550a63dda9af5fd7cecff13aedf64c7"
+      sha256: "603c56eafdf4ba3cf63a99b73883ad8957b26ab60c2a2061424c31d3051d2f3a"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_settings:
     dependency: "direct main"
     description:
       name: duskmoon_settings
-      sha256: "1122c000eef824a91941e4fe343cbf357aa4c7bcfac04e7a9398dddaeddaeb73"
+      sha256: "72a3c9af02326d66f927176ada2b81aaf0539fc3a50b6c160bdc24228f726e33"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_theme:
     dependency: transitive
     description:
       name: duskmoon_theme
-      sha256: "477f5c8d075224475cec92c6a1a29172d363dec62835eade9908a14d4becd701"
+      sha256: ba6b5e1817758abaaa670ecbf90ca0121b42700e605d5e897a3bc9d0aea1711a
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_theme_bloc:
     dependency: transitive
     description:
       name: duskmoon_theme_bloc
-      sha256: "23f55dd8cca03bf38dc0c2922cc81755032f8cf825b0e2d47c9ab0611ef5ce12"
+      sha256: "32666de7ff08ffc0afe9559b9c410409a75ac4e4defa131d5d5c3cdebd7d847b"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_ui:
     dependency: "direct main"
     description:
       name: duskmoon_ui
-      sha256: "655058d09ff5996949d179907467c52d73582e7702efb801340444c4c7bdd2f1"
+      sha256: "33565b04c0c9287901486a05e572d2883c74254b76b3eedd3e13c707c840ed0c"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_visualization:
     dependency: "direct main"
     description:
       name: duskmoon_visualization
-      sha256: "3b07e10416c6151ab9ac63416fed2367f16a2f03d877f58e46d8a91f77040879"
+      sha256: c95b6b1b1194c2b8bd76d74a0fbe064e0f845c0b436d5f5e68c15b1516e0fc5e
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   duskmoon_widgets:
     dependency: transitive
     description:
       name: duskmoon_widgets
-      sha256: feb4dd4ef36bed919edfd8a450b1c9acefab8f0b4431bddba7eb37eb1687b394
+      sha256: "6ab27440ade1e6f85d9a7aa93a8545958e9d57dedf5f991b3442afb4d7f52875"
       url: "https://pub.dev"
     source: hosted
-    version: "2.2.9"
+    version: "2.2.10"
   equatable:
     dependency: "direct main"
     description:

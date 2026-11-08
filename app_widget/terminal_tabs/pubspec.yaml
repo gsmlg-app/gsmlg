@@ -22,7 +22,7 @@ dependencies:
   app_database: any
   app_secure_storage: any
   app_locale: any
-  duskmoon_ui: ^2.2.5
+  duskmoon_ui: ^2.2.10
   terminal_core: any
   terminal_hosts: any
   terminal_plugin: any

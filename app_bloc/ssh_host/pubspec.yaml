@@ -15,7 +15,7 @@ dependencies:
   meta: ^1.19.0
   app_database: any
   app_secure_storage: any
-  duskmoon_ui: ^2.2.5
+  duskmoon_ui: ^2.2.10
   ssh_key_bloc: any
 
 dev_dependencies:

@@ -14,7 +14,7 @@ dependencies:
     sdk: flutter
   meta: ^1.19.0
   app_database: any
-  duskmoon_ui: ^2.2.5
+  duskmoon_ui: ^2.2.10
   app_security: any
   app_secure_storage: any
 
