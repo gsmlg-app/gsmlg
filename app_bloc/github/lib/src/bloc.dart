@@ -1,3 +1,4 @@
+import 'package:app_logging/app_logging.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
@@ -28,7 +29,8 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
   static const String _baseUrl = 'https://api.github.com';
 
   /// Creates a Dio instance configured for GitHub API.
-  Dio _createDio(String token) {
+  @visibleForTesting
+  static Dio createDio(String token) {
     final dio = Dio(
       BaseOptions(
         baseUrl: _baseUrl,
@@ -39,6 +41,7 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
         },
       ),
     );
+    dio.interceptors.add(ApiCaptureInterceptor(category: 'github'));
     return dio;
   }
 
@@ -55,7 +58,7 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
         return;
       }
 
-      _dio = _createDio(pat);
+      _dio = createDio(pat);
       _api = GitHubApi(_dio!, baseUrl: _baseUrl);
       final userResponse = await _api!.users.getAuthenticatedUser();
       final user = GitHubUser.fromApiResponse(userResponse);
@@ -76,7 +79,7 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
 
     try {
       // Validate PAT by fetching user info
-      _dio = _createDio(event.pat);
+      _dio = createDio(event.pat);
       _api = GitHubApi(_dio!, baseUrl: _baseUrl);
       final userResponse = await _api!.users.getAuthenticatedUser();
       final user = GitHubUser.fromApiResponse(userResponse);
@@ -126,7 +129,7 @@ class GitHubBloc extends Bloc<GitHubEvent, GitHubState> {
 
     try {
       if (_api == null) {
-        _dio = _createDio(currentState.pat);
+        _dio = createDio(currentState.pat);
         _api = GitHubApi(_dio!, baseUrl: _baseUrl);
       }
       final userResponse = await _api!.users.getAuthenticatedUser();

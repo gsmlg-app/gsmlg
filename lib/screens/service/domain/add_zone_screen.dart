@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_database/app_database.dart';
+import 'package:app_logging/app_logging.dart';
 import 'package:cloudflare_dns/cloudflare_dns.dart' as cf;
 import 'package:dio/dio.dart';
 import 'package:domain_bloc/domain_bloc.dart';
@@ -114,6 +115,7 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
               logPrint: (o) => debugPrint(o.toString()),
             ),
           );
+          dio.interceptors.add(ApiCaptureInterceptor(category: 'route53'));
           final client = r53.Route53(dio);
           final response = await client.hostedZones.listHostedZones();
 
@@ -129,15 +131,19 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
           }
 
         case DnsProvider.cloudflare:
-          final dio = Dio(
-            BaseOptions(
-              baseUrl: 'https://api.cloudflare.com/client/v4',
-              headers: {
-                'Authorization': 'Bearer $apiKey',
-                'Content-Type': 'application/json',
-              },
-            ),
-          );
+          final dio =
+              Dio(
+                  BaseOptions(
+                    baseUrl: 'https://api.cloudflare.com/client/v4',
+                    headers: {
+                      'Authorization': 'Bearer $apiKey',
+                      'Content-Type': 'application/json',
+                    },
+                  ),
+                )
+                ..interceptors.add(
+                  ApiCaptureInterceptor(category: 'cloudflare_dns'),
+                );
           final client = cf.CloudflareDns(dio, enableLogging: true);
           final response = await client.zones.listZones();
 
@@ -285,7 +291,11 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                                 children: [
                                   Text(
                                     'No ${_provider == DnsProvider.cloudflare ? "Cloudflare" : "AWS"} accounts configured',
-                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   OutlinedButton.icon(
@@ -387,7 +397,11 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                           ),
                           child: Text(
                             'Select an account and tap "Fetch Available Zones" to see your zones',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -402,7 +416,11 @@ class _AddZoneScreenState extends State<AddZoneScreen> {
                           ),
                           child: Text(
                             'No zones found for this account',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),

@@ -6,6 +6,7 @@ import 'package:cloudflare_dns/cloudflare_dns.dart' as cf;
 import 'package:app_logging/app_logging.dart';
 import 'package:dio/dio.dart';
 import 'package:gsmlg_whois/gsmlg_whois.dart';
+import 'package:http/http.dart' as http;
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 import 'package:ip_db/ip_db.dart';
@@ -1149,7 +1150,9 @@ class ToolExecutor {
   Future<vultr.InstancesApi> _vultrInstancesApi(int accountId) async {
     final secret = await _serviceAccountSecret(accountId);
     final auth = vultr.HttpBearerAuth()..accessToken = secret;
-    return vultr.InstancesApi(vultr.ApiClient(authentication: auth));
+    final apiClient = vultr.ApiClient(authentication: auth)
+      ..client = LoggingHttpClient(http.Client(), defaultCategory: 'vultr');
+    return vultr.InstancesApi(apiClient);
   }
 
   int? _intArg(Object? value) {

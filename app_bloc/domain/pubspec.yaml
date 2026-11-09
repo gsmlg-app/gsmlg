@@ -7,9 +7,13 @@ environment:
 resolution: workspace
 
 dependencies:
+  flutter:
+    sdk: flutter
   bloc: any
   equatable: any
   dio: any
+  meta: any
+  app_logging: any
   drift: any
   app_database: any
   app_secure_storage: any

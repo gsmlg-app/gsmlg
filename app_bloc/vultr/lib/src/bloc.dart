@@ -1,8 +1,10 @@
 import 'package:app_database/app_database.dart';
+import 'package:app_logging/app_logging.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:vultr_api/api.dart';
 
 part 'event.dart';
@@ -27,7 +29,8 @@ class VultrBloc extends Bloc<VultrEvent, VultrState> {
 
   void _initApi(String apiKey) {
     final auth = HttpBearerAuth()..accessToken = apiKey;
-    _apiClient = ApiClient(authentication: auth);
+    _apiClient = ApiClient(authentication: auth)
+      ..client = LoggingHttpClient(http.Client(), defaultCategory: 'vultr');
     _api = InstancesApi(_apiClient!);
   }
 

@@ -1,11 +1,13 @@
 import 'dart:convert';
 
 import 'package:app_database/app_database.dart';
+import 'package:app_logging/app_logging.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:bloc/bloc.dart';
 import 'package:cloudflare_dns/cloudflare_dns.dart' as cf;
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 import 'package:route53/route53.dart' as r53;
 
 import 'models/credentials_model.dart';
@@ -58,7 +60,8 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
     return CloudflareCredentials(apiToken: apiKey);
   }
 
-  Dio _createRoute53Dio(Route53Credentials credentials) {
+  @visibleForTesting
+  static Dio createRoute53Dio(Route53Credentials credentials) {
     final dio = Dio(BaseOptions(
       baseUrl: 'https://route53.amazonaws.com/2013-04-01',
       headers: {
@@ -82,22 +85,25 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
       error: true,
       logPrint: print,
     ));
+    dio.interceptors.add(ApiCaptureInterceptor(category: 'route53'));
     return dio;
   }
 
-  Dio _createCloudflareDio(CloudflareCredentials credentials) {
+  @visibleForTesting
+  static Dio createCloudflareDio(CloudflareCredentials credentials) {
     return Dio(BaseOptions(
       baseUrl: 'https://api.cloudflare.com/client/v4',
       headers: {
         'Authorization': 'Bearer ${credentials.apiToken}',
         'Content-Type': 'application/json',
       },
-    ));
+    ))
+      ..interceptors.add(ApiCaptureInterceptor(category: 'cloudflare_dns'));
   }
 
   cf.CloudflareDns _createCloudflareClient(CloudflareCredentials credentials) {
     return cf.CloudflareDns(
-      _createCloudflareDio(credentials),
+      createCloudflareDio(credentials),
       enableLogging: true,
     );
   }
@@ -138,7 +144,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
       switch (event.zone.provider) {
         case DnsProvider.route53:
           final credentials = await _getRoute53Credentials(event.zone);
-          final dio = _createRoute53Dio(credentials);
+          final dio = createRoute53Dio(credentials);
           final client = r53.Route53(dio);
 
           final response = await client.resourceRecordSets
@@ -190,7 +196,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
       switch (event.zone.provider) {
         case DnsProvider.route53:
           final credentials = await _getRoute53Credentials(event.zone);
-          final dio = _createRoute53Dio(credentials);
+          final dio = createRoute53Dio(credentials);
           final client = r53.Route53(dio);
 
           await client.resourceRecordSets.changeResourceRecordSets(
@@ -245,7 +251,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
       switch (event.zone.provider) {
         case DnsProvider.route53:
           final credentials = await _getRoute53Credentials(event.zone);
-          final dio = _createRoute53Dio(credentials);
+          final dio = createRoute53Dio(credentials);
           final client = r53.Route53(dio);
 
           await client.resourceRecordSets.changeResourceRecordSets(
@@ -305,7 +311,7 @@ class RecordBloc extends Bloc<RecordEvent, RecordState> {
       switch (event.zone.provider) {
         case DnsProvider.route53:
           final credentials = await _getRoute53Credentials(event.zone);
-          final dio = _createRoute53Dio(credentials);
+          final dio = createRoute53Dio(credentials);
           final client = r53.Route53(dio);
 
           await client.resourceRecordSets.changeResourceRecordSets(
