@@ -21,6 +21,10 @@ final class LogCapture {
 
   void attach(LogSink? sink) => _sink = sink;
 
+  /// Whether an API record would currently be written (sink attached and
+  /// [apiEnabled]). Producers use it to skip capture work cheaply.
+  bool get apiActive => apiEnabled && _sink != null;
+
   void api(ApiExchangeRecord r) =>
       _dispatch(apiEnabled, (s) => s.writeApi(r), 'api');
   void agent(AgentLogEvent e) =>
