@@ -45,7 +45,11 @@ void main() {
 
   test('route change closes visit with duration', () {
     tracker.start();
-    tracker.onRouteChanged(Uri.parse('/toolbox/whois'), 'Whois');
+    tracker.onRouteChanged(
+      Uri.parse('/toolbox/whois'),
+      'Whois',
+      routeTemplate: '/toolbox/whois',
+    );
     advance(5);
     tracker.onRouteChanged(Uri.parse('/settings'), null);
     final v = sink.events.last;
@@ -105,5 +109,38 @@ void main() {
     expect(sink.events.last.durationMs, 10000);
     tracker.dispose();
     expect(sink.events.length, 4);
+  });
+
+  test('records route template, never concrete path params', () {
+    tracker.start();
+    tracker.onRouteChanged(
+      Uri.parse('/service/github/gsmlg/secret-repo'),
+      null,
+      routeTemplate: '/service/github/:owner/:repo',
+    );
+    advance(1);
+    tracker.dispose();
+    final v = sink.events.firstWhere((e) => e.eventType == 'screen_view');
+    expect(v.module, 'Service');
+    expect(v.routePath, '/service/github/:owner/:repo');
+    expect(v.screenName, '/service/github/:owner/:repo');
+    final dump = sink.events.map((e) => e.toJson().toString()).join();
+    expect(dump, isNot(contains('gsmlg')));
+    expect(dump, isNot(contains('secret-repo')));
+  });
+
+  test('background time during splash is not charged to reopened visit', () {
+    tracker.start();
+    tracker.onRouteChanged(Uri.parse('/'), null, routeTemplate: '/');
+    advance(5);
+    tracker.onBackground();
+    advance(20);
+    tracker.onRouteChanged(Uri.parse('/home'), 'Home', routeTemplate: '/home');
+    tracker.onForeground();
+    advance(2);
+    tracker.dispose();
+    final v = sink.events.singleWhere((e) => e.eventType == 'screen_view');
+    expect(v.durationMs, 2000);
+    expect(v.screenName, 'Home');
   });
 }

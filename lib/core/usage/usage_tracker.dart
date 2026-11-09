@@ -21,6 +21,7 @@ class UsageTracker {
   Uri? _uri;
   Uri? _resumeUri; // screen to reopen when returning to foreground
   String? _routeName;
+  String? _routeTemplate;
   int _visitMs = 0;
   int _sessionMs = 0;
   DateTime? _foregroundSince;
@@ -57,11 +58,14 @@ class UsageTracker {
     );
   }
 
-  void onRouteChanged(Uri uri, String? routeName) {
+  /// [routeTemplate] is the matched route pattern (e.g. `/service/github/:owner`);
+  /// concrete paths may hold account identifiers and are never recorded.
+  void onRouteChanged(Uri uri, String? routeName, {String? routeTemplate}) {
     if (!_started || _disposed) return;
     if (_foregroundSince == null) {
       _resumeUri = uri.path == SplashScreen.path ? null : uri;
       _routeName = routeName;
+      _routeTemplate = routeTemplate;
       return;
     }
     if (uri.path == _uri?.path) return;
@@ -73,12 +77,14 @@ class UsageTracker {
     _checkpoint();
     _uri = uri;
     _routeName = routeName;
+    _routeTemplate = routeTemplate;
     _visitMs = 0;
   }
 
   void onForeground() {
     if (!_started || _disposed || _foregroundSince != null) return;
     _foregroundSince = _clock();
+    _visitMs = 0; // time spent in background/splash is not charged
     _uri = _resumeUri;
     _resumeUri = null;
   }
@@ -123,8 +129,8 @@ class UsageTracker {
     _emit(
       'screen_view',
       module: moduleFor(uri),
-      screenName: _routeName ?? uri.path,
-      routePath: uri.path,
+      screenName: _routeName ?? _routeTemplate,
+      routePath: _routeTemplate,
       durationMs: _visitMs,
     );
     _uri = null;

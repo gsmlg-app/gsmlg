@@ -64,7 +64,7 @@ class _AppState extends State<App> {
     _usage = UsageTracker()..start();
     _exitListener = AppLifecycleListener(
       onResume: () => _usage.onForeground(),
-      onInactive: () => _usage.onBackground(),
+      onDetach: () => _usage.onBackground(),
       onHide: () => _usage.onBackground(),
       onPause: () => _usage.onBackground(),
       onExitRequested: () async {
@@ -146,7 +146,11 @@ class _AppState extends State<App> {
   void _trackRoute() {
     final configuration = AppRouter.router.routerDelegate.currentConfiguration;
     if (configuration.isEmpty) return;
-    _usage.onRouteChanged(configuration.uri, configuration.last.route.name);
+    _usage.onRouteChanged(
+      configuration.uri,
+      configuration.last.route.name,
+      routeTemplate: configuration.fullPath,
+    );
   }
 
   void _openEditor() {
