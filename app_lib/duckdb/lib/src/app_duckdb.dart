@@ -206,6 +206,40 @@ class AppDuckDb {
     return 0;
   }
 
+  /// One summary row per agent run (see [LogQueryBuilder.buildAgentRunsSql]),
+  /// paged over runs; a run is included when any of its events matches
+  /// [filter], and its aggregates cover all of its events.
+  Future<List<Map<String, dynamic>>> queryAgentRuns({
+    LogFilter filter = const LogFilter(),
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final jsonStr = await rust_duckdb.querySqlJson(
+      sql: LogQueryBuilder.buildAgentRunsSql(
+        filter: filter,
+        limit: limit,
+        offset: offset,
+      ),
+    );
+    final dynamic decoded = jsonDecode(jsonStr);
+    if (decoded is! List) return [];
+    return decoded.whereType<Map<String, dynamic>>().toList();
+  }
+
+  /// Number of agent runs [queryAgentRuns] pages over.
+  Future<int> countAgentRuns({LogFilter filter = const LogFilter()}) async {
+    final jsonStr = await rust_duckdb.querySqlJson(
+      sql: LogQueryBuilder.buildAgentRunsCountSql(filter: filter),
+    );
+    final dynamic decoded = jsonDecode(jsonStr);
+    if (decoded is List && decoded.isNotEmpty) {
+      final total = (decoded.first as Map<String, dynamic>)['total'];
+      if (total is num) return total.toInt();
+      if (total is String) return int.tryParse(total) ?? 0;
+    }
+    return 0;
+  }
+
   /// Distinct API exchange categories, sorted.
   Future<List<String>> listCategories() async {
     final jsonStr = await rust_duckdb.querySqlJson(

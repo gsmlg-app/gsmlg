@@ -2671,6 +2671,12 @@ abstract class AppLocalizations {
   /// **'Errors only'**
   String get logFilterErrorsOnly;
 
+  /// No description provided for @logFilterMethodAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Method: All'**
+  String get logFilterMethodAll;
+
   /// No description provided for @logApiRequest.
   ///
   /// In en, this message translates to:
@@ -2772,12 +2778,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 event} other{{count} events}}'**
   String logAgentEventCount(int count);
-
-  /// No description provided for @logAgentNoRun.
-  ///
-  /// In en, this message translates to:
-  /// **'Events without a run'**
-  String get logAgentNoRun;
 }
 
 class _AppLocalizationsDelegate

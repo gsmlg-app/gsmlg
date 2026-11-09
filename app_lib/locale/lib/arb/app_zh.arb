@@ -373,6 +373,7 @@
   "logCenterExportFailed": "导出失败：{error}",
   "logFilterCategoryAll": "分类：全部",
   "logFilterErrorsOnly": "仅错误",
+  "logFilterMethodAll": "方法：全部",
   "logApiRequest": "请求",
   "logApiResponse": "响应",
   "logApiHeaders": "请求头",
@@ -389,6 +390,5 @@
   "logAgentRunEmpty": "此运行没有记录的事件",
   "logDetailLoadFailed": "加载失败：{error}",
   "logAgentConversation": "会话 {id}",
-  "logAgentEventCount": "{count, plural, other{{count} 个事件}}",
-  "logAgentNoRun": "不属于任何运行的事件"
+  "logAgentEventCount": "{count, plural, other{{count} 个事件}}"
 }

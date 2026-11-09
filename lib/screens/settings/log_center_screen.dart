@@ -32,14 +32,16 @@ class _LogTab {
     required this.table,
     required this.icon,
     required this.label,
-    this.categoryFilter = false,
+    this.apiFilters = false,
     this.groupByRun = false,
   });
 
   final String table;
   final IconData icon;
   final String Function(AppLocalizations l10n) label;
-  final bool categoryFilter;
+
+  /// Category and method filters (API tab).
+  final bool apiFilters;
   final bool groupByRun;
 }
 
@@ -60,7 +62,7 @@ class _LogCenterScreenState extends State<LogCenterScreen>
       table: 'api_exchanges',
       icon: Icons.http,
       label: (l10n) => l10n.logCenterApiLogs,
-      categoryFilter: true,
+      apiFilters: true,
     ),
     _LogTab(
       table: 'agent_events',
@@ -69,6 +71,9 @@ class _LogCenterScreenState extends State<LogCenterScreen>
       groupByRun: true,
     ),
   ];
+
+  /// Tables pruned from the All tab: the ones `v_all_logs` shows.
+  static const _allTabTables = ['system_logs', 'api_exchanges', 'agent_events'];
 
   late final TabController _tabController;
   final _viewerKeys = [
@@ -112,7 +117,9 @@ class _LogCenterScreenState extends State<LogCenterScreen>
     try {
       await _duckDb.deleteOlderThan(
         days: result.days,
-        tables: result.allTables || currentTable == null
+        tables: currentTable == null
+            ? _allTabTables
+            : result.allTables
             ? LogTables.all
             : [currentTable],
       );
@@ -162,8 +169,12 @@ class _LogCenterScreenState extends State<LogCenterScreen>
       tableOrView: tab.table,
       duckDb: widget.duckDb,
       showTypeColumn: tab.table == 'v_all_logs',
-      showCategoryFilter: tab.categoryFilter,
+      showCategoryFilter: tab.apiFilters,
+      showMethodFilter: tab.apiFilters,
       showErrorsOnlyFilter: tab.table != 'v_all_logs',
+      pageQuery: tab.groupByRun
+          ? AgentRunGroupList.pageQuery(widget.duckDb)
+          : null,
       itemsBuilder: tab.groupByRun
           ? (context, items) =>
                 AgentRunGroupList(items: items, duckDb: widget.duckDb)

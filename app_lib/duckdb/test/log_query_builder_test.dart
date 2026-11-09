@@ -49,6 +49,22 @@ void main() {
       expect(sql, contains("conversation_id = 'c''d'"));
     });
 
+    test('method filter matches api_exchanges only, escaped', () {
+      final api = LogQueryBuilder.buildSelectSql(
+        tableOrView: 'api_exchanges',
+        filter: const LogFilter(method: "PO'ST"),
+      );
+      expect(api, contains("method = 'PO''ST'"));
+      for (final table in ['system_logs', 'agent_events', 'v_all_logs']) {
+        final sql = LogQueryBuilder.buildSelectSql(
+          tableOrView: table,
+          filter: const LogFilter(method: 'GET'),
+        );
+        expect(sql, contains('1 = 0'), reason: table);
+        expect(sql, isNot(contains('method =')), reason: table);
+      }
+    });
+
     test('builds prune sql correctly', () {
       final before = DateTime.fromMicrosecondsSinceEpoch(5000000);
       final sql = LogQueryBuilder.buildPruneSql(

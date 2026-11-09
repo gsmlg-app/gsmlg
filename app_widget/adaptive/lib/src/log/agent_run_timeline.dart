@@ -5,7 +5,7 @@ import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
 
 import 'api_exchange_detail.dart';
-import 'log_card_tile.dart';
+import 'duckdb_log_viewer.dart';
 import 'log_detail_sheet.dart';
 
 /// Ordered timeline of one agent run's events. Model turns link to the LLM
@@ -287,77 +287,81 @@ class _AgentRunTimelineState extends State<AgentRunTimeline> {
   }
 }
 
-/// Agent-tab list: one card per run (grouped by `run_id`, in the order the
-/// runs first appear) labelled with its conversation; tapping opens the
+/// Agent-tab list: one card per agent run, built from the run summary rows
+/// of [AppDuckDb.queryAgentRuns] (see [pageQuery]); tapping a card opens the
 /// run's [AgentRunTimeline].
 class AgentRunGroupList extends StatelessWidget {
   const AgentRunGroupList({super.key, required this.items, this.duckDb});
 
+  /// Run items produced by [runItem].
   final List<LogRecordItem> items;
   final AppDuckDb? duckDb;
+
+  /// Maps a run summary row to a list item: id = `run_id`, timestamp and
+  /// message both from the run's latest event.
+  static LogRecordItem runItem(Map<String, dynamic> row) => LogRecordItem(
+        id: '${row['run_id']}',
+        timestamp: DateTime.fromMicrosecondsSinceEpoch(
+          (row['last_us'] as num?)?.toInt() ?? 0,
+        ),
+        logType: 'agent',
+        level: row['has_error'] == true ? LogLevel.error : LogLevel.info,
+        message: '${row['last_summary'] ?? ''}',
+        rawFields: row,
+      );
+
+  /// A [LogPageQuery] paging over agent runs instead of events.
+  static LogPageQuery pageQuery(AppDuckDb? duckDb) =>
+      (filter, limit, offset) async {
+        final db = duckDb ?? AppDuckDb.instance;
+        final total = await db.countAgentRuns(filter: filter);
+        final rows = await db.queryAgentRuns(
+          filter: filter,
+          limit: limit,
+          offset: offset,
+        );
+        return (total: total, items: rows.map(runItem).toList());
+      };
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
     final db = duckDb ?? AppDuckDb.instance;
-
-    final groups = <String?, List<LogRecordItem>>{};
-    for (final item in items) {
-      groups
-          .putIfAbsent(item.rawFields['run_id'] as String?, () => [])
-          .add(item);
-    }
 
     return ListView(
       padding: const EdgeInsets.all(8),
       children: [
-        for (final MapEntry(key: runId, value: events) in groups.entries)
-          if (runId == null)
-            Card(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ListTile(title: Text(l10n.logAgentNoRun)),
-                  for (final item in events)
-                    LogCardTile(
-                      item: item,
-                      showTypeBadge: false,
-                      onTap: () => LogDetailSheet.show(context, item),
-                    ),
-                ],
+        for (final run in items)
+          Card(
+            child: ListTile(
+              leading: Icon(
+                Icons.smart_toy_outlined,
+                color:
+                    run.level == LogLevel.error ? colors.error : colors.primary,
               ),
-            )
-          else
-            Card(
-              child: ListTile(
-                leading: Icon(
-                  Icons.smart_toy_outlined,
-                  color: events.any((e) => e.level == LogLevel.error)
-                      ? colors.error
-                      : colors.primary,
+              title: Text(
+                l10n.logAgentConversation(
+                  '${run.rawFields['conversation_id'] ?? '-'}',
                 ),
-                title: Text(
-                  l10n.logAgentConversation(
-                    '${events.first.rawFields['conversation_id'] ?? '-'}',
+              ),
+              subtitle: Text(
+                [
+                  run.timestamp.toLocal().toString().split('.').first,
+                  l10n.logAgentEventCount(
+                    (run.rawFields['event_count'] as num?)?.toInt() ?? 0,
                   ),
-                ),
-                subtitle: Text(
-                  [
-                    events.last.timestamp.toLocal().toString().split('.').first,
-                    l10n.logAgentEventCount(events.length),
-                    events.first.message,
-                    runId,
-                  ].join(' · '),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () =>
-                    AgentRunTimeline.show(context, duckDb: db, runId: runId),
+                  run.message,
+                  run.id,
+                ].join(' · '),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () =>
+                  AgentRunTimeline.show(context, duckDb: db, runId: run.id),
             ),
+          ),
       ],
     );
   }

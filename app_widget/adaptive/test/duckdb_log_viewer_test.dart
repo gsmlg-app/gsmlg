@@ -1,5 +1,6 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_duckdb/app_duckdb.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -95,6 +96,43 @@ void main() {
 
       await tester.tap(find.text('Reset'));
       expect(cleared, isTrue);
+    });
+  });
+
+  group('LogFilterBar method filter', () {
+    testWidgets('hidden without callback, selects a method with one', (
+      tester,
+    ) async {
+      String? method;
+      Widget bar({ValueChanged<String?>? onMethodChanged}) => MaterialApp(
+            localizationsDelegates: AppLocale.localizationsDelegates,
+            supportedLocales: AppLocale.supportedLocales,
+            home: Scaffold(
+              body: LogFilterBar(
+                onKeywordChanged: (_) {},
+                onTimeRangeChanged: (_) {},
+                onLevelChanged: (_) {},
+                onClearFilters: () {},
+                onMethodChanged: onMethodChanged,
+              ),
+            ),
+          );
+
+      await tester.pumpWidget(bar());
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('logFilterMethod')), findsNothing);
+
+      await tester.pumpWidget(bar(onMethodChanged: (m) => method = m));
+      await tester.pumpAndSettle();
+      expect(find.text('Method: All'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('logFilterMethod')));
+      await tester.pumpAndSettle();
+      for (final m in ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']) {
+        expect(find.text(m), findsWidgets);
+      }
+      await tester.tap(find.text('POST').last);
+      await tester.pumpAndSettle();
+      expect(method, 'POST');
     });
   });
 }

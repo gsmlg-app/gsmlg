@@ -6,6 +6,10 @@ import 'log_detail_sheet.dart';
 import 'log_filter_bar.dart';
 import 'log_pagination_bar.dart';
 
+/// Loads one page of rows plus the total row count for [filter].
+typedef LogPageQuery = Future<({int total, List<LogRecordItem> items})>
+    Function(LogFilter filter, int limit, int offset);
+
 /// Adaptive log viewer querying DuckDB with dynamic filters, pagination,
 /// and responsive mobile Card / desktop DataTable rendering.
 class DuckDbLogViewer extends StatefulWidget {
@@ -21,6 +25,13 @@ class DuckDbLogViewer extends StatefulWidget {
   /// Shows the errors-only toggle.
   final bool showErrorsOnlyFilter;
 
+  /// Shows the HTTP method dropdown.
+  final bool showMethodFilter;
+
+  /// Replaces the default `countLogs` / `queryLogs` page loading, e.g. to
+  /// page over aggregated rows such as agent runs.
+  final LogPageQuery? pageQuery;
+
   /// Replaces the default table / card list rendering of the current page.
   final Widget Function(BuildContext context, List<LogRecordItem> items)?
       itemsBuilder;
@@ -34,6 +45,8 @@ class DuckDbLogViewer extends StatefulWidget {
     this.actions,
     this.showCategoryFilter = false,
     this.showErrorsOnlyFilter = false,
+    this.showMethodFilter = false,
+    this.pageQuery,
     this.itemsBuilder,
   });
 
@@ -51,6 +64,7 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
   LogLevel? _level;
   String? _category;
   bool _errorsOnly = false;
+  String? _method;
   List<String> _categories = const [];
   int _currentPage = 0;
 
@@ -83,6 +97,7 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
         level: _level?.displayName,
         category: _category,
         errorsOnly: _errorsOnly ? true : null,
+        method: _method,
       );
 
   bool get _hasFilters =>
@@ -90,6 +105,7 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
       _timeRange != null ||
       _level != null ||
       _category != null ||
+      _method != null ||
       _errorsOnly;
 
   @override
@@ -116,18 +132,23 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
 
     try {
       final filter = this.filter;
-      final total = await _duckDb.countLogs(
-        tableOrView: widget.tableOrView,
-        filter: filter,
-      );
-
       final offset = _currentPage * _pageSize;
-      final logs = await _duckDb.queryLogs(
-        tableOrView: widget.tableOrView,
-        filter: filter,
-        limit: _pageSize,
-        offset: offset,
-      );
+      final page = widget.pageQuery != null
+          ? await widget.pageQuery!(filter, _pageSize, offset)
+          : (
+              total: await _duckDb.countLogs(
+                tableOrView: widget.tableOrView,
+                filter: filter,
+              ),
+              items: await _duckDb.queryLogs(
+                tableOrView: widget.tableOrView,
+                filter: filter,
+                limit: _pageSize,
+                offset: offset,
+              ),
+            );
+      final total = page.total;
+      final logs = page.items;
 
       if (mounted) {
         setState(() {
@@ -179,6 +200,14 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
     _fetchData();
   }
 
+  void _onMethodChanged(String? method) {
+    setState(() {
+      _method = method;
+      _currentPage = 0;
+    });
+    _fetchData();
+  }
+
   void _onErrorsOnlyChanged(bool errorsOnly) {
     setState(() {
       _errorsOnly = errorsOnly;
@@ -193,6 +222,7 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
       _timeRange = null;
       _level = null;
       _category = null;
+      _method = null;
       _errorsOnly = false;
       _currentPage = 0;
     });
@@ -240,6 +270,8 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
           initialCategory: _category,
           onCategoryChanged:
               widget.showCategoryFilter ? _onCategoryChanged : null,
+          initialMethod: _method,
+          onMethodChanged: widget.showMethodFilter ? _onMethodChanged : null,
           initialErrorsOnly: _errorsOnly,
           onErrorsOnlyChanged:
               widget.showErrorsOnlyFilter ? _onErrorsOnlyChanged : null,

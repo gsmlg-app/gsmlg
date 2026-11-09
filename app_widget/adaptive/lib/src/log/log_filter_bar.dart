@@ -6,9 +6,13 @@ import 'package:flutter/material.dart';
 
 /// Filter bar with search text field, date range selector, and level dropdown.
 ///
-/// The category dropdown and errors-only toggle are shown only when their
-/// callbacks ([onCategoryChanged], [onErrorsOnlyChanged]) are provided.
+/// The category and method dropdowns and the errors-only toggle are shown
+/// only when their callbacks ([onCategoryChanged], [onMethodChanged],
+/// [onErrorsOnlyChanged]) are provided.
 class LogFilterBar extends StatefulWidget {
+  /// Methods offered by the method dropdown.
+  static const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
   final String? initialKeyword;
   final DateTimeRange? initialTimeRange;
   final LogLevel? initialLevel;
@@ -19,6 +23,8 @@ class LogFilterBar extends StatefulWidget {
   final List<String> categories;
   final String? initialCategory;
   final ValueChanged<String?>? onCategoryChanged;
+  final String? initialMethod;
+  final ValueChanged<String?>? onMethodChanged;
   final bool initialErrorsOnly;
   final ValueChanged<bool>? onErrorsOnlyChanged;
 
@@ -34,6 +40,8 @@ class LogFilterBar extends StatefulWidget {
     this.categories = const [],
     this.initialCategory,
     this.onCategoryChanged,
+    this.initialMethod,
+    this.onMethodChanged,
     this.initialErrorsOnly = false,
     this.onErrorsOnlyChanged,
   });
@@ -105,6 +113,7 @@ class _LogFilterBarState extends State<LogFilterBar> {
       widget.initialTimeRange != null ||
       widget.initialLevel != null ||
       widget.initialCategory != null ||
+      widget.initialMethod != null ||
       widget.initialErrorsOnly;
 
   @override
@@ -278,6 +287,31 @@ class _LogFilterBarState extends State<LogFilterBar> {
                           DropdownMenuItem<String?>(value: c, child: Text(c)),
                       ],
                       onChanged: widget.onCategoryChanged,
+                    ),
+                  ),
+                ),
+
+              if (widget.onMethodChanged != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: colors.outline),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String?>(
+                      key: const Key('logFilterMethod'),
+                      value: widget.initialMethod,
+                      isDense: true,
+                      items: [
+                        DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text(context.l10n.logFilterMethodAll),
+                        ),
+                        for (final m in LogFilterBar.httpMethods)
+                          DropdownMenuItem<String?>(value: m, child: Text(m)),
+                      ],
+                      onChanged: widget.onMethodChanged,
                     ),
                   ),
                 ),

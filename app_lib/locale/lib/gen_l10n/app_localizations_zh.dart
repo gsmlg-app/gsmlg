@@ -1343,6 +1343,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logFilterErrorsOnly => '仅错误';
 
   @override
+  String get logFilterMethodAll => '方法：全部';
+
+  @override
   String get logApiRequest => '请求';
 
   @override
@@ -1403,9 +1406,6 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get logAgentNoRun => '不属于任何运行的事件';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

@@ -583,6 +583,7 @@
   },
   "logFilterCategoryAll": "Category: All",
   "logFilterErrorsOnly": "Errors only",
+  "logFilterMethodAll": "Method: All",
   "logApiRequest": "Request",
   "logApiResponse": "Response",
   "logApiHeaders": "Headers",
@@ -620,6 +621,5 @@
         "type": "int"
       }
     }
-  },
-  "logAgentNoRun": "Events without a run"
+  }
 }

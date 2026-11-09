@@ -21,6 +21,7 @@ class LogFilter {
     this.runId,
     this.sessionId,
     this.errorsOnly,
+    this.method,
   });
 
   final String? keyword;
@@ -31,6 +32,9 @@ class LogFilter {
   final String? runId;
   final String? sessionId;
   final bool? errorsOnly;
+
+  /// HTTP method (`api_exchanges` only).
+  final String? method;
 }
 
 /// Safe SQL generator for querying, counting, and pruning logs in DuckDB.
@@ -121,6 +125,10 @@ class LogQueryBuilder {
             : '1 = 0',
       );
     }
+    final method = filter.method;
+    if (method != null && method.isNotEmpty) {
+      conditions.add(isApi ? _eq('method', method) : '1 = 0');
+    }
     final conversationId = filter.conversationId;
     if (conversationId != null && conversationId.isNotEmpty) {
       conditions.add(
@@ -171,6 +179,39 @@ class LogQueryBuilder {
     final where = buildWhereClause(tableOrView: tableOrView, filter: filter);
     return 'SELECT COUNT(*) AS total FROM $tableOrView$where;';
   }
+
+  /// Selects the runs (non-null `run_id`) having at least one `agent_events`
+  /// row matching [filter]; the run aggregates below cover all its events.
+  static String _matchingRunsCte(LogFilter filter) {
+    final where = buildWhereClause(tableOrView: 'agent_events', filter: filter);
+    final runFilter = where.isEmpty
+        ? ' WHERE run_id IS NOT NULL'
+        : '$where AND run_id IS NOT NULL';
+    return 'WITH runs AS (SELECT DISTINCT run_id FROM agent_events$runFilter)';
+  }
+
+  /// One summary row per agent run, latest activity first: `run_id`,
+  /// `conversation_id`, `started_us`, `last_us`, `event_count`, `has_error`,
+  /// `last_summary` (the summary of the latest event).
+  static String buildAgentRunsSql({
+    LogFilter filter = const LogFilter(),
+    int limit = 50,
+    int offset = 0,
+  }) =>
+      '${_matchingRunsCte(filter)} '
+      'SELECT run_id, '
+      'arg_max(conversation_id, timestamp_us) AS conversation_id, '
+      'min(timestamp_us) AS started_us, max(timestamp_us) AS last_us, '
+      'count(*) AS event_count, '
+      "bool_or(is_error OR level IN ('ERROR', 'SEVERE', 'SHOUT')) AS has_error, "
+      'arg_max(summary, timestamp_us) AS last_summary '
+      'FROM agent_events WHERE run_id IN (SELECT run_id FROM runs) '
+      'GROUP BY run_id ORDER BY last_us DESC, run_id '
+      'LIMIT $limit OFFSET $offset;';
+
+  static String buildAgentRunsCountSql(
+          {LogFilter filter = const LogFilter()}) =>
+      '${_matchingRunsCte(filter)} SELECT COUNT(*) AS total FROM runs;';
 
   /// Export query ordered oldest first. `api_exchanges` yields only the
   /// stored `record_json`.

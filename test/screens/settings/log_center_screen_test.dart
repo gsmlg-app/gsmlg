@@ -23,6 +23,16 @@ class _FakeDuckDb implements AppDuckDb {
   }) async => 0;
 
   @override
+  Future<int> countAgentRuns({LogFilter filter = const LogFilter()}) async => 0;
+
+  @override
+  Future<List<Map<String, dynamic>>> queryAgentRuns({
+    LogFilter filter = const LogFilter(),
+    int limit = 50,
+    int offset = 0,
+  }) async => const [];
+
+  @override
   Future<List<String>> listCategories() async => const ['llm'];
 
   @override
@@ -106,5 +116,38 @@ void main() {
     expect(fake.deleteCalls, hasLength(1));
     expect(fake.deleteCalls.single.days, 3);
     expect(fake.deleteCalls.single.tables, ['api_exchanges']);
+  });
+
+  testWidgets('All tab deletes from system, api and agent tables only', (
+    tester,
+  ) async {
+    final fake = _FakeDuckDb();
+    await tester.pumpWidget(_app(fake));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Log Maintenance'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete Old Data…'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('logCenterPruneDays')), '5');
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(fake.deleteCalls.single.days, 5);
+    expect(fake.deleteCalls.single.tables, [
+      'system_logs',
+      'api_exchanges',
+      'agent_events',
+    ]);
+  });
+
+  testWidgets('method filter is shown on the API tab only', (tester) async {
+    await tester.pumpWidget(_app(_FakeDuckDb()));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('logFilterMethod')), findsNothing);
+
+    await tester.tap(find.widgetWithText(Tab, 'API'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('logFilterMethod')), findsOneWidget);
   });
 }

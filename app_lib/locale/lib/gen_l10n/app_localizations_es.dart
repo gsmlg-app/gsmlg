@@ -1360,6 +1360,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get logFilterErrorsOnly => 'Errors only';
 
   @override
+  String get logFilterMethodAll => 'Method: All';
+
+  @override
   String get logApiRequest => 'Request';
 
   @override
@@ -1421,7 +1424,4 @@ class AppLocalizationsEs extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get logAgentNoRun => 'Events without a run';
 }
