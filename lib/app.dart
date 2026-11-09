@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:navigation_bloc/navigation_bloc.dart';
 import 'package:theme_bloc/theme_bloc.dart';
 
+import 'core/usage/usage_tracker.dart';
 import 'destination.dart';
 import 'duo/duo_controller.dart';
 import 'router.dart';
@@ -35,6 +36,7 @@ class _AppState extends State<App> {
   StreamSubscription<DmThemeState>? _themeSub;
   StreamSubscription<void>? _editorSub;
   late final AppLifecycleListener _exitListener;
+  late final UsageTracker _usage;
 
   Future<void> _flushLogs() async {
     try {
@@ -59,9 +61,16 @@ class _AppState extends State<App> {
     final themeBloc = context.read<DmThemeBloc>();
     final editorFiles = context.read<EditorFileService>();
     _editorSub = editorFiles.openRequests.listen((_) => _openEditor());
+    _usage = UsageTracker()..start();
     _exitListener = AppLifecycleListener(
+      onResume: () => _usage.onForeground(),
+      onInactive: () => _usage.onBackground(),
+      onHide: () => _usage.onBackground(),
+      onPause: () => _usage.onBackground(),
       onExitRequested: () async {
         final response = await _confirmExit();
+        // Close the session before flushing so session_end is persisted.
+        if (response == AppExitResponse.exit) _usage.dispose();
         await _flushLogs();
         return response;
       },
@@ -130,6 +139,14 @@ class _AppState extends State<App> {
     _duoManager.start();
     _themeSub = themeBloc.stream.listen((_) => _syncDuoState());
     AppRouter.router.routerDelegate.addListener(_syncDuoState);
+    AppRouter.router.routerDelegate.addListener(_trackRoute);
+    _trackRoute();
+  }
+
+  void _trackRoute() {
+    final configuration = AppRouter.router.routerDelegate.currentConfiguration;
+    if (configuration.isEmpty) return;
+    _usage.onRouteChanged(configuration.uri, configuration.last.route.name);
   }
 
   void _openEditor() {
@@ -178,6 +195,8 @@ class _AppState extends State<App> {
     _exitListener.dispose();
     _themeSub?.cancel();
     AppRouter.router.routerDelegate.removeListener(_syncDuoState);
+    AppRouter.router.routerDelegate.removeListener(_trackRoute);
+    _usage.dispose();
     _duoManager.dispose();
     super.dispose();
   }
