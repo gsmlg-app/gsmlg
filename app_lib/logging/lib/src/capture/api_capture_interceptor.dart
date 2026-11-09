@@ -14,7 +14,8 @@ typedef _Start = ({DateTime ts, Stopwatch watch, String requestId});
 /// request flow. Add it **last** so it sees final headers (after signing).
 ///
 /// `RequestOptions.extra['log_category']` (String) and
-/// `extra['log_context']` ([LogContext]) override the constructor values.
+/// `extra['log_context']` ([LogContext]) override the constructor values;
+/// `extra['log_secret_headers']` (`Set<String>`) adds to [secretHeaders].
 class ApiCaptureInterceptor extends Interceptor {
   ApiCaptureInterceptor({
     required this.category,
@@ -64,6 +65,10 @@ class ApiCaptureInterceptor extends Interceptor {
     if (start is! _Start || !LogCapture.instance.apiActive) return;
     final cat = options.extra['log_category'];
     final ctx = options.extra['log_context'];
+    final extraSecrets = options.extra['log_secret_headers'];
+    final secrets = extraSecrets is Set<String>
+        ? {...secretHeaders, ...extraSecrets}
+        : secretHeaders;
     LogCapture.instance.api(
       ApiExchangeRecord(
         ts: start.ts,
@@ -77,7 +82,7 @@ class ApiCaptureInterceptor extends Interceptor {
             for (final e in options.headers.entries) e.key: _values(e.value),
           },
           bodyBytes: _bytes(options.data),
-          secretHeaders: secretHeaders,
+          secretHeaders: secrets,
         ),
         response: response == null
             ? null
@@ -87,7 +92,7 @@ class ApiCaptureInterceptor extends Interceptor {
                 bodyBytes: options.responseType == ResponseType.stream
                     ? const []
                     : _bytes(response.data),
-                secretHeaders: secretHeaders,
+                secretHeaders: secrets,
               ),
         category: cat is String ? cat : category,
         context: ctx is LogContext ? ctx : context?.call(),

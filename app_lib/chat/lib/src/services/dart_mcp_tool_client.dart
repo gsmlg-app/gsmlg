@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:dart_mcp/client.dart' as mcp;
 import 'package:dart_mcp/stdio.dart';
+import 'package:app_logging/app_logging.dart';
 import 'package:dio/dio.dart';
 import 'package:stream_channel/stream_channel.dart';
 
@@ -24,9 +25,14 @@ class DartMcpStdioServerConfig {
 }
 
 class DartMcpHttpServerConfig {
-  const DartMcpHttpServerConfig({required this.url, this.headers = const {}});
+  const DartMcpHttpServerConfig({
+    required this.url,
+    this.headers = const {},
+    this.name,
+  });
 
   final String url;
+  final String? name;
   final Map<String, String> headers;
 }
 
@@ -38,7 +44,7 @@ class DartMcpToolClient {
   }) : _client = mcp.MCPClient(
          mcp.Implementation(name: clientName, version: clientVersion),
        ),
-       _dio = dio ?? Dio();
+       _dio = (dio ?? Dio())..addApiCaptureOnce();
 
   final mcp.MCPClient _client;
   final Dio _dio;
@@ -189,6 +195,13 @@ class DartMcpToolClient {
             options: Options(
               responseType: ResponseType.plain,
               headers: headers,
+              extra: {
+                'log_category': config.name == null
+                    ? 'mcp'
+                    : 'mcp:${config.name}',
+                // User-configured MCP headers are all treated as secrets.
+                'log_secret_headers': config.headers.keys.toSet(),
+              },
             ),
             data: message,
           );
@@ -346,5 +359,14 @@ String? _jsonRpcErrorResponse(String requestMessage, String message) {
     });
   } catch (_) {
     return null;
+  }
+}
+
+extension ApiCaptureDio on Dio {
+  /// Adds [ApiCaptureInterceptor] (generic `tool` category, overridden per
+  /// request via `extra['log_category']`) unless one is already attached.
+  void addApiCaptureOnce() {
+    if (interceptors.any((i) => i is ApiCaptureInterceptor)) return;
+    interceptors.add(ApiCaptureInterceptor(category: 'tool'));
   }
 }

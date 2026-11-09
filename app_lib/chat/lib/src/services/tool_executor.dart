@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:app_database/app_database.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:cloudflare_dns/cloudflare_dns.dart' as cf;
+import 'package:app_logging/app_logging.dart';
 import 'package:dio/dio.dart';
 import 'package:gsmlg_whois/gsmlg_whois.dart';
 import 'package:html/dom.dart' as dom;
@@ -49,7 +50,7 @@ class ToolExecutor {
        _vault = vault,
        _remoteMcpProfilesProvider = remoteMcpProfilesProvider,
        _remoteMcpToolCaller = remoteMcpToolCaller,
-       _dio = dio ?? Dio(),
+       _dio = (dio ?? Dio())..addApiCaptureOnce(),
        _dartMcpToolClient = dartMcpToolClient ?? DartMcpToolClient(dio: dio);
 
   IpDatabase? _ipDatabase;
@@ -394,6 +395,7 @@ class ToolExecutor {
         'response': await _dartMcpToolClient.callHttpTool(
           config: DartMcpHttpServerConfig(
             url: server.url,
+            name: server.name,
             headers: headers.cast<String, String>(),
           ),
           name: tool.name,
@@ -457,6 +459,7 @@ class ToolExecutor {
             responseType: ResponseType.plain,
             receiveTimeout: const Duration(seconds: 20),
             sendTimeout: const Duration(seconds: 10),
+            extra: const {'log_category': 'tool:web_fetch'},
             headers: const {
               'Accept':
                   'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.8',
@@ -527,6 +530,7 @@ class ToolExecutor {
           responseType: ResponseType.json,
           receiveTimeout: const Duration(seconds: 20),
           sendTimeout: const Duration(seconds: 10),
+          extra: const {'log_category': 'tool:web_search'},
           headers: {
             'Authorization': 'Bearer $apiKey',
             'Accept': 'application/json',
@@ -1051,6 +1055,7 @@ class ToolExecutor {
         serviceName: 'route53',
       ),
     );
+    dio.interceptors.add(ApiCaptureInterceptor(category: 'route53'));
     return r53.Route53(dio);
   }
 
@@ -1065,7 +1070,7 @@ class ToolExecutor {
             'Content-Type': 'application/json',
           },
         ),
-      ),
+      )..interceptors.add(ApiCaptureInterceptor(category: 'cloudflare_dns')),
     );
   }
 

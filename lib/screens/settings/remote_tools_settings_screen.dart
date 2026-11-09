@@ -642,6 +642,7 @@ class _RemoteToolSettingsScreenState extends State<RemoteToolSettingsScreen> {
     final tools = await DartMcpToolClient().listHttpTools(
       DartMcpHttpServerConfig(
         url: profile.url,
+        name: profile.name,
         headers: headers.cast<String, String>(),
       ),
     );

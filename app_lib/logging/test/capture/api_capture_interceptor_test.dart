@@ -95,6 +95,20 @@ void main() {
     );
   });
 
+  test('extra log_secret_headers redacts per request', () async {
+    final dio = make(200, '{}');
+    await dio.get<dynamic>(
+      '/x',
+      options: Options(
+        headers: {'X-Team-Token': 'abc'},
+        extra: {
+          'log_secret_headers': {'X-Team-Token'},
+        },
+      ),
+    );
+    expect(sink.api.single.request!.headers['X-Team-Token'], ['[REDACTED]']);
+  });
+
   test('extra overrides category and context', () async {
     final dio = make(200, '{}');
     await dio.get<dynamic>(
