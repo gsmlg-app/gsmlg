@@ -46,14 +46,23 @@ abstract final class Redaction {
         final i = pair.indexOf('=');
         if (i < 0) return pair;
         final raw = pair.substring(0, i);
-        String name;
+        String? name;
         try {
           name = Uri.decodeQueryComponent(raw);
         } on ArgumentError {
-          name = raw;
+          name = null; // Undecodable name: fail closed and redact the value.
         }
-        return _queryKeys.contains(name.toLowerCase())
+        return name == null || _queryKeys.contains(name.toLowerCase())
             ? '${pair.substring(0, i)}=$redacted'
             : pair;
       }).join('&');
+
+  /// Replaces occurrences of [u] in [text] (e.g. an exception message) with
+  /// [u] whose secret query values are redacted.
+  static String inText(String text, Uri u) {
+    if (!u.hasQuery) return text;
+    final raw = u.toString();
+    final safe = raw.replaceFirst('?${u.query}', '?${query(u.query)}');
+    return text.replaceAll(raw, safe);
+  }
 }

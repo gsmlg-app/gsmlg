@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import 'api_exchange_record.dart';
 import 'log_capture.dart';
 import 'log_context.dart';
+import 'redaction.dart';
 
 typedef _CaptureError = ({String type, String message, String? stackTrace});
 
@@ -50,7 +51,10 @@ final class HttpCaptureTag {
 /// response headers arrive and a `response` record when the body stream ends
 /// (done, error or cancel). Other responses produce one `exchange` record when
 /// the body stream ends. Transport failures produce an `exchange` record with
-/// `error` and the exception is rethrown.
+/// `error` and the exception is rethrown. A record is `aborted` only when the
+/// request's `abortTrigger` fired or a `RequestAbortedException` was seen; a
+/// plain consumer cancel is a normal end. Aborts never populate `error`.
+/// Without a tagged context, [LogContext.current] is used.
 class LoggingHttpClient extends http.BaseClient {
   LoggingHttpClient(this._inner, {this.defaultCategory = 'http'});
 
@@ -69,6 +73,20 @@ class LoggingHttpClient extends http.BaseClient {
     final tag = HttpCaptureTag._tags[request];
     final secrets = tag?.secretHeaders ?? const <String>{};
     final requestCapture = _guard(() => _captureRequest(request, secrets));
+    final context = tag?.context ?? LogContext.current;
+    // Registered before the inner client's listener so the flag is set before
+    // the resulting RequestAbortedException reaches the stream.
+    var abortFired = false;
+    final abortTrigger =
+        request is http.Abortable ? request.abortTrigger : null;
+    if (abortTrigger != null) {
+      unawaited(
+        abortTrigger.then<void>(
+          (_) => abortFired = true,
+          onError: (Object _) {},
+        ),
+      );
+    }
 
     void emit(
       String recordType, {
@@ -85,10 +103,13 @@ class LoggingHttpClient extends http.BaseClient {
               durationMs:
                   recordType == 'request' ? null : watch.elapsedMilliseconds,
               request: recordType == 'response' ? null : requestCapture,
+              method: requestCapture?.method,
+              host: requestCapture?.host,
+              path: requestCapture?.uri,
               response: response,
               category: tag?.category ?? defaultCategory,
               apiType: tag?.apiType,
-              context: tag?.context,
+              context: context,
               error: error,
               aborted: aborted,
             ),
@@ -99,10 +120,11 @@ class LoggingHttpClient extends http.BaseClient {
     try {
       inner = await _inner.send(request);
     } catch (e, st) {
+      final aborted = abortFired || e is http.RequestAbortedException;
       emit(
         'exchange',
-        error: _describe(e, st),
-        aborted: e is http.RequestAbortedException,
+        error: aborted ? null : _describe(e, st, request.url),
+        aborted: aborted,
       );
       rethrow;
     }
@@ -116,9 +138,12 @@ class LoggingHttpClient extends http.BaseClient {
     StackTrace? errorStack;
     var finished = false;
 
-    void finish({required bool cancelled}) {
+    // A consumer cancel alone (e.g. stopping at an SSE end marker) is a
+    // normal end; only a fired abort trigger or abort error counts as aborted.
+    void finish() {
       if (finished) return;
       finished = true;
+      final aborted = abortFired || error is http.RequestAbortedException;
       emit(
         streamed ? 'response' : 'exchange',
         response: _guard(
@@ -129,9 +154,10 @@ class LoggingHttpClient extends http.BaseClient {
             secretHeaders: secrets,
           ),
         ),
-        error: error == null ? null : _describe(error!, errorStack),
-        aborted: (cancelled && error == null) ||
-            error is http.RequestAbortedException,
+        error: error == null || aborted
+            ? null
+            : _describe(error!, errorStack, request.url),
+        aborted: aborted,
       );
     }
 
@@ -150,7 +176,7 @@ class LoggingHttpClient extends http.BaseClient {
             controller.addError(e, st);
           },
           onDone: () {
-            finish(cancelled: false);
+            finish();
             controller.close();
           },
         );
@@ -158,7 +184,7 @@ class LoggingHttpClient extends http.BaseClient {
       onPause: () => sub?.pause(),
       onResume: () => sub?.resume(),
       onCancel: () {
-        finish(cancelled: true);
+        finish();
         return sub?.cancel();
       },
     );
@@ -222,9 +248,9 @@ class LoggingHttpClient extends http.BaseClient {
             e.value.toLowerCase().contains('text/event-stream'),
       );
 
-  static _CaptureError _describe(Object e, StackTrace? st) => (
+  static _CaptureError _describe(Object e, StackTrace? st, Uri url) => (
         type: e.runtimeType.toString(),
-        message: e.toString(),
+        message: Redaction.inText(e.toString(), url),
         stackTrace: st?.toString(),
       );
 

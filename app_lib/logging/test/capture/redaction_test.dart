@@ -27,7 +27,10 @@ void main() {
     });
   });
   test('malformed percent escape does not throw', () {
-    expect(Redaction.query('%zz=1&api_key=abc'), '%zz=1&api_key=[REDACTED]');
+    expect(
+      Redaction.query('%zz=1&api_key=abc'),
+      '%zz=[REDACTED]&api_key=[REDACTED]',
+    );
     expect(
       () => HttpMessageCapture.request(
         method: 'GET',

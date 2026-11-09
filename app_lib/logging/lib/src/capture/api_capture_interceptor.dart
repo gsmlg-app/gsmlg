@@ -7,8 +7,14 @@ import 'package:uuid/uuid.dart';
 import 'api_exchange_record.dart';
 import 'log_capture.dart';
 import 'log_context.dart';
+import 'redaction.dart';
 
-typedef _Start = ({DateTime ts, Stopwatch watch, String requestId});
+typedef _Start = ({
+  DateTime ts,
+  Stopwatch watch,
+  String requestId,
+  LogContext? zoneContext,
+});
 
 /// Records each Dio exchange via [LogCapture.instance] without altering the
 /// request flow. Add it **last** so it sees final headers (after signing).
@@ -16,6 +22,8 @@ typedef _Start = ({DateTime ts, Stopwatch watch, String requestId});
 /// `RequestOptions.extra['log_category']` (String) and
 /// `extra['log_context']` ([LogContext]) override the constructor values;
 /// `extra['log_secret_headers']` (`Set<String>`) adds to [secretHeaders].
+/// Without an explicit context, the [LogContext.current] zone context at
+/// request time is used.
 class ApiCaptureInterceptor extends Interceptor {
   ApiCaptureInterceptor({
     required this.category,
@@ -38,6 +46,7 @@ class ApiCaptureInterceptor extends Interceptor {
         ts: DateTime.now(),
         watch: Stopwatch()..start(),
         requestId: _uuid.v4(),
+        zoneContext: LogContext.current,
       );
     });
     handler.next(options);
@@ -95,12 +104,12 @@ class ApiCaptureInterceptor extends Interceptor {
                 secretHeaders: secrets,
               ),
         category: cat is String ? cat : category,
-        context: ctx is LogContext ? ctx : context?.call(),
+        context: ctx is LogContext ? ctx : context?.call() ?? start.zoneContext,
         error: error == null
             ? null
             : (
                 type: error.runtimeType.toString(),
-                message: error.toString(),
+                message: Redaction.inText(error.toString(), options.uri),
                 stackTrace: error.stackTrace.toString(),
               ),
         aborted: error?.type == DioExceptionType.cancel,

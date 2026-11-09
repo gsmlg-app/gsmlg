@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:app_logging/app_logging.dart' show LogContext;
 import 'package:dart_agent_core/dart_agent_core.dart';
 
 import '../services/tool_executor.dart';
@@ -330,51 +331,55 @@ class ToolExecutionGateway {
         ),
       );
 
-      // Execute through registered backend
-      dynamic rawResult;
+      // Execute through registered backend. HTTP calls made by the backend
+      // are captured with this run/tool-call context.
       bool isError = false;
-
-      if (_shellService != null && _shellService.handlesTool(toolName)) {
-        backend = 'shell';
-        rawResult = await _shellService.executeTool(
-          toolName: toolName,
-          arguments: arguments,
-          runId: runId,
-          sessionId: sessionId,
-          cancelToken: cancelToken,
-        );
-      } else if (_subAgentSupervisor != null &&
-          _subAgentSupervisor.handlesTool(toolName)) {
-        backend = 'sub_agent';
-        rawResult = await _subAgentSupervisor.executeTool(
-          toolName: toolName,
-          arguments: arguments,
-          parentRunId: runId,
-          sessionId: sessionId,
-          cancelToken: cancelToken,
-        );
-      } else if (_memoryProvider != null &&
-          _memoryProvider.handlesTool(toolName)) {
-        backend = 'memory';
-        rawResult = await _memoryProvider.executeTool(
-          toolName: toolName,
-          arguments: arguments,
-          sessionId: sessionId,
-        );
-      } else if (_skillRegistry != null &&
-          _skillRegistry.handlesTool(toolName)) {
-        backend = 'skill';
-        rawResult = await _skillRegistry.executeTool(
-          toolName: toolName,
-          arguments: arguments,
-        );
-      } else if (_toolExecutor != null) {
-        backend = 'tool_executor';
-        rawResult = await _toolExecutor.execute(toolName, arguments);
-      } else {
-        rawResult = {'error': 'No executor available for tool: $toolName'};
-        isError = true;
-      }
+      final dynamic rawResult = await LogContext.runZoned(
+        LogContext(conversationId: sessionId, runId: runId, toolCallId: callId),
+        () async {
+          if (_shellService != null && _shellService.handlesTool(toolName)) {
+            backend = 'shell';
+            return await _shellService.executeTool(
+              toolName: toolName,
+              arguments: arguments,
+              runId: runId,
+              sessionId: sessionId,
+              cancelToken: cancelToken,
+            );
+          } else if (_subAgentSupervisor != null &&
+              _subAgentSupervisor.handlesTool(toolName)) {
+            backend = 'sub_agent';
+            return await _subAgentSupervisor.executeTool(
+              toolName: toolName,
+              arguments: arguments,
+              parentRunId: runId,
+              sessionId: sessionId,
+              cancelToken: cancelToken,
+            );
+          } else if (_memoryProvider != null &&
+              _memoryProvider.handlesTool(toolName)) {
+            backend = 'memory';
+            return await _memoryProvider.executeTool(
+              toolName: toolName,
+              arguments: arguments,
+              sessionId: sessionId,
+            );
+          } else if (_skillRegistry != null &&
+              _skillRegistry.handlesTool(toolName)) {
+            backend = 'skill';
+            return await _skillRegistry.executeTool(
+              toolName: toolName,
+              arguments: arguments,
+            );
+          } else if (_toolExecutor != null) {
+            backend = 'tool_executor';
+            return await _toolExecutor.execute(toolName, arguments);
+          } else {
+            isError = true;
+            return {'error': 'No executor available for tool: $toolName'};
+          }
+        },
+      );
 
       if (rawResult is Map && rawResult['error'] != null) {
         isError = true;

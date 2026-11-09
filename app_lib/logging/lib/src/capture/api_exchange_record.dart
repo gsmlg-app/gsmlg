@@ -129,7 +129,12 @@ class ApiExchangeRecord {
     this.context,
     this.error,
     this.aborted = false,
-  });
+    String? method,
+    String? host,
+    String? path,
+  })  : _method = method,
+        _host = host,
+        _path = path;
 
   final DateTime ts;
   final String requestId;
@@ -144,6 +149,13 @@ class ApiExchangeRecord {
   final LogContext? context;
   final ({String type, String message, String? stackTrace})? error;
   final bool aborted;
+  final String? _method, _host, _path;
+
+  /// Request summary used for index columns. `response` records carry it
+  /// without the full [request] (which [toJson] omits for them).
+  String? get method => request?.method ?? _method;
+  String? get host => request?.host ?? _host;
+  String? get path => request?.uri ?? _path;
 
   Map<String, Object?> toJson() => {
         'ts': formatLogTimestamp(ts),

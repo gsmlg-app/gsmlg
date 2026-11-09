@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:app_chat/app_chat.dart';
 import 'package:app_logging/app_logging.dart';
+import 'package:dart_agent_core/dart_agent_core.dart' show FunctionCall;
 import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 
@@ -83,4 +84,32 @@ void main() {
     expect(r.response!.status, 500);
     expect(jsonEncode(r.response!.body), contains('upstream exploded'));
   });
+
+  test(
+    'tool HTTP traffic via the gateway is linked to run and tool call',
+    () async {
+      final dio = Dio()..httpClientAdapter = _Adapter(200, 'page body');
+      final gateway = ToolExecutionGateway(
+        toolExecutor: ToolExecutor(dio: dio),
+      );
+      await gateway.onPreparedCall(
+        'run-1',
+        'conv-1',
+        FunctionCall(id: 'call-7', name: 'web_fetch', arguments: '{}'),
+      );
+
+      await gateway.execute(
+        runId: 'run-1',
+        sessionId: 'conv-1',
+        toolName: 'web_fetch',
+        arguments: {'url': 'https://example.com/page'},
+      );
+
+      final r = sink.api.single;
+      expect(r.category, 'tool:web_fetch');
+      expect(r.context?.runId, 'run-1');
+      expect(r.context?.conversationId, 'conv-1');
+      expect(r.context?.toolCallId, 'call-7');
+    },
+  );
 }

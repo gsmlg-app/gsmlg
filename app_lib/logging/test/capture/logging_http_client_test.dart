@@ -143,7 +143,7 @@ void main() {
     expect(resp.durationMs, isNotNull);
   });
 
-  test('SSE cancelled after first chunk records aborted with first chunk',
+  test('SSE consumer cancel without abort is a normal end (not aborted)',
       () async {
     final inner = _ControlledClient();
     final client = LoggingHttpClient(inner);
@@ -160,8 +160,99 @@ void main() {
     expect(sink.api, hasLength(2));
     final resp = sink.api[1];
     expect(resp.recordType, 'response');
-    expect(resp.aborted, isTrue);
+    expect(resp.aborted, isFalse);
+    expect(resp.error, isNull);
     expect(resp.response!.body, 'data: a\n\n');
+  });
+
+  test('SSE abortTrigger fired then cancel records aborted without error',
+      () async {
+    final inner = _ControlledClient();
+    final client = LoggingHttpClient(inner);
+    final abort = Completer<void>();
+    final req = http.AbortableRequest(
+      'POST',
+      Uri.parse('https://api.example.com/v1/chat'),
+      abortTrigger: abort.future,
+    )..body = '{}';
+    final res = await client.send(req);
+
+    final first = Completer<void>();
+    late StreamSubscription<List<int>> sub;
+    sub = res.stream.listen((_) => first.complete());
+    inner.body.add(utf8.encode('data: a\n\n'));
+    await first.future;
+    abort.complete();
+    await Future<void>.delayed(Duration.zero);
+    await sub.cancel();
+
+    final resp = sink.api[1];
+    expect(resp.aborted, isTrue);
+    expect(resp.error, isNull);
+    expect(resp.response!.body, 'data: a\n\n');
+  });
+
+  test('response record carries the request summary but not the request',
+      () async {
+    final inner = _ControlledClient();
+    final client = LoggingHttpClient(inner);
+    final res = await client.send(_post('{}'));
+    final done = res.stream.drain<void>();
+    await inner.body.close();
+    await done;
+
+    final resp = sink.api[1];
+    expect(resp.recordType, 'response');
+    expect(resp.request, isNull);
+    expect(resp.method, 'POST');
+    expect(resp.host, 'api.example.com');
+    expect(resp.path, '/v1/chat?key=[REDACTED]');
+    expect(resp.toJson().containsKey('request'), isFalse);
+    final req = sink.api[0];
+    expect(req.method, 'POST');
+    expect(req.host, 'api.example.com');
+    expect(req.path, '/v1/chat?key=[REDACTED]');
+  });
+
+  test('zone LogContext is used when the request has no tagged context',
+      () async {
+    final inner = MockClient((req) async => http.Response('x', 200));
+    final client = LoggingHttpClient(inner);
+    await LogContext.runZoned(
+      const LogContext(runId: 'run-z', toolCallId: 'call-z'),
+      () async => (await client.send(_post('{}'))).stream.drain<void>(),
+    );
+    final r = sink.api.single;
+    expect(r.context?.runId, 'run-z');
+    expect(r.context?.toolCallId, 'call-z');
+
+    final tagged = _post('{}');
+    HttpCaptureTag.tag(
+      tagged,
+      category: 'c',
+      context: const LogContext(runId: 'run-t'),
+    );
+    await LogContext.runZoned(
+      const LogContext(runId: 'run-z'),
+      () async => (await client.send(tagged)).stream.drain<void>(),
+    );
+    expect(sink.api.last.context?.runId, 'run-t');
+  });
+
+  test('error message does not leak secret query values', () async {
+    final inner = MockClient(
+      (req) async => throw http.ClientException('connection refused', req.url),
+    );
+    final client = LoggingHttpClient(inner);
+    final req = http.Request(
+      'GET',
+      Uri.parse('https://api.example.com/v1/m?key=SECRET&q=1'),
+    );
+    await expectLater(client.send(req), throwsA(isA<http.ClientException>()));
+    final r = sink.api.single;
+    expect(r.error!.message, isNot(contains('SECRET')));
+    expect(r.error!.message, contains('connection refused'));
+    expect(r.error!.message, contains('api.example.com/v1/m'));
   });
 
   test('SSE RequestAbortedException is forwarded and recorded as aborted',
@@ -185,7 +276,7 @@ void main() {
     expect(errors, [same(abortErr)]);
     final resp = sink.api[1];
     expect(resp.aborted, isTrue);
-    expect(resp.error!.type, 'RequestAbortedException');
+    expect(resp.error, isNull);
     expect(resp.response!.body, 'data: a\n\n');
   });
 

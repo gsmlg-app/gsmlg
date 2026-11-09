@@ -128,4 +128,54 @@ void main() {
     expect(res.statusCode, 200);
     expect(sink.api, isEmpty);
   });
+
+  test('zone LogContext is the fallback context', () async {
+    final dio = make(200, '{}');
+    await LogContext.runZoned(
+      const LogContext(runId: 'run-z', toolCallId: 'call-z'),
+      () => dio.get<dynamic>('/x'),
+    );
+    expect(sink.api.single.context?.runId, 'run-z');
+    expect(sink.api.single.context?.toolCallId, 'call-z');
+
+    await LogContext.runZoned(
+      const LogContext(runId: 'run-z'),
+      () => dio.get<dynamic>(
+        '/x',
+        options: Options(
+          extra: {'log_context': const LogContext(runId: 'run-e')},
+        ),
+      ),
+    );
+    expect(sink.api.last.context?.runId, 'run-e');
+  });
+
+  test('error message does not leak secret query values', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'))
+      ..httpClientAdapter = _ThrowingAdapter()
+      ..interceptors.add(ApiCaptureInterceptor(category: 'github'));
+    await expectLater(
+      dio.get<dynamic>('/v1/x?key=SECRET'),
+      throwsA(isA<DioException>()),
+    );
+    final r = sink.api.single;
+    expect(r.error!.message, isNot(contains('SECRET')));
+    expect(r.error!.message, contains('api.example.com/v1/x'));
+  });
+}
+
+class _ThrowingAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async =>
+      throw DioException.connectionError(
+        requestOptions: options,
+        reason: 'failed ${options.uri}',
+      );
+
+  @override
+  void close({bool force = false}) {}
 }

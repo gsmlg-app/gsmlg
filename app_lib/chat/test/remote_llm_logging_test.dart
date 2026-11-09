@@ -324,8 +324,72 @@ void main() {
     expect(sink.api.map((r) => r.recordType), ['request', 'response']);
     final r = sink.api.last;
     expect(r.aborted, isTrue);
+    expect(r.error, isNull);
     expect(r.category, 'llm:127.0.0.1');
     expect(r.context?.generationId, 'gen-abort');
     expect(r.response!.body, firstChunk);
+  });
+
+  test('normal SSE completion over a real socket that stays open after the '
+      'end marker is recorded as not aborted with no error', () async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final serverDone = Completer<void>();
+    server.listen((request) async {
+      await request.drain<void>();
+      final response = request.response
+        ..bufferOutput = false
+        ..headers.contentType = ContentType('text', 'event-stream');
+      response.write(
+        'data: ${jsonEncode({
+          'choices': [
+            {
+              'delta': {'content': 'hi'},
+            },
+          ],
+        })}\n\n'
+        'data: [DONE]\n\n',
+      );
+      await response.flush();
+      // Keep the connection open briefly after the end marker.
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      try {
+        await response.close();
+      } catch (_) {}
+      serverDone.complete();
+    });
+    final client = http.Client();
+    final repository = RemoteLlmRepository(
+      vault: _UnusedVault(),
+      client: client,
+    );
+    addTearDown(() async {
+      await serverDone.future.timeout(_timeout);
+      await repository.dispose();
+      client.close();
+      await server.close(force: true);
+    });
+
+    final chunks = await repository
+        .generateResponse(
+          const [],
+          ModelConfig(
+            inferenceMode: ChatInferenceMode.remote,
+            remoteProvider: RemoteLlmProvider.openAiCompatible,
+            remoteAccountId: ModelConfig.dummyRemoteAccountId,
+            remoteBaseUrl: 'http://127.0.0.1:${server.port}/v1',
+            remoteModel: 'm',
+          ),
+          generationId: 'gen-done',
+        )
+        .toList()
+        .timeout(_timeout);
+
+    expect(chunks, [const ChatTextChunk('hi')]);
+    expect(sink.api.map((r) => r.recordType), ['request', 'response']);
+    final r = sink.api.last;
+    expect(r.aborted, isFalse);
+    expect(r.error, isNull);
+    expect(r.method, 'POST');
+    expect(r.host, '127.0.0.1:${server.port}');
   });
 }
