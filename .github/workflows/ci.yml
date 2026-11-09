@@ -119,6 +119,9 @@ jobs:
       - name: Prepare project
         run: melos run prepare
 
+      - name: Build DuckDB native library
+        run: cargo build --manifest-path app_lib/duckdb/rust/Cargo.toml
+
       - name: Run tests
         run: melos run test
 

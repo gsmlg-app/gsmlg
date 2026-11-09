@@ -32,11 +32,16 @@ class AppDuckDb {
           await RustLib.init();
         } catch (_) {
           // In unit tests / headless runner on macOS/Linux/Windows, locate local dylib
+          const libNames = [
+            'libapp_duckdb_rust.dylib',
+            'libapp_duckdb_rust.so',
+            'app_duckdb_rust.dll',
+          ];
+          const roots = ['app_lib/duckdb/rust/target', 'rust/target'];
           final candidates = [
-            'app_lib/duckdb/rust/target/debug/libapp_duckdb_rust.dylib',
-            'app_lib/duckdb/rust/target/release/libapp_duckdb_rust.dylib',
-            'rust/target/debug/libapp_duckdb_rust.dylib',
-            'rust/target/release/libapp_duckdb_rust.dylib',
+            for (final root in roots)
+              for (final mode in const ['debug', 'release'])
+                for (final name in libNames) '$root/$mode/$name',
           ];
           ExternalLibrary? fallback;
           for (final path in candidates) {
