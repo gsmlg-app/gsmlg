@@ -216,6 +216,8 @@ class ToolExecutionGateway {
     final context = AgentCallToolContext.current;
     final cancelToken = context?.cancelToken;
     final rawArguments = jsonEncode(arguments);
+    final stopwatch = Stopwatch()..start();
+    var backend = 'none';
 
     // Find call ID if prepared, otherwise generate stable ID
     var callId = 'call_${DateTime.now().microsecondsSinceEpoch}';
@@ -238,6 +240,8 @@ class ToolExecutionGateway {
         isError: true,
         result: 'Cancelled before execution',
         timestamp: DateTime.now(),
+        backend: backend,
+        durationMs: stopwatch.elapsedMilliseconds,
       );
       await _recordReceipt(
         receipt,
@@ -262,6 +266,8 @@ class ToolExecutionGateway {
         isError: true,
         result: 'Tool $toolName is not allowed in current capability scope',
         timestamp: DateTime.now(),
+        backend: backend,
+        durationMs: stopwatch.elapsedMilliseconds,
       );
       await _recordReceipt(
         receipt,
@@ -300,6 +306,8 @@ class ToolExecutionGateway {
           isError: true,
           result: 'Cancelled before dispatch',
           timestamp: DateTime.now(),
+          backend: backend,
+          durationMs: stopwatch.elapsedMilliseconds,
         );
         await _recordReceipt(
           receipt,
@@ -327,6 +335,7 @@ class ToolExecutionGateway {
       bool isError = false;
 
       if (_shellService != null && _shellService.handlesTool(toolName)) {
+        backend = 'shell';
         rawResult = await _shellService.executeTool(
           toolName: toolName,
           arguments: arguments,
@@ -336,6 +345,7 @@ class ToolExecutionGateway {
         );
       } else if (_subAgentSupervisor != null &&
           _subAgentSupervisor.handlesTool(toolName)) {
+        backend = 'sub_agent';
         rawResult = await _subAgentSupervisor.executeTool(
           toolName: toolName,
           arguments: arguments,
@@ -345,6 +355,7 @@ class ToolExecutionGateway {
         );
       } else if (_memoryProvider != null &&
           _memoryProvider.handlesTool(toolName)) {
+        backend = 'memory';
         rawResult = await _memoryProvider.executeTool(
           toolName: toolName,
           arguments: arguments,
@@ -352,11 +363,13 @@ class ToolExecutionGateway {
         );
       } else if (_skillRegistry != null &&
           _skillRegistry.handlesTool(toolName)) {
+        backend = 'skill';
         rawResult = await _skillRegistry.executeTool(
           toolName: toolName,
           arguments: arguments,
         );
       } else if (_toolExecutor != null) {
+        backend = 'tool_executor';
         rawResult = await _toolExecutor.execute(toolName, arguments);
       } else {
         rawResult = {'error': 'No executor available for tool: $toolName'};
@@ -380,6 +393,8 @@ class ToolExecutionGateway {
         isError: isError,
         result: rawResult,
         timestamp: DateTime.now(),
+        backend: backend,
+        durationMs: stopwatch.elapsedMilliseconds,
       );
 
       await _recordReceipt(
@@ -399,7 +414,7 @@ class ToolExecutionGateway {
           'isError': isError,
         },
       );
-    } catch (e) {
+    } catch (e, st) {
       final isCancel = cancelToken?.isCancelled ?? false;
       final receipt = ToolInvocationReceipt(
         runId: runId,
@@ -411,6 +426,10 @@ class ToolExecutionGateway {
         isError: true,
         result: e.toString(),
         timestamp: DateTime.now(),
+        errorType: e.runtimeType.toString(),
+        stackTrace: st.toString(),
+        backend: backend,
+        durationMs: stopwatch.elapsedMilliseconds,
       );
       await _recordReceipt(
         receipt,

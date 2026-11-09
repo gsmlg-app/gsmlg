@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:app_logging/app_logging.dart' show LogCapture;
 import 'package:dart_agent_core/dart_agent_core.dart' as dac;
 import 'package:dio/dio.dart';
 
@@ -14,6 +15,7 @@ import '../repositories/local_model_access.dart';
 import '../repositories/remote_llm_repository.dart';
 import '../services/tool_executor.dart';
 import 'agent_event.dart';
+import 'agent_event_logger.dart';
 import 'memory_provider.dart';
 import 'plugin_consumer.dart';
 import 'repository_agent_llm_client.dart';
@@ -28,13 +30,15 @@ class _AgentGatewayHook extends dac.AgentHook {
     required this.runId,
     required this.sessionId,
     required this.gateway,
-    required this.eventController,
+    required this.emit,
+    required this.model,
   });
 
   final String runId;
   final String sessionId;
   final ToolExecutionGateway gateway;
-  final StreamController<ChatAgentEvent> eventController;
+  final void Function(ChatAgentEvent event) emit;
+  final String model;
   int _turnIndex = 0;
 
   @override
@@ -46,19 +50,32 @@ class _AgentGatewayHook extends dac.AgentHook {
   }
 
   @override
+  FutureOr<dac.ModelCallHookResult> beforeModelCall(
+    dac.ModelCallHookContext context,
+  ) {
+    emit(
+      ModelTurnStartedEvent(
+        runId: runId,
+        sessionId: sessionId,
+        turnIndex: _turnIndex,
+        model: model,
+      ),
+    );
+    return dac.ModelCallHookResult.proceed(request: context.request);
+  }
+
+  @override
   FutureOr<dac.ModelResponseHookResult> afterModelCall(
     dac.ModelResponseHookContext context,
   ) {
-    if (!eventController.isClosed) {
-      eventController.add(
-        ModelTurnCompletedEvent(
-          runId: runId,
-          sessionId: sessionId,
-          turnIndex: _turnIndex++,
-          modelMessage: context.response,
-        ),
-      );
-    }
+    emit(
+      ModelTurnCompletedEvent(
+        runId: runId,
+        sessionId: sessionId,
+        turnIndex: _turnIndex++,
+        modelMessage: context.response,
+      ),
+    );
     return dac.ModelResponseHookResult.proceed(context.response);
   }
 }
@@ -103,6 +120,28 @@ class ChatAgentRuntime {
     void Function()? onFirstToken,
   }) {
     late final StreamController<ChatAgentEvent> eventController;
+    _AgentGatewayHook? gatewayHook;
+
+    // Logs the event (never throwing), then forwards it to the controller.
+    void emit(ChatAgentEvent event) {
+      try {
+        final turn = switch (event) {
+          ModelTurnStartedEvent(:final turnIndex) ||
+          ModelTurnCompletedEvent(:final turnIndex) => turnIndex + 1,
+          ToolCallPreparedEvent() ||
+          ToolCallStartedEvent() ||
+          ToolCallCompletedEvent() => gatewayHook?._turnIndex,
+          _ => null,
+        };
+        final logEvent = agentLogEventFrom(event, turn: turn);
+        if (logEvent != null) LogCapture.instance.agent(logEvent);
+      } catch (_) {
+        // Logging must never affect the run.
+      }
+      if (!eventController.isClosed) {
+        eventController.add(event);
+      }
+    }
 
     // 1. Setup execution gateway for this run
     final gateway = ToolExecutionGateway(
@@ -112,11 +151,7 @@ class ChatAgentRuntime {
       memoryProvider: memoryProvider,
       skillRegistry: skillRegistry,
       allowedTools: allowedTools,
-      onEvent: (event) {
-        if (!eventController.isClosed) {
-          eventController.add(event);
-        }
-      },
+      onEvent: emit,
       onReceipt: (receipt) async {
         // Automatically persist receipt if storageRepository is available
         if (storageRepository != null) {
@@ -170,17 +205,19 @@ class ChatAgentRuntime {
       initialTools: openAiTools,
     );
 
-    // 4. Setup hooks
-    final gatewayHook = _AgentGatewayHook(
-      runId: runId,
-      sessionId: sessionId,
-      gateway: gateway,
-      eventController: eventController,
-    );
-
     final modelName = modelConfig.inferenceMode == ChatInferenceMode.local
         ? (modelConfig.localModelId ?? modelConfig.modelType.name)
         : modelConfig.remoteModel;
+
+    // 4. Setup hooks
+    final hook = _AgentGatewayHook(
+      runId: runId,
+      sessionId: sessionId,
+      gateway: gateway,
+      emit: emit,
+      model: modelName,
+    );
+    gatewayHook = hook;
 
     // 5. Instantiate fresh StatefulAgent
     final agent = dac.StatefulAgent(
@@ -192,7 +229,7 @@ class ChatAgentRuntime {
         maxTokens: modelConfig.maxTokens,
       ),
       tools: tools,
-      hooks: [gatewayHook],
+      hooks: [hook],
       state: dac.AgentState(sessionId: sessionId),
       disableSubAgents:
           true, // We use AgentSupervisor delegation instead of generic cloning
@@ -208,7 +245,7 @@ class ChatAgentRuntime {
     pluginConsumer?.pinPluginsForRun(runId);
 
     // Emit initial run start
-    eventController.add(
+    emit(
       AgentRunStartedEvent(
         runId: runId,
         sessionId: sessionId,
@@ -233,7 +270,7 @@ class ChatAgentRuntime {
 
           if (!eventController.isClosed) {
             if (isCancelled) {
-              eventController.add(
+              emit(
                 AgentRunCancelledEvent(
                   runId: runId,
                   sessionId: sessionId,
@@ -241,11 +278,12 @@ class ChatAgentRuntime {
                 ),
               );
             } else {
-              eventController.add(
+              emit(
                 AgentRunFailedEvent(
                   runId: runId,
                   sessionId: sessionId,
                   error: err,
+                  stackTrace: st,
                 ),
               );
             }
@@ -266,11 +304,11 @@ class ChatAgentRuntime {
               final text = modelMsg.textOutput;
               final thought = modelMsg.thought;
               if (text != null || thought != null) {
-                eventController.add(
+                emit(
                   ModelChunkReceivedEvent(
                     runId: runId,
                     sessionId: sessionId,
-                    turnIndex: gatewayHook._turnIndex,
+                    turnIndex: hook._turnIndex,
                     textChunk: text,
                     thoughtChunk: thought,
                   ),
@@ -295,7 +333,7 @@ class ChatAgentRuntime {
       },
       onDone: () {
         if (!eventController.isClosed) {
-          eventController.add(
+          emit(
             AgentRunCompletedEvent(
               runId: runId,
               sessionId: sessionId,

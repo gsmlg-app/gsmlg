@@ -11,6 +11,7 @@ export 'src/models/agent_metadata.dart';
 
 // Agent Runtime
 export 'src/agent/agent_event.dart';
+export 'src/agent/agent_event_logger.dart';
 export 'src/agent/agent_invocation.dart';
 export 'src/agent/chat_agent_runtime.dart';
 export 'src/agent/memory_provider.dart';

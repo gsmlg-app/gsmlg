@@ -1,3 +1,5 @@
+import 'package:app_logging/app_logging.dart'
+    show AgentLogEvent, LogCapture, LogContext;
 import 'dart:async';
 
 import 'package:dio/dio.dart';
@@ -298,9 +300,48 @@ class AgentSupervisor {
     };
   }
 
+  /// Records what the supervisor sees of a child run. Child runs started by
+  /// the injected runner do not flow through `ChatAgentRuntime.runStream`.
+  void _logTask(
+    SubAgentTask task,
+    String eventType,
+    String summary,
+    Map<String, Object?> payload, {
+    bool isError = false,
+    String level = 'INFO',
+    int? durationMs,
+  }) {
+    try {
+      LogCapture.instance.agent(
+        AgentLogEvent(
+          ts: DateTime.now(),
+          eventType: eventType,
+          context: LogContext(
+            runId: task.childRunId,
+            parentRunId: task.parentRunId,
+          ),
+          toolName: task.workerName,
+          backend: 'sub_agent',
+          level: level,
+          isError: isError,
+          durationMs: durationMs,
+          summary: summary,
+          payload: {'task_id': task.taskId, ...payload},
+        ),
+      );
+    } catch (_) {}
+  }
+
   Future<void> _runWorker(SubAgentTask task, int depth) async {
     task.status = 'running';
     final runner = _childRunner;
+    final started = DateTime.now();
+    _logTask(
+      task,
+      'sub_agent_started',
+      'sub-agent ${task.workerName} started',
+      {'goal': task.goal, 'context': task.contextSnippet, 'depth': depth + 1},
+    );
     try {
       if (runner != null) {
         final snippet = task.contextSnippet;
@@ -345,6 +386,22 @@ class AgentSupervisor {
       }
     } finally {
       task.completedAt = DateTime.now();
+      final failed = task.status == 'failed';
+      _logTask(
+        task,
+        'sub_agent_finished',
+        'sub-agent ${task.workerName} ${task.status}',
+        {
+          'status': task.status,
+          'result': task.result?.toString(),
+          'error': task.error,
+        },
+        isError: failed,
+        level: failed
+            ? 'SEVERE'
+            : (task.status == 'cancelled' ? 'WARNING' : 'INFO'),
+        durationMs: task.completedAt!.difference(started).inMilliseconds,
+      );
       _budget.releaseWorker();
     }
   }

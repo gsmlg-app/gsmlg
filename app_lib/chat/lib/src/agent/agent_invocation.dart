@@ -21,6 +21,10 @@ class ToolInvocationReceipt extends Equatable {
     this.result,
     this.isError = false,
     required this.timestamp,
+    this.backend,
+    this.durationMs,
+    this.errorType,
+    this.stackTrace,
   });
 
   final String runId;
@@ -33,6 +37,12 @@ class ToolInvocationReceipt extends Equatable {
   final bool isError;
   final DateTime timestamp;
 
+  /// `shell|sub_agent|memory|skill|tool_executor|none`.
+  final String? backend;
+  final int? durationMs;
+  final String? errorType;
+  final String? stackTrace;
+
   Map<String, dynamic> toJson() => {
     'runId': runId,
     'callId': callId,
@@ -43,6 +53,10 @@ class ToolInvocationReceipt extends Equatable {
     'result': result,
     'isError': isError,
     'timestamp': timestamp.toIso8601String(),
+    'backend': backend,
+    'durationMs': durationMs,
+    'errorType': errorType,
+    'stackTrace': stackTrace,
   };
 
   factory ToolInvocationReceipt.fromJson(Map<String, dynamic> json) {
@@ -61,6 +75,10 @@ class ToolInvocationReceipt extends Equatable {
       timestamp: json['timestamp'] != null
           ? DateTime.tryParse(json['timestamp'] as String) ?? DateTime.now()
           : DateTime.now(),
+      backend: json['backend'] as String?,
+      durationMs: json['durationMs'] as int?,
+      errorType: json['errorType'] as String?,
+      stackTrace: json['stackTrace'] as String?,
     );
   }
 
@@ -75,5 +93,9 @@ class ToolInvocationReceipt extends Equatable {
     result,
     isError,
     timestamp,
+    backend,
+    durationMs,
+    errorType,
+    stackTrace,
   ];
 }
