@@ -26,4 +26,16 @@ void main() {
       'Token': '[REDACTED]',
     });
   });
+  test('malformed percent escape does not throw', () {
+    expect(Redaction.query('%zz=1&api_key=abc'), '%zz=1&api_key=[REDACTED]');
+    expect(
+      () => HttpMessageCapture.request(
+        method: 'GET',
+        url: Uri.parse('http://h/p?%zz=1&api_key=abc'),
+        headers: {},
+        bodyBytes: [],
+      ),
+      returnsNormally,
+    );
+  });
 }

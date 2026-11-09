@@ -45,7 +45,13 @@ abstract final class Redaction {
   static String query(String q) => q.split('&').map((pair) {
         final i = pair.indexOf('=');
         if (i < 0) return pair;
-        final name = Uri.decodeQueryComponent(pair.substring(0, i));
+        final raw = pair.substring(0, i);
+        String name;
+        try {
+          name = Uri.decodeQueryComponent(raw);
+        } on ArgumentError {
+          name = raw;
+        }
         return _queryKeys.contains(name.toLowerCase())
             ? '${pair.substring(0, i)}=$redacted'
             : pair;

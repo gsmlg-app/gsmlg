@@ -100,4 +100,43 @@ void main() {
     expect(u['screen_name'], 'Home');
     expect(u['session_id'], 's');
   });
+
+  test('AgentLogEvent default level and full key set', () {
+    expect(AgentLogEvent(ts: DateTime.now(), eventType: 'e').level, 'INFO');
+    final j = AgentLogEvent(
+      ts: DateTime.now(),
+      eventType: 'e',
+      context: const LogContext(
+        conversationId: 'c',
+        runId: 'r',
+        parentRunId: 'p',
+        turn: 1,
+        toolCallId: 't',
+      ),
+      toolName: 'n',
+      backend: 'b',
+      requestId: 'q',
+      durationMs: 5,
+      summary: 's',
+      payload: const {'a': 1},
+    ).toJson();
+    expect(j.keys.toSet(), {
+      'ts',
+      'event_type',
+      'conversation_id',
+      'run_id',
+      'parent_run_id',
+      'turn',
+      'tool_call_id',
+      'tool_name',
+      'backend',
+      'request_id',
+      'level',
+      'is_error',
+      'duration_ms',
+      'summary',
+      'payload',
+    });
+    expect(j['level'], 'INFO');
+  });
 }

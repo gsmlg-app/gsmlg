@@ -9,7 +9,7 @@ class AgentLogEvent {
     this.toolName,
     this.backend,
     this.requestId,
-    this.level = 'info',
+    this.level = 'INFO',
     this.isError = false,
     this.durationMs,
     this.summary = '',
@@ -20,6 +20,9 @@ class AgentLogEvent {
   final String eventType;
   final LogContext context;
   final String? toolName, backend, requestId;
+
+  /// Must be an uppercase package:logging name (INFO, CONFIG, WARNING, SEVERE,
+  /// SHOUT, FINE, FINER, FINEST); the UI level filter matches these.
   final String level;
   final bool isError;
   final int? durationMs;
