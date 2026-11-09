@@ -10,6 +10,7 @@ export 'src/error_display.dart';
 export 'src/terminal_analytics.dart';
 export 'src/capture/log_capture.dart';
 export 'src/capture/logging_http_client.dart';
+export 'src/capture/api_capture_interceptor.dart';
 export 'src/capture/log_context.dart';
 export 'src/capture/api_exchange_record.dart';
 export 'src/capture/http_body.dart';
