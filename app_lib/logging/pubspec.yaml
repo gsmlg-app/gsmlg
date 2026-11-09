@@ -16,11 +16,15 @@ dependencies:
   stack_trace: ^1.12.2
   shared_preferences: ^2.5.6
   meta: any
+  http: any
+  dio: any
+  uuid: any
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  test: any
 
 flutter:
   uses-material-design: true
