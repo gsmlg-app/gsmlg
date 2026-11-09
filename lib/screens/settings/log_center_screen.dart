@@ -70,6 +70,11 @@ class _LogCenterScreenState extends State<LogCenterScreen>
       label: (l10n) => l10n.logCenterAgentLogs,
       groupByRun: true,
     ),
+    _LogTab(
+      table: 'usage_events',
+      icon: Icons.insights,
+      label: (l10n) => l10n.logCenterUsageLogs,
+    ),
   ];
 
   /// Tables pruned from the All tab: the ones `v_all_logs` shows.

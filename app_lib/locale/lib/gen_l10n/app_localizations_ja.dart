@@ -1325,6 +1325,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logCenterAgentLogs => 'Agent';
 
   @override
+  String get logCenterUsageLogs => 'Usage';
+
+  @override
   String get logCenterPruneDaysLabel => 'Older than (days)';
 
   @override

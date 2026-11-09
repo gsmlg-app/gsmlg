@@ -18,6 +18,10 @@ class UsageTracker {
   final String? _appVersion;
   final String sessionId;
 
+  /// The live tracker (set by [start], cleared by [dispose]) so widgets can
+  /// attribute menu taps to the session without plumbing.
+  static UsageTracker? current;
+
   Uri? _uri;
   Uri? _resumeUri; // screen to reopen when returning to foreground
   String? _routeName;
@@ -48,6 +52,7 @@ class UsageTracker {
   void start() {
     if (_started || _disposed) return;
     _started = true;
+    current = this;
     _foregroundSince = _clock();
     _emit(
       'session_start',
@@ -101,6 +106,7 @@ class UsageTracker {
     _closeVisit();
     _accrue();
     _disposed = true;
+    if (identical(current, this)) current = null;
     _emit('session_end', durationMs: _sessionMs);
   }
 

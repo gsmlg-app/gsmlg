@@ -61,7 +61,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Log Center'), findsOneWidget);
-    for (final tab in ['All Logs', 'System', 'API', 'Agent']) {
+    for (final tab in ['All Logs', 'System', 'API', 'Agent', 'Usage']) {
       expect(find.widgetWithText(Tab, tab), findsOneWidget);
     }
     expect(
@@ -149,5 +149,21 @@ void main() {
     await tester.tap(find.widgetWithText(Tab, 'API'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('logFilterMethod')), findsOneWidget);
+  });
+
+  testWidgets('Usage tab lists usage_events and exports that table', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(_FakeDuckDb()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(Tab, 'Usage'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<DuckDbLogViewer>(find.byType(DuckDbLogViewer)).tableOrView,
+      'usage_events',
+    );
+    await tester.tap(find.byTooltip('Log Maintenance'));
+    await tester.pumpAndSettle();
+    expect(find.text('Export JSONL…'), findsOneWidget);
   });
 }

@@ -91,10 +91,7 @@ class LogRecordItem extends Equatable {
     } else if (map.containsKey('summary')) {
       message = map['summary']?.toString() ?? '';
     } else if (isUsage) {
-      message = [
-        map['event_type'],
-        map['screen_name'] ?? map['target'],
-      ].where((e) => e != null).join(' ');
+      message = _usageMessage(map);
     }
 
     return LogRecordItem(
@@ -110,6 +107,18 @@ class LogRecordItem extends Equatable {
       latencyMs: latencyMs,
       rawFields: map,
     );
+  }
+
+  static String _usageMessage(Map<String, dynamic> map) {
+    final type = map['event_type']?.toString() ?? 'usage';
+    if (type == 'menu_tap') return '$type → ${map['target'] ?? ''}'.trim();
+    final duration = (map['duration_ms'] as num?)?.toInt();
+    final detail = [
+      map['module'],
+      map['screen_name'] ?? map['target'],
+      if (duration != null) '${(duration / 1000).toStringAsFixed(1)}s',
+    ].where((e) => e != null && '$e'.isNotEmpty).join(' · ');
+    return detail.isEmpty ? type : '$type $detail';
   }
 
   @override

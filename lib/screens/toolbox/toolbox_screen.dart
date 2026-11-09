@@ -6,8 +6,8 @@ import 'package:app_locale/app_locale.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:go_router/go_router.dart';
 import 'package:gsmlg/constants.dart';
+import 'package:gsmlg/core/usage/menu_navigation.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 import 'package:gsmlg/screens/toolbox/camera/camera_macos_screen.dart';
@@ -79,41 +79,42 @@ class ToolboxScreen extends StatelessWidget {
               children: <Widget>[
                 if (!kIsWeb)
                   AppGridTile(
-                    onTap: () => context.goNamed(TerminalScreen.name),
+                    onTap: () => context.menuGoNamed(TerminalScreen.name),
                     child: Text(context.l10n.terminalTitle),
                   ),
                 AppGridTile(
-                  onTap: () => context.goNamed(EditorScreen.name),
+                  onTap: () => context.menuGoNamed(EditorScreen.name),
                   child: Text(context.l10n.editorTitle),
                 ),
                 AppGridTile(
-                  onTap: () => context.goNamed(WhoisScreen.name),
+                  onTap: () => context.menuGoNamed(WhoisScreen.name),
                   child: const Text('Whois'),
                 ),
                 AppGridTile(
-                  onTap: () => context.goNamed(IpGeoScreen.name),
+                  onTap: () => context.menuGoNamed(IpGeoScreen.name),
                   child: const Text('IP Geolocation'),
                 ),
                 AppGridTile(
-                  onTap: () => context.goNamed(MonitorScreen.name),
+                  onTap: () => context.menuGoNamed(MonitorScreen.name),
                   child: const Text('Monitor'),
                 ),
                 AppGridTile(
-                  onTap: () => context.goNamed(TtsDatasetScreen.name),
+                  onTap: () => context.menuGoNamed(TtsDatasetScreen.name),
                   child: Text(context.l10n.ttsDatasetTitle),
                 ),
                 AppGridTile(
-                  onTap: () => context.goNamed(LogViewerScreen.name),
+                  onTap: () => context.menuGoNamed(LogViewerScreen.name),
                   child: Text(context.l10n.jsonLogInspectorTitle),
                 ),
                 if (_isBluetoothPlatform)
                   AppGridTile(
-                    onTap: () => context.goNamed(BluetoothScannerScreen.name),
+                    onTap: () =>
+                        context.menuGoNamed(BluetoothScannerScreen.name),
                     child: const Text('Bluetooth Scanner'),
                   ),
                 if (_isMobilePlatform)
                   AppGridTile(
-                    onTap: () => context.goNamed(CameraScreen.name),
+                    onTap: () => context.menuGoNamed(CameraScreen.name),
                     child: const Text('Camera'),
                   ),
                 if (isCompassPlatformSupported(
@@ -121,12 +122,12 @@ class ToolboxScreen extends StatelessWidget {
                   platform: defaultTargetPlatform,
                 ))
                   AppGridTile(
-                    onTap: () => context.goNamed(CompassScreen.name),
+                    onTap: () => context.menuGoNamed(CompassScreen.name),
                     child: Text(context.l10n.compassTitle),
                   ),
                 if (!kIsWeb && Platform.isMacOS)
                   AppGridTile(
-                    onTap: () => context.goNamed(CameraMacosScreen.name),
+                    onTap: () => context.menuGoNamed(CameraMacosScreen.name),
                     child: const Text('Camera'),
                   ),
               ],

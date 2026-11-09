@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:github_bloc/github_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:gsmlg/constants.dart';
+import 'package:gsmlg/core/usage/menu_navigation.dart';
 import 'package:gsmlg/destination.dart';
 
 class ServiceScreen extends StatelessWidget {
@@ -55,7 +55,7 @@ class ServiceScreen extends StatelessWidget {
               crossAxisCount: (screenSize.width / 300).ceil(),
               children: <Widget>[
                 AppGridTile(
-                  onTap: () => context.go('/service/domain'),
+                  onTap: () => context.menuGo('/service/domain'),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -66,7 +66,7 @@ class ServiceScreen extends StatelessWidget {
                   ),
                 ),
                 AppGridTile(
-                  onTap: () => context.go('/service/vultr'),
+                  onTap: () => context.menuGo('/service/vultr'),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -80,7 +80,7 @@ class ServiceScreen extends StatelessWidget {
                   builder: (context, state) {
                     final isConnected = state is GitHubConnected;
                     return AppGridTile(
-                      onTap: () => context.go('/service/github'),
+                      onTap: () => context.menuGo('/service/github'),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -118,7 +118,7 @@ class ServiceScreen extends StatelessWidget {
                   },
                 ),
                 AppGridTile(
-                  onTap: () => context.go('/service/audio'),
+                  onTap: () => context.menuGo('/service/audio'),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

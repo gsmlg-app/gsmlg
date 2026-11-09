@@ -1309,6 +1309,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logCenterAgentLogs => '智能体';
 
   @override
+  String get logCenterUsageLogs => '使用情况';
+
+  @override
   String get logCenterPruneDaysLabel => '早于（天）';
 
   @override

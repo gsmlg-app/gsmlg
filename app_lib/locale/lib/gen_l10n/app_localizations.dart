@@ -2611,6 +2611,12 @@ abstract class AppLocalizations {
   /// **'Agent'**
   String get logCenterAgentLogs;
 
+  /// No description provided for @logCenterUsageLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get logCenterUsageLogs;
+
   /// No description provided for @logCenterPruneDaysLabel.
   ///
   /// In en, this message translates to:

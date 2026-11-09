@@ -1,6 +1,6 @@
 import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:gsmlg/core/usage/menu_navigation.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
 import 'package:gsmlg/screens/service/service_screen.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
@@ -41,11 +41,11 @@ class Destinations {
 
   static void changeHandler(int idx, BuildContext context) {
     void _ = switch (idx) {
-      0 => context.goNamed(HomeScreen.name),
-      1 => context.goNamed(ServiceScreen.name),
-      2 => context.goNamed(ToolboxScreen.name),
-      3 => context.goNamed(SettingsScreen.name),
-      int() => context.goNamed(HomeScreen.name),
+      0 => context.menuGoNamed(HomeScreen.name),
+      1 => context.menuGoNamed(ServiceScreen.name),
+      2 => context.menuGoNamed(ToolboxScreen.name),
+      3 => context.menuGoNamed(SettingsScreen.name),
+      int() => context.menuGoNamed(HomeScreen.name),
     };
   }
 }

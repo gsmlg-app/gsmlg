@@ -38,5 +38,29 @@ void main() {
       expect(item.loggerName, equals('isolate_pool'));
       expect(item.clientAddress, equals('worker-2'));
     });
+
+    test('usage rows get a readable one-line message', () {
+      LogRecordItem item(Map<String, dynamic> m) => LogRecordItem.fromMap({
+            'id': 'u',
+            'timestamp_us': 1762700000000000,
+            'session_id': 's',
+            ...m,
+          }, defaultType: 'usage');
+
+      expect(
+        item({
+          'event_type': 'screen_view',
+          'module': 'Toolbox',
+          'screen_name': 'Whois',
+          'duration_ms': 5000,
+        }).message,
+        'screen_view Toolbox · Whois · 5.0s',
+      );
+      expect(
+        item({'event_type': 'menu_tap', 'target': 'Whois'}).message,
+        'menu_tap → Whois',
+      );
+      expect(item({'event_type': 'session_start'}).message, 'session_start');
+    });
   });
 }

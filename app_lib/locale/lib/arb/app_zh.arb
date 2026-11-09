@@ -363,6 +363,7 @@
   "logCenterPruneFailed": "清理失败：{error}",
   "logCenterApiLogs": "API",
   "logCenterAgentLogs": "智能体",
+  "logCenterUsageLogs": "使用情况",
   "logCenterPruneDaysLabel": "早于（天）",
   "logCenterPruneDaysInvalid": "请输入不小于 1 的整数天数",
   "logCenterPruneScopeCurrent": "仅当前标签页",

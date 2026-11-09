@@ -10,6 +10,7 @@ import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_theme/duskmoon_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:gsmlg/core/usage/menu_navigation.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
@@ -32,7 +33,6 @@ import 'package:gsmlg/screens/settings/terminal/ssh_key_management.dart';
 import 'package:gsmlg/screens/settings/terminal/terminal_env_screen.dart';
 import 'package:gsmlg/screens/settings/terminal/terminal_preferences_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:duskmoon_settings/duskmoon_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:theme_bloc/theme_bloc.dart';
@@ -102,14 +102,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 },
                               ),
                               onPressed: (context) {
-                                context.goNamed(AccountScreen.name);
+                                context.menuGoNamed(AccountScreen.name);
                               },
                             ),
                             SettingsTile.navigation(
                               leading: const Icon(Icons.hub_outlined),
                               title: Text(context.l10n.backplaneTitle),
                               onPressed: (context) {
-                                context.goNamed(BackplaneSettingsScreen.name);
+                                context.menuGoNamed(
+                                  BackplaneSettingsScreen.name,
+                                );
                               },
                             ),
                           ],
@@ -140,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 },
                               ),
                               onPressed: (context) {
-                                context.goNamed(ModelManagementScreen.name);
+                                context.menuGoNamed(ModelManagementScreen.name);
                               },
                             ),
                             SettingsTile.navigation(
@@ -160,7 +162,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     },
                                   ),
                               onPressed: (context) {
-                                context.goNamed(RemoteModelSettingsScreen.name);
+                                context.menuGoNamed(
+                                  RemoteModelSettingsScreen.name,
+                                );
                               },
                             ),
                             SettingsTile.navigation(
@@ -178,7 +182,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 },
                               ),
                               onPressed: (context) {
-                                context.goNamed(LocalToolsSettingsScreen.name);
+                                context.menuGoNamed(
+                                  LocalToolsSettingsScreen.name,
+                                );
                               },
                             ),
                             SettingsTile.navigation(
@@ -198,7 +204,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 },
                               ),
                               onPressed: (context) {
-                                context.goNamed(RemoteToolsSettingsScreen.name);
+                                context.menuGoNamed(
+                                  RemoteToolsSettingsScreen.name,
+                                );
                               },
                             ),
                             SettingsTile.navigation(
@@ -219,7 +227,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     },
                                   ),
                               onPressed: (context) {
-                                context.goNamed(AudioSettingsScreen.name);
+                                context.menuGoNamed(AudioSettingsScreen.name);
                               },
                             ),
                           ],
@@ -243,7 +251,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     },
                                   ),
                               onPressed: (context) {
-                                context.goNamed(ChatAgentsSettingsScreen.name);
+                                context.menuGoNamed(
+                                  ChatAgentsSettingsScreen.name,
+                                );
                               },
                             ),
                           ],
@@ -259,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 title: Text(
                                   context.l10n.terminalPreferencesTitle,
                                 ),
-                                onPressed: (context) => context.goNamed(
+                                onPressed: (context) => context.menuGoNamed(
                                   TerminalPreferencesScreen.name,
                                 ),
                               ),
@@ -271,25 +281,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   context.l10n.terminalEnvironmentTitle,
                                 ),
                                 onPressed: (context) =>
-                                    context.goNamed(TerminalEnvScreen.name),
+                                    context.menuGoNamed(TerminalEnvScreen.name),
                               ),
                               SettingsTile.navigation(
                                 leading: const Icon(Icons.person_outline),
                                 title: Text(context.l10n.shellProfilesTitle),
-                                onPressed: (context) =>
-                                    context.goNamed(ShellProfileScreen.name),
+                                onPressed: (context) => context.menuGoNamed(
+                                  ShellProfileScreen.name,
+                                ),
                               ),
                               SettingsTile.navigation(
                                 leading: const Icon(Icons.dns_outlined),
                                 title: Text(context.l10n.titleSSHHost),
                                 onPressed: (context) =>
-                                    context.goNamed(SettingsHost.name),
+                                    context.menuGoNamed(SettingsHost.name),
                               ),
                               SettingsTile.navigation(
                                 leading: const Icon(Icons.vpn_key_outlined),
                                 title: Text(context.l10n.titleSSHKey),
                                 onPressed: (context) =>
-                                    context.goNamed(SettingsSSHKey.name),
+                                    context.menuGoNamed(SettingsSSHKey.name),
                               ),
                             ],
                           ),
@@ -300,7 +311,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               leading: const Icon(Icons.api),
                               title: Text('App Setting'),
                               onPressed: (context) {
-                                context.goNamed(AppSettingsScreen.name);
+                                context.menuGoNamed(AppSettingsScreen.name);
                               },
                             ),
                           ],
@@ -313,7 +324,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               title: Text(context.l10n.appearance),
                               value: state.themeMode.icon,
                               onPressed: (context) {
-                                context.goNamed(AppearanceSettingsScreen.name);
+                                context.menuGoNamed(
+                                  AppearanceSettingsScreen.name,
+                                );
                               },
                             ),
                             SettingsTile.navigation(
@@ -321,7 +334,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               title: Text(context.l10n.accentColor),
                               value: Text(state.themeName),
                               onPressed: (context) {
-                                context.goNamed(AccentColorSettingsScreen.name);
+                                context.menuGoNamed(
+                                  AccentColorSettingsScreen.name,
+                                );
                               },
                             ),
                           ],
@@ -333,21 +348,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               leading: const Icon(Icons.devices_rounded),
                               title: Text(context.l10n.deviceInfo),
                               onPressed: (context) {
-                                context.goNamed(DeviceInfoScreen.name);
+                                context.menuGoNamed(DeviceInfoScreen.name);
                               },
                             ),
                             SettingsTile.navigation(
                               leading: const Icon(Icons.wifi_sharp),
                               title: Text(context.l10n.wifiInfo),
                               onPressed: (context) {
-                                context.goNamed(WifiInfoScreen.name);
+                                context.menuGoNamed(WifiInfoScreen.name);
                               },
                             ),
                             SettingsTile.navigation(
                               leading: const Icon(Icons.monitor_heart_outlined),
                               title: Text(context.l10n.activityMonitorTitle),
                               onPressed: (context) {
-                                context.goNamed(ActivityMonitorScreen.name);
+                                context.menuGoNamed(ActivityMonitorScreen.name);
                               },
                             ),
                             SettingsTile.navigation(
@@ -355,7 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               title: Text(context.l10n.logCenterTitle),
                               value: const Text('DuckDB'),
                               onPressed: (context) {
-                                context.goNamed(LogCenterScreen.name);
+                                context.menuGoNamed(LogCenterScreen.name);
                               },
                             ),
                           ],
