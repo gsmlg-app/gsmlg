@@ -1,0 +1,15 @@
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+pubspec.lock
+
+# Rust
+rust/target/
+rust/Cargo.lock
+
+# Miscellaneous
+*.log
+.DS_Store
+*.iml

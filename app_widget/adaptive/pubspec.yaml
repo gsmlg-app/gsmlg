@@ -18,6 +18,7 @@ dependencies:
   duskmoon_adaptive_scaffold: ^2.2.10
   flutter_bloc: ^9.1.1
   navigation_bloc: any
+  app_duckdb: any
 
 dev_dependencies:
   duskmoon_widgets: ^2.2.10

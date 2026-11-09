@@ -2538,6 +2538,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quit'**
   String get quit;
+
+  /// No description provided for @logCenterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Center'**
+  String get logCenterTitle;
+
+  /// No description provided for @logCenterAllLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'All Logs'**
+  String get logCenterAllLogs;
+
+  /// No description provided for @logCenterSystemLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get logCenterSystemLogs;
+
+  /// No description provided for @logCenterRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get logCenterRefresh;
+
+  /// No description provided for @logCenterMaintenance.
+  ///
+  /// In en, this message translates to:
+  /// **'Log Maintenance'**
+  String get logCenterMaintenance;
+
+  /// No description provided for @logCenterPruneAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean / Prune Logs…'**
+  String get logCenterPruneAction;
+
+  /// No description provided for @logCenterPruneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clean & Prune Logs'**
+  String get logCenterPruneTitle;
+
+  /// No description provided for @logCenterPruneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the logs to remove from local DuckDB storage. This cannot be undone.'**
+  String get logCenterPruneMessage;
+
+  /// No description provided for @logCenterOlderThan7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Older than 7 days'**
+  String get logCenterOlderThan7Days;
+
+  /// No description provided for @logCenterOlderThan30Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Older than 30 days'**
+  String get logCenterOlderThan30Days;
+
+  /// No description provided for @logCenterClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear All'**
+  String get logCenterClearAll;
+
+  /// No description provided for @logCenterPruneDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Log cleanup completed'**
+  String get logCenterPruneDone;
+
+  /// No description provided for @logCenterPruneFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cleanup failed: {error}'**
+  String logCenterPruneFailed(String error);
 }
 
 class _AppLocalizationsDelegate

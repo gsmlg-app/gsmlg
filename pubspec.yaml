@@ -43,6 +43,7 @@ workspace:
   - app_lib/chat
   - app_lib/tts_dataset
   - app_lib/isolate_orchestrator
+  - app_lib/duckdb
   - app_lib/audio
   - app_bloc/theme
   - app_bloc/navigation
@@ -192,6 +193,7 @@ dependencies:
   app_feedback: any
   app_adaptive_widgets: any
   app_logging: any
+  app_duckdb: any
   app_secure_storage: any
   isolate_orchestrator: any
   app_web_view: any

@@ -22,6 +22,7 @@ import 'package:gsmlg/screens/settings/device/activity_monitor_screen.dart';
 import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:gsmlg/screens/settings/local_tools_settings_screen.dart';
+import 'package:gsmlg/screens/settings/log_center_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
 import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
 import 'package:gsmlg/screens/settings/remote_tools_settings_screen.dart';
@@ -347,6 +348,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               title: Text(context.l10n.activityMonitorTitle),
                               onPressed: (context) {
                                 context.goNamed(ActivityMonitorScreen.name);
+                              },
+                            ),
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.analytics_outlined),
+                              title: Text(context.l10n.logCenterTitle),
+                              value: const Text('DuckDB'),
+                              onPressed: (context) {
+                                context.goNamed(LogCenterScreen.name);
                               },
                             ),
                           ],

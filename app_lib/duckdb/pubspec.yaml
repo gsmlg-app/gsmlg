@@ -1,0 +1,27 @@
+name: app_duckdb
+description: DuckDB database integration for log analytics and storage.
+version: 1.0.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_rust_bridge: 2.13.0
+  path_provider: ^2.1.5
+  path: any
+  flutter_rust_bridge_hooks: 2.13.0
+  isolate_orchestrator: any
+  logging: any
+  uuid: any
+  equatable: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  integration_test:
+    sdk: flutter

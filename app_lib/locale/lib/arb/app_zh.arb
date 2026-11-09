@@ -350,5 +350,18 @@
   "closeTabConfirmMessage": "“{title}” 中有正在运行的程序。关闭标签页将终止它。",
   "quitConfirmTitle": "退出 GSMLG？",
   "quitConfirmMessage": "{count, plural, =1{1 个标签页中有正在运行的程序：} other{{count} 个标签页中有正在运行的程序：}}\n{titles}\n\n退出将终止这些程序。",
-  "quit": "退出"
+  "quit": "退出",
+  "logCenterTitle": "日志中心",
+  "logCenterAllLogs": "全部日志",
+  "logCenterSystemLogs": "系统",
+  "logCenterRefresh": "刷新",
+  "logCenterMaintenance": "日志维护",
+  "logCenterPruneAction": "清理日志…",
+  "logCenterPruneTitle": "清理日志",
+  "logCenterPruneMessage": "选择要从本地 DuckDB 存储中删除的日志，此操作无法撤销。",
+  "logCenterOlderThan7Days": "7 天前",
+  "logCenterOlderThan30Days": "30 天前",
+  "logCenterClearAll": "全部清除",
+  "logCenterPruneDone": "日志清理完成",
+  "logCenterPruneFailed": "清理失败：{error}"
 }

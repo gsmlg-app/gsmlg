@@ -539,5 +539,25 @@
       }
     }
   },
-  "quit": "Quit"
+  "quit": "Quit",
+  "logCenterTitle": "Log Center",
+  "logCenterAllLogs": "All Logs",
+  "logCenterSystemLogs": "System",
+  "logCenterRefresh": "Refresh",
+  "logCenterMaintenance": "Log Maintenance",
+  "logCenterPruneAction": "Clean / Prune Logs…",
+  "logCenterPruneTitle": "Clean & Prune Logs",
+  "logCenterPruneMessage": "Select the logs to remove from local DuckDB storage. This cannot be undone.",
+  "logCenterOlderThan7Days": "Older than 7 days",
+  "logCenterOlderThan30Days": "Older than 30 days",
+  "logCenterClearAll": "Clear All",
+  "logCenterPruneDone": "Log cleanup completed",
+  "logCenterPruneFailed": "Cleanup failed: {error}",
+  "@logCenterPruneFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

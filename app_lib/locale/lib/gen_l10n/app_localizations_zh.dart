@@ -1269,6 +1269,47 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get quit => '退出';
+
+  @override
+  String get logCenterTitle => '日志中心';
+
+  @override
+  String get logCenterAllLogs => '全部日志';
+
+  @override
+  String get logCenterSystemLogs => '系统';
+
+  @override
+  String get logCenterRefresh => '刷新';
+
+  @override
+  String get logCenterMaintenance => '日志维护';
+
+  @override
+  String get logCenterPruneAction => '清理日志…';
+
+  @override
+  String get logCenterPruneTitle => '清理日志';
+
+  @override
+  String get logCenterPruneMessage => '选择要从本地 DuckDB 存储中删除的日志，此操作无法撤销。';
+
+  @override
+  String get logCenterOlderThan7Days => '7 天前';
+
+  @override
+  String get logCenterOlderThan30Days => '30 天前';
+
+  @override
+  String get logCenterClearAll => '全部清除';
+
+  @override
+  String get logCenterPruneDone => '日志清理完成';
+
+  @override
+  String logCenterPruneFailed(String error) {
+    return '清理失败：$error';
+  }
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

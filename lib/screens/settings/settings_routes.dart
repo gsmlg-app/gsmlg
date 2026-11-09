@@ -11,6 +11,7 @@ import 'package:gsmlg/screens/settings/device/activity_monitor_screen.dart';
 import 'package:gsmlg/screens/settings/device/device_info_screen.dart';
 import 'package:gsmlg/screens/settings/device/wifi_info_screen.dart';
 import 'package:gsmlg/screens/settings/local_tools_settings_screen.dart';
+import 'package:gsmlg/screens/settings/log_center_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
 import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
 import 'package:gsmlg/screens/settings/remote_tools_settings_screen.dart';
@@ -239,6 +240,15 @@ GoRoute settingsRoutes() => GoRoute(
           child: const AccentColorSettingsScreen(),
         );
       },
+    ),
+    GoRoute(
+      name: LogCenterScreen.name,
+      path: LogCenterScreen.path,
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        restorationId: state.pageKey.value,
+        child: const LogCenterScreen(),
+      ),
     ),
     GoRoute(
       name: ActivityMonitorScreen.name,

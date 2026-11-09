@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:app_database/app_database.dart';
+import 'package:app_duckdb/app_duckdb.dart' show AppDuckDb, DuckDbLogOutput;
 import 'package:app_locale/app_locale.dart';
 import 'package:app_logging/app_logging.dart';
 import 'package:app_provider/app_provider.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart' as logging;
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -41,6 +43,7 @@ void main(List<String> args) async {
           '${record.loggerName} ${record.level.name} [${record.time}]: ${record.message}';
       bootstrapLogFile!.writeAsString('$log\n', mode: FileMode.append);
     });
+    await _attachDuckDbLogging();
     logger.i('App started');
 
     final sharedPrefs = await SharedPreferences.getInstance();
@@ -72,6 +75,22 @@ void main(List<String> args) async {
       stackTrace: stackTrace,
     );
     runApp(BootstrapErrorApp(error: error, stackTrace: stackTrace));
+  }
+}
+
+/// Opens the DuckDB log store and persists every root logger record into it.
+///
+/// Failure is non-fatal: the app keeps running with file/console logging only.
+Future<void> _attachDuckDbLogging() async {
+  try {
+    await AppDuckDb.instance.open();
+    await AppDuckDb.instance.ensureLogSchemas();
+    final output = DuckDbLogOutput(duckDb: AppDuckDb.instance);
+    logging.Logger.root.onRecord.listen(output.writeRootRecord);
+  } catch (error, stackTrace) {
+    logging.Logger(
+      'DuckDb',
+    ).warning('DuckDB log store unavailable', error, stackTrace);
   }
 }
 

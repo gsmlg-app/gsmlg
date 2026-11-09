@@ -35,6 +35,7 @@ dependencies:
   monitor_bloc: any
   tts_dataset_bloc: any
   app_database: any
+  app_duckdb: any
   app_secure_storage: any
   app_chat: any
   tts_dataset: any

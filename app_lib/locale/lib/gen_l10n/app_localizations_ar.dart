@@ -1284,4 +1284,46 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get quit => 'Quit';
+
+  @override
+  String get logCenterTitle => 'Log Center';
+
+  @override
+  String get logCenterAllLogs => 'All Logs';
+
+  @override
+  String get logCenterSystemLogs => 'System';
+
+  @override
+  String get logCenterRefresh => 'Refresh';
+
+  @override
+  String get logCenterMaintenance => 'Log Maintenance';
+
+  @override
+  String get logCenterPruneAction => 'Clean / Prune Logs…';
+
+  @override
+  String get logCenterPruneTitle => 'Clean & Prune Logs';
+
+  @override
+  String get logCenterPruneMessage =>
+      'Select the logs to remove from local DuckDB storage. This cannot be undone.';
+
+  @override
+  String get logCenterOlderThan7Days => 'Older than 7 days';
+
+  @override
+  String get logCenterOlderThan30Days => 'Older than 30 days';
+
+  @override
+  String get logCenterClearAll => 'Clear All';
+
+  @override
+  String get logCenterPruneDone => 'Log cleanup completed';
+
+  @override
+  String logCenterPruneFailed(String error) {
+    return 'Cleanup failed: $error';
+  }
 }

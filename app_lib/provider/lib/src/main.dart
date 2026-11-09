@@ -5,6 +5,7 @@ import 'package:app_audio/audio.dart';
 import 'package:app_chat/app_chat.dart';
 import 'dart:convert';
 import 'package:app_database/app_database.dart';
+import 'package:app_duckdb/app_duckdb.dart' show AppDuckDb;
 import 'package:app_editor/app_editor.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:audio_bloc/audio_bloc.dart';
@@ -53,6 +54,7 @@ class MainProvider extends StatelessWidget {
         ),
         RepositoryProvider<SharedPreferences>(create: (context) => sharedPrefs),
         RepositoryProvider<AppDatabase>(create: (context) => database),
+        RepositoryProvider<AppDuckDb>.value(value: AppDuckDb.instance),
         RepositoryProvider<VaultRepository>(create: (context) => vault),
         RepositoryProvider<GemmaRepository>(
           create: (context) => GemmaRepository(),
