@@ -23,7 +23,8 @@ class App extends StatefulWidget {
 
   final List<String> arguments;
 
-  /// Flushes buffered log records; awaited before the app exits.
+  /// Flushes buffered log records; awaited before the app exits and also
+  /// triggered (not awaited) when the app is hidden or paused.
   final Future<void> Function()? flushLogs;
 
   @override
@@ -42,8 +43,15 @@ class _AppState extends State<App> {
     try {
       await widget.flushLogs?.call();
     } catch (error, stackTrace) {
-      AppLogger().e('Log flush on exit failed', error, stackTrace);
+      AppLogger().e('Log flush failed', error, stackTrace);
     }
+  }
+
+  /// Closes the open screen visit, then flushes without blocking the
+  /// lifecycle callback (the OS may suspend the app soon after).
+  void _onBackground() {
+    _usage.onBackground();
+    unawaited(_flushLogs());
   }
 
   Future<AppExitResponse> _confirmExit() async {
@@ -65,8 +73,8 @@ class _AppState extends State<App> {
     _exitListener = AppLifecycleListener(
       onResume: () => _usage.onForeground(),
       onDetach: () => _usage.onBackground(),
-      onHide: () => _usage.onBackground(),
-      onPause: () => _usage.onBackground(),
+      onHide: _onBackground,
+      onPause: _onBackground,
       onExitRequested: () async {
         final response = await _confirmExit();
         // Close the session before flushing so session_end is persisted.
