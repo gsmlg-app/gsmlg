@@ -7,7 +7,6 @@
 // ignore_for_file: argument_type_not_assignable
 
 import 'api/duckdb.dart';
-import 'api/simple.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -25,28 +24,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  AgentEventEntry dco_decode_agent_event_entry(dynamic raw);
+
+  @protected
+  ApiExchangeEntry dco_decode_api_exchange_entry(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
-
-  @protected
-  bool dco_decode_box_autoadd_bool(dynamic raw);
-
-  @protected
-  DuckDbLogEntry dco_decode_box_autoadd_duck_db_log_entry(dynamic raw);
 
   @protected
   int dco_decode_box_autoadd_i_32(dynamic raw);
 
   @protected
+  PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw);
+
+  @protected
   int dco_decode_box_autoadd_u_32(dynamic raw);
-
-  @protected
-  DhcpLogEntry dco_decode_dhcp_log_entry(dynamic raw);
-
-  @protected
-  DnsLogEntry dco_decode_dns_log_entry(dynamic raw);
-
-  @protected
-  DuckDbLogEntry dco_decode_duck_db_log_entry(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
@@ -55,13 +48,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 dco_decode_i_64(dynamic raw);
 
   @protected
-  List<DhcpLogEntry> dco_decode_list_dhcp_log_entry(dynamic raw);
+  List<AgentEventEntry> dco_decode_list_agent_event_entry(dynamic raw);
 
   @protected
-  List<DnsLogEntry> dco_decode_list_dns_log_entry(dynamic raw);
-
-  @protected
-  List<DuckDbLogEntry> dco_decode_list_duck_db_log_entry(dynamic raw);
+  List<ApiExchangeEntry> dco_decode_list_api_exchange_entry(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
@@ -70,13 +60,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<SystemLogEntry> dco_decode_list_system_log_entry(dynamic raw);
 
   @protected
+  List<UsageEventEntry> dco_decode_list_usage_event_entry(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
-  bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+  int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
 
   @protected
-  int? dco_decode_opt_box_autoadd_i_32(dynamic raw);
+  PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw);
 
   @protected
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
@@ -94,35 +87,31 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
+  UsageEventEntry dco_decode_usage_event_entry(dynamic raw);
+
+  @protected
   BigInt dco_decode_usize(dynamic raw);
 
   @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  AgentEventEntry sse_decode_agent_event_entry(SseDeserializer deserializer);
+
+  @protected
+  ApiExchangeEntry sse_decode_api_exchange_entry(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
-
-  @protected
-  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
-
-  @protected
-  DuckDbLogEntry sse_decode_box_autoadd_duck_db_log_entry(
-      SseDeserializer deserializer);
 
   @protected
   int sse_decode_box_autoadd_i_32(SseDeserializer deserializer);
 
   @protected
+  PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
-
-  @protected
-  DhcpLogEntry sse_decode_dhcp_log_entry(SseDeserializer deserializer);
-
-  @protected
-  DnsLogEntry sse_decode_dns_log_entry(SseDeserializer deserializer);
-
-  @protected
-  DuckDbLogEntry sse_decode_duck_db_log_entry(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
@@ -131,14 +120,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
-  List<DhcpLogEntry> sse_decode_list_dhcp_log_entry(
+  List<AgentEventEntry> sse_decode_list_agent_event_entry(
       SseDeserializer deserializer);
 
   @protected
-  List<DnsLogEntry> sse_decode_list_dns_log_entry(SseDeserializer deserializer);
-
-  @protected
-  List<DuckDbLogEntry> sse_decode_list_duck_db_log_entry(
+  List<ApiExchangeEntry> sse_decode_list_api_exchange_entry(
       SseDeserializer deserializer);
 
   @protected
@@ -149,13 +135,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       SseDeserializer deserializer);
 
   @protected
+  List<UsageEventEntry> sse_decode_list_usage_event_entry(
+      SseDeserializer deserializer);
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
-  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
+  int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
 
   @protected
-  int? sse_decode_opt_box_autoadd_i_32(SseDeserializer deserializer);
+  PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer);
 
   @protected
   int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
@@ -173,36 +163,34 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_decode_unit(SseDeserializer deserializer);
 
   @protected
+  UsageEventEntry sse_decode_usage_event_entry(SseDeserializer deserializer);
+
+  @protected
   BigInt sse_decode_usize(SseDeserializer deserializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_agent_event_entry(
+      AgentEventEntry self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_api_exchange_entry(
+      ApiExchangeEntry self, SseSerializer serializer);
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_duck_db_log_entry(
-      DuckDbLogEntry self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_i_32(int self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_i_64(
+      PlatformInt64 self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_dhcp_log_entry(DhcpLogEntry self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_dns_log_entry(DnsLogEntry self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_duck_db_log_entry(
-      DuckDbLogEntry self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
@@ -211,16 +199,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_dhcp_log_entry(
-      List<DhcpLogEntry> self, SseSerializer serializer);
+  void sse_encode_list_agent_event_entry(
+      List<AgentEventEntry> self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_dns_log_entry(
-      List<DnsLogEntry> self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_list_duck_db_log_entry(
-      List<DuckDbLogEntry> self, SseSerializer serializer);
+  void sse_encode_list_api_exchange_entry(
+      List<ApiExchangeEntry> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8_strict(
@@ -231,13 +215,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       List<SystemLogEntry> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_usage_event_entry(
+      List<UsageEventEntry> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
-  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
+  void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer);
 
   @protected
-  void sse_encode_opt_box_autoadd_i_32(int? self, SseSerializer serializer);
+  void sse_encode_opt_box_autoadd_i_64(
+      PlatformInt64? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
@@ -254,6 +243,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_usage_event_entry(
+      UsageEventEntry self, SseSerializer serializer);
 
   @protected
   void sse_encode_usize(BigInt self, SseSerializer serializer);

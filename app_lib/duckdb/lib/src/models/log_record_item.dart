@@ -37,7 +37,7 @@ enum LogLevel {
 class LogRecordItem extends Equatable {
   final String id;
   final DateTime timestamp;
-  final String logType; // 'system' | 'dns' | 'dhcp'
+  final String logType; // 'system' | 'api' | 'agent'
   final LogLevel level;
   final String? loggerName;
   final String message;
@@ -85,25 +85,6 @@ class LogRecordItem extends Equatable {
           status = detailsMap['status']?.toString() ?? status;
         }
       } catch (_) {}
-    } else if (logType == 'dns') {
-      final qType = map['query_type']?.toString() ?? '';
-      final domain = map['domain']?.toString() ?? '';
-      final answers = map['answers']?.toString() ?? '';
-      final rcode = map['rcode']?.toString() ?? '';
-      message =
-          '$qType $domain => ${answers.isNotEmpty ? answers : rcode}'.trim();
-      clientAddress = map['client_ip']?.toString();
-      status = rcode.isNotEmpty ? rcode : status;
-    } else if (logType == 'dhcp') {
-      final msgType = map['message_type']?.toString() ?? '';
-      final assignedIp = map['assigned_ip']?.toString() ?? '';
-      final hostname = map['hostname']?.toString() ?? '';
-      message =
-          '$msgType $assignedIp ${hostname.isNotEmpty ? '($hostname)' : ''}'
-              .trim();
-      clientAddress =
-          map['client_mac']?.toString() ?? map['client_ip']?.toString();
-      status = msgType.isNotEmpty ? msgType : status;
     } else {
       message = map['message']?.toString() ?? '';
       clientAddress = map['isolate_id']?.toString();

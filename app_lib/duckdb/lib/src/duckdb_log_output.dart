@@ -9,17 +9,13 @@ import 'log_router.dart';
 import 'rust/api/duckdb.dart';
 
 /// A high-performance [LogOutput] implementation that routes and batches log records
-/// into DuckDB dedicated tables (`system_logs`, `dns_logs`, `dhcp_logs`).
+/// into DuckDB the system log table (`system_logs`).
 class DuckDbLogOutput extends LogOutput {
   final AppDuckDb duckDb;
-  final int dnsThreshold;
   final int systemThreshold;
-  final int dhcpThreshold;
   final Duration flushInterval;
 
   final List<SystemLogEntry> _systemBuffer = [];
-  final List<DnsLogEntry> _dnsBuffer = [];
-  final List<DhcpLogEntry> _dhcpBuffer = [];
 
   Timer? _timer;
   bool _isFlushing = false;
@@ -27,9 +23,7 @@ class DuckDbLogOutput extends LogOutput {
 
   DuckDbLogOutput({
     required this.duckDb,
-    this.dnsThreshold = 100,
     this.systemThreshold = 50,
-    this.dhcpThreshold = 50,
     this.flushInterval = const Duration(milliseconds: 500),
   }) {
     if (flushInterval > Duration.zero) {
@@ -62,16 +56,6 @@ class DuckDbLogOutput extends LogOutput {
         if (_systemBuffer.length >= systemThreshold) {
           needsFlush = true;
         }
-      case RoutedDnsLog(:final entry):
-        _dnsBuffer.add(entry);
-        if (_dnsBuffer.length >= dnsThreshold) {
-          needsFlush = true;
-        }
-      case RoutedDhcpLog(:final entry):
-        _dhcpBuffer.add(entry);
-        if (_dhcpBuffer.length >= dhcpThreshold) {
-          needsFlush = true;
-        }
     }
 
     if (needsFlush) {
@@ -86,9 +70,7 @@ class DuckDbLogOutput extends LogOutput {
 
   Future<void> _flushBuffers() async {
     if (_isFlushing) return;
-    if (_systemBuffer.isEmpty && _dnsBuffer.isEmpty && _dhcpBuffer.isEmpty) {
-      return;
-    }
+    if (_systemBuffer.isEmpty) return;
 
     _isFlushing = true;
     try {
@@ -96,20 +78,8 @@ class DuckDbLogOutput extends LogOutput {
       final sysToFlush = List<SystemLogEntry>.of(_systemBuffer);
       _systemBuffer.clear();
 
-      final dnsToFlush = List<DnsLogEntry>.of(_dnsBuffer);
-      _dnsBuffer.clear();
-
-      final dhcpToFlush = List<DhcpLogEntry>.of(_dhcpBuffer);
-      _dhcpBuffer.clear();
-
       if (sysToFlush.isNotEmpty) {
         await duckDb.batchAppendSystemLogs(sysToFlush);
-      }
-      if (dnsToFlush.isNotEmpty) {
-        await duckDb.batchAppendDnsLogs(dnsToFlush);
-      }
-      if (dhcpToFlush.isNotEmpty) {
-        await duckDb.batchAppendDhcpLogs(dhcpToFlush);
       }
     } catch (e, stack) {
       // Isolate error: report without failing caller

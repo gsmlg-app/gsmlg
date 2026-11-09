@@ -43,19 +43,9 @@ class LogQueryBuilder {
 
     if (keyword != null && keyword.trim().isNotEmpty) {
       final safeKw = escapeLiteral(keyword.trim());
-      if (tableOrView == 'dns_logs') {
-        conditions.add(
-          "(domain ILIKE '%$safeKw%' OR client_ip ILIKE '%$safeKw%' OR answers ILIKE '%$safeKw%' OR query_type ILIKE '%$safeKw%')",
-        );
-      } else if (tableOrView == 'dhcp_logs') {
-        conditions.add(
-          "(client_mac ILIKE '%$safeKw%' OR assigned_ip ILIKE '%$safeKw%' OR hostname ILIKE '%$safeKw%' OR message_type ILIKE '%$safeKw%')",
-        );
-      } else {
-        conditions.add(
-          "(message ILIKE '%$safeKw%' OR logger_name ILIKE '%$safeKw%')",
-        );
-      }
+      conditions.add(
+        "(message ILIKE '%$safeKw%' OR logger_name ILIKE '%$safeKw%')",
+      );
     }
 
     if (conditions.isEmpty) {

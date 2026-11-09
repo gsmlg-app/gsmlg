@@ -10,7 +10,7 @@ void main() {
 
     setUp(() async {
       await db.open(inMemory: true);
-      await db.ensureLogSchema();
+      await db.ensureLogSchemas();
     });
 
     tearDown(() async {
@@ -42,113 +42,194 @@ void main() {
       expect(list[1]['name'], equals('Bob'));
     });
 
-    test('append and query recent logs', () async {
-      final entry = AppDuckDb.createLogEntry(
-        id: 'log-1',
-        level: 'INFO',
-        loggerName: 'dns.server',
-        message: 'DNS server started',
-        queryType: 'A',
-        domain: 'example.com',
-        sourceIp: '127.0.0.1',
-        status: 'NOERROR',
-        latencyMs: 5,
-        metadata: '{"cached":true}',
-      );
-
-      await db.appendLog(entry);
-
-      final logs = await db.queryRecentLogs(limit: 10);
-      expect(logs.length, equals(1));
-      expect(logs[0].id, equals('log-1'));
-      expect(logs[0].level, equals('INFO'));
-      expect(logs[0].loggerName, equals('dns.server'));
-      expect(logs[0].message, equals('DNS server started'));
-      expect(logs[0].domain, equals('example.com'));
-      expect(logs[0].latencyMs, equals(5));
-    });
-
-    test('batch append logs', () async {
-      final entries = List.generate(
-        100,
-        (i) => AppDuckDb.createLogEntry(
-          id: 'log-$i',
-          level: i % 2 == 0 ? 'INFO' : 'DEBUG',
-          loggerName: 'benchmark',
-          message: 'Benchmark message $i',
-        ),
-      );
-
-      final count = await db.batchAppendLogs(entries);
-      expect(count, equals(100));
-
-      final allLogs = await db.queryRecentLogs(limit: 200);
-      expect(allLogs.length, equals(100));
-
-      final infoLogs = await db.queryRecentLogs(limit: 200, level: 'INFO');
-      expect(infoLogs.length, equals(50));
-    });
-
-    test('dedicated tables: batch append and query system, dns, and dhcp logs',
-        () async {
+    test('ensureLogSchemas drops legacy dns/dhcp/app_logs tables', () async {
+      await db.execute('CREATE TABLE dns_logs (id VARCHAR);');
+      await db.execute('CREATE TABLE app_logs (id VARCHAR);');
       await db.ensureLogSchemas();
+      final rows = jsonDecode(
+        await db.queryJson(
+          "SELECT count(*) AS n FROM information_schema.tables WHERE table_name IN ('dns_logs','dhcp_logs','app_logs')",
+        ),
+      ) as List<dynamic>;
+      expect(rows.first['n'], equals(0));
+    });
 
-      final sysEntry = SystemLogEntry(
-        id: 'sys-1',
-        timestampUs: PlatformInt64Util.from(1000),
-        level: 'INFO',
-        loggerName: 'AppBloc',
-        message: 'App initialized',
-        isolateId: 'main',
-        error: null,
-        stackTrace: null,
-        metadata: '{"key":"val"}',
-      );
-      await db.batchAppendSystemLogs([sysEntry]);
-
-      final dnsEntry = DnsLogEntry(
-        id: 'dns-1',
-        timestampUs: PlatformInt64Util.from(2000),
-        clientIp: '192.168.1.100',
-        clientPort: 53535,
-        protocol: 'UDP',
-        queryType: 'A',
-        domain: 'example.com',
-        rcode: 'NOERROR',
-        answers: '93.184.216.34',
-        latencyMs: 12,
-        cached: false,
-        upstream: '1.1.1.1',
-        status: 'SUCCESS',
-      );
-      await db.batchAppendDnsLogs([dnsEntry]);
-
-      final dhcpEntry = DhcpLogEntry(
-        id: 'dhcp-1',
-        timestampUs: PlatformInt64Util.from(3000),
-        ipVersion: 'IPv4',
-        messageType: 'ACK',
-        clientMac: '00:11:22:33:44:55',
-        hostname: 'test-device',
-        assignedIp: '192.168.1.150',
-        leaseTimeSec: 86400,
-        serverIp: '192.168.1.1',
-        interfaceName: 'en0',
-        status: 'ASSIGNED',
-      );
-      await db.batchAppendDhcpLogs([dhcpEntry]);
-
+    test('system logs: batch append and query', () async {
+      await db.batchAppendSystemLogs([
+        SystemLogEntry(
+          id: 'sys-1',
+          timestampUs: PlatformInt64Util.from(1000),
+          level: 'INFO',
+          loggerName: 'AppBloc',
+          message: 'App initialized',
+          isolateId: 'main',
+          metadata: '{"key":"val"}',
+        ),
+      ]);
       final sysLogs = await db.querySystemLogs(limit: 10);
       expect(sysLogs.length, equals(1));
       expect(sysLogs.first.message, equals('App initialized'));
+    });
 
-      final dnsLogs = await db.queryDnsLogs(limit: 10);
-      expect(dnsLogs.length, equals(1));
-      expect(dnsLogs.first.domain, equals('example.com'));
+    test('api_exchanges: append and read back', () async {
+      final n = await db.batchAppendApiExchanges([
+        ApiExchangeEntry(
+          id: 'api-1',
+          timestampUs: PlatformInt64Util.from(2000),
+          requestId: 'req-1',
+          recordType: 'response',
+          category: 'chat',
+          apiType: 'openai',
+          method: 'POST',
+          host: 'api.example.com',
+          path: '/v1/chat',
+          status: 200,
+          durationMs: 42,
+          hasError: false,
+          aborted: false,
+          conversationId: 'c1',
+          runId: 'r1',
+          turn: 1,
+          toolCallId: null,
+          recordJson: '{"a":1}',
+        ),
+      ]);
+      expect(n, equals(1));
+      final rows = jsonDecode(
+        await db.queryJson('SELECT * FROM api_exchanges'),
+      ) as List<dynamic>;
+      expect(rows.length, equals(1));
+      expect(rows.first['request_id'], equals('req-1'));
+      expect(rows.first['status'], equals(200));
+      expect(rows.first['has_error'], isFalse);
+      expect(rows.first['tool_call_id'], isNull);
+      expect(rows.first['record_json'], equals('{"a":1}'));
+    });
 
-      final dhcpLogs = await db.queryDhcpLogs(limit: 10);
-      expect(dhcpLogs.length, equals(1));
-      expect(dhcpLogs.first.assignedIp, equals('192.168.1.150'));
+    test('agent_events: append and read back', () async {
+      final n = await db.batchAppendAgentEvents([
+        AgentEventEntry(
+          id: 'ag-1',
+          timestampUs: PlatformInt64Util.from(3000),
+          eventType: 'tool_call',
+          conversationId: 'c1',
+          runId: 'r1',
+          turn: 2,
+          toolName: 'search',
+          level: 'INFO',
+          isError: false,
+          durationMs: 7,
+          summary: 'called search',
+          payloadJson: '{"q":"x"}',
+        ),
+      ]);
+      expect(n, equals(1));
+      final rows = jsonDecode(
+        await db.queryJson('SELECT * FROM agent_events'),
+      ) as List<dynamic>;
+      expect(rows.first['event_type'], equals('tool_call'));
+      expect(rows.first['tool_name'], equals('search'));
+      expect(rows.first['is_error'], isFalse);
+      expect(rows.first['payload_json'], equals('{"q":"x"}'));
+    });
+
+    test('usage_events: append and read back', () async {
+      final n = await db.batchAppendUsageEvents([
+        UsageEventEntry(
+          id: 'u-1',
+          timestampUs: PlatformInt64Util.from(4000),
+          sessionId: 's1',
+          eventType: 'screen_view',
+          screenName: 'Home',
+          durationMs: PlatformInt64Util.from(1500),
+        ),
+      ]);
+      expect(n, equals(1));
+      final rows = jsonDecode(
+        await db.queryJson('SELECT * FROM usage_events'),
+      ) as List<dynamic>;
+      expect(rows.first['session_id'], equals('s1'));
+      expect(rows.first['screen_name'], equals('Home'));
+      expect(rows.first['duration_ms'], equals(1500));
+    });
+
+    test('v_all_logs projects api error as SEVERE', () async {
+      await db.batchAppendApiExchanges([
+        ApiExchangeEntry(
+          id: 'api-ok',
+          timestampUs: PlatformInt64Util.from(10),
+          requestId: 'r-ok',
+          recordType: 'response',
+          category: 'chat',
+          method: 'GET',
+          host: 'h.com',
+          path: '/ok',
+          status: 200,
+          hasError: false,
+          aborted: false,
+          recordJson: '{}',
+        ),
+        ApiExchangeEntry(
+          id: 'api-500',
+          timestampUs: PlatformInt64Util.from(20),
+          requestId: 'r-500',
+          recordType: 'response',
+          category: 'chat',
+          method: 'GET',
+          host: 'h.com',
+          path: '/bad',
+          status: 500,
+          hasError: false,
+          aborted: false,
+          recordJson: '{}',
+        ),
+        ApiExchangeEntry(
+          id: 'api-err',
+          timestampUs: PlatformInt64Util.from(30),
+          requestId: 'r-err',
+          recordType: 'error',
+          category: 'chat',
+          method: 'GET',
+          host: 'h.com',
+          path: '/err',
+          hasError: true,
+          aborted: false,
+          recordJson: '{}',
+        ),
+      ]);
+      await db.batchAppendAgentEvents([
+        AgentEventEntry(
+          id: 'ag-v',
+          timestampUs: PlatformInt64Util.from(40),
+          eventType: 'x',
+          level: 'INFO',
+          isError: false,
+          summary: 'agent summary',
+        ),
+      ]);
+      await db.batchAppendUsageEvents([
+        UsageEventEntry(
+          id: 'u-v',
+          timestampUs: PlatformInt64Util.from(50),
+          sessionId: 's',
+          eventType: 'e',
+        ),
+      ]);
+      final rows = jsonDecode(
+        await db.queryJson(
+          'SELECT id, log_type, level, message FROM v_all_logs ORDER BY timestamp_us',
+        ),
+      ) as List<dynamic>;
+      expect(
+          rows.map((r) => r['id']), ['api-ok', 'api-500', 'api-err', 'ag-v']);
+      expect(rows[0]['level'], 'INFO');
+      expect(rows[0]['log_type'], 'api');
+      expect(rows[0]['message'], 'GET h.com/ok → 200');
+      expect(rows[1]['level'], 'SEVERE');
+      expect(rows[2]['level'], 'SEVERE');
+      expect(rows[2]['message'], 'GET h.com/err → ERR');
+      expect(rows[3]['log_type'], 'agent');
+      expect(rows[3]['message'], 'agent summary');
     });
   });
 }

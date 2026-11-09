@@ -38,7 +38,7 @@ void main() {
 
     test('escapes single quotes in keyword to prevent syntax errors', () {
       final sql = LogQueryBuilder.buildSelectSql(
-        tableOrView: 'dns_logs',
+        tableOrView: 'api_exchanges',
         keyword: "test' OR '1'='1",
       );
       expect(sql, contains("''1''=''1"));
@@ -47,10 +47,11 @@ void main() {
     test('builds prune sql correctly', () {
       final before = DateTime.fromMicrosecondsSinceEpoch(5000000);
       final sql = LogQueryBuilder.buildPruneSql(
-        table: 'dns_logs',
+        table: 'api_exchanges',
         before: before,
       );
-      expect(sql, equals('DELETE FROM dns_logs WHERE timestamp_us < 5000000;'));
+      expect(sql,
+          equals('DELETE FROM api_exchanges WHERE timestamp_us < 5000000;'));
     });
 
     test('builds clear sql correctly', () {

@@ -5,21 +5,6 @@ use serde::{Deserialize, Serialize};
 static DB_CONN: Mutex<Option<Connection>> = Mutex::new(None);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DuckDbLogEntry {
-    pub id: String,
-    pub timestamp_us: i64,
-    pub level: String,
-    pub logger_name: Option<String>,
-    pub message: String,
-    pub query_type: Option<String>,
-    pub domain: Option<String>,
-    pub source_ip: Option<String>,
-    pub status: Option<String>,
-    pub latency_ms: Option<i32>,
-    pub metadata: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemLogEntry {
     pub id: String,
     pub timestamp_us: i64,
@@ -33,35 +18,60 @@ pub struct SystemLogEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DnsLogEntry {
+pub struct ApiExchangeEntry {
     pub id: String,
     pub timestamp_us: i64,
-    pub client_ip: Option<String>,
-    pub client_port: Option<i32>,
-    pub protocol: Option<String>,
-    pub query_type: Option<String>,
-    pub domain: Option<String>,
-    pub rcode: Option<String>,
-    pub answers: Option<String>,
-    pub latency_ms: Option<i32>,
-    pub cached: Option<bool>,
-    pub upstream: Option<String>,
-    pub status: Option<String>,
+    pub request_id: String,
+    pub record_type: String,
+    pub category: String,
+    pub api_type: Option<String>,
+    pub method: Option<String>,
+    pub host: Option<String>,
+    pub path: Option<String>,
+    pub status: Option<i32>,
+    pub duration_ms: Option<i32>,
+    pub has_error: bool,
+    pub aborted: bool,
+    pub conversation_id: Option<String>,
+    pub run_id: Option<String>,
+    pub turn: Option<i32>,
+    pub tool_call_id: Option<String>,
+    pub record_json: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DhcpLogEntry {
+pub struct AgentEventEntry {
     pub id: String,
     pub timestamp_us: i64,
-    pub ip_version: Option<String>,
-    pub message_type: Option<String>,
-    pub client_mac: Option<String>,
-    pub hostname: Option<String>,
-    pub assigned_ip: Option<String>,
-    pub lease_time_sec: Option<i32>,
-    pub server_ip: Option<String>,
-    pub interface_name: Option<String>,
-    pub status: Option<String>,
+    pub event_type: String,
+    pub conversation_id: Option<String>,
+    pub run_id: Option<String>,
+    pub parent_run_id: Option<String>,
+    pub turn: Option<i32>,
+    pub tool_call_id: Option<String>,
+    pub tool_name: Option<String>,
+    pub backend: Option<String>,
+    pub request_id: Option<String>,
+    pub level: String,
+    pub is_error: bool,
+    pub duration_ms: Option<i32>,
+    pub summary: String,
+    pub payload_json: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UsageEventEntry {
+    pub id: String,
+    pub timestamp_us: i64,
+    pub session_id: String,
+    pub event_type: String,
+    pub module: Option<String>,
+    pub screen_name: Option<String>,
+    pub route_path: Option<String>,
+    pub target: Option<String>,
+    pub source_screen: Option<String>,
+    pub duration_ms: Option<i64>,
+    pub payload_json: Option<String>,
 }
 
 /// Open DuckDB database at given file path or in-memory if None or ":memory:".
@@ -97,34 +107,24 @@ pub fn execute_sql(sql: String) -> Result<usize, String> {
     conn.execute(&sql, []).map_err(|e| format!("SQL error: {e}"))
 }
 
-/// Legacy single log schema for backward compatibility.
-pub fn ensure_log_schema() -> Result<(), String> {
-    execute_sql(
-        "CREATE TABLE IF NOT EXISTS app_logs (
-            id VARCHAR PRIMARY KEY,
-            timestamp_us BIGINT,
-            level VARCHAR,
-            logger_name VARCHAR,
-            message TEXT,
-            query_type VARCHAR,
-            domain VARCHAR,
-            source_ip VARCHAR,
-            status VARCHAR,
-            latency_ms INTEGER,
-            metadata TEXT
-        );"
-        .to_string(),
-    )?;
-    Ok(())
+#[flutter_rust_bridge::frb(init)]
+pub fn init_app() {
+    flutter_rust_bridge::setup_default_user_utils();
 }
 
-/// Ensure dedicated tables (`system_logs`, `dns_logs`, `dhcp_logs`) and view exist.
+/// Ensure log tables (`system_logs`, `api_exchanges`, `agent_events`,
+/// `usage_events`) and the `v_all_logs` view exist. Drops legacy objects first.
 pub fn ensure_log_schemas() -> Result<(), String> {
     let lock = DB_CONN.lock();
     let conn = lock.as_ref().ok_or_else(|| "Database not open".to_string())?;
 
     conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS system_logs (
+        "DROP VIEW IF EXISTS v_all_logs;
+        DROP TABLE IF EXISTS dns_logs;
+        DROP TABLE IF EXISTS dhcp_logs;
+        DROP TABLE IF EXISTS app_logs;
+
+        CREATE TABLE IF NOT EXISTS system_logs (
             id VARCHAR PRIMARY KEY,
             timestamp_us BIGINT,
             level VARCHAR,
@@ -138,100 +138,83 @@ pub fn ensure_log_schemas() -> Result<(), String> {
         CREATE INDEX IF NOT EXISTS idx_sys_logs_time ON system_logs(timestamp_us DESC);
         CREATE INDEX IF NOT EXISTS idx_sys_logs_level ON system_logs(level);
 
-        CREATE TABLE IF NOT EXISTS dns_logs (
+        CREATE TABLE IF NOT EXISTS api_exchanges (
             id VARCHAR PRIMARY KEY,
             timestamp_us BIGINT,
-            client_ip VARCHAR,
-            client_port INTEGER,
-            protocol VARCHAR,
-            query_type VARCHAR,
-            domain VARCHAR,
-            rcode VARCHAR,
-            answers TEXT,
-            latency_ms INTEGER,
-            cached BOOLEAN,
-            upstream VARCHAR,
-            status VARCHAR
+            request_id VARCHAR,
+            record_type VARCHAR,
+            category VARCHAR,
+            api_type VARCHAR,
+            method VARCHAR,
+            host VARCHAR,
+            path VARCHAR,
+            status INTEGER,
+            duration_ms INTEGER,
+            has_error BOOLEAN,
+            aborted BOOLEAN,
+            conversation_id VARCHAR,
+            run_id VARCHAR,
+            turn INTEGER,
+            tool_call_id VARCHAR,
+            record_json TEXT
         );
-        CREATE INDEX IF NOT EXISTS idx_dns_logs_time ON dns_logs(timestamp_us DESC);
-        CREATE INDEX IF NOT EXISTS idx_dns_logs_domain ON dns_logs(domain);
-        CREATE INDEX IF NOT EXISTS idx_dns_logs_client ON dns_logs(client_ip);
-        CREATE INDEX IF NOT EXISTS idx_dns_logs_rcode ON dns_logs(rcode);
+        CREATE INDEX IF NOT EXISTS idx_api_exchanges_time ON api_exchanges(timestamp_us DESC);
+        CREATE INDEX IF NOT EXISTS idx_api_exchanges_category ON api_exchanges(category);
 
-        CREATE TABLE IF NOT EXISTS dhcp_logs (
+        CREATE TABLE IF NOT EXISTS agent_events (
             id VARCHAR PRIMARY KEY,
             timestamp_us BIGINT,
-            ip_version VARCHAR,
-            message_type VARCHAR,
-            client_mac VARCHAR,
-            hostname VARCHAR,
-            assigned_ip VARCHAR,
-            lease_time_sec INTEGER,
-            server_ip VARCHAR,
-            interface_name VARCHAR,
-            status VARCHAR
+            event_type VARCHAR,
+            conversation_id VARCHAR,
+            run_id VARCHAR,
+            parent_run_id VARCHAR,
+            turn INTEGER,
+            tool_call_id VARCHAR,
+            tool_name VARCHAR,
+            backend VARCHAR,
+            request_id VARCHAR,
+            level VARCHAR,
+            is_error BOOLEAN,
+            duration_ms INTEGER,
+            summary TEXT,
+            payload_json TEXT
         );
-        CREATE INDEX IF NOT EXISTS idx_dhcp_logs_time ON dhcp_logs(timestamp_us DESC);
-        CREATE INDEX IF NOT EXISTS idx_dhcp_logs_mac ON dhcp_logs(client_mac);
-        CREATE INDEX IF NOT EXISTS idx_dhcp_logs_ip ON dhcp_logs(assigned_ip);
+        CREATE INDEX IF NOT EXISTS idx_agent_events_time ON agent_events(timestamp_us DESC);
+        CREATE INDEX IF NOT EXISTS idx_agent_events_run ON agent_events(run_id);
 
-        CREATE VIEW IF NOT EXISTS v_all_logs AS
-        SELECT id, timestamp_us, level, logger_name, message, 'SYSTEM' AS category FROM system_logs
+        CREATE TABLE IF NOT EXISTS usage_events (
+            id VARCHAR PRIMARY KEY,
+            timestamp_us BIGINT,
+            session_id VARCHAR,
+            event_type VARCHAR,
+            module VARCHAR,
+            screen_name VARCHAR,
+            route_path VARCHAR,
+            target VARCHAR,
+            source_screen VARCHAR,
+            duration_ms BIGINT,
+            payload_json TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_usage_events_time ON usage_events(timestamp_us DESC);
+        CREATE INDEX IF NOT EXISTS idx_usage_events_session ON usage_events(session_id);
+
+        CREATE VIEW v_all_logs AS
+        SELECT id, timestamp_us, 'system' AS log_type, 'system' AS category,
+               level, logger_name, message FROM system_logs
         UNION ALL
-        SELECT id, timestamp_us, 'INFO' AS level, 'DnsService' AS logger_name, 
-               concat(query_type, ' ', domain, ' -> ', rcode, ' (', latency_ms, 'ms)') AS message, 'DNS' AS category FROM dns_logs
+        SELECT id, timestamp_us, 'api' AS log_type, category,
+               CASE WHEN has_error OR coalesce(status, 0) >= 400 THEN 'SEVERE' ELSE 'INFO' END AS level,
+               'api' AS logger_name,
+               concat(method, ' ', host, path, ' → ', coalesce(CAST(status AS VARCHAR), 'ERR')) AS message
+        FROM api_exchanges
         UNION ALL
-        SELECT id, timestamp_us, 'INFO' AS level, concat('DhcpServer.', ip_version) AS logger_name,
-               concat(message_type, ' ', client_mac, ' ', assigned_ip) AS message, 'DHCP' AS category FROM dhcp_logs;
-        "
-    ).map_err(|e| format!("Failed to create log schemas: {e}"))?;
+        SELECT id, timestamp_us, 'agent' AS log_type, 'agent' AS category,
+               level, 'agent' AS logger_name, summary AS message FROM agent_events;
+        ",
+    )
+    .map_err(|e| format!("Failed to create log schemas: {e}"))?;
 
     Ok(())
-}
-
-/// Append a single log entry into `app_logs` (legacy).
-pub fn append_log(entry: DuckDbLogEntry) -> Result<(), String> {
-    batch_append_logs(vec![entry])?;
-    Ok(())
-}
-
-/// High-throughput batch appending using DuckDB Appender for `app_logs`.
-pub fn batch_append_logs(entries: Vec<DuckDbLogEntry>) -> Result<usize, String> {
-    if entries.is_empty() {
-        return Ok(0);
-    }
-
-    let lock = DB_CONN.lock();
-    let conn = lock.as_ref().ok_or_else(|| "Database not open".to_string())?;
-    let count = entries.len();
-
-    let mut appender = conn
-        .appender("app_logs")
-        .map_err(|e| format!("Failed to create appender: {e}"))?;
-
-    for entry in entries {
-        appender
-            .append_row(params![
-                entry.id,
-                entry.timestamp_us,
-                entry.level,
-                entry.logger_name,
-                entry.message,
-                entry.query_type,
-                entry.domain,
-                entry.source_ip,
-                entry.status,
-                entry.latency_ms,
-                entry.metadata,
-            ])
-            .map_err(|e| format!("Failed to append log row: {e}"))?;
-    }
-
-    appender
-        .flush()
-        .map_err(|e| format!("Failed to flush appender: {e}"))?;
-
-    Ok(count)
 }
 
 /// Batch append entries to `system_logs`.
@@ -267,8 +250,8 @@ pub fn batch_append_system_logs(entries: Vec<SystemLogEntry>) -> Result<usize, S
     Ok(count)
 }
 
-/// Batch append entries to `dns_logs`.
-pub fn batch_append_dns_logs(entries: Vec<DnsLogEntry>) -> Result<usize, String> {
+/// Batch append entries to `api_exchanges`.
+pub fn batch_append_api_exchanges(entries: Vec<ApiExchangeEntry>) -> Result<usize, String> {
     if entries.is_empty() {
         return Ok(0);
     }
@@ -276,36 +259,41 @@ pub fn batch_append_dns_logs(entries: Vec<DnsLogEntry>) -> Result<usize, String>
     let conn = lock.as_ref().ok_or_else(|| "Database not open".to_string())?;
     let count = entries.len();
     let mut appender = conn
-        .appender("dns_logs")
-        .map_err(|e| format!("Failed to create dns_logs appender: {e}"))?;
+        .appender("api_exchanges")
+        .map_err(|e| format!("Failed to create api_exchanges appender: {e}"))?;
 
     for e in entries {
         appender
             .append_row(params![
                 e.id,
                 e.timestamp_us,
-                e.client_ip,
-                e.client_port,
-                e.protocol,
-                e.query_type,
-                e.domain,
-                e.rcode,
-                e.answers,
-                e.latency_ms,
-                e.cached,
-                e.upstream,
+                e.request_id,
+                e.record_type,
+                e.category,
+                e.api_type,
+                e.method,
+                e.host,
+                e.path,
                 e.status,
+                e.duration_ms,
+                e.has_error,
+                e.aborted,
+                e.conversation_id,
+                e.run_id,
+                e.turn,
+                e.tool_call_id,
+                e.record_json,
             ])
-            .map_err(|e| format!("Failed to append dns_log row: {e}"))?;
+            .map_err(|e| format!("Failed to append api_exchanges row: {e}"))?;
     }
     appender
         .flush()
-        .map_err(|e| format!("Failed to flush dns_logs appender: {e}"))?;
+        .map_err(|e| format!("Failed to flush api_exchanges appender: {e}"))?;
     Ok(count)
 }
 
-/// Batch append entries to `dhcp_logs`.
-pub fn batch_append_dhcp_logs(entries: Vec<DhcpLogEntry>) -> Result<usize, String> {
+/// Batch append entries to `agent_events`.
+pub fn batch_append_agent_events(entries: Vec<AgentEventEntry>) -> Result<usize, String> {
     if entries.is_empty() {
         return Ok(0);
     }
@@ -313,98 +301,70 @@ pub fn batch_append_dhcp_logs(entries: Vec<DhcpLogEntry>) -> Result<usize, Strin
     let conn = lock.as_ref().ok_or_else(|| "Database not open".to_string())?;
     let count = entries.len();
     let mut appender = conn
-        .appender("dhcp_logs")
-        .map_err(|e| format!("Failed to create dhcp_logs appender: {e}"))?;
+        .appender("agent_events")
+        .map_err(|e| format!("Failed to create agent_events appender: {e}"))?;
 
     for e in entries {
         appender
             .append_row(params![
                 e.id,
                 e.timestamp_us,
-                e.ip_version,
-                e.message_type,
-                e.client_mac,
-                e.hostname,
-                e.assigned_ip,
-                e.lease_time_sec,
-                e.server_ip,
-                e.interface_name,
-                e.status,
+                e.event_type,
+                e.conversation_id,
+                e.run_id,
+                e.parent_run_id,
+                e.turn,
+                e.tool_call_id,
+                e.tool_name,
+                e.backend,
+                e.request_id,
+                e.level,
+                e.is_error,
+                e.duration_ms,
+                e.summary,
+                e.payload_json,
             ])
-            .map_err(|e| format!("Failed to append dhcp_log row: {e}"))?;
+            .map_err(|e| format!("Failed to append agent_events row: {e}"))?;
     }
     appender
         .flush()
-        .map_err(|e| format!("Failed to flush dhcp_logs appender: {e}"))?;
+        .map_err(|e| format!("Failed to flush agent_events appender: {e}"))?;
     Ok(count)
 }
 
-/// Query recent logs with an optional limit and level filter (legacy).
-pub fn query_recent_logs(
-    limit: Option<u32>,
-    level: Option<String>,
-) -> Result<Vec<DuckDbLogEntry>, String> {
+/// Batch append entries to `usage_events`.
+pub fn batch_append_usage_events(entries: Vec<UsageEventEntry>) -> Result<usize, String> {
+    if entries.is_empty() {
+        return Ok(0);
+    }
     let lock = DB_CONN.lock();
     let conn = lock.as_ref().ok_or_else(|| "Database not open".to_string())?;
+    let count = entries.len();
+    let mut appender = conn
+        .appender("usage_events")
+        .map_err(|e| format!("Failed to create usage_events appender: {e}"))?;
 
-    let lim = limit.unwrap_or(100);
-    let (sql, filter_val) = match level {
-        Some(lvl) if !lvl.is_empty() => (
-            "SELECT id, timestamp_us, level, logger_name, message, query_type, domain, source_ip, status, latency_ms, metadata
-             FROM app_logs
-             WHERE level = ?
-             ORDER BY timestamp_us DESC
-             LIMIT ?;",
-            Some(lvl),
-        ),
-        _ => (
-            "SELECT id, timestamp_us, level, logger_name, message, query_type, domain, source_ip, status, latency_ms, metadata
-             FROM app_logs
-             ORDER BY timestamp_us DESC
-             LIMIT ?;",
-            None,
-        ),
-    };
-
-    let mut stmt = conn.prepare(sql).map_err(|e| format!("Prepare error: {e}"))?;
-
-    let row_mapper = |row: &duckdb::Row| -> duckdb::Result<DuckDbLogEntry> {
-        Ok(DuckDbLogEntry {
-            id: row.get(0)?,
-            timestamp_us: row.get(1)?,
-            level: row.get(2)?,
-            logger_name: row.get(3)?,
-            message: row.get(4)?,
-            query_type: row.get(5)?,
-            domain: row.get(6)?,
-            source_ip: row.get(7)?,
-            status: row.get(8)?,
-            latency_ms: row.get(9)?,
-            metadata: row.get(10)?,
-        })
-    };
-
-    let entries: Vec<DuckDbLogEntry> = if let Some(lvl) = filter_val {
-        let rows = stmt
-            .query_map(params![lvl, lim], row_mapper)
-            .map_err(|e| format!("Query error: {e}"))?;
-        let mut list = Vec::new();
-        for r in rows {
-            list.push(r.map_err(|e| format!("Row parse error: {e}"))?);
-        }
-        list
-    } else {
-        let rows = stmt
-            .query_map(params![lim], row_mapper)
-            .map_err(|e| format!("Query error: {e}"))?;
-        let mut list = Vec::new();
-        for r in rows {
-            list.push(r.map_err(|e| format!("Row parse error: {e}"))?);
-        }
-        list
-    };
-
-    Ok(entries)
+    for e in entries {
+        appender
+            .append_row(params![
+                e.id,
+                e.timestamp_us,
+                e.session_id,
+                e.event_type,
+                e.module,
+                e.screen_name,
+                e.route_path,
+                e.target,
+                e.source_screen,
+                e.duration_ms,
+                e.payload_json,
+            ])
+            .map_err(|e| format!("Failed to append usage_events row: {e}"))?;
+    }
+    appender
+        .flush()
+        .map_err(|e| format!("Failed to flush usage_events appender: {e}"))?;
+    Ok(count)
 }
 
 /// Query system logs with optional level filter and limit.
@@ -467,182 +427,6 @@ pub fn query_system_logs(
     Ok(rows)
 }
 
-/// Query DNS logs with optional domain, rcode filters and limit.
-pub fn query_dns_logs(
-    limit: Option<u32>,
-    domain: Option<String>,
-    rcode: Option<String>,
-) -> Result<Vec<DnsLogEntry>, String> {
-    let lock = DB_CONN.lock();
-    let conn = lock.as_ref().ok_or_else(|| "Database not open".to_string())?;
-    let lim = limit.unwrap_or(100);
-
-    let mut sql = "SELECT id, timestamp_us, client_ip, client_port, protocol, query_type, domain, rcode, answers, latency_ms, cached, upstream, status FROM dns_logs".to_string();
-    let mut conditions = Vec::new();
-    if domain.is_some() {
-        conditions.push("domain = ?");
-    }
-    if rcode.is_some() {
-        conditions.push("rcode = ?");
-    }
-    if !conditions.is_empty() {
-        sql.push_str(" WHERE ");
-        sql.push_str(&conditions.join(" AND "));
-    }
-    sql.push_str(" ORDER BY timestamp_us DESC LIMIT ?;");
-
-    let mut stmt = conn.prepare(&sql).map_err(|e| format!("Prepare error: {e}"))?;
-    let mapper = |row: &duckdb::Row| -> duckdb::Result<DnsLogEntry> {
-        Ok(DnsLogEntry {
-            id: row.get(0)?,
-            timestamp_us: row.get(1)?,
-            client_ip: row.get(2)?,
-            client_port: row.get(3)?,
-            protocol: row.get(4)?,
-            query_type: row.get(5)?,
-            domain: row.get(6)?,
-            rcode: row.get(7)?,
-            answers: row.get(8)?,
-            latency_ms: row.get(9)?,
-            cached: row.get(10)?,
-            upstream: row.get(11)?,
-            status: row.get(12)?,
-        })
-    };
-
-    let rows: Vec<DnsLogEntry> = match (&domain, &rcode) {
-        (Some(d), Some(r)) => {
-            let r = stmt
-                .query_map(params![d, r, lim], mapper)
-                .map_err(|e| format!("Query error: {e}"))?;
-            let mut list = Vec::new();
-            for item in r {
-                list.push(item.map_err(|e| format!("Row error: {e}"))?);
-            }
-            list
-        }
-        (Some(d), None) => {
-            let r = stmt
-                .query_map(params![d, lim], mapper)
-                .map_err(|e| format!("Query error: {e}"))?;
-            let mut list = Vec::new();
-            for item in r {
-                list.push(item.map_err(|e| format!("Row error: {e}"))?);
-            }
-            list
-        }
-        (None, Some(r)) => {
-            let r = stmt
-                .query_map(params![r, lim], mapper)
-                .map_err(|e| format!("Query error: {e}"))?;
-            let mut list = Vec::new();
-            for item in r {
-                list.push(item.map_err(|e| format!("Row error: {e}"))?);
-            }
-            list
-        }
-        (None, None) => {
-            let r = stmt
-                .query_map(params![lim], mapper)
-                .map_err(|e| format!("Query error: {e}"))?;
-            let mut list = Vec::new();
-            for item in r {
-                list.push(item.map_err(|e| format!("Row error: {e}"))?);
-            }
-            list
-        }
-    };
-
-    Ok(rows)
-}
-
-/// Query DHCP logs with optional client_mac, assigned_ip filters and limit.
-pub fn query_dhcp_logs(
-    limit: Option<u32>,
-    client_mac: Option<String>,
-    assigned_ip: Option<String>,
-) -> Result<Vec<DhcpLogEntry>, String> {
-    let lock = DB_CONN.lock();
-    let conn = lock.as_ref().ok_or_else(|| "Database not open".to_string())?;
-    let lim = limit.unwrap_or(100);
-
-    let mut sql = "SELECT id, timestamp_us, ip_version, message_type, client_mac, hostname, assigned_ip, lease_time_sec, server_ip, interface_name, status FROM dhcp_logs".to_string();
-    let mut conditions = Vec::new();
-    if client_mac.is_some() {
-        conditions.push("client_mac = ?");
-    }
-    if assigned_ip.is_some() {
-        conditions.push("assigned_ip = ?");
-    }
-    if !conditions.is_empty() {
-        sql.push_str(" WHERE ");
-        sql.push_str(&conditions.join(" AND "));
-    }
-    sql.push_str(" ORDER BY timestamp_us DESC LIMIT ?;");
-
-    let mut stmt = conn.prepare(&sql).map_err(|e| format!("Prepare error: {e}"))?;
-    let mapper = |row: &duckdb::Row| -> duckdb::Result<DhcpLogEntry> {
-        Ok(DhcpLogEntry {
-            id: row.get(0)?,
-            timestamp_us: row.get(1)?,
-            ip_version: row.get(2)?,
-            message_type: row.get(3)?,
-            client_mac: row.get(4)?,
-            hostname: row.get(5)?,
-            assigned_ip: row.get(6)?,
-            lease_time_sec: row.get(7)?,
-            server_ip: row.get(8)?,
-            interface_name: row.get(9)?,
-            status: row.get(10)?,
-        })
-    };
-
-    let rows: Vec<DhcpLogEntry> = match (&client_mac, &assigned_ip) {
-        (Some(m), Some(ip)) => {
-            let r = stmt
-                .query_map(params![m, ip, lim], mapper)
-                .map_err(|e| format!("Query error: {e}"))?;
-            let mut list = Vec::new();
-            for item in r {
-                list.push(item.map_err(|e| format!("Row error: {e}"))?);
-            }
-            list
-        }
-        (Some(m), None) => {
-            let r = stmt
-                .query_map(params![m, lim], mapper)
-                .map_err(|e| format!("Query error: {e}"))?;
-            let mut list = Vec::new();
-            for item in r {
-                list.push(item.map_err(|e| format!("Row error: {e}"))?);
-            }
-            list
-        }
-        (None, Some(ip)) => {
-            let r = stmt
-                .query_map(params![ip, lim], mapper)
-                .map_err(|e| format!("Query error: {e}"))?;
-            let mut list = Vec::new();
-            for item in r {
-                list.push(item.map_err(|e| format!("Row error: {e}"))?);
-            }
-            list
-        }
-        (None, None) => {
-            let r = stmt
-                .query_map(params![lim], mapper)
-                .map_err(|e| format!("Query error: {e}"))?;
-            let mut list = Vec::new();
-            for item in r {
-                list.push(item.map_err(|e| format!("Row error: {e}"))?);
-            }
-            list
-        }
-    };
-
-    Ok(rows)
-}
-
 /// Execute arbitrary SQL and return results as JSON array string.
 pub fn query_sql_json(sql: String) -> Result<String, String> {
     let lock = DB_CONN.lock();
@@ -683,3 +467,4 @@ pub fn query_sql_json(sql: String) -> Result<String, String> {
 
     serde_json::to_string(&results).map_err(|e| format!("JSON serialize error: {e}"))
 }
+

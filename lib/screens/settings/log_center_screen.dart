@@ -22,7 +22,7 @@ enum _PruneChoice { olderThan7Days, olderThan30Days, all }
 class _LogCenterScreenState extends State<LogCenterScreen>
     with SingleTickerProviderStateMixin {
   /// Tables that hold rows written by this app. `v_all_logs` unions them.
-  static const _tables = ['system_logs', 'dns_logs', 'dhcp_logs'];
+  static const _tables = ['system_logs'];
 
   late final TabController _tabController;
   final _allViewerKey = GlobalKey<DuckDbLogViewerState>();

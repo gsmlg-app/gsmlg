@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -2021650641;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1454428887;
 
 // Section: executor
 
@@ -47,7 +47,7 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
-fn wire__crate__api__duckdb__append_log_impl(
+fn wire__crate__api__duckdb__batch_append_agent_events_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -55,40 +55,7 @@ fn wire__crate__api__duckdb__append_log_impl(
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "append_log",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_entry = <crate::api::duckdb::DuckDbLogEntry>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::duckdb::append_log(api_entry)?;
-                    std::result::Result::Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__duckdb__batch_append_dhcp_logs_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "batch_append_dhcp_logs",
+            debug_name: "batch_append_agent_events",
             port: Some(port_),
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
@@ -103,18 +70,18 @@ fn wire__crate__api__duckdb__batch_append_dhcp_logs_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_entries =
-                <Vec<crate::api::duckdb::DhcpLogEntry>>::sse_decode(&mut deserializer);
+                <Vec<crate::api::duckdb::AgentEventEntry>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::duckdb::batch_append_dhcp_logs(api_entries)?;
+                    let output_ok = crate::api::duckdb::batch_append_agent_events(api_entries)?;
                     std::result::Result::Ok(output_ok)
                 })())
             }
         },
     )
 }
-fn wire__crate__api__duckdb__batch_append_dns_logs_impl(
+fn wire__crate__api__duckdb__batch_append_api_exchanges_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -122,40 +89,7 @@ fn wire__crate__api__duckdb__batch_append_dns_logs_impl(
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "batch_append_dns_logs",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_entries = <Vec<crate::api::duckdb::DnsLogEntry>>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::duckdb::batch_append_dns_logs(api_entries)?;
-                    std::result::Result::Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__duckdb__batch_append_logs_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "batch_append_logs",
+            debug_name: "batch_append_api_exchanges",
             port: Some(port_),
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
@@ -170,11 +104,11 @@ fn wire__crate__api__duckdb__batch_append_logs_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_entries =
-                <Vec<crate::api::duckdb::DuckDbLogEntry>>::sse_decode(&mut deserializer);
+                <Vec<crate::api::duckdb::ApiExchangeEntry>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::duckdb::batch_append_logs(api_entries)?;
+                    let output_ok = crate::api::duckdb::batch_append_api_exchanges(api_entries)?;
                     std::result::Result::Ok(output_ok)
                 })())
             }
@@ -215,6 +149,40 @@ fn wire__crate__api__duckdb__batch_append_system_logs_impl(
         },
     )
 }
+fn wire__crate__api__duckdb__batch_append_usage_events_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "batch_append_usage_events",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_entries =
+                <Vec<crate::api::duckdb::UsageEventEntry>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::duckdb::batch_append_usage_events(api_entries)?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__duckdb__close_duckdb_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -241,38 +209,6 @@ fn wire__crate__api__duckdb__close_duckdb_impl(
             move |context| {
                 transform_result_sse::<_, String>((move || {
                     let output_ok = crate::api::duckdb::close_duckdb()?;
-                    std::result::Result::Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__duckdb__ensure_log_schema_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "ensure_log_schema",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::duckdb::ensure_log_schema()?;
                     std::result::Result::Ok(output_ok)
                 })())
             }
@@ -344,37 +280,7 @@ fn wire__crate__api__duckdb__execute_sql_impl(
         },
     )
 }
-fn wire__crate__api__simple__greet_impl(
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "greet",
-            port: None,
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_name = <String>::sse_decode(&mut deserializer);
-            deserializer.end();
-            transform_result_sse::<_, ()>((move || {
-                let output_ok = Ok::<_, ()>(crate::api::simple::greet(api_name))?;
-                std::result::Result::Ok(output_ok)
-            })())
-        },
-    )
-}
-fn wire__crate__api__simple__init_app_impl(
+fn wire__crate__api__duckdb__init_app_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
@@ -400,7 +306,7 @@ fn wire__crate__api__simple__init_app_impl(
             move |context| {
                 transform_result_sse::<_, ()>((move || {
                     let output_ok = Ok::<_, ()>({
-                        crate::api::simple::init_app();
+                        crate::api::duckdb::init_app();
                     })?;
                     std::result::Result::Ok(output_ok)
                 })())
@@ -467,115 +373,6 @@ fn wire__crate__api__duckdb__open_duckdb_impl(
             move |context| {
                 transform_result_sse::<_, String>((move || {
                     let output_ok = crate::api::duckdb::open_duckdb(api_path)?;
-                    std::result::Result::Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__duckdb__query_dhcp_logs_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "query_dhcp_logs",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_limit = <Option<u32>>::sse_decode(&mut deserializer);
-            let api_client_mac = <Option<String>>::sse_decode(&mut deserializer);
-            let api_assigned_ip = <Option<String>>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::duckdb::query_dhcp_logs(
-                        api_limit,
-                        api_client_mac,
-                        api_assigned_ip,
-                    )?;
-                    std::result::Result::Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__duckdb__query_dns_logs_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "query_dns_logs",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_limit = <Option<u32>>::sse_decode(&mut deserializer);
-            let api_domain = <Option<String>>::sse_decode(&mut deserializer);
-            let api_rcode = <Option<String>>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok =
-                        crate::api::duckdb::query_dns_logs(api_limit, api_domain, api_rcode)?;
-                    std::result::Result::Ok(output_ok)
-                })())
-            }
-        },
-    )
-}
-fn wire__crate__api__duckdb__query_recent_logs_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
-    rust_vec_len_: i32,
-    data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "query_recent_logs",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let message = unsafe {
-                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
-                    ptr_,
-                    rust_vec_len_,
-                    data_len_,
-                )
-            };
-            let mut deserializer =
-                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
-            let api_limit = <Option<u32>>::sse_decode(&mut deserializer);
-            let api_level = <Option<String>>::sse_decode(&mut deserializer);
-            deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::duckdb::query_recent_logs(api_limit, api_level)?;
                     std::result::Result::Ok(output_ok)
                 })())
             }
@@ -660,104 +457,94 @@ impl SseDecode for String {
     }
 }
 
+impl SseDecode for crate::api::duckdb::AgentEventEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_timestampUs = <i64>::sse_decode(deserializer);
+        let mut var_eventType = <String>::sse_decode(deserializer);
+        let mut var_conversationId = <Option<String>>::sse_decode(deserializer);
+        let mut var_runId = <Option<String>>::sse_decode(deserializer);
+        let mut var_parentRunId = <Option<String>>::sse_decode(deserializer);
+        let mut var_turn = <Option<i32>>::sse_decode(deserializer);
+        let mut var_toolCallId = <Option<String>>::sse_decode(deserializer);
+        let mut var_toolName = <Option<String>>::sse_decode(deserializer);
+        let mut var_backend = <Option<String>>::sse_decode(deserializer);
+        let mut var_requestId = <Option<String>>::sse_decode(deserializer);
+        let mut var_level = <String>::sse_decode(deserializer);
+        let mut var_isError = <bool>::sse_decode(deserializer);
+        let mut var_durationMs = <Option<i32>>::sse_decode(deserializer);
+        let mut var_summary = <String>::sse_decode(deserializer);
+        let mut var_payloadJson = <Option<String>>::sse_decode(deserializer);
+        return crate::api::duckdb::AgentEventEntry {
+            id: var_id,
+            timestamp_us: var_timestampUs,
+            event_type: var_eventType,
+            conversation_id: var_conversationId,
+            run_id: var_runId,
+            parent_run_id: var_parentRunId,
+            turn: var_turn,
+            tool_call_id: var_toolCallId,
+            tool_name: var_toolName,
+            backend: var_backend,
+            request_id: var_requestId,
+            level: var_level,
+            is_error: var_isError,
+            duration_ms: var_durationMs,
+            summary: var_summary,
+            payload_json: var_payloadJson,
+        };
+    }
+}
+
+impl SseDecode for crate::api::duckdb::ApiExchangeEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_timestampUs = <i64>::sse_decode(deserializer);
+        let mut var_requestId = <String>::sse_decode(deserializer);
+        let mut var_recordType = <String>::sse_decode(deserializer);
+        let mut var_category = <String>::sse_decode(deserializer);
+        let mut var_apiType = <Option<String>>::sse_decode(deserializer);
+        let mut var_method = <Option<String>>::sse_decode(deserializer);
+        let mut var_host = <Option<String>>::sse_decode(deserializer);
+        let mut var_path = <Option<String>>::sse_decode(deserializer);
+        let mut var_status = <Option<i32>>::sse_decode(deserializer);
+        let mut var_durationMs = <Option<i32>>::sse_decode(deserializer);
+        let mut var_hasError = <bool>::sse_decode(deserializer);
+        let mut var_aborted = <bool>::sse_decode(deserializer);
+        let mut var_conversationId = <Option<String>>::sse_decode(deserializer);
+        let mut var_runId = <Option<String>>::sse_decode(deserializer);
+        let mut var_turn = <Option<i32>>::sse_decode(deserializer);
+        let mut var_toolCallId = <Option<String>>::sse_decode(deserializer);
+        let mut var_recordJson = <String>::sse_decode(deserializer);
+        return crate::api::duckdb::ApiExchangeEntry {
+            id: var_id,
+            timestamp_us: var_timestampUs,
+            request_id: var_requestId,
+            record_type: var_recordType,
+            category: var_category,
+            api_type: var_apiType,
+            method: var_method,
+            host: var_host,
+            path: var_path,
+            status: var_status,
+            duration_ms: var_durationMs,
+            has_error: var_hasError,
+            aborted: var_aborted,
+            conversation_id: var_conversationId,
+            run_id: var_runId,
+            turn: var_turn,
+            tool_call_id: var_toolCallId,
+            record_json: var_recordJson,
+        };
+    }
+}
+
 impl SseDecode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         deserializer.cursor.read_u8().unwrap() != 0
-    }
-}
-
-impl SseDecode for crate::api::duckdb::DhcpLogEntry {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_id = <String>::sse_decode(deserializer);
-        let mut var_timestampUs = <i64>::sse_decode(deserializer);
-        let mut var_ipVersion = <Option<String>>::sse_decode(deserializer);
-        let mut var_messageType = <Option<String>>::sse_decode(deserializer);
-        let mut var_clientMac = <Option<String>>::sse_decode(deserializer);
-        let mut var_hostname = <Option<String>>::sse_decode(deserializer);
-        let mut var_assignedIp = <Option<String>>::sse_decode(deserializer);
-        let mut var_leaseTimeSec = <Option<i32>>::sse_decode(deserializer);
-        let mut var_serverIp = <Option<String>>::sse_decode(deserializer);
-        let mut var_interfaceName = <Option<String>>::sse_decode(deserializer);
-        let mut var_status = <Option<String>>::sse_decode(deserializer);
-        return crate::api::duckdb::DhcpLogEntry {
-            id: var_id,
-            timestamp_us: var_timestampUs,
-            ip_version: var_ipVersion,
-            message_type: var_messageType,
-            client_mac: var_clientMac,
-            hostname: var_hostname,
-            assigned_ip: var_assignedIp,
-            lease_time_sec: var_leaseTimeSec,
-            server_ip: var_serverIp,
-            interface_name: var_interfaceName,
-            status: var_status,
-        };
-    }
-}
-
-impl SseDecode for crate::api::duckdb::DnsLogEntry {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_id = <String>::sse_decode(deserializer);
-        let mut var_timestampUs = <i64>::sse_decode(deserializer);
-        let mut var_clientIp = <Option<String>>::sse_decode(deserializer);
-        let mut var_clientPort = <Option<i32>>::sse_decode(deserializer);
-        let mut var_protocol = <Option<String>>::sse_decode(deserializer);
-        let mut var_queryType = <Option<String>>::sse_decode(deserializer);
-        let mut var_domain = <Option<String>>::sse_decode(deserializer);
-        let mut var_rcode = <Option<String>>::sse_decode(deserializer);
-        let mut var_answers = <Option<String>>::sse_decode(deserializer);
-        let mut var_latencyMs = <Option<i32>>::sse_decode(deserializer);
-        let mut var_cached = <Option<bool>>::sse_decode(deserializer);
-        let mut var_upstream = <Option<String>>::sse_decode(deserializer);
-        let mut var_status = <Option<String>>::sse_decode(deserializer);
-        return crate::api::duckdb::DnsLogEntry {
-            id: var_id,
-            timestamp_us: var_timestampUs,
-            client_ip: var_clientIp,
-            client_port: var_clientPort,
-            protocol: var_protocol,
-            query_type: var_queryType,
-            domain: var_domain,
-            rcode: var_rcode,
-            answers: var_answers,
-            latency_ms: var_latencyMs,
-            cached: var_cached,
-            upstream: var_upstream,
-            status: var_status,
-        };
-    }
-}
-
-impl SseDecode for crate::api::duckdb::DuckDbLogEntry {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_id = <String>::sse_decode(deserializer);
-        let mut var_timestampUs = <i64>::sse_decode(deserializer);
-        let mut var_level = <String>::sse_decode(deserializer);
-        let mut var_loggerName = <Option<String>>::sse_decode(deserializer);
-        let mut var_message = <String>::sse_decode(deserializer);
-        let mut var_queryType = <Option<String>>::sse_decode(deserializer);
-        let mut var_domain = <Option<String>>::sse_decode(deserializer);
-        let mut var_sourceIp = <Option<String>>::sse_decode(deserializer);
-        let mut var_status = <Option<String>>::sse_decode(deserializer);
-        let mut var_latencyMs = <Option<i32>>::sse_decode(deserializer);
-        let mut var_metadata = <Option<String>>::sse_decode(deserializer);
-        return crate::api::duckdb::DuckDbLogEntry {
-            id: var_id,
-            timestamp_us: var_timestampUs,
-            level: var_level,
-            logger_name: var_loggerName,
-            message: var_message,
-            query_type: var_queryType,
-            domain: var_domain,
-            source_ip: var_sourceIp,
-            status: var_status,
-            latency_ms: var_latencyMs,
-            metadata: var_metadata,
-        };
     }
 }
 
@@ -775,37 +562,27 @@ impl SseDecode for i64 {
     }
 }
 
-impl SseDecode for Vec<crate::api::duckdb::DhcpLogEntry> {
+impl SseDecode for Vec<crate::api::duckdb::AgentEventEntry> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<crate::api::duckdb::DhcpLogEntry>::sse_decode(deserializer));
+            ans_.push(<crate::api::duckdb::AgentEventEntry>::sse_decode(
+                deserializer,
+            ));
         }
         return ans_;
     }
 }
 
-impl SseDecode for Vec<crate::api::duckdb::DnsLogEntry> {
+impl SseDecode for Vec<crate::api::duckdb::ApiExchangeEntry> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
-            ans_.push(<crate::api::duckdb::DnsLogEntry>::sse_decode(deserializer));
-        }
-        return ans_;
-    }
-}
-
-impl SseDecode for Vec<crate::api::duckdb::DuckDbLogEntry> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut len_ = <i32>::sse_decode(deserializer);
-        let mut ans_ = Vec::with_capacity(len_ as usize);
-        for idx_ in 0..len_ {
-            ans_.push(<crate::api::duckdb::DuckDbLogEntry>::sse_decode(
+            ans_.push(<crate::api::duckdb::ApiExchangeEntry>::sse_decode(
                 deserializer,
             ));
         }
@@ -839,6 +616,20 @@ impl SseDecode for Vec<crate::api::duckdb::SystemLogEntry> {
     }
 }
 
+impl SseDecode for Vec<crate::api::duckdb::UsageEventEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::duckdb::UsageEventEntry>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -850,22 +641,22 @@ impl SseDecode for Option<String> {
     }
 }
 
-impl SseDecode for Option<bool> {
+impl SseDecode for Option<i32> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
-            return Some(<bool>::sse_decode(deserializer));
+            return Some(<i32>::sse_decode(deserializer));
         } else {
             return None;
         }
     }
 }
 
-impl SseDecode for Option<i32> {
+impl SseDecode for Option<i64> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
-            return Some(<i32>::sse_decode(deserializer));
+            return Some(<i64>::sse_decode(deserializer));
         } else {
             return None;
         }
@@ -928,6 +719,36 @@ impl SseDecode for () {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {}
 }
 
+impl SseDecode for crate::api::duckdb::UsageEventEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_timestampUs = <i64>::sse_decode(deserializer);
+        let mut var_sessionId = <String>::sse_decode(deserializer);
+        let mut var_eventType = <String>::sse_decode(deserializer);
+        let mut var_module = <Option<String>>::sse_decode(deserializer);
+        let mut var_screenName = <Option<String>>::sse_decode(deserializer);
+        let mut var_routePath = <Option<String>>::sse_decode(deserializer);
+        let mut var_target = <Option<String>>::sse_decode(deserializer);
+        let mut var_sourceScreen = <Option<String>>::sse_decode(deserializer);
+        let mut var_durationMs = <Option<i64>>::sse_decode(deserializer);
+        let mut var_payloadJson = <Option<String>>::sse_decode(deserializer);
+        return crate::api::duckdb::UsageEventEntry {
+            id: var_id,
+            timestamp_us: var_timestampUs,
+            session_id: var_sessionId,
+            event_type: var_eventType,
+            module: var_module,
+            screen_name: var_screenName,
+            route_path: var_routePath,
+            target: var_target,
+            source_screen: var_sourceScreen,
+            duration_ms: var_durationMs,
+            payload_json: var_payloadJson,
+        };
+    }
+}
+
 impl SseDecode for usize {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -944,32 +765,38 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        1 => wire__crate__api__duckdb__append_log_impl(port, ptr, rust_vec_len, data_len),
-        2 => {
-            wire__crate__api__duckdb__batch_append_dhcp_logs_impl(port, ptr, rust_vec_len, data_len)
-        }
-        3 => {
-            wire__crate__api__duckdb__batch_append_dns_logs_impl(port, ptr, rust_vec_len, data_len)
-        }
-        4 => wire__crate__api__duckdb__batch_append_logs_impl(port, ptr, rust_vec_len, data_len),
-        5 => wire__crate__api__duckdb__batch_append_system_logs_impl(
+        1 => wire__crate__api__duckdb__batch_append_agent_events_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        6 => wire__crate__api__duckdb__close_duckdb_impl(port, ptr, rust_vec_len, data_len),
-        7 => wire__crate__api__duckdb__ensure_log_schema_impl(port, ptr, rust_vec_len, data_len),
-        8 => wire__crate__api__duckdb__ensure_log_schemas_impl(port, ptr, rust_vec_len, data_len),
-        9 => wire__crate__api__duckdb__execute_sql_impl(port, ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__simple__init_app_impl(port, ptr, rust_vec_len, data_len),
-        12 => wire__crate__api__duckdb__is_duckdb_open_impl(port, ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__duckdb__open_duckdb_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__duckdb__query_dhcp_logs_impl(port, ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__duckdb__query_dns_logs_impl(port, ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__duckdb__query_recent_logs_impl(port, ptr, rust_vec_len, data_len),
-        17 => wire__crate__api__duckdb__query_sql_json_impl(port, ptr, rust_vec_len, data_len),
-        18 => wire__crate__api__duckdb__query_system_logs_impl(port, ptr, rust_vec_len, data_len),
+        2 => wire__crate__api__duckdb__batch_append_api_exchanges_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        3 => wire__crate__api__duckdb__batch_append_system_logs_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        4 => wire__crate__api__duckdb__batch_append_usage_events_impl(
+            port,
+            ptr,
+            rust_vec_len,
+            data_len,
+        ),
+        5 => wire__crate__api__duckdb__close_duckdb_impl(port, ptr, rust_vec_len, data_len),
+        6 => wire__crate__api__duckdb__ensure_log_schemas_impl(port, ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__duckdb__execute_sql_impl(port, ptr, rust_vec_len, data_len),
+        8 => wire__crate__api__duckdb__init_app_impl(port, ptr, rust_vec_len, data_len),
+        9 => wire__crate__api__duckdb__is_duckdb_open_impl(port, ptr, rust_vec_len, data_len),
+        10 => wire__crate__api__duckdb__open_duckdb_impl(port, ptr, rust_vec_len, data_len),
+        11 => wire__crate__api__duckdb__query_sql_json_impl(port, ptr, rust_vec_len, data_len),
+        12 => wire__crate__api__duckdb__query_system_logs_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -982,7 +809,6 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        10 => wire__crate__api__simple__greet_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -990,94 +816,74 @@ fn pde_ffi_dispatcher_sync_impl(
 // Section: rust2dart
 
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::duckdb::DhcpLogEntry {
+impl flutter_rust_bridge::IntoDart for crate::api::duckdb::AgentEventEntry {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.id.into_into_dart().into_dart(),
             self.timestamp_us.into_into_dart().into_dart(),
-            self.ip_version.into_into_dart().into_dart(),
-            self.message_type.into_into_dart().into_dart(),
-            self.client_mac.into_into_dart().into_dart(),
-            self.hostname.into_into_dart().into_dart(),
-            self.assigned_ip.into_into_dart().into_dart(),
-            self.lease_time_sec.into_into_dart().into_dart(),
-            self.server_ip.into_into_dart().into_dart(),
-            self.interface_name.into_into_dart().into_dart(),
-            self.status.into_into_dart().into_dart(),
-        ]
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::duckdb::DhcpLogEntry
-{
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::duckdb::DhcpLogEntry>
-    for crate::api::duckdb::DhcpLogEntry
-{
-    fn into_into_dart(self) -> crate::api::duckdb::DhcpLogEntry {
-        self
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::duckdb::DnsLogEntry {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [
-            self.id.into_into_dart().into_dart(),
-            self.timestamp_us.into_into_dart().into_dart(),
-            self.client_ip.into_into_dart().into_dart(),
-            self.client_port.into_into_dart().into_dart(),
-            self.protocol.into_into_dart().into_dart(),
-            self.query_type.into_into_dart().into_dart(),
-            self.domain.into_into_dart().into_dart(),
-            self.rcode.into_into_dart().into_dart(),
-            self.answers.into_into_dart().into_dart(),
-            self.latency_ms.into_into_dart().into_dart(),
-            self.cached.into_into_dart().into_dart(),
-            self.upstream.into_into_dart().into_dart(),
-            self.status.into_into_dart().into_dart(),
-        ]
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::duckdb::DnsLogEntry
-{
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::duckdb::DnsLogEntry>
-    for crate::api::duckdb::DnsLogEntry
-{
-    fn into_into_dart(self) -> crate::api::duckdb::DnsLogEntry {
-        self
-    }
-}
-// Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::api::duckdb::DuckDbLogEntry {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        [
-            self.id.into_into_dart().into_dart(),
-            self.timestamp_us.into_into_dart().into_dart(),
+            self.event_type.into_into_dart().into_dart(),
+            self.conversation_id.into_into_dart().into_dart(),
+            self.run_id.into_into_dart().into_dart(),
+            self.parent_run_id.into_into_dart().into_dart(),
+            self.turn.into_into_dart().into_dart(),
+            self.tool_call_id.into_into_dart().into_dart(),
+            self.tool_name.into_into_dart().into_dart(),
+            self.backend.into_into_dart().into_dart(),
+            self.request_id.into_into_dart().into_dart(),
             self.level.into_into_dart().into_dart(),
-            self.logger_name.into_into_dart().into_dart(),
-            self.message.into_into_dart().into_dart(),
-            self.query_type.into_into_dart().into_dart(),
-            self.domain.into_into_dart().into_dart(),
-            self.source_ip.into_into_dart().into_dart(),
-            self.status.into_into_dart().into_dart(),
-            self.latency_ms.into_into_dart().into_dart(),
-            self.metadata.into_into_dart().into_dart(),
+            self.is_error.into_into_dart().into_dart(),
+            self.duration_ms.into_into_dart().into_dart(),
+            self.summary.into_into_dart().into_dart(),
+            self.payload_json.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::duckdb::DuckDbLogEntry
+    for crate::api::duckdb::AgentEventEntry
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::duckdb::DuckDbLogEntry>
-    for crate::api::duckdb::DuckDbLogEntry
+impl flutter_rust_bridge::IntoIntoDart<crate::api::duckdb::AgentEventEntry>
+    for crate::api::duckdb::AgentEventEntry
 {
-    fn into_into_dart(self) -> crate::api::duckdb::DuckDbLogEntry {
+    fn into_into_dart(self) -> crate::api::duckdb::AgentEventEntry {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::duckdb::ApiExchangeEntry {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.id.into_into_dart().into_dart(),
+            self.timestamp_us.into_into_dart().into_dart(),
+            self.request_id.into_into_dart().into_dart(),
+            self.record_type.into_into_dart().into_dart(),
+            self.category.into_into_dart().into_dart(),
+            self.api_type.into_into_dart().into_dart(),
+            self.method.into_into_dart().into_dart(),
+            self.host.into_into_dart().into_dart(),
+            self.path.into_into_dart().into_dart(),
+            self.status.into_into_dart().into_dart(),
+            self.duration_ms.into_into_dart().into_dart(),
+            self.has_error.into_into_dart().into_dart(),
+            self.aborted.into_into_dart().into_dart(),
+            self.conversation_id.into_into_dart().into_dart(),
+            self.run_id.into_into_dart().into_dart(),
+            self.turn.into_into_dart().into_dart(),
+            self.tool_call_id.into_into_dart().into_dart(),
+            self.record_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::duckdb::ApiExchangeEntry
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::duckdb::ApiExchangeEntry>
+    for crate::api::duckdb::ApiExchangeEntry
+{
+    fn into_into_dart(self) -> crate::api::duckdb::ApiExchangeEntry {
         self
     }
 }
@@ -1109,6 +915,36 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::duckdb::SystemLogEntry>
         self
     }
 }
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::duckdb::UsageEventEntry {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.id.into_into_dart().into_dart(),
+            self.timestamp_us.into_into_dart().into_dart(),
+            self.session_id.into_into_dart().into_dart(),
+            self.event_type.into_into_dart().into_dart(),
+            self.module.into_into_dart().into_dart(),
+            self.screen_name.into_into_dart().into_dart(),
+            self.route_path.into_into_dart().into_dart(),
+            self.target.into_into_dart().into_dart(),
+            self.source_screen.into_into_dart().into_dart(),
+            self.duration_ms.into_into_dart().into_dart(),
+            self.payload_json.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::duckdb::UsageEventEntry
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::duckdb::UsageEventEntry>
+    for crate::api::duckdb::UsageEventEntry
+{
+    fn into_into_dart(self) -> crate::api::duckdb::UsageEventEntry {
+        self
+    }
+}
 
 impl SseEncode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1117,63 +953,56 @@ impl SseEncode for String {
     }
 }
 
+impl SseEncode for crate::api::duckdb::AgentEventEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <i64>::sse_encode(self.timestamp_us, serializer);
+        <String>::sse_encode(self.event_type, serializer);
+        <Option<String>>::sse_encode(self.conversation_id, serializer);
+        <Option<String>>::sse_encode(self.run_id, serializer);
+        <Option<String>>::sse_encode(self.parent_run_id, serializer);
+        <Option<i32>>::sse_encode(self.turn, serializer);
+        <Option<String>>::sse_encode(self.tool_call_id, serializer);
+        <Option<String>>::sse_encode(self.tool_name, serializer);
+        <Option<String>>::sse_encode(self.backend, serializer);
+        <Option<String>>::sse_encode(self.request_id, serializer);
+        <String>::sse_encode(self.level, serializer);
+        <bool>::sse_encode(self.is_error, serializer);
+        <Option<i32>>::sse_encode(self.duration_ms, serializer);
+        <String>::sse_encode(self.summary, serializer);
+        <Option<String>>::sse_encode(self.payload_json, serializer);
+    }
+}
+
+impl SseEncode for crate::api::duckdb::ApiExchangeEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <i64>::sse_encode(self.timestamp_us, serializer);
+        <String>::sse_encode(self.request_id, serializer);
+        <String>::sse_encode(self.record_type, serializer);
+        <String>::sse_encode(self.category, serializer);
+        <Option<String>>::sse_encode(self.api_type, serializer);
+        <Option<String>>::sse_encode(self.method, serializer);
+        <Option<String>>::sse_encode(self.host, serializer);
+        <Option<String>>::sse_encode(self.path, serializer);
+        <Option<i32>>::sse_encode(self.status, serializer);
+        <Option<i32>>::sse_encode(self.duration_ms, serializer);
+        <bool>::sse_encode(self.has_error, serializer);
+        <bool>::sse_encode(self.aborted, serializer);
+        <Option<String>>::sse_encode(self.conversation_id, serializer);
+        <Option<String>>::sse_encode(self.run_id, serializer);
+        <Option<i32>>::sse_encode(self.turn, serializer);
+        <Option<String>>::sse_encode(self.tool_call_id, serializer);
+        <String>::sse_encode(self.record_json, serializer);
+    }
+}
+
 impl SseEncode for bool {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_u8(self as _).unwrap();
-    }
-}
-
-impl SseEncode for crate::api::duckdb::DhcpLogEntry {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <String>::sse_encode(self.id, serializer);
-        <i64>::sse_encode(self.timestamp_us, serializer);
-        <Option<String>>::sse_encode(self.ip_version, serializer);
-        <Option<String>>::sse_encode(self.message_type, serializer);
-        <Option<String>>::sse_encode(self.client_mac, serializer);
-        <Option<String>>::sse_encode(self.hostname, serializer);
-        <Option<String>>::sse_encode(self.assigned_ip, serializer);
-        <Option<i32>>::sse_encode(self.lease_time_sec, serializer);
-        <Option<String>>::sse_encode(self.server_ip, serializer);
-        <Option<String>>::sse_encode(self.interface_name, serializer);
-        <Option<String>>::sse_encode(self.status, serializer);
-    }
-}
-
-impl SseEncode for crate::api::duckdb::DnsLogEntry {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <String>::sse_encode(self.id, serializer);
-        <i64>::sse_encode(self.timestamp_us, serializer);
-        <Option<String>>::sse_encode(self.client_ip, serializer);
-        <Option<i32>>::sse_encode(self.client_port, serializer);
-        <Option<String>>::sse_encode(self.protocol, serializer);
-        <Option<String>>::sse_encode(self.query_type, serializer);
-        <Option<String>>::sse_encode(self.domain, serializer);
-        <Option<String>>::sse_encode(self.rcode, serializer);
-        <Option<String>>::sse_encode(self.answers, serializer);
-        <Option<i32>>::sse_encode(self.latency_ms, serializer);
-        <Option<bool>>::sse_encode(self.cached, serializer);
-        <Option<String>>::sse_encode(self.upstream, serializer);
-        <Option<String>>::sse_encode(self.status, serializer);
-    }
-}
-
-impl SseEncode for crate::api::duckdb::DuckDbLogEntry {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <String>::sse_encode(self.id, serializer);
-        <i64>::sse_encode(self.timestamp_us, serializer);
-        <String>::sse_encode(self.level, serializer);
-        <Option<String>>::sse_encode(self.logger_name, serializer);
-        <String>::sse_encode(self.message, serializer);
-        <Option<String>>::sse_encode(self.query_type, serializer);
-        <Option<String>>::sse_encode(self.domain, serializer);
-        <Option<String>>::sse_encode(self.source_ip, serializer);
-        <Option<String>>::sse_encode(self.status, serializer);
-        <Option<i32>>::sse_encode(self.latency_ms, serializer);
-        <Option<String>>::sse_encode(self.metadata, serializer);
     }
 }
 
@@ -1191,32 +1020,22 @@ impl SseEncode for i64 {
     }
 }
 
-impl SseEncode for Vec<crate::api::duckdb::DhcpLogEntry> {
+impl SseEncode for Vec<crate::api::duckdb::AgentEventEntry> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <crate::api::duckdb::DhcpLogEntry>::sse_encode(item, serializer);
+            <crate::api::duckdb::AgentEventEntry>::sse_encode(item, serializer);
         }
     }
 }
 
-impl SseEncode for Vec<crate::api::duckdb::DnsLogEntry> {
+impl SseEncode for Vec<crate::api::duckdb::ApiExchangeEntry> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <crate::api::duckdb::DnsLogEntry>::sse_encode(item, serializer);
-        }
-    }
-}
-
-impl SseEncode for Vec<crate::api::duckdb::DuckDbLogEntry> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(self.len() as _, serializer);
-        for item in self {
-            <crate::api::duckdb::DuckDbLogEntry>::sse_encode(item, serializer);
+            <crate::api::duckdb::ApiExchangeEntry>::sse_encode(item, serializer);
         }
     }
 }
@@ -1241,6 +1060,16 @@ impl SseEncode for Vec<crate::api::duckdb::SystemLogEntry> {
     }
 }
 
+impl SseEncode for Vec<crate::api::duckdb::UsageEventEntry> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::duckdb::UsageEventEntry>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Option<String> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -1251,22 +1080,22 @@ impl SseEncode for Option<String> {
     }
 }
 
-impl SseEncode for Option<bool> {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <bool>::sse_encode(self.is_some(), serializer);
-        if let Some(value) = self {
-            <bool>::sse_encode(value, serializer);
-        }
-    }
-}
-
 impl SseEncode for Option<i32> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <i32>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<i64> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <i64>::sse_encode(value, serializer);
         }
     }
 }
@@ -1313,6 +1142,23 @@ impl SseEncode for u8 {
 impl SseEncode for () {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {}
+}
+
+impl SseEncode for crate::api::duckdb::UsageEventEntry {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <i64>::sse_encode(self.timestamp_us, serializer);
+        <String>::sse_encode(self.session_id, serializer);
+        <String>::sse_encode(self.event_type, serializer);
+        <Option<String>>::sse_encode(self.module, serializer);
+        <Option<String>>::sse_encode(self.screen_name, serializer);
+        <Option<String>>::sse_encode(self.route_path, serializer);
+        <Option<String>>::sse_encode(self.target, serializer);
+        <Option<String>>::sse_encode(self.source_screen, serializer);
+        <Option<i64>>::sse_encode(self.duration_ms, serializer);
+        <Option<String>>::sse_encode(self.payload_json, serializer);
+    }
 }
 
 impl SseEncode for usize {

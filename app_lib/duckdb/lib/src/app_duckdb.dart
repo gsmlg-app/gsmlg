@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart' show DateTimeRange;
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart'
+    show ExternalLibrary;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -10,7 +11,7 @@ import 'log_query_builder.dart';
 import 'models/log_record_item.dart';
 import 'rust/api/duckdb.dart' as rust_duckdb;
 import 'rust/api/duckdb.dart'
-    show DuckDbLogEntry, SystemLogEntry, DnsLogEntry, DhcpLogEntry;
+    show AgentEventEntry, ApiExchangeEntry, SystemLogEntry, UsageEventEntry;
 import 'rust/frb_generated.dart';
 
 /// High-level Dart interface to the embedded DuckDB database powered by Rust.
@@ -102,26 +103,11 @@ class AppDuckDb {
     return rust_duckdb.querySqlJson(sql: sql);
   }
 
-  /// Ensures that the legacy `app_logs` table schema exists in DuckDB.
-  Future<void> ensureLogSchema() async {
-    await rust_duckdb.ensureLogSchema();
-  }
-
-  /// Ensures that the dedicated tables (`system_logs`, `dns_logs`, `dhcp_logs`)
-  /// and the unified `v_all_logs` view exist in DuckDB.
+  /// Ensures that the log tables (`system_logs`, `api_exchanges`,
+  /// `agent_events`, `usage_events`) and the unified `v_all_logs` view exist,
+  /// dropping legacy DNS/DHCP/app_logs objects.
   Future<void> ensureLogSchemas() async {
     await rust_duckdb.ensureLogSchemas();
-  }
-
-  /// Appends a single log entry into DuckDB (legacy).
-  Future<void> appendLog(DuckDbLogEntry entry) async {
-    await rust_duckdb.appendLog(entry: entry);
-  }
-
-  /// Appends a batch of log entries using the high-performance DuckDB Appender (legacy).
-  Future<int> batchAppendLogs(List<DuckDbLogEntry> entries) async {
-    final count = await rust_duckdb.batchAppendLogs(entries: entries);
-    return count.toInt();
   }
 
   /// Appends a batch of system log entries into `system_logs`.
@@ -130,24 +116,22 @@ class AppDuckDb {
     return count.toInt();
   }
 
-  /// Appends a batch of DNS log entries into `dns_logs`.
-  Future<int> batchAppendDnsLogs(List<DnsLogEntry> entries) async {
-    final count = await rust_duckdb.batchAppendDnsLogs(entries: entries);
+  /// Appends a batch of API exchange records into `api_exchanges`.
+  Future<int> batchAppendApiExchanges(List<ApiExchangeEntry> entries) async {
+    final count = await rust_duckdb.batchAppendApiExchanges(entries: entries);
     return count.toInt();
   }
 
-  /// Appends a batch of DHCP log entries into `dhcp_logs`.
-  Future<int> batchAppendDhcpLogs(List<DhcpLogEntry> entries) async {
-    final count = await rust_duckdb.batchAppendDhcpLogs(entries: entries);
+  /// Appends a batch of agent events into `agent_events`.
+  Future<int> batchAppendAgentEvents(List<AgentEventEntry> entries) async {
+    final count = await rust_duckdb.batchAppendAgentEvents(entries: entries);
     return count.toInt();
   }
 
-  /// Queries recent logs from legacy `app_logs`.
-  Future<List<DuckDbLogEntry>> queryRecentLogs({
-    int? limit,
-    String? level,
-  }) async {
-    return rust_duckdb.queryRecentLogs(limit: limit, level: level);
+  /// Appends a batch of usage events into `usage_events`.
+  Future<int> batchAppendUsageEvents(List<UsageEventEntry> entries) async {
+    final count = await rust_duckdb.batchAppendUsageEvents(entries: entries);
+    return count.toInt();
   }
 
   /// Queries system logs from `system_logs` with optional [level] filter and [limit].
@@ -156,32 +140,6 @@ class AppDuckDb {
     String? level,
   }) async {
     return rust_duckdb.querySystemLogs(limit: limit, level: level);
-  }
-
-  /// Queries DNS logs from `dns_logs` with optional [domain], [rcode] filters and [limit].
-  Future<List<DnsLogEntry>> queryDnsLogs({
-    int? limit,
-    String? domain,
-    String? rcode,
-  }) async {
-    return rust_duckdb.queryDnsLogs(
-      limit: limit,
-      domain: domain,
-      rcode: rcode,
-    );
-  }
-
-  /// Queries DHCP logs from `dhcp_logs` with optional [clientMac], [assignedIp] filters and [limit].
-  Future<List<DhcpLogEntry>> queryDhcpLogs({
-    int? limit,
-    String? clientMac,
-    String? assignedIp,
-  }) async {
-    return rust_duckdb.queryDhcpLogs(
-      limit: limit,
-      clientMac: clientMac,
-      assignedIp: assignedIp,
-    );
   }
 
   /// Query logs from any table or view with dynamic filtering and pagination.
@@ -206,8 +164,6 @@ class AppDuckDb {
     if (decoded is! List) return [];
 
     final defaultType = switch (tableOrView) {
-      'dns_logs' => 'dns',
-      'dhcp_logs' => 'dhcp',
       'system_logs' => 'system',
       _ => null,
     };
@@ -255,37 +211,5 @@ class AppDuckDb {
   Future<void> clearLogsTable({required String table}) async {
     final sql = LogQueryBuilder.buildClearSql(table: table);
     await rust_duckdb.executeSql(sql: sql);
-  }
-
-  /// Helper factory to create a [DuckDbLogEntry] with convenient defaults.
-  static DuckDbLogEntry createLogEntry({
-    required String id,
-    DateTime? timestamp,
-    int? timestampUs,
-    required String level,
-    String? loggerName,
-    required String message,
-    String? queryType,
-    String? domain,
-    String? sourceIp,
-    String? status,
-    int? latencyMs,
-    String? metadata,
-  }) {
-    final ts =
-        timestampUs ?? (timestamp ?? DateTime.now()).microsecondsSinceEpoch;
-    return DuckDbLogEntry(
-      id: id,
-      timestampUs: PlatformInt64Util.from(ts),
-      level: level,
-      loggerName: loggerName,
-      message: message,
-      queryType: queryType,
-      domain: domain,
-      sourceIp: sourceIp,
-      status: status,
-      latencyMs: latencyMs,
-      metadata: metadata,
-    );
   }
 }

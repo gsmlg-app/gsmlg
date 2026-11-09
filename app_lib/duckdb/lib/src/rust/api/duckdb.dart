@@ -23,243 +23,204 @@ Future<bool> isDuckdbOpen() =>
 Future<BigInt> executeSql({required String sql}) =>
     RustLib.instance.api.crateApiDuckdbExecuteSql(sql: sql);
 
-/// Legacy single log schema for backward compatibility.
-Future<void> ensureLogSchema() =>
-    RustLib.instance.api.crateApiDuckdbEnsureLogSchema();
-
-/// Ensure dedicated tables (`system_logs`, `dns_logs`, `dhcp_logs`) and view exist.
+/// Ensure log tables (`system_logs`, `api_exchanges`, `agent_events`,
+/// `usage_events`) and the `v_all_logs` view exist. Drops legacy objects first.
 Future<void> ensureLogSchemas() =>
     RustLib.instance.api.crateApiDuckdbEnsureLogSchemas();
-
-/// Append a single log entry into `app_logs` (legacy).
-Future<void> appendLog({required DuckDbLogEntry entry}) =>
-    RustLib.instance.api.crateApiDuckdbAppendLog(entry: entry);
-
-/// High-throughput batch appending using DuckDB Appender for `app_logs`.
-Future<BigInt> batchAppendLogs({required List<DuckDbLogEntry> entries}) =>
-    RustLib.instance.api.crateApiDuckdbBatchAppendLogs(entries: entries);
 
 /// Batch append entries to `system_logs`.
 Future<BigInt> batchAppendSystemLogs({required List<SystemLogEntry> entries}) =>
     RustLib.instance.api.crateApiDuckdbBatchAppendSystemLogs(entries: entries);
 
-/// Batch append entries to `dns_logs`.
-Future<BigInt> batchAppendDnsLogs({required List<DnsLogEntry> entries}) =>
-    RustLib.instance.api.crateApiDuckdbBatchAppendDnsLogs(entries: entries);
-
-/// Batch append entries to `dhcp_logs`.
-Future<BigInt> batchAppendDhcpLogs({required List<DhcpLogEntry> entries}) =>
-    RustLib.instance.api.crateApiDuckdbBatchAppendDhcpLogs(entries: entries);
-
-/// Query recent logs with an optional limit and level filter (legacy).
-Future<List<DuckDbLogEntry>> queryRecentLogs({int? limit, String? level}) =>
+/// Batch append entries to `api_exchanges`.
+Future<BigInt> batchAppendApiExchanges(
+        {required List<ApiExchangeEntry> entries}) =>
     RustLib.instance.api
-        .crateApiDuckdbQueryRecentLogs(limit: limit, level: level);
+        .crateApiDuckdbBatchAppendApiExchanges(entries: entries);
+
+/// Batch append entries to `agent_events`.
+Future<BigInt> batchAppendAgentEvents(
+        {required List<AgentEventEntry> entries}) =>
+    RustLib.instance.api.crateApiDuckdbBatchAppendAgentEvents(entries: entries);
+
+/// Batch append entries to `usage_events`.
+Future<BigInt> batchAppendUsageEvents(
+        {required List<UsageEventEntry> entries}) =>
+    RustLib.instance.api.crateApiDuckdbBatchAppendUsageEvents(entries: entries);
 
 /// Query system logs with optional level filter and limit.
 Future<List<SystemLogEntry>> querySystemLogs({int? limit, String? level}) =>
     RustLib.instance.api
         .crateApiDuckdbQuerySystemLogs(limit: limit, level: level);
 
-/// Query DNS logs with optional domain, rcode filters and limit.
-Future<List<DnsLogEntry>> queryDnsLogs(
-        {int? limit, String? domain, String? rcode}) =>
-    RustLib.instance.api
-        .crateApiDuckdbQueryDnsLogs(limit: limit, domain: domain, rcode: rcode);
-
-/// Query DHCP logs with optional client_mac, assigned_ip filters and limit.
-Future<List<DhcpLogEntry>> queryDhcpLogs(
-        {int? limit, String? clientMac, String? assignedIp}) =>
-    RustLib.instance.api.crateApiDuckdbQueryDhcpLogs(
-        limit: limit, clientMac: clientMac, assignedIp: assignedIp);
-
 /// Execute arbitrary SQL and return results as JSON array string.
 Future<String> querySqlJson({required String sql}) =>
     RustLib.instance.api.crateApiDuckdbQuerySqlJson(sql: sql);
 
-class DhcpLogEntry {
+class AgentEventEntry {
   final String id;
   final PlatformInt64 timestampUs;
-  final String? ipVersion;
-  final String? messageType;
-  final String? clientMac;
-  final String? hostname;
-  final String? assignedIp;
-  final int? leaseTimeSec;
-  final String? serverIp;
-  final String? interfaceName;
-  final String? status;
-
-  const DhcpLogEntry({
-    required this.id,
-    required this.timestampUs,
-    this.ipVersion,
-    this.messageType,
-    this.clientMac,
-    this.hostname,
-    this.assignedIp,
-    this.leaseTimeSec,
-    this.serverIp,
-    this.interfaceName,
-    this.status,
-  });
-
-  @override
-  int get hashCode =>
-      id.hashCode ^
-      timestampUs.hashCode ^
-      ipVersion.hashCode ^
-      messageType.hashCode ^
-      clientMac.hashCode ^
-      hostname.hashCode ^
-      assignedIp.hashCode ^
-      leaseTimeSec.hashCode ^
-      serverIp.hashCode ^
-      interfaceName.hashCode ^
-      status.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DhcpLogEntry &&
-          runtimeType == other.runtimeType &&
-          id == other.id &&
-          timestampUs == other.timestampUs &&
-          ipVersion == other.ipVersion &&
-          messageType == other.messageType &&
-          clientMac == other.clientMac &&
-          hostname == other.hostname &&
-          assignedIp == other.assignedIp &&
-          leaseTimeSec == other.leaseTimeSec &&
-          serverIp == other.serverIp &&
-          interfaceName == other.interfaceName &&
-          status == other.status;
-}
-
-class DnsLogEntry {
-  final String id;
-  final PlatformInt64 timestampUs;
-  final String? clientIp;
-  final int? clientPort;
-  final String? protocol;
-  final String? queryType;
-  final String? domain;
-  final String? rcode;
-  final String? answers;
-  final int? latencyMs;
-  final bool? cached;
-  final String? upstream;
-  final String? status;
-
-  const DnsLogEntry({
-    required this.id,
-    required this.timestampUs,
-    this.clientIp,
-    this.clientPort,
-    this.protocol,
-    this.queryType,
-    this.domain,
-    this.rcode,
-    this.answers,
-    this.latencyMs,
-    this.cached,
-    this.upstream,
-    this.status,
-  });
-
-  @override
-  int get hashCode =>
-      id.hashCode ^
-      timestampUs.hashCode ^
-      clientIp.hashCode ^
-      clientPort.hashCode ^
-      protocol.hashCode ^
-      queryType.hashCode ^
-      domain.hashCode ^
-      rcode.hashCode ^
-      answers.hashCode ^
-      latencyMs.hashCode ^
-      cached.hashCode ^
-      upstream.hashCode ^
-      status.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is DnsLogEntry &&
-          runtimeType == other.runtimeType &&
-          id == other.id &&
-          timestampUs == other.timestampUs &&
-          clientIp == other.clientIp &&
-          clientPort == other.clientPort &&
-          protocol == other.protocol &&
-          queryType == other.queryType &&
-          domain == other.domain &&
-          rcode == other.rcode &&
-          answers == other.answers &&
-          latencyMs == other.latencyMs &&
-          cached == other.cached &&
-          upstream == other.upstream &&
-          status == other.status;
-}
-
-class DuckDbLogEntry {
-  final String id;
-  final PlatformInt64 timestampUs;
+  final String eventType;
+  final String? conversationId;
+  final String? runId;
+  final String? parentRunId;
+  final int? turn;
+  final String? toolCallId;
+  final String? toolName;
+  final String? backend;
+  final String? requestId;
   final String level;
-  final String? loggerName;
-  final String message;
-  final String? queryType;
-  final String? domain;
-  final String? sourceIp;
-  final String? status;
-  final int? latencyMs;
-  final String? metadata;
+  final bool isError;
+  final int? durationMs;
+  final String summary;
+  final String? payloadJson;
 
-  const DuckDbLogEntry({
+  const AgentEventEntry({
     required this.id,
     required this.timestampUs,
+    required this.eventType,
+    this.conversationId,
+    this.runId,
+    this.parentRunId,
+    this.turn,
+    this.toolCallId,
+    this.toolName,
+    this.backend,
+    this.requestId,
     required this.level,
-    this.loggerName,
-    required this.message,
-    this.queryType,
-    this.domain,
-    this.sourceIp,
-    this.status,
-    this.latencyMs,
-    this.metadata,
+    required this.isError,
+    this.durationMs,
+    required this.summary,
+    this.payloadJson,
   });
 
   @override
   int get hashCode =>
       id.hashCode ^
       timestampUs.hashCode ^
+      eventType.hashCode ^
+      conversationId.hashCode ^
+      runId.hashCode ^
+      parentRunId.hashCode ^
+      turn.hashCode ^
+      toolCallId.hashCode ^
+      toolName.hashCode ^
+      backend.hashCode ^
+      requestId.hashCode ^
       level.hashCode ^
-      loggerName.hashCode ^
-      message.hashCode ^
-      queryType.hashCode ^
-      domain.hashCode ^
-      sourceIp.hashCode ^
-      status.hashCode ^
-      latencyMs.hashCode ^
-      metadata.hashCode;
+      isError.hashCode ^
+      durationMs.hashCode ^
+      summary.hashCode ^
+      payloadJson.hashCode;
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is DuckDbLogEntry &&
+      other is AgentEventEntry &&
           runtimeType == other.runtimeType &&
           id == other.id &&
           timestampUs == other.timestampUs &&
+          eventType == other.eventType &&
+          conversationId == other.conversationId &&
+          runId == other.runId &&
+          parentRunId == other.parentRunId &&
+          turn == other.turn &&
+          toolCallId == other.toolCallId &&
+          toolName == other.toolName &&
+          backend == other.backend &&
+          requestId == other.requestId &&
           level == other.level &&
-          loggerName == other.loggerName &&
-          message == other.message &&
-          queryType == other.queryType &&
-          domain == other.domain &&
-          sourceIp == other.sourceIp &&
+          isError == other.isError &&
+          durationMs == other.durationMs &&
+          summary == other.summary &&
+          payloadJson == other.payloadJson;
+}
+
+class ApiExchangeEntry {
+  final String id;
+  final PlatformInt64 timestampUs;
+  final String requestId;
+  final String recordType;
+  final String category;
+  final String? apiType;
+  final String? method;
+  final String? host;
+  final String? path;
+  final int? status;
+  final int? durationMs;
+  final bool hasError;
+  final bool aborted;
+  final String? conversationId;
+  final String? runId;
+  final int? turn;
+  final String? toolCallId;
+  final String recordJson;
+
+  const ApiExchangeEntry({
+    required this.id,
+    required this.timestampUs,
+    required this.requestId,
+    required this.recordType,
+    required this.category,
+    this.apiType,
+    this.method,
+    this.host,
+    this.path,
+    this.status,
+    this.durationMs,
+    required this.hasError,
+    required this.aborted,
+    this.conversationId,
+    this.runId,
+    this.turn,
+    this.toolCallId,
+    required this.recordJson,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      timestampUs.hashCode ^
+      requestId.hashCode ^
+      recordType.hashCode ^
+      category.hashCode ^
+      apiType.hashCode ^
+      method.hashCode ^
+      host.hashCode ^
+      path.hashCode ^
+      status.hashCode ^
+      durationMs.hashCode ^
+      hasError.hashCode ^
+      aborted.hashCode ^
+      conversationId.hashCode ^
+      runId.hashCode ^
+      turn.hashCode ^
+      toolCallId.hashCode ^
+      recordJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ApiExchangeEntry &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          timestampUs == other.timestampUs &&
+          requestId == other.requestId &&
+          recordType == other.recordType &&
+          category == other.category &&
+          apiType == other.apiType &&
+          method == other.method &&
+          host == other.host &&
+          path == other.path &&
           status == other.status &&
-          latencyMs == other.latencyMs &&
-          metadata == other.metadata;
+          durationMs == other.durationMs &&
+          hasError == other.hasError &&
+          aborted == other.aborted &&
+          conversationId == other.conversationId &&
+          runId == other.runId &&
+          turn == other.turn &&
+          toolCallId == other.toolCallId &&
+          recordJson == other.recordJson;
 }
 
 class SystemLogEntry {
@@ -311,4 +272,63 @@ class SystemLogEntry {
           error == other.error &&
           stackTrace == other.stackTrace &&
           metadata == other.metadata;
+}
+
+class UsageEventEntry {
+  final String id;
+  final PlatformInt64 timestampUs;
+  final String sessionId;
+  final String eventType;
+  final String? module;
+  final String? screenName;
+  final String? routePath;
+  final String? target;
+  final String? sourceScreen;
+  final PlatformInt64? durationMs;
+  final String? payloadJson;
+
+  const UsageEventEntry({
+    required this.id,
+    required this.timestampUs,
+    required this.sessionId,
+    required this.eventType,
+    this.module,
+    this.screenName,
+    this.routePath,
+    this.target,
+    this.sourceScreen,
+    this.durationMs,
+    this.payloadJson,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      timestampUs.hashCode ^
+      sessionId.hashCode ^
+      eventType.hashCode ^
+      module.hashCode ^
+      screenName.hashCode ^
+      routePath.hashCode ^
+      target.hashCode ^
+      sourceScreen.hashCode ^
+      durationMs.hashCode ^
+      payloadJson.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is UsageEventEntry &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          timestampUs == other.timestampUs &&
+          sessionId == other.sessionId &&
+          eventType == other.eventType &&
+          module == other.module &&
+          screenName == other.screenName &&
+          routePath == other.routePath &&
+          target == other.target &&
+          sourceScreen == other.sourceScreen &&
+          durationMs == other.durationMs &&
+          payloadJson == other.payloadJson;
 }

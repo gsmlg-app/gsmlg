@@ -10,7 +10,7 @@ void main() {
       final item = LogRecordItem(
         id: '1',
         timestamp: DateTime(2026, 11, 9, 12, 0, 0),
-        logType: 'dns',
+        logType: 'api',
         level: LogLevel.info,
         message: 'A google.com. => 142.250.190.46',
         clientAddress: '192.168.1.100',
@@ -31,7 +31,7 @@ void main() {
         ),
       );
 
-      expect(find.text('DNS'), findsOneWidget);
+      expect(find.text('API'), findsOneWidget);
       expect(find.text('A google.com. => 142.250.190.46'), findsOneWidget);
       expect(find.text('192.168.1.100'), findsOneWidget);
       expect(find.text('NoError'), findsOneWidget);

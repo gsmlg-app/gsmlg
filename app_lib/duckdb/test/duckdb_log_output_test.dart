@@ -24,24 +24,21 @@ void main() {
         () async {
       final output = DuckDbLogOutput(
         duckDb: db,
-        dnsThreshold: 5,
         systemThreshold: 5,
-        dhcpThreshold: 5,
         flushInterval:
             const Duration(seconds: 10), // long interval to test count trigger
       );
 
-      // Send 5 DNS records
+      // Send 5 system records
       for (var i = 0; i < 5; i++) {
         output.write(
           SerializableLogRecord(
             level: logging.Level.INFO.value,
             levelName: 'INFO',
-            message: 'Query A domain$i.com',
-            loggerName: 'DnsService',
+            message: 'message $i',
+            loggerName: 'AppService',
             time: 1700000000000 + i,
             isolateId: 'w1',
-            context: {'domain': 'domain$i.com', 'queryType': 'A'},
           ),
           'formatted',
         );
@@ -49,7 +46,7 @@ void main() {
 
       await output.flush();
 
-      final logs = await db.queryDnsLogs();
+      final logs = await db.querySystemLogs();
       expect(logs.length, equals(5));
 
       await output.close();
@@ -58,7 +55,6 @@ void main() {
     test('DuckDbLogOutput flushes automatically on periodic timer', () async {
       final output = DuckDbLogOutput(
         duckDb: db,
-        dnsThreshold: 100,
         flushInterval: const Duration(milliseconds: 100),
       );
 
@@ -66,11 +62,10 @@ void main() {
         SerializableLogRecord(
           level: logging.Level.INFO.value,
           levelName: 'INFO',
-          message: 'Query A timer.com',
-          loggerName: 'DnsService',
+          message: 'timer message',
+          loggerName: 'AppService',
           time: 1700000000000,
           isolateId: 'w1',
-          context: {'domain': 'timer.com'},
         ),
         'formatted',
       );
@@ -78,9 +73,9 @@ void main() {
       // Wait 250ms for timer to trigger flush
       await Future<void>.delayed(const Duration(milliseconds: 250));
 
-      final logs = await db.queryDnsLogs();
+      final logs = await db.querySystemLogs();
       expect(logs.length, equals(1));
-      expect(logs.first.domain, equals('timer.com'));
+      expect(logs.first.message, equals('timer message'));
 
       await output.close();
     });

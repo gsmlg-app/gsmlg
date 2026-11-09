@@ -10,24 +10,19 @@ export 'src/log_router.dart';
 export 'src/models/log_record_item.dart';
 export 'src/rust/api/duckdb.dart'
     show
-        DuckDbLogEntry,
+        AgentEventEntry,
+        ApiExchangeEntry,
         SystemLogEntry,
-        DnsLogEntry,
-        DhcpLogEntry,
+        UsageEventEntry,
         openDuckdb,
         closeDuckdb,
         isDuckdbOpen,
         executeSql,
-        ensureLogSchema,
         ensureLogSchemas,
-        appendLog,
-        batchAppendLogs,
         batchAppendSystemLogs,
-        batchAppendDnsLogs,
-        batchAppendDhcpLogs,
-        queryRecentLogs,
+        batchAppendApiExchanges,
+        batchAppendAgentEvents,
+        batchAppendUsageEvents,
         querySystemLogs,
-        queryDnsLogs,
-        queryDhcpLogs,
         querySqlJson;
 export 'src/rust/frb_generated.dart' show RustLib;
