@@ -17,6 +17,7 @@ dependencies:
   isolate_orchestrator: any
   logging: any
   uuid: any
+  app_logging: any
   equatable: any
 
 dev_dependencies:

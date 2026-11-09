@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:app_database/app_database.dart';
-import 'package:app_duckdb/app_duckdb.dart' show AppDuckDb, DuckDbLogOutput;
+import 'package:app_duckdb/app_duckdb.dart'
+    show AppDuckDb, DuckDbLogOutput, DuckDbLogSink;
 import 'package:app_locale/app_locale.dart';
 import 'package:app_logging/app_logging.dart';
 import 'package:app_provider/app_provider.dart';
@@ -43,7 +44,7 @@ void main(List<String> args) async {
           '${record.loggerName} ${record.level.name} [${record.time}]: ${record.message}';
       bootstrapLogFile!.writeAsString('$log\n', mode: FileMode.append);
     });
-    await _attachDuckDbLogging();
+    final flushLogs = await _attachDuckDbLogging();
     logger.i('App started');
 
     final sharedPrefs = await SharedPreferences.getInstance();
@@ -62,7 +63,9 @@ void main(List<String> args) async {
           debugShowCheckedModeBanner: false,
           localizationsDelegates: AppLocale.localizationsDelegates,
           supportedLocales: AppLocale.supportedLocales,
-          home: CrashReportingWidget(child: App(arguments: args)),
+          home: CrashReportingWidget(
+            child: App(arguments: args, flushLogs: flushLogs),
+          ),
         ),
       ),
     );
@@ -78,19 +81,26 @@ void main(List<String> args) async {
   }
 }
 
-/// Opens the DuckDB log store and persists every root logger record into it.
+/// Opens the DuckDB log store, persists every root logger record into it and
+/// attaches the API/agent/usage capture sink.
 ///
 /// Failure is non-fatal: the app keeps running with file/console logging only.
-Future<void> _attachDuckDbLogging() async {
+/// Returns a function that flushes buffered records (a no-op when the store is
+/// unavailable).
+Future<Future<void> Function()> _attachDuckDbLogging() async {
   try {
     await AppDuckDb.instance.open();
     await AppDuckDb.instance.ensureLogSchemas();
     final output = DuckDbLogOutput(duckDb: AppDuckDb.instance);
     logging.Logger.root.onRecord.listen(output.writeRootRecord);
+    final sink = DuckDbLogSink(duckDb: AppDuckDb.instance);
+    LogCapture.instance.attach(sink);
+    return () => Future.wait([output.flush(), sink.flush()]);
   } catch (error, stackTrace) {
     logging.Logger(
       'DuckDb',
     ).warning('DuckDB log store unavailable', error, stackTrace);
+    return () async {};
   }
 }
 

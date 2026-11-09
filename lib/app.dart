@@ -18,9 +18,12 @@ import 'screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 import 'screens/toolbox/editor/editor_screen.dart';
 
 class App extends StatefulWidget {
-  const App({super.key, this.arguments = const []});
+  const App({super.key, this.arguments = const [], this.flushLogs});
 
   final List<String> arguments;
+
+  /// Flushes buffered log records; awaited before the app exits.
+  final Future<void> Function()? flushLogs;
 
   @override
   State<App> createState() => _AppState();
@@ -33,6 +36,22 @@ class _AppState extends State<App> {
   StreamSubscription<void>? _editorSub;
   late final AppLifecycleListener _exitListener;
 
+  Future<void> _flushLogs() async {
+    try {
+      await widget.flushLogs?.call();
+    } catch (error, stackTrace) {
+      AppLogger().e('Log flush on exit failed', error, stackTrace);
+    }
+  }
+
+  Future<AppExitResponse> _confirmExit() async {
+    final navigationContext = AppRouter.key.currentContext;
+    if (navigationContext == null) return AppExitResponse.exit;
+    return await EditorScreen.confirmExit(navigationContext)
+        ? AppExitResponse.exit
+        : AppExitResponse.cancel;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -42,11 +61,9 @@ class _AppState extends State<App> {
     _editorSub = editorFiles.openRequests.listen((_) => _openEditor());
     _exitListener = AppLifecycleListener(
       onExitRequested: () async {
-        final navigationContext = AppRouter.key.currentContext;
-        if (navigationContext == null) return AppExitResponse.exit;
-        return await EditorScreen.confirmExit(navigationContext)
-            ? AppExitResponse.exit
-            : AppExitResponse.cancel;
+        final response = await _confirmExit();
+        await _flushLogs();
+        return response;
       },
     );
     unawaited(
