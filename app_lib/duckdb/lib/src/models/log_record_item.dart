@@ -79,11 +79,9 @@ class LogRecordItem extends Equatable {
     String? status = map['status']?.toString();
 
     if (isApi) {
-      message = [
-        map['method'],
-        map['host'],
-        map['path'],
-      ].where((e) => e != null).join(' ').replaceFirst(RegExp(r' (?=/)'), '');
+      message =
+          '${map['method'] ?? ''} ${map['host'] ?? ''}${map['path'] ?? ''}'
+              .trim();
       final code = (map['status'] as num?)?.toInt() ?? 0;
       level = map['has_error'] == true || code >= 400
           ? LogLevel.error

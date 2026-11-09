@@ -21,6 +21,28 @@ void main() {
       expect(item.timestamp.microsecondsSinceEpoch, equals(1762700000000000));
     });
 
+    test('api row without host keeps a space before the path', () {
+      final item = LogRecordItem.fromMap({
+        'id': 'a1',
+        'timestamp_us': 1,
+        'record_json': '{}',
+        'method': 'POST',
+        'host': null,
+        'path': '/p',
+        'status': 200,
+      });
+      expect(item.message, 'POST /p');
+      final full = LogRecordItem.fromMap({
+        'id': 'a2',
+        'timestamp_us': 1,
+        'record_json': '{}',
+        'method': 'GET',
+        'host': 'h.com',
+        'path': '/x',
+      });
+      expect(full.message, 'GET h.com/x');
+    });
+
     test('parses from system_logs row map', () {
       final map = {
         'id': 'sys-1',

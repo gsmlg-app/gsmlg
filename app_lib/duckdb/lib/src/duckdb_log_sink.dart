@@ -53,7 +53,7 @@ class DuckDbLogSink implements LogSink {
   @override
   void writeApi(ApiExchangeRecord r) {
     if (_isClosed) return;
-    final req = r.request, res = r.response, ctx = r.context;
+    final res = r.response, ctx = r.context;
     if (_api.add(
       ApiExchangeEntry(
         id: _uuid.v4(),
@@ -63,9 +63,9 @@ class DuckDbLogSink implements LogSink {
         recordType: r.recordType,
         category: r.category,
         apiType: r.apiType,
-        method: req?.method,
-        host: req?.host,
-        path: req?.uri,
+        method: r.method,
+        host: r.host,
+        path: r.path,
         status: res?.status,
         durationMs: r.durationMs,
         hasError: r.error != null,

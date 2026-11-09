@@ -128,4 +128,36 @@ void main() {
     await sink.flush();
     await sink.close();
   });
+
+  test('streamed response rows carry method, host and path', () async {
+    final sink = DuckDbLogSink(
+      duckDb: db,
+      flushInterval: const Duration(seconds: 10),
+    );
+    final response = ApiExchangeRecord(
+      ts: DateTime.utc(2026, 3, 12, 10, 0, 1),
+      requestId: 'req-s',
+      recordType: 'response',
+      method: 'POST',
+      host: 'api.example.com',
+      path: '/v1/chat',
+      response: HttpMessageCapture.response(
+        status: 200,
+        headers: const {},
+        bodyBytes: utf8.encode('data: x'),
+      ),
+    );
+    sink.writeApi(response);
+    await sink.flush();
+
+    final row = (await _rows(db, 'SELECT * FROM api_exchanges')).single;
+    expect(row['method'], 'POST');
+    expect(row['host'], 'api.example.com');
+    expect(row['path'], '/v1/chat');
+    expect(
+      jsonDecode(row['record_json'] as String),
+      isNot(contains('request')),
+    );
+    await sink.close();
+  });
 }

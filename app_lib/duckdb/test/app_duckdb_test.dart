@@ -196,6 +196,19 @@ void main() {
           aborted: false,
           recordJson: '{}',
         ),
+        ApiExchangeEntry(
+          id: 'api-pending',
+          timestampUs: PlatformInt64Util.from(35),
+          requestId: 'r-s',
+          recordType: 'request',
+          category: 'llm',
+          method: 'POST',
+          host: 'h.com',
+          path: '/chat',
+          hasError: false,
+          aborted: false,
+          recordJson: '{}',
+        ),
       ]);
       await db.batchAppendAgentEvents([
         AgentEventEntry(
@@ -220,16 +233,18 @@ void main() {
           'SELECT id, log_type, level, message FROM v_all_logs ORDER BY timestamp_us',
         ),
       ) as List<dynamic>;
-      expect(
-          rows.map((r) => r['id']), ['api-ok', 'api-500', 'api-err', 'ag-v']);
+      expect(rows.map((r) => r['id']),
+          ['api-ok', 'api-500', 'api-err', 'api-pending', 'ag-v']);
       expect(rows[0]['level'], 'INFO');
       expect(rows[0]['log_type'], 'api');
       expect(rows[0]['message'], 'GET h.com/ok → 200');
       expect(rows[1]['level'], 'SEVERE');
       expect(rows[2]['level'], 'SEVERE');
       expect(rows[2]['message'], 'GET h.com/err → ERR');
-      expect(rows[3]['log_type'], 'agent');
-      expect(rows[3]['message'], 'agent summary');
+      expect(rows[3]['level'], 'INFO');
+      expect(rows[3]['message'], 'POST h.com/chat → …');
+      expect(rows[4]['log_type'], 'agent');
+      expect(rows[4]['message'], 'agent summary');
     });
   });
 }

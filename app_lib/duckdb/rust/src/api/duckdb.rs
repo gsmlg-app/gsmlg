@@ -205,7 +205,7 @@ pub fn ensure_log_schemas() -> Result<(), String> {
         SELECT id, timestamp_us, 'api' AS log_type, category,
                CASE WHEN has_error OR coalesce(status, 0) >= 400 THEN 'SEVERE' ELSE 'INFO' END AS level,
                'api' AS logger_name,
-               concat(method, ' ', host, path, ' → ', coalesce(CAST(status AS VARCHAR), 'ERR')) AS message
+               concat(method, ' ', host, path, ' → ', coalesce(CAST(status AS VARCHAR), CASE WHEN record_type = 'request' AND NOT coalesce(has_error, false) THEN '…' ELSE 'ERR' END)) AS message
         FROM api_exchanges
         UNION ALL
         SELECT id, timestamp_us, 'agent' AS log_type, 'agent' AS category,
