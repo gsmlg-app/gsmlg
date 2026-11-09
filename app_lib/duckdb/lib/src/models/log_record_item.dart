@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:equatable/equatable.dart';
 
 /// Supported log levels for querying and display.
@@ -37,7 +36,8 @@ enum LogLevel {
 class LogRecordItem extends Equatable {
   final String id;
   final DateTime timestamp;
-  final String logType; // 'system' | 'api' | 'agent'
+  final String logType; // 'system' | 'api' | 'agent' | 'usage'
+  final String? category;
   final LogLevel level;
   final String? loggerName;
   final String message;
@@ -50,6 +50,7 @@ class LogRecordItem extends Equatable {
     required this.id,
     required this.timestamp,
     required this.logType,
+    this.category,
     required this.level,
     this.loggerName,
     required this.message,
@@ -67,27 +68,33 @@ class LogRecordItem extends Equatable {
     final timeUs = (map['timestamp_us'] as num?)?.toInt() ?? 0;
     final timestamp = DateTime.fromMicrosecondsSinceEpoch(timeUs);
     final logType = (map['log_type'] as String?) ?? defaultType ?? 'system';
-    final level = LogLevel.fromString(map['level'] as String?);
     final loggerName = map['logger_name'] as String?;
     final latencyMs = (map['latency_ms'] as num?)?.toInt();
 
-    String message = '';
-    String? clientAddress;
-    String? status = map['status'] as String?;
+    final isApi = map.containsKey('record_json') && map.containsKey('host');
+    final isUsage = map.containsKey('session_id');
+    var level = LogLevel.fromString(map['level'] as String?);
+    var message = map['message']?.toString() ?? '';
+    String? clientAddress = map['isolate_id']?.toString();
+    String? status = map['status']?.toString();
 
-    if (map.containsKey('details') && map['details'] is String) {
-      message = map['message'] as String? ?? '';
-      try {
-        final detailsMap = jsonDecode(map['details'] as String);
-        if (detailsMap is Map<String, dynamic>) {
-          clientAddress = detailsMap['client_ip']?.toString() ??
-              detailsMap['client_mac']?.toString();
-          status = detailsMap['status']?.toString() ?? status;
-        }
-      } catch (_) {}
-    } else {
-      message = map['message']?.toString() ?? '';
-      clientAddress = map['isolate_id']?.toString();
+    if (isApi) {
+      message = [
+        map['method'],
+        map['host'],
+        map['path'],
+      ].where((e) => e != null).join(' ').replaceFirst(RegExp(r' (?=/)'), '');
+      final code = (map['status'] as num?)?.toInt() ?? 0;
+      level = map['has_error'] == true || code >= 400
+          ? LogLevel.error
+          : LogLevel.info;
+    } else if (map.containsKey('summary')) {
+      message = map['summary']?.toString() ?? '';
+    } else if (isUsage) {
+      message = [
+        map['event_type'],
+        map['screen_name'] ?? map['target'],
+      ].where((e) => e != null).join(' ');
     }
 
     return LogRecordItem(
@@ -96,8 +103,8 @@ class LogRecordItem extends Equatable {
       logType: logType,
       level: level,
       loggerName: loggerName,
-      message:
-          message.isNotEmpty ? message : (map['message']?.toString() ?? ''),
+      category: map['category'] as String?,
+      message: message,
       clientAddress: clientAddress,
       status: status,
       latencyMs: latencyMs,
@@ -110,6 +117,7 @@ class LogRecordItem extends Equatable {
         id,
         timestamp,
         logType,
+        category,
         level,
         loggerName,
         message,

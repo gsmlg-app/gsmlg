@@ -12,9 +12,7 @@ void main() {
       );
       final selectSql = LogQueryBuilder.buildSelectSql(
         tableOrView: 'v_all_logs',
-        keyword: 'test',
-        timeRange: range,
-        level: 'INFO',
+        filter: LogFilter(keyword: 'test', timeRange: range, level: 'INFO'),
         limit: 50,
         offset: 100,
       );
@@ -28,9 +26,7 @@ void main() {
 
       final countSql = LogQueryBuilder.buildCountSql(
         tableOrView: 'v_all_logs',
-        keyword: 'test',
-        timeRange: range,
-        level: 'INFO',
+        filter: LogFilter(keyword: 'test', timeRange: range, level: 'INFO'),
       );
       expect(countSql, contains('SELECT COUNT(*) AS total FROM v_all_logs'));
       expect(countSql, contains("level IN ('INFO', 'CONFIG')"));
@@ -39,9 +35,18 @@ void main() {
     test('escapes single quotes in keyword to prevent syntax errors', () {
       final sql = LogQueryBuilder.buildSelectSql(
         tableOrView: 'api_exchanges',
-        keyword: "test' OR '1'='1",
+        filter: const LogFilter(keyword: "test' OR '1'='1"),
       );
       expect(sql, contains("''1''=''1"));
+    });
+
+    test('escapes quotes in category and conversation filters', () {
+      final sql = LogQueryBuilder.buildSelectSql(
+        tableOrView: 'api_exchanges',
+        filter: const LogFilter(category: "a'b", conversationId: "c'd"),
+      );
+      expect(sql, contains("category = 'a''b'"));
+      expect(sql, contains("conversation_id = 'c''d'"));
     });
 
     test('builds prune sql correctly', () {

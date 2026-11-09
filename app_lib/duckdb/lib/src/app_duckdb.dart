@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart'
     show ExternalLibrary;
 import 'package:path/path.dart' as p;
@@ -142,20 +141,27 @@ class AppDuckDb {
     return rust_duckdb.querySystemLogs(limit: limit, level: level);
   }
 
-  /// Query logs from any table or view with dynamic filtering and pagination.
+  static void _checkTable(String table) {
+    if (!LogTables.all.contains(table)) {
+      throw ArgumentError.value(table, 'table', 'not a log table');
+    }
+  }
+
+  static const _queryable = [...LogTables.all, 'v_all_logs'];
+
+  /// Query logs from any log table or `v_all_logs` with filtering and pagination.
   Future<List<LogRecordItem>> queryLogs({
     required String tableOrView,
-    String? keyword,
-    DateTimeRange? timeRange,
-    String? level,
+    LogFilter filter = const LogFilter(),
     int limit = 50,
     int offset = 0,
   }) async {
+    if (!_queryable.contains(tableOrView)) {
+      throw ArgumentError.value(tableOrView, 'tableOrView', 'unknown table');
+    }
     final sql = LogQueryBuilder.buildSelectSql(
       tableOrView: tableOrView,
-      keyword: keyword,
-      timeRange: timeRange,
-      level: level,
+      filter: filter,
       limit: limit,
       offset: offset,
     );
@@ -165,6 +171,9 @@ class AppDuckDb {
 
     final defaultType = switch (tableOrView) {
       'system_logs' => 'system',
+      'api_exchanges' => 'api',
+      'agent_events' => 'agent',
+      'usage_events' => 'usage',
       _ => null,
     };
 
@@ -177,15 +186,14 @@ class AppDuckDb {
   /// Get total count of matching logs for pagination.
   Future<int> countLogs({
     required String tableOrView,
-    String? keyword,
-    DateTimeRange? timeRange,
-    String? level,
+    LogFilter filter = const LogFilter(),
   }) async {
+    if (!_queryable.contains(tableOrView)) {
+      throw ArgumentError.value(tableOrView, 'tableOrView', 'unknown table');
+    }
     final sql = LogQueryBuilder.buildCountSql(
       tableOrView: tableOrView,
-      keyword: keyword,
-      timeRange: timeRange,
-      level: level,
+      filter: filter,
     );
     final jsonStr = await rust_duckdb.querySqlJson(sql: sql);
     final dynamic decoded = jsonDecode(jsonStr);
@@ -198,17 +206,64 @@ class AppDuckDb {
     return 0;
   }
 
-  /// Prune logs older than given datetime.
-  Future<void> pruneLogs({
-    required String table,
-    required DateTime before,
-  }) async {
-    final sql = LogQueryBuilder.buildPruneSql(table: table, before: before);
-    await rust_duckdb.executeSql(sql: sql);
+  /// Distinct API exchange categories, sorted.
+  Future<List<String>> listCategories() async {
+    final jsonStr = await rust_duckdb.querySqlJson(
+      sql: 'SELECT DISTINCT category FROM api_exchanges '
+          'WHERE category IS NOT NULL ORDER BY category;',
+    );
+    final dynamic decoded = jsonDecode(jsonStr);
+    if (decoded is! List) return [];
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map((m) => m['category'].toString())
+        .toList();
   }
 
-  /// Clear all logs in given table.
+  /// Deletes rows older than [days] days (by `timestamp_us`) from [tables].
+  Future<void> deleteOlderThan({
+    required int days,
+    required List<String> tables,
+  }) async {
+    if (days < 1) {
+      throw ArgumentError.value(days, 'days', 'must be >= 1');
+    }
+    tables.forEach(_checkTable);
+    final before = DateTime.now().subtract(Duration(days: days));
+    for (final table in tables) {
+      await rust_duckdb.executeSql(
+        sql: LogQueryBuilder.buildPruneSql(table: table, before: before),
+      );
+    }
+  }
+
+  /// Exports matching rows of [table] as JSON Lines, oldest first.
+  ///
+  /// `api_exchanges` rows are the stored `record_json` verbatim; other
+  /// tables emit one JSON object of the row's columns per line.
+  Future<String> exportJsonl({
+    required String table,
+    LogFilter filter = const LogFilter(),
+  }) async {
+    _checkTable(table);
+    final jsonStr = await rust_duckdb.querySqlJson(
+      sql: LogQueryBuilder.buildExportSql(table: table, filter: filter),
+    );
+    final dynamic decoded = jsonDecode(jsonStr);
+    if (decoded is! List) return '';
+    return decoded
+        .whereType<Map<String, dynamic>>()
+        .map(
+          (m) => table == 'api_exchanges'
+              ? m['record_json'].toString()
+              : jsonEncode(m),
+        )
+        .join('\n');
+  }
+
+  /// Clear all logs in given log table.
   Future<void> clearLogsTable({required String table}) async {
+    _checkTable(table);
     final sql = LogQueryBuilder.buildClearSql(table: table);
     await rust_duckdb.executeSql(sql: sql);
   }

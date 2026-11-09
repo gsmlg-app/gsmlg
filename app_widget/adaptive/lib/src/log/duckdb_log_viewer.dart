@@ -70,19 +70,20 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
     });
 
     try {
-      final total = await _duckDb.countLogs(
-        tableOrView: widget.tableOrView,
+      final filter = LogFilter(
         keyword: _keyword,
         timeRange: _timeRange,
         level: _level?.displayName,
+      );
+      final total = await _duckDb.countLogs(
+        tableOrView: widget.tableOrView,
+        filter: filter,
       );
 
       final offset = _currentPage * _pageSize;
       final logs = await _duckDb.queryLogs(
         tableOrView: widget.tableOrView,
-        keyword: _keyword,
-        timeRange: _timeRange,
-        level: _level?.displayName,
+        filter: filter,
         limit: _pageSize,
         offset: offset,
       );

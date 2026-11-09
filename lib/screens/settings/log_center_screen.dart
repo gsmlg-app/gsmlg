@@ -84,23 +84,16 @@ class _LogCenterScreenState extends State<LogCenterScreen>
 
     final messenger = ScaffoldMessenger.of(context);
     final duckDb = AppDuckDb.instance;
-    final now = DateTime.now();
     try {
-      for (final table in _activeTables) {
-        switch (choice) {
-          case _PruneChoice.olderThan7Days:
-            await duckDb.pruneLogs(
-              table: table,
-              before: now.subtract(const Duration(days: 7)),
-            );
-          case _PruneChoice.olderThan30Days:
-            await duckDb.pruneLogs(
-              table: table,
-              before: now.subtract(const Duration(days: 30)),
-            );
-          case _PruneChoice.all:
+      switch (choice) {
+        case _PruneChoice.olderThan7Days:
+          await duckDb.deleteOlderThan(days: 7, tables: _activeTables);
+        case _PruneChoice.olderThan30Days:
+          await duckDb.deleteOlderThan(days: 30, tables: _activeTables);
+        case _PruneChoice.all:
+          for (final table in _activeTables) {
             await duckDb.clearLogsTable(table: table);
-        }
+          }
       }
       messenger.showSnackBar(SnackBar(content: Text(l10n.logCenterPruneDone)));
       await _activeViewer?.refresh();

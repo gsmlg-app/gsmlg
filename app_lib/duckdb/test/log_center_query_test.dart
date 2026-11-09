@@ -28,7 +28,10 @@ void main() {
   tearDown(() => db.close());
 
   test('keyword search works on the unified v_all_logs view', () async {
-    final rows = await db.queryLogs(tableOrView: 'v_all_logs', keyword: 'fail');
+    final rows = await db.queryLogs(
+      tableOrView: 'v_all_logs',
+      filter: const LogFilter(keyword: 'fail'),
+    );
     expect(rows.map((r) => r.id), ['1']);
     expect(rows.single.logType, 'system');
   });
@@ -36,7 +39,7 @@ void main() {
   test('UI level ERROR matches records stored as SEVERE', () async {
     final rows = await db.queryLogs(
       tableOrView: 'system_logs',
-      level: LogLevel.error.displayName,
+      filter: LogFilter(level: LogLevel.error.displayName),
     );
     expect(rows.map((r) => r.id), ['1']);
   });
@@ -45,7 +48,7 @@ void main() {
     expect(
       await db.countLogs(
         tableOrView: 'v_all_logs',
-        level: LogLevel.debug.displayName,
+        filter: LogFilter(level: LogLevel.debug.displayName),
       ),
       1,
     );
