@@ -353,6 +353,7 @@ class Remote implements RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
     String? generationId,
+    LogContext? logContext,
   }) {
     if (controller.isClosed) {
       controller = StreamController<ChatGenerationChunk>.broadcast();

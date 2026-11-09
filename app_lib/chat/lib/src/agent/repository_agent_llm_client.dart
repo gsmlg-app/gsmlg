@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:app_logging/app_logging.dart' show LogContext;
 import 'package:dart_agent_core/dart_agent_core.dart';
 import 'package:dio/dio.dart';
 
@@ -21,6 +22,7 @@ class RepositoryAgentLlmClient implements LLMClient {
     this.gemmaRepository,
     this.localModelAccess,
     this.conversationId,
+    this.runId,
     this.generationId,
     this.onFirstToken,
     List<app_msg.Message>? initialMessages,
@@ -36,11 +38,22 @@ class RepositoryAgentLlmClient implements LLMClient {
   final GemmaRepository? gemmaRepository;
   final LocalModelAccess? localModelAccess;
   final String? conversationId;
+  final String? runId;
   final String? generationId;
   final void Function()? onFirstToken;
 
   StreamController<ChatGenerationChunk>? _primedBuffer;
   StreamSubscription<ChatGenerationChunk>? _primedSub;
+
+  /// Number of model calls issued so far; the current call's 1-based turn.
+  var _turn = 0;
+
+  LogContext _nextLogContext(String generationId) => LogContext(
+    conversationId: conversationId,
+    runId: runId,
+    generationId: generationId,
+    turn: ++_turn,
+  );
 
   void _primeFirstTurn(
     List<app_msg.Message> messages,
@@ -49,6 +62,7 @@ class RepositoryAgentLlmClient implements LLMClient {
     final effectiveGenId =
         generationId ?? 'gen_${DateTime.now().microsecondsSinceEpoch}';
     final Stream<ChatGenerationChunk> raw;
+    final logContext = _nextLogContext(effectiveGenId);
     if (_isLocal && gemmaRepository != null) {
       raw = gemmaRepository!.generateResponse(
         messages,
@@ -61,6 +75,7 @@ class RepositoryAgentLlmClient implements LLMClient {
         config,
         tools: tools,
         generationId: effectiveGenId,
+        logContext: logContext,
       );
     } else {
       return;
@@ -174,6 +189,7 @@ class RepositoryAgentLlmClient implements LLMClient {
       } else {
         final effectiveGenId =
             generationId ?? 'gen_${DateTime.now().microsecondsSinceEpoch}';
+        final logContext = _nextLogContext(effectiveGenId);
         if (_isLocal && gemmaRepository != null) {
           rawStream = gemmaRepository!.generateResponse(
             appMessages,
@@ -186,6 +202,7 @@ class RepositoryAgentLlmClient implements LLMClient {
             config,
             tools: openAiTools,
             generationId: effectiveGenId,
+            logContext: logContext,
           );
         } else {
           throw StateError('No LLM repository available to handle request');

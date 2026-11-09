@@ -22,6 +22,7 @@ export 'src/agent/sub_agent_supervisor.dart';
 export 'src/agent/tool_gateway.dart';
 
 export 'package:dio/dio.dart' show CancelToken;
+export 'package:app_logging/app_logging.dart' show LogContext;
 export 'package:dart_agent_core/dart_agent_core.dart'
     show AgentException, AgentExceptionCode;
 

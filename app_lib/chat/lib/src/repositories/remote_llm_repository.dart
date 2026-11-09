@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:anthropic_compatible/anthropic_compatible.dart' as anthropic;
+import 'package:app_logging/app_logging.dart';
 import 'package:app_secure_storage/vault_repository.dart';
 import 'package:http/http.dart' as http;
 import 'package:openai_compatible/openai_compatible.dart' as openai;
@@ -15,7 +16,7 @@ import '../models/model_config.dart';
 class RemoteLlmRepository {
   RemoteLlmRepository({required VaultRepository vault, http.Client? client})
     : _vault = vault,
-      _client = client ?? http.Client(),
+      _client = LoggingHttpClient(client ?? http.Client()),
       _ownsClient = client == null;
 
   final VaultRepository _vault;
@@ -25,6 +26,35 @@ class RemoteLlmRepository {
   bool _disposed = false;
 
   static const _accountKeyPrefix = 'service_account_';
+
+  /// Log category for traffic to [config]'s endpoint: `llm:<host>`, or
+  /// `llm:<provider>` when the base url has no host.
+  static String llmCategory(ModelConfig config) {
+    final host = Uri.tryParse(config.remoteBaseUrl.trim())?.host ?? '';
+    return host.isEmpty
+        ? 'llm:${config.remoteProvider.name}'
+        : 'llm:${host.toLowerCase()}';
+  }
+
+  /// Attaches capture metadata for [config] to [request].
+  void _tag(
+    http.BaseRequest request,
+    ModelConfig config, {
+    LogContext? context,
+  }) {
+    final customHeader = config.remoteAuthType == RemoteAuthType.customHeader
+        ? config.remoteAuthHeaderName?.trim()
+        : null;
+    HttpCaptureTag.tag(
+      request,
+      category: llmCategory(config),
+      apiType: config.remoteApiType.name,
+      context: context,
+      secretHeaders: {
+        if (customHeader != null && customHeader.isNotEmpty) customHeader,
+      },
+    );
+  }
 
   /// Whether the configured account has an API key in secure storage.
   Future<bool> isReady(ModelConfig config) async {
@@ -40,9 +70,11 @@ class RemoteLlmRepository {
   Future<List<String>> listModels(ModelConfig config) async {
     final apiKey = await _apiKeyFor(config);
     final headers = _listModelsHeaders(config, apiKey);
-    final response = await _client.get(
-      _modelsUri(config.remoteBaseUrl),
-      headers: headers,
+    final request = http.Request('GET', _modelsUri(config.remoteBaseUrl))
+      ..headers.addAll(headers);
+    _tag(request, config);
+    final response = await http.Response.fromStream(
+      await _client.send(request),
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -80,6 +112,7 @@ class RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
     String? generationId,
+    LogContext? logContext,
   }) async* {
     if (_disposed) throw StateError('RemoteLlmRepository is disposed.');
     final key = generationId ?? Object();
@@ -99,6 +132,7 @@ class RemoteLlmRepository {
             )
             ..headers.addAll(_generationHeaders(config, apiKey))
             ..body = jsonEncode(_requestBody(messages, config, tools: tools));
+      _tag(request, config, context: logContext);
 
       final response = await _client.send(request);
       if (response.statusCode < 200 || response.statusCode >= 300) {

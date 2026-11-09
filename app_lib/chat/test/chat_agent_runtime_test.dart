@@ -15,6 +15,7 @@ class _FakeRemoteLlmRepository extends RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
     String? generationId,
+    LogContext? logContext,
   }) async* {
     turnCount++;
     if (turnCount == 1) {

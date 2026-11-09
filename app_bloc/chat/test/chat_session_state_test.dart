@@ -516,7 +516,9 @@ class _Remote implements RemoteLlmRepository {
   @override
   Stream<ChatGenerationChunk> generateResponse(
       List<Message> messages, ModelConfig config,
-      {List<Map<String, dynamic>> tools = const [], String? generationId}) {
+      {List<Map<String, dynamic>> tools = const [],
+      String? generationId,
+      LogContext? logContext}) {
     final id = messages.first.conversationId;
     started.add(id);
     ids[id] = generationId;

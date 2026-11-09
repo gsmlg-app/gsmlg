@@ -163,6 +163,7 @@ class ChatAgentRuntime {
       gemmaRepository: gemmaRepository,
       localModelAccess: _localModelAccess,
       conversationId: sessionId,
+      runId: runId,
       generationId: generationId,
       onFirstToken: onFirstToken,
       initialMessages: historyMessages,

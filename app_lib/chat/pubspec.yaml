@@ -22,6 +22,7 @@ dependencies:
   path_provider: ^2.1.6
   path: any
   app_database: any
+  app_logging: any
   app_secure_storage: any
   cloudflare_dns: any
   gsmlg_whois: any

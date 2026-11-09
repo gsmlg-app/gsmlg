@@ -352,6 +352,7 @@ class _FakeRemoteLlmRepository implements RemoteLlmRepository {
     ModelConfig config, {
     List<Map<String, dynamic>> tools = const [],
     String? generationId,
+    LogContext? logContext,
   }) {
     lastConfig = config;
     return _controller.stream;
