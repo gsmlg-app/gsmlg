@@ -4,6 +4,9 @@ import 'package:app_duckdb/app_duckdb.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'agent_run_timeline.dart';
+import 'api_exchange_detail.dart';
+
 /// Modal bottom sheet or dialog to inspect full details of a [LogRecordItem].
 class LogDetailSheet extends StatelessWidget {
   final LogRecordItem item;
@@ -11,7 +14,34 @@ class LogDetailSheet extends StatelessWidget {
   const LogDetailSheet({super.key, required this.item});
 
   /// Displays the detail sheet as a modal bottom sheet on mobile, or dialog on large screens.
-  static Future<void> show(BuildContext context, LogRecordItem item) {
+  static Future<void> show(BuildContext context, LogRecordItem item) =>
+      showModal(context, LogDetailSheet(item: item));
+
+  /// Opens the detail view matching [item]'s log type: the full exchange for
+  /// `api` rows, the run timeline for `agent` rows that belong to a run, and
+  /// this generic sheet otherwise.
+  static Future<void> open(
+    BuildContext context,
+    LogRecordItem item, {
+    required AppDuckDb duckDb,
+  }) async {
+    switch (item.logType) {
+      case 'api':
+        return ApiExchangeDetail.show(context, duckDb: duckDb, id: item.id);
+      case 'agent':
+        final runId = item.rawFields.containsKey('run_id')
+            ? item.rawFields['run_id'] as String?
+            : await AgentRunTimeline.runIdOf(duckDb, item.id);
+        if (!context.mounted) return;
+        if (runId != null) {
+          return AgentRunTimeline.show(context, duckDb: duckDb, runId: runId);
+        }
+    }
+    return show(context, item);
+  }
+
+  /// Shows [child] in a dialog on wide screens or a bottom sheet otherwise.
+  static Future<void> showModal(BuildContext context, Widget child) {
     final isWide = MediaQuery.of(context).size.width >= 720;
     if (isWide) {
       return showDialog<void>(
@@ -21,8 +51,8 @@ class LogDetailSheet extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 680, maxHeight: 600),
-            child: LogDetailSheet(item: item),
+            constraints: const BoxConstraints(maxWidth: 820, maxHeight: 720),
+            child: child,
           ),
         ),
       );
@@ -34,10 +64,8 @@ class LogDetailSheet extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        builder: (context) => FractionallySizedBox(
-          heightFactor: 0.85,
-          child: LogDetailSheet(item: item),
-        ),
+        builder: (context) =>
+            FractionallySizedBox(heightFactor: 0.85, child: child),
       );
     }
   }

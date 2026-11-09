@@ -15,6 +15,16 @@ class DuckDbLogViewer extends StatefulWidget {
   final AppDuckDb? duckDb;
   final List<Widget>? actions;
 
+  /// Shows the API category dropdown (values from `listCategories`).
+  final bool showCategoryFilter;
+
+  /// Shows the errors-only toggle.
+  final bool showErrorsOnlyFilter;
+
+  /// Replaces the default table / card list rendering of the current page.
+  final Widget Function(BuildContext context, List<LogRecordItem> items)?
+      itemsBuilder;
+
   const DuckDbLogViewer({
     super.key,
     required this.tableOrView,
@@ -22,6 +32,9 @@ class DuckDbLogViewer extends StatefulWidget {
     this.showTypeColumn,
     this.duckDb,
     this.actions,
+    this.showCategoryFilter = false,
+    this.showErrorsOnlyFilter = false,
+    this.itemsBuilder,
   });
 
   @override
@@ -36,6 +49,9 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
   String? _keyword;
   DateTimeRange? _timeRange;
   LogLevel? _level;
+  String? _category;
+  bool _errorsOnly = false;
+  List<String> _categories = const [];
   int _currentPage = 0;
 
   int _totalCount = 0;
@@ -48,7 +64,33 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
     super.initState();
     _level = widget.defaultFilterLevel;
     _fetchData();
+    if (widget.showCategoryFilter) _loadCategories();
   }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _duckDb.listCategories();
+      if (mounted) setState(() => _categories = categories);
+    } catch (e) {
+      debugPrint('DuckDbLogViewer category load error: $e');
+    }
+  }
+
+  /// The filter currently applied, e.g. for exporting the same rows.
+  LogFilter get filter => LogFilter(
+        keyword: _keyword,
+        timeRange: _timeRange,
+        level: _level?.displayName,
+        category: _category,
+        errorsOnly: _errorsOnly ? true : null,
+      );
+
+  bool get _hasFilters =>
+      _keyword != null ||
+      _timeRange != null ||
+      _level != null ||
+      _category != null ||
+      _errorsOnly;
 
   @override
   void didUpdateWidget(DuckDbLogViewer oldWidget) {
@@ -60,7 +102,10 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
   }
 
   /// Refreshes the log data from DuckDB.
-  Future<void> refresh() => _fetchData();
+  Future<void> refresh() {
+    if (widget.showCategoryFilter) _loadCategories();
+    return _fetchData();
+  }
 
   Future<void> _fetchData() async {
     if (!mounted) return;
@@ -70,11 +115,7 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
     });
 
     try {
-      final filter = LogFilter(
-        keyword: _keyword,
-        timeRange: _timeRange,
-        level: _level?.displayName,
-      );
+      final filter = this.filter;
       final total = await _duckDb.countLogs(
         tableOrView: widget.tableOrView,
         filter: filter,
@@ -130,11 +171,29 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
     _fetchData();
   }
 
+  void _onCategoryChanged(String? category) {
+    setState(() {
+      _category = category;
+      _currentPage = 0;
+    });
+    _fetchData();
+  }
+
+  void _onErrorsOnlyChanged(bool errorsOnly) {
+    setState(() {
+      _errorsOnly = errorsOnly;
+      _currentPage = 0;
+    });
+    _fetchData();
+  }
+
   void _onClearFilters() {
     setState(() {
       _keyword = null;
       _timeRange = null;
       _level = null;
+      _category = null;
+      _errorsOnly = false;
       _currentPage = 0;
     });
     _fetchData();
@@ -177,6 +236,13 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
           onTimeRangeChanged: _onTimeRangeChanged,
           onLevelChanged: _onLevelChanged,
           onClearFilters: _onClearFilters,
+          categories: _categories,
+          initialCategory: _category,
+          onCategoryChanged:
+              widget.showCategoryFilter ? _onCategoryChanged : null,
+          initialErrorsOnly: _errorsOnly,
+          onErrorsOnlyChanged:
+              widget.showErrorsOnlyFilter ? _onErrorsOnlyChanged : null,
         ),
 
         // Main content area
@@ -221,18 +287,14 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                _keyword != null ||
-                                        _timeRange != null ||
-                                        _level != null
+                                _hasFilters
                                     ? 'No logs match filters'
                                     : 'No historical logs found',
                                 style: theme.textTheme.bodyLarge?.copyWith(
                                   color: colors.onSurfaceVariant,
                                 ),
                               ),
-                              if (_keyword != null ||
-                                  _timeRange != null ||
-                                  _level != null) ...[
+                              if (_hasFilters) ...[
                                 const SizedBox(height: 12),
                                 OutlinedButton.icon(
                                   onPressed: _onClearFilters,
@@ -243,9 +305,11 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
                             ],
                           ),
                         )
-                      : isWide
-                          ? _buildDesktopDataTable(context, showType)
-                          : _buildMobileListView(context, showType),
+                      : widget.itemsBuilder != null
+                          ? widget.itemsBuilder!(context, _items)
+                          : isWide
+                              ? _buildDesktopDataTable(context, showType)
+                              : _buildMobileListView(context, showType),
         ),
 
         // Bottom pagination bar
@@ -270,7 +334,7 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
           return LogCardTile(
             item: item,
             showTypeBadge: showType,
-            onTap: () => LogDetailSheet.show(context, item),
+            onTap: () => LogDetailSheet.open(context, item, duckDb: _duckDb),
           );
         },
       ),
@@ -312,7 +376,8 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
                 .first;
 
             return DataRow(
-              onSelectChanged: (_) => LogDetailSheet.show(context, item),
+              onSelectChanged: (_) =>
+                  LogDetailSheet.open(context, item, duckDb: _duckDb),
               cells: [
                 DataCell(
                   Text(timeStr,

@@ -1,37 +1,87 @@
+import 'dart:io';
+
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
-import 'package:app_duckdb/app_duckdb.dart' show AppDuckDb;
+import 'package:app_duckdb/app_duckdb.dart';
 import 'package:app_locale/app_locale.dart';
+import 'package:app_locale/gen_l10n/app_localizations.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 
-/// Settings screen for browsing, filtering and pruning logs persisted in
-/// the local DuckDB log store.
+/// Settings screen for browsing, filtering, exporting and pruning logs
+/// persisted in the local DuckDB log store.
 class LogCenterScreen extends StatefulWidget {
   static const name = 'Log Center';
   static const path = 'log-center';
 
-  const LogCenterScreen({super.key});
+  const LogCenterScreen({super.key, this.duckDb});
+
+  /// Log store override for tests; defaults to [AppDuckDb.instance].
+  final AppDuckDb? duckDb;
 
   @override
   State<LogCenterScreen> createState() => _LogCenterScreenState();
 }
 
-enum _PruneChoice { olderThan7Days, olderThan30Days, all }
+/// One Log Center tab. [table] is a `LogTables.all` entry or `v_all_logs`.
+class _LogTab {
+  const _LogTab({
+    required this.table,
+    required this.icon,
+    required this.label,
+    this.categoryFilter = false,
+    this.groupByRun = false,
+  });
+
+  final String table;
+  final IconData icon;
+  final String Function(AppLocalizations l10n) label;
+  final bool categoryFilter;
+  final bool groupByRun;
+}
 
 class _LogCenterScreenState extends State<LogCenterScreen>
     with SingleTickerProviderStateMixin {
-  /// Tables that hold rows written by this app. `v_all_logs` unions them.
-  static const _tables = ['system_logs'];
+  static final _tabs = [
+    _LogTab(
+      table: 'v_all_logs',
+      icon: Icons.all_inbox,
+      label: (l10n) => l10n.logCenterAllLogs,
+    ),
+    _LogTab(
+      table: 'system_logs',
+      icon: Icons.memory,
+      label: (l10n) => l10n.logCenterSystemLogs,
+    ),
+    _LogTab(
+      table: 'api_exchanges',
+      icon: Icons.http,
+      label: (l10n) => l10n.logCenterApiLogs,
+      categoryFilter: true,
+    ),
+    _LogTab(
+      table: 'agent_events',
+      icon: Icons.smart_toy_outlined,
+      label: (l10n) => l10n.logCenterAgentLogs,
+      groupByRun: true,
+    ),
+  ];
 
   late final TabController _tabController;
-  final _allViewerKey = GlobalKey<DuckDbLogViewerState>();
-  final _systemViewerKey = GlobalKey<DuckDbLogViewerState>();
+  final _viewerKeys = [
+    for (final _ in _tabs) GlobalKey<DuckDbLogViewerState>(),
+  ];
+
+  AppDuckDb get _duckDb => widget.duckDb ?? AppDuckDb.instance;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: _tabs.length, vsync: this)
+      ..addListener(() => setState(() {}));
   }
 
   @override
@@ -40,61 +90,32 @@ class _LogCenterScreenState extends State<LogCenterScreen>
     super.dispose();
   }
 
-  DuckDbLogViewerState? get _activeViewer => switch (_tabController.index) {
-    0 => _allViewerKey.currentState,
-    _ => _systemViewerKey.currentState,
-  };
+  DuckDbLogViewerState? get _activeViewer =>
+      _viewerKeys[_tabController.index].currentState;
 
-  List<String> get _activeTables =>
-      _tabController.index == 0 ? _tables : const ['system_logs'];
+  /// The active tab's table when it is a single log table, else `null`.
+  String? get _activeTable {
+    final table = _tabs[_tabController.index].table;
+    return LogTables.all.contains(table) ? table : null;
+  }
 
   Future<void> _showPruneDialog() async {
     final l10n = context.l10n;
-    final choice = await showDialog<_PruneChoice>(
+    final currentTable = _activeTable;
+    final result = await showDialog<({int days, bool allTables})>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.logCenterPruneTitle),
-        content: Text(l10n.logCenterPruneMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(context).pop(_PruneChoice.olderThan7Days),
-            child: Text(l10n.logCenterOlderThan7Days),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(context).pop(_PruneChoice.olderThan30Days),
-            child: Text(l10n.logCenterOlderThan30Days),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            onPressed: () => Navigator.of(context).pop(_PruneChoice.all),
-            child: Text(l10n.logCenterClearAll),
-          ),
-        ],
-      ),
+      builder: (context) => _PruneDialog(showScope: currentTable != null),
     );
-    if (choice == null || !mounted) return;
+    if (result == null || !mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
-    final duckDb = AppDuckDb.instance;
     try {
-      switch (choice) {
-        case _PruneChoice.olderThan7Days:
-          await duckDb.deleteOlderThan(days: 7, tables: _activeTables);
-        case _PruneChoice.olderThan30Days:
-          await duckDb.deleteOlderThan(days: 30, tables: _activeTables);
-        case _PruneChoice.all:
-          for (final table in _activeTables) {
-            await duckDb.clearLogsTable(table: table);
-          }
-      }
+      await _duckDb.deleteOlderThan(
+        days: result.days,
+        tables: result.allTables || currentTable == null
+            ? LogTables.all
+            : [currentTable],
+      );
       messenger.showSnackBar(SnackBar(content: Text(l10n.logCenterPruneDone)));
       await _activeViewer?.refresh();
     } catch (error) {
@@ -102,6 +123,52 @@ class _LogCenterScreenState extends State<LogCenterScreen>
         SnackBar(content: Text(l10n.logCenterPruneFailed('$error'))),
       );
     }
+  }
+
+  Future<void> _export() async {
+    final table = _activeTable;
+    if (table == null) return;
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final stamp = DateFormat('yyyyMMdd-HHmmss').format(DateTime.now());
+    try {
+      final location = await getSaveLocation(
+        suggestedName: 'gsmlg-$table-$stamp.jsonl',
+        acceptedTypeGroups: const [
+          XTypeGroup(label: 'JSON Lines', extensions: ['jsonl']),
+        ],
+      );
+      if (location == null) return;
+      final jsonl = await _duckDb.exportJsonl(
+        table: table,
+        filter: _activeViewer?.filter ?? const LogFilter(),
+      );
+      final file = File(location.path);
+      await file.writeAsString(jsonl.isEmpty ? '' : '$jsonl\n');
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.logCenterExportDone(file.path))),
+      );
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.logCenterExportFailed('$error'))),
+      );
+    }
+  }
+
+  Widget _viewer(int index) {
+    final tab = _tabs[index];
+    return DuckDbLogViewer(
+      key: _viewerKeys[index],
+      tableOrView: tab.table,
+      duckDb: widget.duckDb,
+      showTypeColumn: tab.table == 'v_all_logs',
+      showCategoryFilter: tab.categoryFilter,
+      showErrorsOnlyFilter: tab.table != 'v_all_logs',
+      itemsBuilder: tab.groupByRun
+          ? (context, items) =>
+                AgentRunGroupList(items: items, duckDb: widget.duckDb)
+          : null,
+    );
   }
 
   @override
@@ -133,6 +200,17 @@ class _LogCenterScreenState extends State<LogCenterScreen>
                 PopupMenuButton<void>(
                   tooltip: context.l10n.logCenterMaintenance,
                   itemBuilder: (context) => [
+                    if (_activeTable != null)
+                      PopupMenuItem<void>(
+                        onTap: _export,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.download, size: 18),
+                            const SizedBox(width: 8),
+                            Text(context.l10n.logCenterExportAction),
+                          ],
+                        ),
+                      ),
                     PopupMenuItem<void>(
                       onTap: _showPruneDialog,
                       child: Row(
@@ -151,14 +229,11 @@ class _LogCenterScreenState extends State<LogCenterScreen>
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
                 tabs: [
-                  Tab(
-                    icon: const Icon(Icons.all_inbox, size: 18),
-                    text: context.l10n.logCenterAllLogs,
-                  ),
-                  Tab(
-                    icon: const Icon(Icons.memory, size: 18),
-                    text: context.l10n.logCenterSystemLogs,
-                  ),
+                  for (final tab in _tabs)
+                    Tab(
+                      icon: Icon(tab.icon, size: 18),
+                      text: tab.label(context.l10n),
+                    ),
                 ],
               ),
             ),
@@ -166,21 +241,102 @@ class _LogCenterScreenState extends State<LogCenterScreen>
         ],
         body: TabBarView(
           controller: _tabController,
-          children: [
-            DuckDbLogViewer(
-              key: _allViewerKey,
-              tableOrView: 'v_all_logs',
-              showTypeColumn: true,
-            ),
-            DuckDbLogViewer(
-              key: _systemViewerKey,
-              tableOrView: 'system_logs',
-              showTypeColumn: false,
-            ),
-          ],
+          children: [for (var i = 0; i < _tabs.length; i++) _viewer(i)],
         ),
       ),
     ),
     smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
   );
+}
+
+/// Asks for N (>= 1) days and, when [showScope], whether to prune the
+/// current tab's table or every log table.
+class _PruneDialog extends StatefulWidget {
+  const _PruneDialog({required this.showScope});
+
+  final bool showScope;
+
+  @override
+  State<_PruneDialog> createState() => _PruneDialogState();
+}
+
+class _PruneDialogState extends State<_PruneDialog> {
+  final _days = TextEditingController(text: '7');
+  bool _allTables = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _days.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final days = int.tryParse(_days.text.trim());
+    if (days == null || days < 1) {
+      setState(() => _error = context.l10n.logCenterPruneDaysInvalid);
+      return;
+    }
+    Navigator.of(context).pop((days: days, allTables: _allTables));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      title: Text(l10n.logCenterPruneTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.logCenterPruneMessage),
+          const SizedBox(height: 16),
+          TextField(
+            key: const Key('logCenterPruneDays'),
+            controller: _days,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(
+              labelText: l10n.logCenterPruneDaysLabel,
+              errorText: _error,
+            ),
+            onSubmitted: (_) => _submit(),
+          ),
+          if (widget.showScope) ...[
+            const SizedBox(height: 8),
+            RadioGroup<bool>(
+              groupValue: _allTables,
+              onChanged: (v) => setState(() => _allTables = v ?? false),
+              child: Column(
+                children: [
+                  RadioListTile<bool>(
+                    value: false,
+                    title: Text(l10n.logCenterPruneScopeCurrent),
+                  ),
+                  RadioListTile<bool>(
+                    value: true,
+                    title: Text(l10n.logCenterPruneScopeAll),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.error,
+          ),
+          onPressed: _submit,
+          child: Text(l10n.logCenterPruneConfirm),
+        ),
+      ],
+    );
+  }
 }

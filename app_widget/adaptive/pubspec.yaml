@@ -19,6 +19,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   navigation_bloc: any
   app_duckdb: any
+  app_locale: any
 
 dev_dependencies:
   duskmoon_widgets: ^2.2.10

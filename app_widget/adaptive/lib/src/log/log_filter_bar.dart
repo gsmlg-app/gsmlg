@@ -1,9 +1,13 @@
 import 'dart:async';
 
 import 'package:app_duckdb/app_duckdb.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
 
 /// Filter bar with search text field, date range selector, and level dropdown.
+///
+/// The category dropdown and errors-only toggle are shown only when their
+/// callbacks ([onCategoryChanged], [onErrorsOnlyChanged]) are provided.
 class LogFilterBar extends StatefulWidget {
   final String? initialKeyword;
   final DateTimeRange? initialTimeRange;
@@ -12,6 +16,11 @@ class LogFilterBar extends StatefulWidget {
   final ValueChanged<DateTimeRange?> onTimeRangeChanged;
   final ValueChanged<LogLevel?> onLevelChanged;
   final VoidCallback onClearFilters;
+  final List<String> categories;
+  final String? initialCategory;
+  final ValueChanged<String?>? onCategoryChanged;
+  final bool initialErrorsOnly;
+  final ValueChanged<bool>? onErrorsOnlyChanged;
 
   const LogFilterBar({
     super.key,
@@ -22,6 +31,11 @@ class LogFilterBar extends StatefulWidget {
     required this.onTimeRangeChanged,
     required this.onLevelChanged,
     required this.onClearFilters,
+    this.categories = const [],
+    this.initialCategory,
+    this.onCategoryChanged,
+    this.initialErrorsOnly = false,
+    this.onErrorsOnlyChanged,
   });
 
   @override
@@ -89,7 +103,9 @@ class _LogFilterBarState extends State<LogFilterBar> {
   bool get _hasActiveFilters =>
       _searchController.text.isNotEmpty ||
       widget.initialTimeRange != null ||
-      widget.initialLevel != null;
+      widget.initialLevel != null ||
+      widget.initialCategory != null ||
+      widget.initialErrorsOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -133,8 +149,11 @@ class _LogFilterBarState extends State<LogFilterBar> {
           ),
           const SizedBox(height: 8),
 
-          // Row 2: Filters (Time Range, Level, Clear)
-          Row(
+          // Row 2: Filters (Time Range, Level, Category, Errors, Clear)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               // Time Range Popup Menu
               PopupMenuButton<String>(
@@ -207,7 +226,6 @@ class _LogFilterBarState extends State<LogFilterBar> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
 
               // Level Dropdown
               Container(
@@ -238,7 +256,39 @@ class _LogFilterBarState extends State<LogFilterBar> {
                 ),
               ),
 
-              const Spacer(),
+              if (widget.onCategoryChanged != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: colors.outline),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String?>(
+                      value: widget.categories.contains(widget.initialCategory)
+                          ? widget.initialCategory
+                          : null,
+                      isDense: true,
+                      items: [
+                        DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text(context.l10n.logFilterCategoryAll),
+                        ),
+                        for (final c in widget.categories)
+                          DropdownMenuItem<String?>(value: c, child: Text(c)),
+                      ],
+                      onChanged: widget.onCategoryChanged,
+                    ),
+                  ),
+                ),
+
+              if (widget.onErrorsOnlyChanged != null)
+                FilterChip(
+                  label: Text(context.l10n.logFilterErrorsOnly),
+                  selected: widget.initialErrorsOnly,
+                  onSelected: widget.onErrorsOnlyChanged,
+                  visualDensity: VisualDensity.compact,
+                ),
 
               // Clear filter button
               if (_hasActiveFilters)

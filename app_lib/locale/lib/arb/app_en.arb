@@ -545,12 +545,9 @@
   "logCenterSystemLogs": "System",
   "logCenterRefresh": "Refresh",
   "logCenterMaintenance": "Log Maintenance",
-  "logCenterPruneAction": "Clean / Prune Logs…",
-  "logCenterPruneTitle": "Clean & Prune Logs",
-  "logCenterPruneMessage": "Select the logs to remove from local DuckDB storage. This cannot be undone.",
-  "logCenterOlderThan7Days": "Older than 7 days",
-  "logCenterOlderThan30Days": "Older than 30 days",
-  "logCenterClearAll": "Clear All",
+  "logCenterPruneAction": "Delete Old Data…",
+  "logCenterPruneTitle": "Delete Old Data",
+  "logCenterPruneMessage": "Delete records older than the given number of days. This cannot be undone.",
   "logCenterPruneDone": "Log cleanup completed",
   "logCenterPruneFailed": "Cleanup failed: {error}",
   "@logCenterPruneFailed": {
@@ -559,5 +556,70 @@
         "type": "String"
       }
     }
-  }
+  },
+  "logCenterApiLogs": "API",
+  "logCenterAgentLogs": "Agent",
+  "logCenterPruneDaysLabel": "Older than (days)",
+  "logCenterPruneDaysInvalid": "Enter a whole number of days, 1 or more",
+  "logCenterPruneScopeCurrent": "Current tab only",
+  "logCenterPruneScopeAll": "All log types",
+  "logCenterPruneConfirm": "Delete",
+  "logCenterExportAction": "Export JSONL…",
+  "logCenterExportDone": "Exported to {path}",
+  "@logCenterExportDone": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "logCenterExportFailed": "Export failed: {error}",
+  "@logCenterExportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "logFilterCategoryAll": "Category: All",
+  "logFilterErrorsOnly": "Errors only",
+  "logApiRequest": "Request",
+  "logApiResponse": "Response",
+  "logApiHeaders": "Headers",
+  "logApiBody": "Body",
+  "logApiNoBody": "No body",
+  "logApiNoResponse": "No response recorded",
+  "logApiBodyBase64": "Binary body (base64)",
+  "logApiBodyTruncated": "Truncated to the first 1 MiB",
+  "logApiError": "Error",
+  "logApiAborted": "Aborted",
+  "logApiCopyJsonl": "Copy JSONL",
+  "logApiCopied": "Copied to clipboard",
+  "logAgentRunTitle": "Agent Run",
+  "logAgentRunEmpty": "No events recorded for this run",
+  "logDetailLoadFailed": "Failed to load: {error}",
+  "@logDetailLoadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "logAgentConversation": "Conversation {id}",
+  "@logAgentConversation": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "logAgentEventCount": "{count, plural, =1{1 event} other{{count} events}}",
+  "@logAgentEventCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "logAgentNoRun": "Events without a run"
 }

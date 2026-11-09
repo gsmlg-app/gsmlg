@@ -1301,23 +1301,14 @@ class AppLocalizationsIt extends AppLocalizations {
   String get logCenterMaintenance => 'Log Maintenance';
 
   @override
-  String get logCenterPruneAction => 'Clean / Prune Logs…';
+  String get logCenterPruneAction => 'Delete Old Data…';
 
   @override
-  String get logCenterPruneTitle => 'Clean & Prune Logs';
+  String get logCenterPruneTitle => 'Delete Old Data';
 
   @override
   String get logCenterPruneMessage =>
-      'Select the logs to remove from local DuckDB storage. This cannot be undone.';
-
-  @override
-  String get logCenterOlderThan7Days => 'Older than 7 days';
-
-  @override
-  String get logCenterOlderThan30Days => 'Older than 30 days';
-
-  @override
-  String get logCenterClearAll => 'Clear All';
+      'Delete records older than the given number of days. This cannot be undone.';
 
   @override
   String get logCenterPruneDone => 'Log cleanup completed';
@@ -1326,4 +1317,111 @@ class AppLocalizationsIt extends AppLocalizations {
   String logCenterPruneFailed(String error) {
     return 'Cleanup failed: $error';
   }
+
+  @override
+  String get logCenterApiLogs => 'API';
+
+  @override
+  String get logCenterAgentLogs => 'Agent';
+
+  @override
+  String get logCenterPruneDaysLabel => 'Older than (days)';
+
+  @override
+  String get logCenterPruneDaysInvalid =>
+      'Enter a whole number of days, 1 or more';
+
+  @override
+  String get logCenterPruneScopeCurrent => 'Current tab only';
+
+  @override
+  String get logCenterPruneScopeAll => 'All log types';
+
+  @override
+  String get logCenterPruneConfirm => 'Delete';
+
+  @override
+  String get logCenterExportAction => 'Export JSONL…';
+
+  @override
+  String logCenterExportDone(String path) {
+    return 'Exported to $path';
+  }
+
+  @override
+  String logCenterExportFailed(String error) {
+    return 'Export failed: $error';
+  }
+
+  @override
+  String get logFilterCategoryAll => 'Category: All';
+
+  @override
+  String get logFilterErrorsOnly => 'Errors only';
+
+  @override
+  String get logApiRequest => 'Request';
+
+  @override
+  String get logApiResponse => 'Response';
+
+  @override
+  String get logApiHeaders => 'Headers';
+
+  @override
+  String get logApiBody => 'Body';
+
+  @override
+  String get logApiNoBody => 'No body';
+
+  @override
+  String get logApiNoResponse => 'No response recorded';
+
+  @override
+  String get logApiBodyBase64 => 'Binary body (base64)';
+
+  @override
+  String get logApiBodyTruncated => 'Truncated to the first 1 MiB';
+
+  @override
+  String get logApiError => 'Error';
+
+  @override
+  String get logApiAborted => 'Aborted';
+
+  @override
+  String get logApiCopyJsonl => 'Copy JSONL';
+
+  @override
+  String get logApiCopied => 'Copied to clipboard';
+
+  @override
+  String get logAgentRunTitle => 'Agent Run';
+
+  @override
+  String get logAgentRunEmpty => 'No events recorded for this run';
+
+  @override
+  String logDetailLoadFailed(String error) {
+    return 'Failed to load: $error';
+  }
+
+  @override
+  String logAgentConversation(String id) {
+    return 'Conversation $id';
+  }
+
+  @override
+  String logAgentEventCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count events',
+      one: '1 event',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get logAgentNoRun => 'Events without a run';
 }

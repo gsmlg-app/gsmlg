@@ -2572,38 +2572,20 @@ abstract class AppLocalizations {
   /// No description provided for @logCenterPruneAction.
   ///
   /// In en, this message translates to:
-  /// **'Clean / Prune Logs…'**
+  /// **'Delete Old Data…'**
   String get logCenterPruneAction;
 
   /// No description provided for @logCenterPruneTitle.
   ///
   /// In en, this message translates to:
-  /// **'Clean & Prune Logs'**
+  /// **'Delete Old Data'**
   String get logCenterPruneTitle;
 
   /// No description provided for @logCenterPruneMessage.
   ///
   /// In en, this message translates to:
-  /// **'Select the logs to remove from local DuckDB storage. This cannot be undone.'**
+  /// **'Delete records older than the given number of days. This cannot be undone.'**
   String get logCenterPruneMessage;
-
-  /// No description provided for @logCenterOlderThan7Days.
-  ///
-  /// In en, this message translates to:
-  /// **'Older than 7 days'**
-  String get logCenterOlderThan7Days;
-
-  /// No description provided for @logCenterOlderThan30Days.
-  ///
-  /// In en, this message translates to:
-  /// **'Older than 30 days'**
-  String get logCenterOlderThan30Days;
-
-  /// No description provided for @logCenterClearAll.
-  ///
-  /// In en, this message translates to:
-  /// **'Clear All'**
-  String get logCenterClearAll;
 
   /// No description provided for @logCenterPruneDone.
   ///
@@ -2616,6 +2598,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cleanup failed: {error}'**
   String logCenterPruneFailed(String error);
+
+  /// No description provided for @logCenterApiLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'API'**
+  String get logCenterApiLogs;
+
+  /// No description provided for @logCenterAgentLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent'**
+  String get logCenterAgentLogs;
+
+  /// No description provided for @logCenterPruneDaysLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Older than (days)'**
+  String get logCenterPruneDaysLabel;
+
+  /// No description provided for @logCenterPruneDaysInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number of days, 1 or more'**
+  String get logCenterPruneDaysInvalid;
+
+  /// No description provided for @logCenterPruneScopeCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current tab only'**
+  String get logCenterPruneScopeCurrent;
+
+  /// No description provided for @logCenterPruneScopeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All log types'**
+  String get logCenterPruneScopeAll;
+
+  /// No description provided for @logCenterPruneConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get logCenterPruneConfirm;
+
+  /// No description provided for @logCenterExportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Export JSONL…'**
+  String get logCenterExportAction;
+
+  /// No description provided for @logCenterExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Exported to {path}'**
+  String logCenterExportDone(String path);
+
+  /// No description provided for @logCenterExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed: {error}'**
+  String logCenterExportFailed(String error);
+
+  /// No description provided for @logFilterCategoryAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Category: All'**
+  String get logFilterCategoryAll;
+
+  /// No description provided for @logFilterErrorsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Errors only'**
+  String get logFilterErrorsOnly;
+
+  /// No description provided for @logApiRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request'**
+  String get logApiRequest;
+
+  /// No description provided for @logApiResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Response'**
+  String get logApiResponse;
+
+  /// No description provided for @logApiHeaders.
+  ///
+  /// In en, this message translates to:
+  /// **'Headers'**
+  String get logApiHeaders;
+
+  /// No description provided for @logApiBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Body'**
+  String get logApiBody;
+
+  /// No description provided for @logApiNoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No body'**
+  String get logApiNoBody;
+
+  /// No description provided for @logApiNoResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'No response recorded'**
+  String get logApiNoResponse;
+
+  /// No description provided for @logApiBodyBase64.
+  ///
+  /// In en, this message translates to:
+  /// **'Binary body (base64)'**
+  String get logApiBodyBase64;
+
+  /// No description provided for @logApiBodyTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Truncated to the first 1 MiB'**
+  String get logApiBodyTruncated;
+
+  /// No description provided for @logApiError.
+  ///
+  /// In en, this message translates to:
+  /// **'Error'**
+  String get logApiError;
+
+  /// No description provided for @logApiAborted.
+  ///
+  /// In en, this message translates to:
+  /// **'Aborted'**
+  String get logApiAborted;
+
+  /// No description provided for @logApiCopyJsonl.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy JSONL'**
+  String get logApiCopyJsonl;
+
+  /// No description provided for @logApiCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Copied to clipboard'**
+  String get logApiCopied;
+
+  /// No description provided for @logAgentRunTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent Run'**
+  String get logAgentRunTitle;
+
+  /// No description provided for @logAgentRunEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No events recorded for this run'**
+  String get logAgentRunEmpty;
+
+  /// No description provided for @logDetailLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load: {error}'**
+  String logDetailLoadFailed(String error);
+
+  /// No description provided for @logAgentConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation {id}'**
+  String logAgentConversation(String id);
+
+  /// No description provided for @logAgentEventCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 event} other{{count} events}}'**
+  String logAgentEventCount(int count);
+
+  /// No description provided for @logAgentNoRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Events without a run'**
+  String get logAgentNoRun;
 }
 
 class _AppLocalizationsDelegate

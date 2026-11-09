@@ -1286,22 +1286,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get logCenterMaintenance => '日志维护';
 
   @override
-  String get logCenterPruneAction => '清理日志…';
+  String get logCenterPruneAction => '删除旧数据…';
 
   @override
-  String get logCenterPruneTitle => '清理日志';
+  String get logCenterPruneTitle => '删除旧数据';
 
   @override
-  String get logCenterPruneMessage => '选择要从本地 DuckDB 存储中删除的日志，此操作无法撤销。';
-
-  @override
-  String get logCenterOlderThan7Days => '7 天前';
-
-  @override
-  String get logCenterOlderThan30Days => '30 天前';
-
-  @override
-  String get logCenterClearAll => '全部清除';
+  String get logCenterPruneMessage => '删除早于指定天数的记录，此操作无法撤销。';
 
   @override
   String get logCenterPruneDone => '日志清理完成';
@@ -1310,6 +1301,111 @@ class AppLocalizationsZh extends AppLocalizations {
   String logCenterPruneFailed(String error) {
     return '清理失败：$error';
   }
+
+  @override
+  String get logCenterApiLogs => 'API';
+
+  @override
+  String get logCenterAgentLogs => '智能体';
+
+  @override
+  String get logCenterPruneDaysLabel => '早于（天）';
+
+  @override
+  String get logCenterPruneDaysInvalid => '请输入不小于 1 的整数天数';
+
+  @override
+  String get logCenterPruneScopeCurrent => '仅当前标签页';
+
+  @override
+  String get logCenterPruneScopeAll => '全部日志类型';
+
+  @override
+  String get logCenterPruneConfirm => '删除';
+
+  @override
+  String get logCenterExportAction => '导出 JSONL…';
+
+  @override
+  String logCenterExportDone(String path) {
+    return '已导出到 $path';
+  }
+
+  @override
+  String logCenterExportFailed(String error) {
+    return '导出失败：$error';
+  }
+
+  @override
+  String get logFilterCategoryAll => '分类：全部';
+
+  @override
+  String get logFilterErrorsOnly => '仅错误';
+
+  @override
+  String get logApiRequest => '请求';
+
+  @override
+  String get logApiResponse => '响应';
+
+  @override
+  String get logApiHeaders => '请求头';
+
+  @override
+  String get logApiBody => '正文';
+
+  @override
+  String get logApiNoBody => '无正文';
+
+  @override
+  String get logApiNoResponse => '未记录响应';
+
+  @override
+  String get logApiBodyBase64 => '二进制正文（base64）';
+
+  @override
+  String get logApiBodyTruncated => '已截断为前 1 MiB';
+
+  @override
+  String get logApiError => '错误';
+
+  @override
+  String get logApiAborted => '已中止';
+
+  @override
+  String get logApiCopyJsonl => '复制 JSONL';
+
+  @override
+  String get logApiCopied => '已复制到剪贴板';
+
+  @override
+  String get logAgentRunTitle => '智能体运行';
+
+  @override
+  String get logAgentRunEmpty => '此运行没有记录的事件';
+
+  @override
+  String logDetailLoadFailed(String error) {
+    return '加载失败：$error';
+  }
+
+  @override
+  String logAgentConversation(String id) {
+    return '会话 $id';
+  }
+
+  @override
+  String logAgentEventCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个事件',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get logAgentNoRun => '不属于任何运行的事件';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
