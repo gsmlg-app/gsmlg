@@ -8,6 +8,15 @@ import 'package:terminal_core/terminal_core.dart';
 class SSHFileSystem extends FileSystem {
   final SftpClient client;
 
+  bool _closed = false;
+
+  @override
+  Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    client.close();
+  }
+
   SSHFileSystem(this.client, String currentDirectory) {
     this.currentDirectory = directory(currentDirectory);
   }

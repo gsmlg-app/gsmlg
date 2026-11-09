@@ -27,15 +27,20 @@ class SftpClient {
   final SSHPrintHandler? printTrace;
 
   SftpClient(this._channel, {this.printDebug, this.printTrace}) {
+    _handshake.future.ignore();
     _startHandshake();
-    _channel.stream.listen(_handleData);
+    _channel.stream.listen(
+      _handleData,
+      onDone: close,
+      onError: _closeError,
+    );
   }
 
   final _buffer = ChunkBuffer();
 
   final _handshake = Completer<SftpHandsake>();
 
-  final _done = Completer<void>();
+  bool _closed = false;
 
   final _requestId = SftpRequestId();
 
@@ -168,22 +173,23 @@ class SftpClient {
     return SftpStatVfs.fromReply(stat);
   }
 
-  /// Close the sftp session.
+  /// Closes this SFTP channel without closing its SSH transport.
   void close() {
-    for (var waiter in _replyWaiters.values) {
-      waiter.completeError(SftpAbortError("Connection closed"));
-    }
-    _replyWaiters.clear();
-    _done.complete();
+    _closeError(SftpAbortError('Connection closed'));
   }
 
   void _closeError(Object error, [StackTrace? stackTrace]) {
+    if (_closed) return;
+    _closed = true;
     stackTrace ??= StackTrace.current;
-    for (var waiter in _replyWaiters.values) {
+    if (!_handshake.isCompleted) {
+      _handshake.completeError(error, stackTrace);
+    }
+    for (final waiter in _replyWaiters.values) {
       waiter.completeError(error, stackTrace);
     }
     _replyWaiters.clear();
-    _done.completeError(error, stackTrace);
+    _channel.destroy();
   }
 
   void _startHandshake() {
@@ -215,6 +221,7 @@ class SftpClient {
   }
 
   void _sendPacket(SftpPacket packet) {
+    if (_closed) throw SftpAbortError('Connection closed');
     printTrace?.call('-> $_channel: $packet');
     final data = packet.encode();
     final writer = SSHMessageWriter();
@@ -399,6 +406,7 @@ class SftpClient {
   }
 
   Future<SftpResponsePacket> _waitReply(int requestId) {
+    if (_closed) throw SftpAbortError('Connection closed');
     final completer = Completer<SftpResponsePacket>();
     _replyWaiters[requestId] = completer;
     return completer.future;
@@ -416,8 +424,13 @@ class SftpClient {
   }
 
   void _handleData(SSHChannelData data) {
-    _buffer.add(data.bytes);
-    _handlePackets();
+    if (_closed) return;
+    try {
+      _buffer.add(data.bytes);
+      _handlePackets();
+    } catch (error, stackTrace) {
+      _closeError(error, stackTrace);
+    }
   }
 
   void _handlePackets() {
@@ -463,7 +476,6 @@ class SftpClient {
     }
 
     final error = SftpError('Version mismatch: ${packet.version}');
-    _handshake.completeError(error, StackTrace.current);
     _closeError(error);
   }
 

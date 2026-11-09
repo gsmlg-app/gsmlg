@@ -510,5 +510,34 @@
   "terminalEnvironmentTitle": "Environment Variables",
   "shellProfilesTitle": "Shell Profiles",
   "terminalBrowserUnsupported": "Terminal is available in the Android, iOS, macOS, Linux, and Windows apps.",
-  "jsonLogInspectorTitle": "JSON Log Inspector"
+  "jsonLogInspectorTitle": "JSON Log Inspector",
+  "optionKeyBehavior": "Option Key Behavior",
+  "optionKeyBehaviorLeftMeta": "Left Meta",
+  "optionKeyBehaviorBothMeta": "Both Meta",
+  "optionKeyBehaviorNormal": "Normal",
+  "optionKeyBehaviorDescription": "Meta sends Esc + key. Normal types special characters.",
+  "closeTabConfirmTitle": "Close Tab?",
+  "closeTabConfirmMessage": "\"{title}\" has a running program. Closing the tab will terminate it.",
+  "@closeTabConfirmMessage": {
+    "description": "Shown before closing a tab whose shell has a foreground program running.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "quitConfirmTitle": "Quit GSMLG?",
+  "quitConfirmMessage": "{count, plural, =1{1 tab has a running program:} other{{count} tabs have running programs:}}\n{titles}\n\nQuitting will terminate them.",
+  "@quitConfirmMessage": {
+    "description": "Shown before quitting or closing the window while tabs have foreground programs running.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
+  "quit": "Quit"
 }

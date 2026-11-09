@@ -38,7 +38,10 @@ class IosHost implements Host {
     final command = args.isEmpty ? executable : '$executable ${args.join(' ')}';
 
     // Execute using ios_system
-    final result = await _env.execute(command);
+    final result = await _env.execute(
+      command,
+      environment: <String, String>{..._profileEnvironment, ...?environment},
+    );
 
     return IosExecutionResult(
       exitCode: result.exitCode,
@@ -75,7 +78,9 @@ class IosHost implements Host {
 
   @override
   Future<void> disconnect() async {
-    _doneCompleter.complete();
+    if (!_doneCompleter.isCompleted) {
+      _doneCompleter.complete();
+    }
   }
 
   @override
@@ -107,7 +112,7 @@ class IosExecutionResult implements ExecutionResult {
 /// - Reading lines of input
 /// - Executing commands via ios_system
 /// - Outputting results
-class IosExecutionSession implements ExecutionSession {
+class IosExecutionSession implements ExecutionSession, ForegroundProcessAware {
   final IosShellEnv _env;
 
   /// Environment variables from profile (applied to each command).
@@ -117,14 +122,26 @@ class IosExecutionSession implements ExecutionSession {
   final _outputController = StreamController<Uint8List>.broadcast();
   final _exitCodeCompleter = Completer<int>();
 
+  @override
+  Future<bool> hasForegroundProcess() async => false;
+
+  final StringBuffer _decodedInput = StringBuffer();
+  late final ByteConversionSink _inputDecoder = const Utf8Decoder(
+    allowMalformed: true,
+  ).startChunkedConversion(StringConversionSink.fromStringSink(_decodedInput));
+
   String _inputBuffer = '';
   bool _closed = false;
+  _EscapeState _escapeState = _EscapeState.none;
+  String _cwd;
+  String? _previousCwd;
 
   IosExecutionSession(
     this._env, {
     Map<String, String> environment = const {},
     String? initCommands,
-  }) : _environment = Map<String, String>.from(environment) {
+  }) : _environment = Map<String, String>.from(environment),
+       _cwd = _env.homePath {
     // Delay initialization to allow output listener to be attached first
     Future.delayed(const Duration(milliseconds: 100), () {
       _initialize(initCommands);
@@ -132,10 +149,6 @@ class IosExecutionSession implements ExecutionSession {
   }
 
   Future<void> _initialize(String? initCommands) async {
-    // Note: External commands (ls, pwd, etc.) currently don't work because
-    // ios_system needs to be rebuilt with a bundled command dictionary.
-    // Only built-in commands (cd, alias, export) are functional.
-
     // Run init commands silently if provided
     final cmds = initCommands;
     if (cmds != null && cmds.isNotEmpty) {
@@ -146,6 +159,7 @@ class IosExecutionSession implements ExecutionSession {
         }
       }
     }
+    await _refreshCwd();
     _showPrompt();
   }
 
@@ -154,10 +168,7 @@ class IosExecutionSession implements ExecutionSession {
     if (command.isEmpty) return;
 
     // Handle export commands for environment variables
-    if (command.startsWith('export ')) {
-      _handleExport(command);
-      return;
-    }
+    if (_handleExport(command)) return;
 
     // Handle alias commands (stored in memory but ios_system doesn't support them)
     if (command.startsWith('alias ')) {
@@ -167,13 +178,15 @@ class IosExecutionSession implements ExecutionSession {
 
     // Execute other commands silently
     try {
-      await _env.execute(command);
+      await _env.execute(command, environment: _environment);
     } catch (_) {
       // Ignore errors for init commands
     }
   }
 
-  void _handleExport(String command) {
+  /// Stores `export VAR=value` in this session's environment instead of
+  /// letting ios_system's built-in export change every session.
+  bool _handleExport(String command) {
     // Parse: export VAR=value or export VAR="value"
     final match = RegExp(r'^export\s+(\w+)=(.*)$').firstMatch(command);
     if (match != null) {
@@ -185,7 +198,9 @@ class IosExecutionSession implements ExecutionSession {
         value = value.substring(1, value.length - 1);
       }
       _environment[varName] = value;
+      return true;
     }
+    return false;
   }
 
   @override
@@ -213,9 +228,14 @@ class IosExecutionSession implements ExecutionSession {
   Future<void> write(Uint8List data) async {
     if (_closed) return;
 
-    final input = utf8.decode(data);
+    _inputDecoder.add(data);
+    final input = _decodedInput.toString();
+    _decodedInput.clear();
 
     for (final char in input.split('')) {
+      if (_consumeEscapeSequence(char)) {
+        continue;
+      }
       if (char == '\r' || char == '\n') {
         // Execute the command
         final command = _inputBuffer.trim();
@@ -223,6 +243,7 @@ class IosExecutionSession implements ExecutionSession {
         _output('\r\n');
         await _executeCommand(command);
         if (!_closed) {
+          await _refreshCwd();
           _showPrompt();
         }
       } else if (char == '\x7f' || char == '\b') {
@@ -250,10 +271,67 @@ class IosExecutionSession implements ExecutionSession {
     }
   }
 
+  /// Swallows terminal escape sequences (arrow keys, Home/End, paging)
+  /// because this line editor has no cursor movement or history.
+  bool _consumeEscapeSequence(String char) {
+    switch (_escapeState) {
+      case _EscapeState.none:
+        if (char != '\x1b') return false;
+        _escapeState = _EscapeState.escape;
+        return true;
+      case _EscapeState.escape:
+        if (char == '[') {
+          _escapeState = _EscapeState.csi;
+          return true;
+        }
+        if (char == 'O') {
+          _escapeState = _EscapeState.ss3;
+          return true;
+        }
+        _escapeState = _EscapeState.none;
+        return false;
+      case _EscapeState.csi:
+        final code = char.codeUnitAt(0);
+        if (code >= 0x40 && code <= 0x7e) {
+          _escapeState = _EscapeState.none;
+        }
+        return true;
+      case _EscapeState.ss3:
+        _escapeState = _EscapeState.none;
+        return true;
+    }
+  }
+
   void _showPrompt() {
-    final cwd = _env.homePath;
-    final shortCwd = cwd.split('/').last;
-    _output('$shortCwd \$ ');
+    _output('${_promptDirectory()} \$ ');
+  }
+
+  String _promptDirectory() {
+    if (_withoutPrivatePrefix(_cwd) == _withoutPrivatePrefix(_env.homePath)) {
+      return '~';
+    }
+    final segments = _cwd.split('/').where((segment) => segment.isNotEmpty);
+    return segments.isEmpty ? '/' : segments.last;
+  }
+
+  String _withoutPrivatePrefix(String path) {
+    final trimmed = path.length > 1 && path.endsWith('/')
+        ? path.substring(0, path.length - 1)
+        : path;
+    return trimmed.startsWith('/private/')
+        ? trimmed.substring('/private'.length)
+        : trimmed;
+  }
+
+  Future<void> _refreshCwd() async {
+    try {
+      final cwd = await IosShellPlugin.getCurrentDirectory();
+      if (cwd.isNotEmpty) {
+        _cwd = cwd;
+      }
+    } catch (_) {
+      // Keep the last known directory when the platform call fails.
+    }
   }
 
   void _output(String text) {
@@ -271,16 +349,12 @@ class IosExecutionSession implements ExecutionSession {
       return;
     }
 
-    if (command.startsWith('cd ')) {
-      final path = command.substring(3).trim();
-      await _handleCd(path);
+    if (command == 'cd' || command.startsWith('cd ')) {
+      await _handleCd(command.substring(2).trim());
       return;
     }
 
-    if (command == 'cd') {
-      await _handleCd(_env.homePath);
-      return;
-    }
+    if (_handleExport(command)) return;
 
     // Execute via ios_system
     try {
@@ -302,7 +376,7 @@ class IosExecutionSession implements ExecutionSession {
         return;
       }
 
-      final result = await _env.execute(command);
+      final result = await _env.execute(command, environment: _environment);
 
       if (result.stdout.isNotEmpty) {
         // Normalize line endings for terminal display
@@ -332,11 +406,37 @@ class IosExecutionSession implements ExecutionSession {
     }
   }
 
-  Future<void> _handleCd(String path) async {
-    final success = await IosShellPlugin.setCurrentDirectory(path);
-    if (!success) {
-      _output('cd: no such file or directory: $path\r\n');
+  Future<void> _handleCd(String argument) async {
+    final target = _resolveCdTarget(argument);
+    if (target == null) {
+      _output('cd: OLDPWD not set\r\n');
+      return;
     }
+    final previous = _cwd;
+    final success = await IosShellPlugin.setCurrentDirectory(target);
+    if (!success) {
+      _output('cd: no such file or directory: $target\r\n');
+      return;
+    }
+    _previousCwd = previous;
+    if (argument == '-') {
+      _output('$target\r\n');
+    }
+  }
+
+  String? _resolveCdTarget(String argument) {
+    var path = argument;
+    final quoted =
+        path.length >= 2 &&
+        ((path.startsWith('"') && path.endsWith('"')) ||
+            (path.startsWith("'") && path.endsWith("'")));
+    if (quoted) {
+      path = path.substring(1, path.length - 1);
+    }
+    if (path.isEmpty || path == '~') return _env.homePath;
+    if (path == '-' && !quoted) return _previousCwd;
+    if (path.startsWith('~/')) return '${_env.homePath}${path.substring(1)}';
+    return path;
   }
 
   @override
@@ -344,3 +444,5 @@ class IosExecutionSession implements ExecutionSession {
     // iOS shell doesn't use PTY backpressure, no-op
   }
 }
+
+enum _EscapeState { none, escape, csi, ss3 }

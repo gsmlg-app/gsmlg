@@ -332,12 +332,24 @@ class BufferLine with IndexedItem {
     }
 
     final builder = StringBuffer();
+    var pendingSpaces = 0;
     for (var i = from; i < to; i++) {
       final codePoint = getCodePoint(i);
       final width = getWidth(i);
-      if (codePoint != 0 && i + width <= to) {
-        builder.writeCharCode(codePoint);
+      if (codePoint == 0) {
+        final isWidePlaceholder = i > 0 && getWidth(i - 1) == 2;
+        if (!isWidePlaceholder) {
+          pendingSpaces++;
+        }
+        continue;
       }
+      if (i + width > to) {
+        continue;
+      }
+      for (; pendingSpaces > 0; pendingSpaces--) {
+        builder.write(' ');
+      }
+      builder.writeCharCode(codePoint);
     }
 
     return builder.toString();

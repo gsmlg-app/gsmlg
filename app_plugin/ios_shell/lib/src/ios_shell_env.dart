@@ -102,8 +102,14 @@ class IosShellEnv {
   /// Executes a command using ios_system.
   ///
   /// Returns the execution result with exit code, stdout, and stderr.
-  Future<IosExecutionResult> execute(String command) async {
-    final result = await IosShellPlugin.execute(command);
+  Future<IosExecutionResult> execute(
+    String command, {
+    Map<String, String> environment = const <String, String>{},
+  }) async {
+    final result = await IosShellPlugin.execute(
+      command,
+      environment: environment,
+    );
     return IosExecutionResult(
       exitCode: result['exitCode'] as int? ?? -1,
       stdout: result['stdout'] as String? ?? '',

@@ -1,6 +1,6 @@
 # Terminal integration and upstream synchronization
 
-Last checked: 2026-11-05. SwiftPM migration base: GSMLG `main` at `e66b9900`; the original terminal integration started at `1d1fbfbe4fe3427b927aed8debf8b565404cc037`. Imported Web Terminal baseline: `67f4a5afb335849852da972cfb71cb5fe725c7ff`.
+Last checked: 2026-11-09. SwiftPM migration base: GSMLG `main` at `e66b9900`; the original terminal integration started at `1d1fbfbe4fe3427b927aed8debf8b565404cc037`. Synchronized Web Terminal baseline: `32ee71fffe38372c4887648520266edf8695bdf5` (advanced from `67f4a5afb335849852da972cfb71cb5fe725c7ff`).
 
 ## Ownership and behavior
 
@@ -28,15 +28,22 @@ The source README claims an MIT root license but that baseline does not contain 
 
 These are source limitations, not local implementations. Per repository policy, affected acceptance is stopped; no local workaround is applied. Resume after an available upstream fix is imported and its behavior verified, not merely after issue closure.
 
-- `TODO(upstream): gsmlg-app/web-terminal#5` — [SFTP workspace action](https://github.com/gsmlg-app/web-terminal/issues/5). The menu currently displays a coming-soon snackbar. Actual SFTP workspace acceptance is blocked.
-- `TODO(upstream): gsmlg-app/web-terminal#6` — [initial profile readiness](https://github.com/gsmlg-app/web-terminal/issues/6). Source startup may open the first tab before profiles load when restoration is disabled; default-profile creation/load events also lack completion ordering. Configured first-session acceptance is blocked.
-- `TODO(upstream): gsmlg-app/web-terminal#7` — [mobile local-tab restoration](https://github.com/gsmlg-app/web-terminal/issues/7). Source serialization omits AndroidHostSpec and IosHostSpec, losing mobile local-tab metadata. Mobile restoration acceptance is blocked.
+Resolved in baseline `32ee71fffe38372c4887648520266edf8695bdf5` (2026-11-09):
+- `gsmlg-app/web-terminal#5` — [SFTP workspace action](https://github.com/gsmlg-app/web-terminal/issues/5). SFTP session connection, file manager plugin integration and tab lifecycle implemented and verified.
+- `gsmlg-app/web-terminal#6` — [initial profile readiness](https://github.com/gsmlg-app/web-terminal/issues/6). Default profile creation orders `ShellProfileLoaded` before startup; empty active tab state reactive builder verified.
+- `gsmlg-app/web-terminal#7` — [mobile local-tab restoration](https://github.com/gsmlg-app/web-terminal/issues/7). Descriptors now encode and restore AndroidHostSpec and IosHostSpec tabs.
 
+Active blocker:
 - `TODO(upstream): gsmlg-app/web-terminal#8` — [sandboxed macOS local PTY](https://github.com/gsmlg-app/web-terminal/issues/8). A native probe with the unchanged GSMLG DebugProfile entitlements confirms `setsid` succeeds but `ioctl(TIOCSCTTY)` fails with errno 1 (`EPERM`); the child exits 127. An unsandboxed control succeeds. The built app exit callback independently reports 127. The source host disables App Sandbox; GSMLG preserves its existing policy. Local-shell acceptance is stopped pending compatible upstream support and child-setup error propagation.
 
 ## Verification evidence and limits
 
 Passed:
+
+- Synchronization to upstream `32ee71fffe38372c4887648520266edf8695bdf5` (2026-11-09): `sync_web_terminal.py --apply` atomically advanced the baseline with zero blockers; all 22 sync helper unit tests passed; scoped Dart analysis passed with zero errors across 11 packages and terminal screens (`dart analyze app_lib/terminal_core app_lib/terminal_hosts app_lib/ssh app_bloc/terminal_tab app_bloc/terminal_settings app_bloc/shell_profile app_widget/xterm app_widget/terminal_plugin app_widget/file_manager_plugin app_widget/terminal_settings lib/screens/toolbox/terminal`).
+- Terminal tests: `flutter test app_bloc/shell_profile/test/shell_profile_startup_test.dart` (3/3 passed), `flutter test app_lib/terminal_hosts/test` (318/318 passed), `flutter test test/screens/toolbox/terminal/terminal_screen_test.dart` (4/4 passed).
+- Updated native iOS shell components: `lg2.xcframework` updated and verified against SHA-256 digests; `git` and `git-lfs` integration wired into `IosShellPlugin.swift` and `WebTerminalShell.m`.
+- Localization: Added `optionKeyBehavior*`, `closeTabConfirm*`, and `quitConfirm*` strings across all 5 ARBs and regenerated message delegates via `melos run gen-l10n`.
 
 - SwiftPM migration: macOS Debug and iOS simulator Debug app builds, actual embedded macOS PTY library loading and Dart/native lifecycle checks, scoped PTY Dart analysis, and the 22 sync-helper tests. These checks do not establish application runtime acceptance or resolve the existing macOS sandbox boundary.
 - Scoped Dart analysis of imported terminal/core/shared/UI/provider sources and added UI tests.

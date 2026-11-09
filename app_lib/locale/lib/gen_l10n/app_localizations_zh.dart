@@ -1229,6 +1229,46 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get jsonLogInspectorTitle => 'JSON 日志检查器';
+
+  @override
+  String get optionKeyBehavior => 'Option 键行为';
+
+  @override
+  String get optionKeyBehaviorLeftMeta => '左侧 Meta';
+
+  @override
+  String get optionKeyBehaviorBothMeta => '两侧 Meta';
+
+  @override
+  String get optionKeyBehaviorNormal => '正常';
+
+  @override
+  String get optionKeyBehaviorDescription => 'Meta 发送 Esc + 按键；正常模式输入特殊字符。';
+
+  @override
+  String get closeTabConfirmTitle => '关闭标签页？';
+
+  @override
+  String closeTabConfirmMessage(String title) {
+    return '“$title” 中有正在运行的程序。关闭标签页将终止它。';
+  }
+
+  @override
+  String get quitConfirmTitle => '退出 GSMLG？';
+
+  @override
+  String quitConfirmMessage(int count, String titles) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个标签页中有正在运行的程序：',
+      one: '1 个标签页中有正在运行的程序：',
+    );
+    return '$_temp0\n$titles\n\n退出将终止这些程序。';
+  }
+
+  @override
+  String get quit => '退出';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -1888,6 +1928,46 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get jsonLogInspectorTitle => 'JSON 日志检查器';
+
+  @override
+  String get optionKeyBehavior => 'Option 键行为';
+
+  @override
+  String get optionKeyBehaviorLeftMeta => '左侧 Meta';
+
+  @override
+  String get optionKeyBehaviorBothMeta => '两侧 Meta';
+
+  @override
+  String get optionKeyBehaviorNormal => '正常';
+
+  @override
+  String get optionKeyBehaviorDescription => 'Meta 发送 Esc + 按键；正常模式输入特殊字符。';
+
+  @override
+  String get closeTabConfirmTitle => '关闭标签页？';
+
+  @override
+  String closeTabConfirmMessage(String title) {
+    return '“$title” 中有正在运行的程序。关闭标签页将终止它。';
+  }
+
+  @override
+  String get quitConfirmTitle => '退出 GSMLG？';
+
+  @override
+  String quitConfirmMessage(int count, String titles) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 个标签页中有正在运行的程序：',
+      one: '1 个标签页中有正在运行的程序：',
+    );
+    return '$_temp0\n$titles\n\n退出将终止这些程序。';
+  }
+
+  @override
+  String get quit => '退出';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -2380,4 +2460,44 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get jsonLogInspectorTitle => 'JSON 日誌檢查器';
+
+  @override
+  String get optionKeyBehavior => 'Option 鍵行為';
+
+  @override
+  String get optionKeyBehaviorLeftMeta => '左側 Meta';
+
+  @override
+  String get optionKeyBehaviorBothMeta => '兩側 Meta';
+
+  @override
+  String get optionKeyBehaviorNormal => '正常';
+
+  @override
+  String get optionKeyBehaviorDescription => 'Meta 傳送 Esc + 按鍵；正常模式輸入特殊字元。';
+
+  @override
+  String get closeTabConfirmTitle => '關閉分頁？';
+
+  @override
+  String closeTabConfirmMessage(String title) {
+    return '「$title」中有正在執行的程式。關閉分頁將終止該程式。';
+  }
+
+  @override
+  String get quitConfirmTitle => '結束 GSMLG？';
+
+  @override
+  String quitConfirmMessage(int count, String titles) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 個分頁中有正在執行的程式：',
+      one: '1 個分頁中有正在執行的程式：',
+    );
+    return '$_temp0\n$titles\n\n結束將終止這些程式。';
+  }
+
+  @override
+  String get quit => '結束';
 }

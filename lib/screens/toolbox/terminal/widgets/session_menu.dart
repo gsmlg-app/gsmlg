@@ -69,19 +69,12 @@ class SessionMenu extends StatelessWidget {
               ),
             ),
           ),
-          PopupMenuItem(
+          const PopupMenuItem(
             value: _SessionType.sftpServer,
-            enabled: false, // SFTP is planned for future release
-            child: Semantics(
-              label:
-                  'SFTP Server. Browse remote files. Coming soon, currently disabled.',
-              enabled: false,
-              child: const ListTile(
-                leading: Icon(Icons.folder),
-                title: Text('SFTP Server'),
-                subtitle: Text('Browse remote files (coming soon)'),
-                contentPadding: EdgeInsets.zero,
-              ),
+            child: ListTile(
+              leading: Icon(Icons.folder),
+              title: Text('SFTP Server'),
+              contentPadding: EdgeInsets.zero,
             ),
           ),
         ],

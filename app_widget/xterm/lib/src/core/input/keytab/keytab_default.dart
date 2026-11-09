@@ -37,7 +37,8 @@ key Return-Shift+NewLine : "\r\n"
 
 key Return+Shift         : "\EOM"
 
-key Backspace  +Alt : "\x17"
+key Backspace  +Alt+Mac : "\E\x7f"
+key Backspace  +Alt-Mac : "\x17"
 
 # Backspace and Delete codes are preserving CTRL-H.
 #

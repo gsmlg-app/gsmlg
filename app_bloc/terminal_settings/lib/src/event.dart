@@ -57,3 +57,15 @@ class TerminalSettingsUpdateRestoreTabs extends TerminalSettingsEvent {
   @override
   List<Object?> get props => [restoreTerminalTabs];
 }
+
+/// Update how the Option keys behave in the terminal on macOS.
+class TerminalSettingsUpdateOptionKeyBehavior extends TerminalSettingsEvent {
+  final TerminalOptionKeyBehavior optionKeyBehavior;
+
+  const TerminalSettingsUpdateOptionKeyBehavior({
+    required this.optionKeyBehavior,
+  });
+
+  @override
+  List<Object?> get props => [optionKeyBehavior];
+}

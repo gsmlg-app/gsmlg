@@ -10,6 +10,7 @@ class TerminalActions extends StatelessWidget {
     required this.terminal,
     required this.controller,
     required this.child,
+    this.onPaste,
   });
 
   final Terminal terminal;
@@ -17,6 +18,9 @@ class TerminalActions extends StatelessWidget {
   final TerminalController controller;
 
   final Widget child;
+
+  /// Called after clipboard text has been pasted into [terminal].
+  final VoidCallback? onPaste;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +33,7 @@ class TerminalActions extends StatelessWidget {
             if (text != null) {
               terminal.paste(text);
               controller.clearSelection();
+              onPaste?.call();
             }
             return null;
           },
@@ -51,10 +56,7 @@ class TerminalActions extends StatelessWidget {
         SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(
           onInvoke: (intent) {
             controller.setSelection(
-              terminal.buffer.createAnchor(
-                0,
-                terminal.buffer.height - terminal.viewHeight,
-              ),
+              terminal.buffer.createAnchor(0, 0),
               terminal.buffer.createAnchor(
                 terminal.viewWidth,
                 terminal.buffer.height - 1,

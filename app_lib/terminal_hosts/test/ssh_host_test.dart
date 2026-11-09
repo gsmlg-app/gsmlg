@@ -420,6 +420,9 @@ class MockSSHHost implements Host {
 /// Note: Uses noSuchMethod to implement complex interfaces
 class MockSSHFileSystem implements FileSystem {
   @override
+  Future<void> close() async {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) {
     // Return null for all methods - this is a minimal mock
     return null;

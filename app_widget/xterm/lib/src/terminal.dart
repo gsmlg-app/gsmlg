@@ -384,10 +384,11 @@ class Terminal with Observable implements TerminalState, EscapeHandler {
   /// See also:
   /// - [textInput]
   void paste(String text) {
+    final normalized = text.replaceAll('\r\n', '\r').replaceAll('\n', '\r');
     if (_bracketedPasteMode) {
-      onOutput?.call(_emitter.bracketedPaste(text));
+      onOutput?.call(_emitter.bracketedPaste(normalized));
     } else {
-      textInput(text);
+      textInput(normalized);
     }
   }
 

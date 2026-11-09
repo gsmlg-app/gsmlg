@@ -44,7 +44,7 @@ lua_ios|https://github.com/holzschu/lua_ios/releases/download/1.0/lua_ios.xcfram
 lg2|https://github.com/holzschu/libgit2/releases/download/ios_1.0/lg2.xcframework.zip|7d205a771be8d120a80d2f7281135dfffd21a3713c86eb4f1957638f6b4b365e|ios
 FRAMEWORKS
 
-python3 "$script_dir/build_lg2_simulator.py" --frameworks-dir "$download_dir/Frameworks"
+python3 "$script_dir/build_lg2.py" --frameworks-dir "$download_dir/Frameworks"
 download_verified https://curl.se/ca/cacert-2026-10-20.pem \
   796f1389bfea13c0ed78f663b765baaff54a508e5483786bd6ece73c5e3e3cbe \
   "$download_dir/cacert.pem"

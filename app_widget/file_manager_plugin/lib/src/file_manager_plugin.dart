@@ -1,5 +1,7 @@
+import 'dart:async';
+
+import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:terminal_core/terminal_core.dart';
 import 'package:file_manager_plugin/src/navigation_breadcrumbs.dart';
@@ -20,44 +22,52 @@ class FileManagerPlugin with Plugin {
   late final navigationStack = NavigationStack<String>(onNavigate: _onNavigate);
 
   final _filesCache = <String, List<FileSystemEntity>>{};
+  final error = ValueNotifier<Object?>(null);
+  final loading = ValueNotifier<bool>(false);
+  FileSystem? _ownedFileSystem;
+  int _generation = 0;
+  int _navigationGeneration = 0;
 
   Future<void> _fetchFiles() async {
+    final fileSystem = _ownedFileSystem;
     final path = currentPath.value;
-
-    if (path == null) {
-      return;
-    }
-
-    this.files.value = _filesCache[path] ?? [];
-
-    final files = await fs.directory(path).list().fold(
-      <FileSystemEntity>[],
-      (files, file) => [...files, file],
-    );
-
-    _filesCache[path] = files;
-
-    if (currentPath.value == path) {
-      this.files.value = files;
+    if (fileSystem == null || path == null || !mounted || !connected) return;
+    final generation = _generation;
+    final navigation = ++_navigationGeneration;
+    bool isCurrent() =>
+        mounted &&
+        connected &&
+        generation == _generation &&
+        navigation == _navigationGeneration;
+    files.value = _filesCache[path] ?? [];
+    error.value = null;
+    loading.value = true;
+    try {
+      final result = await fileSystem.directory(path).list().toList();
+      if (!isCurrent()) return;
+      _filesCache[path] = result;
+      files.value = result;
+    } catch (exception) {
+      if (isCurrent()) error.value = exception;
+    } finally {
+      if (isCurrent()) loading.value = false;
     }
   }
 
   Future<void> _onNavigate(String path) async {
+    if (_ownedFileSystem == null || !mounted || !connected) return;
     currentPath.value = fs.path.normalize(path);
     title.value =
         currentDirectory == null ? null : currentDirectory! + fs.path.separator;
-    _fetchFiles();
+    await _fetchFiles();
   }
 
   Future<void> goto(String target) async {
-    late final String path;
-
-    if (fs.path.isAbsolute(target)) {
-      path = target;
-    } else {
-      path = fs.path.normalize(fs.path.join(currentPath.value!, target));
-    }
-
+    if (_ownedFileSystem == null || !mounted || !connected) return;
+    final path = fs.path.isAbsolute(target)
+        ? target
+        : fs.path
+            .normalize(fs.path.join(currentPath.value ?? homePath!, target));
     navigationStack.push(path);
   }
 
@@ -86,12 +96,79 @@ class FileManagerPlugin with Plugin {
   }
 
   @override
-  void didConnected() async {
-    fs = await host.connectFileSystem();
+  void didConnected() {
+    unawaited(_connectFileSystem(++_generation));
+  }
 
-    homePath = (await fs.directory('.').absolute).path;
+  Future<void> _connectFileSystem(int generation) async {
+    loading.value = true;
+    error.value = null;
+    FileSystem? fileSystem;
+    try {
+      fileSystem = await host.connectFileSystem();
+      if (!mounted || !connected || generation != _generation) {
+        _closeFileSystem(fileSystem);
+        return;
+      }
+      _ownedFileSystem = fileSystem;
+      fs = fileSystem;
+      final home = (await fileSystem.directory('.').absolute).path;
+      if (!mounted || !connected || generation != _generation) return;
+      homePath = home;
+      await goto(home);
+    } catch (exception) {
+      if (identical(_ownedFileSystem, fileSystem)) {
+        _ownedFileSystem = null;
+        if (fileSystem != null) _closeFileSystem(fileSystem);
+      }
+      if (mounted && connected && generation == _generation) {
+        error.value = exception;
+      }
+    } finally {
+      if (mounted &&
+          connected &&
+          generation == _generation &&
+          currentPath.value == null) {
+        loading.value = false;
+      }
+    }
+  }
 
-    goto(homePath!);
+  void _closeFileSystem(FileSystem fileSystem) {
+    unawaited(Future<void>.sync(fileSystem.close)
+        .catchError((Object exception, StackTrace stack) {
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: exception,
+        stack: stack,
+        library: 'file_manager_plugin',
+      ));
+    }));
+  }
+
+  void _releaseFileSystem() {
+    _generation++;
+    _navigationGeneration++;
+    final fileSystem = _ownedFileSystem;
+    _ownedFileSystem = null;
+    if (fileSystem != null) _closeFileSystem(fileSystem);
+    homePath = null;
+    currentPath.value = null;
+    files.value = [];
+    _filesCache.clear();
+    loading.value = false;
+  }
+
+  @override
+  void didUnmounted() => _releaseFileSystem();
+
+  @override
+  void didDisconnected() => _releaseFileSystem();
+
+  @override
+  void onConnectionError(Object error) {
+    if (!mounted) return;
+    loading.value = false;
+    this.error.value = error;
   }
 
   @override
@@ -101,6 +178,21 @@ class FileManagerPlugin with Plugin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: 40, child: FileListToolbar(this)),
+          ValueListenableBuilder(
+            valueListenable: loading,
+            builder: (context, loading, _) => loading
+                ? const LinearProgressIndicator()
+                : const SizedBox.shrink(),
+          ),
+          ValueListenableBuilder(
+            valueListenable: error,
+            builder: (context, error, _) => error == null
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text('${context.l10n.error}: $error'),
+                  ),
+          ),
           Expanded(child: FileListView(this)),
           const Divider(),
           SizedBox(height: 30, child: FileListNavigator(this)),
@@ -230,8 +322,6 @@ class FileListViewState extends State<FileListView> {
 
         if (file is Directory) {
           plugin.goto(file.path);
-        } else if (file is File) {
-          context.read<TabsService>().openFile(file);
         }
       },
       columns: [

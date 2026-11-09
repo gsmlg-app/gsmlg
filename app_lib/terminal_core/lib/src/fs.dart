@@ -27,6 +27,9 @@ abstract class FileSystem {
   /// Creates a new `FileSystem`.
   const FileSystem();
 
+  /// Releases resources owned by this filesystem, if any.
+  Future<void> close() async {}
+
   /// Returns a reference to a [Directory] at [path].
   Directory directory(String path);
 

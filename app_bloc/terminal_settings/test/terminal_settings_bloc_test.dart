@@ -249,6 +249,78 @@ void main() {
         ),
       ],
     );
+
+    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
+      'Load defaults optionKeyBehavior to leftMeta',
+      build: () => TerminalSettingsBloc(vault: mockVault),
+      act: (bloc) => bloc.add(const TerminalSettingsLoad()),
+      expect: () => [
+        isA<TerminalSettingsLoading>(),
+        isA<TerminalSettingsLoaded>().having(
+          (s) => s.optionKeyBehavior,
+          'optionKeyBehavior',
+          TerminalOptionKeyBehavior.leftMeta,
+        ),
+      ],
+    );
+
+    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
+      'Load restores persisted optionKeyBehavior',
+      build: () {
+        mockVault.seed({'terminal_option_key_behavior': 'bothMeta'});
+        return TerminalSettingsBloc(vault: mockVault);
+      },
+      act: (bloc) => bloc.add(const TerminalSettingsLoad()),
+      expect: () => [
+        isA<TerminalSettingsLoading>(),
+        isA<TerminalSettingsLoaded>().having(
+          (s) => s.optionKeyBehavior,
+          'optionKeyBehavior',
+          TerminalOptionKeyBehavior.bothMeta,
+        ),
+      ],
+    );
+
+    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
+      'Load falls back to leftMeta for unknown persisted value',
+      build: () {
+        mockVault.seed({'terminal_option_key_behavior': 'bogus'});
+        return TerminalSettingsBloc(vault: mockVault);
+      },
+      act: (bloc) => bloc.add(const TerminalSettingsLoad()),
+      expect: () => [
+        isA<TerminalSettingsLoading>(),
+        isA<TerminalSettingsLoaded>().having(
+          (s) => s.optionKeyBehavior,
+          'optionKeyBehavior',
+          TerminalOptionKeyBehavior.leftMeta,
+        ),
+      ],
+    );
+
+    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
+      'UpdateOptionKeyBehavior updates and persists the setting',
+      build: () => TerminalSettingsBloc(vault: mockVault),
+      seed: () => const TerminalSettingsLoaded(),
+      act: (bloc) => bloc.add(
+        const TerminalSettingsUpdateOptionKeyBehavior(
+          optionKeyBehavior: TerminalOptionKeyBehavior.normal,
+        ),
+      ),
+      expect: () => [
+        isA<TerminalSettingsLoaded>().having(
+          (s) => s.optionKeyBehavior,
+          'optionKeyBehavior',
+          TerminalOptionKeyBehavior.normal,
+        ),
+      ],
+      verify: (_) async {
+        expect(
+          await mockVault.read(key: 'terminal_option_key_behavior'),
+          'normal',
+        );
+      },
+    );
   });
 
   group('TerminalSettingsState', () {

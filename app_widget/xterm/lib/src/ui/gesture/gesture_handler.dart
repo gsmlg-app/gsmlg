@@ -1,13 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:xterm/src/core/buffer/cell_offset.dart';
 import 'package:xterm/src/core/mouse/button.dart';
 import 'package:xterm/src/core/mouse/button_state.dart';
+import 'package:xterm/src/core/mouse/mode.dart';
 import 'package:xterm/src/terminal_view.dart';
 import 'package:xterm/src/ui/controller.dart';
 import 'package:xterm/src/ui/gesture/gesture_detector.dart';
 import 'package:xterm/src/ui/pointer_input.dart';
 import 'package:xterm/src/ui/render.dart';
+
+enum _SelectionUnit { character, word, line }
 
 class TerminalGestureHandler extends StatefulWidget {
   const TerminalGestureHandler({
@@ -52,13 +58,33 @@ class TerminalGestureHandler extends StatefulWidget {
 }
 
 class _TerminalGestureHandlerState extends State<TerminalGestureHandler> {
+  static const _autoScrollInterval = Duration(milliseconds: 50);
+
   TerminalViewState get terminalView => widget.terminalView;
 
   RenderTerminal get renderTerminal => terminalView.renderTerminal;
 
-  DragStartDetails? _lastDragStartDetails;
-
   LongPressStartDetails? _lastLongPressStartDetails;
+
+  _SelectionUnit _selectionUnit = _SelectionUnit.character;
+
+  Offset? _dragStartContentOffset;
+
+  Offset? _lastDragLocalPosition;
+
+  Timer? _autoScrollTimer;
+
+  bool _leftButtonReported = false;
+
+  bool _reportingDrag = false;
+
+  CellOffset? _lastReportedCell;
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,20 +95,32 @@ class _TerminalGestureHandlerState extends State<TerminalGestureHandler> {
       onTapDown: onTapDown,
       onSecondaryTapDown: onSecondaryTapDown,
       onSecondaryTapUp: onSecondaryTapUp,
-      onTertiaryTapDown: onSecondaryTapDown,
-      onTertiaryTapUp: onSecondaryTapUp,
+      onTertiaryTapDown: onTertiaryTapDown,
+      onTertiaryTapUp: onTertiaryTapUp,
       onLongPressStart: onLongPressStart,
       onLongPressMoveUpdate: onLongPressMoveUpdate,
-      // onLongPressUp: onLongPressUp,
       onDragStart: onDragStart,
       onDragUpdate: onDragUpdate,
+      onDragEnd: onDragEnd,
       onDoubleTapDown: onDoubleTapDown,
+      onTripleTapDown: onTripleTapDown,
     );
   }
 
+  /// Holding Option (Alt) forces local selection even when the running
+  /// program has enabled mouse reporting, like iTerm2.
+  bool get _forceLocalSelection => HardwareKeyboard.instance.isAltPressed;
+
   bool get _shouldSendTapEvent =>
       !widget.readOnly &&
+      !_forceLocalSelection &&
       widget.terminalController.shouldSendPointerInput(PointerInput.tap);
+
+  bool get _shouldReportDrag =>
+      !widget.readOnly &&
+      !_forceLocalSelection &&
+      terminalView.widget.terminal.mouseMode != MouseMode.none &&
+      widget.terminalController.shouldSendPointerInput(PointerInput.drag);
 
   void _tapDown(
     GestureTapDownCallback? callback,
@@ -90,7 +128,6 @@ class _TerminalGestureHandlerState extends State<TerminalGestureHandler> {
     TerminalMouseButton button, {
     bool forceCallback = false,
   }) {
-    // Check if the terminal should and can handle the tap down event.
     var handled = false;
     if (_shouldSendTapEvent) {
       handled = renderTerminal.mouseEvent(
@@ -98,8 +135,10 @@ class _TerminalGestureHandlerState extends State<TerminalGestureHandler> {
         TerminalMouseButtonState.down,
         details.localPosition,
       );
+      if (handled && button == TerminalMouseButton.left) {
+        _leftButtonReported = true;
+      }
     }
-    // If the event was not handled by the terminal, use the supplied callback.
     if (!handled || forceCallback) {
       callback?.call(details);
     }
@@ -111,7 +150,6 @@ class _TerminalGestureHandlerState extends State<TerminalGestureHandler> {
     TerminalMouseButton button, {
     bool forceCallback = false,
   }) {
-    // Check if the terminal should and can handle the tap up event.
     var handled = false;
     if (_shouldSendTapEvent) {
       handled = renderTerminal.mouseEvent(
@@ -120,13 +158,17 @@ class _TerminalGestureHandlerState extends State<TerminalGestureHandler> {
         details.localPosition,
       );
     }
-    // If the event was not handled by the terminal, use the supplied callback.
+    if (button == TerminalMouseButton.left) {
+      _leftButtonReported = false;
+    }
     if (!handled || forceCallback) {
       callback?.call(details);
     }
   }
 
   void onTapDown(TapDownDetails details) {
+    _selectionUnit = _SelectionUnit.character;
+
     if (_isExpandingSelection) {
       widget.onTapDown?.call(details);
       return;
@@ -164,11 +206,23 @@ class _TerminalGestureHandlerState extends State<TerminalGestureHandler> {
   }
 
   void onTertiaryTapUp(TapUpDetails details) {
-    _tapUp(widget.onTertiaryTapUp, details, TerminalMouseButton.right);
+    _tapUp(widget.onTertiaryTapUp, details, TerminalMouseButton.middle);
   }
 
   void onDoubleTapDown(TapDownDetails details) {
+    if (_leftButtonReported) {
+      return;
+    }
+    _selectionUnit = _SelectionUnit.word;
     renderTerminal.selectWord(details.localPosition);
+  }
+
+  void onTripleTapDown(TapDownDetails details) {
+    if (_leftButtonReported) {
+      return;
+    }
+    _selectionUnit = _SelectionUnit.line;
+    renderTerminal.selectLine(details.localPosition);
   }
 
   void onLongPressStart(LongPressStartDetails details) {
@@ -183,31 +237,137 @@ class _TerminalGestureHandlerState extends State<TerminalGestureHandler> {
     );
   }
 
-  // void onLongPressUp() {}
-
   void onDragStart(DragStartDetails details) {
-    _lastDragStartDetails = details;
+    _lastDragLocalPosition = details.localPosition;
+    _dragStartContentOffset =
+        details.localPosition + Offset(0, renderTerminal.scrollOffset);
+
+    if (_shouldReportDrag) {
+      _reportingDrag = true;
+      if (!_leftButtonReported) {
+        _leftButtonReported = renderTerminal.mouseEvent(
+          TerminalMouseButton.left,
+          TerminalMouseButtonState.down,
+          details.localPosition,
+        );
+      }
+      _lastReportedCell = renderTerminal.getCellOffset(details.localPosition);
+      return;
+    }
 
     if (_isExpandingSelection) {
       renderTerminal.extendSelection(details.localPosition);
       return;
     }
 
-    details.kind == PointerDeviceKind.mouse
-        ? renderTerminal.selectCharacters(details.localPosition)
-        : renderTerminal.selectWord(details.localPosition);
+    if (details.kind != PointerDeviceKind.mouse) {
+      renderTerminal.selectWord(details.localPosition);
+      return;
+    }
+
+    _applyDragSelection(details.localPosition, isStart: true);
   }
 
   void onDragUpdate(DragUpdateDetails details) {
+    _lastDragLocalPosition = details.localPosition;
+
+    if (_reportingDrag) {
+      final cell = renderTerminal.getCellOffset(details.localPosition);
+      if (cell != _lastReportedCell) {
+        _lastReportedCell = cell;
+        renderTerminal.mouseEvent(
+          TerminalMouseButton.left,
+          TerminalMouseButtonState.motion,
+          details.localPosition,
+        );
+      }
+      return;
+    }
+
     if (_isExpandingSelection) {
       renderTerminal.extendSelection(details.localPosition);
       return;
     }
 
-    renderTerminal.selectCharacters(
-      _lastDragStartDetails!.localPosition,
-      details.localPosition,
-    );
+    _applyDragSelection(details.localPosition);
+    _updateAutoScroll(details.localPosition);
+  }
+
+  void onDragEnd(DragEndDetails details) {
+    _stopAutoScroll();
+
+    if (_reportingDrag) {
+      final position = _lastDragLocalPosition;
+      if (position != null) {
+        renderTerminal.mouseEvent(
+          TerminalMouseButton.left,
+          TerminalMouseButtonState.up,
+          position,
+        );
+      }
+    }
+    _reportingDrag = false;
+    _leftButtonReported = false;
+    _lastReportedCell = null;
+  }
+
+  void _applyDragSelection(Offset localPosition, {bool isStart = false}) {
+    final startContent = _dragStartContentOffset;
+    if (startContent == null) {
+      return;
+    }
+    final start = startContent - Offset(0, renderTerminal.scrollOffset);
+    final end = isStart ? null : localPosition;
+
+    switch (_selectionUnit) {
+      case _SelectionUnit.character:
+        renderTerminal.selectCharacters(start, end);
+      case _SelectionUnit.word:
+        renderTerminal.selectWord(start, end);
+      case _SelectionUnit.line:
+        renderTerminal.selectLine(start, end);
+    }
+  }
+
+  double _autoScrollDelta(Offset localPosition) {
+    final height = renderTerminal.size.height;
+    final lineHeight = renderTerminal.lineHeight;
+    final double distance;
+    if (localPosition.dy < 0) {
+      distance = localPosition.dy;
+    } else if (localPosition.dy > height) {
+      distance = localPosition.dy - height;
+    } else {
+      return 0;
+    }
+    final lines = (distance.abs() / lineHeight).ceil().clamp(1, 10);
+    return distance.sign * lines * lineHeight;
+  }
+
+  void _updateAutoScroll(Offset localPosition) {
+    if (_autoScrollDelta(localPosition) == 0) {
+      _stopAutoScroll();
+      return;
+    }
+    _autoScrollTimer ??= Timer.periodic(_autoScrollInterval, (_) {
+      final position = _lastDragLocalPosition;
+      if (!mounted || position == null) {
+        _stopAutoScroll();
+        return;
+      }
+      final delta = _autoScrollDelta(position);
+      if (delta == 0) {
+        _stopAutoScroll();
+        return;
+      }
+      renderTerminal.scrollBy(delta);
+      _applyDragSelection(position);
+    });
+  }
+
+  void _stopAutoScroll() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = null;
   }
 
   bool get _isExpandingSelection {

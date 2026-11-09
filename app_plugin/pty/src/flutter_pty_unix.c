@@ -368,6 +368,14 @@ FFI_PLUGIN_EXPORT int pty_getpid(PtyHandle *handle)
     return handle->pid;
 }
 
+FFI_PLUGIN_EXPORT int pty_foreground_pgid(PtyHandle *handle)
+{
+    pthread_mutex_lock(&handle->mutex);
+    pid_t group = handle->exited || handle->terminating ? -1 : tcgetpgrp(handle->ptm);
+    pthread_mutex_unlock(&handle->mutex);
+    return group > 0 ? group : -1;
+}
+
 FFI_PLUGIN_EXPORT char *pty_error(void)
 {
     return error_message;

@@ -1,4 +1,4 @@
-import 'dart:math' show max;
+import 'dart:math' show max, min;
 import 'dart:ui';
 
 import 'package:flutter/rendering.dart';
@@ -228,6 +228,10 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
     return _offset.pixels;
   }
 
+  /// The distance in pixels from the top of the scrollback to the top of the
+  /// viewport.
+  double get scrollOffset => _scrollOffset;
+
   /// The height of a terminal line in pixels. This includes the line spacing.
   /// Height of the entire terminal is expected to be a multiple of this value.
   double get lineHeight => _painter.cellSize.height;
@@ -298,6 +302,35 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
     }
   }
 
+  /// Selects whole logical lines (including soft-wrapped continuations) that
+  /// contain [from] and [to].
+  void selectLine(Offset from, [Offset? to]) {
+    final fromRow = getCellOffset(from).y;
+    final toRow = to == null ? fromRow : getCellOffset(to).y;
+    final lines = _terminal.buffer.lines;
+    var top = min(fromRow, toRow);
+    var bottom = max(fromRow, toRow);
+    while (top > 0 && lines[top].isWrapped) {
+      top--;
+    }
+    while (bottom + 1 < lines.length && lines[bottom + 1].isWrapped) {
+      bottom++;
+    }
+    _controller.setSelection(
+      _terminal.buffer.createAnchor(0, top),
+      _terminal.buffer.createAnchor(_terminal.viewWidth, bottom),
+      mode: SelectionMode.line,
+    );
+  }
+
+  /// Scrolls the viewport by [delta] pixels within the scrollable range.
+  void scrollBy(double delta) {
+    final target = (_scrollOffset + delta).clamp(0.0, _maxScrollExtent);
+    if (target != _scrollOffset) {
+      _offset.jumpTo(target);
+    }
+  }
+
   /// Extends the current character selection to the cell at [to].
   bool extendSelection(Offset to) {
     final basePosition = _controller.selectionBaseOffset;
@@ -322,7 +355,12 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
     Offset offset,
   ) {
     final position = getCellOffset(offset);
-    return _terminal.mouseInput(button, buttonState, position);
+    final screenRow = position.y - _terminal.buffer.scrollBack;
+    return _terminal.mouseInput(
+      button,
+      buttonState,
+      CellOffset(position.x, screenRow.clamp(0, _terminal.viewHeight - 1)),
+    );
   }
 
   void _notifyEditableRect() {

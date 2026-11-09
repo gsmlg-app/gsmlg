@@ -24,7 +24,7 @@ class NativeLifecycleTest(unittest.TestCase):
             'natural', 'ack', 'exec', 'cwd', 'close',
             'reader-failure', 'waiter-failure', 'fd-failure',
             'background-output', 'slow-background-output', 'full-write',
-            'group-ownership',
+            'group-ownership', 'foreground',
         ]:
             with self.subTest(scenario=scenario):
                 result = subprocess.run(

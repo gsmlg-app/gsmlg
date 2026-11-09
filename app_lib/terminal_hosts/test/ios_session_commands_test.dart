@@ -18,12 +18,17 @@ void main() {
   late List<MethodCall> calls;
   PlatformException? catalogError;
   Completer<Map<String, Object>>? execution;
+  late String cwd;
+
+  Iterable<MethodCall> commandCalls() =>
+      calls.where((call) => call.method != 'getCurrentDirectory');
 
   setUp(() async {
     fixture = await Directory.systemTemp.createTemp('ios_session_commands_');
     calls = [];
     catalogError = null;
     execution = null;
+    cwd = fixture.path;
     IosShellEnv.reset();
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (call) async {
@@ -37,6 +42,14 @@ void main() {
             case 'execute':
               if (execution != null) return execution!.future;
               return {'exitCode': 0, 'stdout': 'native output\n', 'stderr': ''};
+            case 'getCurrentDirectory':
+              return cwd;
+            case 'setCurrentDirectory':
+              final path = (call.arguments as Map)['path'] as String;
+              final target = path.startsWith('/') ? path : '$cwd/$path';
+              if (!Directory(target).existsSync()) return false;
+              cwd = target;
+              return true;
             default:
               throw StateError('Unexpected method: ${call.method}');
           }
@@ -79,7 +92,14 @@ void main() {
         output.toString(),
         contains('cd  clear  curl  exit  help  logout  lua  python3\r\n'),
       );
-      expect(calls.map((call) => call.method), ['listCommands']);
+      expect(commandCalls().map((call) => call.method), ['listCommands']);
+    },
+  );
+
+  test(
+    'never reports a foreground process so closing does not prompt',
+    () async {
+      expect(await session.hasForegroundProcess(), isFalse);
     },
   );
 
@@ -88,14 +108,17 @@ void main() {
 
     expect(output.toString(), contains('\x1b[2J\x1b[H'));
     expect(output.toString(), endsWith(' \$ '));
-    expect(calls, isEmpty);
+    expect(commandCalls(), isEmpty);
   });
 
   test('native commands still execute and display their output', () async {
     await enter('curl --version');
 
-    expect(calls.single.method, 'execute');
-    expect(calls.single.arguments, {'command': 'curl --version'});
+    expect(commandCalls().single.method, 'execute');
+    expect(commandCalls().single.arguments, {
+      'command': 'curl --version',
+      'environment': <String, String>{},
+    });
     expect(output.toString(), contains('native output\r\n'));
   });
 
@@ -116,8 +139,8 @@ void main() {
       await Future.wait([first, second]);
       await Future<void>.delayed(Duration.zero);
 
-      expect(calls.map((call) => call.arguments), [
-        {'command': 'ls -a'},
+      expect(commandCalls().map((call) => call.arguments), [
+        {'command': 'ls -a', 'environment': <String, String>{}},
       ]);
       expect('.hidden'.allMatches(output.toString()), hasLength(1));
     },
@@ -133,8 +156,43 @@ void main() {
       expect(output.toString(), endsWith(' \$ '));
 
       await enter('lua -v');
-      expect(calls.last.arguments, {'command': 'lua -v'});
+      expect(commandCalls().last.arguments, {
+        'command': 'lua -v',
+        'environment': <String, String>{},
+      });
       expect(output.toString(), contains('native output\r\n'));
     },
   );
+
+  test('prompt shows ~ at home and the directory name after cd', () async {
+    await Directory('${fixture.path}/projects').create();
+    expect(output.toString(), isEmpty);
+
+    await enter('cd projects');
+    expect(output.toString(), endsWith('projects \$ '));
+
+    output.clear();
+    await enter('cd ~');
+    expect(output.toString(), endsWith('~ \$ '));
+  });
+
+  test('escape sequences are dropped from the input line', () async {
+    await enter('echo hi\x1b[A\x1b[D\x1bOH');
+
+    expect(commandCalls().single.arguments, {
+      'command': 'echo hi',
+      'environment': <String, String>{},
+    });
+  });
+
+  test('export is kept in the session and sent with later commands', () async {
+    await enter('export GREETING="hello world"');
+    expect(commandCalls(), isEmpty);
+
+    await enter('printenv GREETING');
+    expect(commandCalls().single.arguments, {
+      'command': 'printenv GREETING',
+      'environment': {'GREETING': 'hello world'},
+    });
+  });
 }

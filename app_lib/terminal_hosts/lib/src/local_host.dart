@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:io' as io;
 import 'dart:typed_data';
 
 import 'package:flutter_pty/flutter_pty.dart';
@@ -56,7 +57,12 @@ class LocalHost implements Host {
     int height = 25,
     Map<String, String>? environment,
   }) async {
-    final shell = _resolveShell(_shellCommand);
+    final shell = resolveLocalShell(
+      _shellCommand,
+      environment: Platform.environment,
+      isMacOS: Platform.isMacOS,
+      isWindows: Platform.isWindows,
+    );
     final mergedEnv = <String, String>{
       if (Platform.isMacOS) 'TERM_PROGRAM': 'Apple_Terminal',
       ...Platform.environment,
@@ -67,10 +73,10 @@ class LocalHost implements Host {
       shell.command,
       arguments: shell.args,
       environment: mergedEnv,
-      workingDirectory:
-          (_workingDirectory != null && _workingDirectory.isNotEmpty)
-          ? _workingDirectory
-          : null,
+      workingDirectory: resolveLocalWorkingDirectory(
+        _workingDirectory,
+        mergedEnv,
+      ),
       rows: height,
       columns: width,
       ackRead: true, // Enable backpressure to prevent message queue flooding
@@ -117,7 +123,8 @@ class LocalExecutionResult implements ExecutionResult {
   String get stdout => _result.stdout;
 }
 
-class LocalExecutionSession implements ExecutionSession {
+class LocalExecutionSession
+    implements ExecutionSession, ForegroundProcessAware {
   final Pty _pty;
 
   LocalExecutionSession(this._pty);
@@ -147,47 +154,71 @@ class LocalExecutionSession implements ExecutionSession {
   void ackRead() {
     _pty.ackRead();
   }
+
+  @override
+  Future<bool> hasForegroundProcess() async => _pty.hasForegroundProcess;
 }
 
-class _ShellCommand {
+class LocalShellCommand {
   final String command;
 
   final List<String> args;
 
-  _ShellCommand(this.command, this.args);
+  const LocalShellCommand(this.command, this.args);
 }
 
-_ShellCommand _resolveShell(String? customShell) {
-  if (Platform.isWindows) {
-    return _ShellCommand('powershell.exe', []);
+LocalShellCommand resolveLocalShell(
+  String? customShell, {
+  required Map<String, String> environment,
+  required bool isMacOS,
+  required bool isWindows,
+}) {
+  if (isWindows) {
+    return const LocalShellCommand('powershell.exe', []);
   }
 
   final requested = customShell?.trim();
   if (requested != null && requested.isNotEmpty) {
-    final defaultShell = Platform.environment['SHELL'] ?? '';
-    final defaultBase = defaultShell.split('/').last;
-    if (Platform.isMacOS && requested == defaultBase) {
-      final user = Platform.environment['USER'];
-      if (user != null && user.isNotEmpty) {
-        return _ShellCommand('login', ['-fpl', user]);
-      }
-    }
-    return _ShellCommand(
+    return LocalShellCommand(
       requested,
       requested == 'sh' ? const [] : const ['-l'],
     );
   }
 
-  if (Platform.isMacOS) {
-    final user = Platform.environment['USER'];
-    if (user != null && user.isNotEmpty) {
-      // -l prevents login from chdir'ing to $HOME so Pty.start workingDirectory is preserved.
-      return _ShellCommand('login', ['-fpl', user]);
+  final defaultShell = environment['SHELL'];
+  if (isMacOS) {
+    final shell = (defaultShell == null || defaultShell.isEmpty)
+        ? '/bin/zsh'
+        : defaultShell;
+    return LocalShellCommand(shell, const ['-l']);
+  }
+
+  return LocalShellCommand(defaultShell ?? 'sh', const []);
+}
+
+String? resolveLocalWorkingDirectory(
+  String? requested,
+  Map<String, String> environment,
+) {
+  final home = environment['HOME'] ?? environment['USERPROFILE'];
+  final hasHome = home != null && home.isNotEmpty;
+
+  var directory = requested?.trim() ?? '';
+  if (hasHome) {
+    if (directory == '~') {
+      directory = home;
+    } else if (directory.startsWith('~/')) {
+      directory = '$home${directory.substring(1)}';
     }
   }
 
-  final shell = Platform.environment['SHELL'] ?? 'sh';
-  return _ShellCommand(shell, []);
+  if (directory.isNotEmpty && io.FileSystemEntity.isDirectorySync(directory)) {
+    return directory;
+  }
+  if (hasHome && io.FileSystemEntity.isDirectorySync(home)) {
+    return home;
+  }
+  return null;
 }
 
 String buildLocalShellStartupCommands({

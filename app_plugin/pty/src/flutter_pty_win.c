@@ -464,6 +464,11 @@ FFI_PLUGIN_EXPORT int pty_getpid(PtyHandle *handle)
     return (int)handle->dwProcessId;
 }
 
+FFI_PLUGIN_EXPORT int pty_foreground_pgid(PtyHandle *handle)
+{
+    return -1;
+}
+
 FFI_PLUGIN_EXPORT char *pty_error()
 {
     return error_message;

@@ -20,14 +20,19 @@ class IosShellPlugin {
 
   /// Executes a shell command and returns the result.
   ///
+  /// [environment] is applied for the duration of the command only.
+  ///
   /// Returns a map containing:
   /// - `exitCode`: The command's exit code
   /// - `stdout`: Standard output
   /// - `stderr`: Standard error
-  static Future<Map<String, dynamic>> execute(String command) async {
+  static Future<Map<String, dynamic>> execute(
+    String command, {
+    Map<String, String> environment = const <String, String>{},
+  }) async {
     final result = await _channel.invokeMethod<Map<Object?, Object?>>(
       'execute',
-      {'command': command},
+      <String, Object>{'command': command, 'environment': environment},
     );
     return result?.map((k, v) => MapEntry(k.toString(), v)) ?? {};
   }

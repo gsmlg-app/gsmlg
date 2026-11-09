@@ -19,7 +19,9 @@ class TerminalGestureDetector extends StatefulWidget {
     this.onLongPressUp,
     this.onDragStart,
     this.onDragUpdate,
+    this.onDragEnd,
     this.onDoubleTapDown,
+    this.onTripleTapDown,
   });
 
   final Widget? child;
@@ -36,6 +38,8 @@ class TerminalGestureDetector extends StatefulWidget {
 
   final GestureTapDownCallback? onDoubleTapDown;
 
+  final GestureTapDownCallback? onTripleTapDown;
+
   final GestureTapDownCallback? onTertiaryTapDown;
 
   final GestureTapUpCallback? onTertiaryTapUp;
@@ -49,6 +53,8 @@ class TerminalGestureDetector extends StatefulWidget {
   final GestureDragStartCallback? onDragStart;
 
   final GestureDragUpdateCallback? onDragUpdate;
+
+  final GestureDragEndCallback? onDragEnd;
 
   @override
   State<TerminalGestureDetector> createState() =>
@@ -64,6 +70,9 @@ class _TerminalGestureDetectorState extends State<TerminalGestureDetector> {
   // subsequent tap up / tap hold of the same tap.
   bool _isDoubleTap = false;
 
+  // Number of consecutive taps within the double tap timeout and slop.
+  int _tapCount = 0;
+
   // The down handler is force-run on success of a single tap and optimistically
   // run before a long press success.
   void _handleTapDown(TapDownDetails details) {
@@ -71,12 +80,20 @@ class _TerminalGestureDetectorState extends State<TerminalGestureDetector> {
 
     if (_doubleTapTimer != null &&
         _isWithinDoubleTapTolerance(details.globalPosition)) {
-      // If there was already a previous tap, the second down hold/tap is a
-      // double tap down.
-      widget.onDoubleTapDown?.call(details);
+      _tapCount++;
+      if (_tapCount == 2) {
+        widget.onDoubleTapDown?.call(details);
+      } else {
+        widget.onTripleTapDown?.call(details);
+      }
 
       _doubleTapTimer!.cancel();
-      _doubleTapTimeout();
+      if (_tapCount >= 3) {
+        _doubleTapTimeout();
+      } else {
+        _lastTapOffset = details.globalPosition;
+        _doubleTapTimer = Timer(kDoubleTapTimeout, _doubleTapTimeout);
+      }
       _isDoubleTap = true;
     }
   }
@@ -85,6 +102,7 @@ class _TerminalGestureDetectorState extends State<TerminalGestureDetector> {
     if (!_isDoubleTap) {
       widget.onSingleTapUp?.call(details);
       _lastTapOffset = details.globalPosition;
+      _tapCount = 1;
       _doubleTapTimer = Timer(kDoubleTapTimeout, _doubleTapTimeout);
     }
     _isDoubleTap = false;
@@ -93,6 +111,13 @@ class _TerminalGestureDetectorState extends State<TerminalGestureDetector> {
   void _doubleTapTimeout() {
     _doubleTapTimer = null;
     _lastTapOffset = null;
+    _tapCount = 0;
+  }
+
+  @override
+  void dispose() {
+    _doubleTapTimer?.cancel();
+    super.dispose();
   }
 
   bool _isWithinDoubleTapTolerance(Offset secondTapOffset) {
@@ -149,7 +174,8 @@ class _TerminalGestureDetectorState extends State<TerminalGestureDetector> {
         instance
           ..dragStartBehavior = DragStartBehavior.down
           ..onStart = widget.onDragStart
-          ..onUpdate = widget.onDragUpdate;
+          ..onUpdate = widget.onDragUpdate
+          ..onEnd = widget.onDragEnd;
       },
     );
 

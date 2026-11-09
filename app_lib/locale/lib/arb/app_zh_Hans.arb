@@ -312,5 +312,15 @@
   "terminalEnvironmentTitle": "环境变量",
   "shellProfilesTitle": "Shell 配置",
   "terminalBrowserUnsupported": "请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。",
-  "jsonLogInspectorTitle": "JSON 日志检查器"
+  "jsonLogInspectorTitle": "JSON 日志检查器",
+  "optionKeyBehavior": "Option 键行为",
+  "optionKeyBehaviorLeftMeta": "左侧 Meta",
+  "optionKeyBehaviorBothMeta": "两侧 Meta",
+  "optionKeyBehaviorNormal": "正常",
+  "optionKeyBehaviorDescription": "Meta 发送 Esc + 按键；正常模式输入特殊字符。",
+  "closeTabConfirmTitle": "关闭标签页？",
+  "closeTabConfirmMessage": "“{title}” 中有正在运行的程序。关闭标签页将终止它。",
+  "quitConfirmTitle": "退出 GSMLG？",
+  "quitConfirmMessage": "{count, plural, =1{1 个标签页中有正在运行的程序：} other{{count} 个标签页中有正在运行的程序：}}\n{titles}\n\n退出将终止这些程序。",
+  "quit": "退出"
 }

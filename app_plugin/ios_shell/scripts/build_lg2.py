@@ -23,6 +23,13 @@ CMAKE_URL = (
     'cmake-3.31.10-py3-none-macosx_10_10_universal2.whl'
 )
 CMAKE_SHA256 = 'ad697643a00d9ba85179590a383c4f7401169b55ebf4b8b2938daf28c6bdeb6d'
+BUILDS = (
+    ('iphoneos', 'arm64', 'arm64-apple-ios14.0', None),
+    ('iphonesimulator', 'arm64', 'arm64-apple-ios14.0-simulator', 'simulator'),
+    ('iphonesimulator', 'x86_64', 'x86_64-apple-ios14.0-simulator', 'simulator'),
+)
+INIT_ANCHOR = '\tgit_libgit2_init();\n'
+MAIN_ANCHOR = 'int main(int argc, char **argv)\n'
 
 
 def run(command, **kwargs):
@@ -63,20 +70,34 @@ def cmake_binary(work):
     return binary
 
 
-def simulator_slice(framework):
+def platform_slice(framework, variant):
     metadata = plistlib.loads((framework / 'Info.plist').read_bytes())
     for library in metadata['AvailableLibraries']:
-        if library['SupportedPlatform'] == 'ios' and library.get('SupportedPlatformVariant') == 'simulator':
-            return framework / library['LibraryIdentifier']
-    raise ValueError(f'No simulator slice in {framework}')
+        if library['SupportedPlatform'] == 'ios' and library.get('SupportedPlatformVariant') == variant:
+            return framework / library['LibraryIdentifier'], library['LibraryPath']
+    raise ValueError(f'No {variant or "device"} slice in {framework}')
 
 
-def configure_command(cmake, source, build, frameworks, include, sdk, compiler):
-    ssh = simulator_slice(frameworks / 'libssh2.xcframework')
-    ssl = simulator_slice(frameworks / 'openssl.xcframework')
-    ios = simulator_slice(frameworks / 'ios_system.xcframework')
+def replace_once(path, anchor, replacement):
+    text = path.read_text()
+    if text.count(anchor) != 1:
+        raise ValueError(f'Expected exactly one {anchor!r} in {path}')
+    path.write_text(text.replace(anchor, replacement))
+
+
+def add_lfs_filter(source):
+    shutil.copyfile(Path(__file__).resolve().parent / 'lg2/lfs_filter.c', source / 'examples/lfs_filter.c')
+    lg2 = source / 'examples/lg2.c'
+    replace_once(lg2, MAIN_ANCHOR, 'int lg2_lfs_filter_register(void);\n\n' + MAIN_ANCHOR)
+    replace_once(lg2, INIT_ANCHOR, INIT_ANCHOR + '\tlg2_lfs_filter_register();\n')
+
+
+def configure_command(cmake, source, build, frameworks, include, sdk, compiler, architecture, target, variant):
+    ssh = platform_slice(frameworks / 'libssh2.xcframework', variant)[0]
+    ssl = platform_slice(frameworks / 'openssl.xcframework', variant)[0]
+    ios = platform_slice(frameworks / 'ios_system.xcframework', variant)[0]
     flags = [
-        '-target', 'arm64-apple-ios14.0-simulator',
+        '-target', target,
         '-I', str(ssh / 'libssh2.framework/Headers'),
         '-I', str(ios / 'ios_system.framework/Headers'), '-I', str(include),
         '-F', str(ssh), '-F', str(ssl), '-F', str(ios),
@@ -86,7 +107,7 @@ def configure_command(cmake, source, build, frameworks, include, sdk, compiler):
         cmake, '-S', source, '-B', build,
         '-DREGEX_BACKEND=builtin', '-DBUILD_CLAR=OFF', '-DBUILD_EXAMPLES=ON',
         '-DBUILD_SHARED_LIBS=OFF', '-DTHREADSAFE=OFF', '-DCMAKE_BUILD_TYPE=Release',
-        '-DCMAKE_SYSTEM_NAME=iOS', '-DCMAKE_OSX_ARCHITECTURES=arm64',
+        '-DCMAKE_SYSTEM_NAME=iOS', f'-DCMAKE_OSX_ARCHITECTURES={architecture}',
         '-DCMAKE_OSX_DEPLOYMENT_TARGET=14.0', f'-DCMAKE_OSX_SYSROOT={sdk}',
         f'-DCMAKE_C_COMPILER={compiler}', f'-DCMAKE_C_FLAGS={shlex.join(flags)}',
         f'-DCMAKE_EXE_LINKER_FLAGS={shlex.join(linker_flags)}',
@@ -111,66 +132,89 @@ def dylib_command(link_file, output):
     ]
 
 
-def merge_simulator(framework, binary):
-    metadata_file = framework / 'Info.plist'
-    metadata = plistlib.loads(metadata_file.read_bytes())
-    original = next(
-        library for library in metadata['AvailableLibraries']
-        if library['SupportedPlatform'] == 'ios'
-        and library.get('SupportedPlatformVariant') == 'simulator'
-    )
-    original_slice = framework / original['LibraryIdentifier']
-    target_identifier = 'ios-arm64_x86_64-simulator'
-    target_slice = framework / target_identifier
-    if original_slice != target_slice:
-        shutil.copytree(original_slice, target_slice, symlinks=True)
-    library = target_slice / original['LibraryPath']
-    run(['xcrun', 'lipo', '-create', original_slice / original['LibraryPath'] / 'lg2', binary,
-         '-output', library / 'lg2'])
-    run(['codesign', '--force', '--sign', '-', '--timestamp=none', library])
-    original['LibraryIdentifier'] = target_identifier
-    original['SupportedArchitectures'] = ['arm64', 'x86_64']
-    metadata_file.write_bytes(plistlib.dumps(metadata))
-    if original_slice != target_slice:
-        shutil.rmtree(original_slice)
-    architectures = subprocess.check_output(['xcrun', 'lipo', '-archs', library / 'lg2'], text=True).split()
-    if set(architectures) != {'arm64', 'x86_64'}:
-        raise ValueError(f'Unexpected lg2 simulator architectures: {architectures}')
+def build_binary(cmake, source, frameworks, include, work, build, environment):
+    sdk_name, architecture, target, variant = build
+    sdk = subprocess.check_output(['xcrun', '--sdk', sdk_name, '--show-sdk-path'], text=True).strip()
+    compiler = subprocess.check_output(['xcrun', '--find', 'clang'], text=True).strip()
+    directory = work / f'build-{sdk_name}-{architecture}'
+    run(configure_command(cmake, source, directory, frameworks, include, sdk, compiler,
+                          architecture, target, variant), env=environment)
+    run([cmake, '--build', directory, '--parallel', str(min(os.cpu_count() or 1, 6))], env=environment)
+    binary = work / f'lg2-{sdk_name}-{architecture}'
+    run(dylib_command(directory / 'examples/CMakeFiles/lg2.dir/link.txt', binary),
+        cwd=directory / 'examples', env=environment)
+    return binary
 
 
-def build_simulator(frameworks, work):
+def wrap_framework(output, binaries, info_plist):
+    framework = output / 'lg2.framework'
+    framework.mkdir(parents=True)
+    shutil.copyfile(info_plist, framework / 'Info.plist')
+    run(['xcrun', 'lipo', '-create', *binaries, '-output', framework / 'lg2'])
+    return framework
+
+
+def verify_framework(framework, expected):
+    binary = framework / 'lg2'
+    architectures = subprocess.check_output(['xcrun', 'lipo', '-archs', binary], text=True).split()
+    if set(architectures) != set(expected):
+        raise ValueError(f'Unexpected lg2 architectures in {framework}: {architectures}')
+    for architecture in expected:
+        symbols = subprocess.check_output(['xcrun', 'nm', '-gU', '-arch', architecture, binary], text=True).split()
+        for symbol in ('_main', '_lg2_lfs_filter_register'):
+            if symbol not in symbols:
+                raise ValueError(f'{symbol} is not exported by {binary} ({architecture})')
+
+
+def install_xcframework(frameworks, work, binaries):
+    current = frameworks / 'lg2.xcframework'
+    device, device_path = platform_slice(current, None)
+    simulator, simulator_path = platform_slice(current, 'simulator')
+    device_framework = wrap_framework(work / 'device', binaries[:1], device / device_path / 'Info.plist')
+    simulator_framework = wrap_framework(work / 'simulator', binaries[1:], simulator / simulator_path / 'Info.plist')
+    run(['codesign', '--force', '--sign', '-', '--timestamp=none', simulator_framework])
+    verify_framework(device_framework, ['arm64'])
+    verify_framework(simulator_framework, ['arm64', 'x86_64'])
+    output = work / 'lg2.xcframework'
+    run(['xcodebuild', '-create-xcframework', '-framework', device_framework,
+         '-framework', simulator_framework, '-output', output])
+    identifiers = {
+        library['LibraryIdentifier']
+        for library in plistlib.loads((output / 'Info.plist').read_bytes())['AvailableLibraries']
+    }
+    if identifiers != {'ios-arm64', 'ios-arm64_x86_64-simulator'}:
+        raise ValueError(f'Unexpected lg2.xcframework slices: {sorted(identifiers)}')
+    shutil.rmtree(current)
+    shutil.copytree(output, current, symlinks=True)
+
+
+def build_lg2(frameworks, work):
     archive = work / 'libgit2.tar.gz'
     download(f'https://codeload.github.com/holzschu/libgit2/tar.gz/{SOURCE_COMMIT}', SOURCE_SHA256, archive)
     with tarfile.open(archive) as source_archive:
         source_archive.extractall(work)
     source = work / f'libgit2-{SOURCE_COMMIT}'
+    add_lfs_filter(source)
     include = work / 'include'
     include.mkdir()
     download('https://github.com/holzschu/ios_system/releases/download/v3.0.4/ios_error.h',
              HEADER_SHA256, include / 'ios_error.h')
     cmake = cmake_binary(work)
-    sdk = subprocess.check_output(['xcrun', '--sdk', 'iphonesimulator', '--show-sdk-path'], text=True).strip()
-    compiler = subprocess.check_output(['xcrun', '--find', 'clang'], text=True).strip()
-    build = work / 'build'
     environment = os.environ.copy()
     environment.pop('PKG_CONFIG_PATH', None)
     environment['PKG_CONFIG_LIBDIR'] = str(work / 'empty-pkgconfig')
-    run(configure_command(cmake, source, build, frameworks, include, sdk, compiler), env=environment)
-    run([cmake, '--build', build, '--parallel', str(min(os.cpu_count() or 1, 6))], env=environment)
-    binary = work / 'lg2-arm64-simulator'
-    run(dylib_command(build / 'examples/CMakeFiles/lg2.dir/link.txt', binary),
-        cwd=build / 'examples', env=environment)
-    merge_simulator(frameworks / 'lg2.xcframework', binary)
+    binaries = [build_binary(cmake, source, frameworks, include, work, build, environment) for build in BUILDS]
+    install_xcframework(frameworks, work, binaries)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Add the missing lg2 arm64 iOS simulator slice from pinned source.')
+    parser = argparse.ArgumentParser(description='Build lg2 with the Git LFS filter from pinned source for iOS device and simulator.')
     parser.add_argument('--frameworks-dir', required=True, type=Path)
     arguments = parser.parse_args()
     if sys.platform != 'darwin':
         parser.error('An Xcode-equipped macOS host is required')
     with tempfile.TemporaryDirectory(prefix='ios-shell-lg2-') as work:
-        build_simulator(arguments.frameworks_dir.resolve(), Path(work))
+        build_lg2(arguments.frameworks_dir.resolve(), Path(work))
 
 
 if __name__ == '__main__':

@@ -79,7 +79,7 @@ void main() {
         terminal.buffer.getText(
           BufferRangeBlock(CellOffset(2, 0), CellOffset(5, 1)),
         ),
-        startsWith('llo\nce '),
+        startsWith('llo\nce'),
       );
     });
   });
@@ -242,6 +242,37 @@ void main() {
       expect(terminal.buffer.lines[0].toString(), '123');
       expect(terminal.buffer.lines[1].toString(), '4');
       expect(terminal.buffer.lines[2].toString(), '');
+    });
+  });
+
+  group('Buffer.writeChar()', () {
+    test('wraps a wide char that does not fit in the last column', () {
+      final terminal = Terminal();
+      terminal.resize(5, 3);
+      terminal.write('abcd你x');
+
+      expect(terminal.buffer.lines[0].getText(), 'abcd');
+      expect(terminal.buffer.lines[1].isWrapped, isTrue);
+      expect(terminal.buffer.lines[1].getText(), '你x');
+      expect(terminal.buffer.cursorX, 3);
+      expect(terminal.buffer.cursorY, 1);
+    });
+
+    test('keeps a wide char on the line when it fits exactly', () {
+      final terminal = Terminal();
+      terminal.resize(5, 3);
+      terminal.write('abc你');
+
+      expect(terminal.buffer.lines[0].getText(), 'abc你');
+      expect(terminal.buffer.cursorY, 0);
+    });
+
+    test('zero-width code points do not occupy a cell', () {
+      final terminal = Terminal();
+      terminal.write('café|');
+
+      expect(terminal.buffer.cursorX, 5);
+      expect(terminal.buffer.lines[0].getText(), 'cafe|');
     });
   });
 }

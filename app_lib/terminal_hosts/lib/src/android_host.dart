@@ -174,11 +174,15 @@ class AndroidExecutionResult implements ExecutionResult {
 }
 
 /// Session for an interactive shell on Android.
-class AndroidExecutionSession implements ExecutionSession {
+class AndroidExecutionSession
+    implements ExecutionSession, ForegroundProcessAware {
   final Pty _pty;
 
   /// Creates an [AndroidExecutionSession] from a [Pty].
   AndroidExecutionSession(this._pty);
+
+  @override
+  Future<bool> hasForegroundProcess() async => false;
 
   @override
   Future<int> get exitCode => _pty.exitCode;

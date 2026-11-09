@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^9.1.1
+  app_locale: any
   terminal_core: any
   syncfusion_flutter_datagrid: ^35.1.40+1
 

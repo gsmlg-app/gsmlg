@@ -103,6 +103,10 @@ class UpDownMouseHandler implements TerminalMouseHandler {
             event.buttonState == TerminalMouseButtonState.up) {
           return null;
         }
+        if (event.buttonState == TerminalMouseButtonState.motion &&
+            event.state.mouseMode == MouseMode.upDownScroll) {
+          return null;
+        }
         return MouseReporter.report(
           event.button,
           event.buttonState,

@@ -187,6 +187,21 @@ class Pty {
   /// The process id of the process running in the pseudo-terminal.
   int get pid => _pid;
 
+  /// The process group currently in the foreground of the pseudo-terminal,
+  /// or null when it is unknown (Windows) or the process has exited.
+  int? get foregroundProcessGroup {
+    if (_handle == nullptr || _closeFuture != null) return null;
+    final group = _bindings.pty_foreground_pgid(_handle);
+    return group > 0 ? group : null;
+  }
+
+  /// Whether a program other than the spawned process (typically the shell)
+  /// is running in the foreground, e.g. `vim`, `ssh` or a long build.
+  bool get hasForegroundProcess {
+    final group = foregroundProcessGroup;
+    return group != null && group != _pid;
+  }
+
   /// Write data to the pseudo-terminal.
   void write(Uint8List data) {
     if (_handle == nullptr || _closeFuture != null) return;

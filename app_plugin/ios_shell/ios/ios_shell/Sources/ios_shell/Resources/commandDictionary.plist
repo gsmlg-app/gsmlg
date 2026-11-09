@@ -455,6 +455,13 @@
         <string></string>
         <string>file</string>
     </array>
+    <key>git</key>
+    <array>
+        <string>MAIN</string>
+        <string>webterminal_git_main</string>
+        <string></string>
+        <string>file</string>
+    </array>
     <key>python</key>
     <array>
         <string>MAIN</string>

@@ -6,10 +6,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:terminal_core/terminal_core.dart';
 import 'package:terminal_plugin/src/terminal_extra_keys.dart';
 import 'package:terminal_plugin/src/terminal_menu.dart';
 import 'package:terminal_plugin/src/terminal_shortcut_handler.dart';
+import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
 import 'package:xterm/xterm.dart';
 
 class TerminalPlugin extends Plugin {
@@ -21,6 +23,7 @@ class TerminalPlugin extends Plugin {
   }) : terminal = Terminal(
           maxLines: scrollbackLines,
           batchWrites: true,
+          platform: _terminalTargetPlatform(),
         );
 
   final Terminal terminal;
@@ -44,6 +47,23 @@ class TerminalPlugin extends Plugin {
   String? _workingDirectoryTitle;
 
   ExecutionSession? session;
+
+  /// Whether closing this terminal would kill a running program.
+  ///
+  /// Sessions that cannot report their foreground process (e.g. SSH) are
+  /// treated as busy while open, since closing them drops the connection.
+  Future<bool> isBusy() async {
+    final activeSession = session;
+    if (activeSession == null) return false;
+    if (activeSession case final ForegroundProcessAware aware) {
+      try {
+        return await aware.hasForegroundProcess();
+      } catch (_) {
+        return true;
+      }
+    }
+    return true;
+  }
 
   StreamSubscription<String>? _outputSubscription;
   int _sessionGeneration = 0;
@@ -376,6 +396,9 @@ class _TerminalTabViewState extends State<TerminalTabView>
                       backgroundOpacity: 0.8,
                       autofocus: true,
                       cursorType: widget.plugin.profileCursorType,
+                      macOptionKeyBehavior: _selectMacOptionKeyBehavior(
+                        context,
+                      ),
                       textStyle: TerminalStyle(
                         fontSize: widget.plugin.profileFontSize,
                         fontFamily: widget.plugin.profileFontFamily,
@@ -495,4 +518,30 @@ class _ConnectionErrorOverlay extends StatelessWidget {
       ),
     );
   }
+}
+
+TerminalTargetPlatform _terminalTargetPlatform() {
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.macOS) {
+    return TerminalTargetPlatform.macos;
+  }
+  return TerminalTargetPlatform.unknown;
+}
+
+MacOptionKeyBehavior _selectMacOptionKeyBehavior(BuildContext context) {
+  return context.select<TerminalSettingsBloc?, MacOptionKeyBehavior>(
+    (TerminalSettingsBloc? bloc) {
+      final state = bloc?.state;
+      final behavior = state is TerminalSettingsLoaded
+          ? state.optionKeyBehavior
+          : kTerminalDefaultOptionKeyBehavior;
+      switch (behavior) {
+        case TerminalOptionKeyBehavior.leftMeta:
+          return MacOptionKeyBehavior.leftMeta;
+        case TerminalOptionKeyBehavior.bothMeta:
+          return MacOptionKeyBehavior.bothMeta;
+        case TerminalOptionKeyBehavior.normal:
+          return MacOptionKeyBehavior.normal;
+      }
+    },
+  );
 }

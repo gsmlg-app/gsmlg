@@ -47,6 +47,10 @@ FFI_PLUGIN_EXPORT int pty_resize(PtyHandle *handle, int rows, int cols);
 
 FFI_PLUGIN_EXPORT int pty_getpid(PtyHandle *handle);
 
+/// Returns the foreground process group of the terminal, or -1 if it is
+/// unknown or the child has exited.
+FFI_PLUGIN_EXPORT int pty_foreground_pgid(PtyHandle *handle);
+
 FFI_PLUGIN_EXPORT int pty_terminate(PtyHandle *handle, int signal_number);
 
 FFI_PLUGIN_EXPORT int pty_kill(PtyHandle *handle, int signal_number);

@@ -1,7 +1,58 @@
+import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:terminal_settings/terminal_settings.dart';
+import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
+
+class _RecordingTerminalSettingsBloc
+    extends Bloc<TerminalSettingsEvent, TerminalSettingsState>
+    implements TerminalSettingsBloc {
+  _RecordingTerminalSettingsBloc() : super(const TerminalSettingsLoaded()) {
+    on<TerminalSettingsUpdateOptionKeyBehavior>(
+      (
+        TerminalSettingsUpdateOptionKeyBehavior event,
+        Emitter<TerminalSettingsState> emit,
+      ) {
+        events.add(event);
+        emit(
+          (state as TerminalSettingsLoaded).copyWith(
+            optionKeyBehavior: event.optionKeyBehavior,
+          ),
+        );
+      },
+    );
+  }
+
+  final List<TerminalSettingsEvent> events = <TerminalSettingsEvent>[];
+}
+
+Future<void> _pumpSection(
+  WidgetTester tester,
+  TerminalSettingsBloc bloc,
+) async {
+  await tester.pumpWidget(
+    BlocProvider<TerminalSettingsBloc>.value(
+      value: bloc,
+      child: MaterialApp(
+        locale: const Locale('en'),
+        localizationsDelegates: AppLocale.localizationsDelegates,
+        supportedLocales: AppLocale.supportedLocales,
+        home: Scaffold(
+          body: SettingsList(
+            sections: <AbstractSettingsSection>[
+              SettingsSectionTerminal(
+                envSettingsScreenName: 'env',
+                onEnvSettingsPressed: (_) {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
 
 void main() {
   group('SettingsSectionTerminal', () {
@@ -148,5 +199,38 @@ void main() {
         expect(section, isA<AbstractSettingsSection>());
       });
     });
+  });
+
+  group('Option key behavior', () {
+    testWidgets('is shown on macOS and dispatches the selected value',
+        (WidgetTester tester) async {
+      final bloc = _RecordingTerminalSettingsBloc();
+      addTearDown(bloc.close);
+
+      await _pumpSection(tester, bloc);
+
+      expect(find.text('Option Key Behavior'), findsOneWidget);
+      expect(find.text('Left Meta'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('optionKeyBehaviorDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Both Meta').last);
+      await tester.pumpAndSettle();
+
+      expect(bloc.events, <TerminalSettingsEvent>[
+        const TerminalSettingsUpdateOptionKeyBehavior(
+          optionKeyBehavior: TerminalOptionKeyBehavior.bothMeta,
+        ),
+      ]);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
+    testWidgets('is hidden on other platforms', (WidgetTester tester) async {
+      final bloc = _RecordingTerminalSettingsBloc();
+      addTearDown(bloc.close);
+
+      await _pumpSection(tester, bloc);
+
+      expect(find.text('Option Key Behavior'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
   });
 }

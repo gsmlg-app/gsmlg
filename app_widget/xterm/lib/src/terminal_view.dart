@@ -6,6 +6,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:xterm/src/core/buffer/cell_offset.dart';
 import 'package:xterm/src/core/input/keys.dart';
+import 'package:xterm/src/core/input/mac_option.dart';
+import 'package:xterm/src/core/platform.dart';
 import 'package:xterm/src/terminal.dart';
 import 'package:xterm/src/ui/controller.dart';
 import 'package:xterm/src/ui/cursor_type.dart';
@@ -52,6 +54,7 @@ class TerminalView extends StatefulWidget {
     this.readOnly = false,
     this.hardwareKeyboardOnly = false,
     this.simulateScroll = true,
+    this.macOptionKeyBehavior = MacOptionKeyBehavior.leftMeta,
   });
 
   /// The underlying terminal that this widget renders.
@@ -154,6 +157,10 @@ class TerminalView extends StatefulWidget {
   /// keys to the application. This is standard behavior for most terminal
   /// emulators. True by default.
   final bool simulateScroll;
+
+  /// How the Option keys behave when the terminal platform is
+  /// [TerminalTargetPlatform.macos]. Ignored on other platforms.
+  final MacOptionKeyBehavior macOptionKeyBehavior;
 
   @override
   State<TerminalView> createState() => TerminalViewState();
@@ -270,7 +277,9 @@ class TerminalViewState extends State<TerminalView> {
     child = TerminalScrollGestureHandler(
       terminal: widget.terminal,
       simulateScroll: widget.simulateScroll,
-      getCellOffset: (offset) => renderTerminal.getCellOffset(offset),
+      getCellOffset: (offset) => renderTerminal.getCellOffset(
+        renderTerminal.globalToLocal(offset),
+      ),
       getLineHeight: () => renderTerminal.lineHeight,
       child: child,
     );
@@ -321,6 +330,7 @@ class TerminalViewState extends State<TerminalView> {
     child = TerminalActions(
       terminal: widget.terminal,
       controller: _controller,
+      onPaste: _scrollToBottom,
       child: child,
     );
 
@@ -493,6 +503,11 @@ class TerminalViewState extends State<TerminalView> {
       return KeyEventResult.handled;
     }
 
+    if (_handleMacOptionMeta(event)) {
+      _scrollToBottom();
+      return KeyEventResult.handled;
+    }
+
     final key = keyToTerminalKey(event.logicalKey);
 
     if (key == null) {
@@ -511,6 +526,44 @@ class TerminalViewState extends State<TerminalView> {
     }
 
     return handled ? KeyEventResult.handled : KeyEventResult.ignored;
+  }
+
+  bool _handleMacOptionMeta(KeyEvent event) {
+    if (widget.readOnly ||
+        widget.terminal.platform != TerminalTargetPlatform.macos) {
+      return false;
+    }
+
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isControlPressed || keyboard.isMetaPressed) {
+      return false;
+    }
+
+    final pressed = keyboard.logicalKeysPressed;
+    final sendsMeta = widget.macOptionKeyBehavior.sendsMeta(
+      leftOption: pressed.contains(LogicalKeyboardKey.altLeft),
+      rightOption: pressed.contains(LogicalKeyboardKey.altRight),
+    );
+    if (!sendsMeta) {
+      return false;
+    }
+
+    final keyId = event.logicalKey.keyId;
+    if (keyId & LogicalKeyboardKey.planeMask !=
+        LogicalKeyboardKey.unicodePlane) {
+      return false;
+    }
+
+    final output = macOptionMetaInput(
+      keyId & LogicalKeyboardKey.valueMask,
+      shift: keyboard.isShiftPressed,
+    );
+    if (output == null) {
+      return false;
+    }
+
+    widget.terminal.textInput(output);
+    return true;
   }
 
   bool _handleScrollKeyEvent(KeyEvent event) {

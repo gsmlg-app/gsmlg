@@ -110,7 +110,16 @@ class Buffer {
     codePoint = charset.translate(codePoint);
 
     final cellWidth = unicodeV11.wcwidth(codePoint);
-    if (_cursorX >= terminal.viewWidth) {
+    if (cellWidth == 0) {
+      return;
+    }
+
+    final wideAtLastColumn =
+        cellWidth == 2 && viewWidth > 1 && _cursorX == viewWidth - 1;
+    if (_cursorX >= viewWidth || wideAtLastColumn) {
+      if (wideAtLastColumn) {
+        currentLine.eraseCell(_cursorX, terminal.cursor);
+      }
       index();
       setCursorX(0);
       if (terminal.autoWrapMode) {
@@ -118,16 +127,18 @@ class Buffer {
       }
     }
 
-    final line = currentLine;
-    line.setCell(_cursorX, codePoint, cellWidth, terminal.cursor);
-
-    if (_cursorX < viewWidth) {
-      _cursorX++;
-    }
-
+    _putCell(codePoint, cellWidth);
     if (cellWidth == 2) {
-      writeChar(0);
+      _putCell(0, 0);
     }
+  }
+
+  void _putCell(int codePoint, int cellWidth) {
+    if (_cursorX >= viewWidth) {
+      return;
+    }
+    currentLine.setCell(_cursorX, codePoint, cellWidth, terminal.cursor);
+    _cursorX++;
   }
 
   /// The line at the current cursor position.
@@ -575,7 +586,11 @@ class Buffer {
           line.isWrapped)) {
         builder.write("\n");
       }
-      builder.write(line.getText(segment.start, segment.end));
+      final text = line.getText(segment.start, segment.end);
+      final nextLine = segment.line + 1;
+      final continuesOnNextLine =
+          nextLine < height && lines[nextLine].isWrapped;
+      builder.write(continuesOnNextLine ? text : text.trimRight());
     }
 
     return builder.toString();

@@ -9,6 +9,9 @@ import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_database/app_database.dart';
+import 'package:app_locale/app_locale.dart';
+import 'package:file_manager_plugin/file_manager_plugin.dart';
+import 'package:flex_tabs/flex_tabs.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:app_logging/app_logging.dart';
 import 'package:shell_profile_bloc/shell_profile_bloc.dart';
@@ -23,6 +26,7 @@ import 'package:terminal_tabs/terminal_tabs.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:xterm/xterm.dart' show TerminalCursorType;
 
+import 'close_confirmation.dart';
 import 'widgets/widgets.dart';
 
 class TerminalScreen extends StatefulWidget {
@@ -129,9 +133,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     }
     // TODO(upstream): gsmlg-app/web-terminal#6 - wait for profile readiness.
     final profileState = context.read<ShellProfileBloc>().state;
-    if (settingsState.restoreTerminalTabs &&
-        (profileState is ShellProfileInitial ||
-            profileState is ShellProfileLoading)) {
+    if (profileState is! ShellProfileLoaded) {
       return;
     }
 
@@ -200,6 +202,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
   }
 
   void _openLocalShell() {
+    if (context.read<ShellProfileBloc>().state is! ShellProfileLoaded) return;
     if (!_checkMaxShellsLimit()) return;
 
     selectProfileAndOpenShell(
@@ -432,9 +435,14 @@ class _TerminalScreenState extends State<TerminalScreen> {
         );
         return true;
       case 'ssh':
+      case 'sftp':
         final hostId = item['hostId'];
         if (hostId is! int) return false;
-        return _restoreSshSession(hostId, activate: activate);
+        return _restoreSshSession(
+          hostId,
+          activate: activate,
+          sftp: item['type'] == 'sftp',
+        );
       default:
         return false;
     }
@@ -450,7 +458,11 @@ class _TerminalScreenState extends State<TerminalScreen> {
     return null;
   }
 
-  Future<bool> _restoreSshSession(int hostId, {required bool activate}) async {
+  Future<bool> _restoreSshSession(
+    int hostId, {
+    required bool activate,
+    bool sftp = false,
+  }) async {
     try {
       final database = context.read<AppDatabase>();
       final host = await (database.select(
@@ -467,7 +479,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
       }
 
       if (!mounted) return false;
-      final plugin = _createTerminalPlugin();
+      final Plugin plugin = sftp
+          ? FileManagerPlugin()
+          : _createTerminalPlugin();
       final manager = PluginManager(_sshHostSpec(host, keyData: keyData));
       final tabItem = PluginTab(plugin, manager);
       _terminalTabBloc.add(TerminalTabOpenTab(tabItem, activate: activate));
@@ -509,7 +523,14 @@ class _TerminalScreenState extends State<TerminalScreen> {
     final tabState = _terminalTabBloc.state;
     if (tabState is! TerminalTabLoaded) return;
 
-    final tabs = tabState.allTabs.whereType<PluginTab>().toList();
+    final tabs = <PluginTab>[];
+    final descriptors = <Map<String, Object?>>[];
+    for (final tab in tabState.allTabs.whereType<PluginTab>()) {
+      final descriptor = _encodeTab(tab);
+      if (descriptor == null) continue;
+      tabs.add(tab);
+      descriptors.add(descriptor);
+    }
     if (tabs.isEmpty) {
       await prefs.remove(_persistedTabsKey);
       return;
@@ -519,7 +540,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     final activeIndex = tabs.indexWhere((tab) => identical(tab, activeTab));
     final payload = <String, Object?>{
       'activeIndex': activeIndex >= 0 ? activeIndex : 0,
-      'tabs': tabs.map(_encodeTab).whereType<Map<String, Object?>>().toList(),
+      'tabs': descriptors,
     };
     await prefs.setString(_persistedTabsKey, jsonEncode(payload));
   }
@@ -528,9 +549,14 @@ class _TerminalScreenState extends State<TerminalScreen> {
   Map<String, Object?>? _encodeTab(PluginTab tab) {
     final hostSpec = tab.manager.hostSpec;
     if (hostSpec is SSHHostSpec) {
-      return {'type': 'ssh', 'hostId': hostSpec.record.id};
+      return {
+        'type': tab.plugin is FileManagerPlugin ? 'sftp' : 'ssh',
+        'hostId': hostSpec.record.id,
+      };
     }
-    if (hostSpec is LocalHostSpec) {
+    if (hostSpec is LocalHostSpec ||
+        hostSpec is AndroidHostSpec ||
+        hostSpec is IosHostSpec) {
       return {
         'type': 'local',
         'profileId': tab.shellProfileId,
@@ -540,21 +566,50 @@ class _TerminalScreenState extends State<TerminalScreen> {
     return null;
   }
 
-  // TODO(upstream): gsmlg-app/web-terminal#5 - implement the source SFTP action.
-  void _openSftpSession() {
-    // SFTP is planned for future release
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('SFTP support coming soon'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  Future<void> _openSftpSession() async {
+    if (!_checkMaxShellsLimit()) return;
+    final host = await SshHostSelector.show(context);
+    if (host == null || !mounted || !_checkMaxShellsLimit()) return;
+
+    try {
+      SshKeyData? keyData;
+      if (SshIdentityType.fromValue(host.identityType) == SshIdentityType.key) {
+        final keyId = host.identityKeyId;
+        if (keyId == null) throw StateError('SSH key not found');
+        keyData = await _loadSshKeyData(keyId);
+      }
+      if (!mounted || !_checkMaxShellsLimit()) return;
+      PluginManager? manager;
+      final state = _terminalTabBloc.state;
+      if (state is TerminalTabLoaded && state.activeTab is PluginTab) {
+        final activeManager = (state.activeTab as PluginTab).manager;
+        final spec = activeManager.hostSpec;
+        if (activeManager.isConnected &&
+            spec is SSHHostSpec &&
+            spec.record == host) {
+          manager = activeManager;
+        }
+      }
+      manager ??= PluginManager(_sshHostSpec(host, keyData: keyData));
+      final tab = PluginTab(FileManagerPlugin(), manager);
+      _terminalTabBloc.add(TerminalTabOpenTab(tab));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${context.l10n.error}: $error'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   Future<void> _showTabSwitcher() async {
     final state = _terminalTabBloc.state;
     if (state is! TerminalTabLoaded) return;
-    final sessions = _buildSessionList(state);
+    final busyTabs = (await findBusyTabs(state.allTabs)).toSet();
+    if (!mounted) return;
+    final sessions = _buildSessionList(state, busyTabs: busyTabs);
     if (sessions.isEmpty) return;
     final currentId = state.activeTab?.hashCode.toString();
     final result = await showTabSwitcher(
@@ -582,6 +637,25 @@ class _TerminalScreenState extends State<TerminalScreen> {
         }
         _requestTerminalFocus();
     }
+  }
+
+  Future<void> _closeActiveTab() async {
+    final state = _terminalTabBloc.state;
+    final activeTab = state is TerminalTabLoaded ? state.activeTab : null;
+    if (activeTab == null) return;
+    if (!await confirmCloseTab(context, activeTab)) {
+      _requestTerminalFocus();
+      return;
+    }
+    if (!mounted) return;
+    final current = _terminalTabBloc.state;
+    if (current is! TerminalTabLoaded || !current.allTabs.contains(activeTab)) {
+      return;
+    }
+    _terminalTabBloc.add(
+      TerminalTabCloseSession(activeTab.hashCode.toString()),
+    );
+    _requestTerminalFocus();
   }
 
   /// Signals the active TerminalView to request focus after a tab switch.
@@ -630,8 +704,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
         defaultTargetPlatform == TargetPlatform.macOS ||
         defaultTargetPlatform == TargetPlatform.iOS;
 
-    // New tab: Ctrl+T, Ctrl+Shift+T, or Cmd+T (macOS/iOS)
-    if (key == LogicalKeyboardKey.keyT && (ctrl || (isApple && meta))) {
+    // New tab: Cmd+T (macOS/iOS) or Ctrl+T / Ctrl+Shift+T (other platforms)
+    if (key == LogicalKeyboardKey.keyT && (isApple ? meta : ctrl)) {
       _openNewTabFromActiveSession();
       return KeyEventResult.handled;
     }
@@ -639,13 +713,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     // Close active tab: Cmd+W (macOS/iOS) or Ctrl+Shift+W (Linux/Win)
     if (key == LogicalKeyboardKey.keyW &&
         ((isApple && meta && !shift) || (ctrl && shift))) {
-      final state = _terminalTabBloc.state;
-      if (state is TerminalTabLoaded && state.activeTab != null) {
-        _terminalTabBloc.add(
-          TerminalTabCloseSession(state.activeTab.hashCode.toString()),
-        );
-        _requestTerminalFocus();
-      }
+      unawaited(_closeActiveTab());
       return KeyEventResult.handled;
     }
 
@@ -698,14 +766,16 @@ class _TerminalScreenState extends State<TerminalScreen> {
     return KeyEventResult.ignored;
   }
 
-  List<SessionInfo> _buildSessionList(TerminalTabLoaded state) {
+  List<SessionInfo> _buildSessionList(
+    TerminalTabLoaded state, {
+    Set<TabItem> busyTabs = const <TabItem>{},
+  }) {
     return state.allTabs.map((tab) {
       String name = 'Terminal';
-      bool isRunning = false;
       if (tab is PluginTab) {
         name = tab.displayTitle;
-        isRunning = tab.manager.isConnected;
       }
+      final isRunning = busyTabs.contains(tab);
       return SessionInfo(
         id: tab.hashCode.toString(),
         name: name,
@@ -842,30 +912,38 @@ class _TerminalScreenState extends State<TerminalScreen> {
 
     if (activeTab == null) {
       // No active tab, show empty state
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.terminal,
-              size: 64,
-              color: Theme.of(context).colorScheme.outline,
+      return BlocBuilder<ShellProfileBloc, ShellProfileState>(
+        builder: (context, profileState) {
+          if (profileState is ShellProfileError) {
+            return Center(
+              child: Text('${context.l10n.error}: ${profileState.error}'),
+            );
+          }
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.terminal,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No active session',
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(color: Theme.of(context).colorScheme.outline),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: _openLocalShell,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Open Local Shell'),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No active session',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.outline,
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _openLocalShell,
-              icon: const Icon(Icons.add),
-              label: const Text('Open Local Shell'),
-            ),
-          ],
-        ),
+          );
+        },
       );
     }
 

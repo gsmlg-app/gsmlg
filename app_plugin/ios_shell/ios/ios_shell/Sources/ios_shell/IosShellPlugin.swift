@@ -143,6 +143,7 @@ public class IosShellPlugin: NSObject, FlutterPlugin {
         "lua": lua_main,
         "luac": luac_main,
         "lg2": webterminal_lg2_main,
+        "git": webterminal_git_main,
         "python": webterminal_python_main,
         "python3": webterminal_python_main,
     ]
@@ -171,7 +172,8 @@ public class IosShellPlugin: NSObject, FlutterPlugin {
         case "execute":
             if let args = call.arguments as? [String: Any],
                let command = args["command"] as? String {
-                execute(command: command, result: result)
+                let environment = args["environment"] as? [String: String] ?? [:]
+                execute(command: command, environment: environment, result: result)
             } else {
                 result(FlutterError(code: "INVALID_ARGS", message: "Missing command", details: nil))
             }
@@ -271,7 +273,7 @@ public class IosShellPlugin: NSObject, FlutterPlugin {
         ])
     }
 
-    private func execute(command: String, result: @escaping FlutterResult) {
+    private func execute(command: String, environment: [String: String], result: @escaping FlutterResult) {
         guard isInitialized else {
             result(FlutterError(code: "NOT_INITIALIZED", message: "Shell not initialized", details: nil))
             return
@@ -284,7 +286,17 @@ public class IosShellPlugin: NSObject, FlutterPlugin {
             return
         }
 
-        result(webterminal_execute_command(trimmed))
+        let output = webterminal_execute_command(trimmed, environment) ?? [:]
+        result([
+            "exitCode": output["exitCode"] ?? 1,
+            "stdout": IosShellPlugin.decode(output["stdout"]),
+            "stderr": IosShellPlugin.decode(output["stderr"]),
+        ])
+    }
+
+    private static func decode(_ value: Any?) -> String {
+        guard let data = value as? Data else { return "" }
+        return String(decoding: data, as: UTF8.self)
     }
 
     private func listCommands(result: @escaping FlutterResult) {

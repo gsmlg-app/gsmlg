@@ -453,6 +453,22 @@ class FlutterPtyBindings {
   late final _pty_getpid =
       _pty_getpidPtr.asFunction<int Function(ffi.Pointer<PtyHandle>)>();
 
+  /// Returns the foreground process group of the terminal, or -1 if it is
+  /// unknown or the child has exited.
+  int pty_foreground_pgid(
+    ffi.Pointer<PtyHandle> handle,
+  ) {
+    return _pty_foreground_pgid(
+      handle,
+    );
+  }
+
+  late final _pty_foreground_pgidPtr =
+      _lookup<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<PtyHandle>)>>(
+          'pty_foreground_pgid');
+  late final _pty_foreground_pgid = _pty_foreground_pgidPtr
+      .asFunction<int Function(ffi.Pointer<PtyHandle>)>();
+
   void pty_destroy(
     ffi.Pointer<PtyHandle> handle,
   ) {

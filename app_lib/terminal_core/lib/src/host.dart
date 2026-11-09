@@ -50,3 +50,13 @@ abstract class ExecutionSession {
   /// This is used for flow control when backpressure is enabled.
   void ackRead();
 }
+
+/// Optional capability of an [ExecutionSession] that can tell whether a
+/// program other than the shell is running in the foreground.
+///
+/// Sessions that do not implement it cannot report their foreground state.
+abstract interface class ForegroundProcessAware {
+  /// Whether a program other than the shell (e.g. `vim`, `ssh`, a build) is
+  /// currently running in the foreground of the session.
+  Future<bool> hasForegroundProcess();
+}

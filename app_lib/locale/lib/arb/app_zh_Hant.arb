@@ -259,5 +259,15 @@
   "terminalEnvironmentTitle": "环境变量",
   "shellProfilesTitle": "Shell 配置",
   "terminalBrowserUnsupported": "请使用 Android、iOS、macOS、Linux 或 Windows 应用中的终端。",
-  "jsonLogInspectorTitle": "JSON 日誌檢查器"
+  "jsonLogInspectorTitle": "JSON 日誌檢查器",
+  "optionKeyBehavior": "Option 鍵行為",
+  "optionKeyBehaviorLeftMeta": "左側 Meta",
+  "optionKeyBehaviorBothMeta": "兩側 Meta",
+  "optionKeyBehaviorNormal": "正常",
+  "optionKeyBehaviorDescription": "Meta 傳送 Esc + 按鍵；正常模式輸入特殊字元。",
+  "closeTabConfirmTitle": "關閉分頁？",
+  "closeTabConfirmMessage": "「{title}」中有正在執行的程式。關閉分頁將終止該程式。",
+  "quitConfirmTitle": "結束 GSMLG？",
+  "quitConfirmMessage": "{count, plural, =1{1 個分頁中有正在執行的程式：} other{{count} 個分頁中有正在執行的程式：}}\n{titles}\n\n結束將終止這些程式。",
+  "quit": "結束"
 }

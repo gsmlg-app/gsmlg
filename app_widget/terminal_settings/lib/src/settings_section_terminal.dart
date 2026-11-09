@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:shell_profile_bloc/shell_profile_bloc.dart';
 import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
@@ -35,6 +37,13 @@ class SettingsSectionTerminal extends AbstractSettingsSection {
 
         final restoreTabs =
             state is TerminalSettingsLoaded ? state.restoreTerminalTabs : false;
+
+        final optionKeyBehavior = state is TerminalSettingsLoaded
+            ? state.optionKeyBehavior
+            : kTerminalDefaultOptionKeyBehavior;
+
+        final isMacOS =
+            !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
 
         return SettingsSection(
           title: const Text('Terminal'),
@@ -88,10 +97,59 @@ class SettingsSectionTerminal extends AbstractSettingsSection {
                     );
               },
             ),
+            if (isMacOS) _optionKeyBehaviorTile(context, optionKeyBehavior),
           ],
         );
       },
     );
+  }
+}
+
+SettingsTile _optionKeyBehaviorTile(
+  BuildContext context,
+  TerminalOptionKeyBehavior value,
+) {
+  return SettingsTile(
+    leading: const Icon(Icons.keyboard_option_key),
+    title: Text(context.l10n.optionKeyBehavior),
+    description: Text(context.l10n.optionKeyBehaviorDescription),
+    trailing: DropdownButton<TerminalOptionKeyBehavior>(
+      key: const Key('optionKeyBehaviorDropdown'),
+      value: value,
+      underline: const SizedBox(),
+      items: TerminalOptionKeyBehavior.values
+          .map(
+            (TerminalOptionKeyBehavior behavior) =>
+                DropdownMenuItem<TerminalOptionKeyBehavior>(
+              value: behavior,
+              child: Text(_optionKeyBehaviorLabel(context, behavior)),
+            ),
+          )
+          .toList(),
+      onChanged: (TerminalOptionKeyBehavior? behavior) {
+        if (behavior != null) {
+          context.read<TerminalSettingsBloc>().add(
+                TerminalSettingsUpdateOptionKeyBehavior(
+                  optionKeyBehavior: behavior,
+                ),
+              );
+        }
+      },
+    ),
+  );
+}
+
+String _optionKeyBehaviorLabel(
+  BuildContext context,
+  TerminalOptionKeyBehavior behavior,
+) {
+  switch (behavior) {
+    case TerminalOptionKeyBehavior.leftMeta:
+      return context.l10n.optionKeyBehaviorLeftMeta;
+    case TerminalOptionKeyBehavior.bothMeta:
+      return context.l10n.optionKeyBehaviorBothMeta;
+    case TerminalOptionKeyBehavior.normal:
+      return context.l10n.optionKeyBehaviorNormal;
   }
 }
 

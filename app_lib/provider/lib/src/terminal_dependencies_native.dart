@@ -52,8 +52,7 @@ List<BlocProvider<dynamic>> terminalBlocs(AppDatabase database) => [
     )..add(const TerminalSettingsLoad()),
   ),
   BlocProvider<ShellProfileBloc>(
-    create: (context) => ShellProfileBloc(database)
-      ..add(const EnsureDefaultProfile())
-      ..add(const LoadShellProfiles()),
+    create: (context) =>
+        ShellProfileBloc(database)..add(const EnsureDefaultProfile()),
   ),
 ];

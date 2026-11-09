@@ -187,6 +187,23 @@ int main(int argc, char **argv) {
         await_exits(2);
         destroy(second);
         assert_resources_released(before_fds, before_threads);
+    } else if (strcmp(argv[1], "foreground") == 0) {
+        char *args[] = {"bash", "--noprofile", "--norc", "-i", NULL};
+        PtyHandle *handle = spawn("/bin/bash", args, false, NULL);
+        assert(handle != NULL);
+        pid_t pid = pty_getpid(handle);
+        for (int i = 0; i < 3000 && atomic_load(&bytes) == 0; i++) usleep(1000);
+        assert(pty_foreground_pgid(handle) == pid);
+        char command[] = "sleep 5\n";
+        pty_write(handle, command, strlen(command));
+        for (int i = 0; i < 3000 && pty_foreground_pgid(handle) == pid; i++) usleep(1000);
+        pid_t group = pty_foreground_pgid(handle);
+        assert(group > 0 && group != pid);
+        terminate(handle, SIGKILL);
+        await_exits(1);
+        assert(pty_foreground_pgid(handle) == -1);
+        destroy(handle);
+        assert_resources_released(before_fds, before_threads);
     } else if (strcmp(argv[1], "full-write") == 0) {
         char *args[] = {argv[0], "read-input", NULL};
         PtyHandle *handle = spawn(argv[0], args, false, NULL);

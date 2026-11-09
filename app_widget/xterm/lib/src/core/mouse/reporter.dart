@@ -14,11 +14,13 @@ abstract class MouseReporter {
     // The position has to be reported using 1-based coordinates.
     final x = position.x + 1;
     final y = position.y + 1;
+    final pressedID =
+        state == TerminalMouseButtonState.motion ? button.id + 32 : button.id;
     switch (reportMode) {
       case MouseReportMode.normal:
       case MouseReportMode.utf:
         // Button ID 3 is used to signal a button release.
-        final buttonID = state == TerminalMouseButtonState.up ? 3 : button.id;
+        final buttonID = state == TerminalMouseButtonState.up ? 3 : pressedID;
         // The button ID is reported as shifted by 32 to produce a printable
         // character.
         final btn = String.fromCharCode(32 + buttonID);
@@ -32,16 +34,16 @@ abstract class MouseReporter {
         final row = (reportMode == MouseReportMode.normal && y > 223) ||
                 (reportMode == MouseReportMode.utf && y > 2015)
             ? '\x00'
-            : String.fromCharCode(32 + y + 1);
+            : String.fromCharCode(32 + y);
         return "\x1b[M$btn$col$row";
       case MouseReportMode.sgr:
-        final buttonID = button.id;
-        final upDown = state == TerminalMouseButtonState.down ? 'M' : 'm';
+        final buttonID = pressedID;
+        final upDown = state == TerminalMouseButtonState.up ? 'm' : 'M';
         return "\x1b[<$buttonID;$x;$y$upDown";
       case MouseReportMode.urxvt:
         // The button ID uses the same id as to report it as in normal mode.
         final buttonID =
-            32 + (state == TerminalMouseButtonState.up ? 3 : button.id);
+            32 + (state == TerminalMouseButtonState.up ? 3 : pressedID);
         return "\x1b[$buttonID;$x;${y}M";
     }
   }

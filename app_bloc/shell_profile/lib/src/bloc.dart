@@ -196,6 +196,7 @@ class ShellProfileBloc extends Bloc<ShellProfileEvent, ShellProfileState> {
     EnsureDefaultProfile event,
     Emitter<ShellProfileState> emit,
   ) async {
+    emit(const ShellProfileLoading());
     try {
       final profiles = await database.select(database.shellProfiles).get();
       if (profiles.isEmpty) {
@@ -215,8 +216,11 @@ class ShellProfileBloc extends Bloc<ShellProfileEvent, ShellProfileState> {
               ),
             );
       }
-    } catch (_) {
-      // Non-fatal — profile loading will still work
+      final loadedProfiles =
+          await database.select(database.shellProfiles).get();
+      emit(ShellProfileLoaded(loadedProfiles));
+    } catch (error) {
+      emit(ShellProfileError(error));
     }
   }
 

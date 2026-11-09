@@ -23,6 +23,9 @@ class TerminalSettingsBloc
   /// Key for restoring open terminal tabs after app restart.
   static const _restoreTabsKey = 'terminal_restore_tabs';
 
+  /// Key for the macOS Option key behavior.
+  static const _optionKeyBehaviorKey = 'terminal_option_key_behavior';
+
   final VaultRepository _vault;
 
   TerminalSettingsBloc({required VaultRepository vault})
@@ -34,6 +37,7 @@ class TerminalSettingsBloc
     on<TerminalSettingsClearEnvVars>(_onClearEnvVars);
     on<TerminalSettingsUpdateMaxOpenShells>(_onUpdateMaxOpenShells);
     on<TerminalSettingsUpdateRestoreTabs>(_onUpdateRestoreTabs);
+    on<TerminalSettingsUpdateOptionKeyBehavior>(_onUpdateOptionKeyBehavior);
   }
 
   Future<void> _onLoad(
@@ -59,12 +63,18 @@ class TerminalSettingsBloc
           int.tryParse(allSecrets[_maxOpenShellsKey] ?? '') ??
           kTerminalDefaultMaxOpenShells;
       final restoreTerminalTabs = allSecrets[_restoreTabsKey] == 'true';
+      final optionKeyBehavior = TerminalOptionKeyBehavior.values.firstWhere(
+        (TerminalOptionKeyBehavior value) =>
+            value.name == allSecrets[_optionKeyBehaviorKey],
+        orElse: () => kTerminalDefaultOptionKeyBehavior,
+      );
 
       emit(
         TerminalSettingsLoaded(
           environmentVariables: envVars,
           maxOpenShells: maxOpenShells,
           restoreTerminalTabs: restoreTerminalTabs,
+          optionKeyBehavior: optionKeyBehavior,
         ),
       );
     } catch (e) {
@@ -156,6 +166,25 @@ class TerminalSettingsBloc
       await _vault.write(
         key: _restoreTabsKey,
         value: event.restoreTerminalTabs.toString(),
+      );
+    } catch (_) {
+      // Persistence failure; setting still applies for current session.
+    }
+  }
+
+  Future<void> _onUpdateOptionKeyBehavior(
+    TerminalSettingsUpdateOptionKeyBehavior event,
+    Emitter<TerminalSettingsState> emit,
+  ) async {
+    if (state is! TerminalSettingsLoaded) return;
+
+    final currentState = state as TerminalSettingsLoaded;
+
+    emit(currentState.copyWith(optionKeyBehavior: event.optionKeyBehavior));
+    try {
+      await _vault.write(
+        key: _optionKeyBehaviorKey,
+        value: event.optionKeyBehavior.name,
       );
     } catch (_) {
       // Persistence failure; setting still applies for current session.

@@ -5,6 +5,9 @@
 
 static char shellSession[] = "webterminal-local-shell";
 
+extern int ios_setenv_pid(const char *variableName, const char *value, int overwrite, int pid);
+extern int ios_unsetenv_pid(const char *variableName, int pid);
+
 static void selectSession(void) {
     NSString *directory = NSFileManager.defaultManager.currentDirectoryPath;
     ios_switchSession(shellSession);
@@ -21,7 +24,7 @@ static void setStreams(FILE *input, FILE *output, FILE *error) {
     thread_context = shellSession;
 }
 
-static NSString *readOutput(FILE *stream) {
+static NSData *readOutput(FILE *stream) {
     rewind(stream);
     NSMutableData *data = [NSMutableData data];
     unsigned char buffer[8192];
@@ -29,10 +32,32 @@ static NSString *readOutput(FILE *stream) {
     while ((length = fread(buffer, 1, sizeof(buffer), stream)) > 0) {
         [data appendBytes:buffer length:length];
     }
-    return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] ?: @"";
+    return data;
 }
 
-NSDictionary<NSString *, id> *webterminal_execute_command(NSString *command) {
+// ios_system keeps one environment per pid slot; apply and restore both target
+// the slot that is current before the command starts.
+static NSDictionary<NSString *, id> *applyEnvironment(NSDictionary<NSString *, NSString *> *environment, pid_t pid) {
+    NSMutableDictionary<NSString *, id> *previous = [NSMutableDictionary dictionary];
+    [environment enumerateKeysAndObjectsUsingBlock:^(NSString *name, NSString *value, BOOL *stop) {
+        const char *current = ios_getenv(name.UTF8String);
+        previous[name] = current ? [NSString stringWithUTF8String:current] : NSNull.null;
+        ios_setenv_pid(name.UTF8String, value.UTF8String, 1, pid);
+    }];
+    return previous;
+}
+
+static void restoreEnvironment(NSDictionary<NSString *, id> *previous, pid_t pid) {
+    [previous enumerateKeysAndObjectsUsingBlock:^(NSString *name, id value, BOOL *stop) {
+        if (value == NSNull.null) {
+            ios_unsetenv_pid(name.UTF8String, pid);
+        } else {
+            ios_setenv_pid(name.UTF8String, [value UTF8String], 1, pid);
+        }
+    }];
+}
+
+NSDictionary<NSString *, id> *webterminal_execute_command(NSString *command, NSDictionary<NSString *, NSString *> *environment) {
     FILE *input = tmpfile();
     FILE *output = tmpfile();
     FILE *error = tmpfile();
@@ -40,17 +65,20 @@ NSDictionary<NSString *, id> *webterminal_execute_command(NSString *command) {
         if (input) fclose(input);
         if (output) fclose(output);
         if (error) fclose(error);
-        return @{@"exitCode": @1, @"stdout": @"", @"stderr": @"Unable to capture command output.\n"};
+        return @{@"exitCode": @1, @"stdout": [NSData data], @"stderr": [@"Unable to capture command output.\n" dataUsingEncoding:NSUTF8StringEncoding]};
     }
 
     selectSession();
+    pid_t environmentPid = ios_currentPid();
+    NSDictionary<NSString *, id> *previousEnvironment = applyEnvironment(environment, environmentPid);
     setStreams(input, output, error);
     int status = ios_system(command.UTF8String);
     webterminal_python_cleanup_inputs();
+    restoreEnvironment(previousEnvironment, environmentPid);
     fflush(output);
     fflush(error);
-    NSString *stdoutText = readOutput(output);
-    NSString *stderrText = readOutput(error);
+    NSData *stdoutText = readOutput(output);
+    NSData *stderrText = readOutput(error);
     setStreams(stdin, stdout, stderr);
     fclose(input);
     fclose(output);

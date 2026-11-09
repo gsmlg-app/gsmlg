@@ -215,5 +215,15 @@
   "terminalEnvironmentTitle": "Environment Variables",
   "shellProfilesTitle": "Shell Profiles",
   "terminalBrowserUnsupported": "Terminal is available in the Android, iOS, macOS, Linux, and Windows apps.",
-  "jsonLogInspectorTitle": "JSON Log Inspector"
+  "jsonLogInspectorTitle": "JSON Log Inspector",
+  "optionKeyBehavior": "Verhalten der Wahltaste",
+  "optionKeyBehaviorLeftMeta": "Links Meta",
+  "optionKeyBehaviorBothMeta": "Beide Meta",
+  "optionKeyBehaviorNormal": "Normal",
+  "optionKeyBehaviorDescription": "Meta sendet Esc + Taste. Normal gibt Sonderzeichen ein.",
+  "closeTabConfirmTitle": "Tab schließen?",
+  "closeTabConfirmMessage": "In „{title}“ läuft ein Programm. Das Schließen des Tabs beendet es.",
+  "quitConfirmTitle": "GSMLG beenden?",
+  "quitConfirmMessage": "{count, plural, =1{In 1 Tab läuft ein Programm:} other{In {count} Tabs laufen Programme:}}\n{titles}\n\nBeim Beenden werden sie abgebrochen.",
+  "quit": "Beenden"
 }

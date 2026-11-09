@@ -15,6 +15,7 @@ dependencies:
   app_locale: any
   terminal_core: any
   xterm: any
+  terminal_settings_bloc: any
   context_menus: ^2.0.0+1
   starter_plugin: any
   file_manager_plugin: any

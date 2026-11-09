@@ -101,6 +101,47 @@ Future<void> main() async {
       }
     }
   }
+  final shell = Pty.start(
+    '/bin/sh',
+    arguments: ['-i'],
+    environment: {'PS1': r'$ '},
+  );
+  final shellOutput = StringBuffer();
+  shell.output.listen((data) {
+    shellOutput.write(utf8.decode(data, allowMalformed: true));
+  });
+  try {
+    final prompt = DateTime.now().add(const Duration(seconds: 3));
+    while (shellOutput.isEmpty) {
+      if (DateTime.now().isAfter(prompt)) {
+        throw TimeoutException('Shell prompt did not appear');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    check(shell.foregroundProcessGroup == shell.pid, 'Shell owns foreground');
+    check(!shell.hasForegroundProcess, 'Idle shell reported busy');
+    shell.write(utf8.encode('sleep 5\n'));
+    final busy = DateTime.now().add(const Duration(seconds: 3));
+    while (!shell.hasForegroundProcess) {
+      if (DateTime.now().isAfter(busy)) {
+        throw TimeoutException('Foreground sleep was not detected');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+    shell.write(Uint8List.fromList([3]));
+    final idle = DateTime.now().add(const Duration(seconds: 3));
+    while (shell.hasForegroundProcess) {
+      if (DateTime.now().isAfter(idle)) {
+        throw TimeoutException('Interrupted sleep still in foreground');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  } finally {
+    await shell.close();
+  }
+  check(!shell.hasForegroundProcess, 'Closed PTY reported busy');
+  check(shell.foregroundProcessGroup == null, 'Closed PTY has a group');
+
   stdout.writeln(
-      'Dart/native lifecycle: startup errors, output drain, repeated close, escalation passed');
+      'Dart/native lifecycle: startup errors, output drain, repeated close, escalation, foreground detection passed');
 }

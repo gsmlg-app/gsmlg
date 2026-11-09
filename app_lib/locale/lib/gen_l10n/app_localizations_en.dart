@@ -1243,4 +1243,45 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get jsonLogInspectorTitle => 'JSON Log Inspector';
+
+  @override
+  String get optionKeyBehavior => 'Option Key Behavior';
+
+  @override
+  String get optionKeyBehaviorLeftMeta => 'Left Meta';
+
+  @override
+  String get optionKeyBehaviorBothMeta => 'Both Meta';
+
+  @override
+  String get optionKeyBehaviorNormal => 'Normal';
+
+  @override
+  String get optionKeyBehaviorDescription =>
+      'Meta sends Esc + key. Normal types special characters.';
+
+  @override
+  String get closeTabConfirmTitle => 'Close Tab?';
+
+  @override
+  String closeTabConfirmMessage(String title) {
+    return '\"$title\" has a running program. Closing the tab will terminate it.';
+  }
+
+  @override
+  String get quitConfirmTitle => 'Quit GSMLG?';
+
+  @override
+  String quitConfirmMessage(int count, String titles) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tabs have running programs:',
+      one: '1 tab has a running program:',
+    );
+    return '$_temp0\n$titles\n\nQuitting will terminate them.';
+  }
+
+  @override
+  String get quit => 'Quit';
 }
