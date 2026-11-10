@@ -1,4 +1,5 @@
 import 'package:app_agent/app_agent.dart';
+import 'package:app_logging/app_logging.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/screens/chat/chat_screen.dart';
@@ -10,6 +11,9 @@ import 'duo_controller.dart';
 ///
 /// A send continues the selected conversation, or starts one with the active
 /// agent when nothing is selected, then shows the conversation screen.
+///
+/// Blocs are resolved when an intent arrives, so installing the fallback does
+/// not require them; without them intents are ignored (and logged).
 class DuoChatFallback {
   DuoChatFallback({
     required this.chatBloc,
@@ -17,9 +21,19 @@ class DuoChatFallback {
     required this.router,
   });
 
-  final ChatBloc chatBloc;
-  final ChatSettingsBloc settingsBloc;
+  final ChatBloc? Function() chatBloc;
+  final ChatSettingsBloc? Function() settingsBloc;
   final GoRouter router;
+
+  (ChatBloc, ChatSettingsBloc)? _blocs() {
+    final chat = chatBloc();
+    final settings = settingsBloc();
+    if (chat == null || settings == null) {
+      AppLogger().w('Duo chat intent ignored: chat blocs unavailable');
+      return null;
+    }
+    return (chat, settings);
+  }
 
   void install(DuoDisplayManager manager) {
     manager
@@ -33,6 +47,9 @@ class DuoChatFallback {
     if (text.trim().isEmpty && (attachments == null || attachments.isEmpty)) {
       return;
     }
+    final blocs = _blocs();
+    if (blocs == null) return;
+    final (chatBloc, settingsBloc) = blocs;
     final chat = chatBloc.state;
     if (chat.isBusy) return;
     final settings = settingsBloc.state;
@@ -81,6 +98,8 @@ class DuoChatFallback {
   }
 
   void stop() {
+    final chatBloc = _blocs()?.$1;
+    if (chatBloc == null) return;
     chatBloc.add(
       ChatStopGeneration(conversationId: chatBloc.state.conversation?.id),
     );
@@ -88,6 +107,6 @@ class DuoChatFallback {
 
   /// Makes [agentId] the active agent, so the next send starts with it.
   void selectAgent(String agentId) {
-    settingsBloc.add(ChatSettingsSelectAgent(id: agentId));
+    _blocs()?.$2.add(ChatSettingsSelectAgent(id: agentId));
   }
 }

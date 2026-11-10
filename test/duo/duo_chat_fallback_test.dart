@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:gsmlg/duo/duo_chat_fallback.dart';
 import 'package:gsmlg/duo/duo_controller.dart';
 import 'package:gsmlg/screens/agents/agents_screen.dart';
@@ -61,8 +62,8 @@ void main() {
 
     final router = await h.pump(tester, '/chat');
     DuoChatFallback(
-      chatBloc: h.chatBloc,
-      settingsBloc: h.settingsBloc,
+      chatBloc: () => h.chatBloc,
+      settingsBloc: () => h.settingsBloc,
       router: router,
     ).install(primary);
     primary.start();
@@ -99,5 +100,23 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     primary.dispose();
     secondary.dispose();
+  });
+
+  test('intents are ignored while the chat blocs are unavailable', () {
+    var resolved = 0;
+    final fallback = DuoChatFallback(
+      chatBloc: () {
+        resolved++;
+        return null;
+      },
+      settingsBloc: () => null,
+      router: GoRouter(routes: []),
+    );
+
+    fallback.send('hello');
+    fallback.stop();
+    fallback.selectAgent('a1');
+
+    expect(resolved, 3);
   });
 }

@@ -146,8 +146,8 @@ class _AppState extends State<App> {
     };
 
     DuoChatFallback(
-      chatBloc: context.read<ChatBloc>(),
-      settingsBloc: context.read<ChatSettingsBloc>(),
+      chatBloc: _maybeRead<ChatBloc>,
+      settingsBloc: _maybeRead<ChatSettingsBloc>,
       router: AppRouter.router,
     ).install(_duoManager);
 
@@ -166,6 +166,16 @@ class _AppState extends State<App> {
     AppRouter.router.routerDelegate.addListener(_syncDuoState);
     AppRouter.router.routerDelegate.addListener(_trackRoute);
     _trackRoute();
+  }
+
+  /// Reads [T] at call time; null when unmounted or not provided.
+  T? _maybeRead<T>() {
+    if (!mounted) return null;
+    try {
+      return context.read<T>();
+    } on ProviderNotFoundException {
+      return null;
+    }
   }
 
   void _trackRoute() {
