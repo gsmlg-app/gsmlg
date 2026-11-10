@@ -173,13 +173,12 @@ class _ChatScreenState extends State<ChatScreen> {
     final settings = context.read<ChatSettingsBloc>().state;
     final agent = settings.agents.where((a) => a.id == agentId).firstOrNull;
     if (agent == null) return;
+    // An owned conversation keeps its agent; selecting another one starts a
+    // new conversation for it (handled by ChatBloc).
     context.read<ChatBloc>().add(
-      ChatConfigureSession(
+      ChatSelectAgent(
+        agent: agent,
         conversationId: context.read<ChatBloc>().state.conversation?.id,
-        config: agent.config,
-        agentId: agent.id,
-        thinkingEnabled: agent.thinkingEnabled,
-        systemPrompt: agent.instructions,
       ),
     );
   }

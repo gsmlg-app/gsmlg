@@ -157,4 +157,19 @@ void main() {
       'c1',
     ]);
   });
+
+  test(
+    'an unowned conversation is claimed once; owners never change',
+    () async {
+      final storage = ChatStorageRepository(db);
+      final legacy = Conversation.create(id: 'c1');
+      await storage.saveConversation(legacy);
+      await storage.saveConversation(legacy.copyWith(agentId: 'a'));
+      expect((await storage.loadConversation('c1'))!.agentId, 'a');
+
+      await storage.saveConversation(legacy.copyWith(agentId: 'b'));
+      await storage.saveConversation(legacy);
+      expect((await storage.loadConversation('c1'))!.agentId, 'a');
+    },
+  );
 }

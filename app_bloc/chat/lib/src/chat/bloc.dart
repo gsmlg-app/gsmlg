@@ -66,6 +66,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<ChatNewConversation>(_onNewConversation);
     on<ChatUpdateDraft>(_onUpdateDraft);
     on<ChatConfigureSession>(_onConfigureSession);
+    on<ChatSelectAgent>(_onSelectAgent);
     on<ChatSendMessage>(_onSendMessage);
     on<ChatStopGeneration>(_onStopGeneration);
     on<ChatClearConversation>(_onClearConversation);
@@ -307,6 +308,36 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         emit);
   }
 
+  /// Switching agents inside a conversation owned by another agent starts a
+  /// new conversation for the selected agent; otherwise the current session
+  /// is configured with it (an unowned session is claimed on its first run).
+  Future<void> _onSelectAgent(
+      ChatSelectAgent event, Emitter<ChatState> emit) async {
+    final agent = event.agent;
+    final id = event.conversationId ?? state.conversation?.id;
+    final session = state.sessions[id];
+    if (session?.isBusy ?? false) return;
+    final owner = session?.conversation.agentId;
+    if (session == null || (owner != null && owner != agent.id)) {
+      await _onNewConversation(
+          ChatNewConversation(
+              systemPrompt: agent.instructions,
+              config: agent.config,
+              agentId: agent.id,
+              thinkingEnabled: agent.thinkingEnabled),
+          emit);
+      return;
+    }
+    _onConfigureSession(
+        ChatConfigureSession(
+            conversationId: id,
+            config: agent.config,
+            agentId: agent.id,
+            thinkingEnabled: agent.thinkingEnabled,
+            systemPrompt: agent.instructions),
+        emit);
+  }
+
   _GenerationTask? _reserve(Conversation conversation, Emitter<ChatState> emit,
       {ModelConfig? config, String? agentId}) {
     final id = conversation.id;
@@ -318,9 +349,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
     final session =
         state.sessions[id] ?? ChatSessionState(conversation: conversation);
-    final runAgentId = agentId ?? session.agentId;
-    if (runAgentId != null && conversation.agentId != runAgentId) {
-      conversation = conversation.copyWith(agentId: runAgentId);
+    // A conversation belongs to one agent: an unowned (legacy) conversation
+    // is claimed once by its first run's agent and never changes afterwards.
+    final owner = conversation.agentId ?? agentId ?? session.agentId;
+    if (owner != null && conversation.agentId == null) {
+      conversation = conversation.copyWith(agentId: owner);
     }
     final task = _GenerationTask(
         id: id,
@@ -332,7 +365,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             : session.systemPrompt,
         conversation: conversation,
         config: config ?? session.config,
-        agentId: runAgentId,
+        agentId: owner,
         tools: _toolExecutor.openAiToolDefinitions
             .map((tool) =>
                 Map<String, dynamic>.from(jsonDecode(jsonEncode(tool)) as Map))
@@ -344,7 +377,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             clearError: true,
             clearRun: true,
             config: task.config,
-            agentId: agentId,
+            agentId: owner,
             hasUnreadResponse: false),
         emit,
         updateHistory: true);
@@ -369,7 +402,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           .copyWith(title: _generateTitle(event.content));
       _putSession(
           ChatSessionState(
-              conversation: conversation, systemPrompt: event.systemPrompt),
+              conversation: conversation,
+              agentId: event.agentId,
+              systemPrompt: event.systemPrompt),
           emit,
           select: true);
     }
@@ -379,8 +414,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (task == null) return;
     final submittedDraft = state.drafts[task.id] ?? state.drafts[''];
     try {
+      await _applyOwner(task);
+      if (!_isCurrent(task)) return;
       task.config = await _loadEffectiveConfig(task.config);
-      task.allowedTools = await _allowedToolsFor(task.agentId);
       if (!_isCurrent(task)) return;
       final error = await _readinessError(task.config!);
       if (!_isCurrent(task)) return;
@@ -1183,8 +1219,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       required Emitter<ChatState> emit,
       String? title}) async {
     try {
+      await _applyOwner(task);
+      if (!_isCurrent(task)) return;
       task.config = await _loadEffectiveConfig(task.config);
-      task.allowedTools = await _allowedToolsFor(task.agentId);
       if (!_isCurrent(task)) return;
       final error = await _readinessError(task.config!);
       if (!_isCurrent(task)) return;
@@ -1441,11 +1478,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         .modelConfig(agentConfig.remoteModel, base: config);
   }
 
-  /// Tool allow-list of the agent owning a run; null means all tools.
-  Future<Set<String>?> _allowedToolsFor(String? agentId) async {
-    if (agentId == null) return null;
-    final agent = await _agentRepository.get(agentId);
-    return agent?.allowedTools?.toSet();
+  /// Runs use the owning agent's config, instructions, thinking and tool
+  /// allow-list (null = all tools). Without a stored owner the session's
+  /// settings apply unchanged.
+  Future<void> _applyOwner(_GenerationTask task) async {
+    final id = task.agentId;
+    final agent = id == null ? null : await _agentRepository.get(id);
+    task.allowedTools = agent?.allowedTools?.toSet();
+    if (agent == null) return;
+    task.config = agent.config;
+    task.systemPrompt = agent.instructions;
+    task.thinkingEnabled = agent.thinkingEnabled;
   }
 
   @override
@@ -1479,8 +1522,8 @@ class _GenerationTask {
   Set<String>? allowedTools;
   final String runId;
   final int order;
-  final bool thinkingEnabled;
-  final String? systemPrompt;
+  bool thinkingEnabled;
+  String? systemPrompt;
   final removedSystemIds = <String>{};
   Completer<void>? localPreparation;
   LocalModelLease? localLease;

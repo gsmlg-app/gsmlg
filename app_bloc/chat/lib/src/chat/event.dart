@@ -51,6 +51,15 @@ final class ChatConfigureSession extends ChatEvent {
   final String? systemPrompt;
 }
 
+/// Select [agent] for the current (or given) conversation. A conversation
+/// owned by a different agent is left untouched and a new conversation for
+/// [agent] is started instead.
+final class ChatSelectAgent extends ChatEvent {
+  const ChatSelectAgent({required this.agent, this.conversationId});
+  final AgentDefinition agent;
+  final String? conversationId;
+}
+
 final class ChatSendMessage extends ChatEvent {
   const ChatSendMessage(
       {required this.content,

@@ -217,6 +217,110 @@ void main() {
       expect((await storage.loadConversation(id))!.agentId, 'x');
     });
 
+    Future<String> newConversation(ChatBloc bloc, String agentId) async {
+      final before = bloc.state.conversation?.id;
+      final created = bloc.stream.firstWhere(
+          (s) => s.conversation != null && s.conversation!.id != before);
+      bloc.add(ChatNewConversation(
+          agentId: agentId, config: _remoteConfig, systemPrompt: 'ui'));
+      final id = (await created).conversation!.id;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      return id;
+    }
+
+    Future<void> sendAndStop(ChatBloc bloc, String id, String agentId) async {
+      final streaming = bloc.stream
+          .firstWhere((s) => s.sessionFor(id)?.status == ChatStatus.streaming);
+      bloc.add(ChatSendMessage(
+          conversationId: id,
+          content: 'hi',
+          config: _remoteConfig,
+          agentId: agentId));
+      await streaming;
+      final stopped = bloc.stream
+          .firstWhere((s) => s.sessionFor(id)?.status == ChatStatus.stopped);
+      bloc.add(ChatStopGeneration(conversationId: id));
+      await stopped;
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+
+    const otherConfig = ModelConfig(
+        inferenceMode: ChatInferenceMode.remote,
+        remoteBaseUrl: 'http://localhost:9000/v1',
+        remoteModel: 'other-model');
+
+    test('a run with another active agent keeps the owner and uses its setup',
+        () async {
+      await agents.save(_agent('x', tools: ['shell']));
+      await agents.save(_agent('y', tools: ['web_fetch'])
+          .copyWith(config: otherConfig, instructions: 'You are y'));
+      final bloc = chat();
+      final id = await newConversation(bloc, 'x');
+
+      await sendAndStop(bloc, id, 'y');
+
+      expect((await storage.loadConversation(id))!.agentId, 'x');
+      expect(bloc.state.sessionFor(id)!.agentId, 'x');
+      expect(runtime.allowedTools, {'shell'});
+      expect(runtime.modelConfig!.remoteModel, 'agent-model');
+      expect(runtime.history.whereType<SystemMessage>().map((m) => m.content),
+          ['You are x']);
+
+      // Regenerate (restart path) also runs as the owner.
+      runtime.allowedTools = null;
+      final restarted = bloc.stream
+          .firstWhere((s) => s.sessionFor(id)?.status == ChatStatus.streaming);
+      bloc.add(ChatRegenerateResponse(conversationId: id));
+      await restarted;
+      expect(runtime.calls, 2);
+      expect(runtime.allowedTools, {'shell'});
+      expect(runtime.modelConfig!.remoteModel, 'agent-model');
+    });
+
+    test('a legacy unowned conversation is claimed once by its first run',
+        () async {
+      await agents.save(_agent('x', tools: ['shell']));
+      await agents.save(_agent('y', tools: ['web_fetch']));
+      await storage.saveConversation(Conversation.create(id: 'legacy'));
+      final bloc = chat();
+      final loaded =
+          bloc.stream.firstWhere((s) => s.conversation?.id == 'legacy');
+      bloc.add(const ChatLoadConversation(id: 'legacy'));
+      await loaded;
+
+      await sendAndStop(bloc, 'legacy', 'x');
+      expect((await storage.loadConversation('legacy'))!.agentId, 'x');
+
+      await sendAndStop(bloc, 'legacy', 'y');
+      expect((await storage.loadConversation('legacy'))!.agentId, 'x');
+      expect(runtime.allowedTools, {'shell'});
+    });
+
+    test('selecting another agent in an owned conversation starts a new one',
+        () async {
+      final x = _agent('x');
+      final y = _agent('y').copyWith(config: otherConfig);
+      await agents.save(x);
+      await agents.save(y);
+      final bloc = chat();
+      final owned = await newConversation(bloc, 'x');
+
+      // Re-selecting the owner configures the same conversation.
+      bloc.add(ChatSelectAgent(agent: x));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(bloc.state.conversation!.id, owned);
+
+      final switched =
+          bloc.stream.firstWhere((s) => s.conversation?.id != owned);
+      bloc.add(ChatSelectAgent(agent: y));
+      final next = (await switched).conversation!;
+      expect(next.agentId, 'y');
+      expect(bloc.state.sessionFor(next.id)!.config, otherConfig);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect((await storage.loadConversation(next.id))!.agentId, 'y');
+      expect((await storage.loadConversation(owned))!.agentId, 'x');
+    });
+
     test('an agent without a tool list allows all tools', () async {
       await agents.save(_agent('y'));
       final bloc = chat();
@@ -234,6 +338,8 @@ void main() {
 class _Runtime implements ChatAgentRuntime {
   int calls = 0;
   Set<String>? allowedTools;
+  ModelConfig? modelConfig;
+  List<Message> history = const [];
   final _controllers = <StreamController<ChatAgentEvent>>[];
 
   @override
@@ -251,6 +357,8 @@ class _Runtime implements ChatAgentRuntime {
   }) {
     calls++;
     this.allowedTools = allowedTools;
+    this.modelConfig = modelConfig;
+    history = historyMessages;
     final controller = StreamController<ChatAgentEvent>();
     _controllers.add(controller);
     return controller.stream;

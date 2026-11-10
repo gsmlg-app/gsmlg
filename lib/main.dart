@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:app_agent/app_agent.dart';
 import 'package:app_database/app_database.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:app_logging/app_logging.dart';
@@ -52,6 +53,12 @@ void main(List<String> args) async {
     logger.i('SharedPreferences initialized');
     final database = AppDatabase();
     logger.i('Database initialized');
+    try {
+      // One-time import of legacy `chat_agents` before any bloc reads agents.
+      await AgentRepository(database).importLegacy(sharedPrefs);
+    } catch (error) {
+      logger.e('Legacy agent import failed: $error');
+    }
     final vault = SecureStorageVaultRepository(namespace: 'gsmlg');
     logger.i('Vault initialized');
 

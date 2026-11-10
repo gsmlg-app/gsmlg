@@ -83,6 +83,17 @@ class ChatStorageRepository {
           updatedAt: Value(conversation.updatedAt),
         ),
       );
+      // An unowned (legacy) conversation is claimed once; an existing owner
+      // is never replaced.
+      if (conversation.agentId != null) {
+        await (_db.update(_db.chatConversationTable)
+              ..where((t) => t.id.equals(conversation.id) & t.agentId.isNull()))
+            .write(
+              ChatConversationTableCompanion(
+                agentId: Value(conversation.agentId),
+              ),
+            );
+      }
     });
   }
 
