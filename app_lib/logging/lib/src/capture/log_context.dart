@@ -11,6 +11,16 @@ class LogContext {
     this.turn,
   });
 
+  /// Inverse of [toJson].
+  factory LogContext.fromJson(Map<String, Object?> json) => LogContext(
+        conversationId: json['conversation_id'] as String?,
+        runId: json['run_id'] as String?,
+        parentRunId: json['parent_run_id'] as String?,
+        generationId: json['generation_id'] as String?,
+        toolCallId: json['tool_call_id'] as String?,
+        turn: (json['turn'] as num?)?.toInt(),
+      );
+
   final String? conversationId, runId, parentRunId, generationId, toolCallId;
   final int? turn;
 

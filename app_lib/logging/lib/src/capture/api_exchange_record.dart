@@ -75,6 +75,27 @@ class HttpMessageCapture {
     );
   }
 
+  /// Inverse of [toJson]. Messages with a `method` are requests.
+  factory HttpMessageCapture.fromJson(Map<String, Object?> json) =>
+      HttpMessageCapture(
+        method: json['method'] as String?,
+        scheme: json['scheme'] as String?,
+        host: json['host'] as String?,
+        uri: json['uri'] as String?,
+        proto: json['proto'] as String? ?? 'HTTP/1.1',
+        remoteAddr: json['remote_addr'] as String?,
+        status: (json['status'] as num?)?.toInt(),
+        headers: {
+          for (final e in ((json['headers'] as Map?) ?? const {}).entries)
+            '${e.key}': [for (final v in e.value as List) '$v'],
+        },
+        body: json['body'],
+        bodyEncoding: json['body_encoding'] as String? ?? 'none',
+        bodyTruncated: json['body_truncated'] as bool? ?? false,
+        contentType: json['content_type'] as String?,
+        contentLength: (json['content_length'] as num?)?.toInt(),
+      );
+
   final String? method, scheme, host, uri, remoteAddr;
   final String proto;
   final int? status;
@@ -135,6 +156,42 @@ class ApiExchangeRecord {
   })  : _method = method,
         _host = host,
         _path = path;
+
+  /// Inverse of [toJson].
+  ///
+  /// [toJson] omits the request of `response` records; for those, optional
+  /// top-level `method`, `host` and `path` keys (not part of [toJson]) restore
+  /// the request summary used for index columns.
+  factory ApiExchangeRecord.fromJson(Map<String, Object?> json) {
+    Map<String, Object?>? map(Object? v) =>
+        (v as Map?)?.cast<String, Object?>();
+    final request = map(json['request']);
+    final response = map(json['response']);
+    final context = map(json['context']);
+    final error = map(json['error']);
+    return ApiExchangeRecord(
+      ts: DateTime.parse(json['ts']! as String),
+      requestId: json['request_id']! as String,
+      recordType: json['record_type']! as String,
+      durationMs: (json['duration_ms'] as num?)?.toInt(),
+      request: request == null ? null : HttpMessageCapture.fromJson(request),
+      response: response == null ? null : HttpMessageCapture.fromJson(response),
+      category: json['category'] as String? ?? 'other',
+      apiType: json['api_type'] as String?,
+      context: context == null ? null : LogContext.fromJson(context),
+      error: error == null
+          ? null
+          : (
+              type: error['type']! as String,
+              message: error['message']! as String,
+              stackTrace: error['stack_trace'] as String?,
+            ),
+      aborted: json['aborted'] as bool? ?? false,
+      method: json['method'] as String?,
+      host: json['host'] as String?,
+      path: json['path'] as String?,
+    );
+  }
 
   final DateTime ts;
   final String requestId;

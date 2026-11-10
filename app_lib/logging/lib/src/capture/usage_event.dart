@@ -14,6 +14,20 @@ class UsageEvent {
     this.payload,
   });
 
+  /// Inverse of [toJson].
+  factory UsageEvent.fromJson(Map<String, Object?> json) => UsageEvent(
+        ts: DateTime.parse(json['ts']! as String),
+        sessionId: json['session_id']! as String,
+        eventType: json['event_type']! as String,
+        module: json['module'] as String?,
+        screenName: json['screen_name'] as String?,
+        routePath: json['route_path'] as String?,
+        target: json['target'] as String?,
+        sourceScreen: json['source_screen'] as String?,
+        durationMs: (json['duration_ms'] as num?)?.toInt(),
+        payload: (json['payload'] as Map?)?.cast<String, Object?>(),
+      );
+
   final DateTime ts;
   final String sessionId;
 

@@ -16,6 +16,21 @@ class AgentLogEvent {
     this.payload,
   });
 
+  /// Inverse of [toJson]; the context is read from the flattened keys.
+  factory AgentLogEvent.fromJson(Map<String, Object?> json) => AgentLogEvent(
+        ts: DateTime.parse(json['ts']! as String),
+        eventType: json['event_type']! as String,
+        context: LogContext.fromJson(json),
+        toolName: json['tool_name'] as String?,
+        backend: json['backend'] as String?,
+        requestId: json['request_id'] as String?,
+        level: json['level'] as String? ?? 'INFO',
+        isError: json['is_error'] as bool? ?? false,
+        durationMs: (json['duration_ms'] as num?)?.toInt(),
+        summary: json['summary'] as String? ?? '',
+        payload: (json['payload'] as Map?)?.cast<String, Object?>(),
+      );
+
   final DateTime ts;
   final String eventType;
   final LogContext context;

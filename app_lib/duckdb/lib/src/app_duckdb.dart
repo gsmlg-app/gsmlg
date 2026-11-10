@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'log_query_builder.dart';
+import 'log_store.dart';
 import 'models/log_record_item.dart';
 import 'rust/api/duckdb.dart' as rust_duckdb;
 import 'rust/api/duckdb.dart'
@@ -14,7 +15,7 @@ import 'rust/api/duckdb.dart'
 import 'rust/frb_generated.dart';
 
 /// High-level Dart interface to the embedded DuckDB database powered by Rust.
-class AppDuckDb {
+class AppDuckDb implements LogStore {
   AppDuckDb._();
 
   /// Singleton instance of [AppDuckDb].
@@ -98,6 +99,7 @@ class AppDuckDb {
   }
 
   /// Executes SQL query and returns the results formatted as a JSON string.
+  @override
   Future<String> queryJson(String sql) async {
     return rust_duckdb.querySqlJson(sql: sql);
   }
@@ -150,6 +152,7 @@ class AppDuckDb {
   static const _queryable = [...LogTables.all, 'v_all_logs'];
 
   /// Query logs from any log table or `v_all_logs` with filtering and pagination.
+  @override
   Future<List<LogRecordItem>> queryLogs({
     required String tableOrView,
     LogFilter filter = const LogFilter(),
@@ -169,21 +172,25 @@ class AppDuckDb {
     final dynamic decoded = jsonDecode(jsonStr);
     if (decoded is! List) return [];
 
-    final defaultType = switch (tableOrView) {
-      'system_logs' => 'system',
-      'api_exchanges' => 'api',
-      'agent_events' => 'agent',
-      'usage_events' => 'usage',
-      _ => null,
-    };
-
+    final defaultType = defaultLogType(tableOrView);
     return decoded
         .whereType<Map<String, dynamic>>()
         .map((m) => LogRecordItem.fromMap(m, defaultType: defaultType))
         .toList();
   }
 
+  /// The [LogRecordItem.logType] of rows from [tableOrView] that carry no
+  /// `log_type` column (every table except `v_all_logs`).
+  static String? defaultLogType(String tableOrView) => switch (tableOrView) {
+        'system_logs' => 'system',
+        'api_exchanges' => 'api',
+        'agent_events' => 'agent',
+        'usage_events' => 'usage',
+        _ => null,
+      };
+
   /// Get total count of matching logs for pagination.
+  @override
   Future<int> countLogs({
     required String tableOrView,
     LogFilter filter = const LogFilter(),
@@ -209,6 +216,7 @@ class AppDuckDb {
   /// One summary row per agent run (see [LogQueryBuilder.buildAgentRunsSql]),
   /// paged over runs; a run is included when any of its events matches
   /// [filter], and its aggregates cover all of its events.
+  @override
   Future<List<Map<String, dynamic>>> queryAgentRuns({
     LogFilter filter = const LogFilter(),
     int limit = 50,
@@ -227,6 +235,7 @@ class AppDuckDb {
   }
 
   /// Number of agent runs [queryAgentRuns] pages over.
+  @override
   Future<int> countAgentRuns({LogFilter filter = const LogFilter()}) async {
     final jsonStr = await rust_duckdb.querySqlJson(
       sql: LogQueryBuilder.buildAgentRunsCountSql(filter: filter),
@@ -241,6 +250,7 @@ class AppDuckDb {
   }
 
   /// Distinct API exchange categories, sorted.
+  @override
   Future<List<String>> listCategories() async {
     final jsonStr = await rust_duckdb.querySqlJson(
       sql: 'SELECT DISTINCT category FROM api_exchanges '
@@ -255,6 +265,7 @@ class AppDuckDb {
   }
 
   /// Deletes rows older than [days] days (by `timestamp_us`) from [tables].
+  @override
   Future<void> deleteOlderThan({
     required int days,
     required List<String> tables,
@@ -275,6 +286,7 @@ class AppDuckDb {
   ///
   /// `api_exchanges` rows are the stored `record_json` verbatim; other
   /// tables emit one JSON object of the row's columns per line.
+  @override
   Future<String> exportJsonl({
     required String table,
     LogFilter filter = const LogFilter(),
@@ -296,9 +308,14 @@ class AppDuckDb {
   }
 
   /// Clear all logs in given log table.
+  @override
   Future<void> clearLogsTable({required String table}) async {
     _checkTable(table);
     final sql = LogQueryBuilder.buildClearSql(table: table);
     await rust_duckdb.executeSql(sql: sql);
   }
+
+  /// No-op: [AppDuckDb] writes are not buffered.
+  @override
+  Future<void> flush() async {}
 }

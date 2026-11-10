@@ -6,8 +6,12 @@ export 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart'
 export 'src/app_duckdb.dart';
 export 'src/duckdb_log_output.dart';
 export 'src/duckdb_log_sink.dart';
+export 'src/isolate/log_store_client.dart';
+export 'src/isolate/log_store_worker.dart';
+export 'src/isolate/port_log_sink.dart';
 export 'src/log_query_builder.dart';
 export 'src/log_router.dart';
+export 'src/log_store.dart';
 export 'src/models/log_record_item.dart';
 export 'src/rust/api/duckdb.dart'
     show

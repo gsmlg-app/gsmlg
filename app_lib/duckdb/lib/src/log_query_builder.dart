@@ -35,6 +35,45 @@ class LogFilter {
 
   /// HTTP method (`api_exchanges` only).
   final String? method;
+
+  /// Plain map for crossing isolates; only set fields are included and the
+  /// time range is sent as microseconds since epoch.
+  Map<String, Object?> toWire() => {
+        if (keyword != null) 'keyword': keyword,
+        if (timeRange != null) ...{
+          'start_us': timeRange!.start.microsecondsSinceEpoch,
+          'end_us': timeRange!.end.microsecondsSinceEpoch,
+        },
+        if (level != null) 'level': level,
+        if (category != null) 'category': category,
+        if (conversationId != null) 'conversation_id': conversationId,
+        if (runId != null) 'run_id': runId,
+        if (sessionId != null) 'session_id': sessionId,
+        if (errorsOnly != null) 'errors_only': errorsOnly,
+        if (method != null) 'method': method,
+      };
+
+  /// Inverse of [toWire]; `null` yields an empty filter.
+  factory LogFilter.fromWire(Map<Object?, Object?>? wire) {
+    if (wire == null) return const LogFilter();
+    final startUs = wire['start_us'], endUs = wire['end_us'];
+    return LogFilter(
+      keyword: wire['keyword'] as String?,
+      timeRange: startUs is int && endUs is int
+          ? DateTimeRange(
+              start: DateTime.fromMicrosecondsSinceEpoch(startUs),
+              end: DateTime.fromMicrosecondsSinceEpoch(endUs),
+            )
+          : null,
+      level: wire['level'] as String?,
+      category: wire['category'] as String?,
+      conversationId: wire['conversation_id'] as String?,
+      runId: wire['run_id'] as String?,
+      sessionId: wire['session_id'] as String?,
+      errorsOnly: wire['errors_only'] as bool?,
+      method: wire['method'] as String?,
+    );
+  }
 }
 
 /// Safe SQL generator for querying, counting, and pruning logs in DuckDB.
