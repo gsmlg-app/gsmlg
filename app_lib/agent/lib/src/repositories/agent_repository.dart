@@ -90,8 +90,10 @@ class AgentRepository {
               mode: InsertMode.insertOrIgnore,
             );
       }
-      await prefs.setBool(migratedFlagKey, true);
     });
+    // Only after a successful commit; inserts are idempotent so a crash
+    // between commit and flag just re-runs harmlessly.
+    await prefs.setBool(migratedFlagKey, true);
   }
 
   AgentDefinition? _parseLegacy(String raw, DateTime at) {
