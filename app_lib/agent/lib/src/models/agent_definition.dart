@@ -60,16 +60,24 @@ class AgentDefinition extends Equatable {
     bool? thinkingEnabled,
     List<String>? allowedTools,
     DateTime? updatedAt,
+    bool clearAvatar = false,
+    bool clearDescription = false,
+    bool clearInstructions = false,
+    bool clearAllowedTools = false,
   }) {
     return AgentDefinition(
       id: id,
       name: name ?? this.name,
-      avatar: avatar ?? this.avatar,
-      description: description ?? this.description,
-      instructions: instructions ?? this.instructions,
+      avatar: clearAvatar ? null : avatar ?? this.avatar,
+      description: clearDescription ? null : description ?? this.description,
+      instructions: clearInstructions
+          ? null
+          : instructions ?? this.instructions,
       config: config ?? this.config,
       thinkingEnabled: thinkingEnabled ?? this.thinkingEnabled,
-      allowedTools: allowedTools ?? this.allowedTools,
+      allowedTools: clearAllowedTools
+          ? null
+          : allowedTools ?? this.allowedTools,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

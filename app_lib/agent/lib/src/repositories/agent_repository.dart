@@ -59,32 +59,60 @@ class AgentRepository {
   }
 
   /// One-time import of agents stored as JSON strings under `chat_agents`.
-  /// Preserves ids; unparseable entries are skipped. The legacy key is left
-  /// in place for rollback.
+  /// Preserves ids and order; malformed entries are skipped, existing ids are
+  /// never overwritten, and database failures propagate with the flag left
+  /// unset so the import is retried. The legacy key is left in place.
   Future<void> importLegacy(SharedPreferences prefs) async {
     if (prefs.getBool(migratedFlagKey) ?? false) return;
     final now = DateTime.now();
+    final agents = <AgentDefinition>[];
     for (final raw in prefs.getStringList(legacyAgentsKey) ?? const []) {
-      try {
-        final json = (jsonDecode(raw) as Map).cast<String, Object?>();
-        await save(
-          AgentDefinition(
-            id: json['id'] as String,
-            name: json['name'] as String,
-            instructions: json['systemPrompt'] as String?,
-            config: modelConfigFromJson(
-              (json['config'] as Map?)?.cast<String, Object?>(),
-            ),
-            thinkingEnabled: json['thinkingEnabled'] as bool? ?? false,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
-      } catch (_) {
-        continue;
-      }
+      final agent = _parseLegacy(
+        raw,
+        now.add(Duration(milliseconds: agents.length)),
+      );
+      if (agent != null) agents.add(agent);
     }
-    await prefs.setBool(migratedFlagKey, true);
+    await _db.transaction(() async {
+      for (final agent in agents) {
+        await _db
+            .into(_db.agentDefinitionTable)
+            .insert(
+              AgentDefinitionTableCompanion(
+                id: Value(agent.id),
+                name: Value(agent.name),
+                instructions: Value(agent.instructions),
+                config: Value(jsonEncode(modelConfigToJson(agent.config))),
+                thinkingEnabled: Value(agent.thinkingEnabled),
+                createdAt: Value(agent.createdAt),
+                updatedAt: Value(agent.updatedAt),
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+      }
+      await prefs.setBool(migratedFlagKey, true);
+    });
+  }
+
+  AgentDefinition? _parseLegacy(String raw, DateTime at) {
+    try {
+      final json = (jsonDecode(raw) as Map).cast<String, Object?>();
+      return AgentDefinition(
+        id: json['id'] as String,
+        name: json['name'] as String,
+        instructions: json['systemPrompt'] as String?,
+        config: modelConfigFromJson(
+          (json['config'] as Map?)?.cast<String, Object?>(),
+        ),
+        thinkingEnabled: json['thinkingEnabled'] as bool? ?? false,
+        createdAt: at,
+        updatedAt: at,
+      );
+    } on FormatException {
+      return null;
+    } on TypeError {
+      return null;
+    }
   }
 
   AgentDefinition _fromRow(AgentDefinitionTableData row) {

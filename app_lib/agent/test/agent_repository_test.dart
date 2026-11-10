@@ -78,7 +78,7 @@ void main() {
 
     await repo.importLegacy(prefs);
     final agents = await repo.list();
-    expect(agents.map((a) => a.id).toSet(), {'legacy-1', 'legacy-2'});
+    expect(agents.map((a) => a.id), ['legacy-1', 'legacy-2']);
     final one = agents.firstWhere((a) => a.id == 'legacy-1');
     expect(one.instructions, 'sp');
     expect(one.thinkingEnabled, isTrue);
@@ -87,10 +87,61 @@ void main() {
     expect(one.config.remoteAccountId, 7);
     expect(one.allowedTools, isNull);
 
-    await repo.delete('legacy-1');
-    await repo.importLegacy(prefs);
-    expect((await repo.list()).map((a) => a.id), ['legacy-2']);
     expect(prefs.getBool('agents_migrated_v1'), isTrue);
+  });
+
+  test('importLegacy skips malformed entries and keeps the rest', () async {
+    SharedPreferences.setMockInitialValues({
+      'chat_agents': [
+        'not json',
+        jsonEncode({'name': 'no id'}),
+        jsonEncode({'id': 'ok', 'name': 'Ok'}),
+      ],
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await repo.importLegacy(prefs);
+    expect((await repo.list()).map((a) => a.id), ['ok']);
+  });
+
+  test('importLegacy never overwrites existing agents on re-run', () async {
+    SharedPreferences.setMockInitialValues({
+      'chat_agents': [
+        jsonEncode({'id': 'x', 'name': 'Legacy'}),
+      ],
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await repo.save(sample('x').copyWith(name: 'Edited'));
+    await repo.importLegacy(prefs);
+    expect((await repo.get('x'))!.name, 'Edited');
+
+    await prefs.setBool('agents_migrated_v1', false);
+    await repo.importLegacy(prefs);
+    expect((await repo.get('x'))!.name, 'Edited');
+  });
+
+  test('importLegacy propagates DB failure and leaves flag unset', () async {
+    SharedPreferences.setMockInitialValues({
+      'chat_agents': [
+        jsonEncode({'id': 'x', 'name': 'Legacy'}),
+      ],
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await db.customStatement('DROP TABLE agent_definition_table');
+    await expectLater(repo.importLegacy(prefs), throwsA(anything));
+    expect(prefs.getBool('agents_migrated_v1'), isNull);
+  });
+
+  test('copyWith can clear nullable fields', () {
+    final a = sample('a', tools: ['x']).copyWith(
+      clearAllowedTools: true,
+      clearAvatar: true,
+      clearDescription: true,
+      clearInstructions: true,
+    );
+    expect(a.allowedTools, isNull);
+    expect(a.avatar, isNull);
+    expect(a.description, isNull);
+    expect(a.instructions, isNull);
   });
 
   test('conversations record agentId and filter by it', () async {
