@@ -37,6 +37,10 @@ class RemoteLlmRepository {
 
   static const _accountKeyPrefix = 'service_account_';
 
+  /// Vault key holding the API key of remote LLM account [accountId].
+  static String accountSecretKey(int accountId) =>
+      '$_accountKeyPrefix$accountId';
+
   /// Log category for traffic to [config]'s endpoint: `llm:<host>`, or
   /// `llm:<provider>` when the base url has no host.
   static String llmCategory(ModelConfig config) {
@@ -996,7 +1000,7 @@ class RemoteLlmRepository {
     }
   }
 
-  String _vaultKey(int id) => '$_accountKeyPrefix$id';
+  String _vaultKey(int id) => accountSecretKey(id);
 
   String _trimTrailingSlash(String value) {
     if (value.isEmpty || value == '/') return '';

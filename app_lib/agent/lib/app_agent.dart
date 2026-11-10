@@ -13,11 +13,14 @@ export 'src/models/wire_codecs.dart';
 export 'src/isolate/wire.dart';
 export 'src/isolate/services_client.dart';
 export 'src/isolate/services_server.dart';
+export 'src/isolate/agent_host.dart';
+export 'src/isolate/agent_worker.dart' show agentEntryPoint;
 
 // Agent Runtime
 export 'src/agent/agent_event.dart';
 export 'src/agent/agent_event_logger.dart';
 export 'src/agent/agent_invocation.dart';
+export 'src/agent/agent_runner.dart';
 export 'src/agent/chat_agent_runtime.dart';
 export 'src/agent/memory_provider.dart';
 export 'src/agent/plugin_consumer.dart';

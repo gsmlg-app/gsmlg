@@ -1,7 +1,10 @@
 import 'dart:io' show stderr;
 import 'dart:isolate';
 
-import 'package:app_logging/app_logging.dart';
+import 'api_exchange_record.dart';
+import 'agent_log_event.dart';
+import 'log_capture.dart';
+import 'usage_event.dart';
 
 /// [LogSink] that forwards records to the `logstore` isolate's ingest port
 /// as `{'k': kind, 'r': record.toJson()}`. Fire-and-forget; never throws.

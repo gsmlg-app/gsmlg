@@ -89,7 +89,10 @@ Map<String, Object?> agentEventToWire(ChatAgentEvent e, {String? ackId}) {
       ...base,
       'type': 'runFailed',
       'error': {
-        'type': e.error.runtimeType.toString(),
+        'type': switch (e.error) {
+          final RemoteAgentError r => r.type,
+          final other => other.runtimeType.toString(),
+        },
         'message': e.error.toString(),
         'stackTrace': e.stackTrace?.toString(),
       },

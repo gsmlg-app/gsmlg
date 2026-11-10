@@ -13,6 +13,7 @@ import '../repositories/chat_storage_repository.dart';
 import '../repositories/gemma_repository.dart';
 import '../repositories/local_model_access.dart';
 import '../repositories/remote_llm_repository.dart';
+import '../services/local_llm_gateway.dart';
 import '../services/tool_executor.dart';
 import 'agent_event.dart';
 import 'agent_event_logger.dart';
@@ -32,6 +33,7 @@ class _AgentGatewayHook extends dac.AgentHook {
     required this.gateway,
     required this.emit,
     required this.model,
+    required this.awaitAcknowledgements,
   });
 
   final String runId;
@@ -39,6 +41,7 @@ class _AgentGatewayHook extends dac.AgentHook {
   final ToolExecutionGateway gateway;
   final void Function(ChatAgentEvent event) emit;
   final String model;
+  final bool awaitAcknowledgements;
   int _turnIndex = 0;
 
   @override
@@ -68,15 +71,17 @@ class _AgentGatewayHook extends dac.AgentHook {
   FutureOr<dac.ModelResponseHookResult> afterModelCall(
     dac.ModelResponseHookContext context,
   ) {
-    emit(
-      ModelTurnCompletedEvent(
-        runId: runId,
-        sessionId: sessionId,
-        turnIndex: _turnIndex++,
-        modelMessage: context.response,
-      ),
+    final event = ModelTurnCompletedEvent(
+      runId: runId,
+      sessionId: sessionId,
+      turnIndex: _turnIndex++,
+      modelMessage: context.response,
     );
-    return dac.ModelResponseHookResult.proceed(context.response);
+    emit(event);
+    final proceed = dac.ModelResponseHookResult.proceed(context.response);
+    if (!awaitAcknowledgements) return proceed;
+    // A rejected acknowledgement throws here and fails the run.
+    return event.acknowledgement.future.then((_) => proceed);
   }
 }
 
@@ -92,7 +97,9 @@ class ChatAgentRuntime {
     this.memoryProvider,
     this.skillRegistry,
     this.pluginConsumer,
+    this.localLlm,
     LocalModelAccess? localModelAccess,
+    this.awaitAcknowledgements = false,
   }) : _localModelAccess = localModelAccess;
 
   final ToolExecutor toolExecutor;
@@ -104,7 +111,17 @@ class ChatAgentRuntime {
   final ScopedMemoryProvider? memoryProvider;
   final SkillRegistry? skillRegistry;
   final PluginConsumer? pluginConsumer;
+
+  /// Local generation backend; when set it replaces [gemmaRepository]. In an
+  /// agent isolate this is the services bridge, which leases the local model
+  /// on the main isolate, so it must not be paired with a [LocalModelAccess].
+  final LocalLlmGateway? localLlm;
   final LocalModelAccess? _localModelAccess;
+
+  /// Whether the run waits for each [ModelTurnCompletedEvent] and
+  /// [ToolCallCompletedEvent] to be acknowledged before continuing. The
+  /// acknowledging side fails the run on rejection (agent isolates).
+  final bool awaitAcknowledgements;
 
   /// Runs the full model-tool iteration loop for a user turn, yielding structured events.
   Stream<ChatAgentEvent> runStream({
@@ -151,6 +168,7 @@ class ChatAgentRuntime {
       memoryProvider: memoryProvider,
       skillRegistry: skillRegistry,
       allowedTools: allowedTools,
+      awaitAcknowledgements: awaitAcknowledgements,
       onEvent: emit,
       onReceipt: (receipt) async {
         // Automatically persist receipt if storageRepository is available
@@ -196,6 +214,7 @@ class ChatAgentRuntime {
       config: modelConfig,
       remoteRepository: remoteRepository,
       gemmaRepository: gemmaRepository,
+      localLlm: localLlm,
       localModelAccess: _localModelAccess,
       conversationId: sessionId,
       runId: runId,
@@ -216,6 +235,7 @@ class ChatAgentRuntime {
       gateway: gateway,
       emit: emit,
       model: modelName,
+      awaitAcknowledgements: awaitAcknowledgements,
     );
     gatewayHook = hook;
 

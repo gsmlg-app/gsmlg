@@ -146,4 +146,48 @@ void main() {
       expect(events.any((e) => e is AgentRunStartedEvent), isTrue);
     });
   });
+
+  group('InProcessAgentRunner', () {
+    test('runs the runtime and stop(runId) cancels the run', () async {
+      final runner = InProcessAgentRunner(
+        ChatAgentRuntime(
+          toolExecutor: ToolExecutor(),
+          remoteRepository: _HangingRemoteLlmRepository(),
+        ),
+      );
+      final events = <ChatAgentEvent>[];
+      final done = Completer<void>();
+      runner
+          .runStream(
+            agentId: 'a',
+            runId: 'r1',
+            sessionId: 's',
+            modelConfig: const ModelConfig(
+              inferenceMode: ChatInferenceMode.remote,
+              remoteModel: 'test-model',
+            ),
+            historyMessages: const [],
+            userPrompt: 'hi',
+          )
+          .listen(events.add, onDone: done.complete, onError: (_) {});
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await runner.stop('r1');
+      await done.future.timeout(const Duration(seconds: 5));
+      expect(events.first, isA<AgentRunStartedEvent>());
+      expect(events.last, isA<AgentRunCancelledEvent>());
+    });
+  });
+}
+
+class _HangingRemoteLlmRepository extends RemoteLlmRepository {
+  _HangingRemoteLlmRepository() : super(vault: _FakeVault());
+
+  @override
+  Stream<ChatGenerationChunk> generateResponse(
+    List<Message> messages,
+    ModelConfig config, {
+    List<Map<String, dynamic>> tools = const [],
+    String? generationId,
+    LogContext? logContext,
+  }) => StreamController<ChatGenerationChunk>().stream;
 }

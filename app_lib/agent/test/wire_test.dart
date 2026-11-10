@@ -281,6 +281,40 @@ void main() {
     });
   });
 
+  group('agent isolate additions', () {
+    test('receipt results are reduced to JSON values', () {
+      final receipt = ToolInvocationReceipt(
+        runId: 'r',
+        callId: 'c',
+        invocationId: 'c',
+        toolName: 't',
+        arguments: '{}',
+        status: InvocationStatus.succeeded,
+        result: {
+          'at': DateTime.utc(2026),
+          'items': [Uri.parse('https://x.test'), 1],
+        },
+        timestamp: DateTime.utc(2026),
+      );
+      final wire = receipt.toWire();
+      expect(wire['result'], {
+        'at': '2026-01-01 00:00:00.000Z',
+        'items': ['https://x.test', 1],
+      });
+    });
+
+    test('a remote error keeps its type across another hop', () {
+      const e = AgentRunFailedEvent(
+        runId: 'r',
+        sessionId: 's',
+        error: RemoteAgentError(type: 'AcknowledgementRejected', message: 'x'),
+      );
+      final back =
+          agentEventFromWire(agentEventToWire(e)) as AgentRunFailedEvent;
+      expect((back.error as RemoteAgentError).type, 'AcknowledgementRejected');
+    });
+  });
+
   group('run messages', () {
     final port = ReceivePort();
     tearDownAll(port.close);

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:app_logging/app_logging.dart' show LogContext;
@@ -214,7 +215,20 @@ AgentMessageMetadata agentMessageMetadataFromWire(Map<String, Object?> w) =>
     AgentMessageMetadata.fromJson(w);
 
 extension ToolInvocationReceiptWire on ToolInvocationReceipt {
-  Map<String, Object?> toWire() => toJson().cast<String, Object?>();
+  /// [result] is tool-defined; it is reduced to JSON values (unknown objects
+  /// become their `toString()`) so the map is always sendable.
+  Map<String, Object?> toWire() => {
+    ...toJson().cast<String, Object?>(),
+    'result': _jsonSafe(result),
+  };
+}
+
+Object? _jsonSafe(Object? v) {
+  try {
+    return jsonDecode(jsonEncode(v, toEncodable: (o) => o.toString()));
+  } catch (_) {
+    return v.toString();
+  }
 }
 
 ToolInvocationReceipt toolInvocationReceiptFromWire(Map<String, Object?> w) =>

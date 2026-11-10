@@ -8,7 +8,7 @@ export 'src/duckdb_log_output.dart';
 export 'src/duckdb_log_sink.dart';
 export 'src/isolate/log_store_client.dart';
 export 'src/isolate/log_store_worker.dart';
-export 'src/isolate/port_log_sink.dart';
+export 'package:app_logging/app_logging.dart' show PortLogSink;
 export 'src/log_query_builder.dart';
 export 'src/log_router.dart';
 export 'src/log_store.dart';

@@ -17,3 +17,4 @@ export 'src/capture/http_body.dart';
 export 'src/capture/redaction.dart';
 export 'src/capture/agent_log_event.dart';
 export 'src/capture/usage_event.dart';
+export 'src/capture/port_log_sink.dart';

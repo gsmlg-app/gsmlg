@@ -28,7 +28,9 @@ class ToolExecutionGateway {
     this.onEvent,
     this.onReceipt,
     Set<String>? allowedTools,
+    bool awaitAcknowledgements = false,
   }) : _toolExecutor = toolExecutor,
+       _awaitAcknowledgements = awaitAcknowledgements,
        _shellService = shellService,
        _subAgentSupervisor = subAgentSupervisor,
        _memoryProvider = memoryProvider,
@@ -41,6 +43,10 @@ class ToolExecutionGateway {
   final ScopedMemoryProvider? _memoryProvider;
   final SkillRegistry? _skillRegistry;
   final Set<String>? _allowedTools;
+
+  /// Whether a tool call waits for its [ToolCallCompletedEvent] to be
+  /// acknowledged before returning its result to the model.
+  final bool _awaitAcknowledgements;
   final void Function(ChatAgentEvent event)? onEvent;
   final ToolReceiptHandler? onReceipt;
 
@@ -474,6 +480,15 @@ class ToolExecutionGateway {
         acknowledgement: completer,
       ),
     );
+
+    if (_awaitAcknowledgements) {
+      try {
+        await completer.future;
+      } catch (_) {
+        // Tool errors become tool results, so a rejection cannot fail the run
+        // from here; the acknowledging side cancels the run instead.
+      }
+    }
 
     if (onReceipt != null) {
       await onReceipt!(receipt);
