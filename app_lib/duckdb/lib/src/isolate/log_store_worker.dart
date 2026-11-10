@@ -47,8 +47,16 @@ class LogStoreWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
       throw ArgumentError.value(dbPath, 'dbPath', 'required');
     }
     await AppDuckDb.initialize();
+    // The connection is process-wide: a previous log store isolate that died
+    // without shutting down may have left it open (possibly on this file).
+    await _db.close();
     await _db.open(path: dbPath);
-    await _db.ensureLogSchemas();
+    try {
+      await _db.ensureLogSchemas();
+    } catch (_) {
+      await _db.close();
+      rethrow;
+    }
     _sink = DuckDbLogSink(duckDb: _db);
     _system = DuckDbLogOutput(duckDb: _db);
     _ingest = ReceivePort('logstore.ingest')..listen(_onIngest);
