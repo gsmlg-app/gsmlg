@@ -16,8 +16,10 @@ import 'wire.dart' show RemoteAgentError;
 /// Agent-isolate side of the services bridge. Forwards every call to the
 /// `AgentServicesServer` behind [serverPort].
 ///
-/// Unary calls time out after [timeout]; generation streams have no total
-/// timeout and send a cancel when their subscription is cancelled. Server
+/// Unary calls time out after [timeout]; a generation fails with
+/// `AgentServicesTimeout` if the server does not acknowledge it within
+/// [timeout], has no total timeout once started, and sends a cancel when its
+/// subscription is cancelled or the client is closed. Server
 /// errors are thrown as [RemoteAgentError]. Call [close] when done.
 class AgentServicesClient
     implements SecretReader, ToolDataSource, LocalLlmGateway {
@@ -33,11 +35,20 @@ class AgentServicesClient
   final _port = ReceivePort('agent-services-client');
   final _unary = <int, Completer<Object?>>{};
   final _streams = <int, StreamController<ChatGenerationChunk>>{};
+
+  /// First-response timers of generations the server has not answered yet.
+  final _startTimers = <int, Timer>{};
   var _nextId = 0;
   bool _closed = false;
 
-  /// Fails pending calls and releases the reply port.
+  /// Cancels generations still running on the main isolate, fails pending
+  /// calls and releases the reply port.
   void close() {
+    if (!_closed) {
+      for (final id in _streams.keys) {
+        _sendCancel(id);
+      }
+    }
     _port.close();
     _shutDown();
   }
@@ -53,6 +64,10 @@ class AgentServicesClient
     final streams = _streams.values.toList();
     _unary.clear();
     _streams.clear();
+    for (final t in _startTimers.values) {
+      t.cancel();
+    }
+    _startTimers.clear();
     for (final c in unary) {
       c.completeError(_closedError);
     }
@@ -80,8 +95,19 @@ class AgentServicesClient
     }
     final s = _streams[id];
     if (s == null) return;
+    _startTimers.remove(id)?.cancel();
     if (m.containsKey('chunk')) {
-      s.add(chatGenerationChunkFromWire((m['chunk'] as Map).cast()));
+      final ChatGenerationChunk chunk;
+      try {
+        chunk = chatGenerationChunkFromWire((m['chunk'] as Map).cast());
+      } catch (e, st) {
+        _streams.remove(id);
+        _sendCancel(id);
+        s.addError(e, st);
+        s.close();
+        return;
+      }
+      s.add(chunk);
     } else if (m.containsKey('error')) {
       _streams.remove(id);
       s.addError(_remoteError(m['error']));
@@ -90,6 +116,10 @@ class AgentServicesClient
       _streams.remove(id);
       s.close();
     }
+  }
+
+  void _sendCancel(int id) {
+    _server.send({'id': id, 'op': opCancel, 'reply': _port.sendPort});
   }
 
   RemoteAgentError _remoteError(Object? e) {
@@ -187,6 +217,19 @@ class AgentServicesClient
         }
         final requestId = id = _nextId++;
         _streams[requestId] = controller;
+        // The server acknowledges at once; silence means it is gone.
+        _startTimers[requestId] = Timer(timeout, () {
+          _startTimers.remove(requestId);
+          if (_streams.remove(requestId) == null) return;
+          _sendCancel(requestId);
+          controller.addError(
+            RemoteAgentError(
+              type: servicesTimeoutType,
+              message: 'Agent services generate got no response in $timeout',
+            ),
+          );
+          controller.close();
+        });
         _server.send({
           'id': requestId,
           'op': opLocalLlmGenerate,
@@ -200,14 +243,10 @@ class AgentServicesClient
       },
       onCancel: () {
         final requestId = id;
-        if (requestId == null || _streams.remove(requestId) == null) return;
-        if (!_closed) {
-          _server.send({
-            'id': requestId,
-            'op': opCancel,
-            'reply': _port.sendPort,
-          });
-        }
+        if (requestId == null) return;
+        _startTimers.remove(requestId)?.cancel();
+        if (_streams.remove(requestId) == null) return;
+        if (!_closed) _sendCancel(requestId);
       },
     );
     return controller.stream;

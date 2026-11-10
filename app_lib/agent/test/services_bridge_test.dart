@@ -114,6 +114,22 @@ Future<void> _worker(List<Object?> args) async {
           after = err(e);
         }
         out.send({'unary': results[0], 'stream': results[1], 'after': after});
+      case 'generateAfterClose':
+        final sw = Stopwatch()..start();
+        try {
+          await client.generate(messages, config: config).toList();
+          out.send({'ok': true});
+        } catch (e) {
+          out.send({...err(e), 'ms': sw.elapsedMilliseconds});
+        }
+      case 'clientClose':
+        final first = Completer<void>();
+        client.generate(messages, config: config).listen((_) {
+          if (!first.isCompleted) first.complete();
+        }, onError: (Object _) {});
+        await first.future;
+        client.close();
+        out.send('closed');
       case 'timeout':
         try {
           await client.read('hang');
@@ -154,11 +170,13 @@ class _Fixture {
   }
 
   /// Spawns [scenario] and returns its messages.
-  Future<StreamQueue> run(String scenario) async {
-    final port = ReceivePort();
-    await Isolate.spawn(_worker, [server.port, port.sendPort, scenario]);
-    return StreamQueue(port);
-  }
+  Future<StreamQueue> run(String scenario) => _spawn(server.port, scenario);
+}
+
+Future<StreamQueue> _spawn(SendPort serverPort, String scenario) async {
+  final port = ReceivePort();
+  await Isolate.spawn(_worker, [serverPort, port.sendPort, scenario]);
+  return StreamQueue(port);
 }
 
 /// Minimal queue over a ReceivePort.
@@ -348,6 +366,67 @@ void main() {
     }
     await f.llm.cancelled.future.timeout(const Duration(seconds: 5));
     q.close();
+  });
+
+  test(
+    'generate on a fresh client after server close fails, not hangs',
+    () async {
+      await f.server.close();
+      final q = await f.run('generateAfterClose');
+      final result = (await q.next())! as Map;
+      expect(result['errorClass'], 'RemoteAgentError');
+      expect(result['type'], 'AgentServicesTimeout');
+      expect(result['ms'] as int, lessThan(2000));
+      q.close();
+    },
+  );
+
+  test('client close cancels its running generations on main', () async {
+    f.llm.endless = true;
+    final q = await f.run('clientClose');
+    expect(await q.next(), 'closed');
+    await f.llm.cancelled.future.timeout(const Duration(seconds: 5));
+    q.close();
+  });
+
+  test('client close releases the main-isolate local model lease', () async {
+    final access = LocalModelAccess();
+    final gemma = _FakeGemma();
+    final server = AgentServicesServer(
+      secrets: _HangingSecrets(VaultSecretReader(_MemoryVault())),
+      data: DatabaseToolDataSource(f.database),
+      localLlm: GemmaLocalLlmGateway(gemma, access: access),
+    );
+    addTearDown(server.close);
+    final q = await _spawn(server.port, 'clientClose');
+    expect(await q.next(), 'closed');
+    final lease = await access.acquire().timeout(const Duration(seconds: 5));
+    lease.release();
+    q.close();
+  });
+
+  test('undecodable chunks become stream errors and cancel', () async {
+    final fakeServer = ReceivePort();
+    addTearDown(fakeServer.close);
+    final requests = <Map>[];
+    fakeServer.listen((m) {
+      final req = m as Map;
+      requests.add(req);
+      if (req['op'] == 'localLlm.generate') {
+        (req['reply'] as SendPort).send({
+          'id': req['id'],
+          'chunk': {'kind': 'bogus'},
+        });
+      }
+    });
+    final client = AgentServicesClient(fakeServer.sendPort);
+    addTearDown(client.close);
+    await expectLater(
+      client.generate(const [], config: const ModelConfig()),
+      emitsError(isArgumentError),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(requests.map((r) => r['op']), ['localLlm.generate', 'cancel']);
   });
 
   test('unary calls time out instead of hanging', () async {

@@ -143,6 +143,7 @@ class AgentServicesServer {
         },
         cancelOnError: true,
       );
+      _send(reply, {'id': id, 'started': true});
     } catch (e) {
       _send(reply, {'id': id, 'error': errorToWire(e)});
     }
