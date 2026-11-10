@@ -74,12 +74,13 @@ class MainProvider extends StatelessWidget {
               LocalModelAccess.forResource(context.read<GemmaRepository>()),
         ),
         RepositoryProvider<RemoteLlmRepository>(
-          create: (context) => RemoteLlmRepository(vault: vault),
+          create: (context) =>
+              RemoteLlmRepository(secrets: VaultSecretReader(vault)),
         ),
         RepositoryProvider<BackplaneServiceRepository>(
           create: (context) => BackplaneServiceRepository(
-            database: database,
-            vault: vault,
+            data: DatabaseToolDataSource(database),
+            secrets: VaultSecretReader(vault),
             remoteLlm: context.read<RemoteLlmRepository>(),
           ),
         ),
@@ -98,8 +99,8 @@ class MainProvider extends StatelessWidget {
         ),
         RepositoryProvider<ToolExecutor>(
           create: (context) => ToolExecutor(
-            database: database,
-            vault: vault,
+            data: DatabaseToolDataSource(database),
+            secrets: VaultSecretReader(vault),
             remoteMcpProfilesProvider: () {
               final profiles =
                   sharedPrefs.getStringList('remote_mcp_profiles') ??

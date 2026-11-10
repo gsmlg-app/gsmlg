@@ -15,6 +15,8 @@ import 'package:vultr_api/api.dart' as vultr;
 
 import '../models/model_config.dart';
 import 'dart_mcp_tool_client.dart';
+import 'secret_reader.dart';
+import 'tool_data_source.dart';
 
 typedef RemoteMcpProfilesProvider = List<String> Function();
 
@@ -40,23 +42,28 @@ final class ChatToolDefinition {
 
 /// Executes tool calls from the LLM and provides tool definitions.
 class ToolExecutor {
+  /// Pass [data] and [secrets]; [database] and [vault] are main-isolate
+  /// conveniences wrapped in [DatabaseToolDataSource] / [VaultSecretReader].
   ToolExecutor({
+    ToolDataSource? data,
+    SecretReader? secrets,
     AppDatabase? database,
     VaultRepository? vault,
     RemoteMcpProfilesProvider? remoteMcpProfilesProvider,
     RemoteMcpToolCaller? remoteMcpToolCaller,
     DartMcpToolClient? dartMcpToolClient,
     Dio? dio,
-  }) : _database = database,
-       _vault = vault,
+  }) : _data =
+           data ?? (database == null ? null : DatabaseToolDataSource(database)),
+       _secrets = secrets ?? (vault == null ? null : VaultSecretReader(vault)),
        _remoteMcpProfilesProvider = remoteMcpProfilesProvider,
        _remoteMcpToolCaller = remoteMcpToolCaller,
        _dio = (dio ?? Dio())..addApiCaptureOnce(),
        _dartMcpToolClient = dartMcpToolClient ?? DartMcpToolClient(dio: dio);
 
   IpDatabase? _ipDatabase;
-  final AppDatabase? _database;
-  final VaultRepository? _vault;
+  final ToolDataSource? _data;
+  final SecretReader? _secrets;
   final RemoteMcpProfilesProvider? _remoteMcpProfilesProvider;
   final RemoteMcpToolCaller? _remoteMcpToolCaller;
   final Dio _dio;
@@ -372,11 +379,9 @@ class ToolExecutor {
       final headers = <String, dynamic>{};
       if (server.accountId != null) {
         if (server.id == 'backplane') {
-          final database = _requireDatabase();
-          final account =
-              await (database.select(database.serviceAccountTable)
-                    ..where((table) => table.id.equals(server.accountId!)))
-                  .getSingleOrNull();
+          final account = await _requireData().serviceAccountById(
+            server.accountId!,
+          );
           if (account == null) {
             throw StateError(
               'Selected service account is missing. Manage Service Accounts.',
@@ -731,8 +736,7 @@ class ToolExecutor {
     Map<String, dynamic> args,
   ) async {
     try {
-      final database = _requireDatabase();
-      final zones = await database.select(database.dnsZoneTable).get();
+      final zones = await _requireData().listDnsZones();
       return {'zones': zones.map(_zoneToJson).toList(growable: false)};
     } catch (e) {
       return {'error': e.toString()};
@@ -923,45 +927,48 @@ class ToolExecutor {
     }
   }
 
-  AppDatabase _requireDatabase() {
-    final database = _database;
-    if (database == null) {
+  ToolDataSource _requireData() {
+    final data = _data;
+    if (data == null) {
       throw StateError('ToolExecutor database dependency is not configured');
     }
-    return database;
+    return data;
   }
 
-  VaultRepository _requireVault() {
-    final vault = _vault;
-    if (vault == null) {
+  SecretReader _requireSecrets() {
+    final secrets = _secrets;
+    if (secrets == null) {
       throw StateError('ToolExecutor vault dependency is not configured');
     }
-    return vault;
+    return secrets;
   }
 
   Future<DnsZoneTableData> _findZone(Map<String, dynamic> args) async {
-    final database = _requireDatabase();
+    final data = _requireData();
     final localZoneId = _intArg(args['local_zone_id']);
     final zoneId = args['zone_id'] as String?;
     final zoneName = args['zone_name'] as String?;
     final provider = args['provider'] as String?;
+    final providerFilter = provider != null && provider.isNotEmpty
+        ? provider
+        : null;
 
-    final query = database.select(database.dnsZoneTable);
+    final List<DnsZoneTableData> zones;
     if (localZoneId != null) {
-      query.where((t) => t.id.equals(localZoneId));
+      zones = await data.findDnsZones(
+        localZoneId: localZoneId,
+        provider: providerFilter,
+      );
     } else if (zoneId != null && zoneId.isNotEmpty) {
-      query.where((t) => t.zoneId.equals(zoneId));
+      zones = await data.findDnsZones(zoneId: zoneId, provider: providerFilter);
     } else if (zoneName != null && zoneName.isNotEmpty) {
-      query.where((t) => t.zoneName.equals(zoneName));
+      zones = await data.findDnsZones(
+        zoneName: zoneName,
+        provider: providerFilter,
+      );
     } else {
       throw Exception('Provide local_zone_id, zone_id, or zone_name');
     }
-
-    if (provider != null && provider.isNotEmpty) {
-      query.where((t) => t.provider.equals(provider));
-    }
-
-    final zones = await query.get();
     if (zones.isEmpty) {
       throw Exception('DNS zone not found');
     }
@@ -974,9 +981,7 @@ class ToolExecutor {
   }
 
   Future<String> _serviceAccountSecret(int accountId) async {
-    final secret = await _requireVault().read(
-      key: 'service_account_$accountId',
-    );
+    final secret = await _requireSecrets().read('service_account_$accountId');
     if (secret == null || secret.isEmpty) {
       throw Exception('No credentials found for service account $accountId');
     }
@@ -984,10 +989,9 @@ class ToolExecutor {
   }
 
   Future<String> _ollamaApiKey() async {
-    final database = _requireDatabase();
-    final query = database.select(database.serviceAccountTable)
-      ..where((t) => t.provider.equals(ServiceProvider.ollama.name));
-    final accounts = await query.get();
+    final accounts = await _requireData().serviceAccountsByProvider(
+      ServiceProvider.ollama,
+    );
     if (accounts.isEmpty) {
       throw Exception('No Ollama service account configured');
     }
@@ -1130,13 +1134,10 @@ class ToolExecutor {
   }
 
   Future<List<ServiceAccountTableData>> _vultrAccounts({int? accountId}) async {
-    final database = _requireDatabase();
-    final query = database.select(database.serviceAccountTable)
-      ..where((t) => t.provider.equals(ServiceProvider.vultr.name));
-    if (accountId != null) {
-      query.where((t) => t.id.equals(accountId));
-    }
-    final accounts = await query.get();
+    final accounts = await _requireData().serviceAccountsByProvider(
+      ServiceProvider.vultr,
+      id: accountId,
+    );
     if (accounts.isEmpty) {
       throw Exception(
         accountId == null

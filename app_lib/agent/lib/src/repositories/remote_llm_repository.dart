@@ -11,15 +11,25 @@ import '../models/agent_metadata.dart';
 import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
+import '../services/secret_reader.dart';
 
 /// Repository for remote LLM APIs.
 class RemoteLlmRepository {
-  RemoteLlmRepository({required VaultRepository vault, http.Client? client})
-    : _vault = vault,
-      _client = LoggingHttpClient(client ?? http.Client()),
-      _ownsClient = client == null;
+  /// Pass [secrets]; [vault] is a main-isolate convenience wrapped in
+  /// [VaultSecretReader].
+  RemoteLlmRepository({
+    SecretReader? secrets,
+    VaultRepository? vault,
+    http.Client? client,
+  }) : _secrets =
+           secrets ??
+           VaultSecretReader(
+             vault ?? (throw ArgumentError('secrets or vault is required')),
+           ),
+       _client = LoggingHttpClient(client ?? http.Client()),
+       _ownsClient = client == null;
 
-  final VaultRepository _vault;
+  final SecretReader _secrets;
   final http.Client _client;
   final bool _ownsClient;
   final Map<Object, Completer<void>> _generationAborts = {};
@@ -63,7 +73,7 @@ class RemoteLlmRepository {
     }
     final accountId = config.remoteAccountId;
     if (accountId == null) return false;
-    final apiKey = await _vault.read(key: _vaultKey(accountId));
+    final apiKey = await _secrets.read(_vaultKey(accountId));
     return apiKey != null && apiKey.trim().isNotEmpty;
   }
 
@@ -284,7 +294,7 @@ class RemoteLlmRepository {
       throw const RemoteLlmException('Select a remote LLM account first.');
     }
 
-    final apiKey = await _vault.read(key: _vaultKey(accountId));
+    final apiKey = await _secrets.read(_vaultKey(accountId));
     if (apiKey == null || apiKey.trim().isEmpty) {
       throw const RemoteLlmException(
         'The selected remote LLM account is missing an API key.',

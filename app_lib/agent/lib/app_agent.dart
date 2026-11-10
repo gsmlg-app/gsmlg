@@ -11,6 +11,8 @@ export 'src/models/inference.dart';
 export 'src/models/agent_metadata.dart';
 export 'src/models/wire_codecs.dart';
 export 'src/isolate/wire.dart';
+export 'src/isolate/services_client.dart';
+export 'src/isolate/services_server.dart';
 
 // Agent Runtime
 export 'src/agent/agent_event.dart';
@@ -41,6 +43,9 @@ export 'src/repositories/backplane_service_repository.dart';
 // Services
 export 'src/services/dart_mcp_tool_client.dart';
 export 'src/services/tool_executor.dart';
+export 'src/services/secret_reader.dart';
+export 'src/services/tool_data_source.dart';
+export 'src/services/local_llm_gateway.dart';
 
 export 'src/services/conversation_title_generator.dart';
 export 'src/services/minicpm_title_backend.dart';

@@ -12,14 +12,21 @@ import '../models/model_config.dart' as app_cfg;
 import '../repositories/gemma_repository.dart';
 import '../repositories/local_model_access.dart';
 import '../repositories/remote_llm_repository.dart';
+import '../services/local_llm_gateway.dart';
 
-/// Adapts GSMLG model repositories (RemoteLlmRepository, GemmaRepository)
+/// Adapts GSMLG model repositories (RemoteLlmRepository, LocalLlmGateway)
 /// into a dart_agent_core LLMClient with request-scoped local model lease protection.
+///
+/// Local generation goes through [localLlm]; [gemmaRepository] is a
+/// main-isolate convenience wrapped in [GemmaLocalLlmGateway]. The
+/// [localModelAccess] lease is taken here, so a gateway that leases itself
+/// (an agent isolate's bridged gateway) must be paired with no access.
 class RepositoryAgentLlmClient implements LLMClient {
   RepositoryAgentLlmClient({
     required this.config,
     this.remoteRepository,
     this.gemmaRepository,
+    this.localLlm,
     this.localModelAccess,
     this.conversationId,
     this.runId,
@@ -36,7 +43,15 @@ class RepositoryAgentLlmClient implements LLMClient {
   final app_cfg.ModelConfig config;
   final RemoteLlmRepository? remoteRepository;
   final GemmaRepository? gemmaRepository;
+  final LocalLlmGateway? localLlm;
   final LocalModelAccess? localModelAccess;
+
+  late final LocalLlmGateway? _local =
+      localLlm ??
+      switch (gemmaRepository) {
+        final gemma? => GemmaLocalLlmGateway(gemma),
+        null => null,
+      };
   final String? conversationId;
   final String? runId;
   final String? generationId;
@@ -63,12 +78,9 @@ class RepositoryAgentLlmClient implements LLMClient {
         generationId ?? 'gen_${DateTime.now().microsecondsSinceEpoch}';
     final Stream<ChatGenerationChunk> raw;
     final logContext = _nextLogContext(effectiveGenId);
-    if (_isLocal && gemmaRepository != null) {
-      raw = gemmaRepository!.generateResponse(
-        messages,
-        config: config,
-        tools: tools,
-      );
+    final local = _local;
+    if (_isLocal && local != null) {
+      raw = local.generate(messages, config: config, tools: tools);
     } else if (remoteRepository != null) {
       raw = remoteRepository!.generateResponse(
         messages,
@@ -190,8 +202,9 @@ class RepositoryAgentLlmClient implements LLMClient {
         final effectiveGenId =
             generationId ?? 'gen_${DateTime.now().microsecondsSinceEpoch}';
         final logContext = _nextLogContext(effectiveGenId);
-        if (_isLocal && gemmaRepository != null) {
-          rawStream = gemmaRepository!.generateResponse(
+        final local = _local;
+        if (_isLocal && local != null) {
+          rawStream = local.generate(
             appMessages,
             config: config,
             tools: openAiTools,

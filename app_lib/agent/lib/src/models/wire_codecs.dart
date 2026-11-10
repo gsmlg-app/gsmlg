@@ -6,6 +6,7 @@ import '../agent/agent_invocation.dart';
 import 'agent_definition.dart';
 import 'agent_metadata.dart';
 import 'conversation.dart';
+import 'inference.dart';
 import 'message.dart';
 import 'model_config.dart';
 
@@ -224,3 +225,34 @@ extension LogContextWire on LogContext {
 }
 
 LogContext logContextFromWire(Map<String, Object?> w) => LogContext.fromJson(w);
+
+extension ChatGenerationChunkWire on ChatGenerationChunk {
+  Map<String, Object?> toWire() => switch (this) {
+    ChatTextChunk(:final text) => {'kind': 'text', 'text': text},
+    ChatThinkingChunk(:final content) => {
+      'kind': 'thinking',
+      'content': content,
+    },
+    ChatFunctionCallChunk(:final name, :final args, :final id, :final index) =>
+      {
+        'kind': 'functionCall',
+        'name': name,
+        'args': args,
+        'id': id,
+        'index': index,
+      },
+  };
+}
+
+ChatGenerationChunk chatGenerationChunkFromWire(Map<String, Object?> w) =>
+    switch (w['kind']) {
+      'text' => ChatTextChunk(w['text'] as String),
+      'thinking' => ChatThinkingChunk(w['content'] as String),
+      'functionCall' => ChatFunctionCallChunk(
+        name: w['name'] as String,
+        args: Map<String, dynamic>.from(w['args'] as Map),
+        id: w['id'] as String?,
+        index: w['index'] as int?,
+      ),
+      final k => throw ArgumentError('Unknown chunk kind: $k'),
+    };

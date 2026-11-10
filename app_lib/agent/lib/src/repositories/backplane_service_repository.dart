@@ -4,20 +4,34 @@ import 'package:app_secure_storage/vault_repository.dart';
 import '../models/backplane_settings.dart';
 import '../repositories/remote_llm_repository.dart';
 import '../services/dart_mcp_tool_client.dart';
+import '../services/secret_reader.dart';
+import '../services/tool_data_source.dart';
 
 class BackplaneServiceRepository {
+  /// Pass [data] and [secrets]; [database] and [vault] are main-isolate
+  /// conveniences wrapped in [DatabaseToolDataSource] / [VaultSecretReader].
   BackplaneServiceRepository({
-    required AppDatabase database,
-    required VaultRepository vault,
+    ToolDataSource? data,
+    SecretReader? secrets,
+    AppDatabase? database,
+    VaultRepository? vault,
     required RemoteLlmRepository remoteLlm,
     DartMcpToolClient? mcpClient,
-  }) : _database = database,
-       _vault = vault,
+  }) : _data =
+           data ??
+           DatabaseToolDataSource(
+             database ?? (throw ArgumentError('data or database is required')),
+           ),
+       _secrets =
+           secrets ??
+           VaultSecretReader(
+             vault ?? (throw ArgumentError('secrets or vault is required')),
+           ),
        _remoteLlm = remoteLlm,
        _mcpClient = mcpClient ?? DartMcpToolClient();
 
-  final AppDatabase _database;
-  final VaultRepository _vault;
+  final ToolDataSource _data;
+  final SecretReader _secrets;
   final RemoteLlmRepository _remoteLlm;
   final DartMcpToolClient _mcpClient;
 
@@ -26,15 +40,13 @@ class BackplaneServiceRepository {
     if (id == null) {
       throw StateError('Select a service account in Backplane settings.');
     }
-    final account = await (_database.select(
-      _database.serviceAccountTable,
-    )..where((table) => table.id.equals(id))).getSingleOrNull();
+    final account = await _data.serviceAccountById(id);
     if (account == null) {
       throw StateError(
         'Selected service account is missing. Manage Service Accounts.',
       );
     }
-    final token = (await _vault.read(key: 'service_account_$id'))?.trim();
+    final token = (await _secrets.read('service_account_$id'))?.trim();
     if (token == null || token.isEmpty) {
       throw StateError(
         'Selected service account has no token. Manage Service Accounts.',
