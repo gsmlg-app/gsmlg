@@ -149,6 +149,34 @@ class _NoLocal implements LocalLlmGateway {
   Future<void> stop() async {}
 }
 
+/// Local model that streams one chunk and never finishes.
+class _HangingLocal implements LocalLlmGateway {
+  final started = Completer<void>();
+  final cancelled = Completer<void>();
+
+  @override
+  Stream<ChatGenerationChunk> generate(
+    List<Message> messages, {
+    ModelConfig? config,
+    List<Map<String, dynamic>> tools = const [],
+  }) {
+    late final StreamController<ChatGenerationChunk> controller;
+    controller = StreamController(
+      onListen: () {
+        controller.add(const ChatTextChunk('partial'));
+        if (!started.isCompleted) started.complete();
+      },
+      onCancel: () {
+        if (!cancelled.isCompleted) cancelled.complete();
+      },
+    );
+    return controller.stream;
+  }
+
+  @override
+  Future<void> stop() async {}
+}
+
 void main() {
   late IsolateHub hub;
   late AgentServicesServer services;
@@ -360,6 +388,49 @@ void main() {
     },
   );
 
+  test(
+    'a local run lost with its worker cancels the bridged generation',
+    () async {
+      await host.dispose();
+      await services.close();
+      final local = _HangingLocal();
+      services = AgentServicesServer(
+        secrets: _Secrets(),
+        data: _Data(),
+        localLlm: local,
+      );
+      host = newHost();
+      final events = <ChatAgentEvent>[];
+      final done = Completer<void>();
+      host
+          .runStream(
+            agentId: 'a',
+            runId: 'local-1',
+            sessionId: 'session-1',
+            modelConfig: const ModelConfig(),
+            historyMessages: [
+              UserMessage(
+                id: 'u1',
+                content: 'hi',
+                conversationId: 'session-1',
+                timestamp: DateTime.utc(2026),
+              ),
+            ],
+            userPrompt: 'hi',
+          )
+          .listen(events.add, onDone: done.complete);
+
+      await local.started.future.timeout(const Duration(seconds: 10));
+      await hub.getByName('agent:a')!.kill(graceful: false);
+      await done.future.timeout(const Duration(seconds: 5));
+      expect(
+        ((events.last as AgentRunFailedEvent).error as RemoteAgentError).type,
+        agentIsolateLostErrorType,
+      );
+      await local.cancelled.future.timeout(const Duration(seconds: 2));
+    },
+  );
+
   test('idle timeout stops the worker; the next run respawns it', () async {
     await host.dispose();
     host = newHost(idleTimeout: const Duration(milliseconds: 300));
@@ -419,6 +490,66 @@ void main() {
       expect(events.whereType<ToolCallStartedEvent>(), isEmpty);
     },
   );
+
+  test('a supervisor-restarted worker gets the current log port', () async {
+    final first = ReceivePort();
+    final second = ReceivePort();
+    addTearDown(first.close);
+    addTearDown(second.close);
+    final firstMessages = <Map>[];
+    final secondMessages = <Map>[];
+    first.listen((m) => firstMessages.add(m as Map));
+    second.listen((m) => secondMessages.add(m as Map));
+    final changes = StreamController<SendPort?>();
+    addTearDown(changes.close);
+    await host.dispose();
+    host = newHost(logIngest: first.sendPort, logIngestChanges: changes.stream);
+
+    Future<ChatAgentEvent> complete() => run()
+        .map((e) {
+          if (e is ModelTurnCompletedEvent) e.acknowledge();
+          if (e is ToolCallCompletedEvent) e.acknowledge();
+          return e;
+        })
+        .last
+        .timeout(const Duration(seconds: 20));
+
+    Future<void> until(String what, bool Function() condition) async {
+      final deadline = DateTime.now().add(const Duration(seconds: 10));
+      while (!condition() && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      expect(condition(), isTrue, reason: what);
+    }
+
+    expect(await complete(), isA<AgentRunCompletedEvent>());
+    final worker = hub.getByName('agent:a')!;
+    changes.add(second.sendPort);
+    await until(
+      'live worker switched ports',
+      () => secondMessages.any(
+        (m) => '${m['message']}'.contains('Log ingest port changed'),
+      ),
+    );
+
+    // A supervisor restart reuses the original spawn config (first port).
+    await hub.restartNode('/agents/agent:a');
+    await until('worker restarted', () {
+      final next = hub.getByName('agent:a');
+      return next != null &&
+          next.id != worker.id &&
+          next.state == IsolateState.running;
+    });
+    final apiBefore = secondMessages.where((m) => m['k'] == 'api').length;
+    final firstBefore = firstMessages.length;
+    expect(await complete(), isA<AgentRunCompletedEvent>());
+    await until(
+      'restarted worker logs to the current port',
+      () => secondMessages.where((m) => m['k'] == 'api').length > apiBefore,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    expect(firstMessages.length, firstBefore);
+  });
 
   test('live and new workers follow log ingest port changes', () async {
     final first = ReceivePort();

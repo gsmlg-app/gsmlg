@@ -49,6 +49,14 @@ class AgentServicesServer {
     await Future.wait([for (final s in subs) s.cancel()]);
   }
 
+  /// Cancels every active local generation, e.g. after the client running
+  /// it died: its cancel request will never arrive.
+  Future<void> cancelAllStreams() async {
+    final subs = _streams.values.toList();
+    _streams.clear();
+    await Future.wait([for (final s in subs) s.cancel()]);
+  }
+
   void _onMessage(Object? raw) {
     if (raw is! Map) return;
     final m = raw.cast<String, Object?>();

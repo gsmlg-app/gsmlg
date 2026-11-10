@@ -121,6 +121,7 @@ class AgentHost implements AgentRunner {
       agentId: agentId,
       runId: runId,
       sessionId: sessionId,
+      local: modelConfig.inferenceMode == ChatInferenceMode.local,
       onFirstToken: onFirstToken,
     );
     run.controller = StreamController<ChatAgentEvent>(
@@ -454,6 +455,15 @@ class AgentHost implements AgentRunner {
   }
 
   void _onHubEvent(HubEvent event) {
+    if (event is IsolateReady) {
+      // A supervisor restart reuses the original spawn config, whose log port
+      // may be stale.
+      final name = event.handle.name;
+      if (name.startsWith('$workerRole:')) {
+        _sendLogPort(event.handle.id, _logIngest);
+      }
+      return;
+    }
     final (isolateId, reason) = switch (event) {
       IsolateFailed(:final handle, :final error) => (handle.id, error),
       IsolateStopped(:final id) => (id, 'stopped'),
@@ -464,8 +474,10 @@ class AgentHost implements AgentRunner {
     for (final slot in _workers.values) {
       if (slot.isolateId == isolateId) slot.isolateId = null;
     }
+    var lostLocal = false;
     for (final run in _runs.values.toList()) {
       if (run.isolateId != isolateId) continue;
+      lostLocal |= run.local;
       _fail(
         run,
         RemoteAgentError(
@@ -474,6 +486,9 @@ class AgentHost implements AgentRunner {
         ),
       );
     }
+    // The dead worker can no longer cancel its bridged local generation. Local
+    // runs hold the single local slot, so every active stream is the lost one.
+    if (lostLocal) unawaited(_services.cancelAllStreams());
   }
 
   void _fail(_HostRun run, RemoteAgentError error, [StackTrace? stackTrace]) {
@@ -549,12 +564,16 @@ class _HostRun {
     required this.agentId,
     required this.runId,
     required this.sessionId,
+    required this.local,
     required this.onFirstToken,
   });
 
   final String agentId;
   final String runId;
   final String sessionId;
+
+  /// Uses the main-isolate local model through the services bridge.
+  final bool local;
   final void Function()? onFirstToken;
   late final StreamController<ChatAgentEvent> controller;
   ReceivePort? port;
