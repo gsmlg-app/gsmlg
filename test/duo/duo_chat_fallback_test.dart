@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:app_agent/app_agent.dart';
+import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:gsmlg/duo/duo_chat_fallback.dart';
 import 'package:gsmlg/duo/duo_controller.dart';
 import 'package:gsmlg/screens/agents/agents_screen.dart';
@@ -43,6 +46,8 @@ class _FakeDuoPlatform implements DuoDisplayPlatform {
 }
 
 void main() {
+  setUpAll(() => registerFallbackValue(const ChatLoadHistory()));
+
   testWidgets('companion send on the agents home starts a conversation with '
       'the active agent and shows it', (tester) async {
     final h = await RealChatHarness.create(tester);
@@ -100,6 +105,54 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     primary.dispose();
     secondary.dispose();
+  });
+
+  test('a send for a local agent without a model resolves an installed '
+      'model like the chat screen', () {
+    final chat = MockChatBloc();
+    final settings = MockChatSettingsBloc();
+    final models = MockGemmaModelBloc();
+    final local = AgentDefinition(
+      id: 'l1',
+      name: 'Local',
+      config: const ModelConfig(),
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+    when(() => chat.state).thenReturn(const ChatState());
+    when(() => settings.state).thenReturn(
+      ChatSettingsState(
+        status: ChatSettingsStatus.loaded,
+        agents: [local],
+        activeAgentId: 'l1',
+      ),
+    );
+    when(
+      () => models.state,
+    ).thenReturn(const GemmaModelState(installedModels: ['gemma-4-E2B-it']));
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          name: ChatScreen.name,
+          builder: (_, _) => const SizedBox(),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    DuoChatFallback(
+      chatBloc: () => chat,
+      settingsBloc: () => settings,
+      modelBloc: () => models,
+      router: router,
+    ).send('hello');
+
+    final sent = verify(
+      () => chat.add(captureAny()),
+    ).captured.whereType<ChatSendMessage>().single;
+    expect(sent.config?.localModelId, 'gemma-4-E2B-it');
+    expect(sent.agentId, 'l1');
   });
 
   test('intents are ignored while the chat blocs are unavailable', () {

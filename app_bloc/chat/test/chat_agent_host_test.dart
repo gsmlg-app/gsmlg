@@ -32,6 +32,43 @@ void main() {
     expect(f.runner.runs['b']!.agentId, ChatBloc.unownedAgentId);
   });
 
+  test('a local owner without a model keeps the screen-resolved model id',
+      () async {
+    final f = _Fixture(agents: [
+      AgentDefinition(
+          id: 'x',
+          name: 'X',
+          config: const ModelConfig(),
+          createdAt: DateTime.utc(2026),
+          updatedAt: DateTime.utc(2026)),
+    ]);
+    addTearDown(f.close);
+    f.local.ready = false;
+    await f.storage
+        .saveConversation(Conversation.create(id: 'a', agentId: 'x'));
+    await f.start('a',
+        config: const ModelConfig(localModelId: 'gemma-4-E2B-it'));
+    expect(f.runner.runs['a']!.config.localModelId, 'gemma-4-E2B-it');
+  });
+
+  test('unowned runs never share an isolate key with a stored agent', () async {
+    final f = _Fixture(agents: [
+      AgentDefinition(
+          id: 'default',
+          name: 'Default',
+          config: _remoteConfig,
+          createdAt: DateTime.utc(2026),
+          updatedAt: DateTime.utc(2026)),
+    ]);
+    addTearDown(f.close);
+    await f.storage
+        .saveConversation(Conversation.create(id: 'a', agentId: 'default'));
+    await f.start('a');
+    await f.start('b', config: _remoteConfig);
+    expect(f.runner.runs['a']!.agentId, 'default');
+    expect(f.runner.runs['b']!.agentId, isNot('default'));
+  });
+
   test('both acknowledgements complete only after persistence', () async {
     final f = _Fixture();
     addTearDown(f.close);
@@ -148,7 +185,7 @@ void main() {
         sessionId: 'a',
         error: const RemoteAgentError(
             type: agentIsolateLostErrorType,
-            message: 'Agent isolate agent:default lost: crashed')));
+            message: 'Agent isolate agent:_unowned lost: crashed')));
     await failed;
     expect(f.bloc.state.sessionFor('a')!.errorMessage, contains('lost'));
   });
@@ -181,17 +218,55 @@ void main() {
     await bStarted;
     expect(f.runner.order, ['a', 'b']);
   });
+
+  test(
+      'a failed local run stops generation before the next run takes the lease',
+      () async {
+    final f = _Fixture();
+    addTearDown(f.close);
+    await f.start('a');
+    await f.start('b', expected: ChatStatus.queued);
+    final run = f.runner.runs['a']!;
+    final bStarted =
+        _wait(f.bloc, (s) => s.sessionFor('b')?.isStreaming ?? false);
+    run.add(AgentRunFailedEvent(
+        runId: run.runId,
+        sessionId: 'a',
+        error: const RemoteAgentError(
+            type: agentIsolateLostErrorType,
+            message: 'Agent isolate agent:_unowned lost: crashed')));
+    await bStarted;
+    expect(f.log, ['run:a', 'stop', 'run:b']);
+  });
+
+  test('a normally completed local run does not stop generation', () async {
+    final f = _Fixture();
+    addTearDown(f.close);
+    await f.start('a');
+    final run = f.runner.runs['a']!;
+    run.add(ModelChunkReceivedEvent(
+        runId: run.runId, sessionId: 'a', turnIndex: 0, textChunk: 'ok'));
+    final done =
+        _wait(f.bloc, (s) => s.sessionFor('a')?.status == ChatStatus.ready);
+    run.add(AgentRunCompletedEvent(
+        runId: run.runId, sessionId: 'a', finalResponse: null));
+    await done;
+    expect(f.log, ['run:a']);
+  });
 }
 
 class _Run {
-  _Run(this.agentId, this.runId);
+  _Run(this.agentId, this.runId, this.config);
   final String agentId;
   final String runId;
+  final ModelConfig config;
   final controller = StreamController<ChatAgentEvent>();
   void add(ChatAgentEvent event) => controller.add(event);
 }
 
 class _Runner implements AgentRunner {
+  _Runner(this.log);
+  final List<String> log;
   final runs = <String, _Run>{};
   final order = <String>[];
   final stopped = <String>[];
@@ -213,8 +288,9 @@ class _Runner implements AgentRunner {
   }) {
     final error = throwOnStart;
     if (error != null) throw error;
-    final run = runs[sessionId] = _Run(agentId, runId);
+    final run = runs[sessionId] = _Run(agentId, runId, modelConfig);
     order.add(sessionId);
+    log.add('run:$sessionId');
     return run.controller.stream;
   }
 
@@ -239,10 +315,11 @@ class _Fixture {
       agentRunner: runner,
     );
   }
+  final log = <String>[];
   final storage = _Storage();
-  final local = _Local();
+  late final local = _Local(log);
   final remote = _Remote();
-  final runner = _Runner();
+  late final runner = _Runner(log);
   late final ChatBloc bloc;
 
   Future<void> start(String id,
@@ -283,10 +360,25 @@ class _Remote implements RemoteLlmRepository {
 }
 
 class _Local extends GemmaRepository {
+  _Local(this.log);
+  final List<String> log;
+  bool ready = true;
   @override
-  bool get isReady => true;
+  bool get isReady => ready;
   @override
-  Future<void> stopGeneration() async {}
+  Future<void> activateModel(GemmaModelInfo info) async {}
+  @override
+  Future<void> loadModel(ModelConfig config,
+      {bool supportImage = false,
+      bool supportAudio = false,
+      bool isThinking = false,
+      bool supportsFunctionCalls = false,
+      String? downloadProxyUrl}) async {
+    ready = true;
+  }
+
+  @override
+  Future<void> stopGeneration() async => log.add('stop');
   @override
   Future<void> dispose() async {}
 }

@@ -3,6 +3,7 @@ import 'package:app_logging/app_logging.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/screens/chat/chat_screen.dart';
+import 'package:gsmlg/screens/chat/widgets/local_model_action_button.dart';
 
 import 'duo_controller.dart';
 
@@ -19,10 +20,15 @@ class DuoChatFallback {
     required this.chatBloc,
     required this.settingsBloc,
     required this.router,
+    this.modelBloc,
   });
 
   final ChatBloc? Function() chatBloc;
   final ChatSettingsBloc? Function() settingsBloc;
+
+  /// Installed local models, used to pick a model for a local agent that has
+  /// none configured (as the chat screen does).
+  final GemmaModelBloc? Function()? modelBloc;
   final GoRouter router;
 
   (ChatBloc, ChatSettingsBloc)? _blocs() {
@@ -54,7 +60,7 @@ class DuoChatFallback {
     if (chat.isBusy) return;
     final settings = settingsBloc.state;
     final conversation = chat.conversation;
-    final ModelConfig config;
+    ModelConfig config;
     final String? agentId;
     final String? systemPrompt;
     if (conversation == null) {
@@ -81,6 +87,14 @@ class DuoChatFallback {
           owner?.instructions ??
           session?.systemPrompt ??
           settings.defaultSystemPrompt;
+    }
+    final models = modelBloc?.call();
+    if (models != null &&
+        config.inferenceMode == ChatInferenceMode.local &&
+        config.localModelId == null) {
+      config = config.copyWith(
+        localModelId: resolveLocalModelId(settings, models.state),
+      );
     }
     // Without an id the bloc targets the selected conversation, which is the
     // one started above when nothing was selected.

@@ -92,8 +92,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final AgentRepository _agentRepository;
   final AgentRunner _agentRunner;
 
-  /// Agent (isolate) key of runs in sessions without an owning agent.
-  static const unownedAgentId = 'default';
+  /// Agent (isolate) key of runs in sessions without an owning agent; the
+  /// `_` prefix keeps it apart from stored agent ids (UUIDs and slugs).
+  static const unownedAgentId = '_unowned';
   final SharedPreferences? _preferences;
   final BackplaneServiceRepository? _backplaneService;
   final LocalModelAccess _modelAccess;
@@ -1009,6 +1010,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (!_isCurrent(task)) return;
     await task.localPreparation?.future;
     await task.subscription?.cancel();
+    // A local run that ended abnormally (error, rejected/missing ack, lost
+    // isolate) may still be generating; stop it before the next run gets
+    // the slot, as _cancel does.
+    if (task.localLease != null &&
+        (status != ChatStatus.ready || error != null)) {
+      try {
+        await _gemmaRepository.stopGeneration();
+      } catch (_) {/* The slot is released regardless. */}
+    }
     if (!_isCurrent(task)) return;
     task.localLease?.release();
     _tasks.remove(task.id);
@@ -1522,7 +1532,12 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final agent = id == null ? null : await _agentRepository.get(id);
     task.allowedTools = agent?.allowedTools?.toSet();
     if (agent == null) return;
-    task.config = agent.config;
+    final config = agent.config;
+    // A local agent without a model runs on the model the screen resolved.
+    task.config = config.inferenceMode == ChatInferenceMode.local &&
+            config.localModelId == null
+        ? config.copyWith(localModelId: task.config?.localModelId)
+        : config;
     task.systemPrompt = agent.instructions;
     task.thinkingEnabled = agent.thinkingEnabled;
   }

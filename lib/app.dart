@@ -148,6 +148,7 @@ class _AppState extends State<App> {
     DuoChatFallback(
       chatBloc: _maybeRead<ChatBloc>,
       settingsBloc: _maybeRead<ChatSettingsBloc>,
+      modelBloc: _maybeRead<GemmaModelBloc>,
       router: AppRouter.router,
     ).install(_duoManager);
 
