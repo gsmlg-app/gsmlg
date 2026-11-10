@@ -342,13 +342,24 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
       indicatorColor: colorScheme.onSecondaryContainer.withValues(alpha: 0.2),
     );
 
-    return Theme(
+    final duoConnected = navigationState?.isDuoConnected ?? false;
+    final duoScreenPolicy = widget.duoScreenPolicy ??
+        (duoConnected
+            ? DuoScreenPolicy.navigationOnSecondary
+            : DuoScreenPolicy.splitBody);
+    final navigationVisible =
+        widget.navigationVisible && (!hasRail || sidebarVisible);
+    final railShown = hasRail &&
+        navigationVisible &&
+        !(duoConnected &&
+            duoScreenPolicy == DuoScreenPolicy.navigationOnSecondary);
+
+    final scaffold = Theme(
       data: theme.copyWith(navigationRailTheme: navRailTheme),
       child: DmAdaptiveScaffold(
         destinations: widget.destinations,
         selectedIndex: widget.selectedIndex,
-        navigationVisible:
-            widget.navigationVisible && (!hasRail || sidebarVisible),
+        navigationVisible: navigationVisible,
         showNavigationToggle: widget.navigationVisible && hasRail,
         onNavigationVisibleChange: _setSidebarVisible,
         navigationRestoreInHeader: widget.navigationRestoreInHeader,
@@ -402,10 +413,54 @@ class _AppAdaptiveScaffoldState extends State<AppAdaptiveScaffold> {
             ((navigationState?.isDuoConnected ?? false)
                 ? DuoScreenRole.primary
                 : DuoScreenRole.single),
-        duoScreenPolicy: widget.duoScreenPolicy ??
-            ((navigationState?.isDuoConnected ?? false)
-                ? DuoScreenPolicy.navigationOnSecondary
-                : DuoScreenPolicy.splitBody),
+        duoScreenPolicy: duoScreenPolicy,
+      ),
+    );
+    return _RailSafeArea(
+      enabled: railShown,
+      color: navRailTheme.backgroundColor ?? colorScheme.secondaryContainer,
+      child: scaffold,
+    );
+  }
+}
+
+/// Keeps the navigation rail clear of the start-side safe-area inset.
+///
+/// Flutter's [NavigationRail] consumes that inset inside its own width, but
+/// [DmAdaptiveScaffold] sizes the rail box without it, so on a landscape
+/// iPhone the collapsed rail's icons are squeezed and clipped.
+// WORKAROUND(upstream): duskmoon-dev/flutter-duskmoon-ui#34 — the inset is
+// moved outside the scaffold and painted with the rail background. Remove
+// this widget once duskmoon_adaptive_scaffold sizes the rail with the inset.
+// TODO(upstream): duskmoon-dev/flutter-duskmoon-ui#34
+class _RailSafeArea extends StatelessWidget {
+  const _RailSafeArea({
+    required this.enabled,
+    required this.color,
+    required this.child,
+  });
+
+  /// Whether a rail is shown on this screen. The widget tree keeps the same
+  /// shape either way so toggling the sidebar never remounts the scaffold.
+  final bool enabled;
+  final Color color;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final padding = MediaQuery.paddingOf(context);
+    final inset = enabled ? (rtl ? padding.right : padding.left) : 0.0;
+    return ColoredBox(
+      color: color,
+      child: Padding(
+        padding: EdgeInsetsDirectional.only(start: inset),
+        child: MediaQuery.removePadding(
+          context: context,
+          removeLeft: inset > 0 && !rtl,
+          removeRight: inset > 0 && rtl,
+          child: child,
+        ),
       ),
     );
   }
