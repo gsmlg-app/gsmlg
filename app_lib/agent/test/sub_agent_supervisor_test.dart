@@ -166,7 +166,7 @@ void main() {
       subs.map((e) => e.eventType),
       containsAll(['sub_agent_started', 'sub_agent_finished']),
     );
-    expect(subs.every((e) => e.context?.conversationId == 'conv-9'), isTrue);
+    expect(subs.every((e) => e.context.conversationId == 'conv-9'), isTrue);
   });
 }
 
