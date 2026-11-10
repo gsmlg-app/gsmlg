@@ -16,20 +16,26 @@ import 'wire.dart';
 
 /// Ops of the host <-> agent worker messages. `start` is a `hub.call`
 /// (`{op, run: StartRun}` -> `{accepted: true}`); `ack` (`{op, ack: RunAck}`)
-/// and `cancel` (`{op, cancel: CancelRun}`) are casts.
+/// and `cancel` (`{op, cancel: CancelRun}`) are casts, as is `logPort`
+/// (`{op, port: SendPort?}`), which re-points the worker's logging.
 const agentOpStart = 'start';
 const agentOpAck = 'ack';
 const agentOpCancel = 'cancel';
+const agentOpLogPort = 'logPort';
 
 /// Error type of a run whose acknowledgement the main isolate rejected.
 const ackRejectedErrorType = 'AcknowledgementRejected';
 
+/// Error type of a run whose acknowledgement did not arrive in time.
+const ackTimeoutErrorType = 'AcknowledgementTimeout';
+
 /// Entry point of an agent isolate (`agent:<agentDefinitionId>`).
 ///
 /// Spawn config: `servicesPort` (AgentServicesServer), `logIngest` (log store
-/// ingest port or null), `loggerPort` (same port, for `Logger.root`), and
-/// informational `agentId`/`definition`. Runs never use cached definition
-/// data: every [StartRun] carries its own config.
+/// ingest port or null; LogCapture and `Logger.root` both go there),
+/// `ackTimeoutMs` (default 90 s), and informational `agentId`/`definition`.
+/// Runs never use cached definition data: every [StartRun] carries its own
+/// config.
 @pragma('vm:entry-point')
 void agentEntryPoint(SendPort hubPort) =>
     runWorker<Object?>(hubPort, AgentWorker.new);
@@ -44,13 +50,39 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
   late final AgentServicesClient _services;
   final http.Client _http = http.Client();
   final _runs = <String, _WorkerRun>{};
+  Duration _ackTimeout = const Duration(seconds: 90);
+  IsolateLogBridge? _logBridge;
 
   @override
   Future<void> onInit(Map<String, dynamic> config) async {
     initMetrics();
     _services = AgentServicesClient(config['servicesPort'] as SendPort);
-    final ingest = config['logIngest'] as SendPort?;
-    if (ingest != null) LogCapture.instance.attach(PortLogSink(ingest));
+    final ackTimeoutMs = config['ackTimeoutMs'] as int?;
+    if (ackTimeoutMs != null) {
+      _ackTimeout = Duration(milliseconds: ackTimeoutMs);
+    }
+    _setLogPort(config['logIngest'] as SendPort?);
+  }
+
+  /// Sends LogCapture records and `Logger.root` records to [port] (dropped
+  /// when null). The bridge cannot be re-pointed, so it is re-installed.
+  void _setLogPort(SendPort? port) {
+    LogCapture.instance.attach(port == null ? null : PortLogSink(port));
+    _logBridge?.uninstall();
+    _logBridge = null;
+    if (port == null) return;
+    _logBridge =
+        IsolateLogBridge(
+          isolateId: context.id,
+          loggerPort: port,
+          loggerPrefix: 'worker.${context.name}',
+        )..install(
+          defaultContext: {
+            'workerId': context.id,
+            'workerName': context.name,
+            'role': context.role,
+          },
+        );
   }
 
   @override
@@ -86,6 +118,9 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
         _onAck(RunAck.fromWire(_asMap(m['ack'])));
       case agentOpCancel:
         _runs[CancelRun.fromWire(_asMap(m['cancel'])).runId]?.cancel();
+      case agentOpLogPort:
+        _setLogPort(m['port'] as SendPort?);
+        _logBridge?.getLogger('logs').info('Log ingest port changed');
     }
   }
 
@@ -97,6 +132,7 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
     _runs.clear();
     _services.close();
     _http.close();
+    _logBridge?.uninstall();
     LogCapture.instance.attach(null);
   }
 
@@ -186,6 +222,10 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
 
     try {
       run.start.eventsPort.send(agentEventToWire(event, ackId: ackId));
+      if (ackId != null) {
+        final id = ackId;
+        run.ackTimers[id] = Timer(_ackTimeout, () => _onAckTimeout(run, id));
+      }
     } catch (error) {
       run.acks.remove(ackId);
       if (ack != null && !ack.isCompleted) ack.complete();
@@ -211,8 +251,24 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
     if (terminal) _end(run);
   }
 
+  void _onAckTimeout(_WorkerRun run, String ackId) {
+    run.ackTimers.remove(ackId);
+    final completer = run.acks.remove(ackId);
+    if (completer == null || completer.isCompleted) return;
+    final error = RemoteAgentError(
+      type: ackTimeoutErrorType,
+      message:
+          'No acknowledgement from the main isolate within '
+          '${_ackTimeout.inMilliseconds} ms',
+    );
+    run.fail(error);
+    completer.future.ignore();
+    completer.completeError(error);
+  }
+
   void _onAck(RunAck ack) {
     final run = _runs[ack.runId];
+    run?.ackTimers.remove(ack.ackId)?.cancel();
     final completer = run?.acks.remove(ack.ackId);
     if (run == null || completer == null || completer.isCompleted) return;
     if (ack.ok) {
@@ -235,6 +291,7 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
       if (!ack.isCompleted) ack.complete();
     }
     run.acks.clear();
+    run.cancelAckTimers();
     unawaited(run.remote.dispose());
   }
 }
@@ -246,6 +303,7 @@ class _WorkerRun {
   final RemoteLlmRepository remote;
   final cancelToken = CancelToken();
   final acks = <String, Completer<void>>{};
+  final ackTimers = <String, Timer>{};
   int nextAckId = 0;
   bool cancelled = false;
   RemoteAgentError? failure;
@@ -269,6 +327,14 @@ class _WorkerRun {
       if (!ack.isCompleted) ack.complete();
     }
     acks.clear();
+    cancelAckTimers();
+  }
+
+  void cancelAckTimers() {
+    for (final timer in ackTimers.values) {
+      timer.cancel();
+    }
+    ackTimers.clear();
   }
 }
 

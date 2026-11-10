@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:app_agent/app_agent.dart';
 import 'package:app_database/app_database.dart';
@@ -156,22 +157,28 @@ void main() {
   late AgentHost host;
   var runCounter = 0;
 
-  AgentHost newHost({Duration idleTimeout = const Duration(minutes: 10)}) =>
-      AgentHost(
-        hub: hub,
-        services: services,
-        logIngest: null,
-        secrets: secrets,
-        loadDefinition: (id) async => AgentDefinition(
-          id: id,
-          name: 'Agent $id',
-          config: const ModelConfig(),
-          createdAt: DateTime.utc(2026),
-          updatedAt: DateTime.utc(2026),
-        ),
-        idleTimeout: idleTimeout,
-        startTimeout: const Duration(seconds: 5),
-      );
+  AgentHost newHost({
+    Duration idleTimeout = const Duration(minutes: 10),
+    Duration ackTimeout = const Duration(seconds: 90),
+    SendPort? logIngest,
+    Stream<SendPort?>? logIngestChanges,
+  }) => AgentHost(
+    hub: hub,
+    services: services,
+    logIngest: logIngest,
+    logIngestChanges: logIngestChanges,
+    ackTimeout: ackTimeout,
+    secrets: secrets,
+    loadDefinition: (id) async => AgentDefinition(
+      id: id,
+      name: 'Agent $id',
+      config: const ModelConfig(),
+      createdAt: DateTime.utc(2026),
+      updatedAt: DateTime.utc(2026),
+    ),
+    idleTimeout: idleTimeout,
+    startTimeout: const Duration(seconds: 5),
+  );
 
   setUp(() async {
     hub = IsolateHub();
@@ -398,5 +405,74 @@ void main() {
     await llm.aborted.future.timeout(const Duration(seconds: 5));
     // The worker stays up for later runs.
     expect(hub.getByName('agent:a'), isNotNull);
+  });
+
+  test(
+    'an ack that never arrives fails the run (AcknowledgementTimeout)',
+    () async {
+      await host.dispose();
+      host = newHost(ackTimeout: const Duration(milliseconds: 300));
+      final events = await run().toList().timeout(const Duration(seconds: 20));
+      final failed = events.last as AgentRunFailedEvent;
+      expect((failed.error as RemoteAgentError).type, 'AcknowledgementTimeout');
+      expect(llm.requests, hasLength(1));
+      expect(events.whereType<ToolCallStartedEvent>(), isEmpty);
+    },
+  );
+
+  test('live and new workers follow log ingest port changes', () async {
+    final first = ReceivePort();
+    final second = ReceivePort();
+    addTearDown(first.close);
+    addTearDown(second.close);
+    final firstMessages = <Map>[];
+    final secondMessages = <Map>[];
+    first.listen((m) => firstMessages.add(m as Map));
+    second.listen((m) => secondMessages.add(m as Map));
+    final changes = StreamController<SendPort?>();
+    addTearDown(changes.close);
+    await host.dispose();
+    host = newHost(logIngest: first.sendPort, logIngestChanges: changes.stream);
+
+    Future<ChatAgentEvent> complete({String agentId = 'a'}) =>
+        run(agentId: agentId)
+            .map((e) {
+              if (e is ModelTurnCompletedEvent) e.acknowledge();
+              if (e is ToolCallCompletedEvent) e.acknowledge();
+              return e;
+            })
+            .last
+            .timeout(const Duration(seconds: 20));
+
+    Future<void> until(bool Function() condition) async {
+      final deadline = DateTime.now().add(const Duration(seconds: 5));
+      while (!condition() && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      }
+      expect(condition(), isTrue);
+    }
+
+    expect(await complete(), isA<AgentRunCompletedEvent>());
+    await until(() => firstMessages.any((m) => m['k'] == 'api'));
+
+    changes.add(second.sendPort);
+    // Logger.root (IsolateLogBridge) follows the new port.
+    await until(
+      () => secondMessages.any(
+        (m) => '${m['message']}'.contains('Log ingest port changed'),
+      ),
+    );
+    final before = firstMessages.length;
+
+    expect(await complete(), isA<AgentRunCompletedEvent>());
+    await until(() => secondMessages.any((m) => m['k'] == 'api'));
+    // A worker spawned after the change uses the current port.
+    final apiBefore = secondMessages.where((m) => m['k'] == 'api').length;
+    expect(await complete(agentId: 'b'), isA<AgentRunCompletedEvent>());
+    await until(
+      () => secondMessages.where((m) => m['k'] == 'api').length > apiBefore,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    expect(firstMessages.length, before);
   });
 }

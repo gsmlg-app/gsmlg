@@ -76,9 +76,14 @@ class LogStoreForwarder implements LogSink {
   bool _closed = false;
   int _generation = 0;
   int _applied = 0;
+  final _changes = StreamController<SendPort?>.broadcast(sync: true);
 
   /// The ingest port records currently go to, or `null` when disconnected.
   SendPort? get ingestPort => _port;
+
+  /// Each new [ingestPort] (e.g. after a log store restart), so other
+  /// producers such as agent isolates can follow it.
+  Stream<SendPort?> get ingestPortChanges => _changes.stream;
 
   /// Reconnects whenever the isolate named [target] becomes ready.
   void listen(Stream<HubEvent> events, {required String target}) {
@@ -101,9 +106,11 @@ class LogStoreForwarder implements LogSink {
     }
     if (_closed || generation < _applied) return;
     _applied = generation;
+    final changed = _port != port;
     _port = port;
     _sink = port == null ? null : PortLogSink(port);
     LogCapture.instance.attach(port == null ? null : this);
+    if (changed) _changes.add(port);
   }
 
   @override
@@ -135,8 +142,10 @@ class LogStoreForwarder implements LogSink {
     _closed = true;
     unawaited(_rootSub?.cancel());
     unawaited(_eventSub?.cancel());
+    if (_port != null) _changes.add(null);
     _port = null;
     _sink = null;
     LogCapture.instance.attach(null);
+    unawaited(_changes.close());
   }
 }

@@ -18,6 +18,7 @@ dependencies:
 dev_dependencies:
   app_database: any
   app_secure_storage: any
+  dart_agent_core: ^2.1.9
   flutter_test:
     sdk: flutter
   test: ^1.31.1

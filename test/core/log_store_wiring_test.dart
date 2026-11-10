@@ -76,6 +76,18 @@ void main() {
       );
     });
 
+    test('a logstore restart notifies the new ingest port', () async {
+      final before = isolates.forwarder.ingestPort;
+      final next = isolates.forwarder.ingestPortChanges.first.timeout(
+        const Duration(seconds: 10),
+      );
+      await isolates.hub.restartNode('logstore');
+      final port = await next;
+      expect(port, isNotNull);
+      expect(port, isNot(before));
+      expect(port, isolates.forwarder.ingestPort);
+    });
+
     test('stop detaches the sink and the root forwarder', () async {
       await isolates.stop();
       expect(LogCapture.instance.apiActive, isFalse);

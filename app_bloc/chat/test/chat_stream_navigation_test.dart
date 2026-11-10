@@ -44,6 +44,14 @@ void main() {
         toolExecutor: ToolExecutor(),
         preferences: preferences,
         backplaneService: service,
+        agentRunner: InProcessAgentRunner(
+          ChatAgentRuntime(
+            toolExecutor: ToolExecutor(),
+            remoteRepository: remote,
+            gemmaRepository: gemma,
+            storageRepository: storage,
+          ),
+        ),
       );
       final streaming =
           _waitForState(bloc, (state) => state.status == ChatStatus.streaming);
@@ -87,6 +95,14 @@ void main() {
       toolExecutor: ToolExecutor(),
       preferences: preferences,
       backplaneService: service,
+      agentRunner: InProcessAgentRunner(
+        ChatAgentRuntime(
+          toolExecutor: ToolExecutor(),
+          remoteRepository: remote,
+          gemmaRepository: gemma,
+          storageRepository: storage,
+        ),
+      ),
     );
     final failed =
         _waitForState(bloc, (state) => state.status == ChatStatus.error);
@@ -108,6 +124,14 @@ void main() {
         storageRepository: storageRepository,
         agentRepository: FakeAgentRepository(),
         toolExecutor: ToolExecutor(),
+        agentRunner: InProcessAgentRunner(
+          ChatAgentRuntime(
+            toolExecutor: ToolExecutor(),
+            remoteRepository: _FakeRemoteLlmRepository(),
+            gemmaRepository: gemmaRepository,
+            storageRepository: storageRepository,
+          ),
+        ),
       );
       addTearDown(bloc.close);
       addTearDown(gemmaRepository.dispose);
@@ -182,6 +206,14 @@ void main() {
       storageRepository: storageRepository,
       agentRepository: FakeAgentRepository(),
       toolExecutor: ToolExecutor(),
+      agentRunner: InProcessAgentRunner(
+        ChatAgentRuntime(
+          toolExecutor: ToolExecutor(),
+          remoteRepository: _FakeRemoteLlmRepository(),
+          gemmaRepository: gemmaRepository,
+          storageRepository: storageRepository,
+        ),
+      ),
     );
     addTearDown(bloc.close);
     addTearDown(gemmaRepository.dispose);
@@ -208,6 +240,14 @@ void main() {
       storageRepository: storageRepository,
       agentRepository: FakeAgentRepository(),
       toolExecutor: ToolExecutor(),
+      agentRunner: InProcessAgentRunner(
+        ChatAgentRuntime(
+          toolExecutor: ToolExecutor(),
+          remoteRepository: _FakeRemoteLlmRepository(),
+          gemmaRepository: gemmaRepository,
+          storageRepository: storageRepository,
+        ),
+      ),
     );
     addTearDown(bloc.close);
     addTearDown(gemmaRepository.dispose);
@@ -250,6 +290,14 @@ void main() {
       storageRepository: storageRepository,
       agentRepository: FakeAgentRepository(),
       toolExecutor: ToolExecutor(),
+      agentRunner: InProcessAgentRunner(
+        ChatAgentRuntime(
+          toolExecutor: ToolExecutor(),
+          remoteRepository: remoteRepository,
+          gemmaRepository: gemmaRepository,
+          storageRepository: storageRepository,
+        ),
+      ),
     );
     addTearDown(bloc.close);
     addTearDown(gemmaRepository.dispose);

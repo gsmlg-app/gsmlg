@@ -152,7 +152,7 @@ void main() {
         storageRepository: storage,
         toolExecutor: ToolExecutor(),
         agentRepository: agents,
-        agentRuntime: runtime,
+        agentRunner: InProcessAgentRunner(runtime),
         preferences: preferences,
       );
       addTearDown(bloc.close);

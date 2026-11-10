@@ -205,6 +205,14 @@ class _Fixture {
       storageRepository: storage,
       agentRepository: FakeAgentRepository(),
       toolExecutor: tools,
+      agentRunner: InProcessAgentRunner(
+        ChatAgentRuntime(
+          toolExecutor: tools,
+          remoteRepository: _UnusedRemoteRepository(),
+          gemmaRepository: repository,
+          storageRepository: storage,
+        ),
+      ),
     );
   }
 

@@ -441,11 +441,20 @@ void main() {
 class _Fixture {
   _Fixture() {
     bloc = ChatBloc(
-        gemmaRepository: local,
-        remoteRepository: remote,
-        storageRepository: storage,
-        agentRepository: FakeAgentRepository(),
-        toolExecutor: tools);
+      gemmaRepository: local,
+      remoteRepository: remote,
+      storageRepository: storage,
+      agentRepository: FakeAgentRepository(),
+      toolExecutor: tools,
+      agentRunner: InProcessAgentRunner(
+        ChatAgentRuntime(
+          toolExecutor: tools,
+          remoteRepository: remote,
+          gemmaRepository: local,
+          storageRepository: storage,
+        ),
+      ),
+    );
   }
   final storage = _Storage();
   final local = _Local();

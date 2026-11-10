@@ -69,6 +69,8 @@ void main(List<String> args) async {
         vault: vault,
         hub: isolates.hub,
         logStore: isolates.logStore,
+        logIngest: () => isolates.forwarder.ingestPort,
+        logIngestChanges: isolates.forwarder.ingestPortChanges,
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           localizationsDelegates: AppLocale.localizationsDelegates,

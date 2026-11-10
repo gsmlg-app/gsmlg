@@ -24,7 +24,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     required ChatStorageRepository storageRepository,
     required ToolExecutor toolExecutor,
     required AgentRepository agentRepository,
-    ChatAgentRuntime? agentRuntime,
+    required AgentRunner agentRunner,
     SharedPreferences? preferences,
     BackplaneServiceRepository? backplaneService,
     LocalModelAccess? modelAccess,
@@ -39,13 +39,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         _backplaneService = backplaneService,
         _modelAccess =
             modelAccess ?? LocalModelAccess.forResource(gemmaRepository),
-        _agentRuntime = agentRuntime ??
-            ChatAgentRuntime(
-              toolExecutor: toolExecutor,
-              remoteRepository: remoteRepository,
-              gemmaRepository: gemmaRepository,
-              storageRepository: storageRepository,
-            ),
+        _agentRunner = agentRunner,
         super(const ChatState()) {
     on<_ChatTitleReady>(_onTitleReady);
     on<ChatRenameConversation>(_onRenameConversation);
@@ -96,7 +90,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final ChatStorageRepository _storageRepository;
   final ToolExecutor _toolExecutor;
   final AgentRepository _agentRepository;
-  final ChatAgentRuntime _agentRuntime;
+  final AgentRunner _agentRunner;
+
+  /// Agent (isolate) key of runs in sessions without an owning agent.
+  static const unownedAgentId = 'default';
   final SharedPreferences? _preferences;
   final BackplaneServiceRepository? _backplaneService;
   final LocalModelAccess _modelAccess;
@@ -673,19 +670,27 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final userMsg =
         history.reversed.whereType<UserMessage>().firstOrNull?.content ?? '';
 
-    final stream = _agentRuntime.runStream(
-      runId: task.runId,
-      sessionId: task.id,
-      generationId: task.runId,
-      modelConfig: config,
-      historyMessages: history,
-      userPrompt: userMsg,
-      cancelToken: cancelToken,
-      allowedTools: task.allowedTools,
-      onFirstToken: () {
-        task.timeToFirstToken ??= task.stopwatch.elapsed;
-      },
-    );
+    final Stream<ChatAgentEvent> stream;
+    try {
+      stream = _agentRunner.runStream(
+        agentId: task.agentId ?? unownedAgentId,
+        runId: task.runId,
+        sessionId: task.id,
+        generationId: task.runId,
+        modelConfig: config,
+        historyMessages: history,
+        userPrompt: userMsg,
+        cancelToken: cancelToken,
+        allowedTools: task.allowedTools,
+        onFirstToken: () {
+          task.timeToFirstToken ??= task.stopwatch.elapsed;
+        },
+      );
+    } catch (error) {
+      // No in-process fallback: the run fails visibly.
+      add(_ChatStreamError(task.id, task.runId, leg, error.toString()));
+      return;
+    }
 
     task.subscription = stream.listen((event) {
       if (!_isCurrent(task) || task.leg != leg || task.finishing) return;
@@ -706,7 +711,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   Future<void> _onChatAgentEvent(
       _ChatAgentEventWrapper event, Emitter<ChatState> emit) async {
     final task = _taskFor(event, event.leg);
-    if (task == null || task.finishing) return;
+    if (task == null || task.finishing) {
+      // Stale events are dropped unpersisted; never leave a run waiting.
+      switch (event.event) {
+        case ModelTurnCompletedEvent(:final acknowledgement) ||
+              ToolCallCompletedEvent(:final acknowledgement):
+          if (!acknowledgement.isCompleted) acknowledgement.complete();
+        default:
+      }
+      return;
+    }
 
     switch (event.event) {
       case ModelChunkReceivedEvent(:final textChunk, :final thoughtChunk):
@@ -752,11 +766,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           timestamp: DateTime.now(),
         );
         task.conversation = task.conversation.addMessage(message);
-        await _write(task, () => _storageRepository.saveMessage(message));
-        _emitTask(task, emit, activity: 'Tool finished: $toolName');
-        if (!acknowledgement.isCompleted) {
-          acknowledgement.complete();
+        if (!await _persistThenAck(task, emit, acknowledgement,
+            () => _storageRepository.saveMessage(message))) {
+          return;
         }
+        _emitTask(task, emit, activity: 'Tool finished: $toolName');
       case ModelTurnCompletedEvent(:final modelMessage, :final acknowledgement):
         final metadata = AgentMessageMetadata(
           version: 1,
@@ -782,12 +796,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             .whereType<AssistantMessage>()
             .where((m) => m.id == task.messageId)
             .firstOrNull;
-        if (assistant != null) {
-          await _write(task, () => _storageRepository.saveMessage(assistant));
-        }
-        if (!acknowledgement.isCompleted) {
-          acknowledgement.complete();
-        }
+        await _persistThenAck(
+            task,
+            emit,
+            acknowledgement,
+            assistant == null
+                ? () async {}
+                : () => _storageRepository.saveMessage(assistant));
       case AgentRunCompletedEvent():
         final assistant = task.conversation.messages
             .whereType<AssistantMessage>()
@@ -813,6 +828,26 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       case ModelTurnStartedEvent():
         _emitTask(task, emit, activity: 'Waiting for response');
     }
+  }
+
+  /// Persists, then acknowledges: an agent isolate waits for the ack before
+  /// continuing. A failed write rejects the ack and fails the session.
+  Future<bool> _persistThenAck(_GenerationTask task, Emitter<ChatState> emit,
+      Completer<void> acknowledgement, Future<void> Function() write) async {
+    try {
+      await _write(task, write);
+    } catch (error) {
+      if (!acknowledgement.isCompleted) {
+        // Nobody may listen in-process; the isolate host does.
+        acknowledgement.future.ignore();
+        acknowledgement.completeError(error);
+      }
+      await _finish(task, emit, ChatStatus.error,
+          error: 'Failed to save response: $error');
+      return false;
+    }
+    if (!acknowledgement.isCompleted) acknowledgement.complete();
+    return true;
   }
 
   void _onStreamToken(_ChatStreamToken event, Emitter<ChatState> emit) {
@@ -1007,6 +1042,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     task.timer?.cancel();
     task.stopwatch.stop();
     task.cancelToken?.cancel('Generation cancelled');
+    await _agentRunner.stop(task.runId);
     _localQueue.remove(task);
     if (task.config?.inferenceMode == ChatInferenceMode.remote) {
       await _remoteRepository.stopGeneration(generationId: task.runId);

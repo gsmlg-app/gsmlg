@@ -111,11 +111,20 @@ class _Fixture {
   _Fixture(this.server, this.api) {
     remote = RemoteLlmRepository(vault: _UnusedVault());
     bloc = ChatBloc(
-        gemmaRepository: GemmaRepository(),
-        remoteRepository: remote,
-        storageRepository: storage,
-        agentRepository: FakeAgentRepository(),
-        toolExecutor: ToolExecutor());
+      gemmaRepository: GemmaRepository(),
+      remoteRepository: remote,
+      storageRepository: storage,
+      agentRepository: FakeAgentRepository(),
+      toolExecutor: ToolExecutor(),
+      agentRunner: InProcessAgentRunner(
+        ChatAgentRuntime(
+          toolExecutor: ToolExecutor(),
+          remoteRepository: remote,
+          gemmaRepository: GemmaRepository(),
+          storageRepository: storage,
+        ),
+      ),
+    );
     server.listen((request) async {
       final body = jsonDecode(await utf8.decoder.bind(request).join())
           as Map<String, dynamic>;

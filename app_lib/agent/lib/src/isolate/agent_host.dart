@@ -26,8 +26,13 @@ const agentIsolateLostErrorType = 'AgentIsolateLost';
 /// Workers are spawned on first use and removed after [idleTimeout] without
 /// runs. Acknowledgements of [ModelTurnCompletedEvent] and
 /// [ToolCallCompletedEvent] are relayed to the worker, which waits for them
-/// before continuing. A worker that fails, stops or restarts during a run ends
-/// that run with [AgentRunFailedEvent] ([agentIsolateLostErrorType]).
+/// before continuing; an ack missing for [ackTimeout] fails the run
+/// ([ackTimeoutErrorType]). A worker that fails, stops or restarts during a run
+/// ends that run with [AgentRunFailedEvent] ([agentIsolateLostErrorType]).
+///
+/// Workers log to the current log store ingest port: [logIngest] initially,
+/// then each value of `logIngestChanges` (the log store restarted), which is
+/// sent to live workers and used for later spawns.
 class AgentHost implements AgentRunner {
   AgentHost({
     required IsolateHub hub,
@@ -36,6 +41,8 @@ class AgentHost implements AgentRunner {
     required Future<AgentDefinition?> Function(String id) loadDefinition,
     required SecretReader secrets,
     List<String> Function()? mcpProfiles,
+    Stream<SendPort?>? logIngestChanges,
+    this.ackTimeout = const Duration(seconds: 90),
     this.idleTimeout = const Duration(minutes: 10),
     this.startTimeout = const Duration(seconds: 10),
     this.stopTimeout = const Duration(seconds: 5),
@@ -46,6 +53,7 @@ class AgentHost implements AgentRunner {
        _secrets = secrets,
        _mcpProfiles = mcpProfiles {
     _hubEvents = hub.events.listen(_onHubEvent);
+    _logIngestChanges = logIngestChanges?.listen(_onLogIngest);
   }
 
   static const groupName = 'agents';
@@ -57,12 +65,15 @@ class AgentHost implements AgentRunner {
 
   final IsolateHub _hub;
   final AgentServicesServer _services;
-  final SendPort? _logIngest;
+  SendPort? _logIngest;
   final Future<AgentDefinition?> Function(String id) _loadDefinition;
   final SecretReader _secrets;
 
   /// Remote MCP profiles (JSON strings) sent with every run.
   final List<String> Function()? _mcpProfiles;
+
+  /// A run whose event is not acknowledged within this time fails.
+  final Duration ackTimeout;
 
   /// A worker without runs for this long is stopped.
   final Duration idleTimeout;
@@ -74,6 +85,7 @@ class AgentHost implements AgentRunner {
   final Duration stopTimeout;
 
   late final StreamSubscription<HubEvent> _hubEvents;
+  StreamSubscription<SendPort?>? _logIngestChanges;
   final _runs = <String, _HostRun>{};
   final _workers = <String, _WorkerSlot>{};
   Future<void>? _group;
@@ -153,6 +165,7 @@ class AgentHost implements AgentRunner {
     if (_disposed) return;
     _disposed = true;
     await _hubEvents.cancel();
+    await _logIngestChanges?.cancel();
     for (final run in _runs.values.toList()) {
       _fail(
         run,
@@ -286,6 +299,7 @@ class AgentHost implements AgentRunner {
     } catch (_) {
       // Informational only; runs carry their own config.
     }
+    final logIngest = _logIngest;
     final handle = await _hub.spawn<Object?>(
       role: workerRole,
       name: name,
@@ -296,11 +310,15 @@ class AgentHost implements AgentRunner {
         'agentId': slot.agentId,
         'definition': definition?.toWire(),
         'servicesPort': _services.port,
-        'logIngest': _logIngest,
-        'loggerPort': _logIngest,
+        // The worker installs its own re-pointable Logger.root bridge, so no
+        // orchestrator `loggerPort`.
+        'logIngest': logIngest,
+        'ackTimeoutMs': ackTimeout.inMilliseconds,
       },
     );
     slot.isolateId = handle.id;
+    // The port changed while spawning.
+    if (_logIngest != logIngest) _sendLogPort(handle.id, _logIngest);
     return handle;
   }
 
@@ -417,6 +435,22 @@ class AgentHost implements AgentRunner {
         ),
       );
     });
+  }
+
+  void _onLogIngest(SendPort? port) {
+    _logIngest = port;
+    for (final slot in _workers.values) {
+      final isolateId = slot.isolateId;
+      if (isolateId != null) _sendLogPort(isolateId, port);
+    }
+  }
+
+  void _sendLogPort(String isolateId, SendPort? port) {
+    try {
+      _hub.cast(isolateId, {'op': agentOpLogPort, 'port': port});
+    } catch (_) {
+      // Worker gone; a respawn uses the current port.
+    }
   }
 
   void _onHubEvent(HubEvent event) {

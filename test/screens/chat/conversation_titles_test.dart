@@ -282,6 +282,14 @@ class Fixture {
       toolExecutor: ToolExecutor(),
       agentRepository: AgentRepository(db),
       titleGenerator: titles,
+      agentRunner: InProcessAgentRunner(
+        ChatAgentRuntime(
+          toolExecutor: ToolExecutor(),
+          remoteRepository: remote,
+          gemmaRepository: gemma,
+          storageRepository: storage,
+        ),
+      ),
     );
   }
   final db = AppDatabase.forTesting();

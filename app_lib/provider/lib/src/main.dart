@@ -4,6 +4,7 @@ import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_audio/audio.dart';
 import 'package:app_agent/app_agent.dart';
 import 'dart:convert';
+import 'dart:isolate' show SendPort;
 import 'package:app_database/app_database.dart';
 import 'package:app_duckdb/app_duckdb.dart' show LogStore;
 import 'package:app_editor/app_editor.dart';
@@ -39,6 +40,8 @@ class MainProvider extends StatelessWidget {
     required this.vault,
     required this.hub,
     required this.logStore,
+    this.logIngest,
+    this.logIngestChanges,
   });
 
   final Widget child;
@@ -51,6 +54,20 @@ class MainProvider extends StatelessWidget {
 
   /// Log store read by the Log Center (backed by the `logstore` isolate).
   final LogStore logStore;
+
+  /// Current log store ingest port (null: agent isolates drop their logs).
+  final SendPort? Function()? logIngest;
+
+  /// New ingest ports after a log store restart; agent isolates follow them.
+  final Stream<SendPort?>? logIngestChanges;
+
+  /// Remote MCP profiles (JSON) for tools, read fresh on every use.
+  List<String> _remoteMcpProfiles() {
+    final profiles =
+        sharedPrefs.getStringList('remote_mcp_profiles') ?? const <String>[];
+    final managed = BackplaneSettingsBloc.readSettings(sharedPrefs).mcpProfile;
+    return [...profiles, if (managed != null) jsonEncode(managed)];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,16 +118,33 @@ class MainProvider extends StatelessWidget {
           create: (context) => ToolExecutor(
             data: DatabaseToolDataSource(database),
             secrets: VaultSecretReader(vault),
-            remoteMcpProfilesProvider: () {
-              final profiles =
-                  sharedPrefs.getStringList('remote_mcp_profiles') ??
-                  const <String>[];
-              final managed = BackplaneSettingsBloc.readSettings(
-                sharedPrefs,
-              ).mcpProfile;
-              return [...profiles, if (managed != null) jsonEncode(managed)];
-            },
+            remoteMcpProfilesProvider: _remoteMcpProfiles,
           ),
+        ),
+        RepositoryProvider<AgentServicesServer>(
+          create: (context) => AgentServicesServer(
+            secrets: VaultSecretReader(vault),
+            data: DatabaseToolDataSource(database),
+            // No lease here: ChatBloc holds the FIFO LocalModelAccess lease
+            // for the whole local run, so leasing per generation would
+            // deadlock.
+            localLlm: GemmaLocalLlmGateway(context.read<GemmaRepository>()),
+          ),
+          dispose: (services) => services.close(),
+        ),
+        // Every agent runs in its own `agent:<id>` isolate; there is no
+        // in-process fallback.
+        RepositoryProvider<AgentHost>(
+          create: (context) => AgentHost(
+            hub: hub,
+            services: context.read<AgentServicesServer>(),
+            logIngest: logIngest?.call(),
+            logIngestChanges: logIngestChanges,
+            loadDefinition: context.read<AgentRepository>().get,
+            secrets: VaultSecretReader(vault),
+            mcpProfiles: _remoteMcpProfiles,
+          ),
+          dispose: (host) => host.dispose(),
         ),
       ],
       child: MultiBlocProvider(
@@ -175,6 +209,7 @@ class MainProvider extends StatelessWidget {
               storageRepository: context.read<ChatStorageRepository>(),
               toolExecutor: context.read<ToolExecutor>(),
               agentRepository: context.read<AgentRepository>(),
+              agentRunner: context.read<AgentHost>(),
               preferences: sharedPrefs,
               backplaneService: context.read<BackplaneServiceRepository>(),
             ),
