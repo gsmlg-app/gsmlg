@@ -32,18 +32,21 @@ void main() {
     await database.close();
   });
 
-  Future<void> loadSettings(WidgetTester tester, [AgentDefinition? agent]) =>
-      tester.runAsync(() async {
-        if (agent != null) await AgentRepository(database).save(agent);
-        settingsBloc = ChatSettingsBloc(
-          repository: ChatStorageRepository(database),
-          preferences: preferences,
-          agentRepository: AgentRepository(database),
-        );
-        final loaded = settingsBloc.stream.firstWhere((s) => s.isLoaded);
-        settingsBloc.add(const ChatSettingsLoad());
-        await loaded;
-      });
+  Future<void> loadSettings(
+    WidgetTester tester, [
+    AgentDefinition? agent,
+    AgentRepository? agentRepository,
+  ]) => tester.runAsync(() async {
+    if (agent != null) await AgentRepository(database).save(agent);
+    settingsBloc = ChatSettingsBloc(
+      repository: ChatStorageRepository(database),
+      preferences: preferences,
+      agentRepository: agentRepository ?? AgentRepository(database),
+    );
+    final loaded = settingsBloc.stream.firstWhere((s) => s.isLoaded);
+    settingsBloc.add(const ChatSettingsLoad());
+    await loaded;
+  });
 
   Future<void> pump(WidgetTester tester, String location) => pumpChatRoutes(
     tester,
@@ -164,4 +167,35 @@ void main() {
     expect(find.text('Name is required'), findsOneWidget);
     expect(settingsBloc.state.agents, isEmpty);
   });
+
+  testWidgets('a failed save shows an error and re-enables Save', (
+    tester,
+  ) async {
+    await loadSettings(tester, null, _FailingAgentRepository(database));
+    await pump(tester, '/chat/agents/new');
+
+    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Writer');
+    await save(
+      tester,
+      () => settingsBloc.state.status == ChatSettingsStatus.error,
+    );
+
+    expect(find.textContaining('Failed to save agent'), findsOneWidget);
+    expect(find.byType(AgentSessionsScreen), findsNothing);
+    final button = tester.widget<ButtonStyleButton>(
+      find.ancestor(
+        of: find.text('Save'),
+        matching: find.bySubtype<ButtonStyleButton>(),
+      ),
+    );
+    expect(button.onPressed, isNotNull);
+  });
+}
+
+class _FailingAgentRepository extends AgentRepository {
+  _FailingAgentRepository(super.db);
+
+  @override
+  Future<void> save(AgentDefinition agent) async =>
+      throw StateError('disk full');
 }

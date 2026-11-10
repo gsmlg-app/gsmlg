@@ -429,5 +429,6 @@
   "agentModelTemperatureHelp": "0 = 确定性，2 = 非常有创意",
   "agentModelTopK": "Top-K",
   "agentModelTopKDescription": "采样多样性",
-  "agentModelTopKHelp": "越低越集中，越高越多样"
+  "agentModelTopKHelp": "越低越集中，越高越多样",
+  "agentEditorSaveFailed": "无法保存智能体，请重试。"
 }

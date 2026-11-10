@@ -193,7 +193,15 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       agents[index] = agent;
     }
 
-    await _agentRepository.save(agent);
+    try {
+      await _agentRepository.save(agent);
+    } catch (e) {
+      emit(state.copyWith(
+        status: ChatSettingsStatus.error,
+        errorMessage: 'Failed to save agent: $e',
+      ));
+      return;
+    }
 
     final isFirst = state.agents.isEmpty;
     final isActive = event.id == state.activeAgentId || isFirst;

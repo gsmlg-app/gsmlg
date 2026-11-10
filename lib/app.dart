@@ -12,9 +12,9 @@ import 'package:theme_bloc/theme_bloc.dart';
 
 import 'core/usage/usage_tracker.dart';
 import 'destination.dart';
+import 'duo/duo_chat_fallback.dart';
 import 'duo/duo_controller.dart';
 import 'router.dart';
-import 'screens/home/home_screen.dart';
 import 'screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 import 'screens/toolbox/editor/editor_screen.dart';
 
@@ -145,12 +145,11 @@ class _AppState extends State<App> {
       } catch (_) {}
     };
 
-    _duoManager.onFallbackTextSubmit = (text) {
-      try {
-        AppRouter.router.goNamed(HomeScreen.name);
-        context.read<ChatBloc>().add(ChatSendMessage(content: text));
-      } catch (_) {}
-    };
+    DuoChatFallback(
+      chatBloc: context.read<ChatBloc>(),
+      settingsBloc: context.read<ChatSettingsBloc>(),
+      router: AppRouter.router,
+    ).install(_duoManager);
 
     _duoManager.onToggleTheme = () {
       final mode = themeBloc.state.themeMode;

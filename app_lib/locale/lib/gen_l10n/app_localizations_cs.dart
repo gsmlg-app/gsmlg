@@ -1547,4 +1547,7 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get agentModelTopKHelp =>
       'Lower = more focused, Higher = more diverse';
+
+  @override
+  String get agentEditorSaveFailed => 'Could not save the agent. Try again.';
 }

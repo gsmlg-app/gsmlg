@@ -667,5 +667,6 @@
   "agentModelTemperatureHelp": "0 = deterministic, 2 = very creative",
   "agentModelTopK": "Top-K",
   "agentModelTopKDescription": "Sampling diversity",
-  "agentModelTopKHelp": "Lower = more focused, Higher = more diverse"
+  "agentModelTopKHelp": "Lower = more focused, Higher = more diverse",
+  "agentEditorSaveFailed": "Could not save the agent. Try again."
 }

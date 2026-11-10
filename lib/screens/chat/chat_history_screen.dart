@@ -107,10 +107,10 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                   conversation: conversation,
                   isSelected: state.conversation?.id == conversation.id,
                   onTap: () {
-                    context.read<ChatBloc>().add(
-                      ChatLoadConversation(id: conversation.id),
+                    context.goNamed(
+                      ChatScreen.name,
+                      queryParameters: {'id': conversation.id},
                     );
-                    context.goNamed(ChatScreen.name);
                   },
                   onDelete: () => _confirmDelete(context, conversation),
                 );

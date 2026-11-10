@@ -316,6 +316,13 @@ class DuoDisplayManager extends ChangeNotifier {
   VoidCallback? onChatStop;
   void Function(String agentId)? onChatSelectAgent;
 
+  /// App-level chat handling used while no chat screen installed the
+  /// callbacks above.
+  void Function(String text, {List<ChatAttachment>? attachments})?
+  onFallbackChatSend;
+  VoidCallback? onFallbackChatStop;
+  void Function(String agentId)? onFallbackChatSelectAgent;
+
   /// Software keyboard relay messages (see [DuoKeyboardMessages]). On the
   /// primary engine they are consumed by the keyboard router when enabled.
   void Function(Map<String, dynamic> message)? onKeyboardMessage;
@@ -607,13 +614,17 @@ class DuoDisplayManager extends ChangeNotifier {
             onChatSend!(text, attachments: attachments);
           } else if (onTextSubmit != null) {
             onTextSubmit!(text);
+          } else if (onFallbackChatSend != null) {
+            onFallbackChatSend!(text, attachments: attachments);
           } else {
             onFallbackTextSubmit?.call(text);
           }
         } else if (type == 'chat_stop') {
-          onChatStop?.call();
+          (onChatStop ?? onFallbackChatStop)?.call();
         } else if (type == 'chat_select_agent' && map.containsKey('agentId')) {
-          onChatSelectAgent?.call(map['agentId'] as String);
+          (onChatSelectAgent ?? onFallbackChatSelectAgent)?.call(
+            map['agentId'] as String,
+          );
         }
       }
     } catch (_) {}

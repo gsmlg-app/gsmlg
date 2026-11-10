@@ -3012,6 +3012,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Lower = more focused, Higher = more diverse'**
   String get agentModelTopKHelp;
+
+  /// No description provided for @agentEditorSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the agent. Try again.'**
+  String get agentEditorSaveFailed;
 }
 
 class _AppLocalizationsDelegate

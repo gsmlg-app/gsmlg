@@ -1525,6 +1525,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get agentModelTopKHelp => '越低越集中，越高越多样';
+
+  @override
+  String get agentEditorSaveFailed => '无法保存智能体，请重试。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

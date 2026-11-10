@@ -1,9 +1,11 @@
 import 'package:app_agent/app_agent.dart';
+import 'package:app_database/app_database.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/screens/chat/chat_routes.dart';
@@ -98,4 +100,115 @@ Future<GoRouter> pumpChatRoutes(
     await tester.pump();
   }
   return router;
+}
+
+/// A real [ChatBloc] and [ChatSettingsBloc] over an in-memory database with
+/// active agent `a1` and its stored conversation `c1` ("Release notes").
+class RealChatHarness {
+  RealChatHarness._(
+    this.preferences,
+    this.settingsBloc,
+    this.chatBloc,
+    this.tools,
+  );
+
+  final SharedPreferences preferences;
+  final ChatSettingsBloc settingsBloc;
+  final ChatBloc chatBloc;
+  final ToolExecutor tools;
+
+  static Future<RealChatHarness> create(WidgetTester tester) async {
+    // The conversation input bar creates an audio recorder.
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('com.llfbandit.record/messages'),
+      (_) async => null,
+    );
+    SharedPreferences.setMockInitialValues({'chat_active_agent_id': 'a1'});
+    final preferences = await SharedPreferences.getInstance();
+    final database = AppDatabase.forTesting();
+    final storage = ChatStorageRepository(database);
+    final agents = AgentRepository(database);
+    final tools = ToolExecutor();
+    final harness = await tester.runAsync(() async {
+      await agents.save(testAgent('a1', name: 'Writer'));
+      await storage.saveConversation(
+        testConversation('c1', agentId: 'a1', title: 'Release notes'),
+      );
+      final settingsBloc = ChatSettingsBloc(
+        repository: storage,
+        preferences: preferences,
+        agentRepository: agents,
+      );
+      final loaded = settingsBloc.stream.firstWhere((s) => s.isLoaded);
+      settingsBloc.add(const ChatSettingsLoad());
+      await loaded;
+      final chatBloc = ChatBloc(
+        gemmaRepository: GemmaRepository(),
+        remoteRepository: _IdleRemote(),
+        storageRepository: storage,
+        toolExecutor: tools,
+        agentRepository: agents,
+        agentRunner: InProcessAgentRunner(
+          ChatAgentRuntime(
+            toolExecutor: tools,
+            remoteRepository: _IdleRemote(),
+            gemmaRepository: GemmaRepository(),
+            storageRepository: storage,
+          ),
+        ),
+      );
+      return RealChatHarness._(preferences, settingsBloc, chatBloc, tools);
+    });
+    addTearDown(() async {
+      await tester.runAsync(() async {
+        await harness!.chatBloc.close();
+        await harness.settingsBloc.close();
+        await database.close();
+      });
+    });
+    return harness!;
+  }
+
+  Future<GoRouter> pump(WidgetTester tester, String location) => pumpChatRoutes(
+    tester,
+    location: location,
+    settingsBloc: settingsBloc,
+    chatBloc: chatBloc,
+    preferences: preferences,
+    toolExecutor: tools,
+    settle: false,
+  );
+
+  Future<void> settle(WidgetTester tester, bool Function() done) async {
+    for (var i = 0; i < 100 && !done(); i += 1) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+  }
+}
+
+/// Remote model that accepts runs and answers with nothing.
+class _IdleRemote implements RemoteLlmRepository {
+  @override
+  Future<bool> isReady(ModelConfig config) async => true;
+
+  @override
+  Stream<ChatGenerationChunk> generateResponse(
+    List<Message> messages,
+    ModelConfig config, {
+    List<Map<String, dynamic>> tools = const [],
+    String? generationId,
+    LogContext? logContext,
+  }) => const Stream.empty();
+
+  @override
+  Future<void> stopGeneration({String? generationId}) async {}
+
+  @override
+  Future<void> dispose() async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

@@ -146,6 +146,25 @@ void main() {
       expect(stored.description, isNull);
     });
 
+    test('a failing repository save emits an error and keeps agents', () async {
+      final bloc = ChatSettingsBloc(
+        repository: storage,
+        preferences: preferences,
+        agentRepository: _FailingAgentRepository(db),
+      );
+      addTearDown(bloc.close);
+      final ready = bloc.stream.firstWhere((s) => s.isLoaded);
+      bloc.add(const ChatSettingsLoad());
+      await ready;
+
+      final failed =
+          bloc.stream.firstWhere((s) => s.status == ChatSettingsStatus.error);
+      bloc.add(const ChatSettingsSaveAgent(id: 'a1', name: 'Writer'));
+      final state = await failed;
+      expect(state.errorMessage, contains('disk full'));
+      expect(state.agents, isEmpty);
+    });
+
     test('load imports legacy chat_agents once', () async {
       await preferences.setStringList('chat_agents', [
         jsonEncode({
@@ -413,4 +432,12 @@ class _Remote implements RemoteLlmRepository {
 class _Gemma extends GemmaRepository {
   @override
   bool get isReady => true;
+}
+
+class _FailingAgentRepository extends AgentRepository {
+  _FailingAgentRepository(super.db);
+
+  @override
+  Future<void> save(AgentDefinition agent) async =>
+      throw StateError('disk full');
 }

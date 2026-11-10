@@ -122,8 +122,9 @@ class _AgentsScreenState extends State<AgentsScreen> {
   }
 
   void _openConversation(Conversation conversation) {
-    context.read<ChatBloc>().add(ChatLoadConversation(id: conversation.id));
-    context.goNamed(ChatScreen.name);
+    // ChatScreen loads the conversation from the link; selecting it here
+    // would race its "nothing selected" start.
+    context.goNamed(ChatScreen.name, queryParameters: {'id': conversation.id});
   }
 }
 

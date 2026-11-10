@@ -22,6 +22,9 @@ class AgentEditorScreen extends StatefulWidget {
 
   const AgentEditorScreen({this.agentId, super.key});
 
+  /// How long Save waits for the settings bloc before reporting a failure.
+  static const saveTimeout = Duration(seconds: 10);
+
   final String? agentId;
 
   @override
@@ -285,13 +288,20 @@ class _AgentEditorScreenState extends State<AgentEditorScreen> {
     final bloc = context.read<ChatSettingsBloc>();
     final id =
         widget.agentId ?? 'agent-${DateTime.now().microsecondsSinceEpoch}';
+    final before = _agentIn(bloc.state);
     final allowedTools = _allowedTools;
     setState(() => _saving = true);
-    final saved = bloc.stream.firstWhere(
-      (state) =>
-          state.status == ChatSettingsStatus.error ||
-          state.agents.any((agent) => agent.id == id),
-    );
+    // Completes on the state produced by this save: a new definition object
+    // for [id], or the error it raised.
+    final saved = bloc.stream
+        .firstWhere(
+          (state) =>
+              state.status == ChatSettingsStatus.error ||
+              state.agents.any(
+                (agent) => agent.id == id && !identical(agent, before),
+              ),
+        )
+        .timeout(AgentEditorScreen.saveTimeout);
     bloc.add(
       ChatSettingsSaveAgent(
         id: id,
@@ -305,13 +315,25 @@ class _AgentEditorScreenState extends State<AgentEditorScreen> {
         clearAllowedTools: allowedTools == null,
       ),
     );
-    final state = await saved;
+    String? error;
+    try {
+      final state = await saved;
+      if (state.status == ChatSettingsStatus.error) {
+        error = state.errorMessage;
+      }
+    } catch (_) {
+      error = '';
+    }
     if (!mounted) return;
     setState(() => _saving = false);
-    if (state.status == ChatSettingsStatus.error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? '')));
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error.isEmpty ? context.l10n.agentEditorSaveFailed : error,
+          ),
+        ),
+      );
       return;
     }
     context.goNamed(AgentSessionsScreen.name, pathParameters: {'agentId': id});

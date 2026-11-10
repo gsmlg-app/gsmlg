@@ -65,8 +65,35 @@ class _ChatScreenState extends State<ChatScreen> {
         chatBloc.state.conversation?.id != conversationId) {
       chatBloc.add(ChatLoadConversation(id: conversationId));
     } else if (chatBloc.state.conversation == null) {
-      chatBloc.add(const ChatNewConversation());
+      _startConversationWhenSettingsReady(settingsBloc);
     }
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final conversationId = widget.conversationId;
+    if (conversationId != null &&
+        conversationId != oldWidget.conversationId &&
+        context.read<ChatBloc>().state.conversation?.id != conversationId) {
+      context.read<ChatBloc>().add(ChatLoadConversation(id: conversationId));
+    }
+  }
+
+  /// With nothing selected, starts a conversation with the active agent once
+  /// the settings (and so the active agent) are known.
+  Future<void> _startConversationWhenSettingsReady(
+    ChatSettingsBloc settingsBloc,
+  ) async {
+    if (!settingsBloc.state.isLoaded) {
+      await settingsBloc.stream.firstWhere(
+        (state) => state.isLoaded || state.status == ChatSettingsStatus.error,
+      );
+    }
+    if (!mounted || context.read<ChatBloc>().state.conversation != null) {
+      return;
+    }
+    _startNewConversation();
   }
 
   @override
