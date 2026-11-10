@@ -117,7 +117,12 @@ class RealChatHarness {
   final ChatBloc chatBloc;
   final ToolExecutor tools;
 
-  static Future<RealChatHarness> create(WidgetTester tester) async {
+  /// [agents] and [conversations] are stored besides `a1` and `c1`.
+  static Future<RealChatHarness> create(
+    WidgetTester tester, {
+    List<AgentDefinition> agents = const [],
+    List<Conversation> conversations = const [],
+  }) async {
     // The conversation input bar creates an audio recorder.
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       const MethodChannel('com.llfbandit.record/messages'),
@@ -127,17 +132,23 @@ class RealChatHarness {
     final preferences = await SharedPreferences.getInstance();
     final database = AppDatabase.forTesting();
     final storage = ChatStorageRepository(database);
-    final agents = AgentRepository(database);
+    final agentRepository = AgentRepository(database);
     final tools = ToolExecutor();
     final harness = await tester.runAsync(() async {
-      await agents.save(testAgent('a1', name: 'Writer'));
+      await agentRepository.save(testAgent('a1', name: 'Writer'));
+      for (final agent in agents) {
+        await agentRepository.save(agent);
+      }
       await storage.saveConversation(
         testConversation('c1', agentId: 'a1', title: 'Release notes'),
       );
+      for (final conversation in conversations) {
+        await storage.saveConversation(conversation);
+      }
       final settingsBloc = ChatSettingsBloc(
         repository: storage,
         preferences: preferences,
-        agentRepository: agents,
+        agentRepository: agentRepository,
       );
       final loaded = settingsBloc.stream.firstWhere((s) => s.isLoaded);
       settingsBloc.add(const ChatSettingsLoad());
@@ -147,7 +158,7 @@ class RealChatHarness {
         remoteRepository: _IdleRemote(),
         storageRepository: storage,
         toolExecutor: tools,
-        agentRepository: agents,
+        agentRepository: agentRepository,
         agentRunner: InProcessAgentRunner(
           ChatAgentRuntime(
             toolExecutor: tools,

@@ -67,6 +67,17 @@ class _ChatScreenState extends State<ChatScreen> {
     } else if (chatBloc.state.conversation == null) {
       _startConversationWhenSettingsReady(settingsBloc);
     }
+    _followOwner();
+  }
+
+  /// Makes the owner of the selected conversation the active agent, so the
+  /// label, input bar, model banner and Duo status describe the owner.
+  void _followOwner() {
+    final owner = _ownerAgent();
+    final settingsBloc = context.read<ChatSettingsBloc>();
+    if (owner != null && owner.id != settingsBloc.state.activeAgentId) {
+      settingsBloc.add(ChatSettingsSelectAgent(id: owner.id));
+    }
   }
 
   @override
@@ -303,6 +314,25 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<ChatBloc, ChatState>(
+          listenWhen: (previous, current) =>
+              previous.conversation?.id != current.conversation?.id ||
+              previous.conversation?.agentId != current.conversation?.agentId,
+          listener: (_, _) => _followOwner(),
+        ),
+        // The owner may only be known once the agents are loaded.
+        BlocListener<ChatSettingsBloc, ChatSettingsState>(
+          listenWhen: (previous, current) => previous.agents != current.agents,
+          listener: (_, _) => _followOwner(),
+        ),
+      ],
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return AppAdaptiveScaffold(
       navigationRestoreInHeader: true,
       selectedIndex: Destinations.indexOf(const Key(HomeScreen.name), context),
