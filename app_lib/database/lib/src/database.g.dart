@@ -1387,6 +1387,12 @@ class $ChatConversationTableTable extends ChatConversationTable
   late final GeneratedColumn<String> systemPrompt = GeneratedColumn<String>(
       'system_prompt', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _agentIdMeta =
+      const VerificationMeta('agentId');
+  @override
+  late final GeneratedColumn<String> agentId = GeneratedColumn<String>(
+      'agent_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -1411,6 +1417,7 @@ class $ChatConversationTableTable extends ChatConversationTable
         titleRevision,
         contentRevision,
         systemPrompt,
+        agentId,
         createdAt,
         updatedAt
       ];
@@ -1460,6 +1467,10 @@ class $ChatConversationTableTable extends ChatConversationTable
           systemPrompt.isAcceptableOrUnknown(
               data['system_prompt']!, _systemPromptMeta));
     }
+    if (data.containsKey('agent_id')) {
+      context.handle(_agentIdMeta,
+          agentId.isAcceptableOrUnknown(data['agent_id']!, _agentIdMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -1490,6 +1501,8 @@ class $ChatConversationTableTable extends ChatConversationTable
           .read(DriftSqlType.int, data['${effectivePrefix}content_revision'])!,
       systemPrompt: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}system_prompt']),
+      agentId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}agent_id']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -1519,6 +1532,9 @@ class ChatConversationTableData extends DataClass
   /// Optional system prompt for this conversation.
   final String? systemPrompt;
 
+  /// Owning agent definition id (null for legacy conversations).
+  final String? agentId;
+
   /// Timestamp when the conversation was created.
   final DateTime createdAt;
 
@@ -1531,6 +1547,7 @@ class ChatConversationTableData extends DataClass
       required this.titleRevision,
       required this.contentRevision,
       this.systemPrompt,
+      this.agentId,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -1543,6 +1560,9 @@ class ChatConversationTableData extends DataClass
     map['content_revision'] = Variable<int>(contentRevision);
     if (!nullToAbsent || systemPrompt != null) {
       map['system_prompt'] = Variable<String>(systemPrompt);
+    }
+    if (!nullToAbsent || agentId != null) {
+      map['agent_id'] = Variable<String>(agentId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -1559,6 +1579,9 @@ class ChatConversationTableData extends DataClass
       systemPrompt: systemPrompt == null && nullToAbsent
           ? const Value.absent()
           : Value(systemPrompt),
+      agentId: agentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(agentId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1574,6 +1597,7 @@ class ChatConversationTableData extends DataClass
       titleRevision: serializer.fromJson<int>(json['titleRevision']),
       contentRevision: serializer.fromJson<int>(json['contentRevision']),
       systemPrompt: serializer.fromJson<String?>(json['systemPrompt']),
+      agentId: serializer.fromJson<String?>(json['agentId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1588,6 +1612,7 @@ class ChatConversationTableData extends DataClass
       'titleRevision': serializer.toJson<int>(titleRevision),
       'contentRevision': serializer.toJson<int>(contentRevision),
       'systemPrompt': serializer.toJson<String?>(systemPrompt),
+      'agentId': serializer.toJson<String?>(agentId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1600,6 +1625,7 @@ class ChatConversationTableData extends DataClass
           int? titleRevision,
           int? contentRevision,
           Value<String?> systemPrompt = const Value.absent(),
+          Value<String?> agentId = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       ChatConversationTableData(
@@ -1610,6 +1636,7 @@ class ChatConversationTableData extends DataClass
         contentRevision: contentRevision ?? this.contentRevision,
         systemPrompt:
             systemPrompt.present ? systemPrompt.value : this.systemPrompt,
+        agentId: agentId.present ? agentId.value : this.agentId,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -1629,6 +1656,7 @@ class ChatConversationTableData extends DataClass
       systemPrompt: data.systemPrompt.present
           ? data.systemPrompt.value
           : this.systemPrompt,
+      agentId: data.agentId.present ? data.agentId.value : this.agentId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1643,6 +1671,7 @@ class ChatConversationTableData extends DataClass
           ..write('titleRevision: $titleRevision, ')
           ..write('contentRevision: $contentRevision, ')
           ..write('systemPrompt: $systemPrompt, ')
+          ..write('agentId: $agentId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1651,7 +1680,7 @@ class ChatConversationTableData extends DataClass
 
   @override
   int get hashCode => Object.hash(id, title, titleSource, titleRevision,
-      contentRevision, systemPrompt, createdAt, updatedAt);
+      contentRevision, systemPrompt, agentId, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1662,6 +1691,7 @@ class ChatConversationTableData extends DataClass
           other.titleRevision == this.titleRevision &&
           other.contentRevision == this.contentRevision &&
           other.systemPrompt == this.systemPrompt &&
+          other.agentId == this.agentId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1674,6 +1704,7 @@ class ChatConversationTableCompanion
   final Value<int> titleRevision;
   final Value<int> contentRevision;
   final Value<String?> systemPrompt;
+  final Value<String?> agentId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -1684,6 +1715,7 @@ class ChatConversationTableCompanion
     this.titleRevision = const Value.absent(),
     this.contentRevision = const Value.absent(),
     this.systemPrompt = const Value.absent(),
+    this.agentId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1695,6 +1727,7 @@ class ChatConversationTableCompanion
     this.titleRevision = const Value.absent(),
     this.contentRevision = const Value.absent(),
     this.systemPrompt = const Value.absent(),
+    this.agentId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1707,6 +1740,7 @@ class ChatConversationTableCompanion
     Expression<int>? titleRevision,
     Expression<int>? contentRevision,
     Expression<String>? systemPrompt,
+    Expression<String>? agentId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -1718,6 +1752,7 @@ class ChatConversationTableCompanion
       if (titleRevision != null) 'title_revision': titleRevision,
       if (contentRevision != null) 'content_revision': contentRevision,
       if (systemPrompt != null) 'system_prompt': systemPrompt,
+      if (agentId != null) 'agent_id': agentId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1731,6 +1766,7 @@ class ChatConversationTableCompanion
       Value<int>? titleRevision,
       Value<int>? contentRevision,
       Value<String?>? systemPrompt,
+      Value<String?>? agentId,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<int>? rowid}) {
@@ -1741,6 +1777,7 @@ class ChatConversationTableCompanion
       titleRevision: titleRevision ?? this.titleRevision,
       contentRevision: contentRevision ?? this.contentRevision,
       systemPrompt: systemPrompt ?? this.systemPrompt,
+      agentId: agentId ?? this.agentId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1768,6 +1805,9 @@ class ChatConversationTableCompanion
     if (systemPrompt.present) {
       map['system_prompt'] = Variable<String>(systemPrompt.value);
     }
+    if (agentId.present) {
+      map['agent_id'] = Variable<String>(agentId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1789,6 +1829,542 @@ class ChatConversationTableCompanion
           ..write('titleRevision: $titleRevision, ')
           ..write('contentRevision: $contentRevision, ')
           ..write('systemPrompt: $systemPrompt, ')
+          ..write('agentId: $agentId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AgentDefinitionTableTable extends AgentDefinitionTable
+    with TableInfo<$AgentDefinitionTableTable, AgentDefinitionTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentDefinitionTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _avatarMeta = const VerificationMeta('avatar');
+  @override
+  late final GeneratedColumn<String> avatar = GeneratedColumn<String>(
+      'avatar', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _instructionsMeta =
+      const VerificationMeta('instructions');
+  @override
+  late final GeneratedColumn<String> instructions = GeneratedColumn<String>(
+      'instructions', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _configMeta = const VerificationMeta('config');
+  @override
+  late final GeneratedColumn<String> config = GeneratedColumn<String>(
+      'config', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _thinkingEnabledMeta =
+      const VerificationMeta('thinkingEnabled');
+  @override
+  late final GeneratedColumn<bool> thinkingEnabled = GeneratedColumn<bool>(
+      'thinking_enabled', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("thinking_enabled" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _allowedToolsMeta =
+      const VerificationMeta('allowedTools');
+  @override
+  late final GeneratedColumn<String> allowedTools = GeneratedColumn<String>(
+      'allowed_tools', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        avatar,
+        description,
+        instructions,
+        config,
+        thinkingEnabled,
+        allowedTools,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agent_definition_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<AgentDefinitionTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('avatar')) {
+      context.handle(_avatarMeta,
+          avatar.isAcceptableOrUnknown(data['avatar']!, _avatarMeta));
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
+    if (data.containsKey('instructions')) {
+      context.handle(
+          _instructionsMeta,
+          instructions.isAcceptableOrUnknown(
+              data['instructions']!, _instructionsMeta));
+    }
+    if (data.containsKey('config')) {
+      context.handle(_configMeta,
+          config.isAcceptableOrUnknown(data['config']!, _configMeta));
+    } else if (isInserting) {
+      context.missing(_configMeta);
+    }
+    if (data.containsKey('thinking_enabled')) {
+      context.handle(
+          _thinkingEnabledMeta,
+          thinkingEnabled.isAcceptableOrUnknown(
+              data['thinking_enabled']!, _thinkingEnabledMeta));
+    }
+    if (data.containsKey('allowed_tools')) {
+      context.handle(
+          _allowedToolsMeta,
+          allowedTools.isAcceptableOrUnknown(
+              data['allowed_tools']!, _allowedToolsMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AgentDefinitionTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AgentDefinitionTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      avatar: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}avatar']),
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      instructions: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}instructions']),
+      config: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}config'])!,
+      thinkingEnabled: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}thinking_enabled'])!,
+      allowedTools: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}allowed_tools']),
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $AgentDefinitionTableTable createAlias(String alias) {
+    return $AgentDefinitionTableTable(attachedDatabase, alias);
+  }
+}
+
+class AgentDefinitionTableData extends DataClass
+    implements Insertable<AgentDefinitionTableData> {
+  /// Primary key (UUID string).
+  final String id;
+  final String name;
+
+  /// Emoji avatar.
+  final String? avatar;
+  final String? description;
+
+  /// System instructions for the agent.
+  final String? instructions;
+
+  /// JSON-encoded model configuration.
+  final String config;
+  final bool thinkingEnabled;
+
+  /// JSON array of allowed tool names; null means all tools.
+  final String? allowedTools;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const AgentDefinitionTableData(
+      {required this.id,
+      required this.name,
+      this.avatar,
+      this.description,
+      this.instructions,
+      required this.config,
+      required this.thinkingEnabled,
+      this.allowedTools,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || avatar != null) {
+      map['avatar'] = Variable<String>(avatar);
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || instructions != null) {
+      map['instructions'] = Variable<String>(instructions);
+    }
+    map['config'] = Variable<String>(config);
+    map['thinking_enabled'] = Variable<bool>(thinkingEnabled);
+    if (!nullToAbsent || allowedTools != null) {
+      map['allowed_tools'] = Variable<String>(allowedTools);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  AgentDefinitionTableCompanion toCompanion(bool nullToAbsent) {
+    return AgentDefinitionTableCompanion(
+      id: Value(id),
+      name: Value(name),
+      avatar:
+          avatar == null && nullToAbsent ? const Value.absent() : Value(avatar),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      instructions: instructions == null && nullToAbsent
+          ? const Value.absent()
+          : Value(instructions),
+      config: Value(config),
+      thinkingEnabled: Value(thinkingEnabled),
+      allowedTools: allowedTools == null && nullToAbsent
+          ? const Value.absent()
+          : Value(allowedTools),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory AgentDefinitionTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AgentDefinitionTableData(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      avatar: serializer.fromJson<String?>(json['avatar']),
+      description: serializer.fromJson<String?>(json['description']),
+      instructions: serializer.fromJson<String?>(json['instructions']),
+      config: serializer.fromJson<String>(json['config']),
+      thinkingEnabled: serializer.fromJson<bool>(json['thinkingEnabled']),
+      allowedTools: serializer.fromJson<String?>(json['allowedTools']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'avatar': serializer.toJson<String?>(avatar),
+      'description': serializer.toJson<String?>(description),
+      'instructions': serializer.toJson<String?>(instructions),
+      'config': serializer.toJson<String>(config),
+      'thinkingEnabled': serializer.toJson<bool>(thinkingEnabled),
+      'allowedTools': serializer.toJson<String?>(allowedTools),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  AgentDefinitionTableData copyWith(
+          {String? id,
+          String? name,
+          Value<String?> avatar = const Value.absent(),
+          Value<String?> description = const Value.absent(),
+          Value<String?> instructions = const Value.absent(),
+          String? config,
+          bool? thinkingEnabled,
+          Value<String?> allowedTools = const Value.absent(),
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      AgentDefinitionTableData(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        avatar: avatar.present ? avatar.value : this.avatar,
+        description: description.present ? description.value : this.description,
+        instructions:
+            instructions.present ? instructions.value : this.instructions,
+        config: config ?? this.config,
+        thinkingEnabled: thinkingEnabled ?? this.thinkingEnabled,
+        allowedTools:
+            allowedTools.present ? allowedTools.value : this.allowedTools,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  AgentDefinitionTableData copyWithCompanion(
+      AgentDefinitionTableCompanion data) {
+    return AgentDefinitionTableData(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      avatar: data.avatar.present ? data.avatar.value : this.avatar,
+      description:
+          data.description.present ? data.description.value : this.description,
+      instructions: data.instructions.present
+          ? data.instructions.value
+          : this.instructions,
+      config: data.config.present ? data.config.value : this.config,
+      thinkingEnabled: data.thinkingEnabled.present
+          ? data.thinkingEnabled.value
+          : this.thinkingEnabled,
+      allowedTools: data.allowedTools.present
+          ? data.allowedTools.value
+          : this.allowedTools,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentDefinitionTableData(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('avatar: $avatar, ')
+          ..write('description: $description, ')
+          ..write('instructions: $instructions, ')
+          ..write('config: $config, ')
+          ..write('thinkingEnabled: $thinkingEnabled, ')
+          ..write('allowedTools: $allowedTools, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, avatar, description, instructions,
+      config, thinkingEnabled, allowedTools, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AgentDefinitionTableData &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.avatar == this.avatar &&
+          other.description == this.description &&
+          other.instructions == this.instructions &&
+          other.config == this.config &&
+          other.thinkingEnabled == this.thinkingEnabled &&
+          other.allowedTools == this.allowedTools &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class AgentDefinitionTableCompanion
+    extends UpdateCompanion<AgentDefinitionTableData> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> avatar;
+  final Value<String?> description;
+  final Value<String?> instructions;
+  final Value<String> config;
+  final Value<bool> thinkingEnabled;
+  final Value<String?> allowedTools;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const AgentDefinitionTableCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.avatar = const Value.absent(),
+    this.description = const Value.absent(),
+    this.instructions = const Value.absent(),
+    this.config = const Value.absent(),
+    this.thinkingEnabled = const Value.absent(),
+    this.allowedTools = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AgentDefinitionTableCompanion.insert({
+    required String id,
+    required String name,
+    this.avatar = const Value.absent(),
+    this.description = const Value.absent(),
+    this.instructions = const Value.absent(),
+    required String config,
+    this.thinkingEnabled = const Value.absent(),
+    this.allowedTools = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name),
+        config = Value(config);
+  static Insertable<AgentDefinitionTableData> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? avatar,
+    Expression<String>? description,
+    Expression<String>? instructions,
+    Expression<String>? config,
+    Expression<bool>? thinkingEnabled,
+    Expression<String>? allowedTools,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (avatar != null) 'avatar': avatar,
+      if (description != null) 'description': description,
+      if (instructions != null) 'instructions': instructions,
+      if (config != null) 'config': config,
+      if (thinkingEnabled != null) 'thinking_enabled': thinkingEnabled,
+      if (allowedTools != null) 'allowed_tools': allowedTools,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AgentDefinitionTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String?>? avatar,
+      Value<String?>? description,
+      Value<String?>? instructions,
+      Value<String>? config,
+      Value<bool>? thinkingEnabled,
+      Value<String?>? allowedTools,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return AgentDefinitionTableCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      avatar: avatar ?? this.avatar,
+      description: description ?? this.description,
+      instructions: instructions ?? this.instructions,
+      config: config ?? this.config,
+      thinkingEnabled: thinkingEnabled ?? this.thinkingEnabled,
+      allowedTools: allowedTools ?? this.allowedTools,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (avatar.present) {
+      map['avatar'] = Variable<String>(avatar.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (instructions.present) {
+      map['instructions'] = Variable<String>(instructions.value);
+    }
+    if (config.present) {
+      map['config'] = Variable<String>(config.value);
+    }
+    if (thinkingEnabled.present) {
+      map['thinking_enabled'] = Variable<bool>(thinkingEnabled.value);
+    }
+    if (allowedTools.present) {
+      map['allowed_tools'] = Variable<String>(allowedTools.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentDefinitionTableCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('avatar: $avatar, ')
+          ..write('description: $description, ')
+          ..write('instructions: $instructions, ')
+          ..write('config: $config, ')
+          ..write('thinkingEnabled: $thinkingEnabled, ')
+          ..write('allowedTools: $allowedTools, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -9747,6 +10323,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $GitHubRepoTableTable(this);
   late final $ChatConversationTableTable chatConversationTable =
       $ChatConversationTableTable(this);
+  late final $AgentDefinitionTableTable agentDefinitionTable =
+      $AgentDefinitionTableTable(this);
   late final $ChatMessageTableTable chatMessageTable =
       $ChatMessageTableTable(this);
   late final $ChatSettingsTableTable chatSettingsTable =
@@ -9780,6 +10358,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         dnsZoneTable,
         gitHubRepoTable,
         chatConversationTable,
+        agentDefinitionTable,
         chatMessageTable,
         chatSettingsTable,
         serviceAccountTable,
@@ -10470,6 +11049,7 @@ typedef $$ChatConversationTableTableCreateCompanionBuilder
   Value<int> titleRevision,
   Value<int> contentRevision,
   Value<String?> systemPrompt,
+  Value<String?> agentId,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -10482,6 +11062,7 @@ typedef $$ChatConversationTableTableUpdateCompanionBuilder
   Value<int> titleRevision,
   Value<int> contentRevision,
   Value<String?> systemPrompt,
+  Value<String?> agentId,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -10538,6 +11119,9 @@ class $$ChatConversationTableTableFilterComposer
 
   ColumnFilters<String> get systemPrompt => $composableBuilder(
       column: $table.systemPrompt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get agentId => $composableBuilder(
+      column: $table.agentId, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -10597,6 +11181,9 @@ class $$ChatConversationTableTableOrderingComposer
       column: $table.systemPrompt,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get agentId => $composableBuilder(
+      column: $table.agentId, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -10630,6 +11217,9 @@ class $$ChatConversationTableTableAnnotationComposer
 
   GeneratedColumn<String> get systemPrompt => $composableBuilder(
       column: $table.systemPrompt, builder: (column) => column);
+
+  GeneratedColumn<String> get agentId =>
+      $composableBuilder(column: $table.agentId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -10692,6 +11282,7 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
             Value<int> titleRevision = const Value.absent(),
             Value<int> contentRevision = const Value.absent(),
             Value<String?> systemPrompt = const Value.absent(),
+            Value<String?> agentId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -10703,6 +11294,7 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
             titleRevision: titleRevision,
             contentRevision: contentRevision,
             systemPrompt: systemPrompt,
+            agentId: agentId,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -10714,6 +11306,7 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
             Value<int> titleRevision = const Value.absent(),
             Value<int> contentRevision = const Value.absent(),
             Value<String?> systemPrompt = const Value.absent(),
+            Value<String?> agentId = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -10725,6 +11318,7 @@ class $$ChatConversationTableTableTableManager extends RootTableManager<
             titleRevision: titleRevision,
             contentRevision: contentRevision,
             systemPrompt: systemPrompt,
+            agentId: agentId,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -10781,6 +11375,269 @@ typedef $$ChatConversationTableTableProcessedTableManager
         (ChatConversationTableData, $$ChatConversationTableTableReferences),
         ChatConversationTableData,
         PrefetchHooks Function({bool chatMessageTableRefs})>;
+typedef $$AgentDefinitionTableTableCreateCompanionBuilder
+    = AgentDefinitionTableCompanion Function({
+  required String id,
+  required String name,
+  Value<String?> avatar,
+  Value<String?> description,
+  Value<String?> instructions,
+  required String config,
+  Value<bool> thinkingEnabled,
+  Value<String?> allowedTools,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+typedef $$AgentDefinitionTableTableUpdateCompanionBuilder
+    = AgentDefinitionTableCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String?> avatar,
+  Value<String?> description,
+  Value<String?> instructions,
+  Value<String> config,
+  Value<bool> thinkingEnabled,
+  Value<String?> allowedTools,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$AgentDefinitionTableTableFilterComposer
+    extends Composer<_$AppDatabase, $AgentDefinitionTableTable> {
+  $$AgentDefinitionTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get avatar => $composableBuilder(
+      column: $table.avatar, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get instructions => $composableBuilder(
+      column: $table.instructions, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get config => $composableBuilder(
+      column: $table.config, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get thinkingEnabled => $composableBuilder(
+      column: $table.thinkingEnabled,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get allowedTools => $composableBuilder(
+      column: $table.allowedTools, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$AgentDefinitionTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $AgentDefinitionTableTable> {
+  $$AgentDefinitionTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get avatar => $composableBuilder(
+      column: $table.avatar, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get instructions => $composableBuilder(
+      column: $table.instructions,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get config => $composableBuilder(
+      column: $table.config, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get thinkingEnabled => $composableBuilder(
+      column: $table.thinkingEnabled,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get allowedTools => $composableBuilder(
+      column: $table.allowedTools,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$AgentDefinitionTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AgentDefinitionTableTable> {
+  $$AgentDefinitionTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get avatar =>
+      $composableBuilder(column: $table.avatar, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+      column: $table.description, builder: (column) => column);
+
+  GeneratedColumn<String> get instructions => $composableBuilder(
+      column: $table.instructions, builder: (column) => column);
+
+  GeneratedColumn<String> get config =>
+      $composableBuilder(column: $table.config, builder: (column) => column);
+
+  GeneratedColumn<bool> get thinkingEnabled => $composableBuilder(
+      column: $table.thinkingEnabled, builder: (column) => column);
+
+  GeneratedColumn<String> get allowedTools => $composableBuilder(
+      column: $table.allowedTools, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$AgentDefinitionTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $AgentDefinitionTableTable,
+    AgentDefinitionTableData,
+    $$AgentDefinitionTableTableFilterComposer,
+    $$AgentDefinitionTableTableOrderingComposer,
+    $$AgentDefinitionTableTableAnnotationComposer,
+    $$AgentDefinitionTableTableCreateCompanionBuilder,
+    $$AgentDefinitionTableTableUpdateCompanionBuilder,
+    (
+      AgentDefinitionTableData,
+      BaseReferences<_$AppDatabase, $AgentDefinitionTableTable,
+          AgentDefinitionTableData>
+    ),
+    AgentDefinitionTableData,
+    PrefetchHooks Function()> {
+  $$AgentDefinitionTableTableTableManager(
+      _$AppDatabase db, $AgentDefinitionTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AgentDefinitionTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AgentDefinitionTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AgentDefinitionTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> avatar = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> instructions = const Value.absent(),
+            Value<String> config = const Value.absent(),
+            Value<bool> thinkingEnabled = const Value.absent(),
+            Value<String?> allowedTools = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AgentDefinitionTableCompanion(
+            id: id,
+            name: name,
+            avatar: avatar,
+            description: description,
+            instructions: instructions,
+            config: config,
+            thinkingEnabled: thinkingEnabled,
+            allowedTools: allowedTools,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            Value<String?> avatar = const Value.absent(),
+            Value<String?> description = const Value.absent(),
+            Value<String?> instructions = const Value.absent(),
+            required String config,
+            Value<bool> thinkingEnabled = const Value.absent(),
+            Value<String?> allowedTools = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AgentDefinitionTableCompanion.insert(
+            id: id,
+            name: name,
+            avatar: avatar,
+            description: description,
+            instructions: instructions,
+            config: config,
+            thinkingEnabled: thinkingEnabled,
+            allowedTools: allowedTools,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$AgentDefinitionTableTable,
+                        AgentDefinitionTableData>(table),
+                    BaseReferences<_$AppDatabase, $AgentDefinitionTableTable,
+                        AgentDefinitionTableData>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$AgentDefinitionTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $AgentDefinitionTableTable,
+        AgentDefinitionTableData,
+        $$AgentDefinitionTableTableFilterComposer,
+        $$AgentDefinitionTableTableOrderingComposer,
+        $$AgentDefinitionTableTableAnnotationComposer,
+        $$AgentDefinitionTableTableCreateCompanionBuilder,
+        $$AgentDefinitionTableTableUpdateCompanionBuilder,
+        (
+          AgentDefinitionTableData,
+          BaseReferences<_$AppDatabase, $AgentDefinitionTableTable,
+              AgentDefinitionTableData>
+        ),
+        AgentDefinitionTableData,
+        PrefetchHooks Function()>;
 typedef $$ChatMessageTableTableCreateCompanionBuilder
     = ChatMessageTableCompanion Function({
   required String id,
@@ -16196,6 +17053,8 @@ class $AppDatabaseManager {
       $$GitHubRepoTableTableTableManager(_db, _db.gitHubRepoTable);
   $$ChatConversationTableTableTableManager get chatConversationTable =>
       $$ChatConversationTableTableTableManager(_db, _db.chatConversationTable);
+  $$AgentDefinitionTableTableTableManager get agentDefinitionTable =>
+      $$AgentDefinitionTableTableTableManager(_db, _db.agentDefinitionTable);
   $$ChatMessageTableTableTableManager get chatMessageTable =>
       $$ChatMessageTableTableTableManager(_db, _db.chatMessageTable);
   $$ChatSettingsTableTableTableManager get chatSettingsTable =>

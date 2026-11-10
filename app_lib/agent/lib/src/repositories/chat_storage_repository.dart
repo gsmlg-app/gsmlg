@@ -18,10 +18,17 @@ class ChatStorageRepository {
   // ==========================================================================
 
   /// Loads all conversations ordered by most recently updated.
-  Future<List<Conversation>> loadConversations() async {
-    final rows = await (_db.select(
-      _db.chatConversationTable,
-    )..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])).get();
+  /// When [agentId] is given, only that agent's conversations are returned.
+  Future<List<Conversation>> loadConversations({String? agentId}) async {
+    final rows =
+        await (_db.select(_db.chatConversationTable)
+              ..where(
+                (t) => agentId == null
+                    ? const Constant(true)
+                    : t.agentId.equals(agentId),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+            .get();
 
     return rows.map(_conversationFromRow).toList();
   }
@@ -49,6 +56,7 @@ class ChatStorageRepository {
               title: Value(conversation.title),
               titleSource: Value(conversation.titleSource),
               systemPrompt: Value(conversation.systemPrompt),
+              agentId: Value(conversation.agentId),
               createdAt: Value(conversation.createdAt),
               updatedAt: Value(conversation.updatedAt),
             ),
@@ -318,6 +326,7 @@ class ChatStorageRepository {
       titleRevision: row.titleRevision,
       contentRevision: row.contentRevision,
       systemPrompt: row.systemPrompt,
+      agentId: row.agentId,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );

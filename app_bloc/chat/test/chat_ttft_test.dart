@@ -318,7 +318,7 @@ class _MemoryStorage implements ChatStorageRepository {
       conversations[id]?.copyWith(messages: await loadMessages(id));
 
   @override
-  Future<List<Conversation>> loadConversations() async =>
+  Future<List<Conversation>> loadConversations({String? agentId}) async =>
       conversations.values.toList();
 
   @override

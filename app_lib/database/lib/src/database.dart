@@ -3,6 +3,7 @@ import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'tables/agent_definition.dart';
 import 'tables/chat_conversation.dart';
 import 'tables/chat_message.dart';
 import 'tables/chat_settings.dart';
@@ -22,6 +23,7 @@ import 'tables/ssh_hosts.dart';
 import 'tables/shell_profiles.dart';
 import 'type_converter.dart';
 
+export 'tables/agent_definition.dart';
 export 'tables/chat_conversation.dart';
 export 'tables/chat_message.dart';
 export 'tables/chat_settings.dart';
@@ -48,6 +50,7 @@ part 'database.g.dart';
   DnsZoneTable,
   GitHubRepoTable,
   ChatConversationTable,
+  AgentDefinitionTable,
   ChatMessageTable,
   ChatSettingsTable,
   ServiceAccountTable,
@@ -74,7 +77,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration {
@@ -84,6 +87,14 @@ class AppDatabase extends _$AppDatabase {
         await _installChatRevisionTriggers();
       },
       onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 21) {
+          await m.createTable(agentDefinitionTable);
+          await _addColumnIfMissing(
+            m,
+            chatConversationTable,
+            chatConversationTable.agentId,
+          );
+        }
         if (from < 19) {
           await m.createTable(sshKeys);
           await m.createTable(sshHosts);

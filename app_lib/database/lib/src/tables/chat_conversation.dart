@@ -16,6 +16,9 @@ class ChatConversationTable extends Table {
   /// Optional system prompt for this conversation.
   TextColumn get systemPrompt => text().nullable()();
 
+  /// Owning agent definition id (null for legacy conversations).
+  TextColumn get agentId => text().nullable()();
+
   /// Timestamp when the conversation was created.
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 

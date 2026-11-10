@@ -685,7 +685,7 @@ class _Storage implements ChatStorageRepository {
   Future<Conversation?> loadConversation(String id) async =>
       conversations[id]?.copyWith(messages: await loadMessages(id));
   @override
-  Future<List<Conversation>> loadConversations() async =>
+  Future<List<Conversation>> loadConversations({String? agentId}) async =>
       conversations.values.toList();
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

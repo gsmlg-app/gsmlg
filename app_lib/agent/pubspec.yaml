@@ -21,6 +21,7 @@ dependencies:
   http: any
   path_provider: ^2.1.6
   path: any
+  shared_preferences: ^2.5.6
   app_database: any
   app_logging: any
   app_secure_storage: any

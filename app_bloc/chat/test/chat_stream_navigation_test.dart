@@ -401,7 +401,7 @@ class _FakeChatStorageRepository implements ChatStorageRepository {
   String? _defaultSystemPrompt;
 
   @override
-  Future<List<Conversation>> loadConversations() async {
+  Future<List<Conversation>> loadConversations({String? agentId}) async {
     return _conversations.values.toList()
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   }

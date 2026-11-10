@@ -14,6 +14,7 @@ class Conversation extends Equatable {
     this.titleSource = 'manual',
     this.titleRevision = 0,
     this.contentRevision = 0,
+    this.agentId,
   });
 
   /// Creates a new empty conversation.
@@ -21,6 +22,7 @@ class Conversation extends Equatable {
     required String id,
     String? title,
     String? systemPrompt,
+    String? agentId,
   }) {
     final now = DateTime.now();
     return Conversation(
@@ -30,6 +32,7 @@ class Conversation extends Equatable {
       createdAt: now,
       updatedAt: now,
       systemPrompt: systemPrompt,
+      agentId: agentId,
     );
   }
 
@@ -58,6 +61,9 @@ class Conversation extends Equatable {
   /// Optional system prompt for this conversation.
   final String? systemPrompt;
 
+  /// Id of the owning agent definition (null for legacy conversations).
+  final String? agentId;
+
   @override
   List<Object?> get props => [
     id,
@@ -69,6 +75,7 @@ class Conversation extends Equatable {
     titleSource,
     titleRevision,
     contentRevision,
+    agentId,
   ];
 
   /// Returns the last message in the conversation, if any.
@@ -94,6 +101,7 @@ class Conversation extends Equatable {
     String? titleSource,
     int? titleRevision,
     int? contentRevision,
+    String? agentId,
   }) {
     return Conversation(
       id: id ?? this.id,
@@ -105,6 +113,7 @@ class Conversation extends Equatable {
       updatedAt: updatedAt ?? this.updatedAt,
       messages: messages ?? this.messages,
       systemPrompt: systemPrompt ?? this.systemPrompt,
+      agentId: agentId ?? this.agentId,
     );
   }
 
