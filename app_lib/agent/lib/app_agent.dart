@@ -9,6 +9,8 @@ export 'src/models/model_config.dart';
 export 'src/models/backplane_settings.dart';
 export 'src/models/inference.dart';
 export 'src/models/agent_metadata.dart';
+export 'src/models/wire_codecs.dart';
+export 'src/isolate/wire.dart';
 
 // Agent Runtime
 export 'src/agent/agent_event.dart';
