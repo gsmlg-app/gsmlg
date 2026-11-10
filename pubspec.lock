@@ -1931,6 +1931,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.0"
+  secrethub_agent:
+    dependency: "direct main"
+    description:
+      name: secrethub_agent
+      sha256: ea4bf390dde96a38487b761a11e21bdc5f702f96a3bd07bfb5d8da8a41fefc73
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.1"
   shared_preferences:
     dependency: "direct main"
     description:
@@ -2497,5 +2505,5 @@ packages:
     source: hosted
     version: "0.0.6"
 sdks:
-  dart: ">=3.13.0 <4.0.0"
-  flutter: ">=3.47.0 <4.0.0"
+  dart: ">=3.13.7 <4.0.0"
+  flutter: ">=3.47.9 <4.0.0"

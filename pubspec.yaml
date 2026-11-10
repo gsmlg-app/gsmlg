@@ -193,6 +193,7 @@ dependencies:
   app_feedback: any
   app_adaptive_widgets: any
   app_logging: any
+  secrethub_agent: ^0.1.1
   app_duckdb: any
   app_secure_storage: any
   isolate_orchestrator: any

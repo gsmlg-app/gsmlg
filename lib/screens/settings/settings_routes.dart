@@ -15,6 +15,7 @@ import 'package:gsmlg/screens/settings/log_center_screen.dart';
 import 'package:gsmlg/screens/settings/model_management_screen.dart';
 import 'package:gsmlg/screens/settings/remote_model_settings_screen.dart';
 import 'package:gsmlg/screens/settings/remote_tools_settings_screen.dart';
+import 'package:gsmlg/screens/settings/secrethub_agent/secrethub_agent_settings_screen.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 import 'package:gsmlg/screens/settings/terminal/host_management.dart';
 import 'package:gsmlg/screens/settings/terminal/shell_profile_edit_screen.dart';
@@ -110,6 +111,15 @@ GoRoute settingsRoutes() => GoRoute(
         key: state.pageKey,
         restorationId: state.pageKey.value,
         child: const BackplaneSettingsScreen(),
+      ),
+    ),
+    GoRoute(
+      name: SecretHubAgentSettingsScreen.name,
+      path: SecretHubAgentSettingsScreen.path,
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        restorationId: state.pageKey.value,
+        child: const SecretHubAgentSettingsScreen(),
       ),
     ),
     GoRoute(

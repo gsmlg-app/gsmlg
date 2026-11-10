@@ -3018,6 +3018,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not save the agent. Try again.'**
   String get agentEditorSaveFailed;
+
+  /// No description provided for @secrethubAgentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SecretHub Agent'**
+  String get secrethubAgentTitle;
+
+  /// No description provided for @secrethubAgentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect this device to a SecretHub Core service'**
+  String get secrethubAgentSubtitle;
+
+  /// No description provided for @secrethubCoreUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Core URL'**
+  String get secrethubCoreUrl;
+
+  /// No description provided for @secrethubTrust.
+  ///
+  /// In en, this message translates to:
+  /// **'Server trust'**
+  String get secrethubTrust;
+
+  /// No description provided for @secrethubTrustSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System certificates'**
+  String get secrethubTrustSystem;
+
+  /// No description provided for @secrethubTrustPinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned CA certificate'**
+  String get secrethubTrustPinned;
+
+  /// No description provided for @secrethubPinnedCa.
+  ///
+  /// In en, this message translates to:
+  /// **'CA certificate (PEM)'**
+  String get secrethubPinnedCa;
+
+  /// No description provided for @secrethubSecrets.
+  ///
+  /// In en, this message translates to:
+  /// **'Secrets'**
+  String get secrethubSecrets;
+
+  /// No description provided for @secrethubSecretsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Map an app alias to a secret path in SecretHub.'**
+  String get secrethubSecretsHint;
+
+  /// No description provided for @secrethubAlias.
+  ///
+  /// In en, this message translates to:
+  /// **'Alias'**
+  String get secrethubAlias;
+
+  /// No description provided for @secrethubPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret path'**
+  String get secrethubPath;
+
+  /// No description provided for @secrethubAllowOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow offline access'**
+  String get secrethubAllowOffline;
+
+  /// No description provided for @secrethubAddSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'Add secret'**
+  String get secrethubAddSecret;
+
+  /// No description provided for @secrethubSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'SecretHub Agent settings saved'**
+  String get secrethubSaved;
+
+  /// No description provided for @secrethubErrorCoreUrl.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an https:// Core URL with a host.'**
+  String get secrethubErrorCoreUrl;
+
+  /// No description provided for @secrethubErrorPinnedCa.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a PEM certificate (-----BEGIN CERTIFICATE-----).'**
+  String get secrethubErrorPinnedCa;
+
+  /// No description provided for @secrethubErrorBinding.
+  ///
+  /// In en, this message translates to:
+  /// **'Every secret needs an alias and a path.'**
+  String get secrethubErrorBinding;
+
+  /// No description provided for @secrethubErrorDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Aliases must be unique.'**
+  String get secrethubErrorDuplicate;
+
+  /// No description provided for @secrethubStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get secrethubStatus;
+
+  /// No description provided for @secrethubNativePlugin.
+  ///
+  /// In en, this message translates to:
+  /// **'Native plugin'**
+  String get secrethubNativePlugin;
+
+  /// No description provided for @secrethubNativeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get secrethubNativeUnavailable;
+
+  /// No description provided for @secrethubConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to SecretHub'**
+  String get secrethubConnect;
+
+  /// No description provided for @secrethubFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch secrets'**
+  String get secrethubFetch;
+
+  /// No description provided for @secrethubPendingPlugin.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for plugin support (gsmlg-app/secrethub_agent#1)'**
+  String get secrethubPendingPlugin;
 }
 
 class _AppLocalizationsDelegate

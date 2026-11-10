@@ -1550,4 +1550,80 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get agentEditorSaveFailed => 'Could not save the agent. Try again.';
+
+  @override
+  String get secrethubAgentTitle => 'SecretHub Agent';
+
+  @override
+  String get secrethubAgentSubtitle =>
+      'Connect this device to a SecretHub Core service';
+
+  @override
+  String get secrethubCoreUrl => 'Core URL';
+
+  @override
+  String get secrethubTrust => 'Server trust';
+
+  @override
+  String get secrethubTrustSystem => 'System certificates';
+
+  @override
+  String get secrethubTrustPinned => 'Pinned CA certificate';
+
+  @override
+  String get secrethubPinnedCa => 'CA certificate (PEM)';
+
+  @override
+  String get secrethubSecrets => 'Secrets';
+
+  @override
+  String get secrethubSecretsHint =>
+      'Map an app alias to a secret path in SecretHub.';
+
+  @override
+  String get secrethubAlias => 'Alias';
+
+  @override
+  String get secrethubPath => 'Secret path';
+
+  @override
+  String get secrethubAllowOffline => 'Allow offline access';
+
+  @override
+  String get secrethubAddSecret => 'Add secret';
+
+  @override
+  String get secrethubSaved => 'SecretHub Agent settings saved';
+
+  @override
+  String get secrethubErrorCoreUrl => 'Enter an https:// Core URL with a host.';
+
+  @override
+  String get secrethubErrorPinnedCa =>
+      'Paste a PEM certificate (-----BEGIN CERTIFICATE-----).';
+
+  @override
+  String get secrethubErrorBinding => 'Every secret needs an alias and a path.';
+
+  @override
+  String get secrethubErrorDuplicate => 'Aliases must be unique.';
+
+  @override
+  String get secrethubStatus => 'Status';
+
+  @override
+  String get secrethubNativePlugin => 'Native plugin';
+
+  @override
+  String get secrethubNativeUnavailable => 'Not available';
+
+  @override
+  String get secrethubConnect => 'Connect to SecretHub';
+
+  @override
+  String get secrethubFetch => 'Fetch secrets';
+
+  @override
+  String get secrethubPendingPlugin =>
+      'Waiting for plugin support (gsmlg-app/secrethub_agent#1)';
 }

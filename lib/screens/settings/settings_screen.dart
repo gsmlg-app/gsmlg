@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:gsmlg/core/usage/menu_navigation.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/agents/agents_screen.dart';
+import 'package:gsmlg/screens/settings/secrethub_agent/secrethub_agent_settings_screen.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
 import 'package:gsmlg/screens/settings/app_settings_screen.dart';
@@ -334,6 +335,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               onPressed: (context) {
                                 context.menuGoNamed(
                                   AccentColorSettingsScreen.name,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        SettingsSection(
+                          title: Text(context.l10n.secrethubAgentTitle),
+                          tiles: <SettingsTile>[
+                            SettingsTile.navigation(
+                              leading: const Icon(Icons.vpn_lock_outlined),
+                              title: Text(context.l10n.secrethubAgentTitle),
+                              description: Text(
+                                context.l10n.secrethubAgentSubtitle,
+                              ),
+                              onPressed: (context) {
+                                context.menuGoNamed(
+                                  SecretHubAgentSettingsScreen.name,
                                 );
                               },
                             ),

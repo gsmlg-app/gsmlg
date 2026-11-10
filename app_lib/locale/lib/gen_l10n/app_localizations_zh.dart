@@ -1528,6 +1528,79 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get agentEditorSaveFailed => '无法保存智能体，请重试。';
+
+  @override
+  String get secrethubAgentTitle => 'SecretHub 代理';
+
+  @override
+  String get secrethubAgentSubtitle => '将此设备连接到 SecretHub Core 服务';
+
+  @override
+  String get secrethubCoreUrl => 'Core 地址';
+
+  @override
+  String get secrethubTrust => '服务器信任';
+
+  @override
+  String get secrethubTrustSystem => '系统证书';
+
+  @override
+  String get secrethubTrustPinned => '固定 CA 证书';
+
+  @override
+  String get secrethubPinnedCa => 'CA 证书（PEM）';
+
+  @override
+  String get secrethubSecrets => '密钥';
+
+  @override
+  String get secrethubSecretsHint => '将应用内别名映射到 SecretHub 中的密钥路径。';
+
+  @override
+  String get secrethubAlias => '别名';
+
+  @override
+  String get secrethubPath => '密钥路径';
+
+  @override
+  String get secrethubAllowOffline => '允许离线访问';
+
+  @override
+  String get secrethubAddSecret => '添加密钥';
+
+  @override
+  String get secrethubSaved => '已保存 SecretHub 代理设置';
+
+  @override
+  String get secrethubErrorCoreUrl => '请输入带主机名的 https:// Core 地址。';
+
+  @override
+  String get secrethubErrorPinnedCa =>
+      '请粘贴 PEM 证书（-----BEGIN CERTIFICATE-----）。';
+
+  @override
+  String get secrethubErrorBinding => '每个密钥都需要别名和路径。';
+
+  @override
+  String get secrethubErrorDuplicate => '别名不能重复。';
+
+  @override
+  String get secrethubStatus => '状态';
+
+  @override
+  String get secrethubNativePlugin => '原生插件';
+
+  @override
+  String get secrethubNativeUnavailable => '不可用';
+
+  @override
+  String get secrethubConnect => '连接 SecretHub';
+
+  @override
+  String get secrethubFetch => '获取密钥';
+
+  @override
+  String get secrethubPendingPlugin => '等待插件支持（gsmlg-app/secrethub_agent#1）';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
