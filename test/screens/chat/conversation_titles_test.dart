@@ -280,6 +280,7 @@ class Fixture {
       remoteRepository: remote,
       storageRepository: storage,
       toolExecutor: ToolExecutor(),
+      agentRepository: AgentRepository(db),
       titleGenerator: titles,
     );
   }

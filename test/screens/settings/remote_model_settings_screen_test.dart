@@ -73,6 +73,7 @@ void main() {
         chatSettingsBloc = ChatSettingsBloc(
           repository: ChatStorageRepository(database),
           preferences: preferences,
+          agentRepository: AgentRepository(database),
         );
 
         await tester.pumpWidget(
@@ -140,6 +141,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: repository,
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await tester.pumpWidget(
@@ -217,6 +219,7 @@ void main() {
         chatSettingsBloc = ChatSettingsBloc(
           repository: ChatStorageRepository(database),
           preferences: preferences,
+          agentRepository: AgentRepository(database),
         );
 
         await _pumpScreen(
@@ -252,6 +255,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await _pumpScreen(
@@ -275,6 +279,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await _pumpScreen(
@@ -297,6 +302,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await _pumpScreen(
@@ -324,6 +330,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await _pumpScreen(
@@ -396,6 +403,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await _pumpScreen(
@@ -473,6 +481,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await _pumpScreen(
@@ -519,6 +528,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await _pumpScreen(
@@ -566,6 +576,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await _pumpScreen(
@@ -611,6 +622,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
 
       await _pumpScreen(

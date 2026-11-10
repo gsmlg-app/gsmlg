@@ -64,13 +64,14 @@ void main() {
           ChatSettingsBloc(
               repository: ChatStorageRepository(database),
               preferences: preferences,
+              agentRepository: AgentRepository(database),
             )
             ..add(const ChatSettingsLoad())
             ..add(
               ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Agent',
-                systemPrompt: '',
+                instructions: '',
                 config: agentConfig,
               ),
             );

@@ -1,42 +1,5 @@
 part of 'bloc.dart';
 
-/// A reusable chat-agent profile.
-class ChatAgent extends Equatable {
-  const ChatAgent({
-    required this.id,
-    required this.name,
-    required this.config,
-    this.systemPrompt,
-    this.thinkingEnabled = false,
-  });
-
-  final String id;
-  final String name;
-  final ModelConfig config;
-  final String? systemPrompt;
-  final bool thinkingEnabled;
-
-  ChatAgent copyWith({
-    String? name,
-    ModelConfig? config,
-    String? systemPrompt,
-    bool? thinkingEnabled,
-    bool clearSystemPrompt = false,
-  }) {
-    return ChatAgent(
-      id: id,
-      name: name ?? this.name,
-      config: config ?? this.config,
-      systemPrompt:
-          clearSystemPrompt ? null : (systemPrompt ?? this.systemPrompt),
-      thinkingEnabled: thinkingEnabled ?? this.thinkingEnabled,
-    );
-  }
-
-  @override
-  List<Object?> get props => [id, name, config, systemPrompt, thinkingEnabled];
-}
-
 /// Status of the chat settings.
 enum ChatSettingsStatus {
   /// Initial state, settings not loaded.
@@ -74,8 +37,8 @@ class ChatSettingsState extends Equatable {
   /// The default system prompt for new conversations.
   final String? defaultSystemPrompt;
 
-  /// Saved chat-agent profiles.
-  final List<ChatAgent> agents;
+  /// Saved agent definitions.
+  final List<AgentDefinition> agents;
 
   /// The selected chat-agent profile id.
   final String? activeAgentId;
@@ -109,7 +72,7 @@ class ChatSettingsState extends Equatable {
   bool get hasError => status == ChatSettingsStatus.error;
 
   /// Currently selected chat agent, if any.
-  ChatAgent? get activeAgent {
+  AgentDefinition? get activeAgent {
     for (final agent in agents) {
       if (agent.id == activeAgentId) return agent;
     }
@@ -120,7 +83,7 @@ class ChatSettingsState extends Equatable {
     ChatSettingsStatus? status,
     ModelConfig? config,
     String? defaultSystemPrompt,
-    List<ChatAgent>? agents,
+    List<AgentDefinition>? agents,
     String? activeAgentId,
     String? errorMessage,
     bool? configChanged,

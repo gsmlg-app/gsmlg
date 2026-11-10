@@ -93,6 +93,7 @@ void main() {
                 create: (_) => ChatSettingsBloc(
                   repository: ChatStorageRepository(database),
                   preferences: prefs,
+                  agentRepository: AgentRepository(database),
                 ),
               ),
               BlocProvider<GemmaModelBloc>(

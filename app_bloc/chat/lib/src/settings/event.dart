@@ -26,21 +26,33 @@ final class ChatSettingsUpdateSystemPrompt extends ChatSettingsEvent {
   final String? agentId;
 }
 
-/// Add or update a chat agent profile.
+/// Add or update an agent definition.
+///
+/// Null optional fields keep the existing agent's values; empty
+/// [instructions] clear them and [clearAllowedTools] resets the tool list to
+/// "all tools".
 final class ChatSettingsSaveAgent extends ChatSettingsEvent {
   const ChatSettingsSaveAgent({
     this.id,
     required this.name,
-    required this.systemPrompt,
+    this.instructions,
+    this.avatar,
+    this.description,
     this.config,
     this.thinkingEnabled,
+    this.allowedTools,
+    this.clearAllowedTools = false,
   });
 
   final String? id;
   final String name;
-  final String systemPrompt;
+  final String? instructions;
+  final String? avatar;
+  final String? description;
   final ModelConfig? config;
   final bool? thinkingEnabled;
+  final List<String>? allowedTools;
+  final bool clearAllowedTools;
 }
 
 /// Delete a chat agent profile.

@@ -59,13 +59,14 @@ void main() {
             ChatSettingsBloc(
                 repository: ChatStorageRepository(database),
                 preferences: preferences,
+                agentRepository: AgentRepository(database),
               )
               ..add(const ChatSettingsLoad())
               ..add(
                 const ChatSettingsSaveAgent(
                   id: 'agent-1',
                   name: 'Managed agent',
-                  systemPrompt: '',
+                  instructions: '',
                   config: ModelConfig(
                     inferenceMode: ChatInferenceMode.remote,
                     remoteAuthType: RemoteAuthType.customHeader,
@@ -171,13 +172,17 @@ void main() {
       );
 
       chatSettingsBloc =
-          ChatSettingsBloc(repository: repository, preferences: preferences)
+          ChatSettingsBloc(
+              repository: repository,
+              preferences: preferences,
+              agentRepository: AgentRepository(database),
+            )
             ..add(const ChatSettingsLoad())
             ..add(
               const ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Remote agent',
-                systemPrompt: '',
+                instructions: '',
                 config: ModelConfig.defaultConfig,
               ),
             );
@@ -226,13 +231,17 @@ void main() {
     ) async {
       final repository = ChatStorageRepository(database);
       chatSettingsBloc =
-          ChatSettingsBloc(repository: repository, preferences: preferences)
+          ChatSettingsBloc(
+              repository: repository,
+              preferences: preferences,
+              agentRepository: AgentRepository(database),
+            )
             ..add(const ChatSettingsLoad())
             ..add(
               const ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Cloud agent',
-                systemPrompt: '',
+                instructions: '',
                 config: ModelConfig(
                   inferenceMode: ChatInferenceMode.remote,
                   remoteProvider: RemoteLlmProvider.openAi,
@@ -267,13 +276,17 @@ void main() {
     ) async {
       final repository = ChatStorageRepository(database);
       chatSettingsBloc =
-          ChatSettingsBloc(repository: repository, preferences: preferences)
+          ChatSettingsBloc(
+              repository: repository,
+              preferences: preferences,
+              agentRepository: AgentRepository(database),
+            )
             ..add(const ChatSettingsLoad())
             ..add(
               const ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Self-hosted agent',
-                systemPrompt: '',
+                instructions: '',
                 config: ModelConfig(
                   inferenceMode: ChatInferenceMode.remote,
                   remoteProvider: RemoteLlmProvider.openAiCompatible,
@@ -318,13 +331,17 @@ void main() {
 
       final repository = ChatStorageRepository(database);
       chatSettingsBloc =
-          ChatSettingsBloc(repository: repository, preferences: preferences)
+          ChatSettingsBloc(
+              repository: repository,
+              preferences: preferences,
+              agentRepository: AgentRepository(database),
+            )
             ..add(const ChatSettingsLoad())
             ..add(
               const ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Local agent',
-                systemPrompt: '',
+                instructions: '',
                 config: ModelConfig(
                   inferenceMode: ChatInferenceMode.local,
                   localModelId: 'gemma-4-E4B-it',
@@ -363,13 +380,17 @@ void main() {
 
       final repository = ChatStorageRepository(database);
       chatSettingsBloc =
-          ChatSettingsBloc(repository: repository, preferences: preferences)
+          ChatSettingsBloc(
+              repository: repository,
+              preferences: preferences,
+              agentRepository: AgentRepository(database),
+            )
             ..add(const ChatSettingsLoad())
             ..add(
               const ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Local agent',
-                systemPrompt: '',
+                instructions: '',
                 config: ModelConfig(inferenceMode: ChatInferenceMode.local),
               ),
             );
@@ -412,6 +433,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: repository,
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       )..add(const ChatSettingsLoad());
       await chatSettingsBloc.stream.firstWhere(
         (state) => state.status == ChatSettingsStatus.loaded,
@@ -420,7 +442,7 @@ void main() {
         const ChatSettingsSaveAgent(
           id: 'agent-1',
           name: 'Agent One',
-          systemPrompt: '',
+          instructions: '',
           config: ModelConfig(
             inferenceMode: ChatInferenceMode.local,
             temperature: 1.4,
@@ -434,7 +456,7 @@ void main() {
         const ChatSettingsSaveAgent(
           id: 'agent-2',
           name: 'Agent Two',
-          systemPrompt: '',
+          instructions: '',
           config: ModelConfig(inferenceMode: ChatInferenceMode.local),
         ),
       );
@@ -442,7 +464,7 @@ void main() {
         (state) => state.agents.length == 2,
       );
 
-      ChatAgent agentById(String id) =>
+      AgentDefinition agentById(String id) =>
           chatSettingsBloc.state.agents.firstWhere((agent) => agent.id == id);
 
       Future<void> pickModel(String agentId, String modelName) async {
@@ -504,13 +526,17 @@ void main() {
 
       final repository = ChatStorageRepository(database);
       chatSettingsBloc =
-          ChatSettingsBloc(repository: repository, preferences: preferences)
+          ChatSettingsBloc(
+              repository: repository,
+              preferences: preferences,
+              agentRepository: AgentRepository(database),
+            )
             ..add(const ChatSettingsLoad())
             ..add(
               const ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Local agent',
-                systemPrompt: '',
+                instructions: '',
                 config: ModelConfig(inferenceMode: ChatInferenceMode.local),
               ),
             );
@@ -567,13 +593,17 @@ void main() {
       );
 
       chatSettingsBloc =
-          ChatSettingsBloc(repository: repository, preferences: preferences)
+          ChatSettingsBloc(
+              repository: repository,
+              preferences: preferences,
+              agentRepository: AgentRepository(database),
+            )
             ..add(const ChatSettingsLoad())
             ..add(
               ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Remote agent',
-                systemPrompt: '',
+                instructions: '',
                 config: ModelConfig.defaultConfig.copyWith(
                   inferenceMode: ChatInferenceMode.remote,
                   remoteProvider: RemoteLlmProvider.openAiCompatible,
@@ -611,13 +641,17 @@ void main() {
     testWidgets('lists agents without per-agent settings', (tester) async {
       final repository = ChatStorageRepository(database);
       chatSettingsBloc =
-          ChatSettingsBloc(repository: repository, preferences: preferences)
+          ChatSettingsBloc(
+              repository: repository,
+              preferences: preferences,
+              agentRepository: AgentRepository(database),
+            )
             ..add(const ChatSettingsLoad())
             ..add(
               const ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Code reviewer',
-                systemPrompt: 'Review code for correctness and missing tests.',
+                instructions: 'Review code for correctness and missing tests.',
                 config: ModelConfig(inferenceMode: ChatInferenceMode.remote),
               ),
             );
@@ -647,13 +681,17 @@ void main() {
     ) async {
       final repository = ChatStorageRepository(database);
       chatSettingsBloc =
-          ChatSettingsBloc(repository: repository, preferences: preferences)
+          ChatSettingsBloc(
+              repository: repository,
+              preferences: preferences,
+              agentRepository: AgentRepository(database),
+            )
             ..add(const ChatSettingsLoad())
             ..add(
               const ChatSettingsSaveAgent(
                 id: 'agent-1',
                 name: 'Code reviewer',
-                systemPrompt: 'Review code for correctness and missing tests.',
+                instructions: 'Review code for correctness and missing tests.',
                 config: ModelConfig(inferenceMode: ChatInferenceMode.remote),
               ),
             );
@@ -701,6 +739,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: repository,
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       )..add(const ChatSettingsLoad());
 
       await _pumpScreen(
@@ -719,7 +758,7 @@ void main() {
       chatSettingsBloc.add(
         const ChatSettingsSaveAgent(
           name: 'Reviewer',
-          systemPrompt: 'Review code.',
+          instructions: 'Review code.',
         ),
       );
       await _pumpUntil(
@@ -739,7 +778,7 @@ void main() {
       chatSettingsBloc.add(
         const ChatSettingsSaveAgent(
           name: 'Writer',
-          systemPrompt: 'Write docs.',
+          instructions: 'Write docs.',
         ),
       );
       await _pumpUntil(

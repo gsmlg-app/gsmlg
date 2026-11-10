@@ -23,6 +23,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     required RemoteLlmRepository remoteRepository,
     required ChatStorageRepository storageRepository,
     required ToolExecutor toolExecutor,
+    required AgentRepository agentRepository,
     ChatAgentRuntime? agentRuntime,
     SharedPreferences? preferences,
     BackplaneServiceRepository? backplaneService,
@@ -32,6 +33,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         _remoteRepository = remoteRepository,
         _storageRepository = storageRepository,
         _toolExecutor = toolExecutor,
+        _agentRepository = agentRepository,
         _titleGenerator = titleGenerator,
         _preferences = preferences,
         _backplaneService = backplaneService,
@@ -92,6 +94,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   final RemoteLlmRepository _remoteRepository;
   final ChatStorageRepository _storageRepository;
   final ToolExecutor _toolExecutor;
+  final AgentRepository _agentRepository;
   final ChatAgentRuntime _agentRuntime;
   final SharedPreferences? _preferences;
   final BackplaneServiceRepository? _backplaneService;
@@ -191,10 +194,22 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         return message;
       }).toList();
       if (interrupted) conversation = conversation.copyWith(messages: messages);
+      final agentId = conversation.agentId;
+      final agent =
+          agentId == null ? null : await _agentRepository.get(agentId);
+      if (_closing ||
+          navigation != _navigationVersion ||
+          _deleted.contains(event.id)) {
+        return;
+      }
       _putSession(
           ChatSessionState(
               conversation: conversation,
-              status: interrupted ? ChatStatus.stopped : ChatStatus.ready),
+              status: interrupted ? ChatStatus.stopped : ChatStatus.ready,
+              config: agent?.config,
+              agentId: agent?.id,
+              thinkingEnabled: agent?.thinkingEnabled,
+              systemPrompt: agent?.instructions),
           emit,
           select: true);
     } catch (error) {
@@ -205,9 +220,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
-  Conversation _newConversation({String? title, String? systemPrompt}) {
+  Conversation _newConversation(
+      {String? title, String? systemPrompt, String? agentId}) {
     var conversation = Conversation.create(
-        id: _uuid.v4(), title: title, systemPrompt: systemPrompt);
+        id: _uuid.v4(),
+        title: title,
+        systemPrompt: systemPrompt,
+        agentId: agentId);
     if (title == null) conversation = conversation.copyWith(title: 'New Chat');
     if (systemPrompt != null && systemPrompt.isNotEmpty) {
       conversation = conversation.addMessage(SystemMessage(
@@ -222,8 +241,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   Future<void> _onNewConversation(
       ChatNewConversation event, Emitter<ChatState> emit) async {
     ++_navigationVersion;
-    final conversation =
-        _newConversation(title: event.title, systemPrompt: event.systemPrompt);
+    final conversation = _newConversation(
+        title: event.title,
+        systemPrompt: event.systemPrompt,
+        agentId: event.agentId);
     _putSession(
         ChatSessionState(
             conversation: conversation,
@@ -297,6 +318,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
     final session =
         state.sessions[id] ?? ChatSessionState(conversation: conversation);
+    final runAgentId = agentId ?? session.agentId;
+    if (runAgentId != null && conversation.agentId != runAgentId) {
+      conversation = conversation.copyWith(agentId: runAgentId);
+    }
     final task = _GenerationTask(
         id: id,
         runId: _uuid.v4(),
@@ -307,6 +332,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             : session.systemPrompt,
         conversation: conversation,
         config: config ?? session.config,
+        agentId: runAgentId,
         tools: _toolExecutor.openAiToolDefinitions
             .map((tool) =>
                 Map<String, dynamic>.from(jsonDecode(jsonEncode(tool)) as Map))
@@ -338,7 +364,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (conversation == null && targetId != null) return;
     if (conversation == null) {
       ++_navigationVersion;
-      conversation = _newConversation(systemPrompt: event.systemPrompt)
+      conversation = _newConversation(
+              systemPrompt: event.systemPrompt, agentId: event.agentId)
           .copyWith(title: _generateTitle(event.content));
       _putSession(
           ChatSessionState(
@@ -353,6 +380,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     final submittedDraft = state.drafts[task.id] ?? state.drafts[''];
     try {
       task.config = await _loadEffectiveConfig(task.config);
+      task.allowedTools = await _allowedToolsFor(task.agentId);
       if (!_isCurrent(task)) return;
       final error = await _readinessError(task.config!);
       if (!_isCurrent(task)) return;
@@ -453,6 +481,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
         systemPrompt: prompt,
+        agentId: conversation.agentId,
         messages: [
           if (system != null) system,
           ...conversation.messages.where((message) => message is! SystemMessage)
@@ -616,6 +645,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       historyMessages: history,
       userPrompt: userMsg,
       cancelToken: cancelToken,
+      allowedTools: task.allowedTools,
       onFirstToken: () {
         task.timeToFirstToken ??= task.stopwatch.elapsed;
       },
@@ -1154,6 +1184,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       String? title}) async {
     try {
       task.config = await _loadEffectiveConfig(task.config);
+      task.allowedTools = await _allowedToolsFor(task.agentId);
       if (!_isCurrent(task)) return;
       final error = await _readinessError(task.config!);
       if (!_isCurrent(task)) return;
@@ -1395,25 +1426,26 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (preferences == null) return config;
     final activeId = preferences.getString('chat_active_agent_id');
     if (activeId == null) return config;
-    final agents = preferences.getStringList('chat_agents') ?? const <String>[];
-    for (final raw in agents) {
-      try {
-        final agent = jsonDecode(raw);
-        if (agent is! Map<String, dynamic> || agent['id'] != activeId) continue;
-        final agentConfig = agent['config'];
-        if (agentConfig is! Map<String, dynamic> ||
-            agentConfig['managedRemoteId'] != BackplaneSettings.managedId) {
-          return config;
-        }
-        final model = agentConfig['remoteModel'];
-        if (model is! String) return config;
-        return BackplaneSettingsBloc.readSettings(preferences)
-            .modelConfig(model, base: config);
-      } catch (_) {
-        continue;
-      }
+    final AgentDefinition? agent;
+    try {
+      agent = await _agentRepository.get(activeId);
+    } catch (_) {
+      return config;
     }
-    return config;
+    final agentConfig = agent?.config;
+    if (agentConfig == null ||
+        agentConfig.managedRemoteId != BackplaneSettings.managedId) {
+      return config;
+    }
+    return BackplaneSettingsBloc.readSettings(preferences)
+        .modelConfig(agentConfig.remoteModel, base: config);
+  }
+
+  /// Tool allow-list of the agent owning a run; null means all tools.
+  Future<Set<String>?> _allowedToolsFor(String? agentId) async {
+    if (agentId == null) return null;
+    final agent = await _agentRepository.get(agentId);
+    return agent?.allowedTools?.toSet();
   }
 
   @override
@@ -1440,8 +1472,11 @@ class _GenerationTask {
       required this.config,
       required this.tools,
       required this.thinkingEnabled,
-      required this.systemPrompt});
+      required this.systemPrompt,
+      this.agentId});
   final String id;
+  final String? agentId;
+  Set<String>? allowedTools;
   final String runId;
   final int order;
   final bool thinkingEnabled;

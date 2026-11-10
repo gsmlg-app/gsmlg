@@ -37,6 +37,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: sharedPreferences,
+        agentRepository: AgentRepository(database),
       );
       gemmaModelBloc = GemmaModelBloc(
         repository: GemmaRepository(),

@@ -6,6 +6,8 @@ import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/fake_agent_repository.dart';
+
 void main() {
   test('managed agent resolves current Backplane URL and account at runtime',
       () async {
@@ -17,14 +19,15 @@ void main() {
     await preferences.setString('backplane_settings',
         jsonEncode(const BackplaneSettings(accountId: 1).toJson()));
     await preferences.setString('chat_active_agent_id', 'agent-1');
-    await preferences.setStringList('chat_agents', [
-      jsonEncode({
-        'id': 'agent-1',
-        'config': {
-          'managedRemoteId': 'backplane',
-          'remoteModel': 'chosen-model'
-        },
-      })
+    final agents = FakeAgentRepository([
+      AgentDefinition(
+        id: 'agent-1',
+        name: 'Managed',
+        config: const ModelConfig(
+            managedRemoteId: 'backplane', remoteModel: 'chosen-model'),
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      ),
     ]);
     final storage = _FakeChatStorageRepository();
     await storage.saveSettings(storedConfig);
@@ -37,6 +40,7 @@ void main() {
         gemmaRepository: gemma,
         remoteRepository: remote,
         storageRepository: storage,
+        agentRepository: agents,
         toolExecutor: ToolExecutor(),
         preferences: preferences,
         backplaneService: service,
@@ -79,6 +83,7 @@ void main() {
       gemmaRepository: gemma,
       remoteRepository: remote,
       storageRepository: storage,
+      agentRepository: agents,
       toolExecutor: ToolExecutor(),
       preferences: preferences,
       backplaneService: service,
@@ -101,6 +106,7 @@ void main() {
         gemmaRepository: gemmaRepository,
         remoteRepository: _FakeRemoteLlmRepository(),
         storageRepository: storageRepository,
+        agentRepository: FakeAgentRepository(),
         toolExecutor: ToolExecutor(),
       );
       addTearDown(bloc.close);
@@ -174,6 +180,7 @@ void main() {
       gemmaRepository: gemmaRepository,
       remoteRepository: _FakeRemoteLlmRepository(),
       storageRepository: storageRepository,
+      agentRepository: FakeAgentRepository(),
       toolExecutor: ToolExecutor(),
     );
     addTearDown(bloc.close);
@@ -199,6 +206,7 @@ void main() {
       gemmaRepository: gemmaRepository,
       remoteRepository: _FakeRemoteLlmRepository(),
       storageRepository: storageRepository,
+      agentRepository: FakeAgentRepository(),
       toolExecutor: ToolExecutor(),
     );
     addTearDown(bloc.close);
@@ -240,6 +248,7 @@ void main() {
       gemmaRepository: gemmaRepository,
       remoteRepository: remoteRepository,
       storageRepository: storageRepository,
+      agentRepository: FakeAgentRepository(),
       toolExecutor: ToolExecutor(),
     );
     addTearDown(bloc.close);

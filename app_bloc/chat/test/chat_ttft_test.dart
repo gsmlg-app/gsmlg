@@ -4,6 +4,8 @@ import 'package:app_agent/app_agent.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/fake_agent_repository.dart';
+
 void main() {
   for (final firstChunk in [
     const ChatTextChunk('first'),
@@ -201,6 +203,7 @@ class _Fixture {
       gemmaRepository: repository,
       remoteRepository: _UnusedRemoteRepository(),
       storageRepository: storage,
+      agentRepository: FakeAgentRepository(),
       toolExecutor: tools,
     );
   }

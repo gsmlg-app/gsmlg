@@ -61,7 +61,7 @@ class ChatInputBar extends StatefulWidget {
   final String? selectedModelId;
   final String? selectedAgentName;
   final String? selectedAgentId;
-  final List<ChatAgent> agents;
+  final List<AgentDefinition> agents;
   final int historyTokenCount;
   final void Function(
     String text, {
@@ -790,7 +790,7 @@ class _AgentSelector extends StatelessWidget {
 
   final String selectedAgentName;
   final String? selectedAgentId;
-  final List<ChatAgent> agents;
+  final List<AgentDefinition> agents;
   final ValueChanged<String>? onAgentSelect;
   final VoidCallback? onAgentTap;
 

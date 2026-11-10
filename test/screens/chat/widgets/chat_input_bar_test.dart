@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:app_agent/app_agent.dart';
-import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -155,15 +154,19 @@ void main() {
   testWidgets('can change agent when chat input is disabled', (tester) async {
     String? selectedAgentId;
     final agents = [
-      ChatAgent(
+      AgentDefinition(
         id: 'agent1',
         name: 'Agent 1',
         config: ModelConfig.defaultConfig,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
       ),
-      ChatAgent(
+      AgentDefinition(
         id: 'agent2',
         name: 'Agent 2',
         config: ModelConfig.defaultConfig,
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
       ),
     ];
 

@@ -86,6 +86,9 @@ class MainProvider extends StatelessWidget {
         RepositoryProvider<ChatStorageRepository>(
           create: (context) => ChatStorageRepository(database),
         ),
+        RepositoryProvider<AgentRepository>(
+          create: (context) => AgentRepository(database),
+        ),
         RepositoryProvider<TtsDatasetRepository>(
           create: (context) => TtsDatasetRepository(database),
         ),
@@ -144,6 +147,7 @@ class MainProvider extends StatelessWidget {
             create: (context) => ChatSettingsBloc(
               repository: context.read<ChatStorageRepository>(),
               preferences: context.read<SharedPreferences>(),
+              agentRepository: context.read<AgentRepository>(),
             ),
           ),
           BlocProvider<BackplaneSettingsBloc>(
@@ -169,6 +173,7 @@ class MainProvider extends StatelessWidget {
               remoteRepository: context.read<RemoteLlmRepository>(),
               storageRepository: context.read<ChatStorageRepository>(),
               toolExecutor: context.read<ToolExecutor>(),
+              agentRepository: context.read<AgentRepository>(),
               preferences: sharedPrefs,
               backplaneService: context.read<BackplaneServiceRepository>(),
             ),

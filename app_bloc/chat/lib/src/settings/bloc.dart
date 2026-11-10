@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:app_agent/app_agent.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -15,8 +13,10 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
   ChatSettingsBloc({
     required ChatStorageRepository repository,
     required SharedPreferences preferences,
+    required AgentRepository agentRepository,
   })  : _repository = repository,
         _preferences = preferences,
+        _agentRepository = agentRepository,
         super(const ChatSettingsState()) {
     on<ChatSettingsLoad>(_onLoad);
     on<ChatSettingsUpdateConfig>(_onUpdateConfig);
@@ -29,11 +29,11 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
   }
 
   static const _thinkingEnabledKey = 'chat_thinking_enabled';
-  static const _agentsKey = 'chat_agents';
   static const _activeAgentIdKey = 'chat_active_agent_id';
 
   final ChatStorageRepository _repository;
   final SharedPreferences _preferences;
+  final AgentRepository _agentRepository;
   final _uuid = const Uuid();
 
   Future<void> _onLoad(
@@ -47,14 +47,15 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       final systemPrompt = await _repository.loadDefaultSystemPrompt();
       final thinkingEnabled =
           _preferences.getBool(_thinkingEnabledKey) ?? false;
-      final agents = _loadAgents();
+      await _agentRepository.importLegacy(_preferences);
+      final agents = await _agentRepository.list();
       final activeAgentId = _preferences.getString(_activeAgentIdKey);
       final activeAgent = _agentById(agents, activeAgentId);
 
       emit(state.copyWith(
         status: ChatSettingsStatus.loaded,
         config: activeAgent?.config ?? config,
-        defaultSystemPrompt: activeAgent?.systemPrompt ?? systemPrompt,
+        defaultSystemPrompt: activeAgent?.instructions ?? systemPrompt,
         agents: agents,
         activeAgentId: _validActiveAgentId(agents, activeAgentId),
         thinkingEnabled: activeAgent?.thinkingEnabled ?? thinkingEnabled,
@@ -85,12 +86,10 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       final targetAgentId = event.agentId ?? state.activeAgentId;
       final isActive = targetAgentId == state.activeAgentId;
 
-      final agents = state.agents.map((agent) {
-        if (agent.id != targetAgentId) return agent;
-        return agent.copyWith(config: event.config);
-      }).toList(growable: false);
-
-      await _saveAgents(agents);
+      final agents = await _updateAgent(
+        targetAgentId,
+        (agent) => agent.copyWith(config: event.config),
+      );
 
       if (isActive) {
         await _repository.saveSettings(event.config);
@@ -122,15 +121,13 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       final targetAgentId = event.agentId ?? state.activeAgentId;
       final isActive = targetAgentId == state.activeAgentId;
 
-      final agents = state.agents.map((agent) {
-        if (agent.id != targetAgentId) return agent;
-        return agent.copyWith(
-          systemPrompt: event.prompt,
-          clearSystemPrompt: event.prompt == null,
-        );
-      }).toList(growable: false);
-
-      await _saveAgents(agents);
+      final agents = await _updateAgent(
+        targetAgentId,
+        (agent) => agent.copyWith(
+          instructions: event.prompt,
+          clearInstructions: event.prompt == null,
+        ),
+      );
 
       if (isActive) {
         await _repository.saveDefaultSystemPrompt(event.prompt);
@@ -158,7 +155,6 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     Emitter<ChatSettingsState> emit,
   ) async {
     final name = event.name.trim();
-    final prompt = event.systemPrompt.trim();
     if (name.isEmpty) {
       emit(state.copyWith(
         status: ChatSettingsStatus.error,
@@ -168,14 +164,26 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     }
 
     final existingAgent = _agentById(state.agents, event.id);
-    final agent = ChatAgent(
+    final now = _now();
+    final agent = AgentDefinition(
       id: existingAgent?.id ?? event.id ?? _uuid.v4(),
       name: name,
+      avatar: event.avatar ?? existingAgent?.avatar,
+      description: event.description ?? existingAgent?.description,
       config: event.config ?? existingAgent?.config ?? state.config,
-      systemPrompt: prompt.isEmpty ? null : prompt,
+      instructions: switch (event.instructions?.trim()) {
+        null => existingAgent?.instructions,
+        '' => null,
+        final prompt => prompt,
+      },
       thinkingEnabled: event.thinkingEnabled ??
           existingAgent?.thinkingEnabled ??
           state.thinkingEnabled,
+      allowedTools: event.clearAllowedTools
+          ? null
+          : event.allowedTools ?? existingAgent?.allowedTools,
+      createdAt: existingAgent?.createdAt ?? now,
+      updatedAt: now,
     );
     final agents = [...state.agents];
     final index = agents.indexWhere((item) => item.id == agent.id);
@@ -185,7 +193,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       agents[index] = agent;
     }
 
-    await _saveAgents(agents);
+    await _agentRepository.save(agent);
 
     final isFirst = state.agents.isEmpty;
     final isActive = event.id == state.activeAgentId || isFirst;
@@ -194,13 +202,13 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       await _preferences.setString(_activeAgentIdKey, agent.id);
       await _preferences.setBool(_thinkingEnabledKey, agent.thinkingEnabled);
       await _repository.saveSettings(agent.config);
-      await _repository.saveDefaultSystemPrompt(agent.systemPrompt);
+      await _repository.saveDefaultSystemPrompt(agent.instructions);
       emit(state.copyWith(
         status: ChatSettingsStatus.loaded,
         agents: agents,
         activeAgentId: agent.id,
         config: agent.config,
-        defaultSystemPrompt: agent.systemPrompt,
+        defaultSystemPrompt: agent.instructions,
         thinkingEnabled: agent.thinkingEnabled,
       ));
     } else {
@@ -218,7 +226,7 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     final agents = state.agents
         .where((agent) => agent.id != event.id)
         .toList(growable: false);
-    await _saveAgents(agents);
+    await _agentRepository.delete(event.id);
 
     if (state.activeAgentId != event.id) {
       emit(state.copyWith(status: ChatSettingsStatus.loaded, agents: agents));
@@ -251,12 +259,12 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     await _preferences.setString(_activeAgentIdKey, agent.id);
     await _preferences.setBool(_thinkingEnabledKey, agent.thinkingEnabled);
     await _repository.saveSettings(agent.config);
-    await _repository.saveDefaultSystemPrompt(agent.systemPrompt);
+    await _repository.saveDefaultSystemPrompt(agent.instructions);
     emit(state.copyWith(
       status: ChatSettingsStatus.loaded,
       activeAgentId: agent.id,
       config: agent.config,
-      defaultSystemPrompt: agent.systemPrompt,
+      defaultSystemPrompt: agent.instructions,
       thinkingEnabled: agent.thinkingEnabled,
       configChanged: true,
     ));
@@ -269,12 +277,10 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     final targetAgentId = event.agentId ?? state.activeAgentId;
     final isActive = targetAgentId == state.activeAgentId;
 
-    final agents = state.agents.map((agent) {
-      if (agent.id != targetAgentId) return agent;
-      return agent.copyWith(thinkingEnabled: event.enabled);
-    }).toList(growable: false);
-
-    await _saveAgents(agents);
+    final agents = await _updateAgent(
+      targetAgentId,
+      (agent) => agent.copyWith(thinkingEnabled: event.enabled),
+    );
 
     if (isActive) {
       await _preferences.setBool(_thinkingEnabledKey, event.enabled);
@@ -300,14 +306,14 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       await _repository.saveSettings(defaultConfig);
       await _repository.saveDefaultSystemPrompt(null);
       await _preferences.setBool(_thinkingEnabledKey, false);
-      final agents = _replaceActiveAgent(
+      final agents = await _updateAgent(
+        state.activeAgentId,
         (agent) => agent.copyWith(
           config: defaultConfig,
-          clearSystemPrompt: true,
+          clearInstructions: true,
           thinkingEnabled: false,
         ),
       );
-      await _saveAgents(agents);
 
       emit(state.copyWith(
         status: ChatSettingsStatus.loaded,
@@ -325,44 +331,29 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     }
   }
 
-  List<ChatAgent> _loadAgents() {
-    final values = _preferences.getStringList(_agentsKey) ?? const <String>[];
-    return values
-        .map((value) {
-          try {
-            final json = jsonDecode(value);
-            if (json is! Map<String, Object?>) return null;
-            return _agentFromJson(json);
-          } catch (_) {
-            return null;
-          }
-        })
-        .whereType<ChatAgent>()
+  /// Applies [update] to the agent with [id], persists it, and returns the
+  /// new agent list (unchanged when no agent matches).
+  Future<List<AgentDefinition>> _updateAgent(
+    String? id,
+    AgentDefinition Function(AgentDefinition) update,
+  ) async {
+    final current = _agentById(state.agents, id);
+    if (current == null) return state.agents;
+    final updated = update(current).copyWith(updatedAt: _now());
+    await _agentRepository.save(updated);
+    return state.agents
+        .map((agent) => agent.id == updated.id ? updated : agent)
         .toList(growable: false);
   }
 
-  Future<void> _saveAgents(List<ChatAgent> agents) {
-    final values = agents
-        .map((agent) => jsonEncode(_agentToJson(agent)))
-        .toList(growable: false);
-    return _preferences.setStringList(_agentsKey, values);
+  /// Current time at the database's second precision, so in-memory agents
+  /// equal what a reload returns.
+  static DateTime _now() {
+    final seconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
   }
 
-  List<ChatAgent> _replaceActiveAgent(ChatAgent Function(ChatAgent) update) {
-    final activeAgentId = state.activeAgentId;
-    if (activeAgentId == null) return state.agents;
-
-    var changed = false;
-    final agents = state.agents.map((agent) {
-      if (agent.id != activeAgentId) return agent;
-      changed = true;
-      return update(agent);
-    }).toList(growable: false);
-
-    return changed ? agents : state.agents;
-  }
-
-  ChatAgent? _agentById(List<ChatAgent> agents, String? id) {
+  AgentDefinition? _agentById(List<AgentDefinition> agents, String? id) {
     if (id == null) return null;
     for (final agent in agents) {
       if (agent.id == id) return agent;
@@ -370,135 +361,11 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     return null;
   }
 
-  String? _validActiveAgentId(List<ChatAgent> agents, String? activeAgentId) {
+  String? _validActiveAgentId(
+      List<AgentDefinition> agents, String? activeAgentId) {
     if (activeAgentId == null) return null;
     return agents.any((agent) => agent.id == activeAgentId)
         ? activeAgentId
         : null;
-  }
-
-  ChatAgent _agentFromJson(Map<String, Object?> json) {
-    return ChatAgent(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      config: _configFromJson(json['config'] as Map<String, Object?>?),
-      systemPrompt: json['systemPrompt'] as String?,
-      thinkingEnabled: json['thinkingEnabled'] as bool? ?? false,
-    );
-  }
-
-  Map<String, Object?> _agentToJson(ChatAgent agent) {
-    return {
-      'id': agent.id,
-      'name': agent.name,
-      'config': _configToJson(agent.config),
-      'systemPrompt': agent.systemPrompt,
-      'thinkingEnabled': agent.thinkingEnabled,
-    };
-  }
-
-  ModelConfig _configFromJson(Map<String, Object?>? json) {
-    if (json == null) return ModelConfig.platformDefaultConfig;
-    return ModelConfig(
-      inferenceMode: _enumFromName(
-        ChatInferenceMode.values,
-        json['inferenceMode'],
-        ModelConfig.defaultConfig.inferenceMode,
-      ),
-      modelType: _enumFromName(
-        GemmaModelType.values,
-        json['modelType'],
-        ModelConfig.defaultConfig.modelType,
-      ),
-      customModelPath: json['customModelPath'] as String?,
-      localModelId: json['localModelId'] as String?,
-      maxTokens:
-          json['maxTokens'] as int? ?? ModelConfig.defaultConfig.maxTokens,
-      temperature: (json['temperature'] as num?)?.toDouble() ??
-          ModelConfig.defaultConfig.temperature,
-      topK: json['topK'] as int? ?? ModelConfig.defaultConfig.topK,
-      backend: _backendFromName(json['backend']),
-      remoteProvider: _enumFromName(
-        RemoteLlmProvider.values,
-        json['remoteProvider'],
-        ModelConfig.defaultConfig.remoteProvider,
-      ),
-      remoteApiType: _remoteApiTypeFromJson(json),
-      remoteAccountId: json['remoteAccountId'] as int?,
-      remoteBaseUrl: json['remoteBaseUrl'] as String? ??
-          ModelConfig.defaultConfig.remoteBaseUrl,
-      remoteModel: json['remoteModel'] as String? ??
-          ModelConfig.defaultConfig.remoteModel,
-      remoteAuthType: _enumFromName(
-        RemoteAuthType.values,
-        json['remoteAuthType'],
-        ModelConfig.defaultConfig.remoteAuthType,
-      ),
-      remoteAuthHeaderName: json['remoteAuthHeaderName'] as String?,
-      remoteStreamingEnabled: json['remoteStreamingEnabled'] as bool? ??
-          ModelConfig.defaultConfig.remoteStreamingEnabled,
-      remoteThinkingEffort: _enumFromName(
-        RemoteThinkingEffort.values,
-        json['remoteThinkingEffort'],
-        ModelConfig.defaultConfig.remoteThinkingEffort,
-      ),
-      managedRemoteId: json['managedRemoteId'] as String?,
-    ).withSupportedBackendForCurrentPlatform();
-  }
-
-  Map<String, Object?> _configToJson(ModelConfig config) {
-    return {
-      'inferenceMode': config.inferenceMode.name,
-      'modelType': config.modelType.name,
-      'customModelPath': config.customModelPath,
-      'localModelId': config.localModelId,
-      'maxTokens': config.maxTokens,
-      'temperature': config.temperature,
-      'topK': config.topK,
-      'backend': config.backend.name,
-      'remoteProvider': config.remoteProvider.name,
-      'remoteApiType': config.remoteApiType.name,
-      'remoteAccountId': config.remoteAccountId,
-      'remoteBaseUrl': config.remoteBaseUrl,
-      'remoteModel': config.remoteModel,
-      'remoteAuthType': config.remoteAuthType.name,
-      'remoteAuthHeaderName': config.remoteAuthHeaderName,
-      'remoteStreamingEnabled': config.remoteStreamingEnabled,
-      'remoteThinkingEffort': config.remoteThinkingEffort.name,
-      'managedRemoteId': config.managedRemoteId,
-    };
-  }
-
-  T _enumFromName<T extends Enum>(List<T> values, Object? name, T fallback) {
-    if (name is! String) return fallback;
-    for (final value in values) {
-      if (value.name == name) return value;
-    }
-    return fallback;
-  }
-
-  RemoteLlmApiType _remoteApiTypeFromJson(Map<String, Object?> json) {
-    final apiType = _enumFromName(
-      RemoteLlmApiType.values,
-      json['remoteApiType'],
-      RemoteLlmApiType.openAiChatCompletions,
-    );
-    if (json['remoteApiType'] is String) return apiType;
-
-    final provider = _enumFromName(
-      RemoteLlmProvider.values,
-      json['remoteProvider'],
-      ModelConfig.defaultConfig.remoteProvider,
-    );
-    return provider.defaultApiType;
-  }
-
-  GemmaBackend _backendFromName(Object? name) {
-    if (name == 'gpu') return defaultGemmaBackendForCurrentPlatform();
-    return _enumFromName(
-      GemmaBackend.values,
-      name,
-      defaultGemmaBackendForCurrentPlatform(),
-    );
   }
 }

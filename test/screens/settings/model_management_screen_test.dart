@@ -38,6 +38,7 @@ void main() {
       chatSettingsBloc = ChatSettingsBloc(
         repository: ChatStorageRepository(database),
         preferences: preferences,
+        agentRepository: AgentRepository(database),
       );
     });
 

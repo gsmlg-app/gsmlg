@@ -179,7 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
         config: agent.config,
         agentId: agent.id,
         thinkingEnabled: agent.thinkingEnabled,
-        systemPrompt: agent.systemPrompt,
+        systemPrompt: agent.instructions,
       ),
     );
   }

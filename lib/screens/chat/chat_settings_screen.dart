@@ -179,7 +179,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
         body: BlocBuilder<ChatSettingsBloc, ChatSettingsState>(
           builder: (context, state) {
             final agentId = widget.agentId;
-            ChatAgent? editingAgent;
+            AgentDefinition? editingAgent;
             if (agentId != null) {
               editingAgent = _agentById(state, agentId);
               if (editingAgent == null) {
@@ -201,7 +201,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
 
             final currentConfig = editingAgent?.config ?? state.config;
             final currentSystemPrompt =
-                editingAgent?.systemPrompt ?? state.defaultSystemPrompt;
+                editingAgent?.instructions ?? state.defaultSystemPrompt;
             final currentSystemPromptPreview =
                 currentSystemPrompt == null || currentSystemPrompt.isEmpty
                 ? 'Not set'
@@ -385,7 +385,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
     );
   }
 
-  ChatAgent? _agentById(ChatSettingsState state, String id) {
+  AgentDefinition? _agentById(ChatSettingsState state, String id) {
     for (final agent in state.agents) {
       if (agent.id == id) return agent;
     }
@@ -398,7 +398,6 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
       ChatSettingsSaveAgent(
         id: id,
         name: 'New Agent',
-        systemPrompt: '',
         config: _defaultAgentConfig(context),
         thinkingEnabled: false,
       ),
@@ -409,7 +408,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
     );
   }
 
-  String _settingsSummary(ChatAgent agent) {
+  String _settingsSummary(AgentDefinition agent) {
     return _modelLabel(agent.config);
   }
 
@@ -464,7 +463,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
     );
   }
 
-  void _showModelPicker(BuildContext context, ChatAgent? editingAgent) {
+  void _showModelPicker(BuildContext context, AgentDefinition? editingAgent) {
     final choices = _configuredModels(context);
     final baseConfig =
         editingAgent?.config ?? context.read<ChatSettingsBloc>().state.config;
@@ -628,7 +627,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
     return models.toList()..sort();
   }
 
-  void _showAgentDialog(BuildContext context, {ChatAgent? agent}) {
+  void _showAgentDialog(BuildContext context, {AgentDefinition? agent}) {
     final nameController = TextEditingController(text: agent?.name);
 
     showDialog<void>(
@@ -660,11 +659,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
           FilledButton(
             onPressed: () {
               context.read<ChatSettingsBloc>().add(
-                ChatSettingsSaveAgent(
-                  id: agent?.id,
-                  name: nameController.text,
-                  systemPrompt: agent?.systemPrompt ?? '',
-                ),
+                ChatSettingsSaveAgent(id: agent?.id, name: nameController.text),
               );
               Navigator.pop(dialogContext);
             },
@@ -675,7 +670,7 @@ class _ChatAgentsSettingsScreenState extends State<ChatAgentsSettingsScreen> {
     );
   }
 
-  void _confirmDeleteAgent(BuildContext context, ChatAgent agent) {
+  void _confirmDeleteAgent(BuildContext context, AgentDefinition agent) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(

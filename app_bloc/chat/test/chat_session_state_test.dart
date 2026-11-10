@@ -6,6 +6,8 @@ import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/fake_agent_repository.dart';
+
 const _remoteConfig = ModelConfig(
     inferenceMode: ChatInferenceMode.remote,
     remoteBaseUrl: 'http://localhost:8000/v1',
@@ -442,6 +444,7 @@ class _Fixture {
         gemmaRepository: local,
         remoteRepository: remote,
         storageRepository: storage,
+        agentRepository: FakeAgentRepository(),
         toolExecutor: tools);
   }
   final storage = _Storage();

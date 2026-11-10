@@ -7,6 +7,8 @@ import 'package:app_secure_storage/vault_repository.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/fake_agent_repository.dart';
+
 const _timeout = Duration(seconds: 5);
 
 void main() {
@@ -112,6 +114,7 @@ class _Fixture {
         gemmaRepository: GemmaRepository(),
         remoteRepository: remote,
         storageRepository: storage,
+        agentRepository: FakeAgentRepository(),
         toolExecutor: ToolExecutor());
     server.listen((request) async {
       final body = jsonDecode(await utf8.decoder.bind(request).join())
