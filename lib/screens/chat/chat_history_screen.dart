@@ -1,5 +1,5 @@
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
-import 'package:app_chat/app_chat.dart';
+import 'package:app_agent/app_agent.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';

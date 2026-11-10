@@ -2,7 +2,7 @@ import 'terminal_dependencies_stub.dart'
     if (dart.library.io) 'terminal_dependencies_native.dart';
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_audio/audio.dart';
-import 'package:app_chat/app_chat.dart';
+import 'package:app_agent/app_agent.dart';
 import 'dart:convert';
 import 'package:app_database/app_database.dart';
 import 'package:app_duckdb/app_duckdb.dart' show LogStore;

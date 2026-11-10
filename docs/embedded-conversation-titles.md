@@ -132,18 +132,18 @@ proves contents, not native execution, signing, store acceptance or device suppo
 Run deterministic checks using the package working directories:
 
 ```sh
-(cd app_lib/chat && flutter test --no-pub)
+(cd app_lib/agent && flutter test --no-pub)
 flutter test --no-pub app_bloc/chat/test app_lib/database/test test/screens/chat/conversation_titles_test.dart
-flutter analyze --no-pub app_lib/chat app_bloc/chat app_lib/database app_lib/provider
+flutter analyze --no-pub app_lib/agent app_bloc/chat app_lib/database app_lib/provider
 python3 -m unittest discover -s tools/conversation_title -p 'test_*.py'
 ```
 
 `gemma_repository_isolate_registration_test.dart` reads package-relative source;
 running the entire chat package from the repository root gives a working-directory
-failure. It passes when invoked from `app_lib/chat`.
+failure. It passes when invoked from `app_lib/agent`.
 
 The opt-in actual-engine test accepts `TITLE_MODEL_PATH` and `TITLE_LIBRARY_PATH`
-and runs `app_lib/chat/test/minicpm_title_native_smoke_test.dart`. An installed-app
+and runs `app_lib/agent/test/minicpm_title_native_smoke_test.dart`. An installed-app
 smoke test is `integration_test/conversation_title_offline_test.dart`; run it with
 a disposable test installation on a device without user data. Do not run this
 fixture over a populated `org.gsmlg.app` installation.
@@ -392,7 +392,7 @@ Full-suite results remain distinct from title qualification:
 - That rerun passed all ten pure Dart suites, including 1,991 Vultr API cases,
   then failed the unchanged xterm `htop golden test` with a **2-pixel** difference
   on macOS. Test-generated failure images were restored; no golden was replaced.
-- The independent chat rerun passed **90 app_chat tests (3 skipped)** and
+- The independent chat rerun passed **90 app_agent tests (3 skipped)** and
   **62 chat_bloc tests**. Explicit build/model prerequisites account for skips;
   mocked/unit tests do not establish native runtime compatibility.
 - Run `40920541320` passed format and analysis, but its full-suite job failed

@@ -10,7 +10,7 @@ The GSMLG Chat Agent Runtime integrates the `dart_agent_core` stateful agent eng
 1. **Session & UI State**: Owned by `ChatBloc` in `app_bloc/chat`.
 2. **Credential Management**: Vault-isolated keys via `app_secure_storage`.
 3. **Persistence**: SQLite database via Drift (Schema v20) in `app_lib/database`.
-4. **Model Residency & Lifecycle**: Single-permit FIFO lease access via `LocalModelAccess` in `app_lib/chat`.
+4. **Model Residency & Lifecycle**: Single-permit FIFO lease access via `LocalModelAccess` in `app_lib/agent`.
 5. **Platform Boundaries**: Strict separation between desktop process execution and sandboxed mobile environments.
 
 ```mermaid
@@ -36,14 +36,14 @@ graph TD
 
 | Component | Package / Path | Primary Responsibility |
 | --- | --- | --- |
-| `ChatAgentRuntime` | `app_lib/chat/lib/src/agent/chat_agent_runtime.dart` | Encapsulates per-run agent initialization, streaming hooks, cancellation, and receipt journaling. |
-| `ToolExecutionGateway` | `app_lib/chat/lib/src/agent/tool_gateway.dart` | Single gateway for all tool dispatches. Enforces capability scoping, parameter validation, pre-dispatch cancellation checks, serial mutating locks, and receipts. |
-| `RepositoryAgentLlmClient` | `app_lib/chat/lib/src/agent/repository_agent_llm_client.dart` | Implements `AgentLlmClient` over `GemmaRepository` and `RemoteLlmRepository`, with turn priming and buffer synchronization. |
-| `ShellExecutionService` | `app_lib/chat/lib/src/agent/shell_service.dart` | Run-owned OS process management with bounded output ring-buffering, stdin writing, and mobile capability checks. |
-| `AgentSupervisor` | `app_lib/chat/lib/src/agent/sub_agent_supervisor.dart` | Manages named sub-agent execution, hierarchical budget enforcement (`TreeBudget`), and deadlock-free worker scheduling. |
-| `SkillRegistry` | `app_lib/chat/lib/src/agent/skill_registry.dart` | Discovers SKILL.md metadata, registers skill tools, and executes skill scripts. |
-| `PluginConsumer` | `app_lib/chat/lib/src/agent/plugin_consumer.dart` | Backplane Plugin 1.0 JSON manifest parser with `${PLUGIN_ROOT}` variable expansion and per-run version pinning. |
-| `ScopedMemoryProvider` | `app_lib/chat/lib/src/agent/memory_provider.dart` | Scoped storage and retrieval with provenance metadata and keyword/exact text fallback when embeddings are unavailable. |
+| `ChatAgentRuntime` | `app_lib/agent/lib/src/agent/chat_agent_runtime.dart` | Encapsulates per-run agent initialization, streaming hooks, cancellation, and receipt journaling. |
+| `ToolExecutionGateway` | `app_lib/agent/lib/src/agent/tool_gateway.dart` | Single gateway for all tool dispatches. Enforces capability scoping, parameter validation, pre-dispatch cancellation checks, serial mutating locks, and receipts. |
+| `RepositoryAgentLlmClient` | `app_lib/agent/lib/src/agent/repository_agent_llm_client.dart` | Implements `AgentLlmClient` over `GemmaRepository` and `RemoteLlmRepository`, with turn priming and buffer synchronization. |
+| `ShellExecutionService` | `app_lib/agent/lib/src/agent/shell_service.dart` | Run-owned OS process management with bounded output ring-buffering, stdin writing, and mobile capability checks. |
+| `AgentSupervisor` | `app_lib/agent/lib/src/agent/sub_agent_supervisor.dart` | Manages named sub-agent execution, hierarchical budget enforcement (`TreeBudget`), and deadlock-free worker scheduling. |
+| `SkillRegistry` | `app_lib/agent/lib/src/agent/skill_registry.dart` | Discovers SKILL.md metadata, registers skill tools, and executes skill scripts. |
+| `PluginConsumer` | `app_lib/agent/lib/src/agent/plugin_consumer.dart` | Backplane Plugin 1.0 JSON manifest parser with `${PLUGIN_ROOT}` variable expansion and per-run version pinning. |
+| `ScopedMemoryProvider` | `app_lib/agent/lib/src/agent/memory_provider.dart` | Scoped storage and retrieval with provenance metadata and keyword/exact text fallback when embeddings are unavailable. |
 | `ChatBloc` | `app_bloc/chat/lib/src/chat/bloc.dart` | Manages UI session state, history, drafts, TTFT metrics, and single-permit local inference queuing. |
 
 ---
@@ -105,7 +105,7 @@ sequenceDiagram
 
 ### Native Protocol Mapping
 
-To prevent semantic truncation across API boundaries, shared models in `app_api` and `app_lib/chat` maintain native fidelity:
+To prevent semantic truncation across API boundaries, shared models in `app_api` and `app_lib/agent` maintain native fidelity:
 
 1. **OpenAI Chat Completions & Responses**:
    - `app_api/openai_compatible` extended to parse and serialize `tool_calls` with `id`, `name`, `arguments`, and `index`.
@@ -204,7 +204,7 @@ All packages and integration layers were verified against unit, migration, concu
 ```
 === Verification Suite Results ===
 
-1. app_lib/chat:
+1. app_lib/agent:
    - Command: flutter test
    - Result: 111 passed, 0 failed, 3 skipped (Metal binary on CI)
    - Covered: ToolExecutionGateway, ShellExecutionService, AgentSupervisor,
@@ -242,7 +242,7 @@ All packages and integration layers were verified against unit, migration, concu
    - Result: 4 passed, 0 failed (tool_use, tool_result, input schemas)
 
 6. Static Analyzer:
-   - Command: dart analyze app_lib/chat app_bloc/chat app_api/openai_compatible app_api/anthropic_compatible app_lib/database
+   - Command: dart analyze app_lib/agent app_bloc/chat app_api/openai_compatible app_api/anthropic_compatible app_lib/database
    - Result: No issues found (0 errors, 0 warnings)
 ```
 
@@ -345,6 +345,6 @@ Future<void> demonstrateLongRunningShellTask() async {
 ## 12. Implementation, Verification, & Release Status
 
 - **Implemented**: Complete `dart_agent_core: 2.1.9` runtime loop (`ChatAgentRuntime`), single `ToolExecutionGateway`, desktop/mobile `ShellExecutionService`, multi-turn `RepositoryAgentLlmClient`, hierarchical `AgentSupervisor` with `TreeBudget`, `SkillRegistry`, `PluginConsumer` (Plugin 1.0 manifest with `${PLUGIN_ROOT}` variable expansion), `ScopedMemoryProvider`, Drift schema v20 migration, and full BLoC integration in `ChatBloc`.
-- **Tested**: Verified with comprehensive unit, concurrency, FIFO lease, HTTP cancellation, and TTFT test suites across `app_lib/chat`, `app_bloc/chat`, `app_api/openai_compatible`, `app_api/anthropic_compatible`, and `app_lib/database`. All 206 tests pass with 0 analyzer warnings.
+- **Tested**: Verified with comprehensive unit, concurrency, FIFO lease, HTTP cancellation, and TTFT test suites across `app_lib/agent`, `app_bloc/chat`, `app_api/openai_compatible`, `app_api/anthropic_compatible`, and `app_lib/database`. All 206 tests pass with 0 analyzer warnings.
 - **Merged / Released Status**: Developed on the working branch without unsolicited branch/worktree creations. Ready for standard repository review and CI build pipelines.
 

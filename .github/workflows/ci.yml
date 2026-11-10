@@ -222,7 +222,7 @@ jobs:
         run: melos run prepare
 
       - name: Qualify Linux title runtime independently of application plugins
-        working-directory: app_lib/chat
+        working-directory: app_lib/agent
         run: |
           export TITLE_MODEL_PATH="$PWD/../../assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf"
           export TITLE_LIBRARY_PATH="$(find "${PUB_CACHE:-$HOME/.pub-cache}" -path '*/lib_llama_cpp_linux-0.7.5/linux/prebuilt/x64/liblib_llama_cpp_linux.so' -print -quit)"
@@ -237,7 +237,7 @@ jobs:
           python3 tools/conversation_title/verify_package.py build/linux/x64/release/bundle
           TITLE_MODEL_PATH="$PWD/build/linux/x64/release/bundle/data/flutter_assets/assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf" \
           TITLE_LIBRARY_PATH="$PWD/build/linux/x64/release/bundle/lib/liblib_llama_cpp_linux.so" \
-          flutter test --no-pub app_lib/chat/test/minicpm_title_native_smoke_test.dart
+          flutter test --no-pub app_lib/agent/test/minicpm_title_native_smoke_test.dart
 
   title-windows:
     name: Qualify Windows offline titles
@@ -252,7 +252,7 @@ jobs:
       - name: Prepare project
         run: melos run prepare
       - name: Qualify Windows title runtime independently of application plugins
-        working-directory: app_lib/chat
+        working-directory: app_lib/agent
         run: |
           $cache = if ($env:PUB_CACHE) { $env:PUB_CACHE } else { "$env:LOCALAPPDATA/Pub/Cache" }
           $env:TITLE_MODEL_PATH = "$pwd/../../assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf"
@@ -269,7 +269,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:TITLE_MODEL_PATH = "$pwd/build/windows/x64/runner/Release/data/flutter_assets/assets/models/conversation_title/MiniCPM5-1B-Q4_K_M.gguf"
           $env:TITLE_LIBRARY_PATH = "$pwd/build/windows/x64/runner/Release/lib_llama_cpp_windows.dll"
-          flutter test --no-pub app_lib/chat/test/minicpm_title_native_smoke_test.dart
+          flutter test --no-pub app_lib/agent/test/minicpm_title_native_smoke_test.dart
       - name: Launch Windows fixture and verify native platform channels
         timeout-minutes: 25
         run: flutter drive -d windows --keep-app-running --driver=test_driver/conversation_title.dart --target=integration_test/conversation_title_offline_test.dart

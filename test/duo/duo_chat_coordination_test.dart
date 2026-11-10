@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:app_chat/app_chat.dart';
+import 'package:app_agent/app_agent.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gsmlg/duo/duo_controller.dart';

@@ -1,4 +1,4 @@
-import 'package:app_chat/chat_models.dart';
+import 'package:app_agent/agent_models.dart';
 import 'package:chat_bloc/src/chat/stream_error_message.dart';
 import 'package:test/test.dart';
 

@@ -21,7 +21,7 @@ Agent 实例采用独立运行状态。默认不要求一个 agent 对应一个 
 
 | 当前事实 | 对实施的影响 |
 | --- | --- |
-| app_lib/chat/pubspec.yaml 尚无 dart_agent_core；chat/lib/src 尚无 agent 目录 | 需要真正接入 runtime，而不是仅启用某个配置 |
+| app_lib/agent/pubspec.yaml 尚无 dart_agent_core；chat/lib/src 尚无 agent 目录 | 需要真正接入 runtime，而不是仅启用某个配置 |
 | ChatBloc 仍负责工具执行后重新启动模型调用 | 移出循环，保留会话、UI、标题、TTFT 和在途写入管理 |
 | 现有工具处理和 provider 缓冲转换不能完整保留同轮全部调用 | 必须先收集完整模型轮、保留调用 ID，再执行完整调用批次 |
 | RemoteLlmRepository 已依赖 openai_compatible / anthropic_compatible | 继续使用共享协议包，不在新 runtime 内再实现一套 HTTP |
@@ -275,7 +275,7 @@ P0 → P1 → P2 为公共基础；之后 Shell 和 sub-agent 可由不同工程
 - Memory：项目/会话过滤、来源保留、更新/删除索引、文字 fallback、上下文预算。
 - UI：任务树与工具活动真实反映 run；PTY 合并输出；错误与 unknown 状态；无工具 continuation 新消息；MiniCPM 标题与 completedSuccessfully。
 
-重点测试目录：app_lib/chat/test、app_bloc/chat/test、app_lib/database/test、app_lib/terminal_core/test、app_lib/terminal_hosts/test、app_api/openai_compatible/test，以及实际变更的 local_llm/其他协议包测试。
+重点测试目录：app_lib/agent/test、app_bloc/chat/test、app_lib/database/test、app_lib/terminal_core/test、app_lib/terminal_hosts/test、app_api/openai_compatible/test，以及实际变更的 local_llm/其他协议包测试。
 
 使用 fake LLM、loopback 协议服务和真实无害本地子进程覆盖确定行为。真实模型、Android/iOS、各桌面构建分开报告；mock 通过不等于真机验证。
 
@@ -306,7 +306,7 @@ Keep the app in control of UI/session state, credentials, model resources, tool 
 
 Read applicable repository instructions, the current source and lockfile, and this plan. Work on the existing branch; do not create a branch or worktree unless the user asks. Preserve newer compatible changes and unrelated local edits.
 
-The earlier 2026-10-30 integration was an unmerged patch, not the current implementation. At the reviewed baseline, app_chat does not depend on dart_agent_core, chat/lib/src has no agent directory, and the database schema is 19. Recheck these facts before editing.
+The earlier 2026-10-30 integration was an unmerged patch, not the current implementation. At the reviewed baseline, app_agent does not depend on dart_agent_core, chat/lib/src has no agent directory, and the database schema is 19. Recheck these facts before editing.
 
 Current RemoteLlmRepository uses app_api/openai_compatible and app_api/anthropic_compatible. OpenAiMessage currently stores only role and String content, and Responses input reuses that type. Extend these shared models minimally to represent real tool calls/results and multimodal content; do not bypass them by adding a parallel HTTP stack.
 
@@ -418,16 +418,16 @@ Finish with what is implemented, what was verified, remaining concrete limitatio
 
 ### 固定仓库基线
 
-- [Chat 依赖](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/chat/pubspec.yaml)
+- [Chat 依赖](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/agent/pubspec.yaml)
 - [ChatBloc](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_bloc/chat/lib/src/chat/bloc.dart)
-- [RemoteLlmRepository](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/chat/lib/src/repositories/remote_llm_repository.dart)
-- [GemmaRepository](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/chat/lib/src/repositories/gemma_repository.dart)
-- [LocalModelAccess](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/chat/lib/src/repositories/local_model_access.dart)
+- [RemoteLlmRepository](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/agent/lib/src/repositories/remote_llm_repository.dart)
+- [GemmaRepository](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/agent/lib/src/repositories/gemma_repository.dart)
+- [LocalModelAccess](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/agent/lib/src/repositories/local_model_access.dart)
 - [OpenAI 兼容请求模型](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_api/openai_compatible/lib/src/openai_compatible.dart)
 - [Anthropic 兼容请求模型](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_api/anthropic_compatible/lib/src/anthropic_compatible.dart)
 - [移动端模型 facade](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_plugin/local_llm/local_llm/lib/app_local_llm.dart)
 - [移动端模型接口](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_plugin/local_llm/local_llm_platform_interface/lib/src/local_llm_platform.dart)
-- [ToolExecutor](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/chat/lib/src/services/tool_executor.dart)
+- [ToolExecutor](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/agent/lib/src/services/tool_executor.dart)
 - [Terminal Host](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/terminal_core/lib/src/host.dart)
 - [MainProvider](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/provider/lib/src/main.dart)
 - [数据库与迁移](https://github.com/gsmlg-app/gsmlg/blob/88088dd9acc687a28db3662bf43f349185cb3395/app_lib/database/lib/src/database.dart)

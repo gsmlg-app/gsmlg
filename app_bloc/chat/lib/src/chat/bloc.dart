@@ -3,7 +3,7 @@ import 'dart:developer' as developer;
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:app_chat/app_chat.dart';
+import 'package:app_agent/app_agent.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
@@ -1295,7 +1295,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         }
       } catch (error) {
         developer.log('Optional title update failed (${error.runtimeType})',
-            name: 'app_chat.title');
+            name: 'app_agent.title');
       } finally {
         lease?.release();
         // Cancellation defers the request; ordinary inference failure is not

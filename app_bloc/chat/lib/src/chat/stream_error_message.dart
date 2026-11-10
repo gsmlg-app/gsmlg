@@ -1,4 +1,4 @@
-import 'package:app_chat/chat_models.dart';
+import 'package:app_agent/agent_models.dart';
 
 final class StreamingAssistantErrorResult {
   const StreamingAssistantErrorResult({

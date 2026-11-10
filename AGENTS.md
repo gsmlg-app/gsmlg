@@ -141,7 +141,7 @@ Each feature BLoC lives in its own package under `app_bloc/`:
 
 ### On-Device LLM (Chat)
 
-`app_lib/chat` provides `GemmaRepository` (model management via flutter_gemma) and `ChatStorageRepository` (conversation persistence via AppDatabase). The chat feature BLoCs (`ChatSettingsBloc`, `GemmaModelBloc`, `ChatBloc`) live in `app_bloc/chat`. Desktop platforms (macOS/Linux/Windows) require `.litertlm` model format and a bundled Java gRPC server (`litertlm-server.jar`).
+`app_lib/agent` provides `GemmaRepository` (model management via flutter_gemma) and `ChatStorageRepository` (conversation persistence via AppDatabase). The chat feature BLoCs (`ChatSettingsBloc`, `GemmaModelBloc`, `ChatBloc`) live in `app_bloc/chat`. Desktop platforms (macOS/Linux/Windows) require `.litertlm` model format and a bundled Java gRPC server (`litertlm-server.jar`).
 
 ### Secure Storage
 

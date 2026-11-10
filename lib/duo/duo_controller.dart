@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:isolate';
 import 'dart:ui';
 
-import 'package:app_chat/app_chat.dart';
+import 'package:app_agent/app_agent.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 

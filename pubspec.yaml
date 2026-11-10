@@ -40,7 +40,7 @@ workspace:
   - app_lib/provider
   - app_lib/logging
   - app_lib/secure_storage
-  - app_lib/chat
+  - app_lib/agent
   - app_lib/tts_dataset
   - app_lib/isolate_orchestrator
   - app_lib/duckdb
@@ -204,7 +204,7 @@ dependencies:
   duskmoon_form: ^2.2.10
   camera_settings_form: any
   ip_db: any
-  app_chat: any
+  app_agent: any
   tts_dataset: any
   app_audio: any
   app_local_llm: any

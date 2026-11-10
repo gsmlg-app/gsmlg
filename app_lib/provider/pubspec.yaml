@@ -38,7 +38,7 @@ dependencies:
   app_duckdb: any
   isolate_orchestrator: any
   app_secure_storage: any
-  app_chat: any
+  app_agent: any
   tts_dataset: any
   app_audio: any
   app_editor: any
