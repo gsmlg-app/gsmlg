@@ -87,26 +87,6 @@ class AppDatabase extends _$AppDatabase {
         await _installChatRevisionTriggers();
       },
       onUpgrade: (Migrator m, int from, int to) async {
-        if (from < 21) {
-          await m.createTable(agentDefinitionTable);
-          await _addColumnIfMissing(
-            m,
-            chatConversationTable,
-            chatConversationTable.agentId,
-          );
-        }
-        if (from < 19) {
-          await m.createTable(sshKeys);
-          await m.createTable(sshHosts);
-          await m.createTable(shellProfiles);
-        }
-        if (from < 20) {
-          await _addColumnIfMissing(
-            m,
-            chatMessageTable,
-            chatMessageTable.agentMetadata,
-          );
-        }
         if (from < 2) {
           await m.createTable(dnsZoneTable);
         }
@@ -264,6 +244,28 @@ class AppDatabase extends _$AppDatabase {
             m,
             chatMessageTable,
             chatMessageTable.responseTimeToFirstTokenMs,
+          );
+        }
+        // Newer steps run after the older ones: they alter tables created
+        // above (e.g. the chat tables at v4).
+        if (from < 19) {
+          await m.createTable(sshKeys);
+          await m.createTable(sshHosts);
+          await m.createTable(shellProfiles);
+        }
+        if (from < 20) {
+          await _addColumnIfMissing(
+            m,
+            chatMessageTable,
+            chatMessageTable.agentMetadata,
+          );
+        }
+        if (from < 21) {
+          await m.createTable(agentDefinitionTable);
+          await _addColumnIfMissing(
+            m,
+            chatConversationTable,
+            chatConversationTable.agentId,
           );
         }
       },
