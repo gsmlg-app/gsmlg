@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Serves run summary rows as `queryAgentRuns` would for 60 events in
 /// `run-a` plus one event in `run-b`.
-class _FakeDuckDb implements AppDuckDb {
+class _FakeLogStore implements LogStore {
   LogFilter? lastFilter;
 
   @override
@@ -49,7 +49,7 @@ void main() {
   testWidgets('Agent viewer pages over runs: one card per run, full count', (
     tester,
   ) async {
-    final fake = _FakeDuckDb();
+    final fake = _FakeLogStore();
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocale.localizationsDelegates,
@@ -57,10 +57,10 @@ void main() {
         home: Scaffold(
           body: DuckDbLogViewer(
             tableOrView: 'agent_events',
-            duckDb: fake,
+            logStore: fake,
             pageQuery: AgentRunGroupList.pageQuery(fake),
             itemsBuilder: (context, items) =>
-                AgentRunGroupList(items: items, duckDb: fake),
+                AgentRunGroupList(items: items, logStore: fake),
           ),
         ),
       ),

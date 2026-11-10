@@ -1,5 +1,8 @@
+import 'dart:ui' show AppExitResponse;
+
 import 'package:app_editor/app_editor.dart';
 import 'package:app_logging/app_logging.dart';
+import 'package:editor_bloc/editor_bloc.dart' show EditorCubit;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -95,5 +98,37 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('confirmed exit flushes logs, then runs onExit', (tester) async {
+    final calls = <String>[];
+    final editor = EditorCubit(files);
+    addTearDown(editor.close);
+    addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
+    await tester.pumpWidget(
+      RepositoryProvider<EditorFileService>.value(
+        value: files,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: navigation),
+            BlocProvider.value(value: theme),
+            BlocProvider.value(value: editor),
+          ],
+          child: App(
+            flushLogs: () async => calls.add('flush'),
+            onExit: () async => calls.add('exit'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    late AppExitResponse response;
+    await tester.runAsync(() async {
+      response = await tester.binding.handleRequestAppExit();
+    });
+
+    expect(response, AppExitResponse.exit);
+    expect(calls, ['flush', 'exit']);
   });
 }

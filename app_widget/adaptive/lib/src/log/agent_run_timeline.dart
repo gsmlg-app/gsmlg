@@ -12,15 +12,16 @@ import 'log_detail_sheet.dart';
 /// exchanges of the same `(run_id, turn)` and tool calls to the exchanges
 /// tagged with their `tool_call_id`; each link opens [ApiExchangeDetail].
 class AgentRunTimeline extends StatefulWidget {
-  const AgentRunTimeline({super.key, required this.runId, this.duckDb});
+  const AgentRunTimeline(
+      {super.key, required this.runId, required this.logStore});
 
   final String runId;
-  final AppDuckDb? duckDb;
+  final LogStore logStore;
 
   /// Looks up the `run_id` of the `agent_events` row [id].
-  static Future<String?> runIdOf(AppDuckDb duckDb, String id) async {
+  static Future<String?> runIdOf(LogStore logStore, String id) async {
     final rows = jsonDecode(
-      await duckDb.queryJson(
+      await logStore.queryJson(
         'SELECT run_id FROM agent_events '
         "WHERE id = '${LogQueryBuilder.escapeLiteral(id)}';",
       ),
@@ -33,12 +34,12 @@ class AgentRunTimeline extends StatefulWidget {
 
   static Future<void> show(
     BuildContext context, {
-    required AppDuckDb duckDb,
+    required LogStore logStore,
     required String runId,
   }) =>
       LogDetailSheet.showModal(
         context,
-        AgentRunTimeline(runId: runId, duckDb: duckDb),
+        AgentRunTimeline(runId: runId, logStore: logStore),
       );
 
   @override
@@ -51,8 +52,6 @@ class _AgentRunTimelineState extends State<AgentRunTimeline> {
   late final Future<({List<_Row> events, List<_Row> exchanges})> _data =
       _load();
 
-  AppDuckDb get _duckDb => widget.duckDb ?? AppDuckDb.instance;
-
   Future<({List<_Row> events, List<_Row> exchanges})> _load() async {
     final runId = LogQueryBuilder.escapeLiteral(widget.runId);
     List<_Row> rows(String json) {
@@ -61,13 +60,13 @@ class _AgentRunTimelineState extends State<AgentRunTimeline> {
     }
 
     final events = rows(
-      await _duckDb.queryJson(
+      await widget.logStore.queryJson(
         "SELECT * FROM agent_events WHERE run_id = '$runId' "
         'ORDER BY timestamp_us ASC;',
       ),
     );
     final exchanges = rows(
-      await _duckDb.queryJson(
+      await widget.logStore.queryJson(
         'SELECT id, timestamp_us, request_id, record_type, method, host, '
         'path, status, has_error, turn, tool_call_id FROM api_exchanges '
         "WHERE run_id = '$runId' ORDER BY timestamp_us ASC;",
@@ -278,7 +277,7 @@ class _AgentRunTimelineState extends State<AgentRunTimeline> {
             ),
             onPressed: () => ApiExchangeDetail.show(
               context,
-              duckDb: _duckDb,
+              logStore: widget.logStore,
               id: '${x['id']}',
             ),
           ),
@@ -288,14 +287,15 @@ class _AgentRunTimelineState extends State<AgentRunTimeline> {
 }
 
 /// Agent-tab list: one card per agent run, built from the run summary rows
-/// of [AppDuckDb.queryAgentRuns] (see [pageQuery]); tapping a card opens the
+/// of [LogStore.queryAgentRuns] (see [pageQuery]); tapping a card opens the
 /// run's [AgentRunTimeline].
 class AgentRunGroupList extends StatelessWidget {
-  const AgentRunGroupList({super.key, required this.items, this.duckDb});
+  const AgentRunGroupList(
+      {super.key, required this.items, required this.logStore});
 
   /// Run items produced by [runItem].
   final List<LogRecordItem> items;
-  final AppDuckDb? duckDb;
+  final LogStore logStore;
 
   /// Maps a run summary row to a list item: id = `run_id`, timestamp and
   /// message both from the run's latest event.
@@ -311,11 +311,10 @@ class AgentRunGroupList extends StatelessWidget {
       );
 
   /// A [LogPageQuery] paging over agent runs instead of events.
-  static LogPageQuery pageQuery(AppDuckDb? duckDb) =>
+  static LogPageQuery pageQuery(LogStore logStore) =>
       (filter, limit, offset) async {
-        final db = duckDb ?? AppDuckDb.instance;
-        final total = await db.countAgentRuns(filter: filter);
-        final rows = await db.queryAgentRuns(
+        final total = await logStore.countAgentRuns(filter: filter);
+        final rows = await logStore.queryAgentRuns(
           filter: filter,
           limit: limit,
           offset: offset,
@@ -327,7 +326,6 @@ class AgentRunGroupList extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final colors = Theme.of(context).colorScheme;
-    final db = duckDb ?? AppDuckDb.instance;
 
     return ListView(
       padding: const EdgeInsets.all(8),
@@ -358,8 +356,8 @@ class AgentRunGroupList extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () =>
-                  AgentRunTimeline.show(context, duckDb: db, runId: run.id),
+              onTap: () => AgentRunTimeline.show(context,
+                  logStore: logStore, runId: run.id),
             ),
           ),
       ],

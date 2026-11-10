@@ -16,7 +16,7 @@ class DuckDbLogViewer extends StatefulWidget {
   final String tableOrView;
   final LogLevel? defaultFilterLevel;
   final bool? showTypeColumn;
-  final AppDuckDb? duckDb;
+  final LogStore logStore;
   final List<Widget>? actions;
 
   /// Shows the API category dropdown (values from `listCategories`).
@@ -41,7 +41,7 @@ class DuckDbLogViewer extends StatefulWidget {
     required this.tableOrView,
     this.defaultFilterLevel,
     this.showTypeColumn,
-    this.duckDb,
+    required this.logStore,
     this.actions,
     this.showCategoryFilter = false,
     this.showErrorsOnlyFilter = false,
@@ -56,8 +56,6 @@ class DuckDbLogViewer extends StatefulWidget {
 
 class DuckDbLogViewerState extends State<DuckDbLogViewer> {
   static const int _pageSize = 50;
-
-  AppDuckDb get _duckDb => widget.duckDb ?? AppDuckDb.instance;
 
   String? _keyword;
   DateTimeRange? _timeRange;
@@ -83,7 +81,7 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
 
   Future<void> _loadCategories() async {
     try {
-      final categories = await _duckDb.listCategories();
+      final categories = await widget.logStore.listCategories();
       if (mounted) setState(() => _categories = categories);
     } catch (e) {
       debugPrint('DuckDbLogViewer category load error: $e');
@@ -136,11 +134,11 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
       final page = widget.pageQuery != null
           ? await widget.pageQuery!(filter, _pageSize, offset)
           : (
-              total: await _duckDb.countLogs(
+              total: await widget.logStore.countLogs(
                 tableOrView: widget.tableOrView,
                 filter: filter,
               ),
-              items: await _duckDb.queryLogs(
+              items: await widget.logStore.queryLogs(
                 tableOrView: widget.tableOrView,
                 filter: filter,
                 limit: _pageSize,
@@ -366,7 +364,8 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
           return LogCardTile(
             item: item,
             showTypeBadge: showType,
-            onTap: () => LogDetailSheet.open(context, item, duckDb: _duckDb),
+            onTap: () =>
+                LogDetailSheet.open(context, item, logStore: widget.logStore),
           );
         },
       ),
@@ -409,7 +408,7 @@ class DuckDbLogViewerState extends State<DuckDbLogViewer> {
 
             return DataRow(
               onSelectChanged: (_) =>
-                  LogDetailSheet.open(context, item, duckDb: _duckDb),
+                  LogDetailSheet.open(context, item, logStore: widget.logStore),
               cells: [
                 DataCell(
                   Text(timeStr,

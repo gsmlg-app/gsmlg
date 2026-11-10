@@ -2,10 +2,11 @@ import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_duckdb/app_duckdb.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gsmlg/screens/settings/log_center_screen.dart';
 
-class _FakeDuckDb implements AppDuckDb {
+class _FakeLogStore implements LogStore {
   final deleteCalls = <({int days, List<String> tables})>[];
 
   @override
@@ -47,17 +48,27 @@ class _FakeDuckDb implements AppDuckDb {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Widget _app(AppDuckDb duckDb) => MaterialApp(
-  localizationsDelegates: AppLocale.localizationsDelegates,
-  supportedLocales: AppLocale.supportedLocales,
-  home: LogCenterScreen(duckDb: duckDb),
+/// A log store whose every call fails, e.g. the log store isolate is down.
+class _FailingLogStore implements LogStore {
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      Future<Never>.error(StateError('log store unavailable'));
+}
+
+Widget _app(LogStore logStore) => RepositoryProvider<LogStore>.value(
+  value: logStore,
+  child: MaterialApp(
+    localizationsDelegates: AppLocale.localizationsDelegates,
+    supportedLocales: AppLocale.supportedLocales,
+    home: const LogCenterScreen(),
+  ),
 );
 
 void main() {
   testWidgets('LogCenterScreen shows the four tabs and a viewer per tab', (
     tester,
   ) async {
-    await tester.pumpWidget(_app(_FakeDuckDb()));
+    await tester.pumpWidget(_app(_FakeLogStore()));
     await tester.pumpAndSettle();
 
     expect(find.text('Log Center'), findsOneWidget);
@@ -87,7 +98,7 @@ void main() {
   testWidgets('delete dialog rejects 0 and deletes the API table by age', (
     tester,
   ) async {
-    final fake = _FakeDuckDb();
+    final fake = _FakeLogStore();
     await tester.pumpWidget(_app(fake));
     await tester.pumpAndSettle();
 
@@ -121,7 +132,7 @@ void main() {
   testWidgets('All tab deletes from system, api and agent tables only', (
     tester,
   ) async {
-    final fake = _FakeDuckDb();
+    final fake = _FakeLogStore();
     await tester.pumpWidget(_app(fake));
     await tester.pumpAndSettle();
 
@@ -142,7 +153,7 @@ void main() {
   });
 
   testWidgets('method filter is shown on the API tab only', (tester) async {
-    await tester.pumpWidget(_app(_FakeDuckDb()));
+    await tester.pumpWidget(_app(_FakeLogStore()));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('logFilterMethod')), findsNothing);
 
@@ -154,7 +165,7 @@ void main() {
   testWidgets('Usage tab lists usage_events and exports that table', (
     tester,
   ) async {
-    await tester.pumpWidget(_app(_FakeDuckDb()));
+    await tester.pumpWidget(_app(_FakeLogStore()));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(Tab, 'Usage'));
     await tester.pumpAndSettle();
@@ -165,5 +176,18 @@ void main() {
     await tester.tap(find.byTooltip('Log Maintenance'));
     await tester.pumpAndSettle();
     expect(find.text('Export JSONL…'), findsOneWidget);
+  });
+
+  testWidgets('shows the error state when the log store fails', (tester) async {
+    await tester.pumpWidget(_app(_FailingLogStore()));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Failed to query logs'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.widgetWithText(Tab, 'Agent'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Failed to query logs'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

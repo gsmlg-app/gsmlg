@@ -7,6 +7,7 @@ import 'package:app_locale/gen_l10n/app_localizations.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
@@ -17,10 +18,11 @@ class LogCenterScreen extends StatefulWidget {
   static const name = 'Log Center';
   static const path = 'log-center';
 
-  const LogCenterScreen({super.key, this.duckDb});
+  const LogCenterScreen({super.key, this.logStore});
 
-  /// Log store override for tests; defaults to [AppDuckDb.instance].
-  final AppDuckDb? duckDb;
+  /// Log store override; defaults to the [LogStore] provided by
+  /// `MainProvider`.
+  final LogStore? logStore;
 
   @override
   State<LogCenterScreen> createState() => _LogCenterScreenState();
@@ -85,11 +87,12 @@ class _LogCenterScreenState extends State<LogCenterScreen>
     for (final _ in _tabs) GlobalKey<DuckDbLogViewerState>(),
   ];
 
-  AppDuckDb get _duckDb => widget.duckDb ?? AppDuckDb.instance;
+  late final LogStore _logStore;
 
   @override
   void initState() {
     super.initState();
+    _logStore = widget.logStore ?? context.read<LogStore>();
     _tabController = TabController(length: _tabs.length, vsync: this)
       ..addListener(() => setState(() {}));
   }
@@ -120,7 +123,7 @@ class _LogCenterScreenState extends State<LogCenterScreen>
 
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await _duckDb.deleteOlderThan(
+      await _logStore.deleteOlderThan(
         days: result.days,
         tables: currentTable == null
             ? _allTabTables
@@ -151,7 +154,7 @@ class _LogCenterScreenState extends State<LogCenterScreen>
         ],
       );
       if (location == null) return;
-      final jsonl = await _duckDb.exportJsonl(
+      final jsonl = await _logStore.exportJsonl(
         table: table,
         filter: _activeViewer?.filter ?? const LogFilter(),
       );
@@ -172,17 +175,15 @@ class _LogCenterScreenState extends State<LogCenterScreen>
     return DuckDbLogViewer(
       key: _viewerKeys[index],
       tableOrView: tab.table,
-      duckDb: widget.duckDb,
+      logStore: _logStore,
       showTypeColumn: tab.table == 'v_all_logs',
       showCategoryFilter: tab.apiFilters,
       showMethodFilter: tab.apiFilters,
       showErrorsOnlyFilter: tab.table != 'v_all_logs',
-      pageQuery: tab.groupByRun
-          ? AgentRunGroupList.pageQuery(widget.duckDb)
-          : null,
+      pageQuery: tab.groupByRun ? AgentRunGroupList.pageQuery(_logStore) : null,
       itemsBuilder: tab.groupByRun
           ? (context, items) =>
-                AgentRunGroupList(items: items, duckDb: widget.duckDb)
+                AgentRunGroupList(items: items, logStore: _logStore)
           : null,
     );
   }

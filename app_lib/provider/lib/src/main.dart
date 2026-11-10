@@ -5,7 +5,7 @@ import 'package:app_audio/audio.dart';
 import 'package:app_chat/app_chat.dart';
 import 'dart:convert';
 import 'package:app_database/app_database.dart';
-import 'package:app_duckdb/app_duckdb.dart' show AppDuckDb;
+import 'package:app_duckdb/app_duckdb.dart' show LogStore;
 import 'package:app_editor/app_editor.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:audio_bloc/audio_bloc.dart';
@@ -18,6 +18,7 @@ import 'package:editor_bloc/editor_bloc.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:github_bloc/github_bloc.dart';
+import 'package:isolate_orchestrator/isolate_orchestrator.dart' show IsolateHub;
 import 'package:navigation_bloc/navigation_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:theme_bloc/theme_bloc.dart';
@@ -36,12 +37,20 @@ class MainProvider extends StatelessWidget {
     required this.sharedPrefs,
     required this.database,
     required this.vault,
+    required this.hub,
+    required this.logStore,
   });
 
   final Widget child;
   final SharedPreferences sharedPrefs;
   final AppDatabase database;
   final VaultRepository vault;
+
+  /// The app's isolate hub (runs the `logstore` worker).
+  final IsolateHub hub;
+
+  /// Log store read by the Log Center (backed by the `logstore` isolate).
+  final LogStore logStore;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +63,8 @@ class MainProvider extends StatelessWidget {
         ),
         RepositoryProvider<SharedPreferences>(create: (context) => sharedPrefs),
         RepositoryProvider<AppDatabase>(create: (context) => database),
-        RepositoryProvider<AppDuckDb>.value(value: AppDuckDb.instance),
+        RepositoryProvider<IsolateHub>.value(value: hub),
+        RepositoryProvider<LogStore>.value(value: logStore),
         RepositoryProvider<VaultRepository>(create: (context) => vault),
         RepositoryProvider<GemmaRepository>(
           create: (context) => GemmaRepository(),

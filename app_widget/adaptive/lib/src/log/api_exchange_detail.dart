@@ -34,11 +34,11 @@ class ApiExchangeDetail extends StatelessWidget {
   /// Loads every record sharing the `request_id` of the `api_exchanges` row
   /// [id], oldest first, decoded from `record_json`.
   static Future<List<Map<String, Object?>>> loadRecords(
-    AppDuckDb duckDb,
+    LogStore logStore,
     String id,
   ) async {
     final safeId = LogQueryBuilder.escapeLiteral(id);
-    final json = await duckDb.queryJson(
+    final json = await logStore.queryJson(
       'SELECT record_json FROM api_exchanges WHERE request_id = '
       "(SELECT request_id FROM api_exchanges WHERE id = '$safeId') "
       'ORDER BY timestamp_us ASC;',
@@ -65,13 +65,13 @@ class ApiExchangeDetail extends StatelessWidget {
   /// Loads the exchange for row [id] and shows it in a dialog / sheet.
   static Future<void> show(
     BuildContext context, {
-    required AppDuckDb duckDb,
+    required LogStore logStore,
     required String id,
   }) =>
       LogDetailSheet.showModal(
         context,
         FutureBuilder<List<Map<String, Object?>>>(
-          future: loadRecords(duckDb, id),
+          future: loadRecords(logStore, id),
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Center(

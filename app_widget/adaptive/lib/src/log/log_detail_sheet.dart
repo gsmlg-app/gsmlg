@@ -23,18 +23,19 @@ class LogDetailSheet extends StatelessWidget {
   static Future<void> open(
     BuildContext context,
     LogRecordItem item, {
-    required AppDuckDb duckDb,
+    required LogStore logStore,
   }) async {
     switch (item.logType) {
       case 'api':
-        return ApiExchangeDetail.show(context, duckDb: duckDb, id: item.id);
+        return ApiExchangeDetail.show(context, logStore: logStore, id: item.id);
       case 'agent':
         final runId = item.rawFields.containsKey('run_id')
             ? item.rawFields['run_id'] as String?
-            : await AgentRunTimeline.runIdOf(duckDb, item.id);
+            : await AgentRunTimeline.runIdOf(logStore, item.id);
         if (!context.mounted) return;
         if (runId != null) {
-          return AgentRunTimeline.show(context, duckDb: duckDb, runId: runId);
+          return AgentRunTimeline.show(context,
+              logStore: logStore, runId: runId);
         }
     }
     return show(context, item);

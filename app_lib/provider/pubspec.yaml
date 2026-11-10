@@ -36,6 +36,7 @@ dependencies:
   tts_dataset_bloc: any
   app_database: any
   app_duckdb: any
+  isolate_orchestrator: any
   app_secure_storage: any
   app_chat: any
   tts_dataset: any

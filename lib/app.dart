@@ -19,13 +19,22 @@ import 'screens/toolbox/bluetooth/bluetooth_scanner_screen.dart';
 import 'screens/toolbox/editor/editor_screen.dart';
 
 class App extends StatefulWidget {
-  const App({super.key, this.arguments = const [], this.flushLogs});
+  const App({
+    super.key,
+    this.arguments = const [],
+    this.flushLogs,
+    this.onExit,
+  });
 
   final List<String> arguments;
 
   /// Flushes buffered log records; awaited before the app exits and also
   /// triggered (not awaited) when the app is hidden or paused.
   final Future<void> Function()? flushLogs;
+
+  /// Releases app-wide resources (the isolate hub); awaited after the final
+  /// [flushLogs] once an exit is confirmed.
+  final Future<void> Function()? onExit;
 
   @override
   State<App> createState() => _AppState();
@@ -44,6 +53,14 @@ class _AppState extends State<App> {
       await widget.flushLogs?.call();
     } catch (error, stackTrace) {
       AppLogger().e('Log flush failed', error, stackTrace);
+    }
+  }
+
+  Future<void> _shutdown() async {
+    try {
+      await widget.onExit?.call();
+    } catch (error, stackTrace) {
+      AppLogger().e('Shutdown failed', error, stackTrace);
     }
   }
 
@@ -80,6 +97,7 @@ class _AppState extends State<App> {
         // Close the session before flushing so session_end is persisted.
         if (response == AppExitResponse.exit) _usage.dispose();
         await _flushLogs();
+        if (response == AppExitResponse.exit) await _shutdown();
         return response;
       },
     );

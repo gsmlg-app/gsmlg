@@ -4,7 +4,39 @@ import 'package:app_locale/app_locale.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// A log store whose every call fails, e.g. the log store isolate is down.
+class _FailingLogStore implements LogStore {
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      Future<Never>.error(StateError('log store unavailable'));
+}
+
 void main() {
+  group('DuckDbLogViewer', () {
+    testWidgets('shows the error state when the log store fails', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocale.localizationsDelegates,
+          supportedLocales: AppLocale.supportedLocales,
+          home: Scaffold(
+            body: DuckDbLogViewer(
+              tableOrView: 'api_exchanges',
+              logStore: _FailingLogStore(),
+              showCategoryFilter: true,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Failed to query logs'), findsOneWidget);
+      expect(find.textContaining('log store unavailable'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('LogCardTile', () {
     testWidgets('renders log item fields and responds to tap', (tester) async {
       bool tapped = false;
