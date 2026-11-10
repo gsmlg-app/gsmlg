@@ -29,8 +29,8 @@ final class ChatSettingsUpdateSystemPrompt extends ChatSettingsEvent {
 /// Add or update an agent definition.
 ///
 /// Null optional fields keep the existing agent's values; empty
-/// [instructions] clear them and [clearAllowedTools] resets the tool list to
-/// "all tools".
+/// [instructions], [avatar] and [description] clear them and
+/// [clearAllowedTools] resets the tool list to "all tools".
 final class ChatSettingsSaveAgent extends ChatSettingsEvent {
   const ChatSettingsSaveAgent({
     this.id,

@@ -1409,6 +1409,122 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get agentsTitle => '智能体';
+
+  @override
+  String get agentsNewAgent => '新建智能体';
+
+  @override
+  String get agentsOtherChats => '其他对话';
+
+  @override
+  String get agentsHistory => '历史';
+
+  @override
+  String get agentsMore => '更多';
+
+  @override
+  String get agentsDeleteTitle => '删除智能体？';
+
+  @override
+  String agentsDeleteMessage(String name) {
+    return '删除“$name”？它的对话将移到其他对话。';
+  }
+
+  @override
+  String get agentsNewChat => '新对话';
+
+  @override
+  String get agentsNoSessions => '还没有与此智能体的对话';
+
+  @override
+  String get agentsNotFound => '未找到智能体';
+
+  @override
+  String get agentsSessionsTitle => '对话';
+
+  @override
+  String get agentEditorCreateTitle => '新建智能体';
+
+  @override
+  String get agentEditorEditTitle => '编辑智能体';
+
+  @override
+  String get agentEditorProfile => '资料';
+
+  @override
+  String get agentEditorName => '名称';
+
+  @override
+  String get agentEditorNameRequired => '名称为必填项';
+
+  @override
+  String get agentEditorAvatar => '头像';
+
+  @override
+  String get agentEditorAvatarHint => '一个表情符号';
+
+  @override
+  String get agentEditorDescription => '描述';
+
+  @override
+  String get agentEditorInstructions => '指令';
+
+  @override
+  String get agentEditorInstructionsHint => '你是一个乐于助人的助手……';
+
+  @override
+  String get agentEditorModelSettings => '模型设置';
+
+  @override
+  String get agentEditorThinking => '思考';
+
+  @override
+  String get agentEditorThinkingDescription => '显示模型的推理过程';
+
+  @override
+  String get agentEditorTools => '工具';
+
+  @override
+  String get agentEditorAllTools => '全部工具';
+
+  @override
+  String get agentEditorAllToolsDescription => '智能体可以调用所有可用工具';
+
+  @override
+  String get agentModelTitle => '模型';
+
+  @override
+  String get agentModelSelectLocal => '选择本地模型';
+
+  @override
+  String get agentModelLocal => '本地模型';
+
+  @override
+  String get agentModelNone => '没有已配置的模型';
+
+  @override
+  String get agentModelNoneDescription => '请在设置中配置本地或远程模型。';
+
+  @override
+  String get agentModelTemperature => '温度';
+
+  @override
+  String get agentModelTemperatureDescription => '越高越有创意';
+
+  @override
+  String get agentModelTemperatureHelp => '0 = 确定性，2 = 非常有创意';
+
+  @override
+  String get agentModelTopK => 'Top-K';
+
+  @override
+  String get agentModelTopKDescription => '采样多样性';
+
+  @override
+  String get agentModelTopKHelp => '越低越集中，越高越多样';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).

@@ -622,5 +622,50 @@
         "type": "int"
       }
     }
-  }
+  },
+  "agentsTitle": "Agents",
+  "agentsNewAgent": "New agent",
+  "agentsOtherChats": "Other chats",
+  "agentsHistory": "History",
+  "agentsMore": "More",
+  "agentsDeleteTitle": "Delete agent?",
+  "agentsDeleteMessage": "Delete \"{name}\"? Its chats move to Other chats.",
+  "@agentsDeleteMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "agentsNewChat": "New chat",
+  "agentsNoSessions": "No chats with this agent yet",
+  "agentsNotFound": "Agent not found",
+  "agentsSessionsTitle": "Chats",
+  "agentEditorCreateTitle": "New agent",
+  "agentEditorEditTitle": "Edit agent",
+  "agentEditorProfile": "Profile",
+  "agentEditorName": "Name",
+  "agentEditorNameRequired": "Name is required",
+  "agentEditorAvatar": "Avatar",
+  "agentEditorAvatarHint": "One emoji",
+  "agentEditorDescription": "Description",
+  "agentEditorInstructions": "Instructions",
+  "agentEditorInstructionsHint": "You are a helpful assistant...",
+  "agentEditorModelSettings": "Model settings",
+  "agentEditorThinking": "Thinking",
+  "agentEditorThinkingDescription": "Show the model's reasoning",
+  "agentEditorTools": "Tools",
+  "agentEditorAllTools": "All tools",
+  "agentEditorAllToolsDescription": "The agent can call every available tool",
+  "agentModelTitle": "Model",
+  "agentModelSelectLocal": "Select a local model",
+  "agentModelLocal": "Local model",
+  "agentModelNone": "No configured models",
+  "agentModelNoneDescription": "Configure local or remote models in Settings.",
+  "agentModelTemperature": "Temperature",
+  "agentModelTemperatureDescription": "Higher = more creative",
+  "agentModelTemperatureHelp": "0 = deterministic, 2 = very creative",
+  "agentModelTopK": "Top-K",
+  "agentModelTopKDescription": "Sampling diversity",
+  "agentModelTopKHelp": "Lower = more focused, Higher = more diverse"
 }

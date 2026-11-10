@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
+import 'package:gsmlg/screens/agents/agents_screen.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
 import 'package:gsmlg/screens/settings/app_settings_screen.dart';
@@ -145,29 +145,16 @@ GoRoute settingsRoutes() => GoRoute(
         );
       },
     ),
+    // Agents moved to the chat tab; keep old settings links working.
     GoRoute(
-      name: ChatAgentsSettingsScreen.name,
-      path: ChatAgentsSettingsScreen.path,
-      pageBuilder: (context, state) {
-        return NoTransitionPage<void>(
-          key: state.pageKey,
-          restorationId: state.pageKey.value,
-          child: const ChatAgentsSettingsScreen(),
-        );
-      },
+      path: 'agents',
+      redirect: (context, state) => AgentsScreen.path,
       routes: [
         GoRoute(
-          name: ChatAgentSettingsScreen.name,
-          path: ChatAgentSettingsScreen.path,
-          pageBuilder: (context, state) {
-            return NoTransitionPage<void>(
-              key: state.pageKey,
-              restorationId: state.pageKey.value,
-              child: ChatAgentSettingsScreen(
-                agentId: state.pathParameters['agentId']!,
-              ),
-            );
-          },
+          path: 'agent/:agentId',
+          redirect: (context, state) =>
+              '${AgentsScreen.path}/agents/'
+              '${Uri.encodeComponent(state.pathParameters['agentId']!)}/edit',
         ),
       ],
     ),

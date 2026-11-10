@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
 
+import 'chat_screen.dart';
 import 'widgets/chat_session_status.dart';
 
 class ChatHistoryScreen extends StatefulWidget {
@@ -109,7 +110,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> {
                     context.read<ChatBloc>().add(
                       ChatLoadConversation(id: conversation.id),
                     );
-                    context.pop();
+                    context.goNamed(ChatScreen.name);
                   },
                   onDelete: () => _confirmDelete(context, conversation),
                 );

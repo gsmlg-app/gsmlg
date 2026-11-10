@@ -3,17 +3,19 @@ import 'dart:convert';
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_agent/app_agent.dart';
 import 'package:app_database/app_database.dart';
-import 'package:app_locale/app_locale.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'agents_test_support.dart';
+
 void main() {
-  group('ChatAgentsSettingsScreen', () {
+  // Model settings of the agent editor and the agents home, moved from the
+  // former chat agent settings screen.
+  group('Agent model settings', () {
     late AppDatabase database;
     late SharedPreferences preferences;
     late _MemoryVaultRepository vault;
@@ -90,6 +92,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('backplane-model').last);
         await tester.pumpAndSettle();
+        await _saveEditor(tester);
         await _pumpUntil(
           tester,
           () =>
@@ -117,10 +120,22 @@ void main() {
           BackplaneSettings.managedId,
         );
 
+        await _pumpScreen(
+          tester,
+          chatSettingsBloc: chatSettingsBloc,
+          accountsBloc: accountsBloc,
+          preferences: preferences,
+          agentId: 'agent-1',
+        );
+        await _pumpUntil(
+          tester,
+          () => find.text('Model').evaluate().isNotEmpty,
+        );
         await tester.tap(find.text('Model'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('other-model').last);
         await tester.pumpAndSettle();
+        await _saveEditor(tester);
         await _pumpUntil(
           tester,
           () => chatSettingsBloc.state.config.remoteModel == 'other-model',
@@ -206,6 +221,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('MiniMax-M2.7').last);
       await tester.pumpAndSettle();
+      await _saveEditor(tester);
 
       await _pumpUntil(
         tester,
@@ -493,6 +509,7 @@ void main() {
         await tester.tap(find.widgetWithText(ListTile, modelName));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 250));
+        await _saveEditor(tester);
       }
 
       await pickModel('agent-1', 'Gemma 4 E2B IT');
@@ -667,7 +684,7 @@ void main() {
         tester,
         () =>
             chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
-            find.text('Add Agent').evaluate().isNotEmpty,
+            find.text('New agent').evaluate().isNotEmpty,
       );
 
       expect(find.text('Code reviewer'), findsOneWidget);
@@ -705,26 +722,18 @@ void main() {
       );
       await _pumpUntil(tester, () => find.text('Name').evaluate().isNotEmpty);
 
-      await tester.tap(find.text('Name'));
-      await tester.pumpAndSettle();
       await tester.enterText(
-        find.widgetWithText(TextField, 'Agent name'),
+        find.widgetWithText(TextField, 'Name'),
         'Bug finder',
       );
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
-      await tester.pumpAndSettle();
+      await _saveEditor(tester);
+      await _pumpUntil(
+        tester,
+        () => chatSettingsBloc.state.agents.single.name == 'Bug finder',
+      );
 
       expect(chatSettingsBloc.state.agents.single.name, 'Bug finder');
       expect(chatSettingsBloc.state.activeAgent?.name, 'Bug finder');
-
-      await _pumpUntil(
-        tester,
-        () => find
-            .text('Remove Agent', skipOffstage: false)
-            .evaluate()
-            .isNotEmpty,
-      );
-      expect(find.text('Remove Agent', skipOffstage: false), findsOneWidget);
 
       chatSettingsBloc.add(const ChatSettingsDeleteAgent(id: 'agent-1'));
       await _pumpUntil(tester, () => chatSettingsBloc.state.agents.isEmpty);
@@ -752,7 +761,7 @@ void main() {
         tester,
         () =>
             chatSettingsBloc.state.status == ChatSettingsStatus.loaded &&
-            find.text('Add Agent').evaluate().isNotEmpty,
+            find.text('New agent').evaluate().isNotEmpty,
       );
 
       chatSettingsBloc.add(
@@ -827,6 +836,7 @@ void main() {
   });
 }
 
+/// Pumps the agent editor for [agentId], or the agents home when null.
 Future<void> _pumpScreen(
   WidgetTester tester, {
   required ChatSettingsBloc chatSettingsBloc,
@@ -834,31 +844,26 @@ Future<void> _pumpScreen(
   required SharedPreferences preferences,
   GemmaModelBloc? gemmaModelBloc,
   String? agentId,
-}) {
-  Widget child = MaterialApp(
-    localizationsDelegates: AppLocale.localizationsDelegates,
-    supportedLocales: AppLocale.supportedLocales,
-    home: RepositoryProvider<SharedPreferences>.value(
-      value: preferences,
-      child: ChatAgentsSettingsScreen(agentId: agentId),
-    ),
+}) async {
+  final chatBloc = MockChatBloc();
+  when(() => chatBloc.state).thenReturn(const ChatState());
+  await pumpChatRoutes(
+    tester,
+    location: agentId == null ? '/chat' : '/chat/agents/$agentId/edit',
+    settingsBloc: chatSettingsBloc,
+    chatBloc: chatBloc,
+    preferences: preferences,
+    gemmaModelBloc: gemmaModelBloc,
+    settle: false,
   );
-  if (gemmaModelBloc != null) {
-    child = BlocProvider<GemmaModelBloc>.value(
-      value: gemmaModelBloc,
-      child: child,
-    );
-  }
+}
 
-  return tester.pumpWidget(
-    MultiBlocProvider(
-      providers: [
-        BlocProvider<ChatSettingsBloc>.value(value: chatSettingsBloc),
-        BlocProvider<AccountsBloc>.value(value: accountsBloc),
-      ],
-      child: child,
-    ),
-  );
+/// Saves the agent editor form.
+Future<void> _saveEditor(WidgetTester tester) async {
+  final button = find.widgetWithText(FilledButton, 'Save');
+  await tester.ensureVisible(button);
+  await tester.tap(button);
+  await tester.pump();
 }
 
 Future<void> _pumpUntil(WidgetTester tester, bool Function() done) async {

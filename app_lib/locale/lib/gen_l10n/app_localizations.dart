@@ -2784,6 +2784,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 event} other{{count} events}}'**
   String logAgentEventCount(int count);
+
+  /// No description provided for @agentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Agents'**
+  String get agentsTitle;
+
+  /// No description provided for @agentsNewAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'New agent'**
+  String get agentsNewAgent;
+
+  /// No description provided for @agentsOtherChats.
+  ///
+  /// In en, this message translates to:
+  /// **'Other chats'**
+  String get agentsOtherChats;
+
+  /// No description provided for @agentsHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get agentsHistory;
+
+  /// No description provided for @agentsMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get agentsMore;
+
+  /// No description provided for @agentsDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete agent?'**
+  String get agentsDeleteTitle;
+
+  /// No description provided for @agentsDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\"? Its chats move to Other chats.'**
+  String agentsDeleteMessage(String name);
+
+  /// No description provided for @agentsNewChat.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get agentsNewChat;
+
+  /// No description provided for @agentsNoSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats with this agent yet'**
+  String get agentsNoSessions;
+
+  /// No description provided for @agentsNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent not found'**
+  String get agentsNotFound;
+
+  /// No description provided for @agentsSessionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats'**
+  String get agentsSessionsTitle;
+
+  /// No description provided for @agentEditorCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New agent'**
+  String get agentEditorCreateTitle;
+
+  /// No description provided for @agentEditorEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit agent'**
+  String get agentEditorEditTitle;
+
+  /// No description provided for @agentEditorProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get agentEditorProfile;
+
+  /// No description provided for @agentEditorName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get agentEditorName;
+
+  /// No description provided for @agentEditorNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name is required'**
+  String get agentEditorNameRequired;
+
+  /// No description provided for @agentEditorAvatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar'**
+  String get agentEditorAvatar;
+
+  /// No description provided for @agentEditorAvatarHint.
+  ///
+  /// In en, this message translates to:
+  /// **'One emoji'**
+  String get agentEditorAvatarHint;
+
+  /// No description provided for @agentEditorDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get agentEditorDescription;
+
+  /// No description provided for @agentEditorInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get agentEditorInstructions;
+
+  /// No description provided for @agentEditorInstructionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You are a helpful assistant...'**
+  String get agentEditorInstructionsHint;
+
+  /// No description provided for @agentEditorModelSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Model settings'**
+  String get agentEditorModelSettings;
+
+  /// No description provided for @agentEditorThinking.
+  ///
+  /// In en, this message translates to:
+  /// **'Thinking'**
+  String get agentEditorThinking;
+
+  /// No description provided for @agentEditorThinkingDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the model\'s reasoning'**
+  String get agentEditorThinkingDescription;
+
+  /// No description provided for @agentEditorTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get agentEditorTools;
+
+  /// No description provided for @agentEditorAllTools.
+  ///
+  /// In en, this message translates to:
+  /// **'All tools'**
+  String get agentEditorAllTools;
+
+  /// No description provided for @agentEditorAllToolsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The agent can call every available tool'**
+  String get agentEditorAllToolsDescription;
+
+  /// No description provided for @agentModelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Model'**
+  String get agentModelTitle;
+
+  /// No description provided for @agentModelSelectLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a local model'**
+  String get agentModelSelectLocal;
+
+  /// No description provided for @agentModelLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local model'**
+  String get agentModelLocal;
+
+  /// No description provided for @agentModelNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No configured models'**
+  String get agentModelNone;
+
+  /// No description provided for @agentModelNoneDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Configure local or remote models in Settings.'**
+  String get agentModelNoneDescription;
+
+  /// No description provided for @agentModelTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get agentModelTemperature;
+
+  /// No description provided for @agentModelTemperatureDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Higher = more creative'**
+  String get agentModelTemperatureDescription;
+
+  /// No description provided for @agentModelTemperatureHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'0 = deterministic, 2 = very creative'**
+  String get agentModelTemperatureHelp;
+
+  /// No description provided for @agentModelTopK.
+  ///
+  /// In en, this message translates to:
+  /// **'Top-K'**
+  String get agentModelTopK;
+
+  /// No description provided for @agentModelTopKDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sampling diversity'**
+  String get agentModelTopKDescription;
+
+  /// No description provided for @agentModelTopKHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Lower = more focused, Higher = more diverse'**
+  String get agentModelTopKHelp;
 }
 
 class _AppLocalizationsDelegate

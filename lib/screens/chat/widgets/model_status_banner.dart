@@ -3,7 +3,7 @@ import 'package:chat_bloc/chat_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
+import 'package:gsmlg/screens/agents/agents_screen.dart';
 
 class ModelStatusBanner extends StatelessWidget {
   const ModelStatusBanner({super.key, required this.state});
@@ -254,7 +254,7 @@ class ModelStatusBanner extends StatelessWidget {
           ),
         ),
         TextButton(
-          onPressed: () => context.goNamed(ChatAgentsSettingsScreen.name),
+          onPressed: () => context.goNamed(AgentsScreen.name),
           child: const Text('Change'),
         ),
         TextButton(

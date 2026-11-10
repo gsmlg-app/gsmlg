@@ -115,6 +115,37 @@ void main() {
       expect(await agents.get('a1'), isNull);
     });
 
+    test('empty avatar and description clear them; null keeps them', () async {
+      final bloc = await loaded();
+      addTearDown(bloc.close);
+      var saved = bloc.stream.firstWhere((s) => s.agents.length == 1);
+      bloc.add(const ChatSettingsSaveAgent(
+        id: 'a1',
+        name: 'Writer',
+        avatar: '✍️',
+        description: 'Writes',
+      ));
+      await saved;
+
+      saved = bloc.stream.firstWhere((s) => s.agents.single.name == 'Author');
+      bloc.add(const ChatSettingsSaveAgent(id: 'a1', name: 'Author'));
+      await saved;
+      expect(bloc.state.agents.single.avatar, '✍️');
+      expect(bloc.state.agents.single.description, 'Writes');
+
+      saved = bloc.stream.firstWhere((s) => s.agents.single.avatar == null);
+      bloc.add(const ChatSettingsSaveAgent(
+        id: 'a1',
+        name: 'Author',
+        avatar: ' ',
+        description: '',
+      ));
+      await saved;
+      final stored = await agents.get('a1');
+      expect(stored!.avatar, isNull);
+      expect(stored.description, isNull);
+    });
+
     test('load imports legacy chat_agents once', () async {
       await preferences.setStringList('chat_agents', [
         jsonEncode({

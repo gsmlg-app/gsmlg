@@ -1427,4 +1427,124 @@ class AppLocalizationsCs extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get agentsTitle => 'Agents';
+
+  @override
+  String get agentsNewAgent => 'New agent';
+
+  @override
+  String get agentsOtherChats => 'Other chats';
+
+  @override
+  String get agentsHistory => 'History';
+
+  @override
+  String get agentsMore => 'More';
+
+  @override
+  String get agentsDeleteTitle => 'Delete agent?';
+
+  @override
+  String agentsDeleteMessage(String name) {
+    return 'Delete \"$name\"? Its chats move to Other chats.';
+  }
+
+  @override
+  String get agentsNewChat => 'New chat';
+
+  @override
+  String get agentsNoSessions => 'No chats with this agent yet';
+
+  @override
+  String get agentsNotFound => 'Agent not found';
+
+  @override
+  String get agentsSessionsTitle => 'Chats';
+
+  @override
+  String get agentEditorCreateTitle => 'New agent';
+
+  @override
+  String get agentEditorEditTitle => 'Edit agent';
+
+  @override
+  String get agentEditorProfile => 'Profile';
+
+  @override
+  String get agentEditorName => 'Name';
+
+  @override
+  String get agentEditorNameRequired => 'Name is required';
+
+  @override
+  String get agentEditorAvatar => 'Avatar';
+
+  @override
+  String get agentEditorAvatarHint => 'One emoji';
+
+  @override
+  String get agentEditorDescription => 'Description';
+
+  @override
+  String get agentEditorInstructions => 'Instructions';
+
+  @override
+  String get agentEditorInstructionsHint => 'You are a helpful assistant...';
+
+  @override
+  String get agentEditorModelSettings => 'Model settings';
+
+  @override
+  String get agentEditorThinking => 'Thinking';
+
+  @override
+  String get agentEditorThinkingDescription => 'Show the model\'s reasoning';
+
+  @override
+  String get agentEditorTools => 'Tools';
+
+  @override
+  String get agentEditorAllTools => 'All tools';
+
+  @override
+  String get agentEditorAllToolsDescription =>
+      'The agent can call every available tool';
+
+  @override
+  String get agentModelTitle => 'Model';
+
+  @override
+  String get agentModelSelectLocal => 'Select a local model';
+
+  @override
+  String get agentModelLocal => 'Local model';
+
+  @override
+  String get agentModelNone => 'No configured models';
+
+  @override
+  String get agentModelNoneDescription =>
+      'Configure local or remote models in Settings.';
+
+  @override
+  String get agentModelTemperature => 'Temperature';
+
+  @override
+  String get agentModelTemperatureDescription => 'Higher = more creative';
+
+  @override
+  String get agentModelTemperatureHelp =>
+      '0 = deterministic, 2 = very creative';
+
+  @override
+  String get agentModelTopK => 'Top-K';
+
+  @override
+  String get agentModelTopKDescription => 'Sampling diversity';
+
+  @override
+  String get agentModelTopKHelp =>
+      'Lower = more focused, Higher = more diverse';
 }

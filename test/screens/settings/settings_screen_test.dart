@@ -282,7 +282,7 @@ Future<void> _pumpScreen(
       ),
       GoRoute(
         path: '/test/chat-agents',
-        name: 'ChatAgentsSettings',
+        name: 'Agents',
         builder: (context, state) => const Text('Agent route'),
       ),
       GoRoute(

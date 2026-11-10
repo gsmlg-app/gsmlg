@@ -168,8 +168,8 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
     final agent = AgentDefinition(
       id: existingAgent?.id ?? event.id ?? _uuid.v4(),
       name: name,
-      avatar: event.avatar ?? existingAgent?.avatar,
-      description: event.description ?? existingAgent?.description,
+      avatar: _optionalText(event.avatar, existingAgent?.avatar),
+      description: _optionalText(event.description, existingAgent?.description),
       config: event.config ?? existingAgent?.config ?? state.config,
       instructions: switch (event.instructions?.trim()) {
         null => existingAgent?.instructions,
@@ -218,6 +218,14 @@ class ChatSettingsBloc extends Bloc<ChatSettingsEvent, ChatSettingsState> {
       ));
     }
   }
+
+  /// Null keeps [existing]; blank text clears the field.
+  static String? _optionalText(String? value, String? existing) =>
+      switch (value?.trim()) {
+        null => existing,
+        '' => null,
+        final text => text,
+      };
 
   Future<void> _onDeleteAgent(
     ChatSettingsDeleteAgent event,

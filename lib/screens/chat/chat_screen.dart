@@ -2,16 +2,18 @@ import 'dart:typed_data';
 
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_agent/app_agent.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:chat_bloc/chat_bloc.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/duo/duo_controller.dart';
+import 'package:gsmlg/screens/agents/agent_editor_screen.dart';
+import 'package:gsmlg/screens/agents/agents_screen.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
 
 import 'chat_history_screen.dart';
-import 'chat_settings_screen.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/chat_message_list.dart';
 import 'widgets/local_model_action_button.dart';
@@ -19,9 +21,12 @@ import 'widgets/model_status_banner.dart';
 
 class ChatScreen extends StatefulWidget {
   static const name = 'Chat';
-  static const path = '/chat';
+  static const path = 'conversation';
 
-  const ChatScreen({super.key});
+  /// Conversation to open (deep link `?id=`); null keeps the current one.
+  const ChatScreen({super.key, this.conversationId});
+
+  final String? conversationId;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -55,7 +60,11 @@ class _ChatScreenState extends State<ChatScreen> {
     // Load conversation history
     final chatBloc = context.read<ChatBloc>();
     chatBloc.add(const ChatLoadHistory());
-    if (chatBloc.state.conversation == null) {
+    final conversationId = widget.conversationId;
+    if (conversationId != null &&
+        chatBloc.state.conversation?.id != conversationId) {
+      chatBloc.add(ChatLoadConversation(id: conversationId));
+    } else if (chatBloc.state.conversation == null) {
       chatBloc.add(const ChatNewConversation());
     }
   }
@@ -215,7 +224,45 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  /// The existing agent owning the selected conversation, if any.
+  AgentDefinition? _ownerAgent() {
+    final ownerId = context.read<ChatBloc>().state.conversation?.agentId;
+    if (ownerId == null) return null;
+    return context
+        .read<ChatSettingsBloc>()
+        .state
+        .agents
+        .where((agent) => agent.id == ownerId)
+        .firstOrNull;
+  }
+
+  /// Edits the owner agent of an owned conversation; otherwise opens the
+  /// agents home.
+  void _openAgentSettings() {
+    final owner = _ownerAgent();
+    if (owner == null) {
+      context.goNamed(AgentsScreen.name);
+    } else {
+      context.goNamed(
+        AgentEditorScreen.name,
+        pathParameters: {'agentId': owner.id},
+      );
+    }
+  }
+
   void _startNewConversation() {
+    final owner = _ownerAgent();
+    if (owner != null) {
+      context.read<ChatBloc>().add(
+        ChatNewConversation(
+          systemPrompt: owner.instructions,
+          config: owner.config,
+          agentId: owner.id,
+          thinkingEnabled: owner.thinkingEnabled,
+        ),
+      );
+      return;
+    }
     final settingsState = context.read<ChatSettingsBloc>().state;
     context.read<ChatBloc>().add(
       ChatNewConversation(
@@ -295,9 +342,9 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: _startNewConversation,
             ),
             IconButton(
-              icon: const Icon(Icons.settings),
-              tooltip: 'Settings',
-              onPressed: () => context.goNamed(ChatAgentsSettingsScreen.name),
+              icon: const Icon(Icons.tune),
+              tooltip: context.l10n.agentEditorEditTitle,
+              onPressed: _openAgentSettings,
             ),
           ],
         ),
@@ -439,17 +486,18 @@ class _ChatScreenState extends State<ChatScreen> {
               supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
               supportsThinking: modelInfo?.effectiveSupportsThinking ?? false,
               thinkingEnabled: settingsState.thinkingEnabled,
-              selectedAgentName:
-                  settingsState.activeAgent?.name ?? 'Select agent',
+              selectedAgentName: _agentLabel(settingsState),
               selectedAgentId: settingsState.activeAgentId,
-              agents: settingsState.agents,
-              onAgentSelect: (agentId) {
-                _selectAgent(agentId);
-              },
-              onModelTap: () => context.goNamed(ChatAgentsSettingsScreen.name),
-              onThinkingToggle: (enabled) {
-                _configureSession(settingsState, thinkingEnabled: enabled);
-              },
+              onModelTap: () => context.goNamed(AgentsScreen.name),
+              // The owner agent decides thinking in an owned conversation.
+              onThinkingToggle: chatState.conversation?.agentId != null
+                  ? null
+                  : (enabled) {
+                      _configureSession(
+                        settingsState,
+                        thinkingEnabled: enabled,
+                      );
+                    },
               onSend: (message, {imageBytes, audioBytes, attachments}) {
                 _sendMessage(
                   settingsState,
@@ -484,6 +532,7 @@ class _ChatScreenState extends State<ChatScreen> {
         final config = settingsState.config;
         final canSend = settingsState.config.isRemoteConfigured;
         final isDeepSeek = config.remoteProvider == RemoteLlmProvider.deepSeek;
+        final owned = chatState.conversation?.agentId != null;
         return ChatInputBar(
           conversationId: chatState.conversation?.id,
           draft: chatState.currentDraft,
@@ -497,14 +546,11 @@ class _ChatScreenState extends State<ChatScreen> {
               ? config.remoteThinkingEffort != RemoteThinkingEffort.off
               : settingsState.thinkingEnabled,
           thinkingEffort: isDeepSeek ? config.remoteThinkingEffort : null,
-          selectedAgentName: settingsState.activeAgent?.name ?? 'Select agent',
+          selectedAgentName: _agentLabel(settingsState),
           selectedAgentId: settingsState.activeAgentId,
-          agents: settingsState.agents,
-          onAgentSelect: (agentId) {
-            _selectAgent(agentId);
-          },
-          onModelTap: () => context.goNamed(ChatAgentsSettingsScreen.name),
-          onThinkingEffortChanged: isDeepSeek
+          onModelTap: () => context.goNamed(AgentsScreen.name),
+          // The owner agent decides thinking in an owned conversation.
+          onThinkingEffortChanged: isDeepSeek && !owned
               ? (effort) {
                   _configureSession(
                     settingsState,
@@ -512,7 +558,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   );
                 }
               : null,
-          onThinkingToggle: isDeepSeek
+          onThinkingToggle: isDeepSeek || owned
               ? null
               : (enabled) {
                   _configureSession(settingsState, thinkingEnabled: enabled);
@@ -537,6 +583,13 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       },
     );
+  }
+
+  String _agentLabel(ChatSettingsState settingsState) {
+    final agent = settingsState.activeAgent;
+    if (agent == null) return context.l10n.agentsTitle;
+    final avatar = agent.avatar;
+    return avatar == null ? agent.name : '$avatar ${agent.name}';
   }
 
   void _sendMessage(
@@ -784,7 +837,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Text('Remote LLM needs an account, base URL, and model.'),
           ),
           TextButton(
-            onPressed: () => context.goNamed(ChatAgentsSettingsScreen.name),
+            onPressed: _openAgentSettings,
             child: const Text('Settings'),
           ),
         ],

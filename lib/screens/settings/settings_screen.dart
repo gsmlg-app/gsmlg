@@ -12,7 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:gsmlg/core/usage/menu_navigation.dart';
 import 'package:gsmlg/destination.dart';
-import 'package:gsmlg/screens/chat/chat_settings_screen.dart';
+import 'package:gsmlg/screens/agents/agents_screen.dart';
 import 'package:gsmlg/screens/settings/accent_color_settings_screen.dart';
 import 'package:gsmlg/screens/settings/account_screen.dart';
 import 'package:gsmlg/screens/settings/app_settings_screen.dart';
@@ -251,9 +251,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     },
                                   ),
                               onPressed: (context) {
-                                context.menuGoNamed(
-                                  ChatAgentsSettingsScreen.name,
-                                );
+                                context.menuGoNamed(AgentsScreen.name);
                               },
                             ),
                           ],
