@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_agent/app_agent.dart';
+import 'package:app_logging/app_logging.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -131,4 +132,51 @@ void main() {
       expect(waitRes['status'], isIn(['cancelled', 'failed']));
     });
   });
+
+  test('sub-agent log records carry the parent conversation id', () async {
+    final events = <AgentLogEvent>[];
+    LogCapture.instance.attach(_AgentSink(events));
+    addTearDown(() => LogCapture.instance.attach(null));
+    final supervisor = AgentSupervisor(
+      childRunner:
+          ({
+            required String childRunId,
+            required String role,
+            required String prompt,
+            required Set<String>? allowedTools,
+            required CancelToken cancelToken,
+            required TreeBudget budget,
+            required int depth,
+          }) async => 'ok',
+    );
+    final spawn = await supervisor.executeTool(
+      toolName: 'spawn_agent',
+      arguments: {'name': 'w', 'goal': 'g'},
+      parentRunId: 'p1',
+      sessionId: 'conv-9',
+    );
+    await supervisor.executeTool(
+      toolName: 'wait_agent',
+      arguments: {'taskId': spawn['taskId'], 'timeout': 2000},
+      parentRunId: 'p1',
+      sessionId: 'conv-9',
+    );
+    final subs = events.where((e) => e.backend == 'sub_agent').toList();
+    expect(
+      subs.map((e) => e.eventType),
+      containsAll(['sub_agent_started', 'sub_agent_finished']),
+    );
+    expect(subs.every((e) => e.context?.conversationId == 'conv-9'), isTrue);
+  });
+}
+
+class _AgentSink implements LogSink {
+  _AgentSink(this.events);
+  final List<AgentLogEvent> events;
+  @override
+  void writeApi(ApiExchangeRecord r) {}
+  @override
+  void writeAgent(AgentLogEvent e) => events.add(e);
+  @override
+  void writeUsage(UsageEvent e) {}
 }

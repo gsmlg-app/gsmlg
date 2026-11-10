@@ -169,6 +169,7 @@ class ChatAgentRuntime {
       skillRegistry: skillRegistry,
       allowedTools: allowedTools,
       awaitAcknowledgements: awaitAcknowledgements,
+      currentTurn: () => gatewayHook?._turnIndex,
       onEvent: emit,
       onReceipt: (receipt) async {
         // Automatically persist receipt if storageRepository is available

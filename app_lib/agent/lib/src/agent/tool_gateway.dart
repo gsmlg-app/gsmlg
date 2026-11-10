@@ -29,7 +29,9 @@ class ToolExecutionGateway {
     this.onReceipt,
     Set<String>? allowedTools,
     bool awaitAcknowledgements = false,
-  }) : _toolExecutor = toolExecutor,
+    int? Function()? currentTurn,
+  }) : _currentTurn = currentTurn,
+       _toolExecutor = toolExecutor,
        _awaitAcknowledgements = awaitAcknowledgements,
        _shellService = shellService,
        _subAgentSupervisor = subAgentSupervisor,
@@ -37,6 +39,8 @@ class ToolExecutionGateway {
        _skillRegistry = skillRegistry,
        _allowedTools = allowedTools;
 
+  /// Returns the 1-based model turn the run is currently in, if known.
+  final int? Function()? _currentTurn;
   final ToolExecutor? _toolExecutor;
   final ShellExecutionService? _shellService;
   final AgentSupervisor? _subAgentSupervisor;
@@ -341,7 +345,12 @@ class ToolExecutionGateway {
       // are captured with this run/tool-call context.
       bool isError = false;
       final dynamic rawResult = await LogContext.runZoned(
-        LogContext(conversationId: sessionId, runId: runId, toolCallId: callId),
+        LogContext(
+          conversationId: sessionId,
+          runId: runId,
+          turn: _currentTurn?.call(),
+          toolCallId: callId,
+        ),
         () async {
           if (_shellService != null && _shellService.handlesTool(toolName)) {
             backend = 'shell';

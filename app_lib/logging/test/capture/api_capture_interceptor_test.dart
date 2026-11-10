@@ -40,6 +40,24 @@ class _Adapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+class _CancellableAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    await cancelFuture;
+    throw DioException.requestCancelled(
+      requestOptions: options,
+      reason: 'cancelled',
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
 void main() {
   late _Sink sink;
   setUp(() {
@@ -54,6 +72,20 @@ void main() {
         ..interceptors.add(
           ApiCaptureInterceptor(category: 'github', secretHeaders: secrets),
         );
+
+  test('cancel is recorded as aborted without an error', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'))
+      ..httpClientAdapter = _CancellableAdapter()
+      ..interceptors.add(ApiCaptureInterceptor(category: 'github'));
+    final token = CancelToken();
+    final future = dio.get<dynamic>('/slow', cancelToken: token);
+    await Future<void>.delayed(const Duration(milliseconds: 20));
+    token.cancel('stop');
+    await expectLater(future, throwsA(isA<DioException>()));
+    final r = sink.api.single;
+    expect(r.aborted, isTrue);
+    expect(r.error, isNull);
+  });
 
   test('records JSON request/response exchange', () async {
     final dio = make(200, '{"ok":true}');

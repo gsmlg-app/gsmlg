@@ -62,6 +62,7 @@ class SubAgentTask {
   SubAgentTask({
     required this.taskId,
     required this.parentRunId,
+    this.sessionId,
     required this.childRunId,
     required this.workerName,
     required this.goal,
@@ -73,6 +74,9 @@ class SubAgentTask {
 
   final String taskId;
   final String parentRunId;
+
+  /// Conversation the parent run belongs to (for log correlation).
+  final String? sessionId;
   final String childRunId;
   final String workerName;
   final String goal;
@@ -217,7 +221,13 @@ class AgentSupervisor {
   }) async {
     switch (toolName) {
       case _spawnTool:
-        return _spawnAgent(arguments, parentRunId, cancelToken, depth);
+        return _spawnAgent(
+          arguments,
+          parentRunId,
+          cancelToken,
+          depth,
+          sessionId,
+        );
       case _waitTool:
         return _waitAgent(arguments, parentRunId, cancelToken);
       case _cancelTool:
@@ -232,6 +242,7 @@ class AgentSupervisor {
     String parentRunId,
     CancelToken? parentCancelToken,
     int depth,
+    String sessionId,
   ) async {
     final name = args['name'] as String;
     final goal = args['goal'] as String;
@@ -256,6 +267,7 @@ class AgentSupervisor {
     final task = SubAgentTask(
       taskId: taskId,
       parentRunId: parentRunId,
+      sessionId: sessionId,
       childRunId: childRunId,
       workerName: name,
       goal: goal,
@@ -317,6 +329,7 @@ class AgentSupervisor {
           ts: DateTime.now(),
           eventType: eventType,
           context: LogContext(
+            conversationId: task.sessionId,
             runId: task.childRunId,
             parentRunId: task.parentRunId,
           ),

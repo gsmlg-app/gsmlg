@@ -112,4 +112,21 @@ void main() {
       expect(r.context?.toolCallId, 'call-7');
     },
   );
+
+  test('tool HTTP traffic carries the current turn', () async {
+    final dio = Dio()..httpClientAdapter = _Adapter(200, 'page body');
+    final gateway = ToolExecutionGateway(
+      toolExecutor: ToolExecutor(dio: dio),
+      currentTurn: () => 2,
+    );
+
+    await gateway.execute(
+      runId: 'run-1',
+      sessionId: 'conv-1',
+      toolName: 'web_fetch',
+      arguments: {'url': 'https://example.com/page'},
+    );
+
+    expect(sink.api.single.context?.turn, 2);
+  });
 }

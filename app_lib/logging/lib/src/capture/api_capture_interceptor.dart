@@ -105,7 +105,7 @@ class ApiCaptureInterceptor extends Interceptor {
               ),
         category: cat is String ? cat : category,
         context: ctx is LogContext ? ctx : context?.call() ?? start.zoneContext,
-        error: error == null
+        error: error == null || error.type == DioExceptionType.cancel
             ? null
             : (
                 type: error.runtimeType.toString(),
