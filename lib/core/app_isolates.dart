@@ -6,6 +6,7 @@ import 'package:app_duckdb/app_duckdb.dart';
 import 'package:app_logging/app_logging.dart';
 import 'package:isolate_orchestrator/isolate_orchestrator.dart';
 import 'package:logging/logging.dart' as logging;
+import 'package:flutter/foundation.dart' show visibleForTesting;
 
 /// The app's [IsolateHub] and the `logstore` worker that owns the DuckDB log
 /// store. Every log producer (LogCapture and `Logger.root`) writes to it
@@ -14,6 +15,14 @@ class AppIsolates {
   AppIsolates._(this.hub, this.logStore, this.forwarder);
 
   static const logStoreName = 'logstore';
+  static const logGroupName = 'logs';
+
+  /// Restart budget of the log store (the root supervisor's default).
+  static const logStoreIntensity = RestartIntensity(
+    maxRestarts: 10,
+    withinDuration: Duration(hours: 1),
+    backoffPolicy: RestartPolicy(),
+  );
 
   final IsolateHub hub;
   final LogStoreClient logStore;
@@ -32,13 +41,7 @@ class AppIsolates {
       ..listen(hub.events, target: logStoreName);
     try {
       await hub.start();
-      await hub.registerService(
-        ChildSpec(
-          name: logStoreName,
-          entryPoint: logStoreEntryPoint,
-          config: {'dbPath': dbPath},
-        ),
-      );
+      await registerLogStore(hub, dbPath: dbPath);
       await forwarder.connect();
     } catch (error, stackTrace) {
       logging.Logger(
@@ -46,6 +49,32 @@ class AppIsolates {
       ).warning('Log store isolate unavailable', error, stackTrace);
     }
     return AppIsolates._(hub, logStore, forwarder);
+  }
+
+  /// Registers the `logstore` worker on [dbPath] in its own `/logs` group.
+  ///
+  /// The group is temporary: when the log store exceeds [intensity] it stays
+  /// down instead of escalating to the root, which would stop every other
+  /// group (e.g. `/agents`).
+  @visibleForTesting
+  static Future<void> registerLogStore(
+    IsolateHub hub, {
+    required String dbPath,
+    void Function(SendPort) entryPoint = logStoreEntryPoint,
+    RestartIntensity intensity = logStoreIntensity,
+  }) async {
+    final group = await hub.createGroup(
+      name: logGroupName,
+      intensity: intensity,
+      restartType: ChildRestartType.temporary,
+    );
+    await group.registerService(
+      ChildSpec(
+        name: logStoreName,
+        entryPoint: entryPoint,
+        config: {'dbPath': dbPath},
+      ),
+    );
   }
 
   /// Writes every log record buffered by the log store so far.
