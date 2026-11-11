@@ -436,10 +436,10 @@ packages:
     dependency: "direct main"
     description:
       name: crypto
-      sha256: e3626ae6270383c9e3a549f34c9e4cd26c09ae6a9adaab2bf4737a00340efdc4
+      sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.8"
+    version: "3.0.7"
   csslib:
     dependency: transitive
     description:
@@ -488,6 +488,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.2"
+  dart_sentencepiece_tokenizer:
+    dependency: transitive
+    description:
+      name: dart_sentencepiece_tokenizer
+      sha256: "23fd14a3a7a736e0a85c329ab0227f8eaf9626ef83b1d98b6f37fbc284fca8c8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.1"
   dart_style:
     dependency: transitive
     description:
@@ -1331,6 +1339,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.1"
+  lib_onnx:
+    dependency: transitive
+    description:
+      name: lib_onnx
+      sha256: ae8ef8070e444f2954d7c4a74cacbd43b14bc9f0ca743c06b53df6b8e01ceb65
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
   linked_scroll_controller:
     dependency: transitive
     description:

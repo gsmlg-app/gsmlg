@@ -45,6 +45,7 @@ workspace:
   - app_lib/tts_dataset
   - app_lib/isolate_orchestrator
   - app_lib/duckdb
+  - app_lib/embedding
   - app_lib/audio
   - app_bloc/theme
   - app_bloc/navigation
@@ -197,6 +198,7 @@ dependencies:
   app_logging: any
   secrethub_agent: ^0.1.1
   app_duckdb: any
+  app_embedding: any
   app_secure_storage: any
   isolate_orchestrator: any
   app_web_view: any

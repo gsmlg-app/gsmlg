@@ -1,0 +1,17 @@
+name: app_embedding
+description: On-device text embeddings with EmbeddingGemma 2 on lib_onnx.
+version: 1.0.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.10.7 <4.0.0"
+resolution: workspace
+
+dependencies:
+  lib_onnx: ^0.3.0
+  dart_sentencepiece_tokenizer: ^1.4.1
+  path: any
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.31.1
