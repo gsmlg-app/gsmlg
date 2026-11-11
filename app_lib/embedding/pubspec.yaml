@@ -8,7 +8,7 @@ environment:
 resolution: workspace
 
 dependencies:
-  lib_onnx: ^0.3.0
+  lib_onnx: ^0.3.1
   dart_sentencepiece_tokenizer: ^1.4.1
   path: any
 

@@ -161,6 +161,12 @@ class _WhoisHistoryScreenState extends State<WhoisHistoryScreen> {
                                     backgroundColor: Theme.of(
                                       context,
                                     ).colorScheme.errorContainer,
+                                    // flutter_slidable 5 reads its theme from
+                                    // material_ui, not this app's Material
+                                    // theme; pin the contrast color here.
+                                    foregroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.onErrorContainer,
                                     icon: Icons.delete,
                                   ),
                                 ],

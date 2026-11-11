@@ -103,6 +103,7 @@ workspace:
 
 dependencies:
   context_menus: ^2.0.0+1
+  # TODO(upstream): gsmlg-app/web-terminal#13 — move to ^0.6.0 after the terminal sync adopts it.
   window_manager: ^0.5.2
   terminal_core: any
   terminal_hosts: any
@@ -147,7 +148,7 @@ dependencies:
   duskmoon_ui: ^2.2.10
   duskmoon_adaptive_scaffold: ^2.2.10
   duskmoon_settings: ^2.2.10
-  flutter_slidable: ^4.0.3
+  flutter_slidable: ^5.2.0
   file_picker: ^13.3.0
   file_selector: ^1.1.0
   intl: any
