@@ -128,9 +128,14 @@ class _ChatInputBarState extends State<ChatInputBar> {
       extentOffset: draft.selectionExtent.clamp(0, length),
     );
     // Echoing our own draft must preserve the platform IME composing range.
+    // Compare offsets only: the platform's selection may carry an affinity the
+    // draft does not store, and rewriting the value mid-composition makes the
+    // iOS IME re-insert its marked text (typing "a" produced "aa").
+    final current = _controller.selection;
     if (force ||
         _controller.text != draft.text ||
-        _controller.selection != selection) {
+        current.baseOffset != selection.baseOffset ||
+        current.extentOffset != selection.extentOffset) {
       _controller.value = TextEditingValue(
         text: draft.text,
         selection: selection,
