@@ -28,6 +28,7 @@ workspace:
   - app_plugin/android_shell
   - app_plugin/ios_shell
   - third_party/flex_tabs
+  - third_party/zmodem
   - app_lib/editor
   - app_bloc/editor
   - app_lib/log_models
@@ -122,6 +123,7 @@ dependencies:
   android_shell: any
   ios_shell: any
   flex_tabs: any
+  zmodem: any
   flutter:
     sdk: flutter
 

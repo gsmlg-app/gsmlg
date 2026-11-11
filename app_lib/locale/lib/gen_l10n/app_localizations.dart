@@ -3162,6 +3162,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting for plugin support (gsmlg-app/secrethub_agent#1)'**
   String get secrethubPendingPlugin;
+
+  /// Tab switcher section label for tabs not in any group.
+  ///
+  /// In en, this message translates to:
+  /// **'Ungrouped'**
+  String get tabGroupUngrouped;
+
+  /// Tab card menu item: submenu listing groups to move the tab into.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to group'**
+  String get tabGroupMoveTo;
+
+  /// Tab card menu item: create a new group containing this tab.
+  ///
+  /// In en, this message translates to:
+  /// **'New group…'**
+  String get tabGroupNew;
+
+  /// Tab card menu item: remove the tab from its group.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from group'**
+  String get tabGroupRemove;
+
+  /// Group header menu item and dialog title for renaming a group.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename group…'**
+  String get tabGroupRename;
+
+  /// Group header menu item that closes every tab in the group.
+  ///
+  /// In en, this message translates to:
+  /// **'Close group'**
+  String get tabGroupClose;
+
+  /// Hint text for the group name input.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get tabGroupNameHint;
+
+  /// Tab card menu item for renaming the tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename…'**
+  String get tabRename;
+
+  /// Title of the confirmation shown before closing a group with running programs.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Group?'**
+  String get tabGroupCloseConfirmTitle;
+
+  /// Shown before closing a tab group whose tabs have foreground programs running.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 tab in this group has a running program:} other{{count} tabs in this group have running programs:}}\n{titles}\n\nClosing the group will terminate them.'**
+  String tabGroupCloseConfirmMessage(int count, String titles);
+
+  /// Settings tile title for ZMODEM (sz) download options.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads (sz)'**
+  String get zmodemDownloads;
+
+  /// Download mode: save into the download folder without asking.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to folder'**
+  String get zmodemDownloadModeFolder;
+
+  /// Download mode: ask for a folder each time.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask where to save'**
+  String get zmodemDownloadModeAsk;
+
+  /// Settings tile title for the sz download folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Download folder'**
+  String get zmodemDownloadFolder;
+
+  /// Shown when the download folder is the system Downloads folder.
+  ///
+  /// In en, this message translates to:
+  /// **'System Downloads'**
+  String get zmodemSystemDownloads;
+
+  /// Button that opens a folder chooser for the download folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose…'**
+  String get zmodemChooseFolder;
+
+  /// Button that resets the download folder to the system Downloads folder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get zmodemReset;
+
+  /// Button that cancels a running file transfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get zmodemCancel;
+
+  /// Snackbar after a single file was downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to {path}'**
+  String zmodemSavedTo(String path);
+
+  /// Snackbar after several files were downloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Saved 1 file to {folder}} other{Saved {count} files to {folder}}}'**
+  String zmodemSavedFiles(int count, String folder);
+
+  /// Snackbar after files were uploaded with rz.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Uploaded 1 file} other{Uploaded {count} files}}'**
+  String zmodemUploaded(int count);
+
+  /// Snackbar when rz declined uploaded files because they already exist.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{name} already exists on the remote and was skipped (run rz -y to overwrite)} other{{count} files already exist on the remote and were skipped (run rz -y to overwrite)}}'**
+  String zmodemSkippedExisting(int count, String name);
+
+  /// Snackbar after a file transfer was cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer cancelled'**
+  String get zmodemCancelled;
+
+  /// Snackbar after a file transfer failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer failed: {reason}'**
+  String zmodemFailed(String reason);
+
+  /// Snackbar action that reveals the downloaded file.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in Finder'**
+  String get zmodemShowInFinder;
+
+  /// Transfer progress: which file of how many.
+  ///
+  /// In en, this message translates to:
+  /// **'{index} of {count}'**
+  String zmodemFileOf(int index, int count);
+
+  /// Tab switcher select-mode button that groups the selected tabs.
+  ///
+  /// In en, this message translates to:
+  /// **'Group selected tabs'**
+  String get tabGroupSelected;
 }
 
 class _AppLocalizationsDelegate

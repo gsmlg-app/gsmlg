@@ -1626,4 +1626,125 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get secrethubPendingPlugin =>
       'Waiting for plugin support (gsmlg-app/secrethub_agent#1)';
+
+  @override
+  String get tabGroupUngrouped => 'Ungrouped';
+
+  @override
+  String get tabGroupMoveTo => 'Move to group';
+
+  @override
+  String get tabGroupNew => 'New group…';
+
+  @override
+  String get tabGroupRemove => 'Remove from group';
+
+  @override
+  String get tabGroupRename => 'Rename group…';
+
+  @override
+  String get tabGroupClose => 'Close group';
+
+  @override
+  String get tabGroupNameHint => 'Group name';
+
+  @override
+  String get tabRename => 'Rename…';
+
+  @override
+  String get tabGroupCloseConfirmTitle => 'Close Group?';
+
+  @override
+  String tabGroupCloseConfirmMessage(int count, String titles) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tabs in this group have running programs:',
+      one: '1 tab in this group has a running program:',
+    );
+    return '$_temp0\n$titles\n\nClosing the group will terminate them.';
+  }
+
+  @override
+  String get zmodemDownloads => 'Downloads (sz)';
+
+  @override
+  String get zmodemDownloadModeFolder => 'Save to folder';
+
+  @override
+  String get zmodemDownloadModeAsk => 'Ask where to save';
+
+  @override
+  String get zmodemDownloadFolder => 'Download folder';
+
+  @override
+  String get zmodemSystemDownloads => 'System Downloads';
+
+  @override
+  String get zmodemChooseFolder => 'Choose…';
+
+  @override
+  String get zmodemReset => 'Reset';
+
+  @override
+  String get zmodemCancel => 'Cancel';
+
+  @override
+  String zmodemSavedTo(String path) {
+    return 'Saved to $path';
+  }
+
+  @override
+  String zmodemSavedFiles(int count, String folder) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Saved $count files to $folder',
+      one: 'Saved 1 file to $folder',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String zmodemUploaded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Uploaded $count files',
+      one: 'Uploaded 1 file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String zmodemSkippedExisting(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count files already exist on the remote and were skipped (run rz -y to overwrite)',
+      one:
+          '$name already exists on the remote and was skipped (run rz -y to overwrite)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get zmodemCancelled => 'Transfer cancelled';
+
+  @override
+  String zmodemFailed(String reason) {
+    return 'Transfer failed: $reason';
+  }
+
+  @override
+  String get zmodemShowInFinder => 'Show in Finder';
+
+  @override
+  String zmodemFileOf(int index, int count) {
+    return '$index of $count';
+  }
+
+  @override
+  String get tabGroupSelected => 'Group selected tabs';
 }

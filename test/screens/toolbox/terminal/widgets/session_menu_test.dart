@@ -129,7 +129,7 @@ void main() {
 
         expect(find.text('Open a terminal on this device'), findsOneWidget);
         expect(find.text('Connect to a remote server'), findsOneWidget);
-        expect(find.text('Browse remote files (coming soon)'), findsOneWidget);
+        expect(find.textContaining('coming soon'), findsNothing);
       });
 
       testWidgets('shows correct icons in menu', (WidgetTester tester) async {
@@ -175,18 +175,18 @@ void main() {
         expect(sftpSessionCalled, isFalse);
       });
 
-      testWidgets('SFTP option is disabled', (WidgetTester tester) async {
+      testWidgets('calls onNewSftpSession when SFTP selected', (
+        WidgetTester tester,
+      ) async {
         await tester.pumpWidget(buildTestWidget());
 
         await tester.tap(find.byIcon(Icons.add));
         await tester.pumpAndSettle();
 
-        // Tap on SFTP - since it's disabled, callback should not be called
         await tester.tap(find.text('SFTP Server'));
         await tester.pumpAndSettle();
 
-        // SFTP is disabled so callback not called
-        expect(sftpSessionCalled, isFalse);
+        expect(sftpSessionCalled, isTrue);
       });
 
       testWidgets('menu closes after selection', (WidgetTester tester) async {

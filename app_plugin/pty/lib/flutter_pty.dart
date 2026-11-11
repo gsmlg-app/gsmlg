@@ -195,6 +195,20 @@ class Pty {
     return group > 0 ? group : null;
   }
 
+  /// The current working directory of the spawned process (typically the
+  /// shell), read from the operating system. Null when unknown (Windows) or
+  /// the process has exited.
+  String? get currentWorkingDirectory {
+    if (_handle == nullptr || _closeFuture != null) return null;
+    return using((arena) {
+      const size = 4096;
+      final buffer = arena<Char>(size);
+      final length = _bindings.pty_working_directory(_handle, buffer, size);
+      if (length <= 0) return null;
+      return buffer.cast<Utf8>().toDartString(length: length);
+    });
+  }
+
   /// Whether a program other than the spawned process (typically the shell)
   /// is running in the foreground, e.g. `vim`, `ssh` or a long build.
   bool get hasForegroundProcess {

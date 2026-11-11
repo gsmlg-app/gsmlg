@@ -469,6 +469,29 @@ class FlutterPtyBindings {
   late final _pty_foreground_pgid = _pty_foreground_pgidPtr
       .asFunction<int Function(ffi.Pointer<PtyHandle>)>();
 
+  /// Writes the current working directory of the spawned process (typically
+  /// the shell) into [buffer] as a NUL-terminated string. Returns the path
+  /// length, or -1 if it is unknown, the child has exited, or [size] is too
+  /// small.
+  int pty_working_directory(
+    ffi.Pointer<PtyHandle> handle,
+    ffi.Pointer<ffi.Char> buffer,
+    int size,
+  ) {
+    return _pty_working_directory(
+      handle,
+      buffer,
+      size,
+    );
+  }
+
+  late final _pty_working_directoryPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Int Function(ffi.Pointer<PtyHandle>, ffi.Pointer<ffi.Char>,
+              ffi.Int)>>('pty_working_directory');
+  late final _pty_working_directory = _pty_working_directoryPtr.asFunction<
+      int Function(ffi.Pointer<PtyHandle>, ffi.Pointer<ffi.Char>, int)>();
+
   void pty_destroy(
     ffi.Pointer<PtyHandle> handle,
   ) {

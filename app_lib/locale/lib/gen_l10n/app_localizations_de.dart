@@ -1627,4 +1627,125 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get secrethubPendingPlugin =>
       'Waiting for plugin support (gsmlg-app/secrethub_agent#1)';
+
+  @override
+  String get tabGroupUngrouped => 'Ohne Gruppe';
+
+  @override
+  String get tabGroupMoveTo => 'In Gruppe verschieben';
+
+  @override
+  String get tabGroupNew => 'Neue Gruppe…';
+
+  @override
+  String get tabGroupRemove => 'Aus Gruppe entfernen';
+
+  @override
+  String get tabGroupRename => 'Gruppe umbenennen…';
+
+  @override
+  String get tabGroupClose => 'Gruppe schließen';
+
+  @override
+  String get tabGroupNameHint => 'Gruppenname';
+
+  @override
+  String get tabRename => 'Umbenennen…';
+
+  @override
+  String get tabGroupCloseConfirmTitle => 'Gruppe schließen?';
+
+  @override
+  String tabGroupCloseConfirmMessage(int count, String titles) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'In $count Tabs dieser Gruppe laufen Programme:',
+      one: 'In 1 Tab dieser Gruppe läuft ein Programm:',
+    );
+    return '$_temp0\n$titles\n\nBeim Schließen der Gruppe werden sie beendet.';
+  }
+
+  @override
+  String get zmodemDownloads => 'Downloads (sz)';
+
+  @override
+  String get zmodemDownloadModeFolder => 'In Ordner speichern';
+
+  @override
+  String get zmodemDownloadModeAsk => 'Speicherort jedes Mal erfragen';
+
+  @override
+  String get zmodemDownloadFolder => 'Download-Ordner';
+
+  @override
+  String get zmodemSystemDownloads => 'System-Downloads';
+
+  @override
+  String get zmodemChooseFolder => 'Auswählen…';
+
+  @override
+  String get zmodemReset => 'Zurücksetzen';
+
+  @override
+  String get zmodemCancel => 'Abbrechen';
+
+  @override
+  String zmodemSavedTo(String path) {
+    return 'Gespeichert unter $path';
+  }
+
+  @override
+  String zmodemSavedFiles(int count, String folder) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Dateien in $folder gespeichert',
+      one: '1 Datei in $folder gespeichert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String zmodemUploaded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Dateien hochgeladen',
+      one: '1 Datei hochgeladen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String zmodemSkippedExisting(int count, String name) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count Dateien existieren bereits auf dem Zielsystem und wurden übersprungen (rz -y zum Überschreiben)',
+      one:
+          '$name existiert bereits auf dem Zielsystem und wurde übersprungen (rz -y zum Überschreiben)',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get zmodemCancelled => 'Übertragung abgebrochen';
+
+  @override
+  String zmodemFailed(String reason) {
+    return 'Übertragung fehlgeschlagen: $reason';
+  }
+
+  @override
+  String get zmodemShowInFinder => 'Im Finder zeigen';
+
+  @override
+  String zmodemFileOf(int index, int count) {
+    return '$index von $count';
+  }
+
+  @override
+  String get tabGroupSelected => 'Ausgewählte Tabs gruppieren';
 }

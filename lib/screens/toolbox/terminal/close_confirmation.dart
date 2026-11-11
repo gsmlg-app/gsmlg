@@ -59,6 +59,37 @@ Future<bool> confirmCloseTab(BuildContext context, TabItem tab) async {
   return confirmed ?? false;
 }
 
+/// Asks once before closing a tab group when any of its [tabs] is busy.
+///
+/// Returns true when every tab in the group may close.
+Future<bool> confirmCloseGroup(BuildContext context, List<TabItem> tabs) async {
+  final busyTabs = await findBusyTabs(tabs);
+  if (busyTabs.isEmpty || !context.mounted) return busyTabs.isEmpty;
+  final l10n = context.l10n;
+  final titles = busyTabs
+      .map((TabItem tab) => '• ${_tabTitle(tab)}')
+      .join('\n');
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) => AlertDialog(
+      title: Text(l10n.tabGroupCloseConfirmTitle),
+      content: Text(l10n.tabGroupCloseConfirmMessage(busyTabs.length, titles)),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          autofocus: true,
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(l10n.close),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
+}
+
 /// Asks before quitting while [busyTabs] have running programs.
 ///
 /// Returns true when the app may quit.

@@ -204,6 +204,27 @@ int main(int argc, char **argv) {
         assert(pty_foreground_pgid(handle) == -1);
         destroy(handle);
         assert_resources_released(before_fds, before_threads);
+    } else if (strcmp(argv[1], "working-directory") == 0) {
+        char *args[] = {"bash", "--noprofile", "--norc", "-i", NULL};
+        PtyHandle *handle = spawn("/bin/bash", args, false, "/usr");
+        assert(handle != NULL);
+        char path[4096];
+        assert(pty_working_directory(handle, path, sizeof path) > 0);
+        assert(strcmp(path, "/usr") == 0);
+        char command[] = "cd /usr/bin\n";
+        pty_write(handle, command, strlen(command));
+        for (int i = 0; i < 3000; i++) {
+            if (pty_working_directory(handle, path, sizeof path) > 0 &&
+                strcmp(path, "/usr/bin") == 0) break;
+            usleep(1000);
+        }
+        assert(strcmp(path, "/usr/bin") == 0);
+        assert(pty_working_directory(handle, path, 4) == -1);
+        terminate(handle, SIGKILL);
+        await_exits(1);
+        assert(pty_working_directory(handle, path, sizeof path) == -1);
+        destroy(handle);
+        assert_resources_released(before_fds, before_threads);
     } else if (strcmp(argv[1], "full-write") == 0) {
         char *args[] = {argv[0], "read-input", NULL};
         PtyHandle *handle = spawn(argv[0], args, false, NULL);

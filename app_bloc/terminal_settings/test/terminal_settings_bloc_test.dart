@@ -323,6 +323,124 @@ void main() {
     );
   });
 
+  group('download settings', () {
+    late MockVaultRepository mockVault;
+
+    setUp(() => mockVault = MockVaultRepository());
+
+    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
+      'Load defaults to saving into the system Downloads folder',
+      build: () => TerminalSettingsBloc(vault: mockVault),
+      act: (bloc) => bloc.add(const TerminalSettingsLoad()),
+      expect: () => [
+        isA<TerminalSettingsLoading>(),
+        isA<TerminalSettingsLoaded>()
+            .having(
+              (s) => s.downloadMode,
+              'downloadMode',
+              TerminalDownloadMode.saveToFolder,
+            )
+            .having((s) => s.downloadDirectory, 'downloadDirectory', isNull),
+      ],
+    );
+
+    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
+      'loads download mode and directory from vault',
+      build: () {
+        mockVault.seed({
+          'terminal_download_mode': 'ask',
+          'terminal_download_directory': '/Users/me/Transfers',
+        });
+        return TerminalSettingsBloc(vault: mockVault);
+      },
+      act: (bloc) => bloc.add(const TerminalSettingsLoad()),
+      expect: () => [
+        isA<TerminalSettingsLoading>(),
+        isA<TerminalSettingsLoaded>()
+            .having(
+              (s) => s.downloadMode,
+              'downloadMode',
+              TerminalDownloadMode.ask,
+            )
+            .having(
+              (s) => s.downloadDirectory,
+              'downloadDirectory',
+              '/Users/me/Transfers',
+            ),
+      ],
+    );
+
+    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
+      'UpdateDownloadMode persists terminal_download_mode',
+      build: () => TerminalSettingsBloc(vault: mockVault),
+      seed: () => const TerminalSettingsLoaded(),
+      act: (bloc) => bloc.add(
+        const TerminalSettingsUpdateDownloadMode(
+          downloadMode: TerminalDownloadMode.ask,
+        ),
+      ),
+      expect: () => [
+        isA<TerminalSettingsLoaded>().having(
+          (s) => s.downloadMode,
+          'downloadMode',
+          TerminalDownloadMode.ask,
+        ),
+      ],
+      verify: (_) async {
+        expect(await mockVault.read(key: 'terminal_download_mode'), 'ask');
+      },
+    );
+
+    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
+      'UpdateDownloadDirectory persists the folder',
+      build: () => TerminalSettingsBloc(vault: mockVault),
+      seed: () => const TerminalSettingsLoaded(),
+      act: (bloc) => bloc.add(
+        const TerminalSettingsUpdateDownloadDirectory(
+          downloadDirectory: '/tmp/dl',
+        ),
+      ),
+      expect: () => [
+        isA<TerminalSettingsLoaded>().having(
+          (s) => s.downloadDirectory,
+          'downloadDirectory',
+          '/tmp/dl',
+        ),
+      ],
+      verify: (_) async {
+        expect(
+          await mockVault.read(key: 'terminal_download_directory'),
+          '/tmp/dl',
+        );
+      },
+    );
+
+    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
+      'UpdateDownloadDirectory(null) deletes the key',
+      build: () {
+        mockVault.seed({'terminal_download_directory': '/tmp/dl'});
+        return TerminalSettingsBloc(vault: mockVault);
+      },
+      seed: () => const TerminalSettingsLoaded(downloadDirectory: '/tmp/dl'),
+      act: (bloc) => bloc.add(
+        const TerminalSettingsUpdateDownloadDirectory(downloadDirectory: null),
+      ),
+      expect: () => [
+        isA<TerminalSettingsLoaded>().having(
+          (s) => s.downloadDirectory,
+          'downloadDirectory',
+          isNull,
+        ),
+      ],
+      verify: (_) async {
+        expect(
+          await mockVault.containsKey(key: 'terminal_download_directory'),
+          isFalse,
+        );
+      },
+    );
+  });
+
   group('TerminalSettingsState', () {
     test('TerminalSettingsLoaded has default values', () {
       const state = TerminalSettingsLoaded();

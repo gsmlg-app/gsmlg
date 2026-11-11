@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:app_locale/app_locale.dart';
@@ -44,6 +45,18 @@ class SettingsSectionTerminal extends AbstractSettingsSection {
 
         final isMacOS =
             !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
+
+        final isDesktop = !kIsWeb &&
+            (defaultTargetPlatform == TargetPlatform.macOS ||
+                defaultTargetPlatform == TargetPlatform.linux ||
+                defaultTargetPlatform == TargetPlatform.windows);
+
+        final downloadMode = state is TerminalSettingsLoaded
+            ? state.downloadMode
+            : TerminalDownloadMode.saveToFolder;
+
+        final downloadDirectory =
+            state is TerminalSettingsLoaded ? state.downloadDirectory : null;
 
         return SettingsSection(
           title: const Text('Terminal'),
@@ -98,6 +111,8 @@ class SettingsSectionTerminal extends AbstractSettingsSection {
               },
             ),
             if (isMacOS) _optionKeyBehaviorTile(context, optionKeyBehavior),
+            if (isDesktop) _downloadModeTile(context, downloadMode),
+            if (isDesktop) _downloadDirectoryTile(context, downloadDirectory),
           ],
         );
       },
@@ -135,6 +150,77 @@ SettingsTile _optionKeyBehaviorTile(
               );
         }
       },
+    ),
+  );
+}
+
+SettingsTile _downloadModeTile(
+  BuildContext context,
+  TerminalDownloadMode value,
+) {
+  return SettingsTile(
+    leading: const Icon(Icons.download),
+    title: Text(context.l10n.zmodemDownloads),
+    trailing: DropdownButton<TerminalDownloadMode>(
+      key: const Key('downloadModeDropdown'),
+      value: value,
+      underline: const SizedBox(),
+      items: [
+        DropdownMenuItem<TerminalDownloadMode>(
+          value: TerminalDownloadMode.saveToFolder,
+          child: Text(context.l10n.zmodemDownloadModeFolder),
+        ),
+        DropdownMenuItem<TerminalDownloadMode>(
+          value: TerminalDownloadMode.ask,
+          child: Text(context.l10n.zmodemDownloadModeAsk),
+        ),
+      ],
+      onChanged: (TerminalDownloadMode? mode) {
+        if (mode != null) {
+          context.read<TerminalSettingsBloc>().add(
+                TerminalSettingsUpdateDownloadMode(downloadMode: mode),
+              );
+        }
+      },
+    ),
+  );
+}
+
+SettingsTile _downloadDirectoryTile(BuildContext context, String? directory) {
+  final bloc = context.read<TerminalSettingsBloc>();
+  return SettingsTile(
+    key: const Key('downloadDirectoryTile'),
+    leading: const Icon(Icons.folder_open),
+    title: Text(context.l10n.zmodemDownloadFolder),
+    description: Text(directory ?? context.l10n.zmodemSystemDownloads),
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextButton(
+          onPressed: () async {
+            final chosen = await FilePicker.getDirectoryPath(
+              initialDirectory: directory,
+            );
+            if (chosen != null) {
+              bloc.add(
+                TerminalSettingsUpdateDownloadDirectory(
+                  downloadDirectory: chosen,
+                ),
+              );
+            }
+          },
+          child: Text(context.l10n.zmodemChooseFolder),
+        ),
+        if (directory != null)
+          TextButton(
+            onPressed: () => bloc.add(
+              const TerminalSettingsUpdateDownloadDirectory(
+                downloadDirectory: null,
+              ),
+            ),
+            child: Text(context.l10n.zmodemReset),
+          ),
+      ],
     ),
   );
 }

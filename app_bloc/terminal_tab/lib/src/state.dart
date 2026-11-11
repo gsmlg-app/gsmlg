@@ -26,6 +26,13 @@ final class TerminalTabLoaded extends TerminalTabState {
   final bool isMounted;
   final bool isFullscreen; // Hides navigation shell when true
   final int version; // Force state change detection on tab operations
+  final TabGrouping _grouping;
+
+  /// Group membership for the open tabs.
+  ///
+  /// Tabs can close outside this bloc (the flex_tabs close button disposes
+  /// them directly), so membership is pruned against [tabs] on every read.
+  TabGrouping get grouping => _grouping.retainTabs(tabs.children);
 
   const TerminalTabLoaded({
     required this.tabs,
@@ -33,11 +40,12 @@ final class TerminalTabLoaded extends TerminalTabState {
     required this.isMounted,
     this.isFullscreen = false,
     this.version = 0,
-  });
+    TabGrouping grouping = const TabGrouping(),
+  }) : _grouping = grouping;
 
   @override
   List<Object?> get props =>
-      [tabs, tabsDocument, isMounted, isFullscreen, version];
+      [tabs, tabsDocument, isMounted, isFullscreen, version, grouping];
 
   /// Returns the currently active TabItem, if any.
   TabItem? get activeTab => tabs.activeTab;
@@ -54,6 +62,7 @@ final class TerminalTabLoaded extends TerminalTabState {
     TabsDocument? tabsDocument,
     bool? isMounted,
     bool? isFullscreen,
+    TabGrouping? grouping,
     bool incrementVersion = false,
   }) {
     return TerminalTabLoaded(
@@ -62,6 +71,7 @@ final class TerminalTabLoaded extends TerminalTabState {
       isMounted: isMounted ?? this.isMounted,
       isFullscreen: isFullscreen ?? this.isFullscreen,
       version: incrementVersion ? version + 1 : version,
+      grouping: grouping ?? this.grouping,
     );
   }
 }

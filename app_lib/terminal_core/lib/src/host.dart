@@ -60,3 +60,13 @@ abstract interface class ForegroundProcessAware {
   /// currently running in the foreground of the session.
   Future<bool> hasForegroundProcess();
 }
+
+/// Optional capability of an [ExecutionSession] that can report the shell's
+/// current working directory from the operating system.
+///
+/// Unlike directory tracking through terminal escape sequences, this does
+/// not depend on the user's shell configuration.
+abstract interface class WorkingDirectoryAware {
+  /// The shell's current working directory, or null when unknown.
+  Future<String?> currentWorkingDirectory();
+}

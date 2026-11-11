@@ -26,6 +26,10 @@ class TerminalSettingsBloc
   /// Key for the macOS Option key behavior.
   static const _optionKeyBehaviorKey = 'terminal_option_key_behavior';
 
+  /// Keys for where `sz` downloads are saved.
+  static const _downloadModeKey = 'terminal_download_mode';
+  static const _downloadDirectoryKey = 'terminal_download_directory';
+
   final VaultRepository _vault;
 
   TerminalSettingsBloc({required VaultRepository vault})
@@ -38,6 +42,8 @@ class TerminalSettingsBloc
     on<TerminalSettingsUpdateMaxOpenShells>(_onUpdateMaxOpenShells);
     on<TerminalSettingsUpdateRestoreTabs>(_onUpdateRestoreTabs);
     on<TerminalSettingsUpdateOptionKeyBehavior>(_onUpdateOptionKeyBehavior);
+    on<TerminalSettingsUpdateDownloadMode>(_onUpdateDownloadMode);
+    on<TerminalSettingsUpdateDownloadDirectory>(_onUpdateDownloadDirectory);
   }
 
   Future<void> _onLoad(
@@ -68,6 +74,12 @@ class TerminalSettingsBloc
             value.name == allSecrets[_optionKeyBehaviorKey],
         orElse: () => kTerminalDefaultOptionKeyBehavior,
       );
+      final downloadMode = TerminalDownloadMode.values.firstWhere(
+        (TerminalDownloadMode value) =>
+            value.name == allSecrets[_downloadModeKey],
+        orElse: () => TerminalDownloadMode.saveToFolder,
+      );
+      final downloadDirectory = allSecrets[_downloadDirectoryKey];
 
       emit(
         TerminalSettingsLoaded(
@@ -75,6 +87,11 @@ class TerminalSettingsBloc
           maxOpenShells: maxOpenShells,
           restoreTerminalTabs: restoreTerminalTabs,
           optionKeyBehavior: optionKeyBehavior,
+          downloadMode: downloadMode,
+          downloadDirectory:
+              downloadDirectory == null || downloadDirectory.isEmpty
+              ? null
+              : downloadDirectory,
         ),
       );
     } catch (e) {
@@ -186,6 +203,49 @@ class TerminalSettingsBloc
         key: _optionKeyBehaviorKey,
         value: event.optionKeyBehavior.name,
       );
+    } catch (_) {
+      // Persistence failure; setting still applies for current session.
+    }
+  }
+
+  Future<void> _onUpdateDownloadMode(
+    TerminalSettingsUpdateDownloadMode event,
+    Emitter<TerminalSettingsState> emit,
+  ) async {
+    if (state is! TerminalSettingsLoaded) return;
+
+    final currentState = state as TerminalSettingsLoaded;
+
+    emit(currentState.copyWith(downloadMode: event.downloadMode));
+    try {
+      await _vault.write(key: _downloadModeKey, value: event.downloadMode.name);
+    } catch (_) {
+      // Persistence failure; setting still applies for current session.
+    }
+  }
+
+  Future<void> _onUpdateDownloadDirectory(
+    TerminalSettingsUpdateDownloadDirectory event,
+    Emitter<TerminalSettingsState> emit,
+  ) async {
+    if (state is! TerminalSettingsLoaded) return;
+
+    final currentState = state as TerminalSettingsLoaded;
+    final directory = event.downloadDirectory?.trim();
+    final cleared = directory == null || directory.isEmpty;
+
+    emit(
+      currentState.copyWith(
+        downloadDirectory: cleared ? null : directory,
+        clearDownloadDirectory: cleared,
+      ),
+    );
+    try {
+      if (cleared) {
+        await _vault.delete(key: _downloadDirectoryKey);
+      } else {
+        await _vault.write(key: _downloadDirectoryKey, value: directory);
+      }
     } catch (_) {
       // Persistence failure; setting still applies for current session.
     }

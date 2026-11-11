@@ -54,6 +54,29 @@ Future<void> main() async {
   check(await stubborn.exitCode == -ProcessSignal.sigkill.signalNumber,
       'Close did not escalate to SIGKILL');
 
+  final cwdShell = Pty.start(
+    '/bin/bash',
+    arguments: ['--noprofile', '--norc', '-i'],
+    workingDirectory: '/usr',
+  );
+  cwdShell.output.listen((_) {});
+  try {
+    check(cwdShell.currentWorkingDirectory == '/usr',
+        'Expected the shell to start in /usr');
+    cwdShell.write(utf8.encode('cd /usr/bin\n'));
+    final cwdDeadline = DateTime.now().add(const Duration(seconds: 3));
+    while (cwdShell.currentWorkingDirectory != '/usr/bin') {
+      if (DateTime.now().isAfter(cwdDeadline)) {
+        throw TimeoutException('Working directory did not follow cd');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  } finally {
+    await cwdShell.close();
+  }
+  check(cwdShell.currentWorkingDirectory == null,
+      'Expected no working directory after close');
+
   for (final prefix in ['', 'true | ']) {
     final interactive = Pty.start(
       '/bin/bash',

@@ -441,7 +441,8 @@ void main() {
         await Future.delayed(Duration.zero);
         final state = bloc.state as TerminalTabLoaded;
         expect(state.props.length,
-            5); // tabs, tabsDocument, isMounted, isFullscreen, version
+            6); // tabs, tabsDocument, isMounted, isFullscreen, version, grouping
+        expect(state.props, contains(state.grouping));
       });
 
       test('TerminalTabLoaded copyWith preserves fields', () async {
@@ -1017,6 +1018,282 @@ void main() {
         bloc.add(TerminalTabToggleFullscreen());
         await Future.delayed(Duration.zero);
         expect((bloc.state as TerminalTabLoaded).isFullscreen, false);
+      });
+    });
+
+    group('groups', () {
+      late TerminalTabBloc groupBloc;
+      var nextId = 0;
+
+      String id(TabItem tab) => tab.hashCode.toString();
+
+      TerminalTabLoaded loaded() => groupBloc.state as TerminalTabLoaded;
+
+      Future<void> settle() => Future<void>.delayed(Duration.zero);
+
+      Future<List<TestTabItem>> openTabs(int count) async {
+        groupBloc.add(TerminalTabStart());
+        await settle();
+        final tabs = <TestTabItem>[
+          for (var i = 0; i < count; i++) TestTabItem('t${i + 1}'),
+        ];
+        for (final tab in tabs) {
+          groupBloc.add(TerminalTabOpenTab(tab));
+        }
+        await settle();
+        return tabs;
+      }
+
+      setUp(() {
+        nextId = 0;
+        groupBloc = TerminalTabBloc(groupIdGenerator: () => 'g${nextId++}');
+      });
+
+      tearDown(() => groupBloc.close());
+
+      test('CreateGroup assigns the tab and emits', () async {
+        final tabs = await openTabs(1);
+        final version = loaded().version;
+
+        groupBloc.add(TerminalTabCreateGroup(id(tabs[0]), 'web'));
+        await settle();
+
+        expect(loaded().grouping.groupOf(tabs[0])!.name, 'web');
+        expect(loaded().version, greaterThan(version));
+      });
+
+      test('new tabs are ungrouped even when the active tab is grouped',
+          () async {
+        final tabs = await openTabs(1);
+        groupBloc.add(TerminalTabCreateGroup(id(tabs[0]), 'web'));
+        await settle();
+
+        final tab2 = TestTabItem('t2');
+        groupBloc.add(TerminalTabOpenTab(tab2));
+        await settle();
+
+        expect(loaded().grouping.groupIdOf(tab2), isNull);
+      });
+
+      test("MoveToGroup places the tab after the group's last member",
+          () async {
+        final t = await openTabs(4);
+        groupBloc.add(TerminalTabCreateGroup(id(t[0]), 'web'));
+        await settle();
+        groupBloc.add(TerminalTabMoveToGroup(id(t[1]), 'g0'));
+        await settle();
+        expect(loaded().allTabs, <TabItem>[t[0], t[1], t[2], t[3]]);
+
+        groupBloc.add(TerminalTabMoveToGroup(id(t[3]), 'g0'));
+        await settle();
+
+        expect(loaded().allTabs, <TabItem>[t[0], t[1], t[3], t[2]]);
+        expect(loaded().grouping.groupIdOf(t[3]), 'g0');
+      });
+
+      test("MoveToGroup moves a tab forward past the group's last member",
+          () async {
+        final t = await openTabs(3);
+        groupBloc.add(TerminalTabCreateGroup(id(t[0]), 'one'));
+        groupBloc.add(TerminalTabCreateGroup(id(t[2]), 'two'));
+        await settle();
+
+        groupBloc.add(TerminalTabMoveToGroup(id(t[0]), 'g1'));
+        await settle();
+
+        expect(loaded().grouping.groupIdOf(t[0]), 'g1');
+        expect(loaded().grouping.groups.map((TabGroup g) => g.id), ['g1']);
+        expect(loaded().allTabs, <TabItem>[t[1], t[2], t[0]]);
+      });
+
+      test('MoveTabBefore moves only the dragged tab and adopts the group',
+          () async {
+        final t = await openTabs(3);
+        groupBloc.add(TerminalTabCreateGroup(id(t[2]), 'web'));
+        await settle();
+
+        groupBloc.add(TerminalTabMoveTabBefore(id(t[0]), id(t[2])));
+        await settle();
+
+        expect(loaded().allTabs, <TabItem>[t[1], t[0], t[2]]);
+        expect(loaded().grouping.groupIdOf(t[0]), 'g0');
+      });
+
+      test('MoveTabBefore a later tab moves it backwards', () async {
+        final t = await openTabs(4);
+
+        groupBloc.add(TerminalTabMoveTabBefore(id(t[3]), id(t[1])));
+        await settle();
+
+        expect(loaded().allTabs, <TabItem>[t[0], t[3], t[1], t[2]]);
+      });
+
+      test('MoveTabBefore onto an ungrouped target ungroups', () async {
+        final t = await openTabs(2);
+        groupBloc.add(TerminalTabCreateGroup(id(t[0]), 'web'));
+        await settle();
+
+        groupBloc.add(TerminalTabMoveTabBefore(id(t[0]), id(t[1])));
+        await settle();
+
+        expect(loaded().grouping.groupIdOf(t[0]), isNull);
+        expect(loaded().grouping.groups, isEmpty);
+      });
+
+      test('closing via CloseSession deletes the emptied group', () async {
+        final t = await openTabs(2);
+        groupBloc.add(TerminalTabCreateGroup(id(t[0]), 'web'));
+        await settle();
+
+        groupBloc.add(TerminalTabCloseSession(id(t[0])));
+        await settle();
+
+        expect(loaded().grouping.groups, isEmpty);
+        expect(loaded().grouping.membership, isEmpty);
+      });
+
+      test('closing a tab outside the bloc is pruned', () async {
+        final t = await openTabs(2);
+        groupBloc.add(TerminalTabCreateGroup(id(t[0]), 'web'));
+        await settle();
+
+        t[0].dispose();
+        await settle();
+
+        expect(loaded().grouping.groups, isEmpty);
+        expect(loaded().grouping.membership, isEmpty);
+      });
+
+      test('RestoreGroups then OpenTab(groupId:) restores membership',
+          () async {
+        groupBloc.add(TerminalTabStart());
+        await settle();
+        groupBloc.add(
+          TerminalTabRestoreGroups(
+            const <TabGroup>[TabGroup(id: 'saved', name: 'web')],
+            ungroupedCollapsed: true,
+          ),
+        );
+        final grouped = TestTabItem('a');
+        final unknown = TestTabItem('b');
+        groupBloc.add(TerminalTabOpenTab(grouped, groupId: 'saved'));
+        groupBloc.add(TerminalTabOpenTab(unknown, groupId: 'missing'));
+        await settle();
+
+        expect(loaded().grouping.groupOf(grouped)!.name, 'web');
+        expect(loaded().grouping.groupIdOf(unknown), isNull);
+        expect(loaded().grouping.ungroupedCollapsed, isTrue);
+      });
+
+      test('restoring several groups keeps all of them', () async {
+        groupBloc.add(TerminalTabStart());
+        await settle();
+        groupBloc.add(
+          TerminalTabRestoreGroups(const <TabGroup>[
+            TabGroup(id: 'a', name: 'A'),
+            TabGroup(id: 'b', name: 'B'),
+            TabGroup(id: 'ghost', name: 'Ghost'),
+          ]),
+        );
+        final t1 = TestTabItem('1');
+        final t2 = TestTabItem('2');
+        final t3 = TestTabItem('3');
+        groupBloc.add(TerminalTabOpenTab(t1, groupId: 'a'));
+        groupBloc.add(TerminalTabOpenTab(t2, groupId: 'b'));
+        groupBloc.add(TerminalTabOpenTab(t3, groupId: 'a'));
+        groupBloc.add(TerminalTabFinishGroupRestore());
+        await settle();
+
+        final grouping = loaded().grouping;
+        expect(grouping.groups.map((TabGroup g) => g.id), ['a', 'b']);
+        expect(grouping.groupIdOf(t1), 'a');
+        expect(grouping.groupIdOf(t2), 'b');
+        expect(grouping.groupIdOf(t3), 'a');
+      });
+
+      test('RenameGroup and ToggleGroupCollapsed update grouping', () async {
+        final t = await openTabs(1);
+        groupBloc.add(TerminalTabCreateGroup(id(t[0]), 'web'));
+        groupBloc.add(TerminalTabRenameGroup('g0', 'api'));
+        groupBloc.add(TerminalTabToggleGroupCollapsed('g0'));
+        groupBloc.add(TerminalTabToggleGroupCollapsed(null));
+        await settle();
+
+        final group = loaded().grouping.groupById('g0')!;
+        expect(group.name, 'api');
+        expect(group.collapsed, isTrue);
+        expect(loaded().grouping.ungroupedCollapsed, isTrue);
+      });
+
+      test('Ungroup removes the tab from its group', () async {
+        final t = await openTabs(1);
+        groupBloc.add(TerminalTabCreateGroup(id(t[0]), 'web'));
+        groupBloc.add(TerminalTabUngroup(id(t[0])));
+        await settle();
+
+        expect(loaded().grouping.groupIdOf(t[0]), isNull);
+      });
+
+      test('MoveSessionsToGroup moves several tabs keeping their order',
+          () async {
+        final t = await openTabs(5);
+        groupBloc.add(TerminalTabCreateGroup(id(t[1]), 'web'));
+        await settle();
+
+        groupBloc.add(
+          TerminalTabMoveSessionsToGroup([id(t[4]), id(t[0])], 'g0'),
+        );
+        await settle();
+
+        final grouping = loaded().grouping;
+        expect(grouping.groupIdOf(t[0]), 'g0');
+        expect(grouping.groupIdOf(t[4]), 'g0');
+        expect(loaded().allTabs, <TabItem>[t[1], t[0], t[4], t[2], t[3]]);
+      });
+
+      test('CreateGroupWithSessions puts every tab in the new group', () async {
+        final t = await openTabs(3);
+
+        groupBloc.add(
+          TerminalTabCreateGroupWithSessions([id(t[0]), id(t[2])], 'api'),
+        );
+        await settle();
+
+        final grouping = loaded().grouping;
+        expect(grouping.groups.single.name, 'api');
+        expect(grouping.groupIdOf(t[0]), 'g0');
+        expect(grouping.groupIdOf(t[2]), 'g0');
+        expect(grouping.groupIdOf(t[1]), isNull);
+        expect(loaded().allTabs, <TabItem>[t[0], t[2], t[1]]);
+      });
+
+      test('UngroupSessions removes several tabs and drops empty groups',
+          () async {
+        final t = await openTabs(3);
+        groupBloc.add(
+          TerminalTabCreateGroupWithSessions([id(t[0]), id(t[1])], 'api'),
+        );
+        await settle();
+
+        groupBloc.add(TerminalTabUngroupSessions([id(t[0]), id(t[1])]));
+        await settle();
+
+        expect(loaded().grouping.groups, isEmpty);
+        expect(loaded().grouping.membership, isEmpty);
+      });
+
+      test('GoToTab and NextTab follow global order with groups', () async {
+        final t = await openTabs(3);
+        groupBloc.add(TerminalTabCreateGroup(id(t[2]), 'web'));
+        await settle();
+
+        groupBloc.add(TerminalTabGoToTab(0));
+        await settle();
+        expect(loaded().activeTab, same(t[0]));
+
+        groupBloc.add(TerminalTabNextTab());
+        await settle();
+        expect(loaded().activeTab, same(t[1]));
       });
     });
   });

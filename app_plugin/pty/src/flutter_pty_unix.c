@@ -376,6 +376,34 @@ FFI_PLUGIN_EXPORT int pty_foreground_pgid(PtyHandle *handle)
     return group > 0 ? group : -1;
 }
 
+FFI_PLUGIN_EXPORT int pty_working_directory(PtyHandle *handle, char *buffer, int size)
+{
+    if (buffer == NULL || size <= 0) return -1;
+    pthread_mutex_lock(&handle->mutex);
+    pid_t pid = handle->exited || handle->terminating ? -1 : handle->pid;
+    pthread_mutex_unlock(&handle->mutex);
+    if (pid <= 0) return -1;
+#if defined(__APPLE__) && TARGET_OS_OSX
+    struct proc_vnodepathinfo info;
+    int read = proc_pidinfo(pid, PROC_PIDVNODEPATHINFO, 0, &info, sizeof info);
+    if (read != (int)sizeof info) return -1;
+    size_t length = strnlen(info.pvi_cdir.vip_path, sizeof info.pvi_cdir.vip_path);
+    if (length == 0 || length >= (size_t)size) return -1;
+    memcpy(buffer, info.pvi_cdir.vip_path, length);
+    buffer[length] = '\0';
+    return (int)length;
+#elif defined(__linux__)
+    char link[64];
+    snprintf(link, sizeof link, "/proc/%d/cwd", (int)pid);
+    ssize_t length = readlink(link, buffer, (size_t)size - 1);
+    if (length <= 0 || length >= size - 1) return -1;
+    buffer[length] = '\0';
+    return (int)length;
+#else
+    return -1;
+#endif
+}
+
 FFI_PLUGIN_EXPORT char *pty_error(void)
 {
     return error_message;

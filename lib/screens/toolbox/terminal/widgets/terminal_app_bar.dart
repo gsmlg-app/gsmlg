@@ -147,6 +147,7 @@ class SessionInfo {
     required this.name,
     this.onClose,
     this.isRunning = false,
+    this.groupId,
   });
 
   /// Unique identifier for the session
@@ -160,4 +161,7 @@ class SessionInfo {
 
   /// Whether this session has an active running process
   final bool isRunning;
+
+  /// Id of the tab group this session belongs to, or null when ungrouped.
+  final String? groupId;
 }

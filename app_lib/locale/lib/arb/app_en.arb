@@ -692,5 +692,160 @@
   "secrethubNativeUnavailable": "Not available",
   "secrethubConnect": "Connect to SecretHub",
   "secrethubFetch": "Fetch secrets",
-  "secrethubPendingPlugin": "Waiting for plugin support (gsmlg-app/secrethub_agent#1)"
+  "secrethubPendingPlugin": "Waiting for plugin support (gsmlg-app/secrethub_agent#1)",
+  "tabGroupUngrouped": "Ungrouped",
+  "@tabGroupUngrouped": {
+    "description": "Tab switcher section label for tabs not in any group."
+  },
+  "tabGroupMoveTo": "Move to group",
+  "@tabGroupMoveTo": {
+    "description": "Tab card menu item: submenu listing groups to move the tab into."
+  },
+  "tabGroupNew": "New group…",
+  "@tabGroupNew": {
+    "description": "Tab card menu item: create a new group containing this tab."
+  },
+  "tabGroupRemove": "Remove from group",
+  "@tabGroupRemove": {
+    "description": "Tab card menu item: remove the tab from its group."
+  },
+  "tabGroupRename": "Rename group…",
+  "@tabGroupRename": {
+    "description": "Group header menu item and dialog title for renaming a group."
+  },
+  "tabGroupClose": "Close group",
+  "@tabGroupClose": {
+    "description": "Group header menu item that closes every tab in the group."
+  },
+  "tabGroupNameHint": "Group name",
+  "@tabGroupNameHint": {
+    "description": "Hint text for the group name input."
+  },
+  "tabRename": "Rename…",
+  "@tabRename": {
+    "description": "Tab card menu item for renaming the tab."
+  },
+  "tabGroupCloseConfirmTitle": "Close Group?",
+  "@tabGroupCloseConfirmTitle": {
+    "description": "Title of the confirmation shown before closing a group with running programs."
+  },
+  "tabGroupCloseConfirmMessage": "{count, plural, =1{1 tab in this group has a running program:} other{{count} tabs in this group have running programs:}}\n{titles}\n\nClosing the group will terminate them.",
+  "@tabGroupCloseConfirmMessage": {
+    "description": "Shown before closing a tab group whose tabs have foreground programs running.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
+  "zmodemDownloads": "Downloads (sz)",
+  "@zmodemDownloads": {
+    "description": "Settings tile title for ZMODEM (sz) download options."
+  },
+  "zmodemDownloadModeFolder": "Save to folder",
+  "@zmodemDownloadModeFolder": {
+    "description": "Download mode: save into the download folder without asking."
+  },
+  "zmodemDownloadModeAsk": "Ask where to save",
+  "@zmodemDownloadModeAsk": {
+    "description": "Download mode: ask for a folder each time."
+  },
+  "zmodemDownloadFolder": "Download folder",
+  "@zmodemDownloadFolder": {
+    "description": "Settings tile title for the sz download folder."
+  },
+  "zmodemSystemDownloads": "System Downloads",
+  "@zmodemSystemDownloads": {
+    "description": "Shown when the download folder is the system Downloads folder."
+  },
+  "zmodemChooseFolder": "Choose…",
+  "@zmodemChooseFolder": {
+    "description": "Button that opens a folder chooser for the download folder."
+  },
+  "zmodemReset": "Reset",
+  "@zmodemReset": {
+    "description": "Button that resets the download folder to the system Downloads folder."
+  },
+  "zmodemCancel": "Cancel",
+  "@zmodemCancel": {
+    "description": "Button that cancels a running file transfer."
+  },
+  "zmodemSavedTo": "Saved to {path}",
+  "@zmodemSavedTo": {
+    "description": "Snackbar after a single file was downloaded.",
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "zmodemSavedFiles": "{count, plural, =1{Saved 1 file to {folder}} other{Saved {count} files to {folder}}}",
+  "@zmodemSavedFiles": {
+    "description": "Snackbar after several files were downloaded.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "folder": {
+        "type": "String"
+      }
+    }
+  },
+  "zmodemUploaded": "{count, plural, =1{Uploaded 1 file} other{Uploaded {count} files}}",
+  "@zmodemUploaded": {
+    "description": "Snackbar after files were uploaded with rz.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "zmodemSkippedExisting": "{count, plural, =1{{name} already exists on the remote and was skipped (run rz -y to overwrite)} other{{count} files already exist on the remote and were skipped (run rz -y to overwrite)}}",
+  "@zmodemSkippedExisting": {
+    "description": "Snackbar when rz declined uploaded files because they already exist.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "zmodemCancelled": "Transfer cancelled",
+  "@zmodemCancelled": {
+    "description": "Snackbar after a file transfer was cancelled."
+  },
+  "zmodemFailed": "Transfer failed: {reason}",
+  "@zmodemFailed": {
+    "description": "Snackbar after a file transfer failed.",
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "zmodemShowInFinder": "Show in Finder",
+  "@zmodemShowInFinder": {
+    "description": "Snackbar action that reveals the downloaded file."
+  },
+  "zmodemFileOf": "{index} of {count}",
+  "@zmodemFileOf": {
+    "description": "Transfer progress: which file of how many.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tabGroupSelected": "Group selected tabs",
+  "@tabGroupSelected": {
+    "description": "Tab switcher select-mode button that groups the selected tabs."
+  }
 }

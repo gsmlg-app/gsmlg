@@ -51,6 +51,12 @@ FFI_PLUGIN_EXPORT int pty_getpid(PtyHandle *handle);
 /// unknown or the child has exited.
 FFI_PLUGIN_EXPORT int pty_foreground_pgid(PtyHandle *handle);
 
+/// Writes the current working directory of the spawned process (typically
+/// the shell) into [buffer] as a NUL-terminated string. Returns the path
+/// length, or -1 if it is unknown, the child has exited, or [size] is too
+/// small.
+FFI_PLUGIN_EXPORT int pty_working_directory(PtyHandle *handle, char *buffer, int size);
+
 FFI_PLUGIN_EXPORT int pty_terminate(PtyHandle *handle, int signal_number);
 
 FFI_PLUGIN_EXPORT int pty_kill(PtyHandle *handle, int signal_number);

@@ -124,7 +124,7 @@ class LocalExecutionResult implements ExecutionResult {
 }
 
 class LocalExecutionSession
-    implements ExecutionSession, ForegroundProcessAware {
+    implements ExecutionSession, ForegroundProcessAware, WorkingDirectoryAware {
   final Pty _pty;
 
   LocalExecutionSession(this._pty);
@@ -157,6 +157,10 @@ class LocalExecutionSession
 
   @override
   Future<bool> hasForegroundProcess() async => _pty.hasForegroundProcess;
+
+  @override
+  Future<String?> currentWorkingDirectory() async =>
+      _pty.currentWorkingDirectory;
 }
 
 class LocalShellCommand {

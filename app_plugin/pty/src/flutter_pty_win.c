@@ -469,6 +469,11 @@ FFI_PLUGIN_EXPORT int pty_foreground_pgid(PtyHandle *handle)
     return -1;
 }
 
+FFI_PLUGIN_EXPORT int pty_working_directory(PtyHandle *handle, char *buffer, int size)
+{
+    return -1;
+}
+
 FFI_PLUGIN_EXPORT char *pty_error()
 {
     return error_message;

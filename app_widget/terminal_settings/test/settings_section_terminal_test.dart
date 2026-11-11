@@ -8,7 +8,25 @@ import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
 class _RecordingTerminalSettingsBloc
     extends Bloc<TerminalSettingsEvent, TerminalSettingsState>
     implements TerminalSettingsBloc {
-  _RecordingTerminalSettingsBloc() : super(const TerminalSettingsLoaded()) {
+  _RecordingTerminalSettingsBloc([
+    super.initialState = const TerminalSettingsLoaded(),
+  ]) {
+    on<TerminalSettingsUpdateDownloadMode>(
+      (event, emit) {
+        events.add(event);
+        emit((state as TerminalSettingsLoaded)
+            .copyWith(downloadMode: event.downloadMode));
+      },
+    );
+    on<TerminalSettingsUpdateDownloadDirectory>(
+      (event, emit) {
+        events.add(event);
+        emit((state as TerminalSettingsLoaded).copyWith(
+          downloadDirectory: event.downloadDirectory,
+          clearDownloadDirectory: event.downloadDirectory == null,
+        ));
+      },
+    );
     on<TerminalSettingsUpdateOptionKeyBehavior>(
       (
         TerminalSettingsUpdateOptionKeyBehavior event,
@@ -232,5 +250,76 @@ void main() {
 
       expect(find.text('Option Key Behavior'), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+  });
+
+  group('Download settings', () {
+    setUp(() {
+      final binding = TestWidgetsFlutterBinding.ensureInitialized();
+      binding.platformDispatcher.views.first.physicalSize =
+          const Size(1200, 4000);
+      binding.platformDispatcher.views.first.devicePixelRatio = 1;
+    });
+    tearDown(() {
+      final binding = TestWidgetsFlutterBinding.ensureInitialized();
+      binding.platformDispatcher.views.first.resetPhysicalSize();
+      binding.platformDispatcher.views.first.resetDevicePixelRatio();
+    });
+
+    testWidgets('show mode and System Downloads by default',
+        (WidgetTester tester) async {
+      final bloc = _RecordingTerminalSettingsBloc();
+      addTearDown(bloc.close);
+
+      await _pumpSection(tester, bloc);
+
+      expect(find.text('Downloads (sz)'), findsOneWidget);
+      expect(find.text('Save to folder'), findsOneWidget);
+      expect(find.text('System Downloads'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
+    testWidgets('choosing ask mode dispatches UpdateDownloadMode',
+        (WidgetTester tester) async {
+      final bloc = _RecordingTerminalSettingsBloc();
+      addTearDown(bloc.close);
+
+      await _pumpSection(tester, bloc);
+      await tester.tap(find.byKey(const Key('downloadModeDropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ask where to save').last);
+      await tester.pumpAndSettle();
+
+      expect(bloc.events, <TerminalSettingsEvent>[
+        const TerminalSettingsUpdateDownloadMode(
+          downloadMode: TerminalDownloadMode.ask,
+        ),
+      ]);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
+    testWidgets('Reset clears a custom folder', (WidgetTester tester) async {
+      final bloc = _RecordingTerminalSettingsBloc(
+        const TerminalSettingsLoaded(downloadDirectory: '/Users/me/Transfers'),
+      );
+      addTearDown(bloc.close);
+
+      await _pumpSection(tester, bloc);
+      expect(find.text('/Users/me/Transfers'), findsOneWidget);
+
+      await tester.tap(find.text('Reset'));
+      await tester.pumpAndSettle();
+
+      expect(bloc.events, <TerminalSettingsEvent>[
+        const TerminalSettingsUpdateDownloadDirectory(downloadDirectory: null),
+      ]);
+      expect(find.text('System Downloads'), findsOneWidget);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
+    testWidgets('are hidden on iOS', (WidgetTester tester) async {
+      final bloc = _RecordingTerminalSettingsBloc();
+      addTearDown(bloc.close);
+
+      await _pumpSection(tester, bloc);
+
+      expect(find.text('Downloads (sz)'), findsNothing);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
   });
 }

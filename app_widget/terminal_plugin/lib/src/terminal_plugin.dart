@@ -6,11 +6,17 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:path/path.dart' as p;
 import 'package:terminal_core/terminal_core.dart';
 import 'package:terminal_plugin/src/terminal_extra_keys.dart';
 import 'package:terminal_plugin/src/terminal_menu.dart';
 import 'package:terminal_plugin/src/terminal_shortcut_handler.dart';
+import 'package:terminal_plugin/src/zmodem/io_zmodem_file_access.dart';
+import 'package:terminal_plugin/src/zmodem/zmodem_file_access.dart';
+import 'package:terminal_plugin/src/zmodem/zmodem_progress_panel.dart';
+import 'package:terminal_plugin/src/zmodem/zmodem_transfer_controller.dart';
 import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
 import 'package:xterm/xterm.dart';
 
@@ -20,13 +26,40 @@ class TerminalPlugin extends Plugin {
     this.profileFontFamily = 'Source Code Pro',
     this.profileCursorType = TerminalCursorType.block,
     int scrollbackLines = 10000,
-  }) : terminal = Terminal(
+    ZmodemFileAccess? fileAccess,
+  })  : fileAccess = fileAccess ??
+            IoZmodemFileAccess(
+              settings: () =>
+                  (mode: ZmodemDownloadMode.saveToFolder, directory: null),
+            ),
+        terminal = Terminal(
           maxLines: scrollbackLines,
           batchWrites: true,
           platform: _terminalTargetPlatform(),
         );
 
   final Terminal terminal;
+
+  /// File access for `sz`/`rz` transfers.
+  final ZmodemFileAccess fileAccess;
+
+  ZmodemTransferController? _zmodem;
+  StreamSubscription<ZmodemTransferResult>? _zmodemResults;
+
+  /// The ZMODEM controller of the current session.
+  @visibleForTesting
+  ZmodemTransferController? get zmodem => _zmodem;
+
+  /// Progress of the running `sz`/`rz` transfer, or null.
+  final transferProgress = ValueNotifier<ZmodemProgress?>(null);
+
+  final _transferResults = StreamController<ZmodemTransferResult>.broadcast();
+
+  /// Finished, cancelled or failed transfers.
+  Stream<ZmodemTransferResult> get transferResults => _transferResults.stream;
+
+  /// Cancels the running transfer, if any.
+  void cancelTransfer() => unawaited(_zmodem?.cancel());
 
   /// Font size from the shell profile.
   final double profileFontSize;
@@ -65,7 +98,21 @@ class TerminalPlugin extends Plugin {
     return true;
   }
 
-  StreamSubscription<String>? _outputSubscription;
+  /// The shell's current working directory as reported by the operating
+  /// system, or null when the session cannot report it.
+  Future<String?> liveWorkingDirectory() async {
+    final activeSession = session;
+    if (activeSession is! WorkingDirectoryAware) return null;
+    try {
+      final directory = await (activeSession as WorkingDirectoryAware)
+          .currentWorkingDirectory();
+      return directory == null || directory.isEmpty ? null : directory;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  StreamSubscription<Uint8List>? _outputSubscription;
   int _sessionGeneration = 0;
 
   void _updateTitle() {
@@ -94,7 +141,9 @@ class TerminalPlugin extends Plugin {
     };
 
     terminal.onOutput = (data) {
-      session?.write(const Utf8Encoder().convert(data));
+      final bytes = const Utf8Encoder().convert(data);
+      if (_zmodem?.handleKeyboardInput(bytes) ?? false) return;
+      session?.write(bytes);
     };
 
     terminal.onResize = (w, h, pw, ph) {
@@ -122,43 +171,92 @@ class TerminalPlugin extends Plugin {
         await openedSession.close();
         return;
       }
-      session = openedSession;
+      _attachSession(openedSession);
       if (terminal.viewWidth != initialWidth ||
           terminal.viewHeight != initialHeight) {
         unawaited(
           openedSession.resize(terminal.viewWidth, terminal.viewHeight),
         );
       }
-
-      _outputSubscription = openedSession.output
-          .map<List<int>>((data) {
-            openedSession.ackRead();
-            return data;
-          })
-          .transform(const Utf8Decoder(allowMalformed: true))
-          .listen(terminal.write, onError: (Object error) {
-            if (mounted && identical(session, openedSession)) {
-              onConnectionError(error);
-            }
-          });
-
-      openedSession.exitCode.then((code) {
-        if (!identical(session, openedSession)) return;
-        session = null;
-        unawaited(_outputSubscription?.cancel());
-        _outputSubscription = null;
-        if (mounted) {
-          manager.remove(this);
-        }
-      }, onError: (Object error) {
-        if (mounted && identical(session, openedSession)) {
-          onConnectionError(error);
-        }
-      });
     } catch (e) {
       if (!mounted || generation != _sessionGeneration) return;
       terminal.write('\r\n\x1b[31mError: Failed to start shell: $e\x1b[0m\r\n');
     }
+  }
+
+  /// Runs [debugAttachSession]'s wiring for a freshly opened session.
+  void _attachSession(ExecutionSession openedSession) {
+    session = openedSession;
+    final decoder = const Utf8Decoder(allowMalformed: true)
+        .startChunkedConversion(_TerminalTextSink(terminal.write));
+    final zmodem = ZmodemTransferController(
+      onTerminalOutput: decoder.add,
+      writeToSession: openedSession.write,
+      files: fileAccess,
+      supported: kIsWeb ||
+          (defaultTargetPlatform != TargetPlatform.iOS &&
+              defaultTargetPlatform != TargetPlatform.android),
+    );
+    _zmodem = zmodem;
+    zmodem.progress.addListener(() {
+      if (identical(_zmodem, zmodem)) {
+        transferProgress.value = zmodem.progress.value;
+      }
+    });
+    _zmodemResults = zmodem.results.listen(_transferResults.add);
+
+    late final StreamSubscription<Uint8List> subscription;
+    subscription = openedSession.output.listen(
+      (data) {
+        final pending = zmodem.handleSessionOutput(data);
+        if (pending is Future<void>) {
+          subscription.pause();
+          pending.whenComplete(() {
+            openedSession.ackRead();
+            subscription.resume();
+          });
+        } else {
+          openedSession.ackRead();
+        }
+      },
+      onError: (Object error) {
+        if (mounted && identical(session, openedSession)) {
+          onConnectionError(error);
+        }
+      },
+    );
+    _outputSubscription = subscription;
+
+    openedSession.exitCode.then((code) {
+      if (!identical(session, openedSession)) return;
+      session = null;
+      unawaited(_outputSubscription?.cancel());
+      _outputSubscription = null;
+      _disposeZmodem();
+      if (mounted) {
+        manager.remove(this);
+      }
+    }, onError: (Object error) {
+      if (mounted && identical(session, openedSession)) {
+        onConnectionError(error);
+      }
+    });
+  }
+
+  /// Wires [openedSession] like a real connection, for tests.
+  @visibleForTesting
+  void debugAttachSession(ExecutionSession openedSession) =>
+      _attachSession(openedSession);
+
+  void _disposeZmodem() {
+    final zmodem = _zmodem;
+    final results = _zmodemResults;
+    _zmodem = null;
+    _zmodemResults = null;
+    transferProgress.value = null;
+    if (zmodem == null) return;
+    // Keep forwarding until disposed, so a final "cancelled" result arrives.
+    unawaited(zmodem.dispose().whenComplete(() => results?.cancel()));
   }
 
   void _closeSession() {
@@ -167,6 +265,7 @@ class TerminalPlugin extends Plugin {
     session = null;
     unawaited(_outputSubscription?.cancel());
     _outputSubscription = null;
+    _disposeZmodem();
     unawaited(activeSession?.close());
   }
 
@@ -240,11 +339,59 @@ class _TerminalTabViewState extends State<TerminalTabView>
   bool _ctrlPressed = false;
   bool _altPressed = false;
 
+  StreamSubscription<ZmodemTransferResult>? _transferResults;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _terminalFocusNode.addListener(_onTerminalFocusChanged);
+    _listenTransferResults();
+  }
+
+  void _listenTransferResults() {
+    unawaited(_transferResults?.cancel());
+    _transferResults =
+        widget.plugin.transferResults.listen(_showTransferResult);
+  }
+
+  void _showTransferResult(ZmodemTransferResult result) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    final l10n = context.l10n;
+    final files = widget.plugin.fileAccess;
+    final (String message, String? reveal) = switch (result) {
+      ZmodemDownloadCompleted(:final paths) when paths.length == 1 => (
+          l10n.zmodemSavedTo(paths.single),
+          paths.single,
+        ),
+      ZmodemDownloadCompleted(:final paths) => (
+          l10n.zmodemSavedFiles(paths.length, p.dirname(paths.first)),
+          p.dirname(paths.first),
+        ),
+      ZmodemUploadCompleted(:final count, :final skipped) => (
+          [
+            if (count > 0) l10n.zmodemUploaded(count),
+            if (skipped.isNotEmpty)
+              l10n.zmodemSkippedExisting(skipped.length, skipped.first),
+          ].join(' · '),
+          null,
+        ),
+      ZmodemTransferCancelled() => (l10n.zmodemCancelled, null),
+      ZmodemTransferFailed(:final reason) => (l10n.zmodemFailed(reason), null),
+    };
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: reveal == null
+            ? null
+            : SnackBarAction(
+                label: l10n.zmodemShowInFinder,
+                onPressed: () => unawaited(files.reveal(reveal)),
+              ),
+      ),
+    );
   }
 
   @override
@@ -265,6 +412,7 @@ class _TerminalTabViewState extends State<TerminalTabView>
     if (widget.plugin != oldWidget.plugin) {
       _ctrlPressed = false;
       _altPressed = false;
+      _listenTransferResults();
     }
   }
 
@@ -362,6 +510,7 @@ class _TerminalTabViewState extends State<TerminalTabView>
     _focusNotifier?.removeListener(_onFocusRequested);
     _terminalFocusNode.removeListener(_onTerminalFocusChanged);
     _terminalFocusNode.dispose();
+    unawaited(_transferResults?.cancel());
     super.dispose();
   }
 
@@ -437,6 +586,25 @@ class _TerminalTabViewState extends State<TerminalTabView>
                       unawaited(widget.plugin.manager.connect());
                     }
                   },
+                );
+              },
+            ),
+            ValueListenableBuilder<ZmodemProgress?>(
+              valueListenable: widget.plugin.transferProgress,
+              builder: (context, progress, _) {
+                if (progress == null) return const SizedBox.shrink();
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: ZmodemProgressPanel(
+                        progress: progress,
+                        onCancel: widget.plugin.cancelTransfer,
+                      ),
+                    ),
+                  ),
                 );
               },
             ),
@@ -544,4 +712,19 @@ MacOptionKeyBehavior _selectMacOptionKeyBehavior(BuildContext context) {
       }
     },
   );
+}
+
+/// Forwards decoded text to the terminal.
+class _TerminalTextSink implements Sink<String> {
+  _TerminalTextSink(this._write);
+
+  final void Function(String text) _write;
+
+  @override
+  void add(String data) {
+    if (data.isNotEmpty) _write(data);
+  }
+
+  @override
+  void close() {}
 }

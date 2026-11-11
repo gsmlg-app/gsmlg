@@ -69,3 +69,25 @@ class TerminalSettingsUpdateOptionKeyBehavior extends TerminalSettingsEvent {
   @override
   List<Object?> get props => [optionKeyBehavior];
 }
+
+/// Sets where `sz` downloads are saved.
+class TerminalSettingsUpdateDownloadMode extends TerminalSettingsEvent {
+  final TerminalDownloadMode downloadMode;
+
+  const TerminalSettingsUpdateDownloadMode({required this.downloadMode});
+
+  @override
+  List<Object?> get props => [downloadMode];
+}
+
+/// Sets the download folder; null resets it to the system Downloads folder.
+class TerminalSettingsUpdateDownloadDirectory extends TerminalSettingsEvent {
+  final String? downloadDirectory;
+
+  const TerminalSettingsUpdateDownloadDirectory({
+    required this.downloadDirectory,
+  });
+
+  @override
+  List<Object?> get props => [downloadDirectory];
+}
