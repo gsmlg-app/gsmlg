@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:ssh_key_bloc/ssh_key_bloc.dart';
 import 'package:terminal_settings/terminal_settings.dart';
 
@@ -132,6 +133,11 @@ void main() {
       ),
     );
     await tester.tap(find.text('Open key form'));
+    await tester.pumpAndSettle();
+    // The form's GoogleFonts.robotoMono load finishes on real async I/O, and
+    // the engine then posts a `fontsChange` message that schedules a relayout
+    // frame. Let it land inside the test instead of after the tree is gone.
+    await tester.runAsync(GoogleFonts.pendingFonts);
     await tester.pumpAndSettle();
   }
 
