@@ -48,13 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: SizedBox(
           width: w * 0.618,
           height: w * 0.618,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.rectangle,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            child: Center(child: LogoGSMLGDEV()),
-          ),
+          child: const Center(child: LogoGSMLGDEV()),
         ),
       ),
     );
