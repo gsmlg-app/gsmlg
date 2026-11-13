@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_agent/app_agent.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
+import 'package:dart_agent_core/dart_agent_core.dart' as dac;
 import 'package:test/test.dart';
 
 class _FakeRemoteLlmRepository extends RemoteLlmRepository {
@@ -59,6 +60,52 @@ class _FakeVault implements VaultRepository {
 }
 
 void main() {
+  for (final firstChunk in [
+    const ChatTextChunk('first'),
+    const ChatThinkingChunk('reasoning'),
+    const ChatTextChunk(' '),
+  ]) {
+    test(
+      'records primed $firstChunk before buffered delivery exactly once',
+      () async {
+        final remote = _ControlledRemoteLlmRepository();
+        var firstTokenCalls = 0;
+        final client = RepositoryAgentLlmClient(
+          config: const ModelConfig(inferenceMode: ChatInferenceMode.remote),
+          remoteRepository: remote,
+          initialMessages: [
+            UserMessage(
+              id: 'user',
+              conversationId: 'conversation',
+              timestamp: DateTime(2026),
+              content: 'hello',
+            ),
+          ],
+          onFirstToken: () => firstTokenCalls++,
+        );
+        remote.controller.add(const ChatTextChunk(''));
+        remote.controller.add(const ChatThinkingChunk(''));
+        expect(firstTokenCalls, 0);
+
+        remote.controller.add(firstChunk);
+        // No event-loop turn has allowed the primed buffer to deliver anything.
+        expect(firstTokenCalls, 1);
+        remote.controller.add(const ChatTextChunk('later'));
+        remote.controller.add(const ChatThinkingChunk('later reasoning'));
+        expect(firstTokenCalls, 1);
+
+        final stream = await client.stream(
+          const [],
+          modelConfig: const dac.ModelConfig(model: 'test-model'),
+        );
+        final drained = stream.toList();
+        await remote.controller.close();
+        await drained;
+        expect(firstTokenCalls, 1);
+      },
+    );
+  }
+
   group('ChatAgentRuntime', () {
     test(
       'executes multi-turn agent loop with tool calls and emits typed events',
@@ -190,4 +237,19 @@ class _HangingRemoteLlmRepository extends RemoteLlmRepository {
     String? generationId,
     LogContext? logContext,
   }) => StreamController<ChatGenerationChunk>().stream;
+}
+
+class _ControlledRemoteLlmRepository extends RemoteLlmRepository {
+  _ControlledRemoteLlmRepository() : super(vault: _FakeVault());
+
+  final controller = StreamController<ChatGenerationChunk>(sync: true);
+
+  @override
+  Stream<ChatGenerationChunk> generateResponse(
+    List<Message> messages,
+    ModelConfig config, {
+    List<Map<String, dynamic>> tools = const [],
+    String? generationId,
+    LogContext? logContext,
+  }) => controller.stream;
 }

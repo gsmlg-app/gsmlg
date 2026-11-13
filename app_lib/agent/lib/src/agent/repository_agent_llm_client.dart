@@ -59,6 +59,7 @@ class RepositoryAgentLlmClient implements LLMClient {
 
   StreamController<ChatGenerationChunk>? _primedBuffer;
   StreamSubscription<ChatGenerationChunk>? _primedSub;
+  var _firstTokenReceived = false;
 
   /// Number of model calls issued so far; the current call's 1-based turn.
   var _turn = 0;
@@ -97,6 +98,8 @@ class RepositoryAgentLlmClient implements LLMClient {
     _primedBuffer = buffer;
     _primedSub = raw.listen(
       (chunk) {
+        // Capture arrival before the asynchronous first-turn buffer adds delay.
+        _recordFirstToken(chunk);
         if (!buffer.isClosed) buffer.add(chunk);
       },
       onError: (err, st) {
@@ -112,6 +115,18 @@ class RepositoryAgentLlmClient implements LLMClient {
   LocalModelAccess? get _localModelAccess => localModelAccess;
 
   bool get _isLocal => config.inferenceMode == ChatInferenceMode.local;
+
+  void _recordFirstToken(ChatGenerationChunk chunk) {
+    if (_firstTokenReceived) return;
+    final hasToken = switch (chunk) {
+      ChatTextChunk(:final text) => text.isNotEmpty,
+      ChatThinkingChunk(:final content) => content.isNotEmpty,
+      ChatFunctionCallChunk() => false,
+    };
+    if (!hasToken) return;
+    _firstTokenReceived = true;
+    onFirstToken?.call();
+  }
 
   @override
   Future<ModelMessage> generate(
@@ -259,11 +274,9 @@ class RepositoryAgentLlmClient implements LLMClient {
 
       rawSub = rawStream.listen(
         (chunk) {
+          _recordFirstToken(chunk);
           switch (chunk) {
             case ChatTextChunk(:final text):
-              if (text.isNotEmpty) {
-                onFirstToken?.call();
-              }
               controller.add(
                 StreamingMessage(
                   modelMessage: ModelMessage(
@@ -273,9 +286,6 @@ class RepositoryAgentLlmClient implements LLMClient {
                 ),
               );
             case ChatThinkingChunk(:final content):
-              if (content.isNotEmpty) {
-                onFirstToken?.call();
-              }
               controller.add(
                 StreamingMessage(
                   modelMessage: ModelMessage(
