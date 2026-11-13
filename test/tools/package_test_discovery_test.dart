@@ -39,9 +39,15 @@ void main() {
       ..writeAsStringSync('#!/bin/sh\nexit 37\n');
     final chmod = await Process.run('chmod', ['+x', executable.path]);
     expect(chmod.exitCode, 0);
+    // Under flutter test the current executable is flutter_tester, not Dart.
+    // Resolve Dart before replacing PATH with the failing-process fixture.
+    final dart = await Process.run('sh', ['-c', 'command -v dart']);
+    expect(dart.exitCode, 0, reason: '${dart.stderr}');
+    final dartExecutable = (dart.stdout as String).trim();
+    expect(dartExecutable, isNotEmpty);
     final script = File('tools/run_package_tests.dart').absolute.path;
     final result = await Process.run(
-      Platform.resolvedExecutable,
+      dartExecutable,
       [script, 'dart'],
       workingDirectory: temporary.path,
       environment: {'PATH': '${bin.path}:${Platform.environment['PATH']}'},
