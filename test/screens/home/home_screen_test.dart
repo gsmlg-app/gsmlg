@@ -1,142 +1,156 @@
-import 'package:flutter/material.dart';
-import 'package:gsmlg/screens/home/home_screen.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
 import 'package:app_locale/app_locale.dart';
+import 'package:chat_bloc/chat_bloc.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:gsmlg/screens/agents/agent_editor_screen.dart';
+import 'package:gsmlg/screens/agents/agent_sessions_screen.dart';
+import 'package:gsmlg/screens/agents/agents_screen.dart';
+import 'package:gsmlg/screens/chat/chat_history_screen.dart';
+import 'package:gsmlg/screens/chat/chat_routes.dart';
+import 'package:gsmlg/screens/home/home_routes.dart';
+import 'package:gsmlg/screens/home/home_screen.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../agents/agents_test_support.dart';
 
 void main() {
-  group('HomeScreen', () {
-    testWidgets('renders correctly with basic components', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocale.localizationsDelegates,
-          supportedLocales: AppLocale.supportedLocales,
-          home: const HomeScreen(),
-        ),
-      );
+  late MockChatSettingsBloc settingsBloc;
+  late MockChatBloc chatBloc;
+  late MockGemmaModelBloc gemmaBloc;
+  late SharedPreferences preferences;
 
-      expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.byType(SafeArea), findsAtLeastNWidgets(1));
-      expect(find.byType(Column), findsAtLeastNWidgets(1));
-    });
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    preferences = await SharedPreferences.getInstance();
+    settingsBloc = MockChatSettingsBloc();
+    chatBloc = MockChatBloc();
+    gemmaBloc = MockGemmaModelBloc();
+    when(() => settingsBloc.state).thenReturn(
+      ChatSettingsState(
+        status: ChatSettingsStatus.loaded,
+        agents: [testAgent('writer', name: 'Writer')],
+      ),
+    );
+    when(() => chatBloc.state).thenReturn(
+      ChatState(
+        conversationHistory: [
+          testConversation('owned', agentId: 'writer', title: 'Owned chat'),
+          testConversation('legacy', title: 'Legacy chat'),
+        ],
+      ),
+    );
+    when(() => gemmaBloc.state).thenReturn(const GemmaModelState());
+  });
 
-    testWidgets('displays throw error button', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocale.localizationsDelegates,
-          supportedLocales: AppLocale.supportedLocales,
-          home: const HomeScreen(),
-        ),
-      );
-
-      expect(find.byType(TextButton), findsOneWidget);
-      expect(find.text('Throw Error'), findsOneWidget);
-    });
-
-    testWidgets('throw error button has correct styling', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocale.localizationsDelegates,
-          supportedLocales: AppLocale.supportedLocales,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue,
-              error: Colors.red,
-            ),
+  Future<void> pump(
+    WidgetTester tester, {
+    Size size = const Size(800, 1000),
+  }) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final router = GoRouter(
+      initialLocation: HomeScreen.path,
+      routes: [homeRoutes(), chatRoutes()],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      RepositoryProvider<SharedPreferences>.value(
+        value: preferences,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<ChatSettingsBloc>.value(value: settingsBloc),
+            BlocProvider<ChatBloc>.value(value: chatBloc),
+            BlocProvider<GemmaModelBloc>.value(value: gemmaBloc),
+          ],
+          child: MaterialApp.router(
+            localizationsDelegates: AppLocale.localizationsDelegates,
+            supportedLocales: AppLocale.supportedLocales,
+            routerConfig: router,
           ),
-          home: const HomeScreen(),
         ),
-      );
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
 
-      final textButton = tester.widget<TextButton>(find.byType(TextButton));
-      final textWidget = textButton.child as Text;
-
-      expect(textWidget.style?.color, equals(Colors.red));
-    });
-
-    testWidgets('throws exception when throw error button is pressed', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocale.localizationsDelegates,
-          supportedLocales: AppLocale.supportedLocales,
-          home: const HomeScreen(),
-        ),
-      );
-
-      final button = find.byType(TextButton);
-      expect(button, findsOneWidget);
-
-      await tester.tap(button);
-      await tester.pump();
-
-      expect(tester.takeException(), isA<Exception>());
-    });
-
-    testWidgets('uses correct screen dimensions for container', (
-      WidgetTester tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocale.localizationsDelegates,
-          supportedLocales: AppLocale.supportedLocales,
-          home: const HomeScreen(),
-        ),
-      );
-
-      // Find the main container (should be at least one)
-      expect(find.byType(Container), findsAtLeastNWidgets(1));
-    });
-
-    testWidgets('handles landscape orientation correctly', (
-      WidgetTester tester,
-    ) async {
-      await tester.binding.setSurfaceSize(const Size(1200, 800));
-
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocale.localizationsDelegates,
-          supportedLocales: AppLocale.supportedLocales,
-          home: const HomeScreen(),
-        ),
-      );
+  group('HomeScreen', () {
+    testWidgets('renders the agents landing page', (tester) async {
+      await pump(tester);
 
       expect(find.byType(HomeScreen), findsOneWidget);
-
-      await tester.binding.setSurfaceSize(null);
+      expect(find.byType(AgentsScreen), findsOneWidget);
+      expect(find.text('Writer'), findsOneWidget);
+      expect(find.text('New agent'), findsOneWidget);
     });
 
-    testWidgets('container has correct decoration', (
-      WidgetTester tester,
+    testWidgets('loads agent settings and conversation history', (
+      tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocale.localizationsDelegates,
-          supportedLocales: AppLocale.supportedLocales,
-          home: const HomeScreen(),
-        ),
-      );
+      await pump(tester);
 
-      // Find containers and check if any have decoration
-      final containers = find.byType(Container);
-      expect(containers, findsAtLeastNWidgets(1));
+      verify(() => settingsBloc.add(const ChatSettingsLoad())).called(1);
+      verify(() => chatBloc.add(const ChatLoadHistory())).called(1);
     });
 
-    testWidgets('displays logo correctly', (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          localizationsDelegates: AppLocale.localizationsDelegates,
-          supportedLocales: AppLocale.supportedLocales,
-          home: const HomeScreen(),
-        ),
-      );
+    testWidgets('selects the Home navigation destination', (tester) async {
+      await pump(tester);
 
-      // Check for any logo-related widgets
-      expect(find.byType(HomeScreen), findsOneWidget);
+      final scaffold = tester.widget<AppAdaptiveScaffold>(
+        find.byType(AppAdaptiveScaffold),
+      );
+      expect(scaffold.selectedIndex, 0);
+    });
+
+    testWidgets('new agent card opens the editor from Home', (tester) async {
+      await pump(tester);
+      await tester.tap(find.text('New agent'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AgentEditorScreen), findsOneWidget);
+    });
+
+    testWidgets('agent card opens its sessions from Home', (tester) async {
+      await pump(tester);
+      await tester.tap(find.text('Writer'));
+      await tester.pumpAndSettle();
+
+      final sessions = tester.widget<AgentSessionsScreen>(
+        find.byType(AgentSessionsScreen),
+      );
+      expect(sessions.agentId, 'writer');
+    });
+
+    testWidgets('history action opens conversation history from Home', (
+      tester,
+    ) async {
+      await pump(tester);
+      await tester.tap(find.byIcon(Icons.history));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatHistoryScreen), findsOneWidget);
+    });
+
+    testWidgets('shows unowned conversations below the agent cards', (
+      tester,
+    ) async {
+      await pump(tester);
+
+      expect(find.text('Other chats'), findsOneWidget);
+      expect(find.text('Legacy chat'), findsOneWidget);
+      expect(find.text('Owned chat'), findsNothing);
+    });
+
+    testWidgets('keeps agent controls visible in landscape', (tester) async {
+      await pump(tester, size: const Size(1200, 800));
+
+      expect(find.text('Writer'), findsOneWidget);
+      expect(find.text('New agent'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }
