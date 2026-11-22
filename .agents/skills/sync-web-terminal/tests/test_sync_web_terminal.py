@@ -101,6 +101,19 @@ class SyncTest(unittest.TestCase):
         self.assertEqual((self.dst / "feature/file.txt").read_text(), "local\n")
         self.assertEqual(json.loads(self.manifest.read_text())["baseline"], self.baseline)
 
+    def test_resolved_conflict_can_be_acknowledged_explicitly(self):
+        write(self.dst, "feature/file.txt", "local\n")
+        self.commit(self.dst)
+        write(self.src, "feature/file.txt", "upstream\n")
+        target = self.commit(self.src)
+        self.assertEqual(self.apply()[0], 2)
+        write(self.dst, "feature/file.txt", "local+upstream\n")
+        code, result = self.apply("--ack-manual", "feature/file.txt")
+        self.assertEqual(code, 0)
+        self.assertEqual(result["files"][0]["action"], "manual_acknowledged")
+        self.assertEqual((self.dst / "feature/file.txt").read_text(), "local+upstream\n")
+        self.assertEqual(json.loads(self.manifest.read_text())["baseline"], target)
+
     def test_disjoint_local_adaptation_merges_and_failed_verification_retry_works(self):
         local = self.initial.replace("one\n", "local\n")
         write(self.dst, "feature/file.txt", local)

@@ -271,7 +271,12 @@ def synchronize(args):
                     row["action"] = "blocked_dirty"
                     blockers.append(dst)
             if action == "conflict":
-                blockers.append(src)
+                manual_changes.add(src)
+                if src in acknowledged:
+                    action = "manual_acknowledged"
+                    row["action"] = action
+                else:
+                    blockers.append(src)
             if content is not None or action == "delete":
                 writes.append((dst, local, content))
         except SyncError as error:
