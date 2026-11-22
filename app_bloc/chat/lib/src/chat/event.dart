@@ -96,12 +96,27 @@ final class ChatRegenerateResponse extends ChatEvent {
   final String? conversationId;
 }
 
+final class ChatForkConversation extends ChatEvent {
+  const ChatForkConversation({required this.messageId, this.conversationId});
+  final String messageId;
+  final String? conversationId;
+}
+
 final class ChatEditUserMessage extends ChatEvent {
-  const ChatEditUserMessage(
-      {required this.messageId, required this.content, this.conversationId});
+  const ChatEditUserMessage({
+    required this.messageId,
+    required this.content,
+    this.conversationId,
+    this.imageBytes,
+    this.audioBytes,
+    this.attachments,
+  });
   final String messageId;
   final String content;
   final String? conversationId;
+  final Uint8List? imageBytes;
+  final Uint8List? audioBytes;
+  final List<ChatAttachment>? attachments;
 }
 
 final class ChatDeleteConversation extends ChatEvent {

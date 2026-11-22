@@ -102,7 +102,9 @@ final class UserMessage extends Message {
   final List<ChatAttachment> attachments;
 
   /// Whether this message has an image attachment.
-  bool get hasImage => imageBytes != null;
+  bool get hasImage =>
+      imageBytes != null ||
+      attachments.any((a) => a.isImage && (a.bytes?.isNotEmpty ?? false));
 
   /// Whether this message has an audio attachment.
   bool get hasAudio => audioBytes != null;
@@ -110,12 +112,58 @@ final class UserMessage extends Message {
   /// Whether this message has any file attachments.
   bool get hasAttachments => attachments.isNotEmpty || hasImage || hasAudio;
 
+  /// Inline image payloads (from [attachments] and/or [imageBytes]) ready to
+  /// send as multimodal content blocks.
+  List<({Uint8List bytes, String mimeType})> get inlineImages {
+    final images = <({Uint8List bytes, String mimeType})>[];
+    var matchedImageBytes = false;
+    final legacyBytes = imageBytes;
+
+    for (final attachment in attachments) {
+      final bytes = attachment.bytes;
+      if (!attachment.isImage || bytes == null || bytes.isEmpty) continue;
+      if (legacyBytes != null &&
+          (identical(bytes, legacyBytes) ||
+              bytes.length == legacyBytes.length)) {
+        matchedImageBytes = true;
+      }
+      images.add((
+        bytes: bytes,
+        mimeType: _resolveImageMimeType(
+          attachment.mimeType,
+          attachment.name,
+          bytes,
+        ),
+      ));
+    }
+
+    if (legacyBytes != null && legacyBytes.isNotEmpty && !matchedImageBytes) {
+      images.add((
+        bytes: legacyBytes,
+        mimeType: _resolveImageMimeType(null, '', legacyBytes),
+      ));
+    }
+
+    return images;
+  }
+
   /// Text sent to models, with readable file attachments appended.
-  String contentWithAttachments({int maxInlineFileBytes = 64 * 1024}) {
+  ///
+  /// When [includeImages] is `false`, image attachments with available bytes
+  /// are omitted from the text block because they are transmitted natively as
+  /// multimodal image content parts.
+  String contentWithAttachments({
+    int maxInlineFileBytes = 64 * 1024,
+    bool includeImages = true,
+  }) {
     final parts = <String>[
       if (content.trim().isNotEmpty) content.trim(),
       for (final attachment in attachments)
-        _attachmentReferenceText(attachment, maxInlineFileBytes),
+        if (includeImages ||
+            !attachment.isImage ||
+            attachment.bytes == null ||
+            attachment.bytes!.isEmpty)
+          _attachmentReferenceText(attachment, maxInlineFileBytes),
     ];
     return parts.join('\n\n');
   }
@@ -323,6 +371,63 @@ String _extensionFor(String name, String? mimeType) {
     'application/json' => 'json',
     _ => '',
   };
+}
+
+String _resolveImageMimeType(
+  String? explicitMimeType,
+  String name,
+  Uint8List bytes,
+) {
+  final normalized = explicitMimeType?.trim().toLowerCase();
+  if (normalized != null && normalized.startsWith('image/')) {
+    return normalized;
+  }
+  final ext = _extensionFor(name, normalized);
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'gif':
+      return 'image/gif';
+    case 'webp':
+      return 'image/webp';
+    case 'bmp':
+      return 'image/bmp';
+  }
+  // Magic-byte sniffing fallback.
+  if (bytes.length >= 8 &&
+      bytes[0] == 0x89 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x4E &&
+      bytes[3] == 0x47) {
+    return 'image/png';
+  }
+  if (bytes.length >= 3 &&
+      bytes[0] == 0xFF &&
+      bytes[1] == 0xD8 &&
+      bytes[2] == 0xFF) {
+    return 'image/jpeg';
+  }
+  if (bytes.length >= 6 &&
+      bytes[0] == 0x47 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46) {
+    return 'image/gif';
+  }
+  if (bytes.length >= 12 &&
+      bytes[0] == 0x52 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x46 &&
+      bytes[8] == 0x57 &&
+      bytes[9] == 0x45 &&
+      bytes[10] == 0x42 &&
+      bytes[11] == 0x50) {
+    return 'image/webp';
+  }
+  return 'image/png';
 }
 
 bool _isImageExtension(String extension) {

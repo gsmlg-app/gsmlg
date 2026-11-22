@@ -10,12 +10,16 @@ import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/duo/duo_controller.dart';
 import 'package:gsmlg/screens/agents/agent_editor_screen.dart';
+import 'package:gsmlg/screens/agents/agent_model_config.dart';
 import 'package:gsmlg/screens/agents/agents_screen.dart';
 import 'package:gsmlg/screens/home/home_screen.dart';
 
 import 'chat_history_screen.dart';
+import 'widgets/agent_activity_panel.dart';
+import 'widgets/chat_composer_popovers.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/chat_message_list.dart';
+import 'widgets/clipboard_attachments.dart';
 import 'widgets/local_model_action_button.dart';
 import 'widgets/model_status_banner.dart';
 
@@ -33,6 +37,11 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  ChatPermissionMode _permissionMode = ChatPermissionMode.fullAccess;
+  String? _editingConversationId;
+  UserMessage? _editingMessage;
+  ChatDraft? _draftBeforeEdit;
+
   bool get _isDuoConnected {
     final duo = DuoDisplayManager.instance;
     return duo != null && !duo.secondary && duo.connected;
@@ -171,6 +180,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
     duo.onEscKey = () {
       if (!mounted) return;
+      if (_editingMessage != null) {
+        _cancelEditingMessage();
+        return;
+      }
       final chatState = context.read<ChatBloc>().state;
       if (chatState.isBusy) {
         context.read<ChatBloc>().add(
@@ -262,6 +275,141 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  bool _isEditingIn(String? conversationId) =>
+      _editingMessage != null && _editingConversationId == conversationId;
+
+  List<ChatAttachment> _editableAttachments(UserMessage message) {
+    final result = List<ChatAttachment>.from(message.attachments);
+    final image = message.imageBytes;
+    if (image != null &&
+        !result.any((a) => a.isImage || identical(a.bytes, image))) {
+      result.add(
+        ChatAttachment(
+          id: '${message.id}-image',
+          name: 'image.png',
+          mimeType: 'image/png',
+          sizeBytes: image.length,
+          bytes: image,
+        ),
+      );
+    }
+    final audio = message.audioBytes;
+    if (audio != null &&
+        !result.any((a) => a.isAudio || identical(a.bytes, audio))) {
+      result.add(
+        ChatAttachment(
+          id: '${message.id}-audio',
+          name: 'audio.wav',
+          mimeType: 'audio/wav',
+          sizeBytes: audio.length,
+          bytes: audio,
+        ),
+      );
+    }
+    return result;
+  }
+
+  void _beginEditingUserMessage(ChatState chatState, UserMessage message) {
+    if (chatState.isBusy) return;
+    final conversationId = chatState.conversation?.id;
+    if (conversationId == null) return;
+    final priorDraft = _isEditingIn(conversationId)
+        ? _draftBeforeEdit
+        : chatState.currentDraft;
+    setState(() {
+      _editingConversationId = conversationId;
+      _editingMessage = message;
+      _draftBeforeEdit = priorDraft;
+    });
+    final initialAttachments = _editableAttachments(message);
+    _updateDraft(
+      conversationId,
+      ChatDraft(
+        text: message.content,
+        selectionBase: message.content.length,
+        selectionExtent: message.content.length,
+        attachments: initialAttachments,
+      ),
+    );
+    if (initialAttachments.any(
+      (a) => a.isImage && (a.bytes?.length ?? 0) > 512 * 1024,
+    )) {
+      _normalizeEditedDraftImages(conversationId, message.id);
+    }
+  }
+
+  Future<void> _normalizeEditedDraftImages(
+    String conversationId,
+    String messageId,
+  ) async {
+    final bloc = context.read<ChatBloc>();
+    final draft = bloc.state.drafts[conversationId];
+    if (draft == null) return;
+    var changed = false;
+    final updated = <ChatAttachment>[];
+    for (final attachment in draft.attachments) {
+      final bytes = attachment.bytes;
+      if (attachment.isImage && bytes != null && bytes.length > 512 * 1024) {
+        final normalized = await ClipboardAttachments.normalizeImage(bytes);
+        if (normalized != null) {
+          changed = true;
+          updated.add(
+            attachment.copyWith(
+              name: ClipboardAttachments.replaceExtension(
+                attachment.name,
+                normalized.extension,
+              ),
+              mimeType: normalized.mimeType,
+              sizeBytes: normalized.bytes.length,
+              bytes: normalized.bytes,
+            ),
+          );
+          continue;
+        }
+      }
+      updated.add(attachment);
+    }
+    if (!mounted || !changed) return;
+    if (_editingConversationId != conversationId ||
+        _editingMessage?.id != messageId) {
+      return;
+    }
+    final latest = bloc.state.drafts[conversationId] ?? draft;
+    _updateDraft(
+      conversationId,
+      ChatDraft(
+        text: latest.text,
+        selectionBase: latest.selectionBase,
+        selectionExtent: latest.selectionExtent,
+        attachments: updated,
+      ),
+    );
+  }
+
+  void _cancelEditingMessage() {
+    final conversationId = _editingConversationId;
+    final priorDraft = _draftBeforeEdit;
+    if (_editingMessage == null) return;
+    setState(() {
+      _editingConversationId = null;
+      _editingMessage = null;
+      _draftBeforeEdit = null;
+    });
+    if (conversationId != null) {
+      _updateDraft(conversationId, priorDraft ?? const ChatDraft());
+    }
+  }
+
+  List<Message> _messagesForDisplay(ChatState state) {
+    final editing = _editingMessage;
+    if (editing == null || _editingConversationId != state.conversation?.id) {
+      return state.messages;
+    }
+    final index = state.messages.indexWhere((m) => m.id == editing.id);
+    if (index < 0) return state.messages;
+    return state.messages.sublist(0, index);
+  }
+
   /// The existing agent owning the selected conversation, if any.
   AgentDefinition? _ownerAgent() {
     final ownerId = context.read<ChatBloc>().state.conversation?.agentId;
@@ -320,7 +468,13 @@ class _ChatScreenState extends State<ChatScreen> {
           listenWhen: (previous, current) =>
               previous.conversation?.id != current.conversation?.id ||
               previous.conversation?.agentId != current.conversation?.agentId,
-          listener: (_, _) => _followOwner(),
+          listener: (_, current) {
+            if (_editingMessage != null &&
+                _editingConversationId != current.conversation?.id) {
+              _cancelEditingMessage();
+            }
+            _followOwner();
+          },
         ),
         // The owner may only be known once the agents are loaded.
         BlocListener<ChatSettingsBloc, ChatSettingsState>(
@@ -478,27 +632,46 @@ class _ChatScreenState extends State<ChatScreen> {
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, state) {
         if (state.conversation == null) return _buildWelcomeView();
-        return ChatMessageList(
-          messages: state.messages,
-          isStreaming: state.isStreaming,
-          showThinking: _shouldShowThinking(settingsState),
-          onEditUserMessage: (message, content) {
-            context.read<ChatBloc>().add(
-              ChatEditUserMessage(
-                conversationId: state.conversation?.id,
-                messageId: message.id,
-                content: content,
+        final session = state.currentSession;
+        final toolActivities = session?.toolActivities ?? const [];
+        final subAgents = session?.subAgents ?? const [];
+        return Column(
+          children: [
+            Expanded(
+              child: ChatMessageList(
+                messages: _messagesForDisplay(state),
+                isStreaming: state.isStreaming,
+                showThinking: _shouldShowThinking(settingsState),
+                onEditUserMessage: (message) =>
+                    _beginEditingUserMessage(state, message),
+                onRegenerateResponse: (message) {
+                  context.read<ChatBloc>().add(
+                    ChatRegenerateResponse(
+                      conversationId: state.conversation?.id,
+                      messageId: message.id,
+                    ),
+                  );
+                },
+                onForkConversation: (message) {
+                  context.read<ChatBloc>().add(
+                    ChatForkConversation(
+                      conversationId: state.conversation?.id,
+                      messageId: message.id,
+                    ),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Forked conversation')),
+                  );
+                },
               ),
-            );
-          },
-          onRegenerateResponse: (message) {
-            context.read<ChatBloc>().add(
-              ChatRegenerateResponse(
-                conversationId: state.conversation?.id,
-                messageId: message.id,
+            ),
+            if (toolActivities.isNotEmpty || subAgents.isNotEmpty)
+              AgentActivityPanel(
+                toolActivities: toolActivities,
+                subAgents: subAgents,
+                isStreaming: state.isStreaming,
               ),
-            );
-          },
+          ],
         );
       },
     );
@@ -511,6 +684,14 @@ class _ChatScreenState extends State<ChatScreen> {
       return config.remoteThinkingEffort != RemoteThinkingEffort.off;
     }
     return settingsState.thinkingEnabled;
+  }
+
+  List<AgentModelChoice> _availableModelChoices(BuildContext context) {
+    try {
+      return configuredAgentModels(context);
+    } catch (_) {
+      return const [];
+    }
   }
 
   Widget _buildLocalInputBar(ChatSettingsState settingsState) {
@@ -531,6 +712,10 @@ class _ChatScreenState extends State<ChatScreen> {
             return ChatInputBar(
               conversationId: chatState.conversation?.id,
               draft: chatState.currentDraft,
+              editingMessageId: _isEditingIn(chatState.conversation?.id)
+                  ? _editingMessage?.id
+                  : null,
+              onCancelEdit: _cancelEditingMessage,
               onDraftChanged: _updateDraft,
               onAttachmentsAdded: _addAttachments,
               isQueued: chatState.status == ChatStatus.queued,
@@ -543,18 +728,29 @@ class _ChatScreenState extends State<ChatScreen> {
               supportsAudio: modelInfo?.effectiveSupportsAudio ?? false,
               supportsThinking: modelInfo?.effectiveSupportsThinking ?? false,
               thinkingEnabled: settingsState.thinkingEnabled,
+              permissionMode: _permissionMode,
+              onPermissionModeChanged: (mode) =>
+                  setState(() => _permissionMode = mode),
+              selectedModelName: _localModelDisplayName(
+                settingsState,
+                modelState,
+              ),
+              selectedModelId: targetModelId,
+              modelChoices: _availableModelChoices(context),
+              onModelChoiceSelect: (choice) {
+                _configureSession(
+                  settingsState,
+                  config: applyModelChoice(settingsState.config, choice),
+                );
+              },
               selectedAgentName: _agentLabel(settingsState),
               selectedAgentId: settingsState.activeAgentId,
-              onModelTap: () => context.goNamed(AgentsScreen.name),
-              // The owner agent decides thinking in an owned conversation.
-              onThinkingToggle: chatState.conversation?.agentId != null
-                  ? null
-                  : (enabled) {
-                      _configureSession(
-                        settingsState,
-                        thinkingEnabled: enabled,
-                      );
-                    },
+              agents: settingsState.agents,
+              onAgentSelect: _selectAgent,
+              onModelTap: _openAgentSettings,
+              onThinkingToggle: (enabled) {
+                _configureSession(settingsState, thinkingEnabled: enabled);
+              },
               onSend: (message, {imageBytes, audioBytes, attachments}) {
                 _sendMessage(
                   settingsState,
@@ -588,38 +784,46 @@ class _ChatScreenState extends State<ChatScreen> {
       builder: (context, chatState) {
         final config = settingsState.config;
         final canSend = settingsState.config.isRemoteConfigured;
-        final isDeepSeek = config.remoteProvider == RemoteLlmProvider.deepSeek;
-        final owned = chatState.conversation?.agentId != null;
         return ChatInputBar(
           conversationId: chatState.conversation?.id,
           draft: chatState.currentDraft,
+          editingMessageId: _isEditingIn(chatState.conversation?.id)
+              ? _editingMessage?.id
+              : null,
+          onCancelEdit: _cancelEditingMessage,
           onDraftChanged: _updateDraft,
           onAttachmentsAdded: _addAttachments,
           isQueued: chatState.status == ChatStatus.queued,
           enabled: canSend,
           isStreaming: chatState.isBusy,
+          supportsImage: true,
           historyTokenCount: _calculateHistoryTokens(chatState.conversation),
-          thinkingEnabled: isDeepSeek
-              ? config.remoteThinkingEffort != RemoteThinkingEffort.off
-              : settingsState.thinkingEnabled,
-          thinkingEffort: isDeepSeek ? config.remoteThinkingEffort : null,
+          thinkingEnabled:
+              config.remoteThinkingEffort != RemoteThinkingEffort.off,
+          thinkingEffort: config.remoteThinkingEffort,
+          permissionMode: _permissionMode,
+          onPermissionModeChanged: (mode) =>
+              setState(() => _permissionMode = mode),
+          selectedModelName: config.remoteModel,
+          modelChoices: _availableModelChoices(context),
+          onModelChoiceSelect: (choice) {
+            _configureSession(
+              settingsState,
+              config: applyModelChoice(config, choice),
+            );
+          },
           selectedAgentName: _agentLabel(settingsState),
           selectedAgentId: settingsState.activeAgentId,
-          onModelTap: () => context.goNamed(AgentsScreen.name),
-          // The owner agent decides thinking in an owned conversation.
-          onThinkingEffortChanged: isDeepSeek && !owned
-              ? (effort) {
-                  _configureSession(
-                    settingsState,
-                    config: config.copyWith(remoteThinkingEffort: effort),
-                  );
-                }
-              : null,
-          onThinkingToggle: isDeepSeek || owned
-              ? null
-              : (enabled) {
-                  _configureSession(settingsState, thinkingEnabled: enabled);
-                },
+          agents: settingsState.agents,
+          onAgentSelect: _selectAgent,
+          onModelTap: _openAgentSettings,
+          onThinkingEffortChanged: (effort) {
+            _configureSession(
+              settingsState,
+              config: config.copyWith(remoteThinkingEffort: effort),
+              thinkingEnabled: effort != RemoteThinkingEffort.off,
+            );
+          },
           onSend: (message, {imageBytes, audioBytes, attachments}) {
             _sendMessage(
               settingsState,
@@ -673,6 +877,26 @@ class _ChatScreenState extends State<ChatScreen> {
       config: config,
       conversationId: chatState.conversation?.id,
     );
+    final editing = _editingMessage;
+    if (editing != null &&
+        _editingConversationId == chatState.conversation?.id) {
+      setState(() {
+        _editingMessage = null;
+        _editingConversationId = null;
+        _draftBeforeEdit = null;
+      });
+      context.read<ChatBloc>().add(
+        ChatEditUserMessage(
+          conversationId: chatState.conversation?.id,
+          messageId: editing.id,
+          content: message,
+          imageBytes: imageBytes,
+          audioBytes: audioBytes,
+          attachments: attachments,
+        ),
+      );
+      return;
+    }
     context.read<ChatBloc>().add(
       ChatSendMessage(
         conversationId: chatState.conversation?.id,

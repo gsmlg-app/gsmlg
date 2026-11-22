@@ -441,7 +441,7 @@ class RemoteLlmRepository {
   }) {
     final request = openai.OpenAiResponsesRequest(
       model: config.remoteModel.trim(),
-      input: _toOpenAiMessages(messages),
+      input: _toOpenAiMessages(messages, responsesFormat: true),
       stream: config.remoteStreamingEnabled,
       temperature: config.temperature,
       store: false,
@@ -476,7 +476,10 @@ class RemoteLlmRepository {
     return config.remoteProvider == RemoteLlmProvider.openAiCompatible;
   }
 
-  List<openai.OpenAiMessage> _toOpenAiMessages(List<Message> messages) {
+  List<openai.OpenAiMessage> _toOpenAiMessages(
+    List<Message> messages, {
+    bool responsesFormat = false,
+  }) {
     final result = <openai.OpenAiMessage>[];
     for (final message in messages) {
       if (message is AssistantMessage && message.isStreaming) continue;
@@ -486,12 +489,37 @@ class RemoteLlmRepository {
           openai.OpenAiMessage(role: 'system', content: message.content),
         );
       } else if (message is UserMessage) {
-        result.add(
-          openai.OpenAiMessage(
-            role: 'user',
-            content: message.contentWithAttachments(),
-          ),
-        );
+        final images = message.inlineImages;
+        if (images.isEmpty) {
+          result.add(
+            openai.OpenAiMessage(
+              role: 'user',
+              content: message.contentWithAttachments(),
+            ),
+          );
+        } else {
+          final text = message.contentWithAttachments(includeImages: false);
+          final parts = <Map<String, dynamic>>[
+            if (text.isNotEmpty)
+              {'type': responsesFormat ? 'input_text' : 'text', 'text': text},
+            for (final img in images)
+              if (responsesFormat)
+                {
+                  'type': 'input_image',
+                  'image_url':
+                      'data:${img.mimeType};base64,${base64Encode(img.bytes)}',
+                }
+              else
+                {
+                  'type': 'image_url',
+                  'image_url': {
+                    'url':
+                        'data:${img.mimeType};base64,${base64Encode(img.bytes)}',
+                  },
+                },
+          ];
+          result.add(openai.OpenAiMessage(role: 'user', content: parts));
+        }
       } else if (message is AssistantMessage) {
         final meta = message.agentMetadata != null
             ? AgentMessageMetadata.decode(message.agentMetadata)
@@ -583,7 +611,24 @@ class RemoteLlmRepository {
           if (system.isNotEmpty) system.write('\n\n');
           system.write(message.content);
         case UserMessage():
-          appendUserContent(message.contentWithAttachments());
+          final images = message.inlineImages;
+          if (images.isEmpty) {
+            appendUserContent(message.contentWithAttachments());
+          } else {
+            final text = message.contentWithAttachments(includeImages: false);
+            appendUserContent([
+              for (final img in images)
+                <String, dynamic>{
+                  'type': 'image',
+                  'source': {
+                    'type': 'base64',
+                    'media_type': img.mimeType,
+                    'data': base64Encode(img.bytes),
+                  },
+                },
+              if (text.isNotEmpty) anthropic.AnthropicContentBlock.text(text),
+            ]);
+          }
         case AssistantMessage():
           final meta = message.agentMetadata != null
               ? AgentMessageMetadata.decode(message.agentMetadata)

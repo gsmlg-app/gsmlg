@@ -134,4 +134,70 @@ void main() {
       defaultGemmaBackendForCurrentPlatform(),
     );
   });
+
+  test(
+    'persists user message image and file attachments across reloads',
+    () async {
+      final database = AppDatabase.forTesting();
+      addTearDown(database.close);
+
+      final repository = ChatStorageRepository(database);
+      await repository.saveConversation(Conversation.create(id: 'conv-att'));
+
+      final pngBytes = Uint8List.fromList([
+        0x89,
+        0x50,
+        0x4E,
+        0x47,
+        0x0D,
+        0x0A,
+        0x1A,
+        0x0A,
+        0x42,
+        0x99,
+      ]);
+      final pdfBytes = Uint8List.fromList('%PDF-1.4\nhello'.codeUnits);
+
+      final original = UserMessage(
+        id: 'user-att-1',
+        content: 'Check these files',
+        conversationId: 'conv-att',
+        timestamp: DateTime(2026, 5, 13, 12),
+        attachments: [
+          ChatAttachment(
+            id: 'att-img',
+            name: 'screenshot.png',
+            mimeType: 'image/png',
+            sizeBytes: pngBytes.length,
+            bytes: pngBytes,
+          ),
+          ChatAttachment(
+            id: 'att-pdf',
+            name: 'spec.pdf',
+            mimeType: 'application/pdf',
+            sizeBytes: pdfBytes.length,
+            bytes: pdfBytes,
+          ),
+        ],
+      );
+
+      await repository.saveMessage(original);
+
+      final loaded = await repository.loadMessages('conv-att');
+      final restored = loaded.single as UserMessage;
+      expect(restored.imageBytes, pngBytes);
+      expect(restored.attachments, hasLength(2));
+      expect(restored.attachments[0].id, 'att-img');
+      expect(restored.attachments[0].name, 'screenshot.png');
+      expect(restored.attachments[0].mimeType, 'image/png');
+      expect(restored.attachments[0].bytes, pngBytes);
+      expect(restored.attachments[1].id, 'att-pdf');
+      expect(restored.attachments[1].name, 'spec.pdf');
+      expect(restored.attachments[1].mimeType, 'application/pdf');
+      expect(restored.attachments[1].bytes, pdfBytes);
+      expect(restored.inlineImages, hasLength(1));
+      expect(restored.inlineImages.single.bytes, pngBytes);
+      expect(restored.inlineImages.single.mimeType, 'image/png');
+    },
+  );
 }

@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'chat_message_bubble.dart';
 
 const chatMessageGap = 12.0;
-const _actionsBlockKind = 'gsmlg.actions';
 
 class ChatMessageList extends StatefulWidget {
   const ChatMessageList({
@@ -16,13 +15,15 @@ class ChatMessageList extends StatefulWidget {
     this.showThinking = false,
     this.onEditUserMessage,
     this.onRegenerateResponse,
+    this.onForkConversation,
   });
 
   final List<Message> messages;
   final bool isStreaming;
   final bool showThinking;
-  final void Function(UserMessage message, String content)? onEditUserMessage;
+  final ValueChanged<UserMessage>? onEditUserMessage;
   final void Function(AssistantMessage message)? onRegenerateResponse;
+  final void Function(AssistantMessage message)? onForkConversation;
 
   @override
   State<ChatMessageList> createState() => _ChatMessageListState();
@@ -32,15 +33,13 @@ class _ChatMessageListState extends State<ChatMessageList> {
   @override
   Widget build(BuildContext context) {
     final visibleMessages = _orderedVisibleMessages(widget.messages);
+    final messagesById = {for (final m in visibleMessages) m.id: m};
     final theme =
         (Theme.of(context).extension<DmChatTheme>() ??
                 DmChatTheme.withContext(context))
             .copyWith(
               rowSpacing: chatMessageGap,
-              customBuilders: {
-                chatTypingBlockKind: buildChatTypingBlock,
-                _actionsBlockKind: (context, block) => block.data! as Widget,
-              },
+              customBuilders: {chatTypingBlockKind: buildChatTypingBlock},
             );
     return DmChatView(
       messages: [
@@ -53,27 +52,26 @@ class _ChatMessageListState extends State<ChatMessageList> {
                 widget.isStreaming &&
                 visibleMessages[index] is AssistantMessage &&
                 (visibleMessages[index] as AssistantMessage).isStreaming,
-            actions: DmChatCustomBlock(
-              kind: _actionsBlockKind,
-              data: _ChatMessageActions(
-                message: visibleMessages[index],
-                enabled: !widget.isStreaming,
-                onCopy: () => _copyMessage(context, visibleMessages[index]),
-                onEdit: visibleMessages[index] is UserMessage
-                    ? () => _showEditMessageDialog(
-                        context,
-                        visibleMessages[index] as UserMessage,
-                      )
-                    : null,
-                onRegenerate: visibleMessages[index] is AssistantMessage
-                    ? () => widget.onRegenerateResponse?.call(
-                        visibleMessages[index] as AssistantMessage,
-                      )
-                    : null,
-              ),
-            ),
           ),
       ],
+      footerBuilder: (context, dmMessage) {
+        final message = messagesById[dmMessage.id];
+        if (message == null) return null;
+        return _ChatMessageActions(
+          message: message,
+          enabled: !widget.isStreaming,
+          onCopy: () => _copyMessage(context, message),
+          onEdit: message is UserMessage && widget.onEditUserMessage != null
+              ? () => widget.onEditUserMessage?.call(message)
+              : null,
+          onRegenerate: message is AssistantMessage
+              ? () => widget.onRegenerateResponse?.call(message)
+              : null,
+          onFork: message is AssistantMessage
+              ? () => widget.onForkConversation?.call(message)
+              : null,
+        );
+      },
       showInput: false,
       isStreaming: widget.isStreaming,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -117,77 +115,6 @@ class _ChatMessageListState extends State<ChatMessageList> {
       context,
     ).showSnackBar(const SnackBar(content: Text('Copied message')));
   }
-
-  Future<void> _showEditMessageDialog(
-    BuildContext context,
-    UserMessage message,
-  ) async {
-    final editedContent = await showDialog<String>(
-      context: context,
-      builder: (_) => _EditMessageDialog(initialContent: message.content),
-    );
-
-    if (editedContent == null || editedContent == message.content.trim()) {
-      return;
-    }
-    widget.onEditUserMessage?.call(message, editedContent);
-  }
-}
-
-class _EditMessageDialog extends StatefulWidget {
-  const _EditMessageDialog({required this.initialContent});
-
-  final String initialContent;
-
-  @override
-  State<_EditMessageDialog> createState() => _EditMessageDialogState();
-}
-
-class _EditMessageDialogState extends State<_EditMessageDialog> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialContent);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    final content = _controller.text.trim();
-    if (content.isNotEmpty) {
-      Navigator.pop(context, content);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Edit Message'),
-      content: SizedBox(
-        width: 420,
-        child: TextField(
-          controller: _controller,
-          minLines: 3,
-          maxLines: 8,
-          autofocus: true,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
-      ],
-    );
-  }
 }
 
 class _ChatMessageActions extends StatelessWidget {
@@ -197,6 +124,7 @@ class _ChatMessageActions extends StatelessWidget {
     required this.onCopy,
     this.onEdit,
     this.onRegenerate,
+    this.onFork,
   });
 
   final Message message;
@@ -204,6 +132,7 @@ class _ChatMessageActions extends StatelessWidget {
   final VoidCallback onCopy;
   final VoidCallback? onEdit;
   final VoidCallback? onRegenerate;
+  final VoidCallback? onFork;
 
   @override
   Widget build(BuildContext context) {
@@ -239,6 +168,14 @@ class _ChatMessageActions extends StatelessWidget {
               visualDensity: VisualDensity.compact,
               tooltip: 'Regenerate response',
               onPressed: enabled ? onRegenerate : null,
+            ),
+          if (onFork != null)
+            IconButton(
+              icon: const Icon(Icons.call_split),
+              iconSize: 18,
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Fork conversation',
+              onPressed: enabled ? onFork : null,
             ),
           if (assistant != null && assistant.isStreaming)
             _LiveResponseSpeedChip(message: assistant),

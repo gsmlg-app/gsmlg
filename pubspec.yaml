@@ -232,6 +232,11 @@ dependencies:
 dependency_overrides:
   camera_macos:
     path: third_party/camera_macos
+  duskmoon_widgets:
+    git:
+      url: https://github.com/duskmoon-dev/flutter-duskmoon-ui.git
+      path: packages/duskmoon_widgets
+      ref: 61e2bc6
 
 dev_dependencies:
   bloc_test: ^10.0.0

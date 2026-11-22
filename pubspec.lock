@@ -649,12 +649,13 @@ packages:
     source: hosted
     version: "2.2.11"
   duskmoon_widgets:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: duskmoon_widgets
-      sha256: "3d35898dea0a7f62d82b971a6b6d6546dbc99039c66789ec1b4f12c76df0d098"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/duskmoon_widgets"
+      ref: "61e2bc6"
+      resolved-ref: "61e2bc6d6163a7213a5f5492a06303da0a062f1c"
+      url: "https://github.com/duskmoon-dev/flutter-duskmoon-ui.git"
+    source: git
     version: "2.2.11"
   equatable:
     dependency: "direct main"

@@ -14,6 +14,7 @@ import UniformTypeIdentifiers
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     EditorFileBridge.shared.bind(messenger: engineBridge.applicationRegistrar.messenger())
+    ClipboardBridge.shared.bind(messenger: engineBridge.applicationRegistrar.messenger())
   }
 }
 
@@ -249,5 +250,133 @@ private final class EditorFileBridge: NSObject, UIDocumentPickerDelegate {
 
   private func failure(_ code: String) -> FlutterError {
     FlutterError(code: code, message: code == "write_failed" ? "Unable to write the document." : "Unable to read the document.", details: nil)
+  }
+}
+
+private final class ClipboardBridge {
+  static let shared = ClipboardBridge()
+  private let maximumBytes = 25 * 1024 * 1024
+  private var channel: FlutterMethodChannel?
+
+  func bind(messenger: FlutterBinaryMessenger) {
+    channel?.setMethodCallHandler(nil)
+    let channel = FlutterMethodChannel(name: "gsmlg/clipboard", binaryMessenger: messenger)
+    self.channel = channel
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self else { result(nil); return }
+      switch call.method {
+      case "readAttachments":
+        result(self.readAttachments())
+      case "normalizeImage":
+        let args = call.arguments as? [String: Any] ?? [:]
+        guard let typed = args["bytes"] as? FlutterStandardTypedData else {
+          result(nil); return
+        }
+        let maxDimension = (args["maxDimension"] as? NSNumber)?.intValue ?? 1568
+        let quality = ((args["quality"] as? NSNumber)?.doubleValue ?? 82.0) / 100.0
+        let maxBytes = (args["maxBytes"] as? NSNumber)?.intValue ?? (512 * 1024)
+        DispatchQueue.global(qos: .userInitiated).async {
+          let normalized = self.normalizeImageData(
+            typed.data,
+            maxDimension: maxDimension,
+            quality: quality,
+            maxBytes: maxBytes
+          )
+          DispatchQueue.main.async {
+            if let normalized {
+              result([
+                "bytes": FlutterStandardTypedData(bytes: normalized.data),
+                "mimeType": normalized.mimeType,
+                "extension": normalized.ext,
+              ])
+            } else {
+              result(nil)
+            }
+          }
+        }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+  }
+
+  private func readAttachments() -> [[String: Any]] {
+    let pasteboard = UIPasteboard.general
+    var items: [[String: Any]] = []
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+
+    if let images = pasteboard.images, !images.isEmpty {
+      for (index, image) in images.enumerated() {
+        guard let pngData = image.pngData(), pngData.count <= maximumBytes else { continue }
+        let suffix = images.count > 1 ? "_\(index + 1)" : ""
+        if let normalized = normalizeImageData(pngData) {
+          items.append([
+            "name": "pasted_image_\(timestamp)\(suffix).\(normalized.ext)",
+            "mimeType": normalized.mimeType,
+            "bytes": FlutterStandardTypedData(bytes: normalized.data),
+            "sizeBytes": normalized.data.count,
+          ])
+        } else {
+          items.append([
+            "name": "pasted_image_\(timestamp)\(suffix).png",
+            "mimeType": "image/png",
+            "bytes": FlutterStandardTypedData(bytes: pngData),
+            "sizeBytes": pngData.count,
+          ])
+        }
+      }
+      if !items.isEmpty { return items }
+    }
+
+    if let url = pasteboard.url, url.isFileURL,
+       let data = try? Data(contentsOf: url), data.count <= maximumBytes {
+      let mimeType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType
+      var entry: [String: Any] = [
+        "name": url.lastPathComponent,
+        "bytes": FlutterStandardTypedData(bytes: data),
+        "sizeBytes": data.count,
+      ]
+      if let mimeType { entry["mimeType"] = mimeType }
+      items.append(entry)
+    }
+
+    return items
+  }
+
+  private func normalizeImageData(
+    _ data: Data,
+    maxDimension: Int = 1568,
+    quality: Double = 0.82,
+    maxBytes: Int = 512 * 1024
+  ) -> (data: Data, mimeType: String, ext: String)? {
+    guard let image = UIImage(data: data) else { return nil }
+    let pixelWidth = Int((image.size.width * image.scale).rounded())
+    let pixelHeight = Int((image.size.height * image.scale).rounded())
+    guard pixelWidth > 0, pixelHeight > 0 else { return nil }
+
+    let longest = max(pixelWidth, pixelHeight)
+    if data.count <= maxBytes && longest <= maxDimension {
+      return nil
+    }
+
+    let ratio = longest > maxDimension ? CGFloat(maxDimension) / CGFloat(longest) : 1.0
+    let targetSize = CGSize(
+      width: max(1, (CGFloat(pixelWidth) * ratio).rounded()),
+      height: max(1, (CGFloat(pixelHeight) * ratio).rounded())
+    )
+    let format = UIGraphicsImageRendererFormat()
+    format.scale = 1.0
+    format.opaque = true
+    let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
+    let rendered = renderer.image { ctx in
+      UIColor.white.setFill()
+      ctx.fill(CGRect(origin: .zero, size: targetSize))
+      image.draw(in: CGRect(origin: .zero, size: targetSize))
+    }
+    guard let jpegData = rendered.jpegData(compressionQuality: CGFloat(quality)),
+          jpegData.count < data.count else {
+      return nil
+    }
+    return (jpegData, "image/jpeg", "jpg")
   }
 }

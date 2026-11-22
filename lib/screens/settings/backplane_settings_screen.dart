@@ -30,6 +30,8 @@ class _BackplaneSettingsScreenState extends State<BackplaneSettingsScreen> {
   int? _accountId;
   RemoteLlmApiType _apiType = RemoteLlmApiType.openAiResponses;
   bool _mcpEnabled = false;
+  bool _modelsExpanded = false;
+  bool _toolsExpanded = false;
 
   @override
   void initState() {
@@ -196,61 +198,45 @@ class _BackplaneSettingsScreenState extends State<BackplaneSettingsScreen> {
                           ),
                         ],
                       ),
-                      SettingsSection(
-                        title: Text(context.l10n.backplaneModels),
-                        tiles: [
-                          SettingsTile(
-                            title: Text(context.l10n.backplaneLoadModels),
-                            leading: state.modelsLoading
-                                ? const CircularProgressIndicator()
-                                : const Icon(Icons.refresh),
-                            description: Text(
-                              state.modelsError == null
-                                  ? (dirty
-                                        ? context
-                                              .l10n
-                                              .backplaneSaveBeforeDiscovery
-                                        : state.settings.models.isEmpty
-                                        ? context.l10n.backplaneNoModels
-                                        : state.settings.models.join(', '))
-                                  : '${context.l10n.backplaneModelsLoadFailed}: ${state.modelsError}',
-                            ),
-                            onPressed: canDiscover && !state.modelsLoading
-                                ? (_) => context
-                                      .read<BackplaneSettingsBloc>()
-                                      .add(const BackplaneLoadModels())
-                                : null,
-                          ),
-                        ],
+                      _buildDiscoverySection(
+                        context: context,
+                        sectionTitle: context.l10n.backplaneModels,
+                        actionTitle: context.l10n.backplaneLoadModels,
+                        loading: state.modelsLoading,
+                        error: state.modelsError,
+                        errorPrefix: context.l10n.backplaneModelsLoadFailed,
+                        emptyText: context.l10n.backplaneNoModels,
+                        dirty: dirty,
+                        canDiscover: canDiscover,
+                        items: state.settings.models,
+                        expanded: _modelsExpanded,
+                        onToggleExpanded: () =>
+                            setState(() => _modelsExpanded = !_modelsExpanded),
+                        onDiscover: () => context
+                            .read<BackplaneSettingsBloc>()
+                            .add(const BackplaneLoadModels()),
                       ),
-                      SettingsSection(
-                        title: Text(context.l10n.backplaneTools),
-                        tiles: [
-                          SettingsTile(
-                            title: Text(context.l10n.backplaneRefreshTools),
-                            leading: state.toolsLoading
-                                ? const CircularProgressIndicator()
-                                : const Icon(Icons.refresh),
-                            description: Text(
-                              state.toolsError == null
-                                  ? (dirty
-                                        ? context
-                                              .l10n
-                                              .backplaneSaveBeforeDiscovery
-                                        : state.settings.tools.isEmpty
-                                        ? context.l10n.backplaneNoTools
-                                        : state.settings.tools
-                                              .map((tool) => tool['name'])
-                                              .join(', '))
-                                  : '${context.l10n.backplaneToolsRefreshFailed}: ${state.toolsError}',
-                            ),
-                            onPressed: canDiscover && !state.toolsLoading
-                                ? (_) => context
-                                      .read<BackplaneSettingsBloc>()
-                                      .add(const BackplaneRefreshTools())
-                                : null,
-                          ),
+                      _buildDiscoverySection(
+                        context: context,
+                        sectionTitle: context.l10n.backplaneTools,
+                        actionTitle: context.l10n.backplaneRefreshTools,
+                        loading: state.toolsLoading,
+                        error: state.toolsError,
+                        errorPrefix: context.l10n.backplaneToolsRefreshFailed,
+                        emptyText: context.l10n.backplaneNoTools,
+                        dirty: dirty,
+                        canDiscover: canDiscover,
+                        items: [
+                          for (final tool in state.settings.tools)
+                            if (tool['name']?.toString().isNotEmpty ?? false)
+                              tool['name'].toString(),
                         ],
+                        expanded: _toolsExpanded,
+                        onToggleExpanded: () =>
+                            setState(() => _toolsExpanded = !_toolsExpanded),
+                        onDiscover: () => context
+                            .read<BackplaneSettingsBloc>()
+                            .add(const BackplaneRefreshTools()),
                       ),
                     ],
                   ),
@@ -261,6 +247,169 @@ class _BackplaneSettingsScreenState extends State<BackplaneSettingsScreen> {
         ),
       ),
       smallSecondaryBody: DmAdaptiveScaffold.emptyBuilder,
+    );
+  }
+
+  SettingsSection _buildDiscoverySection({
+    required BuildContext context,
+    required String sectionTitle,
+    required String actionTitle,
+    required bool loading,
+    required String? error,
+    required String errorPrefix,
+    required String emptyText,
+    required bool dirty,
+    required bool canDiscover,
+    required List<String> items,
+    required bool expanded,
+    required VoidCallback onToggleExpanded,
+    required VoidCallback onDiscover,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasItems = error == null && !dirty && items.isNotEmpty;
+
+    Widget? description;
+    if (error != null) {
+      description = Text(
+        '$errorPrefix: $error',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: colorScheme.error),
+      );
+    } else if (dirty) {
+      description = Text(
+        context.l10n.backplaneSaveBeforeDiscovery,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      );
+    } else if (items.isEmpty) {
+      description = Text(
+        emptyText,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    return SettingsSection(
+      title: Text(sectionTitle),
+      tiles: [
+        SettingsTile(
+          title: Text(actionTitle),
+          leading: loading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.refresh),
+          value: hasItems ? Text('${items.length}') : null,
+          description: description,
+          onPressed: canDiscover && !loading ? (_) => onDiscover() : null,
+        ),
+        if (hasItems)
+          CustomSettingsTile(
+            child: _DiscoveredItemsTile(
+              items: items,
+              expanded: expanded,
+              onToggle: onToggleExpanded,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _DiscoveredItemsTile extends StatelessWidget {
+  const _DiscoveredItemsTile({
+    required this.items,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final List<String> items;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final subtleStyle = theme.textTheme.bodySmall?.copyWith(
+      color: colorScheme.onSurfaceVariant,
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: onToggle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    items.join(', '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: subtleStyle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  expanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (expanded) ...[
+          Divider(
+            height: 1,
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 220),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final item in items)
+                    Container(
+                      constraints: const BoxConstraints(maxWidth: 260),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.6,
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        item,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

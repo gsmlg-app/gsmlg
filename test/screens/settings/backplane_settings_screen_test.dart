@@ -154,6 +154,59 @@ void main() {
     expect(settings.tools, isEmpty);
     expect(service.calls, 0);
   });
+
+  testWidgets('discovered models and tools render with ellipsis and expand', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await preferences.setString(
+      BackplaneSettingsBloc.preferencesKey,
+      jsonEncode(
+        const BackplaneSettings(
+          serviceUrl: 'https://example.com',
+          models: ['gpt-5', 'claude-sonnet', 'gemini-pro'],
+          tools: [
+            {'name': 'GaoNote::gao_note.search'},
+            {'name': 'web::fetch'},
+            {'name': 'memory::remember'},
+          ],
+        ).toJson(),
+      ),
+    );
+    backplaneBloc = BackplaneSettingsBloc(
+      preferences: preferences,
+      service: _Service(),
+    );
+    await _pump(tester, backplaneBloc, accountsBloc);
+
+    final modelsPreviewFinder = find.text('gpt-5, claude-sonnet, gemini-pro');
+    expect(modelsPreviewFinder, findsOneWidget);
+    final modelsPreviewText = tester.widget<Text>(modelsPreviewFinder);
+    expect(modelsPreviewText.maxLines, 1);
+    expect(modelsPreviewText.overflow, TextOverflow.ellipsis);
+
+    final toolsPreviewFinder = find.text(
+      'GaoNote::gao_note.search, web::fetch, memory::remember',
+    );
+    expect(toolsPreviewFinder, findsOneWidget);
+    final previewText = tester.widget<Text>(toolsPreviewFinder);
+    expect(previewText.maxLines, 1);
+    expect(previewText.overflow, TextOverflow.ellipsis);
+    expect(find.text('web::fetch'), findsNothing);
+
+    await tester.tap(toolsPreviewFinder);
+    await tester.pumpAndSettle();
+    expect(find.text('web::fetch'), findsOneWidget);
+    expect(find.text('memory::remember'), findsOneWidget);
+
+    await tester.tap(toolsPreviewFinder);
+    await tester.pumpAndSettle();
+    expect(find.text('web::fetch'), findsNothing);
+  });
 }
 
 Future<void> _pump(

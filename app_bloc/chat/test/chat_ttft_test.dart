@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:app_agent/app_agent.dart';
 import 'package:chat_bloc/chat_bloc.dart';
@@ -107,6 +108,7 @@ void main() {
         final toolStarted = fixture.tools.started.stream.first;
         fixture.repository.controller
             .add(const ChatFunctionCallChunk(name: 'tool', args: {}));
+        await fixture.repository.controller.close();
         await toolStarted;
         await Future<void>.delayed(const Duration(milliseconds: 30));
         final resumed = fixture.repository.generations.stream.first;
@@ -194,6 +196,123 @@ void main() {
             ?.timeToFirstToken
             ?.inMilliseconds,
         latency?.inMilliseconds);
+  });
+
+  test(
+      'editing a user message replaces attachments, drops later turns, and clears draft',
+      () async {
+    final fixture = _Fixture();
+    addTearDown(fixture.close);
+
+    // Turn 1
+    await fixture.start(const ChatSendMessage(content: 'turn 1'));
+    fixture.repository.controller.add(const ChatTextChunk('answer 1'));
+    await fixture.finish();
+
+    // Turn 2
+    await fixture.start(const ChatSendMessage(content: 'turn 2'));
+    fixture.repository.controller.add(const ChatTextChunk('answer 2'));
+    await fixture.finish();
+
+    final convId = fixture.bloc.state.conversation!.id;
+    final turn1User =
+        fixture.bloc.state.messages.whereType<UserMessage>().first;
+    final newImg = Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x01]);
+    final newAtt = ChatAttachment(
+      id: 'att-new',
+      name: 'new.png',
+      mimeType: 'image/png',
+      sizeBytes: newImg.length,
+      bytes: newImg,
+    );
+
+    // Simulate user editing turn 1 in the composer draft
+    fixture.bloc.add(ChatUpdateDraft(
+      conversationId: convId,
+      text: 'turn 1 revised',
+      attachments: [newAtt],
+    ));
+    await _flush();
+    expect(fixture.bloc.state.currentDraft.text, 'turn 1 revised');
+
+    await fixture.start(ChatEditUserMessage(
+      conversationId: convId,
+      messageId: turn1User.id,
+      content: 'turn 1 revised',
+      imageBytes: newImg,
+      attachments: [newAtt],
+    ));
+    fixture.repository.controller.add(const ChatTextChunk('new answer 1'));
+    await fixture.finish();
+
+    // Draft is cleared, turn 2 is dropped, and turn 1 has updated content + attachment
+    expect(fixture.bloc.state.currentDraft.isEmpty, isTrue);
+    final users = fixture.bloc.state.messages.whereType<UserMessage>().toList();
+    expect(users, hasLength(1));
+    expect(users.single.id, turn1User.id);
+    expect(users.single.content, 'turn 1 revised');
+    expect(users.single.imageBytes, newImg);
+    expect(users.single.attachments, [newAtt]);
+
+    final assistants =
+        fixture.bloc.state.messages.whereType<AssistantMessage>().toList();
+    expect(assistants, hasLength(1));
+    expect(assistants.single.content, 'new answer 1');
+  });
+
+  test(
+      'forking from an assistant response clones prefix into a new conversation and preserves the original',
+      () async {
+    final fixture = _Fixture();
+    addTearDown(fixture.close);
+
+    // Turn 1
+    await fixture.start(const ChatSendMessage(content: 'turn 1'));
+    fixture.repository.controller.add(const ChatTextChunk('answer 1'));
+    await fixture.finish();
+
+    // Turn 2
+    await fixture.start(const ChatSendMessage(content: 'turn 2'));
+    fixture.repository.controller.add(const ChatTextChunk('answer 2'));
+    await fixture.finish();
+
+    final originalId = fixture.bloc.state.conversation!.id;
+    final originalMessages = List<Message>.from(fixture.bloc.state.messages);
+    final turn1Assistant = originalMessages.whereType<AssistantMessage>().first;
+
+    final forkedReady = _wait(
+      fixture.bloc,
+      (state) =>
+          state.conversation != null && state.conversation!.id != originalId,
+    );
+    fixture.bloc.add(ChatForkConversation(
+      conversationId: originalId,
+      messageId: turn1Assistant.id,
+    ));
+    await forkedReady;
+    await _flush();
+
+    final forkedConv = fixture.bloc.state.conversation!;
+    expect(forkedConv.id, isNot(originalId));
+    expect(forkedConv.title, endsWith('(Fork)'));
+
+    // Forked conversation only contains turn 1 (with fresh message IDs)
+    final forkedUsers = forkedConv.messages.whereType<UserMessage>().toList();
+    final forkedAssistants =
+        forkedConv.messages.whereType<AssistantMessage>().toList();
+    expect(forkedUsers, hasLength(1));
+    expect(forkedUsers.single.content, 'turn 1');
+    expect(forkedAssistants, hasLength(1));
+    expect(forkedAssistants.single.content, 'answer 1');
+    expect(forkedAssistants.single.id, isNot(turn1Assistant.id));
+    expect(forkedAssistants.single.conversationId, forkedConv.id);
+
+    // Original conversation remains intact in storage with both turns
+    final storedOriginal = await fixture.storage.loadConversation(originalId);
+    expect(storedOriginal!.messages.whereType<UserMessage>(), hasLength(2));
+    final storedFork = await fixture.storage.loadConversation(forkedConv.id);
+    expect(storedFork!.messages.whereType<UserMessage>(), hasLength(1));
+    expect(storedFork.messages.whereType<AssistantMessage>(), hasLength(1));
   });
 }
 

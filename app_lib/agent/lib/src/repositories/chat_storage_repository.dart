@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:app_database/app_database.dart';
 import 'package:drift/drift.dart';
 
@@ -159,9 +161,18 @@ class ChatStorageRepository {
   Future<void> saveMessage(Message message) async {
     int? tokenCount;
     ChatResponseInfo? responseInfo;
+    Uint8List? primaryImageBytes;
+    String? metadata;
     if (message is AssistantMessage) {
       tokenCount = message.tokenCount;
       responseInfo = message.responseInfo;
+      metadata = message.agentMetadata;
+    } else if (message is ToolResponseMessage) {
+      metadata = message.agentMetadata;
+    } else if (message is UserMessage) {
+      primaryImageBytes =
+          message.imageBytes ?? message.inlineImages.firstOrNull?.bytes;
+      metadata = _encodeUserAttachments(message.attachments, primaryImageBytes);
     }
 
     await _db
@@ -185,19 +196,11 @@ class ChatStorageRepository {
             responseTimeToFirstTokenMs: Value(
               responseInfo?.timeToFirstToken?.inMilliseconds,
             ),
-            imageBytes: Value(
-              message is UserMessage ? message.imageBytes : null,
-            ),
+            imageBytes: Value(primaryImageBytes),
             toolName: Value(
               message is ToolResponseMessage ? message.toolName : null,
             ),
-            agentMetadata: Value(
-              message is AssistantMessage
-                  ? message.agentMetadata
-                  : (message is ToolResponseMessage
-                        ? message.agentMetadata
-                        : null),
-            ),
+            agentMetadata: Value(metadata),
             timestamp: Value(message.timestamp),
           ),
         );
@@ -351,6 +354,7 @@ class ChatStorageRepository {
         conversationId: row.conversationId,
         timestamp: row.timestamp,
         imageBytes: row.imageBytes,
+        attachments: _decodeUserAttachments(row.agentMetadata, row.imageBytes),
       ),
       'assistant' => () {
         final meta = AgentMessageMetadata.decode(row.agentMetadata);
@@ -533,5 +537,97 @@ class ChatStorageRepository {
 
   String _backendToString(GemmaBackend backend) {
     return backend.name;
+  }
+
+  static const int _maxPersistedInlineAttachmentBytes = 16 * 1024 * 1024;
+
+  String? _encodeUserAttachments(
+    List<ChatAttachment> attachments,
+    Uint8List? primaryImageBytes,
+  ) {
+    if (attachments.isEmpty) return null;
+    var usedPrimaryImageBytes = false;
+    final encoded = <Map<String, dynamic>>[];
+
+    for (final attachment in attachments) {
+      final bytes = attachment.bytes;
+      final item = <String, dynamic>{
+        'id': attachment.id,
+        'name': attachment.name,
+        if (attachment.mimeType != null) 'mimeType': attachment.mimeType,
+        if (attachment.sizeBytes != null)
+          'sizeBytes': attachment.sizeBytes
+        else if (bytes != null)
+          'sizeBytes': bytes.length,
+      };
+      if (bytes != null && bytes.isNotEmpty) {
+        if (!usedPrimaryImageBytes &&
+            primaryImageBytes != null &&
+            identical(bytes, primaryImageBytes)) {
+          item['usesImageBytes'] = true;
+          usedPrimaryImageBytes = true;
+        } else if (bytes.length <= _maxPersistedInlineAttachmentBytes) {
+          item['bytesBase64'] = base64Encode(bytes);
+        }
+      }
+      encoded.add(item);
+    }
+
+    return jsonEncode({'version': 1, 'attachments': encoded});
+  }
+
+  List<ChatAttachment> _decodeUserAttachments(
+    String? rawMetadata,
+    Uint8List? imageBytes,
+  ) {
+    if (rawMetadata == null || rawMetadata.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(rawMetadata);
+      if (decoded is! Map<String, dynamic>) return const [];
+      final rawList = decoded['attachments'];
+      if (rawList is! List) return const [];
+
+      final attachments = <ChatAttachment>[];
+      for (final entry in rawList) {
+        if (entry is! Map) continue;
+        final id = entry['id'];
+        final name = entry['name'];
+        if (id is! String || name is! String) continue;
+
+        Uint8List? bytes;
+        if (entry['usesImageBytes'] == true) {
+          bytes = imageBytes;
+        } else {
+          final b64 = entry['bytesBase64'];
+          if (b64 is String && b64.isNotEmpty) {
+            try {
+              bytes = base64Decode(b64);
+            } on FormatException {
+              bytes = null;
+            }
+          }
+        }
+
+        final sizeBytes = entry['sizeBytes'] is int
+            ? entry['sizeBytes'] as int
+            : bytes?.length;
+        final mimeType = entry['mimeType'] is String
+            ? entry['mimeType'] as String
+            : null;
+
+        attachments.add(
+          ChatAttachment(
+            id: id,
+            name: name,
+            sizeBytes: sizeBytes,
+            mimeType: mimeType,
+            bytes: bytes,
+          ),
+        );
+      }
+      return attachments;
+    } on FormatException {
+      return const [];
+    }
   }
 }

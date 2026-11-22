@@ -10,6 +10,7 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
     EditorDocumentBridge.shared.bind(flutterViewController.engine.binaryMessenger)
+    ClipboardBridge.shared.bind(flutterViewController.engine.binaryMessenger)
 
     super.awakeFromNib()
   }

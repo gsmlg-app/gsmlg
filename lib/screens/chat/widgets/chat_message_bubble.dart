@@ -69,7 +69,9 @@ DmChatMessage toDmChatMessage(
           id: tool.id,
           name: tool.toolName,
           output: '$fence${output is String ? 'text' : 'json'}\n$text\n$fence',
-          status: DmChatToolCallStatus.done,
+          status: tool.isError
+              ? DmChatToolCallStatus.error
+              : DmChatToolCallStatus.done,
         ),
       );
     case final SystemMessage system:

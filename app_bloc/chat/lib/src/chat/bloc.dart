@@ -29,12 +29,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     BackplaneServiceRepository? backplaneService,
     LocalModelAccess? modelAccess,
     ConversationTitleGenerator? titleGenerator,
+    AgentKeepAlive? keepAlive,
   })  : _gemmaRepository = gemmaRepository,
         _remoteRepository = remoteRepository,
         _storageRepository = storageRepository,
         _toolExecutor = toolExecutor,
         _agentRepository = agentRepository,
         _titleGenerator = titleGenerator,
+        _keepAlive = keepAlive,
         _preferences = preferences,
         _backplaneService = backplaneService,
         _modelAccess =
@@ -43,19 +45,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         super(const ChatState()) {
     on<_ChatTitleReady>(_onTitleReady);
     on<ChatRenameConversation>(_onRenameConversation);
-    if (titleGenerator != null) {
-      _titlesActive = WidgetsBinding.instance.lifecycleState == null ||
-          WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
-      _titleLifecycle = AppLifecycleListener(onStateChange: (lifecycle) {
-        _titlesActive = lifecycle == AppLifecycleState.resumed;
-        if (!_titlesActive) {
-          ++_titleEpoch;
-          unawaited(_titleGenerator?.cancel());
-        } else {
-          _drainTitles();
-        }
-      });
-    }
+    _initLifecycleListener();
     on<ChatLoadConversation>(_onLoadConversation);
     on<ChatNewConversation>(_onNewConversation);
     on<ChatUpdateDraft>(_onUpdateDraft);
@@ -65,6 +55,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<ChatStopGeneration>(_onStopGeneration);
     on<ChatClearConversation>(_onClearConversation);
     on<ChatRegenerateResponse>(_onRegenerateResponse);
+    on<ChatForkConversation>(_onForkConversation);
     on<ChatEditUserMessage>(_onEditUserMessage);
     on<ChatDeleteConversation>(_onDeleteConversation);
     on<ChatLoadHistory>(_onLoadHistory);
@@ -78,7 +69,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<_ChatAgentEventWrapper>(_onChatAgentEvent);
   }
   final ConversationTitleGenerator? _titleGenerator;
-  AppLifecycleListener? _titleLifecycle;
+  final AgentKeepAlive? _keepAlive;
+  AppLifecycleListener? _lifecycleListener;
+  bool _backgroundedWithActiveRuns = false;
   bool _titlesActive = true;
   bool _titleRunning = false;
   int _titleEpoch = 0;
@@ -369,17 +362,54 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
                 Map<String, dynamic>.from(jsonDecode(jsonEncode(tool)) as Map))
             .toList());
     _tasks[id] = task;
+    _syncKeepAlive();
     _putSession(
         session.copyWith(
             status: ChatStatus.preparing,
             clearError: true,
             clearRun: true,
+            clearActivities: true,
             config: task.config,
             agentId: owner,
             hasUnreadResponse: false),
         emit,
         updateHistory: true);
     return task;
+  }
+
+  void _syncKeepAlive() {
+    final keepAlive = _keepAlive;
+    if (keepAlive == null) return;
+    unawaited(keepAlive.onActiveRunsChanged(_tasks.length));
+  }
+
+  void _initLifecycleListener() {
+    try {
+      final initialLifecycle = WidgetsBinding.instance.lifecycleState;
+      _titlesActive = initialLifecycle == null ||
+          initialLifecycle == AppLifecycleState.resumed;
+      _lifecycleListener = AppLifecycleListener(onStateChange: (lifecycle) {
+        final resumed = lifecycle == AppLifecycleState.resumed;
+        if (_titleGenerator != null) {
+          _titlesActive = resumed;
+          if (!_titlesActive) {
+            ++_titleEpoch;
+            unawaited(_titleGenerator.cancel());
+          } else {
+            _drainTitles();
+          }
+        }
+        if (!resumed && _tasks.isNotEmpty) {
+          _backgroundedWithActiveRuns = true;
+          _syncKeepAlive();
+        } else if (resumed && _backgroundedWithActiveRuns) {
+          _backgroundedWithActiveRuns = false;
+          if (!_closing) add(const ChatLoadHistory());
+        }
+      });
+    } catch (_) {
+      // Headless unit tests without WidgetsBinding initialized.
+    }
   }
 
   Future<void> _onSendMessage(
@@ -745,18 +775,60 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           _emitTask(task, emit,
               activity: thoughtChunk.isEmpty ? null : 'Thinking');
         }
-      case ToolCallPreparedEvent(:final toolName):
+      case ToolCallPreparedEvent(
+          :final callId,
+          :final toolName,
+          :final arguments
+        ):
+        _upsertToolActivity(
+          task,
+          ChatToolActivity(
+            callId: callId,
+            toolName: toolName,
+            arguments: arguments,
+            status: 'prepared',
+          ),
+        );
         _emitTask(task, emit, activity: 'Preparing tool: $toolName');
-      case ToolCallStartedEvent(:final toolName):
+      case ToolCallStartedEvent(
+          :final callId,
+          :final toolName,
+          :final arguments
+        ):
+        _upsertToolActivity(
+          task,
+          ChatToolActivity(
+            callId: callId,
+            toolName: toolName,
+            arguments: arguments,
+            status: 'running',
+          ),
+        );
         _emitTask(task, emit, activity: 'Calling tool: $toolName');
       case ToolCallCompletedEvent(
           :final toolName,
           :final callId,
+          :final arguments,
           :final receipt,
           :final acknowledgement
         ):
         final result = receipt.result;
         final resultString = result is String ? result : jsonEncode(result);
+        final preview = resultString.length <= 160
+            ? resultString
+            : '${resultString.substring(0, 157)}...';
+        _upsertToolActivity(
+          task,
+          ChatToolActivity(
+            callId: callId,
+            toolName: toolName,
+            arguments: arguments,
+            status: receipt.status.name,
+            resultPreview: preview,
+            durationMs: receipt.durationMs,
+            isError: receipt.isError,
+          ),
+        );
         final message = ToolResponseMessage(
           id: _uuid.v4(),
           toolName: toolName,
@@ -772,6 +844,34 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           return;
         }
         _emitTask(task, emit, activity: 'Tool finished: $toolName');
+      case SubAgentUpdatedEvent(
+          :final taskId,
+          :final parentRunId,
+          :final childRunId,
+          :final workerName,
+          :final goal,
+          :final status,
+          :final depth,
+          :final summary,
+          :final error,
+          :final durationMs
+        ):
+        _upsertSubAgentActivity(
+          task,
+          ChatSubAgentActivity(
+            taskId: taskId,
+            parentRunId: parentRunId,
+            childRunId: childRunId,
+            workerName: workerName,
+            goal: goal,
+            status: status,
+            depth: depth,
+            summary: summary,
+            error: error,
+            durationMs: durationMs,
+          ),
+        );
+        _emitTask(task, emit, activity: 'Sub-agent $workerName: $status');
       case ModelTurnCompletedEvent(:final modelMessage, :final acknowledgement):
         final metadata = AgentMessageMetadata(
           version: 1,
@@ -936,13 +1036,37 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  void _upsertToolActivity(_GenerationTask task, ChatToolActivity activity) {
+    final index = task.toolActivities
+        .indexWhere((item) => item.callId == activity.callId);
+    if (index == -1) {
+      task.toolActivities.add(activity);
+    } else {
+      task.toolActivities[index] = activity;
+    }
+  }
+
+  void _upsertSubAgentActivity(
+      _GenerationTask task, ChatSubAgentActivity activity) {
+    final index =
+        task.subAgents.indexWhere((item) => item.taskId == activity.taskId);
+    if (index == -1) {
+      task.subAgents.add(activity);
+    } else {
+      task.subAgents[index] = activity;
+    }
+  }
+
   void _emitTask(_GenerationTask task, Emitter<ChatState> emit,
       {String? activity}) {
     final session = state.sessions[task.id];
     if (session != null && _isCurrent(task)) {
       _putSession(
           session.copyWith(
-              conversation: task.conversation, currentActivity: activity),
+              conversation: task.conversation,
+              currentActivity: activity,
+              toolActivities: task.toolActivities,
+              subAgents: task.subAgents),
           emit);
     }
   }
@@ -1022,6 +1146,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (!_isCurrent(task)) return;
     task.localLease?.release();
     _tasks.remove(task.id);
+    _syncKeepAlive();
     task.cancelled = true;
     task.subscription = null;
     final session = state.sessions[task.id];
@@ -1033,6 +1158,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               errorMessage: error,
               clearError: error == null,
               clearRun: true,
+              toolActivities: task.toolActivities,
+              subAgents: task.subAgents,
               hasUnreadResponse: state.conversation?.id != task.id),
           emit,
           updateHistory: true);
@@ -1048,6 +1175,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   Future<_GenerationTask?> _cancel(String id) async {
     final task = _tasks.remove(id);
     if (task == null) return null;
+    _syncKeepAlive();
     task.cancelled = true;
     task.timer?.cancel();
     task.stopwatch.stop();
@@ -1130,6 +1258,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               conversation: conversation,
               status: ChatStatus.ready,
               clearRun: true,
+              clearActivities: true,
               clearError: true,
               hasUnreadResponse: false),
           emit,
@@ -1235,27 +1364,149 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         emit: emit);
   }
 
+  Future<void> _onForkConversation(
+      ChatForkConversation event, Emitter<ChatState> emit) async {
+    final id = event.conversationId ?? state.conversation?.id;
+    final session = state.sessions[id];
+    if (session == null || session.isBusy || _deleted.contains(id)) return;
+    final source = session.conversation;
+    final messages = source.messages;
+    final index = messages
+        .indexWhere((m) => m.id == event.messageId && m is AssistantMessage);
+    if (index < 0) return;
+
+    var endExclusive = index + 1;
+    while (endExclusive < messages.length &&
+        messages[endExclusive] is ToolResponseMessage) {
+      endExclusive++;
+    }
+
+    ++_navigationVersion;
+    final now = DateTime.now();
+    final newId = _uuid.v4();
+    final trimmedTitle = source.title.trim();
+    final baseTitle = trimmedTitle.isEmpty ? 'New Chat' : trimmedTitle;
+    final forkTitle =
+        baseTitle.endsWith(' (Fork)') ? baseTitle : '$baseTitle (Fork)';
+
+    final clonedMessages = <Message>[
+      for (final message in messages.sublist(0, endExclusive))
+        switch (message) {
+          final UserMessage user => user.copyWith(
+              id: _uuid.v4(),
+              conversationId: newId,
+            ),
+          final AssistantMessage assistant => assistant.copyWith(
+              id: _uuid.v4(),
+              conversationId: newId,
+              isStreaming: false,
+            ),
+          final SystemMessage system => system.copyWith(
+              id: _uuid.v4(),
+              conversationId: newId,
+            ),
+          final ToolResponseMessage tool => tool.copyWith(
+              id: _uuid.v4(),
+              conversationId: newId,
+            ),
+        },
+    ];
+
+    final forked = Conversation(
+      id: newId,
+      title: forkTitle,
+      titleSource: 'manual',
+      messages: clonedMessages,
+      systemPrompt: source.systemPrompt,
+      agentId: source.agentId,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    _putSession(
+      ChatSessionState(
+        conversation: forked,
+        config: session.config,
+        agentId: session.agentId ?? source.agentId,
+        thinkingEnabled: session.thinkingEnabled,
+        systemPrompt: session.systemPrompt ?? source.systemPrompt,
+      ),
+      emit,
+      select: true,
+      updateHistory: true,
+    );
+
+    try {
+      await _storageRepository.saveConversation(forked);
+      for (final message in forked.messages) {
+        if (_deleted.contains(newId)) break;
+        await _storageRepository.saveMessage(message);
+      }
+      if (_deleted.contains(newId)) {
+        await _storageRepository.deleteConversation(newId);
+      }
+    } catch (error) {
+      final current = state.sessions[newId];
+      if (!_deleted.contains(newId) && current != null && !current.isBusy) {
+        _putSession(
+          current.copyWith(
+            status: ChatStatus.error,
+            errorMessage: 'Failed to save forked conversation: $error',
+          ),
+          emit,
+        );
+      }
+    }
+  }
+
   Future<void> _onEditUserMessage(
       ChatEditUserMessage event, Emitter<ChatState> emit) async {
     final id = event.conversationId ?? state.conversation?.id;
     final session = state.sessions[id];
     final content = event.content.trim();
-    if (session == null || content.isEmpty) return;
+    if (session == null) return;
     final messages = session.conversation.messages;
     final index =
         messages.indexWhere((m) => m.id == event.messageId && m is UserMessage);
     if (index < 0) return;
+    final original = messages[index] as UserMessage;
+    final UserMessage user;
+    if (event.attachments != null ||
+        event.imageBytes != null ||
+        event.audioBytes != null) {
+      final attachments = event.attachments ?? const [];
+      if (content.isEmpty &&
+          attachments.isEmpty &&
+          event.imageBytes == null &&
+          event.audioBytes == null) {
+        return;
+      }
+      user = UserMessage(
+        id: original.id,
+        content: content,
+        conversationId: original.conversationId,
+        timestamp: original.timestamp,
+        imageBytes: event.imageBytes,
+        audioBytes: event.audioBytes,
+        attachments: attachments,
+      );
+    } else {
+      if (content.isEmpty) return;
+      user = original.copyWith(content: content);
+    }
     _pauseTitles();
     final task = _reserve(session.conversation, emit);
     if (task == null) return;
-    final user = (messages[index] as UserMessage).copyWith(content: content);
+    final submittedDraft = state.drafts[task.id] ?? state.drafts[''];
     await _restartFromPrefix(task,
         retainedMessages: [...messages.sublist(0, index), user],
         deleteMessages: messages.sublist(index + 1),
         title: session.conversation.titleSource == 'fallback' &&
-                messages.indexWhere((m) => m is UserMessage) == index
+                messages.indexWhere((m) => m is UserMessage) == index &&
+                content.isNotEmpty
             ? _generateTitle(content)
             : null,
+        submittedDraft: submittedDraft,
         emit: emit);
   }
 
@@ -1263,7 +1514,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       {required List<Message> retainedMessages,
       required List<Message> deleteMessages,
       required Emitter<ChatState> emit,
-      String? title}) async {
+      String? title,
+      ChatDraft? submittedDraft}) async {
     try {
       await _applyOwner(task);
       if (!_isCurrent(task)) return;
@@ -1297,7 +1549,16 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       });
       if (!_isCurrent(task)) return;
       await _prepareAssistant(task, emit);
-      if (_isCurrent(task)) _schedule(task, emit);
+      if (!_isCurrent(task)) return;
+      if (submittedDraft != null) {
+        final drafts = {...state.drafts};
+        if ((drafts[task.id] ?? drafts['']) == submittedDraft) {
+          drafts.remove(task.id);
+          drafts.remove('');
+        }
+        _publish(emit, drafts: drafts);
+      }
+      _schedule(task, emit);
     } catch (error) {
       if (_isCurrent(task)) {
         await _failPreparation(task, error.toString(), emit);
@@ -1546,12 +1807,13 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   Future<void> close() async {
     _closing = true;
     ++_titleEpoch;
-    _titleLifecycle?.dispose();
+    _lifecycleListener?.dispose();
     _titleCandidates.clear();
     await _titleGenerator?.dispose();
     for (final task in _tasks.values.toList()) {
       await _cancel(task.id);
     }
+    _syncKeepAlive();
     await _remoteRepository.dispose();
     return super.close();
   }
@@ -1576,6 +1838,8 @@ class _GenerationTask {
   bool thinkingEnabled;
   String? systemPrompt;
   final removedSystemIds = <String>{};
+  final toolActivities = <ChatToolActivity>[];
+  final subAgents = <ChatSubAgentActivity>[];
   Completer<void>? localPreparation;
   LocalModelLease? localLease;
   Conversation conversation;

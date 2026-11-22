@@ -8,7 +8,11 @@ import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:gsmlg/duo/duo_controller.dart';
+import 'package:gsmlg/screens/agents/agent_model_config.dart';
 import 'package:record/record.dart';
+
+import 'chat_composer_popovers.dart';
+import 'clipboard_attachments.dart';
 
 class ChatInputBar extends StatefulWidget {
   const ChatInputBar({
@@ -25,7 +29,11 @@ class ChatInputBar extends StatefulWidget {
     this.supportsThinking = false,
     this.thinkingEnabled = false,
     this.thinkingEffort,
+    this.permissionMode = ChatPermissionMode.fullAccess,
+    this.onPermissionModeChanged,
     this.selectedModelName,
+    this.modelChoices = const [],
+    this.onModelChoiceSelect,
     this.installedModels = const [],
     this.remoteModels = const [],
     this.selectedModelId,
@@ -40,6 +48,8 @@ class ChatInputBar extends StatefulWidget {
     this.onModelTap,
     this.onModelSelect,
     this.onAgentSelect,
+    this.editingMessageId,
+    this.onCancelEdit,
   });
 
   final String? conversationId;
@@ -55,7 +65,11 @@ class ChatInputBar extends StatefulWidget {
   final bool supportsThinking;
   final bool thinkingEnabled;
   final RemoteThinkingEffort? thinkingEffort;
+  final ChatPermissionMode permissionMode;
+  final ValueChanged<ChatPermissionMode>? onPermissionModeChanged;
   final String? selectedModelName;
+  final List<AgentModelChoice> modelChoices;
+  final ValueChanged<AgentModelChoice>? onModelChoiceSelect;
   final List<String> installedModels;
   final List<String> remoteModels;
   final String? selectedModelId;
@@ -76,6 +90,10 @@ class ChatInputBar extends StatefulWidget {
   final VoidCallback? onModelTap;
   final ValueChanged<String>? onModelSelect;
   final ValueChanged<String>? onAgentSelect;
+  final String? editingMessageId;
+  final VoidCallback? onCancelEdit;
+
+  bool get isEditingMessage => editingMessageId != null;
 
   @override
   State<ChatInputBar> createState() => _ChatInputBarState();
@@ -83,6 +101,7 @@ class ChatInputBar extends StatefulWidget {
 
 class _ChatInputBarState extends State<ChatInputBar> {
   final _controller = DmMarkdownInputController();
+  final _inputFocusNode = FocusNode();
   final _recorder = AudioRecorder();
   final List<DmChatAttachment> _pendingAttachments = [];
   bool _isRecording = false;
@@ -91,6 +110,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   bool _submittingDraft = false;
   int _inputTokenCount = 0;
   bool _relayToSecondary = true;
+  late ChatPermissionMode _permissionMode;
 
   bool get _isDuoConnected {
     final duo = DuoDisplayManager.instance;
@@ -100,6 +120,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
   @override
   void initState() {
     super.initState();
+    _permissionMode = widget.permissionMode;
     _restoreDraft();
     _controller.addListener(_onTextChanged);
     _setupDuoRelay();
@@ -108,6 +129,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
   @override
   void didUpdateWidget(covariant ChatInputBar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.permissionMode != widget.permissionMode) {
+      _permissionMode = widget.permissionMode;
+    }
     if (oldWidget.conversationId != widget.conversationId) {
       if (_isRecording) unawaited(_finishRecording());
       _restoreDraft(force: true);
@@ -115,6 +139,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
       duo?.syncPrimaryText(_controller.text);
     } else if (oldWidget.draft != widget.draft) {
       _restoreDraft();
+    }
+    if (widget.editingMessageId != null &&
+        widget.editingMessageId != oldWidget.editingMessageId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _inputFocusNode.requestFocus();
+      });
     }
   }
 
@@ -323,12 +353,26 @@ class _ChatInputBarState extends State<ChatInputBar> {
         errorMessage = 'Unable to read file';
       }
 
+      var name = file.name;
+      var mimeType = _mimeTypeFor(file.name, file.extension);
+      if (bytes != null && _isImageExtension(_extensionFor(name, mimeType))) {
+        final normalized = await ClipboardAttachments.normalizeImage(bytes);
+        if (normalized != null) {
+          bytes = normalized.bytes;
+          mimeType = normalized.mimeType;
+          name = ClipboardAttachments.replaceExtension(
+            name,
+            normalized.extension,
+          );
+        }
+      }
+
       picked.add(
         DmChatAttachment(
-          id: '${file.name}:${DateTime.now().microsecondsSinceEpoch}',
-          name: file.name,
-          sizeBytes: file.lengthSync() ?? bytes?.length,
-          mimeType: _mimeTypeFor(file.name, file.extension),
+          id: '$name:${DateTime.now().microsecondsSinceEpoch}',
+          name: name,
+          sizeBytes: bytes?.length ?? file.lengthSync(),
+          mimeType: mimeType,
           bytes: bytes,
           status: bytes == null
               ? DmChatAttachmentStatus.error
@@ -342,6 +386,46 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
     if (!mounted) return;
     _addPickedAttachments(targetId, picked);
+  }
+
+  Future<bool> _pasteFromClipboard() async {
+    if (!widget.enabled || widget.isStreaming) return false;
+    final targetId = widget.conversationId;
+    final items = await ClipboardAttachments.read();
+    if (items.isEmpty || !mounted) return false;
+
+    final now = DateTime.now().microsecondsSinceEpoch;
+    final pasted = <DmChatAttachment>[];
+    for (var i = 0; i < items.length; i++) {
+      var name = items[i].name;
+      var bytes = items[i].bytes;
+      var mimeType = items[i].mimeType ?? _mimeTypeFor(name, null);
+      if (_isImageExtension(_extensionFor(name, mimeType))) {
+        final normalized = await ClipboardAttachments.normalizeImage(bytes);
+        if (normalized != null) {
+          bytes = normalized.bytes;
+          mimeType = normalized.mimeType;
+          name = ClipboardAttachments.replaceExtension(
+            name,
+            normalized.extension,
+          );
+        }
+      }
+      pasted.add(
+        DmChatAttachment(
+          id: 'clip:$name:$now:$i',
+          name: name,
+          sizeBytes: bytes.length,
+          mimeType: mimeType,
+          bytes: bytes,
+          status: DmChatAttachmentStatus.done,
+        ),
+      );
+    }
+
+    if (!mounted) return false;
+    _addPickedAttachments(targetId, pasted);
+    return true;
   }
 
   String _extensionFor(String name, String? mimeType) {
@@ -479,42 +563,65 @@ class _ChatInputBarState extends State<ChatInputBar> {
     }
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
+    _inputFocusNode.dispose();
     _recorder.dispose();
     super.dispose();
   }
 
-  Widget? _buildSelectionControl() {
-    if (widget.selectedAgentName != null) {
-      return _AgentSelector(
-        selectedAgentName: widget.selectedAgentName!,
-        selectedAgentId: widget.selectedAgentId,
-        agents: widget.agents,
-        onAgentSelect: widget.onAgentSelect,
-        onAgentTap: widget.onModelTap,
-      );
-    }
+  Widget? _buildAgentControl() {
+    if (widget.selectedAgentName == null) return null;
+    return ComposerAgentPill(
+      selectedAgentName: widget.selectedAgentName!,
+      selectedAgentId: widget.selectedAgentId,
+      agents: widget.agents,
+      onAgentSelect: widget.onAgentSelect,
+      onManageAgents: widget.onModelTap,
+    );
+  }
 
-    if (widget.selectedModelName != null) {
-      return _ModelSelector(
-        selectedModelName: widget.selectedModelName!,
-        selectedModelId: widget.selectedModelId,
-        installedModels: widget.installedModels,
-        remoteModels: widget.remoteModels,
-        onModelSelect: widget.onModelSelect,
-        onModelTap: widget.onModelTap,
-      );
-    }
+  void _handlePermissionChanged(ChatPermissionMode mode) {
+    setState(() => _permissionMode = mode);
+    widget.onPermissionModeChanged?.call(mode);
+  }
 
-    return null;
+  Widget _buildLeadingControls() {
+    final totalTokens = widget.historyTokenCount + _inputTokenCount;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ComposerAddMenuButton(
+          enabled: widget.enabled && !widget.isStreaming,
+          onAttachFiles: _pickAttachments,
+          onPasteClipboard: () => unawaited(_pasteFromClipboard()),
+          supportsAudio: widget.supportsAudio,
+          isRecording: _isRecording,
+          onToggleRecording: _toggleRecording,
+          onOpenAgentSettings: widget.onModelTap,
+          tokenCount: totalTokens,
+        ),
+        const SizedBox(width: 2),
+        ComposerPermissionPill(
+          value: _permissionMode,
+          enabled: !widget.isStreaming,
+          onChanged: _handlePermissionChanged,
+          onManage: widget.onModelTap,
+        ),
+      ],
+    );
   }
 
   Widget _buildTrailingControls() {
-    final selectionControl = _buildSelectionControl();
-    return Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      alignment: WrapAlignment.end,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasModelOrEffort =
+        widget.selectedModelName != null ||
+        widget.modelChoices.isNotEmpty ||
+        (widget.thinkingEffort != null &&
+            widget.onThinkingEffortChanged != null) ||
+        widget.onThinkingToggle != null;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
         if (_isDuoConnected)
           IconButton(
@@ -528,17 +635,109 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   ? Icons.keyboard_alt_outlined
                   : Icons.keyboard_outlined,
               size: 18,
-              color: _relayToSecondary
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
+              color: _relayToSecondary ? colorScheme.primary : null,
             ),
             tooltip: _relayToSecondary
                 ? 'Keyboard relayed to Display 6. Tap to type here.'
                 : 'Keyboard on Display 0. Tap to relay to Display 6.',
             visualDensity: VisualDensity.compact,
           ),
-        ?selectionControl,
+        if (hasModelOrEffort)
+          Flexible(
+            child: ComposerModelEffortControl(
+              modelName: widget.selectedModelName,
+              thinkingEffort: widget.thinkingEffort,
+              thinkingEnabled: widget.thinkingEnabled,
+              enabled: widget.enabled && !widget.isStreaming,
+              onThinkingEffortChanged: widget.onThinkingEffortChanged,
+              onThinkingToggle: widget.onThinkingToggle,
+              onModelTap: widget.onModelTap,
+              modelChoices: widget.modelChoices,
+              onModelChoiceSelect: widget.onModelChoiceSelect,
+              installedModels: widget.installedModels,
+              remoteModels: widget.remoteModels,
+              selectedModelId: widget.selectedModelId,
+              onModelSelect: widget.onModelSelect,
+            ),
+          ),
+        if (widget.supportsAudio) ...[
+          const SizedBox(width: 2),
+          IconButton(
+            onPressed: widget.enabled && !widget.isStreaming
+                ? _toggleRecording
+                : null,
+            icon: Icon(
+              _isRecording ? Icons.stop_circle : Icons.mic_none,
+              size: 20,
+              color: _isRecording
+                  ? colorScheme.error
+                  : colorScheme.onSurfaceVariant,
+            ),
+            tooltip: _isRecording ? 'Stop recording' : 'Record audio',
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
       ],
+    );
+  }
+
+  String _placeholderText() {
+    if (widget.isQueued) return 'Queued — you can edit your next draft';
+    if (_isRecording) return 'Recording...';
+    if (!widget.enabled) return 'Model not ready';
+    if (_isDuoConnected && _relayToSecondary) {
+      return 'Tap here to type on Display 6...';
+    }
+    final agent = widget.selectedAgentName?.trim();
+    if (agent != null && agent.isNotEmpty) {
+      return 'Message $agent...';
+    }
+    return 'Type a message...';
+  }
+
+  Widget? _buildEditingHeader(BuildContext context) {
+    if (!widget.isEditingMessage) return null;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    return Container(
+      key: const ValueKey('chat-editing-banner'),
+      padding: const EdgeInsets.fromLTRB(16, 6, 8, 6),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+        border: Border(
+          bottom: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.edit_outlined, size: 15, color: colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Editing message — send to restart from here',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextButton(
+            key: const ValueKey('chat-editing-cancel'),
+            onPressed: widget.onCancelEdit,
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -546,65 +745,35 @@ class _ChatInputBarState extends State<ChatInputBar> {
   Widget build(BuildContext context) {
     final input = DmChatInput(
       controller: _controller,
+      focusNode: _inputFocusNode,
+      header: _buildEditingHeader(context),
+      onCancel: widget.isEditingMessage ? widget.onCancelEdit : null,
       onSend: _handleSend,
       onStop: widget.onStop,
       isStreaming: widget.isStreaming,
       pendingAttachments: _pendingAttachments,
       onRemoveAttachment: _removeAttachment,
-      placeholder: widget.isQueued
-          ? 'Queued — you can edit your next draft'
-          : _isRecording
-          ? 'Recording...'
-          : !widget.enabled
-          ? 'Model not ready'
-          : (_isDuoConnected && _relayToSecondary)
-          ? 'Tap here to type on Display 6...'
-          : 'Type a message...',
+      onPaste: _pasteFromClipboard,
+      placeholder: _placeholderText(),
       minLines: 1,
       maxLines: 6,
       submitShortcut: DmChatSubmitShortcut.cmdEnter,
-      leading: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.thinkingEffort != null &&
-              widget.onThinkingEffortChanged != null)
-            _ThinkEffortSelector(
-              value: widget.thinkingEffort!,
-              enabled: widget.enabled && !widget.isStreaming,
-              onChanged: widget.onThinkingEffortChanged!,
-            )
-          else if (widget.onThinkingToggle != null)
-            _ThinkToggleSelector(
-              value: widget.thinkingEnabled,
-              enabled: widget.enabled && !widget.isStreaming,
-              onChanged: widget.onThinkingToggle!,
-            ),
-          IconButton(
-            onPressed: widget.enabled && !widget.isStreaming
-                ? _pickAttachments
-                : null,
-            icon: const Icon(Icons.attach_file, size: 20),
-            tooltip: 'Attach',
-            visualDensity: VisualDensity.compact,
-          ),
-          if (widget.supportsAudio)
-            IconButton(
-              onPressed: widget.enabled && !widget.isStreaming
-                  ? _toggleRecording
-                  : null,
-              icon: Icon(
-                _isRecording ? Icons.stop_circle : Icons.mic,
-                size: 20,
-              ),
-              tooltip: _isRecording ? 'Stop recording' : 'Record audio',
-              visualDensity: VisualDensity.compact,
-            ),
-        ],
-      ),
+      leading: _buildLeadingControls(),
       trailing: _buildTrailingControls(),
+      idleActionIcon: widget.supportsAudio
+          ? (_isRecording ? Icons.stop : Icons.graphic_eq)
+          : null,
+      idleActionTooltip: widget.supportsAudio
+          ? (_isRecording ? 'Stop recording' : 'Voice')
+          : null,
+      onIdleAction:
+          widget.supportsAudio && widget.enabled && !widget.isStreaming
+          ? _toggleRecording
+          : null,
     );
 
     final showOverlay = !widget.enabled && !widget.isStreaming;
+    final agentOverlayControl = showOverlay ? _buildAgentControl() : null;
 
     final inputWidget = Stack(
       clipBehavior: Clip.none,
@@ -624,431 +793,11 @@ class _ChatInputBarState extends State<ChatInputBar> {
             ),
           ),
         ),
-        if (showOverlay)
-          Positioned(
-            bottom: 12,
-            right:
-                56, // SendButton is ~40 wide, container padding is 12, so 52-56 is standard placement
-            child: _buildSelectionControl() ?? const SizedBox.shrink(),
-          ),
+        if (agentOverlayControl != null)
+          Positioned(bottom: 22, left: 58, child: agentOverlayControl),
       ],
     );
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Icon(
-                  Icons.toll_outlined,
-                  size: 13,
-                  color: Theme.of(context).colorScheme.primary.withAlpha(160),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '~${widget.historyTokenCount + _inputTokenCount} tokens',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurfaceVariant.withAlpha(178),
-                  ),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-            const SizedBox(height: 4),
-            inputWidget,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ThinkToggleSelector extends StatelessWidget {
-  const _ThinkToggleSelector({
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final bool value;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final activeColor = value
-        ? colorScheme.primary
-        : colorScheme.onSurfaceVariant;
-
-    return PopupMenuButton<bool>(
-      enabled: enabled,
-      tooltip: value ? 'Thinking: On' : 'Thinking: Off',
-      onSelected: onChanged,
-      itemBuilder: (context) => [
-        for (final option in const [false, true])
-          PopupMenuItem(
-            value: option,
-            child: Row(
-              children: [
-                Icon(
-                  option == value
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Text(option ? 'On' : 'Off'),
-              ],
-            ),
-          ),
-      ],
-      child: Semantics(
-        label: 'Thinking',
-        button: true,
-        child: SizedBox(
-          height: 36,
-          width: 36,
-          child: Center(
-            child: Icon(Icons.psychology, size: 20, color: activeColor),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ThinkEffortSelector extends StatelessWidget {
-  const _ThinkEffortSelector({
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final RemoteThinkingEffort value;
-  final bool enabled;
-  final ValueChanged<RemoteThinkingEffort> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final active = value != RemoteThinkingEffort.off;
-    final activeColor = active
-        ? colorScheme.primary
-        : colorScheme.onSurfaceVariant;
-
-    return PopupMenuButton<RemoteThinkingEffort>(
-      enabled: enabled,
-      tooltip: 'Thinking: ${value.displayName}',
-      onSelected: onChanged,
-      itemBuilder: (context) => [
-        for (final effort in RemoteThinkingEffort.values)
-          PopupMenuItem(
-            value: effort,
-            child: Row(
-              children: [
-                Icon(
-                  effort == value
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Text(effort.displayName),
-              ],
-            ),
-          ),
-      ],
-      child: Semantics(
-        button: true,
-        label: 'Thinking effort ${value.displayName}',
-        child: SizedBox(
-          height: 36,
-          width: 36,
-          child: Center(
-            child: Icon(Icons.psychology, size: 20, color: activeColor),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AgentSelector extends StatelessWidget {
-  const _AgentSelector({
-    required this.selectedAgentName,
-    this.selectedAgentId,
-    this.agents = const [],
-    this.onAgentSelect,
-    this.onAgentTap,
-  });
-
-  final String selectedAgentName;
-  final String? selectedAgentId;
-  final List<AgentDefinition> agents;
-  final ValueChanged<String>? onAgentSelect;
-  final VoidCallback? onAgentTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final canSelect = agents.isNotEmpty && onAgentSelect != null;
-
-    return InkWell(
-      onTap: canSelect
-          ? () => _showAgentMenu(context, colorScheme)
-          : onAgentTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
-                selectedAgentName,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 2),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 18,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAgentMenu(BuildContext context, ColorScheme colorScheme) {
-    final button = context.findRenderObject() as RenderBox;
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        button.localToGlobal(Offset.zero, ancestor: overlay),
-        button.localToGlobal(
-          button.size.bottomRight(Offset.zero),
-          ancestor: overlay,
-        ),
-      ),
-      Offset.zero & overlay.size,
-    );
-
-    showMenu<String>(
-      context: context,
-      position: position,
-      items: agents.map((agent) {
-        final isSelected = agent.id == selectedAgentId;
-        return PopupMenuItem<String>(
-          value: agent.id,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  agent.name,
-                  style: TextStyle(
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-              if (isSelected)
-                Icon(Icons.check, size: 18, color: colorScheme.primary),
-            ],
-          ),
-        );
-      }).toList(),
-    ).then((selectedId) {
-      if (selectedId != null && selectedId != selectedAgentId) {
-        onAgentSelect?.call(selectedId);
-      }
-    });
-  }
-}
-
-class _ModelSelector extends StatelessWidget {
-  const _ModelSelector({
-    required this.selectedModelName,
-    this.selectedModelId,
-    this.installedModels = const [],
-    this.remoteModels = const [],
-    this.onModelSelect,
-    this.onModelTap,
-  });
-
-  final String selectedModelName;
-  final String? selectedModelId;
-  final List<String> installedModels;
-  final List<String> remoteModels;
-  final ValueChanged<String>? onModelSelect;
-  final VoidCallback? onModelTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // Build the list of installed platform-compatible models.
-    final compatibleModels = <(String id, GemmaModelInfo info)>[];
-    for (final id in installedModels) {
-      final info = GemmaModelInfo.findById(id);
-      if (info != null && info.isCurrentPlatformCompatible) {
-        compatibleModels.add((id, info));
-      }
-    }
-
-    final canSelectLocal = compatibleModels.length > 1 && onModelSelect != null;
-    final remoteOptions = remoteModels.toSet().toList()..sort();
-    final canSelectRemote = remoteOptions.length > 1 && onModelSelect != null;
-
-    return InkWell(
-      onTap: canSelectLocal
-          ? () => _showModelMenu(context, compatibleModels, colorScheme)
-          : canSelectRemote
-          ? () => _showRemoteModelMenu(context, remoteOptions, colorScheme)
-          : onModelTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
-                selectedModelName,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 2),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 18,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showModelMenu(
-    BuildContext context,
-    List<(String id, GemmaModelInfo info)> models,
-    ColorScheme colorScheme,
-  ) {
-    final button = context.findRenderObject() as RenderBox;
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        button.localToGlobal(Offset.zero, ancestor: overlay),
-        button.localToGlobal(
-          button.size.bottomRight(Offset.zero),
-          ancestor: overlay,
-        ),
-      ),
-      Offset.zero & overlay.size,
-    );
-
-    showMenu<String>(
-      context: context,
-      position: position,
-      items: models.map((entry) {
-        final (id, info) = entry;
-        final isSelected = id == selectedModelId;
-        return PopupMenuItem<String>(
-          value: id,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  info.displayName,
-                  style: TextStyle(
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-              if (isSelected)
-                Icon(Icons.check, size: 18, color: colorScheme.primary),
-            ],
-          ),
-        );
-      }).toList(),
-    ).then((selectedId) {
-      if (selectedId != null && selectedId != selectedModelId) {
-        onModelSelect?.call(selectedId);
-      }
-    });
-  }
-
-  void _showRemoteModelMenu(
-    BuildContext context,
-    List<String> models,
-    ColorScheme colorScheme,
-  ) {
-    final button = context.findRenderObject() as RenderBox;
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
-    final position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        button.localToGlobal(Offset.zero, ancestor: overlay),
-        button.localToGlobal(
-          button.size.bottomRight(Offset.zero),
-          ancestor: overlay,
-        ),
-      ),
-      Offset.zero & overlay.size,
-    );
-
-    showMenu<String>(
-      context: context,
-      position: position,
-      items: models.map((id) {
-        final isSelected = id == selectedModelId;
-        return PopupMenuItem<String>(
-          value: id,
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  id,
-                  style: TextStyle(
-                    fontWeight: isSelected
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                  ),
-                ),
-              ),
-              if (isSelected)
-                Icon(Icons.check, size: 18, color: colorScheme.primary),
-            ],
-          ),
-        );
-      }).toList(),
-    ).then((selectedId) {
-      if (selectedId != null && selectedId != selectedModelId) {
-        onModelSelect?.call(selectedId);
-      }
-    });
+    return SafeArea(top: false, child: inputWidget);
   }
 }

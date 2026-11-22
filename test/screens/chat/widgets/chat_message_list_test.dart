@@ -163,8 +163,8 @@ void main() {
     tester,
   ) async {
     var editedMessageId = '';
-    var editedContent = '';
     var regeneratedMessageId = '';
+    var forkedMessageId = '';
 
     await tester.pumpWidget(
       MaterialApp(
@@ -184,12 +184,14 @@ void main() {
                 timestamp: DateTime(2026),
               ),
             ],
-            onEditUserMessage: (message, content) {
+            onEditUserMessage: (message) {
               editedMessageId = message.id;
-              editedContent = content;
             },
             onRegenerateResponse: (message) {
               regeneratedMessageId = message.id;
+            },
+            onForkConversation: (message) {
+              forkedMessageId = message.id;
             },
           ),
         ),
@@ -199,20 +201,52 @@ void main() {
     expect(find.byTooltip('Copy message'), findsNWidgets(2));
     expect(find.byTooltip('Edit message'), findsOneWidget);
     expect(find.byTooltip('Regenerate response'), findsOneWidget);
+    expect(find.byTooltip('Fork conversation'), findsOneWidget);
+    expect(find.byTooltip('Response info'), findsOneWidget);
+
+    // Verify assistant action order: copy, regenerate, fork, info.
+    final regenLeft = tester
+        .getRect(find.byTooltip('Regenerate response'))
+        .left;
+    final forkLeft = tester.getRect(find.byTooltip('Fork conversation')).left;
+    final infoLeft = tester.getRect(find.byTooltip('Response info')).left;
+    expect(forkLeft, greaterThan(regenLeft));
+    expect(infoLeft, greaterThan(forkLeft));
+
+    final userBubbleContainer = find.ancestor(
+      of: find.text('hello'),
+      matching: find.byWidgetPredicate(
+        (w) => w is Container && w.decoration is BoxDecoration,
+      ),
+    );
+    expect(userBubbleContainer, findsOneWidget);
+    expect(
+      find.descendant(
+        of: userBubbleContainer,
+        matching: find.byTooltip('Edit message'),
+      ),
+      findsNothing,
+    );
+    expect(
+      tester.getRect(find.byTooltip('Edit message')).top,
+      greaterThanOrEqualTo(tester.getRect(userBubbleContainer).bottom),
+    );
 
     await tester.tap(find.byTooltip('Edit message'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'edited hello');
-    await tester.tap(find.text('Save'));
-    await tester.pumpAndSettle();
 
+    expect(find.byType(AlertDialog), findsNothing);
     expect(editedMessageId, 'user');
-    expect(editedContent, 'edited hello');
 
     await tester.tap(find.byTooltip('Regenerate response'));
     await tester.pump();
 
     expect(regeneratedMessageId, 'assistant');
+
+    await tester.tap(find.byTooltip('Fork conversation'));
+    await tester.pump();
+
+    expect(forkedMessageId, 'assistant');
   });
 
   testWidgets('shows response info for assistant messages', (tester) async {
