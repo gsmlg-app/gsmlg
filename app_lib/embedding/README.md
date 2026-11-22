@@ -1,50 +1,55 @@
 # app_embedding
 
-On-device text embeddings with [EmbeddingGemma 2](https://huggingface.co/google/embeddinggemma-2)
-running on [`lib_onnx`](https://pub.dev/packages/lib_onnx) (ONNX Runtime) and the
-pure-Dart [`dart_sentencepiece_tokenizer`](https://pub.dev/packages/dart_sentencepiece_tokenizer).
+On-device embeddings and semantic retrieval with
+[EmbeddingGemma 2](https://huggingface.co/litert-community/embeddinggemma-2-text-vision-440m-litert-lm)
+powered by Google's official [`mediapipe_retrieval`](https://pub.dev/packages/mediapipe_retrieval)
+package (`UniversalEmbedder` + `SemanticRetriever`).
 
-## Model
+## Models
 
-`EmbeddingGemmaModel` pins the mirror [`gsmlg/embeddinggemma-2`](https://huggingface.co/gsmlg/embeddinggemma-2)
-to an exact revision and lists each file with its SHA-256, so a downloader can fetch and verify:
+`EmbeddingModelVariant` exposes Google's official pinned `.litertlm` artifacts
+from `RetrievalModels` (Apache 2.0, verified by SHA-256):
 
-```dart
-for (final file in EmbeddingGemmaModel.filesFor(EmbeddingVariant.q4)) {
-  final url = EmbeddingGemmaModel.urlFor(file); // download to <dir>/<file.path>, check file.sha256
-}
-```
+- `EmbeddingModelVariant.textVision` (default): 440M text + image model (~388 MB)
+- `EmbeddingModelVariant.multimodal`: 740M text + image + audio model (~485 MB)
 
-The `q4` variant (≈175 MB) is the default. Keep the repository layout: `tokenizer.json`
-and `onnx/<variant>.onnx` with its `.onnx_data` file beside it.
+Models can be supplied from a local path (`modelPath`), downloaded on demand via
+`ModelStore` (`allowDownload: true`), or bundled at build time with
+`dart run mediapipe_core:bundle_models`.
 
 ## Usage
 
 ```dart
-final embedder = await TextEmbedder.load(modelDirectory);
+final embedder = await TextEmbedder.load(modelPath: '/path/to/model.litertlm');
 final query = await embedder.embedQuery('Which planet is red?');
 final doc = await embedder.embedDocument('Mars is the red planet.', title: 'Mars');
 final score = TextEmbedder.similarity(query, doc);
+
+// Optional: on-device vector index (SQLite or in-memory)
+final retriever = await embedder.createRetriever();
+await retriever.insertDocument('mars', 'Mars is the red planet.');
+final hits = await retriever.retrieve('red planet', limit: 3);
+await retriever.dispose();
+
 await embedder.close();
 ```
 
-- Queries and documents get EmbeddingGemma's task prefixes (`EmbeddingTask`).
-- Vectors are 768-d and L2-normalized; pass `dimensions: 512 | 256 | 128` for Matryoshka truncation.
-- Inference runs in lib_onnx's native worker; the tokenizer is parsed in a background isolate.
-- Inputs longer than `maxTokens` (default 2048) are truncated, keeping the end token.
+- Queries and documents can use EmbeddingGemma 2 task prefixes (`EmbeddingTask`).
+- Vectors are 768-d and L2-normalized; pass `dimensions: 512 | 256 | 128` for
+  Matryoshka truncation.
+- `embedImage` and `embedAudio` embed images and 16 kHz mono audio into the same
+  768-d space.
+- Inference runs on MediaPipe's background native worker isolate.
 
 ## Platforms
 
-CPU inference wherever lib_onnx 0.3.0 bundles ONNX Runtime: macOS arm64, Android arm64-v8a,
-iOS 15.1+. On other targets (for example Windows) the app still builds and
-`TextEmbedder.load` throws `UnsupportedError`.
+Uses Google's MediaPipe 1.2.3 retrieval runtime bundled by `mediapipe_retrieval`'s
+native build hook across Android 9+ (arm64/x86_64), iOS 15+, macOS 14+ (arm64),
+Linux (x64/arm64), Windows (x64), and supported WebGPU browsers.
 
 ## Tests
 
 ```bash
-dart test                                        # unit tests
-EMBEDDINGGEMMA_DIR=/path/to/embeddinggemma-2 dart test  # plus real-model checks
+flutter test                                                          # unit tests
+EMBEDDINGGEMMA_MODEL_PATH=/path/to/model.litertlm flutter test        # plus real-model checks
 ```
-
-The model tests compare token ids and similarities with Python ONNX Runtime and
-Hugging Face `tokenizers` on the same files.

@@ -488,14 +488,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.2"
-  dart_sentencepiece_tokenizer:
-    dependency: transitive
-    description:
-      name: dart_sentencepiece_tokenizer
-      sha256: "23fd14a3a7a736e0a85c329ab0227f8eaf9626ef83b1d98b6f37fbc284fca8c8"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.4.1"
   dart_style:
     dependency: transitive
     description:
@@ -1339,14 +1331,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.1.1"
-  lib_onnx:
-    dependency: transitive
-    description:
-      name: lib_onnx
-      sha256: "7dddfd6b119c217603538037bc97d97fdcdb744110ecac67854c4be4fcf79b89"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.1"
   linked_scroll_controller:
     dependency: transitive
     description:
@@ -1467,6 +1451,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.3"
+  mediapipe_core:
+    dependency: transitive
+    description:
+      name: mediapipe_core
+      sha256: f9f179643bff97582e366f66fb6055532183077908044d53b2d15e7b596f2d7d
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.1"
+  mediapipe_retrieval:
+    dependency: transitive
+    description:
+      name: mediapipe_retrieval
+      sha256: "1fd20dd1a5aca8a2bb6ce4db0e088979e08304e224c2dbf1f879b6d6a18e05ad"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.1"
   melos:
     dependency: "direct dev"
     description:

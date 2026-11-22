@@ -1,69 +1,124 @@
-import 'dart:isolate';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:dart_sentencepiece_tokenizer/dart_sentencepiece_tokenizer.dart';
-import 'package:lib_onnx/lib_onnx.dart';
-import 'package:path/path.dart' as p;
+import 'package:mediapipe_retrieval/mediapipe_retrieval.dart';
 
 import 'embedding_model.dart';
 import 'embedding_task.dart';
 
-/// Text embeddings from a local EmbeddingGemma 2 model directory laid out as
-/// the mirror is (`tokenizer.json`, `onnx/<variant>.onnx[_data]`).
+/// On-device embeddings powered by Google's official `mediapipe_retrieval`
+/// [UniversalEmbedder] running EmbeddingGemma 2 (`.litertlm`).
 ///
-/// Inference runs in lib_onnx's native worker, off the calling isolate; the
-/// tokenizer is parsed in a background isolate. Vectors are L2-normalized, so
-/// a dot product is their cosine similarity.
+/// Inference runs off the calling isolate on MediaPipe's native retrieval
+/// worker (Android, iOS, macOS, Linux x64/arm64, Windows x64) or via WebGPU
+/// in supported browsers. Vectors are L2-normalized by default, so a dot
+/// product equals their cosine similarity.
 class TextEmbedder {
-  TextEmbedder._(this._runtime, this._session, this._tokenizer, this.maxTokens);
+  TextEmbedder._(this._embedder);
 
-  final OnnxRuntime _runtime;
-  final InferenceSession _session;
-  final SentencePieceTokenizer _tokenizer;
+  final UniversalEmbedder _embedder;
 
-  /// Longer inputs keep their first `maxTokens - 1` tokens and the final
-  /// end-of-sequence token.
-  final int maxTokens;
+  /// The underlying MediaPipe [UniversalEmbedder], for direct access or
+  /// integration with [SemanticRetriever].
+  UniversalEmbedder get universalEmbedder => _embedder;
 
-  static const _adapter = EmbeddingAdapter(
-    hiddenDim: EmbeddingGemmaModel.dimensions,
-    hasEmbeddedPooling: true,
-  );
-  static const _modalities = [
-    'image_features',
-    'video_features',
-    'audio_features',
-  ];
+  /// The processor delegate fixed when this embedder was created.
+  Delegate get delegate => _embedder.delegate;
 
-  static Future<TextEmbedder> load(
-    String modelDirectory, {
-    EmbeddingVariant variant = EmbeddingVariant.q4,
-    int maxTokens = 2048,
-    SessionOptions? options,
+  /// Queries platform delegate support without loading a model.
+  static Future<TaskCapabilities> queryCapabilities() =>
+      queryUniversalEmbedderCapabilities();
+
+  /// Loads an EmbeddingGemma 2 model through MediaPipe [UniversalEmbedder].
+  ///
+  /// Supply at most one of [modelPath] or [modelBytes]; when both are omitted,
+  /// [variant] is resolved via [modelStore] (downloading if [allowDownload] is
+  /// `true` or reusing a cached/bundled copy).
+  ///
+  /// [maxInputLength] defaults to `0` (the model's built-in default, ~0.4 GB
+  /// memory). Raising it reserves memory for the full length at creation time.
+  static Future<TextEmbedder> load({
+    String? modelPath,
+    Uint8List? modelBytes,
+    EmbeddingModelVariant variant = EmbeddingGemmaModel.defaultVariant,
+    int maxInputLength = 0,
+    int visionTokensPerImage = 0,
+    ActivationDataType activationDataType = ActivationDataType.modelDefault,
+    bool l2Normalize = true,
+    String? cacheDir,
+    Delegate? delegate,
+    bool allowDownload = false,
+    ModelStore? modelStore,
   }) async {
-    if (maxTokens < 2) {
-      throw ArgumentError.value(maxTokens, 'maxTokens', 'must be at least 2');
+    if (modelPath != null && modelBytes != null) {
+      throw ArgumentError('Supply at most one of modelPath and modelBytes.');
     }
-    final tokenizerPath = p.join(
-      modelDirectory,
-      EmbeddingGemmaModel.tokenizer.path,
-    );
-    final tokenizer = await Isolate.run(
-      () => TokenizerJsonLoader.fromJsonFile(tokenizerPath),
-    );
-    final runtime = await OnnxRuntime.createAsync();
-    try {
-      final session = await InferenceSession.loadFile(
-        p.join(modelDirectory, variant.graphPath),
-        runtime: runtime,
-        options: options ?? SessionOptions.cpuOnly(),
-      );
-      return TextEmbedder._(runtime, session, tokenizer, maxTokens);
-    } catch (_) {
-      await runtime.close();
-      rethrow;
+
+    final effectiveDelegate = delegate ?? await _defaultDelegate();
+
+    String? resolvedPath = modelPath;
+    Uint8List? resolvedBytes = modelBytes;
+    DownloadAsset? pinnedModel;
+
+    if (resolvedPath == null && resolvedBytes == null) {
+      if (allowDownload || modelStore != null) {
+        final store = modelStore ?? ModelStore();
+        final source = allowDownload
+            ? await store.get(variant.asset)
+            : await store.find(variant.asset);
+        if (source != null) {
+          resolvedPath = source.path;
+          resolvedBytes = source.bytes;
+        } else {
+          pinnedModel = variant.asset;
+        }
+      } else {
+        pinnedModel = variant.asset;
+      }
     }
+
+    final embedder = await UniversalEmbedder.create(
+      UniversalEmbedderOptions(
+        model: pinnedModel,
+        modelPath: resolvedPath,
+        modelBytes: resolvedBytes,
+        delegate: effectiveDelegate,
+        l2Normalize: l2Normalize,
+        maxInputLength: maxInputLength,
+        visionTokensPerImage: visionTokensPerImage,
+        activationDataType: activationDataType,
+        cacheDir: cacheDir,
+      ),
+    );
+    return TextEmbedder._(embedder);
+  }
+
+  static Future<Delegate> _defaultDelegate() async {
+    final capabilities = await queryUniversalEmbedderCapabilities();
+    final supported = capabilities.supportedDelegates;
+    return supported.isNotEmpty ? supported.first : Delegate.cpu;
+  }
+
+  /// Creates an on-device [SemanticRetriever] backed by this embedder.
+  ///
+  /// Dispose the returned retriever before calling [close] on this embedder.
+  Future<SemanticRetriever> createRetriever({
+    String? databasePath,
+    int embeddingDimension = EmbeddingGemmaModel.dimensions,
+    int chunkSize = 512,
+    int chunkOverlap = 100,
+    ChunkingMode chunkingMode = ChunkingMode.character,
+  }) {
+    return SemanticRetriever.create(
+      SemanticRetrieverOptions(
+        embedder: _embedder,
+        databasePath: databasePath,
+        embeddingDimension: embeddingDimension,
+        chunkSize: chunkSize,
+        chunkOverlap: chunkOverlap,
+        chunkingMode: chunkingMode,
+      ),
+    );
   }
 
   /// Embeds a query (or either side of a symmetric [task]).
@@ -88,37 +143,48 @@ class TextEmbedder {
     String text, {
     int dimensions = EmbeddingGemmaModel.dimensions,
   }) async {
-    final ids = tokenIds(text);
-    final length = ids.length;
-    final inputs = <String, OnnxTensor>{
-      'input_ids': OnnxTensor.fromInt64([1, length], ids),
-      'attention_mask': OnnxTensor.fromInt64([
-        1,
-        length,
-      ], Int64List(length)..fillRange(0, length, 1)),
-      // Text-only: the multimodal graph takes empty modality features.
-      for (final name in _modalities)
-        name: OnnxTensor.fromFloat32([0, 512], Float32List(0)),
-    };
-    Map<String, OnnxTensor>? outputs;
-    try {
-      outputs = await _session.run(inputs);
-      final vector = _adapter
-          .extractEmbeddings(modelOutput: outputs['sentence_embedding']!)
-          .single;
-      return truncate(vector, dimensions);
-    } finally {
-      for (final tensor in [...inputs.values, ...?outputs?.values]) {
-        tensor.dispose();
-      }
-    }
+    _validateDimensions(dimensions);
+    final result = await _embedder.embedText(text);
+    return _extractVector(result, dimensions);
   }
 
-  /// Token ids for [text], capped at [maxTokens].
-  Int64List tokenIds(String text) {
-    final ids = _tokenizer.encode(text).ids;
-    if (ids.length <= maxTokens) return Int64List.fromList(ids);
-    return Int64List.fromList([...ids.take(maxTokens - 1), ids.last]);
+  /// Embeds an encoded JPEG or PNG image into the same vector space as text.
+  Future<Float32List> embedImage(
+    Uint8List imageBytes, {
+    int dimensions = EmbeddingGemmaModel.dimensions,
+  }) async {
+    _validateDimensions(dimensions);
+    final result = await _embedder.embedImage(imageBytes);
+    return _extractVector(result, dimensions);
+  }
+
+  /// Embeds mono 16 kHz PCM audio samples (requires
+  /// [EmbeddingModelVariant.multimodal]).
+  Future<Float32List> embedAudio(
+    Float32List audioData, {
+    int dimensions = EmbeddingGemmaModel.dimensions,
+  }) async {
+    _validateDimensions(dimensions);
+    final result = await _embedder.embedAudio(audioData);
+    return _extractVector(result, dimensions);
+  }
+
+  Float32List _extractVector(UniversalEmbedderResult result, int dimensions) {
+    final floatVector = result.embeddings.first.floatEmbedding;
+    if (floatVector == null) {
+      throw StateError('UniversalEmbedder returned a non-float embedding.');
+    }
+    return truncate(floatVector, dimensions);
+  }
+
+  static void _validateDimensions(int dimensions) {
+    if (!EmbeddingGemmaModel.matryoshkaDimensions.contains(dimensions)) {
+      throw ArgumentError.value(
+        dimensions,
+        'dimensions',
+        'must be one of ${EmbeddingGemmaModel.matryoshkaDimensions}',
+      );
+    }
   }
 
   /// Matryoshka truncation: keeps the leading [dimensions] and re-normalizes.
@@ -133,8 +199,21 @@ class TextEmbedder {
     }
     if (dimensions == vector.length) return vector;
     final result = Float32List.fromList(vector.sublist(0, dimensions));
-    EmbeddingAdapter.normalizeL2(result);
+    _normalizeL2(result);
     return result;
+  }
+
+  static void _normalizeL2(Float32List vector) {
+    var sumSquares = 0.0;
+    for (var i = 0; i < vector.length; i++) {
+      final value = vector[i];
+      sumSquares += value * value;
+    }
+    final norm = math.sqrt(sumSquares);
+    if (norm == 0 || !norm.isFinite) return;
+    for (var i = 0; i < vector.length; i++) {
+      vector[i] = vector[i] / norm;
+    }
   }
 
   /// Cosine similarity of two embeddings of equal dimension.
@@ -142,17 +221,25 @@ class TextEmbedder {
     if (a.length != b.length || a.isEmpty) {
       throw ArgumentError('Embeddings must have the same nonzero dimension');
     }
-    var dot = 0.0, na = 0.0, nb = 0.0;
+    var dot = 0.0;
+    var na = 0.0;
+    var nb = 0.0;
     for (var i = 0; i < a.length; i++) {
-      dot += a[i] * b[i];
-      na += a[i] * a[i];
-      nb += b[i] * b[i];
+      final av = a[i];
+      final bv = b[i];
+      if (!av.isFinite || !bv.isFinite) {
+        throw ArgumentError('Embeddings must contain finite values');
+      }
+      dot += av * bv;
+      na += av * av;
+      nb += bv * bv;
     }
-    return dot / math.sqrt(na * nb);
+    if (na == 0 || nb == 0 || !dot.isFinite || !na.isFinite || !nb.isFinite) {
+      throw ArgumentError('Embedding norms must be finite and nonzero');
+    }
+    return (dot / (math.sqrt(na) * math.sqrt(nb))).clamp(-1.0, 1.0);
   }
 
-  Future<void> close() async {
-    await _session.close();
-    await _runtime.close();
-  }
+  /// Releases the underlying MediaPipe runtime resources.
+  Future<void> close() => _embedder.dispose();
 }
