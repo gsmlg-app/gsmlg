@@ -26,7 +26,7 @@ android {
         namespace 'com.app.local_llm'
     }
 
-    compileSdk 34
+    compileSdk 36
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
