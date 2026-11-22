@@ -70,3 +70,16 @@ abstract interface class WorkingDirectoryAware {
   /// The shell's current working directory, or null when unknown.
   Future<String?> currentWorkingDirectory();
 }
+
+/// Optional capability of a [Host] that can start a shell in a chosen
+/// directory.
+abstract interface class DirectoryShellHost {
+  /// Starts a shell in [workingDirectory], or in the default directory when
+  /// it is null or cannot be entered.
+  Future<ExecutionSession> shellIn(
+    String? workingDirectory, {
+    int width = 80,
+    int height = 25,
+    Map<String, String>? environment,
+  });
+}

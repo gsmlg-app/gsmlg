@@ -46,6 +46,33 @@ class MockHost implements Host {
   }
 }
 
+/// Host that records which directory each shell was started in.
+class DirectoryMockHost extends MockHost implements DirectoryShellHost {
+  final shellDirectories = <String?>[];
+  var plainShells = 0;
+
+  @override
+  Future<ExecutionSession> shell({
+    int width = 80,
+    int height = 25,
+    Map<String, String>? environment,
+  }) async {
+    plainShells++;
+    return MockExecutionSession();
+  }
+
+  @override
+  Future<ExecutionSession> shellIn(
+    String? workingDirectory, {
+    int width = 80,
+    int height = 25,
+    Map<String, String>? environment,
+  }) async {
+    shellDirectories.add(workingDirectory);
+    return MockExecutionSession();
+  }
+}
+
 class MockExecutionSession implements ExecutionSession {
   final _outputController = StreamController<Uint8List>.broadcast();
   final _exitCodeCompleter = Completer<int>();
@@ -196,6 +223,37 @@ void main() {
         manager.didConnected(mockHost);
 
         expect(plugin.connected, isTrue);
+      });
+
+      test('startDirectory opens the shell in that directory', () async {
+        final directoryHost = DirectoryMockHost();
+        final directoryPlugin = TerminalPlugin(startDirectory: '/srv/app');
+        final directoryManager = PluginManager(
+          MockHostSpec(mockHost: directoryHost),
+        );
+        directoryManager.add(directoryPlugin);
+        directoryManager.didConnected(directoryHost);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(directoryHost.shellDirectories, ['/srv/app']);
+        expect(directoryHost.plainShells, 0);
+        directoryManager.didDisconnected();
+        directoryManager.remove(directoryPlugin);
+      });
+
+      test('without startDirectory the plain shell is used', () async {
+        final directoryHost = DirectoryMockHost();
+        final directoryManager = PluginManager(
+          MockHostSpec(mockHost: directoryHost),
+        );
+        directoryManager.add(plugin);
+        directoryManager.didConnected(directoryHost);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(directoryHost.shellDirectories, isEmpty);
+        expect(directoryHost.plainShells, 1);
+        directoryManager.didDisconnected();
+        directoryManager.remove(plugin);
       });
 
       test('didConnected sets title to "Terminal"', () async {

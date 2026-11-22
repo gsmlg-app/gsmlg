@@ -217,40 +217,26 @@ class IndexAwareCircularBuffer<T extends IndexedItem> {
     }
   }
 
-  /// Removes [count] elements starting at [index], shifting all elements after
-  /// [index] to the left.
-  ///
-  /// This method is cheap since it does not actually modify the list, but
-  /// instead just adjusts the start index and length.
+  /// Removes up to [count] elements from the front of the list.
   void trimStart(int count) {
+    if (count <= 0) return;
     if (count > _length) count = _length;
-    _startIndex += count;
-    _startIndex %= _array.length;
+    for (var i = 0; i < count; i++) {
+      _dropChild(i);
+    }
+    _startIndex = (_startIndex + count) % _array.length;
+    _absoluteStartIndex += count;
     _length -= count;
   }
 
-  /// Replaces all elements in the list with [replacement].
+  /// Replaces elements with the newest items in [replacement] that fit.
   void replaceWith(List<T> replacement) {
-    for (var i = 0; i < _length; i++) {
-      _dropChild(i);
+    clear();
+    final copyStart =
+        replacement.length > maxLength ? replacement.length - maxLength : 0;
+    for (var i = copyStart; i < replacement.length; i++) {
+      push(replacement[i]);
     }
-
-    var copyStart = 0;
-    if (replacement.length > maxLength) {
-      copyStart = replacement.length - maxLength;
-    }
-
-    for (var i = 0; i < copyStart; i++) {
-      _dropChild(i);
-    }
-
-    final copyLength = replacement.length - copyStart;
-    for (var i = 0; i < copyLength; i++) {
-      _adoptChild(i, replacement[copyStart + i]);
-    }
-
-    _startIndex = 0;
-    _length = copyLength;
   }
 
   /// Replaces the element at [index] with [value] and returns the replaced

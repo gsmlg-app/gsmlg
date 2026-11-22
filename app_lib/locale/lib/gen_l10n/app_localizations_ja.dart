@@ -1747,4 +1747,135 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tabGroupSelected => 'Group selected tabs';
+
+  @override
+  String get sessionSnapshots => 'Saved Tabs and History';
+
+  @override
+  String get sessionSaveWorkspace => 'Save Workspace';
+
+  @override
+  String get sessionSaveGroup => 'Save Group';
+
+  @override
+  String get sessionRestore => 'Restore';
+
+  @override
+  String get sessionReplace => 'Replace';
+
+  @override
+  String get sessionAppend => 'Append';
+
+  @override
+  String get sessionRestorePrompt => 'Restore tabs from your last session?';
+
+  @override
+  String get sessionLater => 'Later';
+
+  @override
+  String get sessionExitHistory => 'Recent Exits';
+
+  @override
+  String get sessionRecovery => 'Crash Recovery';
+
+  @override
+  String get sessionManualSaved => 'Manually Saved';
+
+  @override
+  String get sessionNoSnapshots => 'No saved sessions yet.';
+
+  @override
+  String get sessionSnapshotName => 'Name';
+
+  @override
+  String get sessionTargetGroup => 'Target group';
+
+  @override
+  String get sessionNewGroup => 'New group';
+
+  @override
+  String get sessionRestoreDescription =>
+      'Restoration opens new sessions without previous output. Replace closes the selected group, or all tabs for a workspace.';
+
+  @override
+  String get sessionUnavailable =>
+      'This tab could not be restored. Its configuration is preserved.';
+
+  @override
+  String get sessionDirectory => 'Working directory';
+
+  @override
+  String get sessionProfile => 'Shell profile';
+
+  @override
+  String get sessionHost => 'SSH host';
+
+  @override
+  String get sessionPersistenceError =>
+      'Tabs could not be saved. Check storage access and retry.';
+
+  @override
+  String get sessionDeleteConfirm => 'Delete this saved session?';
+
+  @override
+  String get sessionSaved => 'Session saved';
+
+  @override
+  String get sessionStorageUnavailable =>
+      'Session storage could not be opened. Existing files have been preserved.';
+
+  @override
+  String get sessionSecureStorageUnavailable =>
+      'Credentials could not be read. Unlock or repair secure storage, then retry.';
+
+  @override
+  String get sessionRestoreFailed => 'Restore failed';
+
+  @override
+  String sessionDetails(int tabs, int groups) {
+    return '$tabs tabs · $groups groups';
+  }
+
+  @override
+  String get sessionMissingProfile => 'The saved shell profile is unavailable.';
+
+  @override
+  String get sessionMissingHost => 'The saved SSH host is unavailable.';
+
+  @override
+  String get sessionMissingDirectory =>
+      'The saved working directory does not exist.';
+
+  @override
+  String get sessionSaveEmpty => 'There are no tabs to save.';
+
+  @override
+  String get sessionPreferenceError =>
+      'Settings could not be saved. Check storage access and retry.';
+
+  @override
+  String get remoteClipboardAllow => 'Allow remote clipboard writes';
+
+  @override
+  String get remoteClipboardDescription =>
+      'Allow terminal sessions to replace your clipboard. Sessions are trusted by default; you can revoke access in each session\'s clipboard menu. Remote clipboard reads are always denied.';
+
+  @override
+  String get remoteClipboardTrust => 'Trust this session for clipboard writes';
+
+  @override
+  String get remoteClipboardRevoke => 'Revoke this session\'s clipboard access';
+
+  @override
+  String get remoteClipboardEnableFirst =>
+      'Enable remote clipboard writes in Terminal settings first.';
+
+  @override
+  String get terminalClipboardActions => 'Terminal clipboard and selection';
+
+  @override
+  String get terminalSelectText => 'Select text (pause mouse reporting)';
+
+  @override
+  String get terminalMouseInteraction => 'Resume application mouse interaction';
 }

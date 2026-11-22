@@ -28,12 +28,16 @@ class TerminalActions extends StatelessWidget {
       actions: {
         PasteTextIntent: CallbackAction<PasteTextIntent>(
           onInvoke: (intent) async {
-            final data = await Clipboard.getData(Clipboard.kTextPlain);
-            final text = data?.text;
-            if (text != null) {
-              terminal.paste(text);
-              controller.clearSelection();
-              onPaste?.call();
+            try {
+              final data = await Clipboard.getData(Clipboard.kTextPlain);
+              final text = data?.text;
+              if (text != null) {
+                terminal.paste(text);
+                controller.clearSelection();
+                onPaste?.call();
+              }
+            } catch (_) {
+              // Clipboard access may be unavailable while the terminal stays usable.
             }
             return null;
           },
@@ -43,18 +47,25 @@ class TerminalActions extends StatelessWidget {
             final selection = controller.selection;
 
             if (selection == null) {
-              return;
+              return null;
             }
 
             final text = terminal.buffer.getText(selection);
 
-            await Clipboard.setData(ClipboardData(text: text));
+            try {
+              await Clipboard.setData(ClipboardData(text: text));
+            } catch (_) {
+              // Clipboard access may be unavailable while the terminal stays usable.
+            }
 
             return null;
           },
         ),
         SelectAllTextIntent: CallbackAction<SelectAllTextIntent>(
           onInvoke: (intent) {
+            if (terminal.buffer.height == 0) {
+              return null;
+            }
             controller.setSelection(
               terminal.buffer.createAnchor(0, 0),
               terminal.buffer.createAnchor(

@@ -1,7 +1,7 @@
+import 'package:app_locale/app_locale.dart';
 import 'package:context_menus/context_menus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:terminal_core/terminal_core.dart';
 import 'package:file_manager_plugin/file_manager_plugin.dart';
@@ -24,8 +24,6 @@ class TerminalContextMenu extends StatefulWidget {
 class TerminalContextMenuState extends State<TerminalContextMenu>
     with ContextMenuStateMixin {
   TerminalPlugin get plugin => widget.plugin;
-
-  Terminal get terminal => plugin.terminal;
 
   TerminalController get terminalController => plugin.terminalController;
 
@@ -93,6 +91,35 @@ class TerminalContextMenuState extends State<TerminalContextMenu>
             onPressed: () => handlePressed(context, _handleSelectAll),
           ),
         ),
+        buttonBuilder(
+          context,
+          ContextMenuButtonConfig(
+            terminalController.suspendedPointerInputs
+                ? context.l10n.terminalMouseInteraction
+                : context.l10n.terminalSelectText,
+            onPressed: () => handlePressed(context, () {
+              terminalController.setSuspendPointerInput(
+                !terminalController.suspendedPointerInputs,
+              );
+            }),
+          ),
+        ),
+        buttonBuilder(
+          context,
+          ContextMenuButtonConfig(
+            plugin.remoteClipboard.trusted
+                ? context.l10n.remoteClipboardRevoke
+                : context.l10n.remoteClipboardTrust,
+            onPressed: plugin.remoteClipboard.sessionActive &&
+                    plugin.remoteClipboard.writesAllowed()
+                ? () => handlePressed(context, () {
+                      plugin.setRemoteClipboardTrusted(
+                        !plugin.remoteClipboard.trusted,
+                      );
+                    })
+                : null,
+          ),
+        ),
         if (tabsService != null) ...[
           buildDivider(),
           buttonBuilder(
@@ -118,43 +145,15 @@ class TerminalContextMenuState extends State<TerminalContextMenu>
   }
 
   Future<void> _handleCopy() async {
-    final selection = terminalController.selection;
-
-    if (selection == null) {
-      return;
-    }
-
-    final text = terminal.buffer.getText(selection);
-
-    await Clipboard.setData(ClipboardData(text: text));
+    await plugin.copySelection();
   }
 
   Future<void> _handlePaste() async {
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
-
-    if (data == null) {
-      return;
-    }
-
-    final text = data.text;
-
-    if (text == null) {
-      return;
-    }
-
-    terminal.paste(text);
+    await plugin.pasteClipboard();
   }
 
   Future<void> _handleSelectAll() async {
-    if (terminal.buffer.lines.length == 0) return;
-    terminalController.setSelection(
-      terminal.buffer.createAnchor(0, 0),
-      terminal.buffer.createAnchor(
-        terminal.viewWidth,
-        terminal.buffer.lines.length - 1,
-      ),
-      mode: SelectionMode.line,
-    );
+    plugin.selectAll();
   }
 
   Future<void> _handleOpenFileManager() async {

@@ -1,8 +1,5 @@
 part of 'bloc.dart';
 
-/// Default maximum number of open shells.
-const kTerminalDefaultMaxOpenShells = 10;
-
 /// How the Option keys behave in the terminal on macOS.
 enum TerminalOptionKeyBehavior {
   /// Left Option acts as Meta, right Option types special characters.
@@ -17,6 +14,9 @@ enum TerminalOptionKeyBehavior {
 
 /// Default Option key behavior on macOS.
 const kTerminalDefaultOptionKeyBehavior = TerminalOptionKeyBehavior.leftMeta;
+
+/// Default permission for clipboard writes from explicitly trusted sessions.
+const kTerminalDefaultAllowRemoteClipboardWrites = true;
 
 /// Where files downloaded with `sz` are saved.
 enum TerminalDownloadMode {
@@ -47,11 +47,9 @@ final class TerminalSettingsLoaded extends TerminalSettingsState {
   /// Custom environment variables to inject into new shell sessions.
   final Map<String, String> environmentVariables;
 
-  /// Maximum number of concurrent shell sessions allowed.
-  final int maxOpenShells;
-
-  /// Whether open terminal tabs should be restored after app restart.
-  final bool restoreTerminalTabs;
+  /// Last error reading environment variables from the secure vault.
+  final Object? secureStorageError;
+  final Object? preferenceError;
 
   /// How the Option keys behave in the terminal on macOS.
   final TerminalOptionKeyBehavior optionKeyBehavior;
@@ -62,44 +60,56 @@ final class TerminalSettingsLoaded extends TerminalSettingsState {
   /// Download folder; null means the system Downloads folder.
   final String? downloadDirectory;
 
+  /// Allows OSC 52 writes in sessions explicitly trusted by the user.
+  final bool allowRemoteClipboardWrites;
+
   const TerminalSettingsLoaded({
     this.environmentVariables = const {},
-    this.maxOpenShells = kTerminalDefaultMaxOpenShells,
-    this.restoreTerminalTabs = false,
+    this.secureStorageError,
+    this.preferenceError,
     this.optionKeyBehavior = kTerminalDefaultOptionKeyBehavior,
     this.downloadMode = TerminalDownloadMode.saveToFolder,
     this.downloadDirectory,
+    this.allowRemoteClipboardWrites =
+        kTerminalDefaultAllowRemoteClipboardWrites,
   });
 
   @override
   List<Object?> get props => [
     environmentVariables,
-    maxOpenShells,
-    restoreTerminalTabs,
+    secureStorageError,
+    preferenceError,
     optionKeyBehavior,
     downloadMode,
     downloadDirectory,
+    allowRemoteClipboardWrites,
   ];
 
   /// Pass [clearDownloadDirectory] to reset the folder to the default.
   TerminalSettingsLoaded copyWith({
     Map<String, String>? environmentVariables,
-    int? maxOpenShells,
-    bool? restoreTerminalTabs,
+    Object? secureStorageError,
+    Object? preferenceError,
+    bool clearPreferenceError = false,
     TerminalOptionKeyBehavior? optionKeyBehavior,
     TerminalDownloadMode? downloadMode,
     String? downloadDirectory,
     bool clearDownloadDirectory = false,
+    bool? allowRemoteClipboardWrites,
   }) {
     return TerminalSettingsLoaded(
       environmentVariables: environmentVariables ?? this.environmentVariables,
-      maxOpenShells: maxOpenShells ?? this.maxOpenShells,
-      restoreTerminalTabs: restoreTerminalTabs ?? this.restoreTerminalTabs,
+      secureStorageError: secureStorageError ?? this.secureStorageError,
+      preferenceError: clearPreferenceError
+          ? null
+          : preferenceError ?? this.preferenceError,
       optionKeyBehavior: optionKeyBehavior ?? this.optionKeyBehavior,
       downloadMode: downloadMode ?? this.downloadMode,
       downloadDirectory: clearDownloadDirectory
           ? null
           : downloadDirectory ?? this.downloadDirectory,
+      allowRemoteClipboardWrites:
+          allowRemoteClipboardWrites ?? this.allowRemoteClipboardWrites,
     );
   }
 }

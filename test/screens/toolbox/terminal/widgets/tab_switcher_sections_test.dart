@@ -22,7 +22,7 @@ void main() {
   List<String> sessionIds(TabSwitcherSection section) =>
       section.sessions.map((SessionInfo s) => s.id).toList();
 
-  test("current tab's group comes first", () {
+  test("current tab's group keeps its stored position", () {
     final sections = buildSwitcherSections(
       const TabSwitcherData(
         sessions: sessions,
@@ -32,7 +32,7 @@ void main() {
       ungroupedLabel: label,
     );
 
-    expect(names(sections), <String>['web', 'api', 'Ungrouped']);
+    expect(names(sections), <String>['api', 'web', 'Ungrouped']);
     expect(sections.last.groupId, isNull);
   });
 
@@ -48,7 +48,22 @@ void main() {
 
     final api = sections.firstWhere((TabSwitcherSection s) => s.name == 'api');
     expect(sessionIds(api), <String>['s2', 's4']);
-    expect(names(sections), <String>['Ungrouped', 'api', 'web']);
+    expect(names(sections), <String>['api', 'web', 'Ungrouped']);
+  });
+
+  test('changing the current tab never changes section order', () {
+    for (final sessionId in ['s1', 's2', 's5']) {
+      final sections = buildSwitcherSections(
+        TabSwitcherData(
+          sessions: sessions,
+          currentSessionId: sessionId,
+          groups: groups.reversed.toList(),
+        ),
+        ungroupedLabel: label,
+      );
+
+      expect(names(sections), <String>['web', 'api', 'Ungrouped']);
+    }
   });
 
   test('ungrouped section is last and omitted when empty', () {
@@ -130,7 +145,7 @@ void main() {
     final sections = buildSwitcherSections(
       const TabSwitcherData(
         sessions: sessions,
-        currentSessionId: 's2',
+        currentSessionId: 's5',
         groups: <TabSwitcherGroup>[
           TabSwitcherGroup(id: 'g1', name: 'api', collapsed: true),
           TabSwitcherGroup(id: 'g2', name: 'web', collapsed: true),
@@ -141,8 +156,8 @@ void main() {
     );
 
     expect(sections.map((TabSwitcherSection s) => s.collapsed).toList(), <bool>[
-      false,
       true,
+      false,
       true,
     ]);
   });

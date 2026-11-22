@@ -297,6 +297,38 @@ void main() {
       expect(cl[9], 9.indexed);
     });
 
+    test('replaces a rotated buffer, retaining only the newest items', () {
+      final cl = IndexAwareCircularBuffer<IndexedValue<int>>(3);
+      final items = List.generate(6, IndexedValue.new);
+      cl.pushAll(items.take(4));
+      expect(cl.toList(), items.sublist(1, 4));
+
+      cl.replaceWith(items.sublist(2));
+
+      expect(cl.toList(), items.sublist(3));
+      expect(items[1].attached, isFalse);
+      expect(items[2].attached, isFalse);
+      for (var i = 0; i < cl.length; i++) {
+        expect(cl[i].index, i);
+      }
+    });
+
+    test('trim start rebases retained items and detaches removed ones', () {
+      final cl = IndexAwareCircularBuffer<IndexedValue<int>>(3);
+      final items = List.generate(5, IndexedValue.new);
+      cl.pushAll(items.take(4));
+
+      cl.trimStart(2);
+
+      expect(items[1].attached, isFalse);
+      expect(items[2].attached, isFalse);
+      expect(cl[0], same(items[3]));
+      expect(items[3].index, 0);
+      cl.push(items[4]);
+      expect(cl[1], same(items[4]));
+      expect(items[4].index, 1);
+    });
+
     test("trim start works", () {
       final cl = IndexAwareCircularBuffer<IndexedValue<int>>(10);
       cl.pushAll(

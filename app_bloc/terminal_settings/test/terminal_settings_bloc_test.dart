@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
@@ -44,6 +45,66 @@ class MockVaultRepository implements VaultRepository {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  group('remote clipboard policy', () {
+    test(
+      'defaults to enabled and preserves explicit choices across reloads',
+      () async {
+        final vault = MockVaultRepository();
+        final bloc = TerminalSettingsBloc(vault: vault);
+        addTearDown(bloc.close);
+        bloc.add(const TerminalSettingsLoad());
+        var loaded = await bloc.stream
+            .where((state) => state is TerminalSettingsLoaded)
+            .cast<TerminalSettingsLoaded>()
+            .first;
+        expect(loaded.allowRemoteClipboardWrites, isTrue);
+
+        bloc.add(const TerminalSettingsUpdateRemoteClipboard(allowed: false));
+        loaded = await bloc.stream
+            .where((state) => state is TerminalSettingsLoaded)
+            .cast<TerminalSettingsLoaded>()
+            .first;
+        expect(loaded.allowRemoteClipboardWrites, isFalse);
+        expect(await vault.readAll(), isEmpty);
+
+        bloc.add(const TerminalSettingsLoad());
+        loaded = await bloc.stream
+            .where((state) => state is TerminalSettingsLoaded)
+            .cast<TerminalSettingsLoaded>()
+            .first;
+        expect(loaded.allowRemoteClipboardWrites, isFalse);
+
+        bloc.add(const TerminalSettingsUpdateRemoteClipboard(allowed: true));
+        loaded = await bloc.stream
+            .where((state) => state is TerminalSettingsLoaded)
+            .cast<TerminalSettingsLoaded>()
+            .first;
+        expect(loaded.allowRemoteClipboardWrites, isTrue);
+        bloc.add(const TerminalSettingsLoad());
+        loaded = await bloc.stream
+            .where((state) => state is TerminalSettingsLoaded)
+            .cast<TerminalSettingsLoaded>()
+            .first;
+        expect(loaded.allowRemoteClipboardWrites, isTrue);
+      },
+    );
+
+    test('unknown stored values fail closed', () async {
+      SharedPreferences.setMockInitialValues({
+        'terminal_allow_remote_clipboard_writes': 'unexpected',
+      });
+      final bloc = TerminalSettingsBloc(vault: MockVaultRepository());
+      addTearDown(bloc.close);
+      bloc.add(const TerminalSettingsLoad());
+      final state = await bloc.stream
+          .where((state) => state is TerminalSettingsLoaded)
+          .cast<TerminalSettingsLoaded>()
+          .first;
+      expect(state.allowRemoteClipboardWrites, isFalse);
+    });
+  });
   group('TerminalSettingsBloc', () {
     late MockVaultRepository mockVault;
 
@@ -62,18 +123,11 @@ void main() {
       act: (bloc) => bloc.add(TerminalSettingsLoad()),
       expect: () => [
         isA<TerminalSettingsLoading>(),
-        isA<TerminalSettingsLoaded>()
-            .having(
-              (s) => s.environmentVariables,
-              'environmentVariables',
-              isEmpty,
-            )
-            .having(
-              (s) => s.maxOpenShells,
-              'maxOpenShells',
-              kTerminalDefaultMaxOpenShells,
-            )
-            .having((s) => s.restoreTerminalTabs, 'restoreTerminalTabs', false),
+        isA<TerminalSettingsLoaded>().having(
+          (s) => s.environmentVariables,
+          'environmentVariables',
+          isEmpty,
+        ),
       ],
     );
 
@@ -94,24 +148,6 @@ void main() {
           'environmentVariables',
           {'PATH': '/usr/bin', 'HOME': '/home/user'},
         ),
-      ],
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'emits Loaded with stored settings when Load event is added',
-      build: () {
-        mockVault.seed({
-          'terminal_max_open_shells': '25',
-          'terminal_restore_tabs': 'true',
-        });
-        return TerminalSettingsBloc(vault: mockVault);
-      },
-      act: (bloc) => bloc.add(TerminalSettingsLoad()),
-      expect: () => [
-        isA<TerminalSettingsLoading>(),
-        isA<TerminalSettingsLoaded>()
-            .having((s) => s.maxOpenShells, 'maxOpenShells', 25)
-            .having((s) => s.restoreTerminalTabs, 'restoreTerminalTabs', true),
       ],
     );
 
@@ -181,73 +217,13 @@ void main() {
     );
 
     blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'UpdateMaxOpenShells updates the max shells setting',
-      build: () => TerminalSettingsBloc(vault: mockVault),
-      seed: () => const TerminalSettingsLoaded(),
-      act: (bloc) =>
-          bloc.add(TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 20)),
-      expect: () => [
-        isA<TerminalSettingsLoaded>().having(
-          (s) => s.maxOpenShells,
-          'maxOpenShells',
-          20,
-        ),
-      ],
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'UpdateMaxOpenShells clamps value to minimum of 1',
-      build: () => TerminalSettingsBloc(vault: mockVault),
-      seed: () => const TerminalSettingsLoaded(),
-      act: (bloc) =>
-          bloc.add(TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 0)),
-      expect: () => [
-        isA<TerminalSettingsLoaded>().having(
-          (s) => s.maxOpenShells,
-          'maxOpenShells',
-          1,
-        ),
-      ],
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'UpdateMaxOpenShells clamps value to maximum of 50',
-      build: () => TerminalSettingsBloc(vault: mockVault),
-      seed: () => const TerminalSettingsLoaded(),
-      act: (bloc) =>
-          bloc.add(TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 100)),
-      expect: () => [
-        isA<TerminalSettingsLoaded>().having(
-          (s) => s.maxOpenShells,
-          'maxOpenShells',
-          50,
-        ),
-      ],
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
       'does not update when state is not Loaded',
       build: () => TerminalSettingsBloc(vault: mockVault),
       // Initial state is TerminalSettingsInitial
-      act: (bloc) =>
-          bloc.add(TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 20)),
-      expect: () => [], // No state changes expected
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'UpdateRestoreTabs updates restore tabs setting',
-      build: () => TerminalSettingsBloc(vault: mockVault),
-      seed: () => const TerminalSettingsLoaded(),
       act: (bloc) => bloc.add(
-        const TerminalSettingsUpdateRestoreTabs(restoreTerminalTabs: true),
+        TerminalSettingsUpdateDownloadDirectory(downloadDirectory: '/tmp/20'),
       ),
-      expect: () => [
-        isA<TerminalSettingsLoaded>().having(
-          (s) => s.restoreTerminalTabs,
-          'restoreTerminalTabs',
-          true,
-        ),
-      ],
+      expect: () => [], // No state changes expected
     );
 
     blocTest<TerminalSettingsBloc, TerminalSettingsState>(
@@ -316,7 +292,9 @@ void main() {
       ],
       verify: (_) async {
         expect(
-          await mockVault.read(key: 'terminal_option_key_behavior'),
+          (await SharedPreferences.getInstance()).getString(
+            'terminal_option_key_behavior',
+          ),
           'normal',
         );
       },
@@ -387,7 +365,12 @@ void main() {
         ),
       ],
       verify: (_) async {
-        expect(await mockVault.read(key: 'terminal_download_mode'), 'ask');
+        expect(
+          (await SharedPreferences.getInstance()).getString(
+            'terminal_download_mode',
+          ),
+          'ask',
+        );
       },
     );
 
@@ -409,7 +392,9 @@ void main() {
       ],
       verify: (_) async {
         expect(
-          await mockVault.read(key: 'terminal_download_directory'),
+          (await SharedPreferences.getInstance()).getString(
+            'terminal_download_directory',
+          ),
           '/tmp/dl',
         );
       },
@@ -434,8 +419,10 @@ void main() {
       ],
       verify: (_) async {
         expect(
-          await mockVault.containsKey(key: 'terminal_download_directory'),
-          isFalse,
+          (await SharedPreferences.getInstance()).getString(
+            'terminal_download_directory',
+          ),
+          '',
         );
       },
     );
@@ -446,39 +433,30 @@ void main() {
       const state = TerminalSettingsLoaded();
 
       expect(state.environmentVariables, isEmpty);
-      expect(state.maxOpenShells, equals(kTerminalDefaultMaxOpenShells));
-      expect(state.restoreTerminalTabs, isFalse);
     });
 
     test('TerminalSettingsLoaded copyWith creates new instance', () {
       const original = TerminalSettingsLoaded(
         environmentVariables: {'KEY': 'value'},
-        maxOpenShells: 15,
+        downloadDirectory: '/tmp/15',
       );
 
-      final copied = original.copyWith(maxOpenShells: 20);
+      final copied = original.copyWith(downloadDirectory: '/tmp/20');
 
-      expect(copied.maxOpenShells, equals(20));
+      expect(copied.downloadDirectory, equals('/tmp/20'));
       expect(
         copied.environmentVariables,
         equals(original.environmentVariables),
       );
-      expect(copied.restoreTerminalTabs, isFalse);
     });
 
     test('TerminalSettingsLoaded equality works correctly', () {
-      const state1 = TerminalSettingsLoaded(maxOpenShells: 10);
-      const state2 = TerminalSettingsLoaded(maxOpenShells: 10);
-      const state3 = TerminalSettingsLoaded(maxOpenShells: 20);
+      const state1 = TerminalSettingsLoaded(downloadDirectory: '/tmp/10');
+      const state2 = TerminalSettingsLoaded(downloadDirectory: '/tmp/10');
+      const state3 = TerminalSettingsLoaded(downloadDirectory: '/tmp/20');
 
       expect(state1, equals(state2));
       expect(state1, isNot(equals(state3)));
-    });
-  });
-
-  group('Default constants', () {
-    test('kTerminalDefaultMaxOpenShells is 10', () {
-      expect(kTerminalDefaultMaxOpenShells, equals(10));
     });
   });
 }

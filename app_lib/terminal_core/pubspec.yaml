@@ -13,7 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   flex_tabs: any
-  window_manager: ^0.5.2
+  window_manager: '>=0.6.0 <0.8.0'
   equatable: ^3.0.0
   path: ^1.9.1
 

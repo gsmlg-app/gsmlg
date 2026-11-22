@@ -1717,6 +1717,130 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tabGroupSelected => '分组所选标签页';
+
+  @override
+  String get sessionSnapshots => '已保存标签页与历史';
+
+  @override
+  String get sessionSaveWorkspace => '保存整个工作区';
+
+  @override
+  String get sessionSaveGroup => '保存分组';
+
+  @override
+  String get sessionRestore => '恢复';
+
+  @override
+  String get sessionReplace => '替换';
+
+  @override
+  String get sessionAppend => '追加';
+
+  @override
+  String get sessionRestorePrompt => '是否恢复上次打开的标签页？';
+
+  @override
+  String get sessionLater => '稍后';
+
+  @override
+  String get sessionExitHistory => '最近退出快照';
+
+  @override
+  String get sessionRecovery => '崩溃恢复';
+
+  @override
+  String get sessionManualSaved => '手动保存';
+
+  @override
+  String get sessionNoSnapshots => '暂无保存的会话。';
+
+  @override
+  String get sessionSnapshotName => '名称';
+
+  @override
+  String get sessionTargetGroup => '目标分组';
+
+  @override
+  String get sessionNewGroup => '新建分组';
+
+  @override
+  String get sessionRestoreDescription =>
+      '恢复会新建会话，不包含历史输出。替换分组仅关闭目标分组，替换工作区会关闭全部标签页。';
+
+  @override
+  String get sessionUnavailable => '此标签页暂时无法恢复，原配置已保留。';
+
+  @override
+  String get sessionDirectory => '工作目录';
+
+  @override
+  String get sessionProfile => 'Shell 配置';
+
+  @override
+  String get sessionHost => 'SSH 主机';
+
+  @override
+  String get sessionPersistenceError => '无法保存标签页，请检查存储权限并重试。';
+
+  @override
+  String get sessionDeleteConfirm => '删除此手动保存的会话？';
+
+  @override
+  String get sessionSaved => '会话已保存';
+
+  @override
+  String get sessionStorageUnavailable => '无法打开会话存储，已有文件已保留。';
+
+  @override
+  String get sessionSecureStorageUnavailable => '无法读取凭据，请解锁或修复安全存储后重试。';
+
+  @override
+  String get sessionRestoreFailed => '恢复失败';
+
+  @override
+  String sessionDetails(int tabs, int groups) {
+    return '$tabs 个标签页 · $groups 个分组';
+  }
+
+  @override
+  String get sessionMissingProfile => '已保存的 Shell 配置不存在。';
+
+  @override
+  String get sessionMissingHost => '已保存的 SSH 主机不存在。';
+
+  @override
+  String get sessionMissingDirectory => '已保存的工作目录不存在。';
+
+  @override
+  String get sessionSaveEmpty => '没有可保存的标签页。';
+
+  @override
+  String get sessionPreferenceError => '无法保存配置，请检查存储权限并重试。';
+
+  @override
+  String get remoteClipboardAllow => '允许远端写入剪贴板';
+
+  @override
+  String get remoteClipboardDescription =>
+      '允许终端会话替换剪贴板内容。会话默认受信任，可在每个会话的剪贴板菜单中撤销权限。远端读取剪贴板始终被拒绝。';
+
+  @override
+  String get remoteClipboardTrust => '信任此会话写入剪贴板';
+
+  @override
+  String get remoteClipboardRevoke => '撤销此会话的剪贴板权限';
+
+  @override
+  String get remoteClipboardEnableFirst => '请先在终端设置中启用允许远端写入剪贴板。';
+
+  @override
+  String get terminalClipboardActions => '终端剪贴板与文本选择';
+
+  @override
+  String get terminalSelectText => '选择文本（暂停鼠标上报）';
+
+  @override
+  String get terminalMouseInteraction => '恢复应用鼠标交互';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -2532,6 +2656,130 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get tabGroupSelected => '分组所选标签页';
+
+  @override
+  String get sessionSnapshots => '已保存标签页与历史';
+
+  @override
+  String get sessionSaveWorkspace => '保存整个工作区';
+
+  @override
+  String get sessionSaveGroup => '保存分组';
+
+  @override
+  String get sessionRestore => '恢复';
+
+  @override
+  String get sessionReplace => '替换';
+
+  @override
+  String get sessionAppend => '追加';
+
+  @override
+  String get sessionRestorePrompt => '是否恢复上次打开的标签页？';
+
+  @override
+  String get sessionLater => '稍后';
+
+  @override
+  String get sessionExitHistory => '最近退出快照';
+
+  @override
+  String get sessionRecovery => '崩溃恢复';
+
+  @override
+  String get sessionManualSaved => '手动保存';
+
+  @override
+  String get sessionNoSnapshots => '暂无保存的会话。';
+
+  @override
+  String get sessionSnapshotName => '名称';
+
+  @override
+  String get sessionTargetGroup => '目标分组';
+
+  @override
+  String get sessionNewGroup => '新建分组';
+
+  @override
+  String get sessionRestoreDescription =>
+      '恢复会新建会话，不包含历史输出。替换分组仅关闭目标分组，替换工作区会关闭全部标签页。';
+
+  @override
+  String get sessionUnavailable => '此标签页暂时无法恢复，原配置已保留。';
+
+  @override
+  String get sessionDirectory => '工作目录';
+
+  @override
+  String get sessionProfile => 'Shell 配置';
+
+  @override
+  String get sessionHost => 'SSH 主机';
+
+  @override
+  String get sessionPersistenceError => '无法保存标签页，请检查存储权限并重试。';
+
+  @override
+  String get sessionDeleteConfirm => '删除此手动保存的会话？';
+
+  @override
+  String get sessionSaved => '会话已保存';
+
+  @override
+  String get sessionStorageUnavailable => '无法打开会话存储，已有文件已保留。';
+
+  @override
+  String get sessionSecureStorageUnavailable => '无法读取凭据，请解锁或修复安全存储后重试。';
+
+  @override
+  String get sessionRestoreFailed => '恢复失败';
+
+  @override
+  String sessionDetails(int tabs, int groups) {
+    return '$tabs 个标签页 · $groups 个分组';
+  }
+
+  @override
+  String get sessionMissingProfile => '已保存的 Shell 配置不存在。';
+
+  @override
+  String get sessionMissingHost => '已保存的 SSH 主机不存在。';
+
+  @override
+  String get sessionMissingDirectory => '已保存的工作目录不存在。';
+
+  @override
+  String get sessionSaveEmpty => '没有可保存的标签页。';
+
+  @override
+  String get sessionPreferenceError => '无法保存配置，请检查存储权限并重试。';
+
+  @override
+  String get remoteClipboardAllow => '允许远端写入剪贴板';
+
+  @override
+  String get remoteClipboardDescription =>
+      '允许终端会话替换剪贴板内容。会话默认受信任，可在每个会话的剪贴板菜单中撤销权限。远端读取剪贴板始终被拒绝。';
+
+  @override
+  String get remoteClipboardTrust => '信任此会话写入剪贴板';
+
+  @override
+  String get remoteClipboardRevoke => '撤销此会话的剪贴板权限';
+
+  @override
+  String get remoteClipboardEnableFirst => '请先在终端设置中启用允许远端写入剪贴板。';
+
+  @override
+  String get terminalClipboardActions => '终端剪贴板与文本选择';
+
+  @override
+  String get terminalSelectText => '选择文本（暂停鼠标上报）';
+
+  @override
+  String get terminalMouseInteraction => '恢复应用鼠标交互';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -3180,4 +3428,128 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get tabGroupSelected => '分組所選分頁';
+
+  @override
+  String get sessionSnapshots => '已儲存分頁與歷史';
+
+  @override
+  String get sessionSaveWorkspace => '儲存整個工作區';
+
+  @override
+  String get sessionSaveGroup => '儲存分組';
+
+  @override
+  String get sessionRestore => '還原';
+
+  @override
+  String get sessionReplace => '取代';
+
+  @override
+  String get sessionAppend => '附加';
+
+  @override
+  String get sessionRestorePrompt => '是否還原上次開啟的分頁？';
+
+  @override
+  String get sessionLater => '稍後';
+
+  @override
+  String get sessionExitHistory => '最近離開快照';
+
+  @override
+  String get sessionRecovery => '當機復原';
+
+  @override
+  String get sessionManualSaved => '手動儲存';
+
+  @override
+  String get sessionNoSnapshots => '尚無已儲存的工作階段。';
+
+  @override
+  String get sessionSnapshotName => '名稱';
+
+  @override
+  String get sessionTargetGroup => '目標分組';
+
+  @override
+  String get sessionNewGroup => '新增分組';
+
+  @override
+  String get sessionRestoreDescription =>
+      '還原會建立新的工作階段，不包含先前輸出。取代分組僅關閉目標分組，取代工作區會關閉所有分頁。';
+
+  @override
+  String get sessionUnavailable => '此分頁暫時無法還原，原始設定已保留。';
+
+  @override
+  String get sessionDirectory => '工作目錄';
+
+  @override
+  String get sessionProfile => 'Shell 設定檔';
+
+  @override
+  String get sessionHost => 'SSH 主機';
+
+  @override
+  String get sessionPersistenceError => '無法儲存分頁，請檢查儲存權限並重試。';
+
+  @override
+  String get sessionDeleteConfirm => '刪除此手動儲存的工作階段？';
+
+  @override
+  String get sessionSaved => '工作階段已儲存';
+
+  @override
+  String get sessionStorageUnavailable => '無法開啟工作階段儲存，現有檔案已保留。';
+
+  @override
+  String get sessionSecureStorageUnavailable => '無法讀取憑證，請解鎖或修復安全儲存後重試。';
+
+  @override
+  String get sessionRestoreFailed => '還原失敗';
+
+  @override
+  String sessionDetails(int tabs, int groups) {
+    return '$tabs 個分頁 · $groups 個分組';
+  }
+
+  @override
+  String get sessionMissingProfile => '已儲存的 Shell 設定檔不存在。';
+
+  @override
+  String get sessionMissingHost => '已儲存的 SSH 主機不存在。';
+
+  @override
+  String get sessionMissingDirectory => '已儲存的工作目錄不存在。';
+
+  @override
+  String get sessionSaveEmpty => '沒有可儲存的分頁。';
+
+  @override
+  String get sessionPreferenceError => '無法儲存設定，請檢查儲存權限後重試。';
+
+  @override
+  String get remoteClipboardAllow => '允許遠端寫入剪貼簿';
+
+  @override
+  String get remoteClipboardDescription =>
+      '允許終端機工作階段覆寫剪貼簿內容。工作階段預設受信任，可在每個工作階段的剪貼簿選單中撤銷權限。遠端讀取剪貼簿一律拒絕。';
+
+  @override
+  String get remoteClipboardTrust => '信任此工作階段寫入剪貼簿';
+
+  @override
+  String get remoteClipboardRevoke => '撤銷此工作階段的剪貼簿權限';
+
+  @override
+  String get remoteClipboardEnableFirst => '請先在終端機設定中啟用允許遠端寫入剪貼簿。';
+
+  @override
+  String get terminalClipboardActions => '終端機剪貼簿與選取文字';
+
+  @override
+  String get terminalSelectText => '選取文字（暫停滑鼠回報）';
+
+  @override
+  String get terminalMouseInteraction => '恢復應用程式滑鼠互動';
 }

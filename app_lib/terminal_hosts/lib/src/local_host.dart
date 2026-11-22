@@ -63,20 +63,19 @@ class LocalHost implements Host {
       isMacOS: Platform.isMacOS,
       isWindows: Platform.isWindows,
     );
-    final mergedEnv = <String, String>{
+    final sessionEnv = <String, String>{
       if (Platform.isMacOS) 'TERM_PROGRAM': 'Apple_Terminal',
-      ...Platform.environment,
       ..._profileEnvironment,
       ...environment ?? {},
     };
     final pty = Pty.start(
       shell.command,
       arguments: shell.args,
-      environment: mergedEnv,
-      workingDirectory: resolveLocalWorkingDirectory(
-        _workingDirectory,
-        mergedEnv,
-      ),
+      environment: sessionEnv,
+      workingDirectory: resolveLocalWorkingDirectory(_workingDirectory, {
+        ...Platform.environment,
+        ...sessionEnv,
+      }),
       rows: height,
       columns: width,
       ackRead: true, // Enable backpressure to prevent message queue flooding

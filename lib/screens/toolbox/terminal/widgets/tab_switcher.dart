@@ -5,6 +5,8 @@ import 'dart:ui';
 import 'package:app_locale/app_locale.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart'
+    show RenderAbstractViewport, RenderSliverGrid;
 import 'package:flutter/services.dart';
 
 import 'tab_switcher_sections.dart';
@@ -41,6 +43,7 @@ class TabSwitcherCallbacks {
     this.onMoveToGroup,
     this.onUngroup,
     this.onRenameGroup,
+    this.onMoveGroupBefore,
     this.onToggleCollapsed,
     this.onCloseGroup,
     this.onMoveSessionsToGroup,
@@ -54,6 +57,7 @@ class TabSwitcherCallbacks {
   final void Function(String sessionId, String groupId)? onMoveToGroup;
   final ValueChanged<String>? onUngroup;
   final void Function(String groupId, String name)? onRenameGroup;
+  final void Function(String groupId, String? targetGroupId)? onMoveGroupBefore;
   final ValueChanged<String?>? onToggleCollapsed;
   final ValueChanged<String>? onCloseGroup;
   final void Function(List<String> sessionIds, String groupId)?
@@ -130,6 +134,12 @@ enum _CardAction { rename, moveTo, newGroup, ungroup }
 
 enum _GroupAction { rename, close }
 
+class _GroupDragData {
+  const _GroupDragData(this.groupId);
+
+  final String groupId;
+}
+
 class _TabSwitcherDialog extends StatefulWidget {
   const _TabSwitcherDialog({
     required this.data,
@@ -150,6 +160,9 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
   String? _focusedId;
   final _selectedSessionIds = <String>{};
   final _focusNode = FocusNode();
+  final _scrollController = ScrollController(keepScrollOffset: false);
+  final _sectionKeys = <String?, ({GlobalKey header, GlobalKey grid})>{};
+
   _TabSwitcherMode _mode = _TabSwitcherMode.switcher;
 
   /// The section containing the current tab when the switcher opened is shown
@@ -158,28 +171,39 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
 
   TabSwitcherCallbacks get _callbacks => widget.callbacks;
 
+  bool get _canReorderGroups =>
+      _mode == _TabSwitcherMode.reorder &&
+      !widget.currentGroupOnly &&
+      _data.groups.length > 1 &&
+      _callbacks.onMoveGroupBefore != null;
+
   @override
   void initState() {
     super.initState();
     _data = widget.data.value;
     widget.data.addListener(_onDataChanged);
     _focusedId = _data.currentSessionId;
+    _revealFocused(center: true);
   }
 
   @override
   void dispose() {
     widget.data.removeListener(_onDataChanged);
     _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   void _onDataChanged() {
+    final previousFocus = _focusedId;
     final previous = _visibleSessions();
-    final previousIndex = previous.indexWhere((s) => s.id == _focusedId);
+    final previousIndex = previous.indexWhere((s) => s.id == previousFocus);
     setState(() {
       _data = widget.data.value;
       final ids = {for (final s in _data.sessions) s.id};
       _selectedSessionIds.retainAll(ids);
+      final groups = {for (final group in _data.groups) group.id};
+      _sectionKeys.removeWhere((id, _) => id != null && !groups.contains(id));
       final visible = _visibleSessions();
       if (visible.any((s) => s.id == _focusedId)) return;
       _focusedId = visible.isEmpty
@@ -188,6 +212,8 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
     });
     if (_data.sessions.isEmpty) {
       Navigator.of(context).maybePop();
+    } else if (_focusedId != previousFocus) {
+      _revealFocused();
     }
   }
 
@@ -200,18 +226,17 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
       currentGroupOnly: widget.currentGroupOnly,
     );
     if (!_currentSectionReleased || sections.isEmpty) return sections;
-    final current = sections.first;
-    if (!current.sessions.any((s) => s.id == _data.currentSessionId)) {
-      return sections;
-    }
     return [
-      TabSwitcherSection(
-        groupId: current.groupId,
-        name: current.name,
-        sessions: current.sessions,
-        collapsed: _storedCollapsed(current.groupId),
-      ),
-      ...sections.skip(1),
+      for (final section in sections)
+        if (section.sessions.any((s) => s.id == _data.currentSessionId))
+          TabSwitcherSection(
+            groupId: section.groupId,
+            name: section.name,
+            sessions: section.sessions,
+            collapsed: _storedCollapsed(section.groupId),
+          )
+        else
+          section,
     ];
   }
 
@@ -404,7 +429,7 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
   }
 
   void _handleSessionTap(SessionInfo session) {
-    setState(() => _focusedId = session.id);
+    if (session.id != _focusedId) _focusSession(session);
 
     switch (_mode) {
       case _TabSwitcherMode.switcher:
@@ -579,6 +604,85 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
     _focusNode.requestFocus();
   }
 
+  ({GlobalKey header, GlobalKey grid}) _keysForSection(String? groupId) =>
+      _sectionKeys.putIfAbsent(
+        groupId,
+        () => (header: GlobalKey(), grid: GlobalKey()),
+      );
+
+  void _focusSession(SessionInfo session, {bool showHeader = false}) {
+    setState(() => _focusedId = session.id);
+    _revealFocused(showHeader: showHeader);
+  }
+
+  void _revealFocused({bool center = false, bool showHeader = false}) {
+    final id = _focusedId;
+    if (id == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || id != _focusedId || !_scrollController.hasClients) return;
+      for (final section in _openSections()) {
+        final index = section.sessions.indexWhere(
+          (session) => session.id == id,
+        );
+        if (index < 0) continue;
+        _revealCard(
+          section.groupId,
+          index,
+          center: center,
+          showHeader: showHeader,
+        );
+        break;
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _revealCard(
+    String? groupId,
+    int index, {
+    required bool center,
+    required bool showHeader,
+  }) {
+    final keys = _sectionKeys[groupId];
+    final grid = keys?.grid.currentContext?.findRenderObject();
+    if (grid is! RenderSliverGrid) return;
+    final position = _scrollController.position;
+    final viewport = RenderAbstractViewport.of(grid);
+    // The grid delegate knows the row position even before the card is built.
+    final tile = grid.gridDelegate
+        .getLayout(grid.constraints)
+        .getGeometryForChildIndex(index);
+    final bounds = Rect.fromLTWH(
+      0,
+      tile.scrollOffset,
+      tile.crossAxisExtent,
+      tile.mainAxisExtent,
+    );
+    final top = viewport.getOffsetToReveal(grid, 0, rect: bounds).offset;
+    final bottom = top + tile.mainAxisExtent;
+    var leading = top;
+    if (showHeader) {
+      final header = keys?.header.currentContext?.findRenderObject();
+      if (header != null) {
+        final headerTop = viewport.getOffsetToReveal(header, 0).offset;
+        if (bottom - headerTop <= position.viewportDimension) {
+          leading = headerTop;
+        }
+      }
+    }
+    final offset = center
+        ? viewport.getOffsetToReveal(grid, 0.5, rect: bounds).offset
+        : min(
+            leading,
+            max(position.pixels, bottom - position.viewportDimension),
+          );
+    final next = offset.clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    if (next != position.pixels) position.jumpTo(next);
+  }
+
   /// Moves focus by grid position across the open sections.
   void _moveFocus({int dx = 0, int dy = 0}) {
     final sections = _openSections();
@@ -586,13 +690,13 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
     if (visible.isEmpty) return;
     final flatIndex = visible.indexWhere((s) => s.id == _focusedId);
     if (flatIndex < 0) {
-      setState(() => _focusedId = visible.first.id);
+      _focusSession(visible.first, showHeader: dy < 0);
       return;
     }
     if (dx != 0) {
       final next = flatIndex + dx;
       if (next >= 0 && next < visible.length) {
-        setState(() => _focusedId = visible[next].id);
+        _focusSession(visible[next]);
       }
       return;
     }
@@ -625,7 +729,11 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
         target = previous[min(lastRowStart + col, previous.length - 1)];
       }
     }
-    if (target != null) setState(() => _focusedId = target!.id);
+    if (target != null) {
+      _focusSession(target, showHeader: dy < 0);
+    } else if (dy < 0) {
+      _revealFocused(showHeader: true);
+    }
   }
 
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
@@ -734,14 +842,19 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
                         constraints.maxWidth,
                       );
                       return CustomScrollView(
+                        controller: _scrollController,
                         shrinkWrap: true,
                         slivers: [
                           for (final section in sections) ...[
                             SliverToBoxAdapter(
+                              key: _keysForSection(section.groupId).header,
                               child: _buildSectionHeader(context, section),
                             ),
                             if (!section.collapsed)
                               SliverPadding(
+                                key: ValueKey(
+                                  'section-cards-${section.groupId}',
+                                ),
                                 padding: const EdgeInsets.fromLTRB(
                                   _gridPadding,
                                   0,
@@ -749,6 +862,7 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
                                   _gridPadding,
                                 ),
                                 sliver: SliverGrid(
+                                  key: _keysForSection(section.groupId).grid,
                                   gridDelegate:
                                       SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisCount: cols,
@@ -793,18 +907,28 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
   Widget _buildSectionHeader(BuildContext context, TabSwitcherSection section) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    return GestureDetector(
+    final groupId = section.groupId;
+    final header = GestureDetector(
       key: ValueKey('tab-switcher-section-${section.groupId ?? 'ungrouped'}'),
       behavior: HitTestBehavior.opaque,
       onTap: () => _toggleSection(section),
       onSecondaryTapUp: (details) =>
           _showGroupMenu(section, details.globalPosition),
-      onLongPressStart: (details) =>
-          _showGroupMenu(section, details.globalPosition),
+      onLongPressStart: _mode == _TabSwitcherMode.reorder
+          ? null
+          : (details) => _showGroupMenu(section, details.globalPosition),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
         child: Row(
           children: [
+            if (_canReorderGroups && groupId != null) ...[
+              Icon(
+                Icons.drag_indicator,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+            ],
             Icon(
               section.collapsed ? Icons.chevron_right : Icons.expand_more,
               size: 18,
@@ -823,6 +947,39 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
           ],
         ),
       ),
+    );
+    if (!_canReorderGroups) return header;
+
+    return DragTarget<_GroupDragData>(
+      onWillAcceptWithDetails: (details) => details.data.groupId != groupId,
+      onAcceptWithDetails: (details) =>
+          _callbacks.onMoveGroupBefore?.call(details.data.groupId, groupId),
+      builder: (context, candidateData, rejectedData) {
+        final target = DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: candidateData.isNotEmpty
+                    ? colorScheme.tertiary
+                    : colorScheme.surfaceContainer,
+                width: 2,
+              ),
+            ),
+          ),
+          child: header,
+        );
+        if (groupId == null) return target;
+
+        return Draggable<_GroupDragData>(
+          data: _GroupDragData(groupId),
+          feedback: SizedBox(
+            width: 240,
+            child: Material(color: colorScheme.surfaceContainer, child: header),
+          ),
+          childWhenDragging: Opacity(opacity: 0.45, child: target),
+          child: target,
+        );
+      },
     );
   }
 
@@ -913,6 +1070,27 @@ class _TabSwitcherDialogState extends State<_TabSwitcherDialog> {
     final isCurrent = session.id == _data.currentSessionId;
     final isMarkedForClose = _selectedSessionIds.contains(session.id);
 
+    return KeyedSubtree(
+      key: ValueKey(session.id),
+      child: _buildCardTarget(
+        context,
+        session: session,
+        index: index,
+        isFocused: isFocused,
+        isCurrent: isCurrent,
+        isMarkedForClose: isMarkedForClose,
+      ),
+    );
+  }
+
+  Widget _buildCardTarget(
+    BuildContext context, {
+    required SessionInfo session,
+    required int index,
+    required bool isFocused,
+    required bool isCurrent,
+    required bool isMarkedForClose,
+  }) {
     return DragTarget<String>(
       onWillAcceptWithDetails: (details) =>
           _mode == _TabSwitcherMode.reorder && details.data != session.id,

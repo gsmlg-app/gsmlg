@@ -1062,6 +1062,49 @@ void main() {
         expect(loaded().version, greaterThan(version));
       });
 
+      test('MoveGroupBefore preserves tabs, membership and active selection',
+          () async {
+        final tabs = await openTabs(3);
+        for (var index = 0; index < tabs.length; index++) {
+          groupBloc
+              .add(TerminalTabCreateGroup(id(tabs[index]), 'group $index'));
+        }
+        await settle();
+        final previous = loaded();
+
+        groupBloc.add(TerminalTabMoveGroupBefore('g2', 'g0'));
+        await settle();
+
+        expect(loaded().grouping.groups.map((group) => group.id),
+            ['g2', 'g0', 'g1']);
+        expect(loaded().grouping.membership, previous.grouping.membership);
+        expect(loaded().allTabs, tabs);
+        expect(loaded().activeTab, same(previous.activeTab));
+        expect(loaded().version, previous.version + 1);
+
+        groupBloc.add(TerminalTabMoveGroupBefore('g2', null));
+        await settle();
+
+        expect(loaded().grouping.groups.map((group) => group.id),
+            ['g0', 'g1', 'g2']);
+      });
+
+      test('MoveGroupBefore ignores missing and unchanged groups', () async {
+        final tabs = await openTabs(2);
+        groupBloc.add(TerminalTabCreateGroup(id(tabs[0]), 'one'));
+        groupBloc.add(TerminalTabCreateGroup(id(tabs[1]), 'two'));
+        await settle();
+        final previous = loaded();
+
+        groupBloc.add(TerminalTabMoveGroupBefore('missing', 'g0'));
+        groupBloc.add(TerminalTabMoveGroupBefore('g0', 'missing'));
+        groupBloc.add(TerminalTabMoveGroupBefore('g0', 'g1'));
+        groupBloc.add(TerminalTabMoveGroupBefore('g0', 'g0'));
+        await settle();
+
+        expect(loaded(), same(previous));
+      });
+
       test('new tabs are ungrouped even when the active tab is grouped',
           () async {
         final tabs = await openTabs(1);
@@ -1282,7 +1325,52 @@ void main() {
         expect(loaded().grouping.membership, isEmpty);
       });
 
-      test('GoToTab and NextTab follow global order with groups', () async {
+      test('NextTab and PreviousTab stay inside the active group', () async {
+        final t = await openTabs(4);
+        groupBloc.add(
+          TerminalTabCreateGroupWithSessions([id(t[1]), id(t[2])], 'api'),
+        );
+        await settle();
+        final group = loaded()
+            .allTabs
+            .where((TabItem tab) => loaded().grouping.groupIdOf(tab) != null)
+            .toList();
+        group.first.activate();
+
+        groupBloc.add(TerminalTabNextTab());
+        await settle();
+        expect(loaded().activeTab, same(group.last));
+
+        groupBloc.add(TerminalTabNextTab());
+        await settle();
+        expect(loaded().activeTab, same(group.first));
+
+        groupBloc.add(TerminalTabPreviousTab());
+        await settle();
+        expect(loaded().activeTab, same(group.last));
+      });
+
+      test('NextTab and PreviousTab stay inside ungrouped tabs', () async {
+        final t = await openTabs(4);
+        groupBloc.add(TerminalTabCreateGroup(id(t[1]), 'web'));
+        groupBloc.add(TerminalTabCreateGroup(id(t[3]), 'api'));
+        await settle();
+        t[0].activate();
+
+        groupBloc.add(TerminalTabNextTab());
+        await settle();
+        expect(loaded().activeTab, same(t[2]));
+
+        groupBloc.add(TerminalTabNextTab());
+        await settle();
+        expect(loaded().activeTab, same(t[0]));
+
+        groupBloc.add(TerminalTabPreviousTab());
+        await settle();
+        expect(loaded().activeTab, same(t[2]));
+      });
+
+      test('GoToTab follows global order with groups', () async {
         final t = await openTabs(3);
         groupBloc.add(TerminalTabCreateGroup(id(t[2]), 'web'));
         await settle();
@@ -1291,7 +1379,7 @@ void main() {
         await settle();
         expect(loaded().activeTab, same(t[0]));
 
-        groupBloc.add(TerminalTabNextTab());
+        groupBloc.add(TerminalTabGoToTab(1));
         await settle();
         expect(loaded().activeTab, same(t[1]));
       });

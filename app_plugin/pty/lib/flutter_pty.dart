@@ -62,32 +62,15 @@ class Pty {
   }) {
     _ensureInitialized();
 
-    final effectiveEnv = <String, String>{};
-
-    effectiveEnv['TERM'] = 'xterm-256color';
-    // Without this, tools like "vi" produce sequences that are not UTF-8 friendly
-    effectiveEnv['LANG'] = 'en_US.UTF-8';
-
-    const envValuesToCopy = {
-      'LOGNAME',
-      'USER',
-      'DISPLAY',
-      'LC_TYPE',
-      'HOME',
-      'PATH'
+    final effectiveEnv = <String, String>{
+      for (final entry in Platform.environment.entries)
+        if (!_isParentTerminalVariable(entry.key)) entry.key: entry.value,
+      'TERM': 'xterm-256color',
+      'COLORTERM': 'truecolor',
+      // Without this, tools like "vi" produce sequences that are not UTF-8 friendly
+      'LANG': Platform.environment['LANG'] ?? 'en_US.UTF-8',
+      ...?environment,
     };
-
-    for (var entry in Platform.environment.entries) {
-      if (envValuesToCopy.contains(entry.key)) {
-        effectiveEnv[entry.key] = entry.value;
-      }
-    }
-
-    if (environment != null) {
-      for (var entry in environment.entries) {
-        effectiveEnv[entry.key] = entry.value;
-      }
-    }
 
     _stdoutPort.listen(_onOutput);
     try {
@@ -217,6 +200,8 @@ class Pty {
   }
 
   /// Write data to the pseudo-terminal.
+  /// On Unix, data is copied into an ordered queue and written by a native
+  /// worker so a full terminal input buffer cannot block the calling isolate.
   void write(Uint8List data) {
     if (_handle == nullptr || _closeFuture != null) return;
     final buf = malloc<Int8>(data.length);
@@ -310,3 +295,37 @@ String? _getPtyError() {
 
   return error.cast<Utf8>().toDartString();
 }
+
+const _parentTerminalVariables = <String>{
+  'CLAUDECODE',
+  'SHLVL',
+  'TMUX',
+  'TMUX_PANE',
+  'STY',
+  'WINDOWID',
+  'INSIDE_EMACS',
+  'LC_TERMINAL',
+  'LC_TERMINAL_VERSION',
+  'WT_SESSION',
+  'WT_PROFILE_ID',
+  'XPC_SERVICE_NAME',
+  '__CFBundleIdentifier',
+};
+
+const _parentTerminalPrefixes = <String>[
+  'CLAUDE_',
+  'TERM_',
+  'ITERM_',
+  'KITTY_',
+  'WEZTERM_',
+  'GHOSTTY_',
+  'ALACRITTY_',
+  'KONSOLE_',
+  'VSCODE_',
+];
+
+/// Whether [name] describes the terminal or agent session that launched this
+/// app rather than the session the PTY child runs in.
+bool _isParentTerminalVariable(String name) =>
+    _parentTerminalVariables.contains(name) ||
+    _parentTerminalPrefixes.any(name.startsWith);

@@ -35,6 +35,36 @@ Future<void> main() async {
     check(!pty.kill(), 'An exited PTY must not signal a reused PID');
   }
 
+  final envShell = Pty.start(
+    '/usr/bin/env',
+    environment: {'PROFILE_VALUE': 'profile'},
+  );
+  final envOutput = envShell.output.expand((data) => data).toList();
+  check(await envShell.exitCode.timeout(const Duration(seconds: 3)) == 0,
+      'env did not exit cleanly');
+  final childEnv = <String, String>{
+    for (final line
+        in const LineSplitter().convert(utf8.decode(await envOutput)))
+      if (line.contains('='))
+        line.substring(0, line.indexOf('=')):
+            line.substring(line.indexOf('=') + 1),
+  };
+  for (final leaked in [
+    'CLAUDECODE',
+    'CLAUDE_CODE_CHILD_SESSION',
+    'TERM_SESSION_ID',
+    'TERM_PROGRAM',
+    'SHLVL',
+    'TMUX',
+  ]) {
+    check(!childEnv.containsKey(leaked), 'Leaked $leaked into the child');
+  }
+  check(childEnv['TERM'] == 'xterm-256color', 'Parent TERM overrode TERM');
+  check(childEnv['COLORTERM'] == 'truecolor', 'COLORTERM not set');
+  check(childEnv['PTY_TEST_KEEP'] == 'kept', 'Dropped a regular variable');
+  check(childEnv['PROFILE_VALUE'] == 'profile', 'Dropped caller environment');
+  await envShell.close();
+
   final stubborn = Pty.start(
     '/bin/sh',
     arguments: [

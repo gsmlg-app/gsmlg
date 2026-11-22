@@ -38,26 +38,6 @@ class TerminalSettingsClearEnvVars extends TerminalSettingsEvent {
   const TerminalSettingsClearEnvVars();
 }
 
-/// Update the maximum number of open shells.
-class TerminalSettingsUpdateMaxOpenShells extends TerminalSettingsEvent {
-  final int maxOpenShells;
-
-  const TerminalSettingsUpdateMaxOpenShells({required this.maxOpenShells});
-
-  @override
-  List<Object?> get props => [maxOpenShells];
-}
-
-/// Update whether terminal tabs are restored across app restarts.
-class TerminalSettingsUpdateRestoreTabs extends TerminalSettingsEvent {
-  final bool restoreTerminalTabs;
-
-  const TerminalSettingsUpdateRestoreTabs({required this.restoreTerminalTabs});
-
-  @override
-  List<Object?> get props => [restoreTerminalTabs];
-}
-
 /// Update how the Option keys behave in the terminal on macOS.
 class TerminalSettingsUpdateOptionKeyBehavior extends TerminalSettingsEvent {
   final TerminalOptionKeyBehavior optionKeyBehavior;
@@ -90,4 +70,13 @@ class TerminalSettingsUpdateDownloadDirectory extends TerminalSettingsEvent {
 
   @override
   List<Object?> get props => [downloadDirectory];
+}
+
+class TerminalSettingsUpdateRemoteClipboard extends TerminalSettingsEvent {
+  const TerminalSettingsUpdateRemoteClipboard({required this.allowed});
+
+  final bool allowed;
+
+  @override
+  List<Object?> get props => [allowed];
 }

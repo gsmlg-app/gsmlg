@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/destination.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
+import 'package:gsmlg/screens/settings/terminal/session_snapshots_screen.dart';
 import 'package:gsmlg/screens/settings/terminal/terminal_env_screen.dart';
 import 'package:terminal_settings/terminal_settings.dart';
 
@@ -42,6 +43,8 @@ class TerminalPreferencesScreen extends StatelessWidget {
                   envSettingsScreenName: TerminalEnvScreen.name,
                   onEnvSettingsPressed: (context) =>
                       context.goNamed(TerminalEnvScreen.name),
+                  onSessionSnapshotsPressed: (context) =>
+                      context.goNamed(SessionSnapshotsScreen.name),
                 ),
               ],
             ),

@@ -9,6 +9,6 @@ class WindowService {
   }
 
   Future<void> setTitle(String title) async {
-    await windowManager.setTitle(title);
+    WindowManager.instance.getCurrent()?.title = title;
   }
 }

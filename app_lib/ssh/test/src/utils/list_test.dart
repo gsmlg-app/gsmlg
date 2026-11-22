@@ -25,6 +25,12 @@ void main() {
       }
     });
 
+    test('can produce every byte value including 0xFF', () {
+      final seen = randomBytes(1 << 16).toSet();
+      expect(seen, contains(0xFF));
+      expect(seen.length, 256);
+    });
+
     test('generates different results on multiple calls', () {
       // Note: There's a small chance this could fail due to randomness
       // but with 32 bytes, collision is extremely unlikely

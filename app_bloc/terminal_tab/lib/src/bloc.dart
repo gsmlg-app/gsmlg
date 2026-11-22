@@ -33,13 +33,55 @@ class TerminalTabBloc extends Bloc<TerminalTabEvent, TerminalTabState> {
     on<TerminalTabCreateGroupWithSessions>(_onCreateGroupWithSessions);
     on<TerminalTabUngroupSessions>(_onUngroupSessions);
     on<TerminalTabRenameGroup>(_onRenameGroup);
+    on<TerminalTabMoveGroupBefore>(_onMoveGroupBefore);
     on<TerminalTabToggleGroupCollapsed>(_onToggleGroupCollapsed);
     on<TerminalTabMoveTabBefore>(_onMoveTabBefore);
     on<TerminalTabRestoreGroups>(_onRestoreGroups);
     on<TerminalTabFinishGroupRestore>(_onFinishGroupRestore);
+    on<TerminalTabApplySnapshot>(_onApplySnapshot);
   }
 
   final String Function() _groupIdGenerator;
+
+  void _onApplySnapshot(
+    TerminalTabApplySnapshot event,
+    Emitter<TerminalTabState> emit,
+  ) {
+    final current = state;
+    if (current is! TerminalTabLoaded) return;
+    final originalGrouping = current.grouping;
+    final removed = [
+      for (final tab in current.allTabs)
+        if (event.replaceTab != null
+            ? identical(tab, event.replaceTab)
+            : !event.append &&
+                (!event.groupOnly ||
+                    originalGrouping.groupIdOf(tab) == event.targetGroupId))
+          tab,
+    ];
+    for (final tab in removed) {
+      tab.dispose();
+    }
+    final retained = originalGrouping.retainTabs(current.allTabs);
+    for (final tab in event.tabs) {
+      current.tabs.add(tab);
+    }
+    if (event.tabs.isNotEmpty) {
+      event.tabs[event.activeIndex.clamp(0, event.tabs.length - 1)].activate();
+    }
+    final grouping = TabGrouping(
+      groups: [
+        ...retained.groups.where((group) =>
+            !event.grouping.groups.any((next) => next.id == group.id)),
+        ...event.grouping.groups
+      ],
+      membership: {...retained.membership, ...event.grouping.membership},
+      ungroupedCollapsed: event.append || event.groupOnly
+          ? retained.ungroupedCollapsed
+          : event.grouping.ungroupedCollapsed,
+    ).dropEmptyGroups();
+    emit(current.copyWith(grouping: grouping, incrementVersion: true));
+  }
 
   static int _groupIdCounter = 0;
 
@@ -197,31 +239,32 @@ class TerminalTabBloc extends Bloc<TerminalTabEvent, TerminalTabState> {
     TerminalTabNextTab event,
     Emitter<TerminalTabState> emit,
   ) {
-    if (state is! TerminalTabLoaded) return;
-    final currentState = state as TerminalTabLoaded;
-    final children = currentState.tabs.children;
-    if (children.isEmpty) return;
-    final activeTab = currentState.tabs.activeTab;
-    if (activeTab == null) return;
-    final idx = children.indexOf(activeTab);
-    final nextIdx = (idx + 1) % children.length;
-    children[nextIdx].activate();
-    emit(currentState.copyWith(incrementVersion: true));
+    _cycleTab(emit, 1);
   }
 
   void _onTerminalTabPreviousTab(
     TerminalTabPreviousTab event,
     Emitter<TerminalTabState> emit,
   ) {
+    _cycleTab(emit, -1);
+  }
+
+  /// Activates the tab [step] places away, wrapping within the active tab's
+  /// group, or within ungrouped tabs when the active tab is ungrouped.
+  void _cycleTab(Emitter<TerminalTabState> emit, int step) {
     if (state is! TerminalTabLoaded) return;
     final currentState = state as TerminalTabLoaded;
-    final children = currentState.tabs.children;
-    if (children.isEmpty) return;
     final activeTab = currentState.tabs.activeTab;
     if (activeTab == null) return;
-    final idx = children.indexOf(activeTab);
-    final prevIdx = (idx - 1 + children.length) % children.length;
-    children[prevIdx].activate();
+    final grouping = currentState.grouping;
+    final groupId = grouping.groupIdOf(activeTab);
+    final candidates = currentState.tabs.children
+        .where((TabItem tab) => grouping.groupIdOf(tab) == groupId)
+        .toList();
+    final idx = candidates.indexOf(activeTab);
+    if (idx < 0) return;
+    final length = candidates.length;
+    candidates[(idx + step + length) % length].activate();
     emit(currentState.copyWith(incrementVersion: true));
   }
 
@@ -368,6 +411,19 @@ class TerminalTabBloc extends Bloc<TerminalTabEvent, TerminalTabState> {
     final tab = _findTabById(current.tabs, event.sessionId);
     if (tab == null) return;
     _emitGrouping(emit, current, current.grouping.assign(tab, null));
+  }
+
+  void _onMoveGroupBefore(
+    TerminalTabMoveGroupBefore event,
+    Emitter<TerminalTabState> emit,
+  ) {
+    final current = state;
+    if (current is! TerminalTabLoaded) return;
+    _emitGrouping(
+      emit,
+      current,
+      current.grouping.moveGroupBefore(event.groupId, event.targetGroupId),
+    );
   }
 
   void _onRenameGroup(

@@ -24,8 +24,8 @@ final class TabGroup extends Equatable {
 
 /// Immutable record of which tabs belong to which [TabGroup].
 ///
-/// Groups are kept in creation order and are never empty: any operation that
-/// leaves a group without members removes it.
+/// New groups are appended to the display order and are never empty: any
+/// operation that leaves a group without members removes it.
 @immutable
 final class TabGrouping extends Equatable {
   const TabGrouping({
@@ -95,6 +95,20 @@ final class TabGrouping extends Equatable {
         for (final g in groups) g.id == id ? g.copyWith(name: trimmed) : g,
       ],
     );
+  }
+
+  /// Moves [groupId] before [targetGroupId], or to the end when null.
+  TabGrouping moveGroupBefore(String groupId, String? targetGroupId) {
+    final from = groups.indexWhere((group) => group.id == groupId);
+    final target = targetGroupId == null
+        ? groups.length
+        : groups.indexWhere((group) => group.id == targetGroupId);
+    if (from < 0 || target < 0 || from == target) return this;
+    final to = from < target ? target - 1 : target;
+    if (from == to) return this;
+    final reordered = groups.toList();
+    reordered.insert(to, reordered.removeAt(from));
+    return _copy(groups: reordered);
   }
 
   /// Toggles collapse of [groupId], or of the ungrouped section when null.

@@ -29,7 +29,7 @@ class TabSwitcherData {
   final List<SessionInfo> sessions;
   final String? currentSessionId;
 
-  /// Groups in creation order.
+  /// Groups in their stored display order.
   final List<TabSwitcherGroup> groups;
   final bool ungroupedCollapsed;
 }
@@ -53,9 +53,8 @@ class TabSwitcherSection {
   final bool collapsed;
 }
 
-/// Splits [data] into switcher sections: the current tab's section first,
-/// then the remaining groups in creation order, then ungrouped tabs. Empty
-/// sections are omitted.
+/// Splits [data] into groups in their stored order, then ungrouped tabs.
+/// Empty sections are omitted and the current tab's section is expanded.
 List<TabSwitcherSection> buildSwitcherSections(
   TabSwitcherData data, {
   required String ungroupedLabel,
@@ -101,7 +100,7 @@ List<TabSwitcherSection> buildSwitcherSections(
   final index = sections.indexWhere(
     (TabSwitcherSection s) => s.groupId == currentKey,
   );
-  final current = sections.removeAt(index);
+  final current = sections[index];
   final open = TabSwitcherSection(
     groupId: current.groupId,
     name: current.name,
@@ -109,5 +108,6 @@ List<TabSwitcherSection> buildSwitcherSections(
     collapsed: false,
   );
   if (currentGroupOnly) return <TabSwitcherSection>[open];
-  return <TabSwitcherSection>[open, ...sections];
+  sections[index] = open;
+  return sections;
 }

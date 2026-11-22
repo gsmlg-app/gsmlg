@@ -28,6 +28,122 @@ void main() {
       });
     });
 
+    group('SGR', () {
+      test('parses plain SGR underline and faint', () {
+        parser.write('\x1b[4;2m');
+        verify(handler.setCursorUnderline());
+        verify(handler.setCursorFaint());
+      });
+
+      test('ignores XTMODKEYS (CSI > 4 ; 2 m) instead of applying SGR', () {
+        parser.write('\x1b[>4;2m');
+        verifyNever(handler.setCursorUnderline());
+        verifyNever(handler.setCursorFaint());
+      });
+
+      test('ignores private-prefixed SGR-like sequences', () {
+        parser.write('\x1b[?4m');
+        verifyNever(handler.setCursorUnderline());
+      });
+
+      test('ignores truncated extended colors without throwing', () {
+        parser.write('\x1b[38m\x1b[38;2;255m\x1b[48;5m\x1b[38;2m');
+        verifyNever(handler.setForegroundColorRgb(any, any, any));
+        verifyNever(handler.setForegroundColor256(any));
+        verifyNever(handler.setBackgroundColor256(any));
+      });
+
+      test('ignores 256-color indexes above 255', () {
+        parser.write('\x1b[38;5;300m\x1b[48;5;256m');
+        verifyNever(handler.setForegroundColor256(any));
+        verifyNever(handler.setBackgroundColor256(any));
+      });
+
+      test('clamps RGB components to a byte', () {
+        parser.write('\x1b[38;2;300;0;999m');
+        verify(handler.setForegroundColorRgb(255, 0, 255));
+      });
+
+      test('parses colon underline style as underline', () {
+        parser.write('\x1b[4:3m');
+        verify(handler.setCursorUnderline());
+        verifyNever(handler.setBackgroundColor16(any));
+      });
+
+      test('parses colon underline style 0 as underline off', () {
+        parser.write('\x1b[4:0m');
+        verify(handler.unsetCursorUnderline());
+        verifyNever(handler.setBackgroundColor16(any));
+      });
+
+      test('parses colon truecolor with an empty color space', () {
+        parser.write('\x1b[38:2::255:128:0m');
+        verify(handler.setForegroundColorRgb(255, 128, 0));
+      });
+
+      test('parses colon truecolor without a color space', () {
+        parser.write('\x1b[48:2:1:2:3m');
+        verify(handler.setBackgroundColorRgb(1, 2, 3));
+      });
+
+      test('parses colon 256-color', () {
+        parser.write('\x1b[38:5:100m');
+        verify(handler.setForegroundColor256(100));
+      });
+
+      test('keeps parameters after a colon group', () {
+        parser.write('\x1b[38:5:100;1m');
+        verify(handler.setForegroundColor256(100));
+        verify(handler.setCursorBold());
+      });
+
+      test('skips underline color arguments', () {
+        parser.write('\x1b[58;2;255;0;0m\x1b[58;5;9m\x1b[58:2::1:2:3m\x1b[59m');
+        verifyNever(handler.resetCursorStyle());
+        verifyNever(handler.setCursorFaint());
+        verifyNever(handler.setCursorBlink());
+        verifyNever(handler.unsupportedStyle(any));
+      });
+    });
+
+    group('CSI parameter limits', () {
+      test('caps oversized numeric parameters', () {
+        parser.write('\x1b[99999999999999999999999b');
+        verify(handler.repeatPreviousCharacter(65535));
+      });
+    });
+
+    group('control strings', () {
+      test('consumes DCS without printing its body', () {
+        parser.write('\x1bP+q544e\x1b\\X');
+        verify(handler.writeChar('X'.codeUnitAt(0))).called(1);
+        verifyNever(handler.writeChar('+'.codeUnitAt(0)));
+        verifyNever(handler.writeChar('q'.codeUnitAt(0)));
+      });
+
+      test('consumes APC, PM and SOS strings', () {
+        parser.write('\x1b_Ga=q\x1b\\\x1b^pm\x1b\\\x1bXsos\x1b\\Y');
+        verify(handler.writeChar('Y'.codeUnitAt(0))).called(1);
+        verifyNever(handler.writeChar('G'.codeUnitAt(0)));
+        verifyNever(handler.writeChar('p'.codeUnitAt(0)));
+        verifyNever(handler.writeChar('s'.codeUnitAt(0)));
+      });
+
+      test('waits for the terminator of a split DCS', () {
+        parser.write('\x1bP+q54');
+        parser.write('4e\x1b');
+        parser.write('\\Z');
+        verify(handler.writeChar('Z'.codeUnitAt(0))).called(1);
+        verifyNever(handler.writeChar('4'.codeUnitAt(0)));
+      });
+
+      test('CAN aborts a control string', () {
+        parser.write('\x1bPabc\x18W');
+        verify(handler.writeChar('W'.codeUnitAt(0))).called(1);
+        verifyNever(handler.writeChar('a'.codeUnitAt(0)));
+      });
+    });
+
     group('cursor positioning', () {
       test('parses cursor position (CUP)', () {
         parser.write('\x1b[5;10H');

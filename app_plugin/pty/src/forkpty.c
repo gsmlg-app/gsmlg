@@ -2,17 +2,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
 
+#include "forkpty.h"
+
+void pty_child_fail(int error_fd, int stage, int error)
+{
+    int report[2] = {stage, error};
+    ssize_t result;
+    do { result = write(error_fd, report, sizeof(report)); } while (result < 0 && errno == EINTR);
+    _exit(127);
+}
+
 pid_t pty_forkpty(
     int *master,
     int *slave,
     const struct termios *termp,
-    const struct winsize *winp)
+    const struct winsize *winp,
+    int error_fd)
 {
     int ptm = open("/dev/ptmx", O_RDWR | O_NOCTTY);
 
@@ -66,13 +78,15 @@ pid_t pty_forkpty(
     if (pid == 0)
     {
         close(ptm);
-        if (setsid() == -1 || ioctl(pts, TIOCSCTTY, (char *)NULL) == -1)
-            _exit(127);
+        if (setsid() == -1)
+            pty_child_fail(error_fd, PTY_CHILD_SETSID, errno);
+        if (ioctl(pts, TIOCSCTTY, (char *)NULL) == -1)
+            pty_child_fail(error_fd, PTY_CHILD_CONTROLLING_TERMINAL, errno);
 
         if (dup2(pts, STDIN_FILENO) == -1 ||
             dup2(pts, STDOUT_FILENO) == -1 ||
             dup2(pts, STDERR_FILENO) == -1)
-            _exit(127);
+            pty_child_fail(error_fd, PTY_CHILD_STDIO, errno);
 
         if (pts > 2)
         {

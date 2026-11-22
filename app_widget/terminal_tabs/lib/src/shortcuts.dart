@@ -70,30 +70,20 @@ SingleActivator get tabNew {
 }
 
 SingleActivator get tabNext {
-  // Shift+] produces } (braceRight)
   return defaultTargetPlatform.isApple
-      ? const SingleActivator(
-          LogicalKeyboardKey.braceRight,
-          meta: true,
-          shift: true,
-        )
+      ? const SingleActivator(LogicalKeyboardKey.bracketRight, meta: true)
       : const SingleActivator(
-          LogicalKeyboardKey.braceRight,
+          LogicalKeyboardKey.bracketRight,
           control: true,
           shift: true,
         );
 }
 
 SingleActivator get tabPrevious {
-  // Shift+[ produces { (braceLeft)
   return defaultTargetPlatform.isApple
-      ? const SingleActivator(
-          LogicalKeyboardKey.braceLeft,
-          meta: true,
-          shift: true,
-        )
+      ? const SingleActivator(LogicalKeyboardKey.bracketLeft, meta: true)
       : const SingleActivator(
-          LogicalKeyboardKey.braceLeft,
+          LogicalKeyboardKey.bracketLeft,
           control: true,
           shift: true,
         );

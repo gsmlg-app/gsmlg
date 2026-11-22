@@ -131,7 +131,7 @@ class TerminalView extends StatefulWidget {
   final Map<ShortcutActivator, Intent>? shortcuts;
 
   /// Keyboard event handler of the terminal. This has higher priority than
-  /// [shortcuts] and input handler of the terminal.
+  /// [shortcuts], IME composition and input handler of the terminal.
   final FocusOnKeyEventCallback? onKeyEvent;
 
   /// Receives committed text after IME composition has finished.
@@ -311,7 +311,8 @@ class TerminalViewState extends State<TerminalView> {
             _handleKeyInput(TerminalKey.enter);
           }
         },
-        onKeyEvent: _handleKeyEvent,
+        onKeyEventOverride: widget.onKeyEvent,
+        onKeyEvent: _handleTerminalKeyEvent,
         readOnly: widget.readOnly,
         child: child,
       );
@@ -485,6 +486,10 @@ class TerminalViewState extends State<TerminalView> {
       return resultOverride;
     }
 
+    return _handleTerminalKeyEvent(focusNode, event);
+  }
+
+  KeyEventResult _handleTerminalKeyEvent(FocusNode focusNode, KeyEvent event) {
     // ignore: invalid_use_of_protected_member
     final shortcutResult = _shortcutManager.handleKeypress(
       focusNode.context!,

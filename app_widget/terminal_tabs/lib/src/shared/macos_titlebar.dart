@@ -4,38 +4,46 @@ import 'package:window_manager/window_manager.dart';
 const kMacosTitlebarHeight = 28.0;
 
 class MacosTitlebar extends StatefulWidget {
-  const MacosTitlebar({super.key, required this.color});
+  const MacosTitlebar({super.key, required this.color, this.window});
 
   final Color color;
+
+  /// The window whose full screen state hides the bar; defaults to the app's
+  /// current window.
+  final Window? window;
 
   @override
   State<MacosTitlebar> createState() => _MacosTitlebarState();
 }
 
-class _MacosTitlebarState extends State<MacosTitlebar> with WindowListener {
+class _MacosTitlebarState extends State<MacosTitlebar> {
   var fullScreen = false;
+  Window? _window;
+  ListenerId? _listenerId;
 
-  @override
-  void onWindowEnterFullScreen() {
-    setState(() => fullScreen = true);
-    super.onWindowEnterFullScreen();
-  }
-
-  @override
-  void onWindowLeaveFullScreen() {
-    setState(() => fullScreen = false);
-    super.onWindowLeaveFullScreen();
+  void _onWindowEvent(WindowEvent event) {
+    if (!mounted) return;
+    switch (event) {
+      case WindowEnteredFullScreenEvent():
+        setState(() => fullScreen = true);
+      case WindowExitedFullScreenEvent():
+        setState(() => fullScreen = false);
+      default:
+        break;
+    }
   }
 
   @override
   void initState() {
-    windowManager.addListener(this);
     super.initState();
+    _window = widget.window ?? WindowManager.instance.getCurrent();
+    _listenerId = _window?.addListener(_onWindowEvent);
   }
 
   @override
   void dispose() {
-    windowManager.removeListener(this);
+    final listenerId = _listenerId;
+    if (listenerId != null) _window?.removeListener(listenerId);
     super.dispose();
   }
 

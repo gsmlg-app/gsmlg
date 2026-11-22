@@ -10,14 +10,31 @@ import 'package:xterm/src/utils/lookup_table.dart';
 /// function calls that the terminal can handle.
 ///
 /// Design goals:
-///  * Zero object allocation during processing.
-///  * No internal state. Same input will always produce same output.
+///  * Minimize allocation for ordinary terminal output.
+///  * Bounded streaming control strings across arbitrary input chunks.
 class EscapeParser {
   final EscapeHandler handler;
 
-  EscapeParser(this.handler);
+  EscapeParser(
+    this.handler, {
+    bool allowTmuxPassthrough = true,
+    this.osc52Capability,
+  }) : _allowTmuxPassthrough = allowTmuxPassthrough;
+
+  final bool _allowTmuxPassthrough;
+  // When provided, an OSC 52 (including outer tmux DCS) must begin and end
+  // under the same attached UI authority. Other escapes are unaffected.
+  final int? Function()? osc52Capability;
+  int? _escapeCapability;
+  int? _stringEscapeCapability;
+  EscapeParser? _passthroughParser;
+
+  /// Bounds encoded control strings, including OSC 52 and tmux envelopes.
+  static const maxControlStringLength = 256 * 1024;
 
   final _queue = ByteConsumer();
+  bool _pendingEscape = false;
+  bool _escapeRetry = false;
 
   /// Start of sequence or character being processed. Useful for debugging.
   var tokenBegin = 0;
@@ -26,6 +43,13 @@ class EscapeParser {
   int get tokenEnd => _queue.totalConsumed;
 
   void write(String chunk) {
+    // A capability change anywhere inside a fragmented sequence poisons that
+    // sequence even if a caller later reuses the original capability.
+    if (osc52Capability != null) {
+      final current = osc52Capability!();
+      if (_escapeCapability != current) _escapeCapability = null;
+      if (_stringEscapeCapability != current) _stringEscapeCapability = null;
+    }
     _queue.unrefConsumedBlocks();
     _queue.add(chunk);
     _process();
@@ -33,12 +57,30 @@ class EscapeParser {
 
   void _process() {
     while (_queue.isNotEmpty) {
+      if (_stringKind != null) {
+        _consumeControlString();
+        continue;
+      }
+      if (_pendingEscape) {
+        tokenBegin = _queue.totalConsumed;
+        _pendingEscape = false;
+        if (!_processEscape()) {
+          _queue.rollback(tokenEnd - tokenBegin);
+          _pendingEscape = true;
+          return;
+        }
+        continue;
+      }
       tokenBegin = _queue.totalConsumed;
       final char = _queue.consume();
 
       if (char == Ascii.ESC) {
+        final fromEarlierChunk = _escapeRetry;
+        _escapeRetry = false;
+        if (!fromEarlierChunk) _escapeCapability = osc52Capability?.call();
         final processed = _processEscape();
         if (!processed) {
+          _escapeRetry = true;
           _queue.rollback(tokenEnd - tokenBegin);
           return;
         }
@@ -100,7 +142,10 @@ class EscapeParser {
     'E'.charCode: _escHandleNextLine,
     'H'.charCode: _escHandleTabSet,
     'M'.charCode: _escHandleReverseIndex,
-    // 'P'.charCode: _unsupportedHandler, // Sixel
+    'P'.charCode: _escHandleDCS,
+    'X'.charCode: _escHandleControlString,
+    '^'.charCode: _escHandleControlString,
+    '_'.charCode: _escHandleControlString,
     // 'c'.charCode: _unsupportedHandler,
     // '#'.charCode: _unsupportedHandler,
     '('.charCode: _escHandleDesignateCharset0, //  SCS - G0
@@ -110,6 +155,22 @@ class EscapeParser {
     '>'.charCode: _escHandleResetAppKeypadMode, // TODO: Normal Keypad
     '='.charCode: _escHandleSetAppKeypadMode, // TODO: Application Keypad
   });
+
+  /// `ESC P`, `ESC X`, `ESC ^`, `ESC _` Control strings (DCS, SOS, PM, APC)
+  ///
+  /// Only tmux's escaped OSC 52 envelope is interpreted. Other strings are
+  /// discarded. CAN and SUB abort a string; ESC begins ST or a new sequence.
+  bool _escHandleControlString() {
+    _stringKind = _ControlStringKind.other;
+    _consumeControlString();
+    return true;
+  }
+
+  bool _escHandleDCS() {
+    _stringKind = _ControlStringKind.dcs;
+    _consumeControlString();
+    return true;
+  }
 
   /// `ESC 7` Save Cursor (DECSC)
   ///
@@ -216,6 +277,7 @@ class EscapeParser {
     }
 
     _csi.params.clear();
+    _csi.subParams.clear();
 
     // test whether the csi is a `CSI ? Ps ...` or `CSI Ps ...`
     final prefix = _queue.peek();
@@ -228,6 +290,7 @@ class EscapeParser {
 
     var param = 0;
     var hasParam = false;
+    var isSubParam = false;
     while (true) {
       // The sequence isn't completed, just ignore it.
       if (_queue.isEmpty) {
@@ -236,18 +299,29 @@ class EscapeParser {
 
       final char = _queue.consume();
 
+      if (char == Ascii.colon) {
+        _csi.add(param, isSubParam);
+        hasParam = true;
+        isSubParam = true;
+        param = 0;
+        continue;
+      }
+
       if (char == Ascii.semicolon) {
         if (hasParam) {
-          _csi.params.add(param);
+          _csi.add(param, isSubParam);
         }
+        isSubParam = false;
         param = 0;
         continue;
       }
 
       if (char >= Ascii.num0 && char <= Ascii.num9) {
         hasParam = true;
-        param *= 10;
-        param += char - Ascii.num0;
+        param = param * 10 + char - Ascii.num0;
+        if (param > _maxCsiParam) {
+          param = _maxCsiParam;
+        }
         continue;
       }
 
@@ -258,7 +332,7 @@ class EscapeParser {
 
       if (char >= Ascii.atSign && char <= Ascii.tilde) {
         if (hasParam) {
-          _csi.params.add(param);
+          _csi.add(param, isSubParam);
         }
 
         _csi.finalByte = char;
@@ -408,6 +482,10 @@ class EscapeParser {
   ///
   /// https://terminalguide.namepad.de/seq/csi_sm/
   void _csiHandleSgr() {
+    if (_csi.prefix != null) {
+      return;
+    }
+
     final params = _csi.params;
 
     if (params.isEmpty) {
@@ -418,6 +496,12 @@ class EscapeParser {
     // ignore: dead_code
     for (var i = 0; i < _csi.params.length; i++) {
       final param = params[i];
+      final groupEnd = _csi.subParamGroupEnd(i);
+      if (groupEnd > i + 1) {
+        _sgrWithSubParams(param, i + 1, groupEnd);
+        i = groupEnd - 1;
+        continue;
+      }
       switch (param) {
         case 0:
           handler.resetCursorStyle();
@@ -497,21 +581,7 @@ class EscapeParser {
           handler.setForegroundColor16(NamedColor.white);
           continue;
         case 38:
-          final mode = params[i + 1];
-          switch (mode) {
-            case 2:
-              final r = params[i + 2];
-              final g = params[i + 3];
-              final b = params[i + 4];
-              handler.setForegroundColorRgb(r, g, b);
-              i += 4;
-              break;
-            case 5:
-              final index = params[i + 2];
-              handler.setForegroundColor256(index);
-              i += 2;
-              break;
-          }
+          i += _sgrExtendedColor(_ColorTarget.foreground, i);
           continue;
         case 39:
           handler.resetForeground();
@@ -542,24 +612,16 @@ class EscapeParser {
           handler.setBackgroundColor16(NamedColor.white);
           continue;
         case 48:
-          final mode = params[i + 1];
-          switch (mode) {
-            case 2:
-              final r = params[i + 2];
-              final g = params[i + 3];
-              final b = params[i + 4];
-              handler.setBackgroundColorRgb(r, g, b);
-              i += 4;
-              break;
-            case 5:
-              final index = params[i + 2];
-              handler.setBackgroundColor256(index);
-              i += 2;
-              break;
-          }
+          i += _sgrExtendedColor(_ColorTarget.background, i);
           continue;
         case 49:
           handler.resetBackground();
+          continue;
+
+        case 58:
+          i += _sgrExtendedColor(_ColorTarget.underline, i);
+          continue;
+        case 59:
           continue;
 
         case 90:
@@ -616,6 +678,96 @@ class EscapeParser {
           handler.unsupportedStyle(param);
           continue;
       }
+    }
+  }
+
+  /// Applies an SGR whose arguments are colon-separated sub-parameters in
+  /// `params[start..end)`, e.g. `4:3` or `38:2::r:g:b`.
+  void _sgrWithSubParams(int code, int start, int end) {
+    final params = _csi.params;
+    switch (code) {
+      case 4:
+        if (params[start] == 0) {
+          handler.unsetCursorUnderline();
+        } else {
+          handler.setCursorUnderline();
+        }
+        return;
+      case 38:
+      case 48:
+      case 58:
+        final target = code == 38
+            ? _ColorTarget.foreground
+            : code == 48
+                ? _ColorTarget.background
+                : _ColorTarget.underline;
+        final mode = params[start];
+        final count = end - start - 1;
+        if (mode == 2 && count >= 3) {
+          final rgbStart = count >= 4 ? start + 2 : start + 1;
+          _applyRgb(
+            target,
+            params[rgbStart],
+            params[rgbStart + 1],
+            params[rgbStart + 2],
+          );
+        } else if (mode == 5 && count >= 1) {
+          _apply256(target, params[start + 1]);
+        }
+        return;
+    }
+  }
+
+  /// Applies a semicolon-form extended color (`38;5;n` or `38;2;r;g;b`)
+  /// starting at the SGR code at [index]. Returns how many arguments after the
+  /// code were consumed, so truncated sequences never read past the end.
+  int _sgrExtendedColor(_ColorTarget target, int index) {
+    final params = _csi.params;
+    final remaining = params.length - index - 1;
+    if (remaining < 1) return 0;
+
+    switch (params[index + 1]) {
+      case 2:
+        if (remaining < 4) return remaining;
+        _applyRgb(
+          target,
+          params[index + 2],
+          params[index + 3],
+          params[index + 4],
+        );
+        return 4;
+      case 5:
+        if (remaining < 2) return remaining;
+        _apply256(target, params[index + 2]);
+        return 2;
+      default:
+        return 1;
+    }
+  }
+
+  void _applyRgb(_ColorTarget target, int r, int g, int b) {
+    r = r > 255 ? 255 : r;
+    g = g > 255 ? 255 : g;
+    b = b > 255 ? 255 : b;
+    switch (target) {
+      case _ColorTarget.foreground:
+        handler.setForegroundColorRgb(r, g, b);
+      case _ColorTarget.background:
+        handler.setBackgroundColorRgb(r, g, b);
+      case _ColorTarget.underline:
+        break;
+    }
+  }
+
+  void _apply256(_ColorTarget target, int index) {
+    if (index > 255) return;
+    switch (target) {
+      case _ColorTarget.foreground:
+        handler.setForegroundColor256(index);
+      case _ColorTarget.background:
+        handler.setBackgroundColor256(index);
+      case _ColorTarget.underline:
+        break;
     }
   }
 
@@ -1047,83 +1199,154 @@ class EscapeParser {
   /// Parse a OSC sequence from the queue. Returns true if a sequence was
   /// found and handled.
   bool _escHandleOSC() {
-    final consumed = _consumeOsc();
-    if (!consumed) {
-      return false;
-    }
+    _stringKind = _ControlStringKind.osc;
+    _consumeControlString();
+    return true;
+  }
 
-    if (_osc.isEmpty) {
-      return true;
-    }
+  void _dispatchOsc(String body) {
+    final osc = body.split(';');
 
     // Common OSCs
-    if (_osc.length >= 2) {
-      final ps = _osc[0];
-      final pt = _osc[1];
+    if (osc.length >= 2) {
+      final ps = osc[0];
+      final pt = osc[1];
 
       switch (ps) {
         case '0':
           handler.setTitle(pt);
           handler.setIconName(pt);
-          return true;
+          return;
         case '1':
           handler.setIconName(pt);
-          return true;
+          return;
         case '2':
           handler.setTitle(pt);
-          return true;
+          return;
       }
     }
 
     // Private extensions
-    handler.unknownOSC(_osc[0], _osc.sublist(1));
-
-    return true;
+    handler.unknownOSC(osc[0], osc.sublist(1));
   }
 
-  final _osc = <String>[];
+  _ControlStringKind? _stringKind;
+  final _stringBody = StringBuffer();
+  bool _stringEscaped = false;
+  bool _stringOverflow = false;
+  bool _tmuxEnvelope = false;
 
-  bool _consumeOsc() {
-    _osc.clear();
-    final param = StringBuffer();
-
-    while (true) {
-      if (_queue.isEmpty) {
-        return false;
-      }
-
+  void _consumeControlString() {
+    while (_queue.isNotEmpty) {
       final char = _queue.consume();
-
-      // OSC terminates with BEL
-      if (char == Ascii.BEL) {
-        _osc.add(param.toString());
-        return true;
+      if (char == Ascii.CAN || char == Ascii.SUB) {
+        _resetControlString();
+        return;
       }
-
-      /// OSC terminates with ST
+      if (_stringEscaped) {
+        _stringEscaped = false;
+        if (char == Ascii.backslash) {
+          _finishControlString();
+          return;
+        }
+        if (_tmuxEnvelope && char == Ascii.ESC) {
+          _appendControlChar(Ascii.ESC);
+          continue;
+        }
+        _escapeCapability = _stringEscapeCapability;
+        _resetControlString();
+        _pendingEscape = true;
+        if (char != Ascii.ESC) {
+          _queue.rollback();
+        }
+        return;
+      }
       if (char == Ascii.ESC) {
-        if (_queue.isEmpty) {
-          return false;
-        }
-
-        if (_queue.consume() == Ascii.backslash) {
-          _osc.add(param.toString());
-        }
-
-        return true;
-      }
-
-      /// Parse next parameter
-      if (char == Ascii.semicolon) {
-        _osc.add(param.toString());
-        param.clear();
+        _stringEscapeCapability = osc52Capability?.call();
+        _stringEscaped = true;
         continue;
       }
-
-      param.writeCharCode(char);
+      if (_stringKind == _ControlStringKind.osc && char == Ascii.BEL) {
+        _finishControlString();
+        return;
+      }
+      _appendControlChar(char);
     }
   }
+
+  void _appendControlChar(int char) {
+    if (_stringOverflow) return;
+    if (_stringBody.length >= maxControlStringLength) {
+      _stringOverflow = true;
+      _stringBody.clear();
+      return;
+    }
+    _stringBody.writeCharCode(char);
+    if (_stringKind == _ControlStringKind.dcs && _stringBody.length == 5) {
+      _tmuxEnvelope = _stringBody.toString() == 'tmux;';
+    }
+  }
+
+  void _finishControlString() {
+    final kind = _stringKind;
+    final body = _stringBody.toString();
+    final overflow = _stringOverflow;
+    _resetControlString();
+    if (overflow) return;
+    final authorized = osc52Capability == null ||
+        (_escapeCapability != null && _escapeCapability == osc52Capability!());
+    if (!authorized &&
+        (kind == _ControlStringKind.dcs || body.startsWith('52;'))) {
+      return;
+    }
+    if (kind == _ControlStringKind.osc) {
+      _dispatchOsc(body);
+    } else if (kind == _ControlStringKind.dcs &&
+        _allowTmuxPassthrough &&
+        body.startsWith('tmux;\x1b]52;')) {
+      final inner = body.substring(5);
+      final end = inner.endsWith('\x1b\\')
+          ? inner.length - 2
+          : inner.endsWith('\x07')
+              ? inner.length - 1
+              : null;
+      if (end == null ||
+          RegExp(r'[\x00-\x1f]').hasMatch(inner.substring(2, end))) {
+        return;
+      }
+      final parser = _passthroughParser ??=
+          EscapeParser(handler, allowTmuxPassthrough: false);
+      parser.reset();
+      parser.write(inner);
+      parser.reset();
+    }
+  }
+
+  void _resetControlString() {
+    _stringKind = null;
+    _stringEscaped = false;
+    _stringEscapeCapability = null;
+    _stringOverflow = false;
+    _tmuxEnvelope = false;
+    _stringBody.clear();
+  }
+
+  /// Drops incomplete input at a transport/session boundary.
+  void reset() {
+    _queue.reset();
+    _pendingEscape = false;
+    _escapeRetry = false;
+    _escapeCapability = null;
+    _resetControlString();
+    _passthroughParser?.reset();
+  }
 }
+
+enum _ControlStringKind { osc, dcs, other }
+
+const _maxCsiParam = 65535;
+
+enum _ColorTarget { foreground, background, underline }
 
 class _Csi {
   _Csi({
@@ -1136,7 +1359,26 @@ class _Csi {
 
   List<int> params;
 
+  /// Whether `params[i]` was introduced by a colon, i.e. it is a sub-parameter
+  /// of the closest preceding non-sub parameter.
+  final subParams = <bool>[];
+
   int finalByte;
+
+  void add(int param, bool isSubParam) {
+    params.add(param);
+    subParams.add(isSubParam);
+  }
+
+  /// The index just past the sub-parameters that follow `params[index]`.
+  int subParamGroupEnd(int index) {
+    var end = index + 1;
+    while (end < subParams.length && subParams[end]) {
+      end++;
+    }
+    return end;
+  }
+
   // final List<int> intermediates;
 
   @override

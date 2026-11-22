@@ -90,12 +90,14 @@ class Terminal with Observable implements TerminalState, EscapeHandler {
     this.inputHandler = defaultInputHandler,
     this.mouseHandler = defaultMouseHandler,
     this.onPrivateOSC,
+    this.osc52Capability,
     this.reflowEnabled = true,
     this.wordSeparators,
     this.batchWrites = false,
   });
 
-  late final _parser = EscapeParser(this);
+  final int? Function()? osc52Capability;
+  late final _parser = EscapeParser(this, osc52Capability: osc52Capability);
 
   final _emitter = const EscapeEmitter();
 
@@ -148,6 +150,11 @@ class Terminal with Observable implements TerminalState, EscapeHandler {
   bool _originMode = false;
 
   bool _autoWrapMode = true;
+
+  // Advances for mode or buffer transitions, including those which reverse
+  // inside a single parser write. A remote mouse gesture cannot cross them.
+  int _mouseContextEpoch = 0;
+  int get mouseContextEpoch => _mouseContextEpoch;
 
   MouseMode _mouseMode = MouseMode.none;
 
@@ -292,6 +299,15 @@ class Terminal with Observable implements TerminalState, EscapeHandler {
   void flush() {
     _flushTimer?.cancel();
     _flushWriteBuffer();
+  }
+
+  /// Drops pending output and incomplete sequences when changing sessions.
+  /// Rendered text and scrollback are preserved.
+  void resetInput() {
+    _flushTimer?.cancel();
+    _writeBuffer.clear();
+    _hasPendingWrite = false;
+    _parser.reset();
   }
 
   /// Sends a key event to the underlying program.
@@ -763,6 +779,7 @@ class Terminal with Observable implements TerminalState, EscapeHandler {
 
   @override
   void setMouseMode(MouseMode mode) {
+    if (_mouseMode != mode) _mouseContextEpoch++;
     _mouseMode = mode;
   }
 
@@ -778,16 +795,19 @@ class Terminal with Observable implements TerminalState, EscapeHandler {
 
   @override
   void useAltBuffer() {
+    if (_buffer != _altBuffer) _mouseContextEpoch++;
     _buffer = _altBuffer;
   }
 
   @override
   void useMainBuffer() {
+    if (_buffer != _mainBuffer) _mouseContextEpoch++;
     _buffer = _mainBuffer;
   }
 
   @override
   void clearAltBuffer() {
+    _mouseContextEpoch++;
     _altBuffer.clear();
   }
 
@@ -803,6 +823,7 @@ class Terminal with Observable implements TerminalState, EscapeHandler {
 
   @override
   void setMouseReportMode(MouseReportMode mode) {
+    if (_mouseReportMode != mode) _mouseContextEpoch++;
     _mouseReportMode = mode;
   }
 

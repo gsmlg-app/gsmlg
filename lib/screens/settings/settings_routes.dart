@@ -18,6 +18,7 @@ import 'package:gsmlg/screens/settings/remote_tools_settings_screen.dart';
 import 'package:gsmlg/screens/settings/secrethub_agent/secrethub_agent_settings_screen.dart';
 import 'package:gsmlg/screens/settings/settings_screen.dart';
 import 'package:gsmlg/screens/settings/terminal/host_management.dart';
+import 'package:gsmlg/screens/settings/terminal/session_snapshots_screen.dart';
 import 'package:gsmlg/screens/settings/terminal/shell_profile_edit_screen.dart';
 import 'package:gsmlg/screens/settings/terminal/shell_profile_screen.dart';
 import 'package:gsmlg/screens/settings/terminal/ssh_key_management.dart';
@@ -43,6 +44,15 @@ GoRoute settingsRoutes() => GoRoute(
           key: state.pageKey,
           restorationId: state.pageKey.value,
           child: const TerminalPreferencesScreen(),
+        ),
+      ),
+      GoRoute(
+        name: SessionSnapshotsScreen.name,
+        path: SessionSnapshotsScreen.path,
+        pageBuilder: (context, state) => NoTransitionPage<void>(
+          key: state.pageKey,
+          restorationId: state.pageKey.value,
+          child: const SessionSnapshotsScreen(),
         ),
       ),
       GoRoute(

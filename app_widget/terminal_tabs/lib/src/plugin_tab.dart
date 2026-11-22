@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:terminal_tab_bloc/terminal_tab_bloc.dart';
 import 'package:terminal_core/terminal_core.dart';
 import 'package:terminal_hosts/terminal_hosts.dart';
+import 'package:terminal_plugin/terminal_plugin.dart';
 
 class PluginTab extends TabItem implements TerminalTabTitleRenamer {
   static int _nextTabNumber = 1;
@@ -18,6 +19,8 @@ class PluginTab extends TabItem implements TerminalTabTitleRenamer {
 
   String? _customTitle;
 
+  String? get customTitle => _customTitle;
+
   PluginTab(this.plugin, this.manager, {this.shellProfileId})
     : tabNumber = _nextTabNumber++ {
     manager.add(plugin);
@@ -25,6 +28,9 @@ class PluginTab extends TabItem implements TerminalTabTitleRenamer {
     _updateTitle();
 
     plugin.title.addListener(_updateTitle);
+    if (plugin case final TerminalPlugin terminal) {
+      terminal.reportedWorkingDirectory.addListener(_updateTitle);
+    }
 
     manager.addListener(_onPluginManagerChanged);
 
@@ -34,6 +40,9 @@ class PluginTab extends TabItem implements TerminalTabTitleRenamer {
   @override
   void didDispose() {
     plugin.title.removeListener(_updateTitle);
+    if (plugin case final TerminalPlugin terminal) {
+      terminal.reportedWorkingDirectory.removeListener(_updateTitle);
+    }
     manager.removeListener(_onPluginManagerChanged);
     if (plugin.mounted) {
       manager.remove(plugin);
@@ -73,7 +82,11 @@ class PluginTab extends TabItem implements TerminalTabTitleRenamer {
   }
 
   String get currentWorkingDirectory {
-    return _extractWorkingDirectory(plugin.title.value);
+    final terminal = plugin;
+    final directory = terminal is TerminalPlugin
+        ? terminal.reportedWorkingDirectory.value
+        : null;
+    return directory ?? _extractWorkingDirectory(plugin.title.value);
   }
 
   String _extractWorkingDirectory(String? title) {

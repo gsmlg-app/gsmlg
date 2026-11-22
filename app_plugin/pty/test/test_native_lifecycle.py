@@ -1,3 +1,4 @@
+import os
 import pathlib
 import subprocess
 import sys
@@ -21,9 +22,10 @@ class NativeLifecycleTest(unittest.TestCase):
 
     def test_real_native_lifecycle(self):
         for scenario in [
-            'natural', 'ack', 'exec', 'cwd', 'close',
-            'reader-failure', 'waiter-failure', 'fd-failure',
+            'natural', 'ack', 'exec', 'cwd', 'ctty-denied', 'close',
+            'reader-failure', 'writer-failure', 'waiter-failure', 'fd-failure',
             'background-output', 'slow-background-output', 'full-write',
+            'write-backpressure', 'write-close',
             'group-ownership', 'foreground', 'working-directory',
         ]:
             with self.subTest(scenario=scenario):
@@ -56,8 +58,19 @@ class NativeLifecycleTest(unittest.TestCase):
                 'dart', 'compile', 'exe', str(script), '-o', str(executable),
             ], cwd=root, check=True, timeout=90, capture_output=True, text=True)
             command = [str(executable)]
+        env = {
+            **os.environ,
+            'CLAUDECODE': '1',
+            'CLAUDE_CODE_CHILD_SESSION': '1',
+            'TERM_SESSION_ID': 'parent-session',
+            'TERM_PROGRAM': 'ParentTerminal',
+            'TERM': 'tmux-256color',
+            'SHLVL': '3',
+            'TMUX': '/tmp/tmux-parent,1,0',
+            'PTY_TEST_KEEP': 'kept',
+        }
         result = subprocess.run(command, cwd=self.directory.name, timeout=30,
-                                capture_output=True, text=True)
+                                capture_output=True, text=True, env=env)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 

@@ -136,21 +136,30 @@ class AppExitGuard extends StatefulWidget {
     required this.navigatorKey,
     required this.child,
     this.interceptWindowClose = false,
+    this.window,
+    this.onBeforeExit,
   });
 
   final GlobalKey<NavigatorState> navigatorKey;
 
   final bool interceptWindowClose;
 
+  /// The window whose close requests are intercepted; defaults to the
+  /// app's current window.
+  final Window? window;
+
   final Widget child;
+  final Future<void> Function()? onBeforeExit;
 
   @override
   State<AppExitGuard> createState() => _AppExitGuardState();
 }
 
-class _AppExitGuardState extends State<AppExitGuard> with WindowListener {
+class _AppExitGuardState extends State<AppExitGuard> {
   late final AppLifecycleListener _lifecycleListener;
   Future<AppExitResponse>? _pendingExit;
+  Window? _window;
+  ListenerId? _windowListenerId;
 
   @override
   void initState() {
@@ -158,31 +167,29 @@ class _AppExitGuardState extends State<AppExitGuard> with WindowListener {
     _lifecycleListener = AppLifecycleListener(
       onExitRequested: _onExitRequested,
     );
-    if (widget.interceptWindowClose) {
-      windowManager.addListener(this);
-      unawaited(_preventWindowClose());
-    }
+    if (widget.interceptWindowClose) _interceptWindowClose();
   }
 
   @override
   void dispose() {
-    if (widget.interceptWindowClose) {
-      windowManager.removeListener(this);
-    }
+    final listenerId = _windowListenerId;
+    if (listenerId != null) _window?.removeListener(listenerId);
     _lifecycleListener.dispose();
     super.dispose();
   }
 
-  Future<void> _preventWindowClose() async {
+  void _interceptWindowClose() {
     try {
-      await windowManager.setPreventClose(true);
+      _window = widget.window ?? WindowManager.instance.getCurrent();
+      _windowListenerId = _window?.addListener(_onWindowEvent);
     } catch (error, stackTrace) {
       AppLogger().e('Failed to intercept window close', error, stackTrace);
     }
   }
 
-  @override
-  void onWindowClose() {
+  void _onWindowEvent(WindowEvent event) {
+    if (event is! WindowCloseRequestedEvent) return;
+    event.request.cancel();
     unawaited(_requestExit());
   }
 
@@ -202,15 +209,33 @@ class _AppExitGuardState extends State<AppExitGuard> with WindowListener {
 
   Future<AppExitResponse> _confirmExit() async {
     final state = context.read<TerminalTabBloc>().state;
-    if (state is! TerminalTabLoaded) return AppExitResponse.exit;
-    final busyTabs = await findBusyTabs(state.allTabs);
-    if (busyTabs.isEmpty) return AppExitResponse.exit;
-    final navigatorContext = widget.navigatorKey.currentContext;
-    if (navigatorContext == null || !navigatorContext.mounted) {
-      return AppExitResponse.exit;
+    if (state is TerminalTabLoaded) {
+      final busyTabs = await findBusyTabs(state.allTabs);
+      if (busyTabs.isNotEmpty) {
+        final navigatorContext = widget.navigatorKey.currentContext;
+        if (navigatorContext == null || !navigatorContext.mounted) {
+          return AppExitResponse.cancel;
+        }
+        if (!await confirmQuitWithBusyTabs(navigatorContext, busyTabs)) {
+          return AppExitResponse.cancel;
+        }
+      }
     }
-    final confirmed = await confirmQuitWithBusyTabs(navigatorContext, busyTabs);
-    return confirmed ? AppExitResponse.exit : AppExitResponse.cancel;
+    try {
+      await widget.onBeforeExit?.call();
+      return AppExitResponse.exit;
+    } catch (error, stackTrace) {
+      AppLogger().e('Failed to finish app shutdown', error, stackTrace);
+      final navigatorContext = widget.navigatorKey.currentContext;
+      if (navigatorContext != null && navigatorContext.mounted) {
+        ScaffoldMessenger.of(navigatorContext).showSnackBar(
+          SnackBar(
+            content: Text(navigatorContext.l10n.sessionPersistenceError),
+          ),
+        );
+      }
+      return AppExitResponse.cancel;
+    }
   }
 
   @override

@@ -1,11 +1,14 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:ui' show AppExitResponse;
+import 'dart:io' as io;
 
 import 'package:flutter/foundation.dart';
 import 'package:context_menus/context_menus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:gsmlg/screens/settings/terminal/session_snapshots_screen.dart';
+import 'package:gsmlg/screens/toolbox/terminal/services/session_controller.dart';
+import 'package:gsmlg/screens/toolbox/terminal/services/session_store.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 import 'package:flutter/services.dart';
 import 'package:app_adaptive_widgets/app_adaptive_widgets.dart';
@@ -16,7 +19,6 @@ import 'package:flex_tabs/flex_tabs.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:app_logging/app_logging.dart';
 import 'package:shell_profile_bloc/shell_profile_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
 import 'package:terminal_tab_bloc/terminal_tab_bloc.dart';
 import 'package:gsmlg/destination.dart';
@@ -30,6 +32,8 @@ import 'package:xterm/xterm.dart' show TerminalCursorType;
 import 'close_confirmation.dart';
 import 'widgets/widgets.dart';
 
+part 'session_restoration.dart';
+
 class TerminalScreen extends StatefulWidget {
   static const name = 'TerminalScreen';
   static const path = 'terminal';
@@ -41,34 +45,35 @@ class TerminalScreen extends StatefulWidget {
 }
 
 class _TerminalScreenState extends State<TerminalScreen> {
-  static const _persistedTabsKey = 'terminal.open_tabs.v1';
-
   late final TerminalTabBloc _terminalTabBloc;
   late final TerminalSettingsBloc _terminalSettingsBloc;
-  late final SharedPreferences _sharedPreferences;
+  SessionController? _sessions;
   final _analytics = TerminalAnalytics();
   final _terminalFocusNotifier = ValueNotifier<int>(0);
-  late final _TerminalLifecycleObserver _lifecycleObserver;
   StreamSubscription<TerminalTabState>? _stateSubscription;
   StreamSubscription<TerminalSettingsState>? _settingsSubscription;
   StreamSubscription<ShellProfileState>? _profileSubscription;
-  final _tabTitlePersistenceListeners = <PluginTab, VoidCallback>{};
-  Timer? _saveOpenTabsTimer;
+  bool _restoring = false;
   bool _initialTabsHandled = false;
   bool _handlingInitialTabs = false;
   bool? _previousFullscreenState;
+  TerminalPlugin? _previousClipboardPlugin;
+  bool? _previousClipboardSetting;
+  bool _terminalClipboardRouteVisible = false;
+  ModalRoute<dynamic>? _terminalClipboardRoute;
 
   @override
   void initState() {
     super.initState();
     _terminalTabBloc = context.read<TerminalTabBloc>();
     _terminalSettingsBloc = context.read<TerminalSettingsBloc>();
-    _sharedPreferences = context.read<SharedPreferences>();
-    _terminalTabBloc.add(TerminalTabStart());
-    final existingState = _terminalTabBloc.state;
-    if (existingState is TerminalTabLoaded) {
-      _syncTabTitlePersistenceListeners(existingState);
+    try {
+      _sessions = context.read<SessionController?>();
+    } on ProviderNotFoundException {
+      _sessions = null;
     }
+    _sessions?.addListener(_onSessionsChanged);
+    _terminalTabBloc.add(TerminalTabStart());
     // Listen for state changes to open initial tab when loaded
     _stateSubscription = _terminalTabBloc.stream.listen(_onStateChanged);
     _settingsSubscription = _terminalSettingsBloc.stream.listen(
@@ -77,10 +82,6 @@ class _TerminalScreenState extends State<TerminalScreen> {
     _profileSubscription = context.read<ShellProfileBloc>().stream.listen(
       _onProfileChanged,
     );
-    _lifecycleObserver = _TerminalLifecycleObserver(
-      onAppExit: _saveOpenTabsToDisk,
-    );
-    WidgetsBinding.instance.addObserver(_lifecycleObserver);
     // Also check immediately in case state is already loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _tryRestoreOrOpenInitialTabs();
@@ -88,25 +89,35 @@ class _TerminalScreenState extends State<TerminalScreen> {
   }
 
   void _onStateChanged(TerminalTabState state) {
-    if (state is TerminalTabLoaded) {
-      _syncTabTitlePersistenceListeners(state);
+    final active = _activeClipboardPlugin(state);
+    if (!identical(active, _previousClipboardPlugin)) {
+      _previousClipboardPlugin?.invalidateIsolatedClipboardContext();
+      active?.invalidateIsolatedClipboardContext();
+      _previousClipboardPlugin = active;
+    }
+    if (_initialTabsHandled && !_handlingInitialTabs) {
+      _sessions?.markReady();
     }
     _tryRestoreOrOpenInitialTabs();
     _trackFullscreenChange(state);
-    if (_initialTabsHandled) {
-      _saveOpenTabsToDisk();
-    }
   }
 
   void _onSettingsChanged(TerminalSettingsState state) {
-    _tryRestoreOrOpenInitialTabs();
-    if (state is TerminalSettingsLoaded && !state.restoreTerminalTabs) {
-      context.read<SharedPreferences>().remove(_persistedTabsKey);
+    final allowed =
+        state is TerminalSettingsLoaded && state.allowRemoteClipboardWrites;
+    if (_previousClipboardSetting != allowed) {
+      _activeClipboardPlugin(
+        _terminalTabBloc.state,
+      )?.invalidateIsolatedClipboardContext();
+      _previousClipboardSetting = allowed;
     }
+    _tryRestoreOrOpenInitialTabs();
+    _onSessionsChanged();
   }
 
   void _onProfileChanged(ShellProfileState state) {
     _tryRestoreOrOpenInitialTabs();
+    _onSessionsChanged();
   }
 
   void _trackFullscreenChange(TerminalTabState state) {
@@ -130,6 +141,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
     }
     if (tabState.tabs.children.isNotEmpty) {
       _initialTabsHandled = true;
+      _sessions?.markReady();
+      _onSessionsChanged();
       return;
     }
     // TODO(upstream): gsmlg-app/web-terminal#6 - wait for profile readiness.
@@ -141,25 +154,37 @@ class _TerminalScreenState extends State<TerminalScreen> {
     _handlingInitialTabs = true;
     _initialTabsHandled = true;
     try {
-      var restored = false;
-      if (settingsState.restoreTerminalTabs) {
-        restored = await _restoreOpenTabsFromDisk();
-      }
-      if (!mounted) return;
-      if (!restored && tabState.tabs.children.isEmpty) {
-        _openLocalShell();
-      }
+      _openLocalShellWithProfile(profileState.defaultProfile);
     } finally {
       _handlingInitialTabs = false;
+      _onSessionsChanged();
     }
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    final visible = route?.isCurrent ?? true;
+    if (_terminalClipboardRouteVisible != visible ||
+        !identical(_terminalClipboardRoute, route)) {
+      _terminalClipboardRoute = route;
+      _terminalClipboardRouteVisible = visible;
+      _activeClipboardPlugin(
+        _terminalTabBloc.state,
+      )?.invalidateIsolatedClipboardContext();
+    }
+    _sessions?.setTerminalRouteVisible(visible);
+  }
+
+  @override
   void dispose() {
-    _saveOpenTabsTimer?.cancel();
-    unawaited(_saveOpenTabsToDisk());
-    _removeTabTitlePersistenceListeners();
-    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
+    _terminalClipboardRouteVisible = false;
+    _activeClipboardPlugin(
+      _terminalTabBloc.state,
+    )?.invalidateIsolatedClipboardContext();
+    _sessions?.setTerminalRouteVisible(false);
+    _sessions?.removeListener(_onSessionsChanged);
     _stateSubscription?.cancel();
     _settingsSubscription?.cancel();
     _profileSubscription?.cancel();
@@ -168,48 +193,30 @@ class _TerminalScreenState extends State<TerminalScreen> {
     super.dispose();
   }
 
-  void _syncTabTitlePersistenceListeners(TerminalTabLoaded state) {
-    final currentTabs = state.allTabs.whereType<PluginTab>().toSet();
-
-    for (final tab in _tabTitlePersistenceListeners.keys.toList()) {
-      if (!currentTabs.contains(tab)) {
-        tab.plugin.title.removeListener(_tabTitlePersistenceListeners[tab]!);
-        _tabTitlePersistenceListeners.remove(tab);
-      }
-    }
-
-    for (final tab in currentTabs) {
-      if (_tabTitlePersistenceListeners.containsKey(tab)) continue;
-      void listener() => _scheduleSaveOpenTabsToDisk();
-      _tabTitlePersistenceListeners[tab] = listener;
-      tab.plugin.title.addListener(listener);
-    }
-  }
-
-  void _removeTabTitlePersistenceListeners() {
-    for (final entry in _tabTitlePersistenceListeners.entries) {
-      entry.key.plugin.title.removeListener(entry.value);
-    }
-    _tabTitlePersistenceListeners.clear();
-  }
-
-  void _scheduleSaveOpenTabsToDisk() {
-    if (!mounted || !_initialTabsHandled) return;
-    _saveOpenTabsTimer?.cancel();
-    _saveOpenTabsTimer = Timer(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      unawaited(_saveOpenTabsToDisk());
-    });
-  }
-
-  void _openLocalShell() {
+  /// Opens a local shell after choosing a profile, in [groupId] if given.
+  void _openLocalShell({String? groupId}) {
     if (context.read<ShellProfileBloc>().state is! ShellProfileLoaded) return;
-    if (!_checkMaxShellsLimit()) return;
 
+    final state = _terminalTabBloc.state;
+    final active = state is TerminalTabLoaded ? state.activeTab : null;
+    final source = active is PluginTab ? active : null;
+    final plugin = source?.plugin;
+    final sourceSession = plugin is TerminalPlugin ? plugin.session : null;
+    final cachedDirectory = source == null
+        ? null
+        : _sessions?.cachedDirectory(source) ?? source.currentWorkingDirectory;
     selectProfileAndOpenShell(
       context: context,
       onProfileSelected: (profile) {
-        unawaited(_openLocalShellInLiveDirectory(profile));
+        unawaited(
+          _openLocalShellInLiveDirectory(
+            profile,
+            source: source,
+            sourceSession: sourceSession,
+            cachedDirectory: cachedDirectory,
+            groupId: groupId,
+          ),
+        );
       },
     );
   }
@@ -222,9 +229,24 @@ class _TerminalScreenState extends State<TerminalScreen> {
     return null;
   }
 
-  TerminalPlugin _createTerminalPlugin([ShellProfile? profile]) {
+  TerminalPlugin? _activeClipboardPlugin(TerminalTabState state) {
+    final tab = state is TerminalTabLoaded ? state.activeTab : null;
+    final plugin = tab is PluginTab ? tab.plugin : null;
+    return plugin is TerminalPlugin ? plugin : null;
+  }
+
+  TerminalPlugin _createTerminalPlugin([
+    ShellProfile? profile,
+    String? startDirectory,
+  ]) {
     final effectiveProfile = profile ?? _getDefaultShellProfile();
-    return TerminalPlugin(
+    late final TerminalPlugin plugin;
+    plugin = TerminalPlugin(
+      isExperimentalClipboardTabActive: () =>
+          mounted &&
+          _terminalClipboardRouteVisible &&
+          (_terminalClipboardRoute?.isCurrent ?? false) &&
+          identical(_activeClipboardPlugin(_terminalTabBloc.state), plugin),
       profileFontSize: effectiveProfile?.fontSize ?? 14.0,
       profileFontFamily: effectiveProfile?.fontFamily ?? 'Source Code Pro',
       profileCursorType:
@@ -234,7 +256,14 @@ class _TerminalScreenState extends State<TerminalScreen> {
           )],
       scrollbackLines: effectiveProfile?.scrollbackLines ?? 10000,
       fileAccess: IoZmodemFileAccess(settings: _zmodemDownloadSettings),
+      remoteClipboardWritesAllowed: () {
+        final state = _terminalSettingsBloc.state;
+        return state is TerminalSettingsLoaded &&
+            state.allowRemoteClipboardWrites;
+      },
+      startDirectory: startDirectory,
     );
+    return plugin;
   }
 
   /// Current `sz` download settings, read when a transfer starts.
@@ -253,10 +282,33 @@ class _TerminalScreenState extends State<TerminalScreen> {
     ShellProfile? profile, {
     String? workingDirectoryOverride,
     bool activate = true,
+    bool inheritFromActive = true,
     String? groupId,
   }) {
+    final tabItem = _localTab(
+      profile,
+      workingDirectoryOverride,
+      inheritFromActive: inheritFromActive,
+    );
+    _terminalTabBloc.add(
+      TerminalTabOpenTab(tabItem, activate: activate, groupId: groupId),
+    );
+    _requestTerminalFocus();
+
+    _analytics.trackSessionCreated(
+      SessionType.local,
+      metadata: profile != null ? {'profile': profile.name} : null,
+    );
+  }
+
+  PluginTab _localTab(
+    ShellProfile? profile,
+    String? workingDirectoryOverride, {
+    bool inheritFromActive = true,
+  }) {
     final inheritedWorkingDirectory =
-        workingDirectoryOverride ?? _getInheritedWorkingDirectory(profile);
+        workingDirectoryOverride ??
+        (inheritFromActive ? _getInheritedWorkingDirectory(profile) : null);
     final plugin = _createTerminalPlugin(profile);
     final settingsState = _terminalSettingsBloc.state;
     final globalEnv = settingsState is TerminalSettingsLoaded
@@ -284,41 +336,45 @@ class _TerminalScreenState extends State<TerminalScreen> {
     );
 
     final manager = PluginManager(hostSpec);
-    final tabItem = PluginTab(plugin, manager, shellProfileId: profile?.id);
-    _terminalTabBloc.add(
-      TerminalTabOpenTab(tabItem, activate: activate, groupId: groupId),
-    );
-    _requestTerminalFocus();
-
-    _analytics.trackSessionCreated(
-      SessionType.local,
-      metadata: profile != null ? {'profile': profile.name} : null,
-    );
+    return PluginTab(plugin, manager, shellProfileId: profile?.id);
   }
 
   /// Opens a local shell, inheriting the active shell's real directory when
   /// the profile asks for it. The directory comes from the operating system,
   /// so it works even when the shell does not report its directory.
-  Future<void> _openLocalShellInLiveDirectory(ShellProfile? profile) async {
+  Future<void> _openLocalShellInLiveDirectory(
+    ShellProfile? profile, {
+    required PluginTab? source,
+    required ExecutionSession? sourceSession,
+    required String? cachedDirectory,
+    String? groupId,
+  }) async {
     String? liveDirectory;
     if (profile?.inheritCurrentState == true) {
-      liveDirectory = await _activeLiveWorkingDirectory();
+      final plugin = source?.plugin;
+      if (plugin is TerminalPlugin &&
+          sourceSession != null &&
+          identical(plugin.session, sourceSession)) {
+        liveDirectory = await _queryDirectoryForOpen(plugin);
+      }
       if (!mounted) return;
+      if (plugin is TerminalPlugin &&
+          !identical(plugin.session, sourceSession)) {
+        liveDirectory = null;
+      }
+      liveDirectory ??= cachedDirectory;
     }
     _openLocalShellWithProfile(
       profile,
       workingDirectoryOverride: liveDirectory,
+      inheritFromActive: false,
+      groupId: groupId,
     );
   }
 
-  Future<String?> _activeLiveWorkingDirectory() async {
-    final state = _terminalTabBloc.state;
-    if (state is! TerminalTabLoaded) return null;
-    final activeTab = state.activeTab;
-    if (activeTab is! PluginTab) return null;
-    final plugin = activeTab.plugin;
-    return plugin is TerminalPlugin ? plugin.liveWorkingDirectory() : null;
-  }
+  Future<String?> _queryDirectoryForOpen(TerminalPlugin plugin) => plugin
+      .liveWorkingDirectory()
+      .timeout(const Duration(seconds: 2), onTimeout: () => null);
 
   String? _getInheritedWorkingDirectory(ShellProfile? profile) {
     if (profile?.inheritCurrentState != true) return null;
@@ -330,35 +386,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
     return directory.isNotEmpty ? directory : null;
   }
 
-  /// Checks if opening a new shell would exceed the max open shells limit.
-  /// Returns true if a new shell can be opened, false otherwise.
-  bool _checkMaxShellsLimit() {
-    final tabState = _terminalTabBloc.state;
-    if (tabState is! TerminalTabLoaded) return true;
-
-    final settingsState = context.read<TerminalSettingsBloc>().state;
-    final maxShells = settingsState is TerminalSettingsLoaded
-        ? settingsState.maxOpenShells
-        : kTerminalDefaultMaxOpenShells;
-
-    if (tabState.tabCount >= maxShells) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Maximum of $maxShells open sessions reached. '
-            'Close a session or increase the limit in Settings.',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      return false;
-    }
-    return true;
-  }
-
   Future<void> _openSshSession() async {
-    if (!_checkMaxShellsLimit()) return;
-
     final host = await SshHostSelector.show(context);
     if (host != null && mounted) {
       // Load SSH key if using key authentication
@@ -428,95 +456,6 @@ class _TerminalScreenState extends State<TerminalScreen> {
     );
   }
 
-  Future<bool> _restoreOpenTabsFromDisk() async {
-    final prefs = context.read<SharedPreferences>();
-    final raw = prefs.getString(_persistedTabsKey);
-    if (raw == null || raw.isEmpty) return false;
-
-    try {
-      final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      final tabData = decoded['tabs'];
-      if (tabData is! List || tabData.isEmpty) return false;
-
-      final activeIndex = decoded['activeIndex'] is int
-          ? decoded['activeIndex'] as int
-          : tabData.length - 1;
-      _terminalTabBloc.add(
-        TerminalTabRestoreGroups(
-          _decodeGroups(decoded['groups']),
-          ungroupedCollapsed: decoded['ungroupedCollapsed'] == true,
-        ),
-      );
-      var restoredCount = 0;
-      for (var i = 0; i < tabData.length; i++) {
-        if (!mounted) return restoredCount > 0;
-        final item = tabData[i];
-        if (item is! Map<String, dynamic>) continue;
-        final activate = i == activeIndex;
-        final restored = await _restoreTab(item, activate: activate);
-        if (restored) restoredCount++;
-      }
-      _terminalTabBloc.add(TerminalTabFinishGroupRestore());
-
-      if (restoredCount > 0) {
-        _requestTerminalFocus();
-        return true;
-      }
-    } catch (_) {
-      await prefs.remove(_persistedTabsKey);
-    }
-    return false;
-  }
-
-  List<TabGroup> _decodeGroups(Object? raw) {
-    if (raw is! List) return const <TabGroup>[];
-    return [
-      for (final entry in raw)
-        if (entry is Map &&
-            entry['id'] is String &&
-            entry['name'] is String &&
-            (entry['name'] as String).trim().isNotEmpty)
-          TabGroup(
-            id: entry['id'] as String,
-            name: (entry['name'] as String).trim(),
-            collapsed: entry['collapsed'] == true,
-          ),
-    ];
-  }
-
-  Future<bool> _restoreTab(
-    Map<String, dynamic> item, {
-    required bool activate,
-  }) async {
-    final type = item['type'];
-    final groupId = item['groupId'] is String
-        ? item['groupId'] as String
-        : null;
-    switch (type) {
-      case 'local':
-        final profile = _findShellProfile(item['profileId']);
-        _openLocalShellWithProfile(
-          profile,
-          workingDirectoryOverride: item['workingDirectory'] as String?,
-          activate: activate,
-          groupId: groupId,
-        );
-        return true;
-      case 'ssh':
-      case 'sftp':
-        final hostId = item['hostId'];
-        if (hostId is! int) return false;
-        return _restoreSshSession(
-          hostId,
-          activate: activate,
-          sftp: item['type'] == 'sftp',
-          groupId: groupId,
-        );
-      default:
-        return false;
-    }
-  }
-
   ShellProfile? _findShellProfile(Object? profileId) {
     if (profileId is! int) return null;
     final state = context.read<ShellProfileBloc>().state;
@@ -525,42 +464,6 @@ class _TerminalScreenState extends State<TerminalScreen> {
       if (profile.id == profileId) return profile;
     }
     return null;
-  }
-
-  Future<bool> _restoreSshSession(
-    int hostId, {
-    required bool activate,
-    bool sftp = false,
-    String? groupId,
-  }) async {
-    try {
-      final database = context.read<AppDatabase>();
-      final host = await (database.select(
-        database.sshHosts,
-      )..where((t) => t.id.equals(hostId))).getSingleOrNull();
-      if (host == null) return false;
-
-      SshKeyData? keyData;
-      final identityType = SshIdentityType.fromValue(host.identityType);
-      if (identityType == SshIdentityType.key) {
-        final keyId = host.identityKeyId;
-        if (keyId == null) return false;
-        keyData = await _loadSshKeyData(keyId);
-      }
-
-      if (!mounted) return false;
-      final Plugin plugin = sftp
-          ? FileManagerPlugin()
-          : _createTerminalPlugin();
-      final manager = PluginManager(_sshHostSpec(host, keyData: keyData));
-      final tabItem = PluginTab(plugin, manager);
-      _terminalTabBloc.add(
-        TerminalTabOpenTab(tabItem, activate: activate, groupId: groupId),
-      );
-      return true;
-    } catch (_) {
-      return false;
-    }
   }
 
   SSHHostSpec _sshHostSpec(SshHost host, {SshKeyData? keyData}) {
@@ -583,87 +486,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
     );
   }
 
-  Future<void> _saveOpenTabsToDisk() async {
-    final settingsState = _terminalSettingsBloc.state;
-    final prefs = _sharedPreferences;
-    if (settingsState is! TerminalSettingsLoaded ||
-        !settingsState.restoreTerminalTabs) {
-      await prefs.remove(_persistedTabsKey);
-      return;
-    }
-
-    final tabState = _terminalTabBloc.state;
-    if (tabState is! TerminalTabLoaded) return;
-
-    final grouping = tabState.grouping;
-    final tabs = <PluginTab>[];
-    final descriptors = <Map<String, Object?>>[];
-    for (final tab in tabState.allTabs.whereType<PluginTab>()) {
-      final descriptor = _encodeTab(tab);
-      if (descriptor == null) continue;
-      if (descriptor['type'] == 'local') {
-        final plugin = tab.plugin;
-        final liveDirectory = plugin is TerminalPlugin
-            ? await plugin.liveWorkingDirectory()
-            : null;
-        if (liveDirectory != null) {
-          descriptor['workingDirectory'] = liveDirectory;
-        }
-      }
-      final groupId = grouping.groupIdOf(tab);
-      if (groupId != null) descriptor['groupId'] = groupId;
-      tabs.add(tab);
-      descriptors.add(descriptor);
-    }
-    if (tabs.isEmpty) {
-      await prefs.remove(_persistedTabsKey);
-      return;
-    }
-
-    final activeTab = tabState.activeTab;
-    final activeIndex = tabs.indexWhere((tab) => identical(tab, activeTab));
-    final savedGroupIds = {
-      for (final descriptor in descriptors) descriptor['groupId'],
-    };
-    final groups = [
-      for (final group in grouping.groups)
-        if (savedGroupIds.contains(group.id))
-          {'id': group.id, 'name': group.name, 'collapsed': group.collapsed},
-    ];
-    final payload = <String, Object?>{
-      'activeIndex': activeIndex >= 0 ? activeIndex : 0,
-      'tabs': descriptors,
-      if (groups.isNotEmpty) 'groups': groups,
-      if (grouping.ungroupedCollapsed) 'ungroupedCollapsed': true,
-    };
-    await prefs.setString(_persistedTabsKey, jsonEncode(payload));
-  }
-
-  // TODO(upstream): gsmlg-app/web-terminal#7 - persist mobile local tabs.
-  Map<String, Object?>? _encodeTab(PluginTab tab) {
-    final hostSpec = tab.manager.hostSpec;
-    if (hostSpec is SSHHostSpec) {
-      return {
-        'type': tab.plugin is FileManagerPlugin ? 'sftp' : 'ssh',
-        'hostId': hostSpec.record.id,
-      };
-    }
-    if (hostSpec is LocalHostSpec ||
-        hostSpec is AndroidHostSpec ||
-        hostSpec is IosHostSpec) {
-      return {
-        'type': 'local',
-        'profileId': tab.shellProfileId,
-        'workingDirectory': tab.currentWorkingDirectory,
-      };
-    }
-    return null;
-  }
-
   Future<void> _openSftpSession() async {
-    if (!_checkMaxShellsLimit()) return;
     final host = await SshHostSelector.show(context);
-    if (host == null || !mounted || !_checkMaxShellsLimit()) return;
+    if (host == null || !mounted) return;
 
     try {
       SshKeyData? keyData;
@@ -672,7 +497,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
         if (keyId == null) throw StateError('SSH key not found');
         keyData = await _loadSshKeyData(keyId);
       }
-      if (!mounted || !_checkMaxShellsLimit()) return;
+      if (!mounted) return;
       PluginManager? manager;
       final state = _terminalTabBloc.state;
       if (state is TerminalTabLoaded && state.activeTab is PluginTab) {
@@ -776,6 +601,11 @@ class _TerminalScreenState extends State<TerminalScreen> {
           onRenameGroup: (groupId, name) {
             _terminalTabBloc.add(TerminalTabRenameGroup(groupId, name));
           },
+          onMoveGroupBefore: (groupId, targetGroupId) {
+            _terminalTabBloc.add(
+              TerminalTabMoveGroupBefore(groupId, targetGroupId),
+            );
+          },
           onToggleCollapsed: (groupId) {
             _terminalTabBloc.add(TerminalTabToggleGroupCollapsed(groupId));
           },
@@ -845,32 +675,63 @@ class _TerminalScreenState extends State<TerminalScreen> {
   void _openNewTabFromActiveSession() {
     final tabState = _terminalTabBloc.state;
     final activeTab = tabState is TerminalTabLoaded ? tabState.activeTab : null;
+    final groupId = activeTab != null && tabState is TerminalTabLoaded
+        ? tabState.grouping.groupIdOf(activeTab)
+        : null;
     if (activeTab is PluginTab && activeTab.manager.hostSpec is SSHHostSpec) {
-      if (!_checkMaxShellsLimit()) return;
-      final sshHostSpec = activeTab.manager.hostSpec as SSHHostSpec;
-      final plugin = _createTerminalPlugin();
-      final tabItem = PluginTab(plugin, activeTab.manager);
-      _terminalTabBloc.add(TerminalTabOpenTab(tabItem));
-      _requestTerminalFocus();
-
-      _analytics.trackSessionCreated(
-        SessionType.ssh,
-        metadata: {
-          'host': sshHostSpec.record.hostname ?? 'unknown',
-          'auth_type': sshHostSpec.keyData != null ? 'key' : 'password',
-        },
-      );
+      unawaited(_openSshTabBeside(activeTab, groupId: groupId));
       return;
     }
 
-    _openLocalShell();
+    _openLocalShell(groupId: groupId);
+  }
+
+  /// Opens another shell on [activeTab]'s connection, in the remote
+  /// directory its shell is in now.
+  Future<void> _openSshTabBeside(PluginTab activeTab, {String? groupId}) async {
+    final activePlugin = activeTab.plugin;
+    final sourceSession = activePlugin is TerminalPlugin
+        ? activePlugin.session
+        : null;
+    final directory = activePlugin is TerminalPlugin && sourceSession != null
+        ? await _queryDirectoryForOpen(activePlugin)
+        : null;
+    if (!mounted) return;
+    final state = _terminalTabBloc.state;
+    if (state is! TerminalTabLoaded ||
+        !state.allTabs.contains(activeTab) ||
+        (activePlugin is TerminalPlugin &&
+            !identical(sourceSession, activePlugin.session))) {
+      return;
+    }
+    final sshHostSpec = activeTab.manager.hostSpec as SSHHostSpec;
+    final plugin = _createTerminalPlugin(
+      null,
+      directory ??
+          (activePlugin is TerminalPlugin
+              ? _sessions?.cachedDirectory(activeTab)
+              : null),
+    );
+    final tabItem = PluginTab(plugin, activeTab.manager);
+    _terminalTabBloc.add(TerminalTabOpenTab(tabItem, groupId: groupId));
+    _requestTerminalFocus();
+
+    _analytics.trackSessionCreated(
+      SessionType.ssh,
+      metadata: {
+        'host': sshHostSpec.record.hostname ?? 'unknown',
+        'auth_type': sshHostSpec.keyData != null ? 'key' : 'password',
+      },
+    );
   }
 
   /// Handles tab management shortcuts at the TerminalView level.
   /// This runs before the terminal processes the key, so Ctrl+T, Ctrl+Shift+T,
   /// Cmd+T, etc. are intercepted without being sent to the shell.
   KeyEventResult _handleTerminalKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
 
     final key = event.logicalKey;
     final ctrl = HardwareKeyboard.instance.isControlPressed;
@@ -879,6 +740,14 @@ class _TerminalScreenState extends State<TerminalScreen> {
     final isApple =
         defaultTargetPlatform == TargetPlatform.macOS ||
         defaultTargetPlatform == TargetPlatform.iOS;
+
+    if (event is KeyRepeatEvent &&
+        key != LogicalKeyboardKey.bracketRight &&
+        key != LogicalKeyboardKey.braceRight &&
+        key != LogicalKeyboardKey.bracketLeft &&
+        key != LogicalKeyboardKey.braceLeft) {
+      return KeyEventResult.ignored;
+    }
 
     // New tab: Cmd+T (macOS/iOS) or Ctrl+T / Ctrl+Shift+T (other platforms)
     if (key == LogicalKeyboardKey.keyT && (isApple ? meta : ctrl)) {
@@ -908,17 +777,19 @@ class _TerminalScreenState extends State<TerminalScreen> {
       return KeyEventResult.handled;
     }
 
-    // Next tab: Ctrl+Shift+] (Linux/Win) / Cmd+Shift+] (macOS)
-    // Shift+] produces } (braceRight)
-    if (key == LogicalKeyboardKey.braceRight && shift) {
+    // Next tab: Cmd+] / Cmd+Shift+] (Apple), Ctrl+Shift+] elsewhere.
+    if ((isApple || shift) &&
+        (key == LogicalKeyboardKey.bracketRight ||
+            (shift && key == LogicalKeyboardKey.braceRight))) {
       _terminalTabBloc.add(TerminalTabNextTab());
       _requestTerminalFocus();
       return KeyEventResult.handled;
     }
 
-    // Previous tab: Ctrl+Shift+[ (Linux/Win) / Cmd+Shift+[ (macOS)
-    // Shift+[ produces { (braceLeft)
-    if (key == LogicalKeyboardKey.braceLeft && shift) {
+    // Previous tab: Cmd+[ / Cmd+Shift+[ (Apple), Ctrl+Shift+[ elsewhere.
+    if ((isApple || shift) &&
+        (key == LogicalKeyboardKey.bracketLeft ||
+            (shift && key == LogicalKeyboardKey.braceLeft))) {
       _terminalTabBloc.add(TerminalTabPreviousTab());
       _requestTerminalFocus();
       return KeyEventResult.handled;
@@ -956,6 +827,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
       String name = 'Terminal';
       if (tab is PluginTab) {
         name = tab.displayTitle;
+      } else if (tab is UnavailableSessionTab) {
+        name = tab.label;
       }
       final isRunning = busyTabs.contains(tab);
       return SessionInfo(
@@ -975,7 +848,11 @@ class _TerminalScreenState extends State<TerminalScreen> {
   String _getCurrentSessionName(TerminalTabLoaded state) {
     final activeTab = state.activeTab;
     if (activeTab == null) return 'Terminal';
-    final name = activeTab is PluginTab ? activeTab.displayTitle : 'Terminal';
+    final name = activeTab is PluginTab
+        ? activeTab.displayTitle
+        : activeTab is UnavailableSessionTab
+        ? activeTab.label
+        : 'Terminal';
     final group = state.grouping.groupOf(activeTab);
     return group == null ? name : '${group.name} · $name';
   }
@@ -991,24 +868,37 @@ class _TerminalScreenState extends State<TerminalScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              final activePlugin = state.activeTab is PluginTab
-                  ? (state.activeTab as PluginTab).plugin
+              final activeTab = state.activeTab;
+              final activePlugin = activeTab is PluginTab
+                  ? activeTab.plugin
                   : null;
 
               return Column(
                 children: [
-                  // AppBar for session management — listen to active
-                  // plugin title so it updates on connection status change.
-                  if (activePlugin != null)
-                    ValueListenableBuilder<String?>(
-                      valueListenable: activePlugin.title,
+                  if (activeTab is PluginTab)
+                    ValueListenableBuilder<Widget?>(
+                      valueListenable: activeTab.title,
                       builder: (context, _, _) => TerminalAppBar(
+                        terminalActions: activePlugin is TerminalPlugin
+                            ? TerminalClipboardMenu(plugin: activePlugin)
+                            : null,
                         currentSessionName: _getCurrentSessionName(state),
                         sessions: _buildSessionList(state),
                         onShowTabSwitcher: _showTabSwitcher,
                         onNewLocalShell: _openLocalShell,
                         onNewSshSession: _openSshSession,
                         onNewSftpSession: _openSftpSession,
+                        onSaveWorkspace: _sessions == null
+                            ? null
+                            : () => _saveSnapshot(),
+                        onSaveGroup:
+                            _sessions == null || state.grouping.groups.isEmpty
+                            ? null
+                            : () => _saveSnapshot(groupOnly: true),
+                        onManageSnapshots: _sessions == null
+                            ? null
+                            : () =>
+                                  context.goNamed(SessionSnapshotsScreen.name),
                       ),
                     )
                   else
@@ -1019,7 +909,18 @@ class _TerminalScreenState extends State<TerminalScreen> {
                       onNewLocalShell: _openLocalShell,
                       onNewSshSession: _openSshSession,
                       onNewSftpSession: _openSftpSession,
+                      onSaveWorkspace: _sessions == null
+                          ? null
+                          : () => _saveSnapshot(),
+                      onSaveGroup:
+                          _sessions == null || state.grouping.groups.isEmpty
+                          ? null
+                          : () => _saveSnapshot(groupOnly: true),
+                      onManageSnapshots: _sessions == null
+                          ? null
+                          : () => context.goNamed(SessionSnapshotsScreen.name),
                     ),
+                  _sessionBanner(),
                   // Terminal content area
                   Expanded(
                     child: TerminalShortcutHandler(
@@ -1137,33 +1038,5 @@ class _TerminalScreenState extends State<TerminalScreen> {
     }
 
     return const Center(child: CircularProgressIndicator());
-  }
-}
-
-class _TerminalLifecycleObserver extends WidgetsBindingObserver {
-  final Future<void> Function() onAppExit;
-
-  _TerminalLifecycleObserver({required this.onAppExit});
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (state) {
-      case AppLifecycleState.inactive:
-      case AppLifecycleState.paused:
-      case AppLifecycleState.detached:
-      case AppLifecycleState.hidden:
-        unawaited(onAppExit());
-        break;
-      case AppLifecycleState.resumed:
-        break;
-    }
-  }
-
-  /// Saves open tabs before quitting. A `cd` does not change any app state,
-  /// so without this the saved working directories could be stale.
-  @override
-  Future<AppExitResponse> didRequestAppExit() async {
-    await onAppExit();
-    return AppExitResponse.exit;
   }
 }

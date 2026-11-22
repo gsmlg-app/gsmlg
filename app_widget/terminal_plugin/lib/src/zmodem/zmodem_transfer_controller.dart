@@ -104,6 +104,7 @@ class ZmodemTransferController {
     required this.writeToSession,
     required this.files,
     this.supported = true,
+    this.awaitInitialFrame = false,
     this.handshakeTimeout = const Duration(seconds: 10),
     this.idleTimeout = const Duration(seconds: 30),
   });
@@ -112,6 +113,9 @@ class ZmodemTransferController {
   final Future<void> Function(Uint8List bytes) writeToSession;
   final ZmodemFileAccess files;
   final bool supported;
+
+  /// Give a flow-controlled caller completion of the initial handshake frame.
+  final bool awaitInitialFrame;
   final Duration handshakeTimeout;
 
   /// A running transfer fails when the remote side sends nothing this long.
@@ -124,10 +128,17 @@ class ZmodemTransferController {
   Stream<ZmodemTransferResult> get results => _results.stream;
 
   _Transfer? _transfer;
+  int _transferEpoch = 0;
+
+  /// Used by a flow-controlled transport to drop stale queued protocol writes.
+  int get transferEpoch => _transferEpoch;
   bool get isActive => _transfer != null;
 
   /// Output held back because it may be the start of a split handshake.
   Uint8List _held = Uint8List(0);
+
+  /// The next scan may join these older bytes to a newly admitted frame.
+  bool get hasPendingTerminalProbe => _held.isNotEmpty;
   Timer? _heldTimer;
 
   /// Leading 'O' bytes of the sender's "OO" to drop after a download.
@@ -152,8 +163,7 @@ class ZmodemTransferController {
       }
       _endDrain();
     }
-    _scan(chunk);
-    return null;
+    return _scan(chunk);
   }
 
   bool _draining = false;
@@ -188,6 +198,15 @@ class ZmodemTransferController {
     _drainClock.stop();
   }
 
+  /// Flush a split signature probe as terminal text at normal EOF.
+  void flushTerminalProbe() {
+    _heldTimer?.cancel();
+    _heldTimer = null;
+    final held = _held;
+    _held = Uint8List(0);
+    _emit(held);
+  }
+
   /// Returns true when [bytes] were consumed by an active transfer.
   bool handleKeyboardInput(Uint8List bytes) {
     final transfer = _transfer;
@@ -217,7 +236,7 @@ class ZmodemTransferController {
 
   // --- passthrough and handshake detection ---------------------------------
 
-  void _scan(Uint8List chunk) {
+  Future<void>? _scan(Uint8List chunk) {
     _heldTimer?.cancel();
     _heldTimer = null;
     var data = _held.isEmpty ? chunk : Uint8List.fromList([..._held, ...chunk]);
@@ -241,12 +260,12 @@ class ZmodemTransferController {
         final keep = _signaturePrefixAtEnd(data, from);
         _emit(Uint8List.sublistView(data, from, data.length - keep));
         _hold(Uint8List.sublistView(data, data.length - keep));
-        return;
+        return null;
       }
       if (data.length - start < _hexHeaderLength) {
         _emit(Uint8List.sublistView(data, from, start));
         _hold(Uint8List.sublistView(data, start));
-        return;
+        return null;
       }
       final type = _validHeaderType(data, start);
       if (type == null) {
@@ -256,8 +275,7 @@ class ZmodemTransferController {
         continue;
       }
       _emit(Uint8List.sublistView(data, from, start));
-      _start(type, Uint8List.sublistView(data, start));
-      return;
+      return _start(type, Uint8List.sublistView(data, start));
     }
   }
 
@@ -347,7 +365,7 @@ class ZmodemTransferController {
 
   // --- transfers -------------------------------------------------------------
 
-  void _start(int type, Uint8List initial) {
+  Future<void>? _start(int type, Uint8List initial) {
     if (!supported) {
       unawaited(writeToSession(Uint8List.fromList(_abortSequence)));
       onTerminalOutput(
@@ -357,16 +375,21 @@ class ZmodemTransferController {
       );
       // The sender may already be streaming; keep it off the screen.
       _startDrain();
-      return;
+      return null;
     }
     final transfer = _Transfer(
       this,
       type == _zrqinit ? ZmodemDirection.download : ZmodemDirection.upload,
     );
+    _transferEpoch++;
     _transfer = transfer;
+    if (awaitInitialFrame) transfer._reportProgress(force: true);
     _armHandshakeTimer(transfer);
     transfer.touch();
-    unawaited(transfer.enqueue(initial));
+    final processing = transfer.enqueue(initial);
+    if (awaitInitialFrame) return processing;
+    unawaited(processing);
+    return null;
   }
 
   /// Fails the transfer if the remote side never gets past the handshake.
@@ -393,6 +416,7 @@ class ZmodemTransferController {
   void _finish(_Transfer transfer, ZmodemTransferResult result) {
     if (!identical(_transfer, transfer)) return;
     transfer.close();
+    _transferEpoch++;
     _transfer = null;
     _setProgress(null);
     if (transfer.direction == ZmodemDirection.download) _swallowOverAndOut = 2;
@@ -406,11 +430,12 @@ class ZmodemTransferController {
   }) async {
     if (!identical(_transfer, transfer)) return;
     transfer.close();
+    final abortEpoch = ++_transferEpoch;
     _transfer = null;
-    _setProgress(null);
     _startDrain();
+    _setProgress(null);
     await transfer.discardCurrent();
-    if (sendAbort) {
+    if (sendAbort && !_disposed && _transferEpoch == abortEpoch) {
       try {
         await writeToSession(Uint8List.fromList(_abortSequence));
       } catch (_) {}
@@ -436,6 +461,7 @@ class _Transfer {
   bool handshakeDone = false;
 
   int _queuedBytes = 0;
+  Completer<void>? _activeFrame;
   int _unflushedBytes = 0;
   int get bufferedBytes => _queuedBytes + _unflushedBytes;
 
@@ -495,6 +521,9 @@ class _Transfer {
     _closed = true;
     handshakeTimer?.cancel();
     _idleTimer?.cancel();
+    if (_activeFrame case final pending? when owner.awaitInitialFrame) {
+      if (!pending.isCompleted) pending.complete();
+    }
     for (final (_, done) in _queue) {
       if (!done.isCompleted) done.complete();
     }
@@ -522,6 +551,7 @@ class _Transfer {
       while (_queue.isNotEmpty && !_closed) {
         final (chunk, done) = _queue.removeFirst();
         _queuedBytes -= chunk.length;
+        _activeFrame = done;
         try {
           await _process(chunk);
         } catch (error) {
@@ -531,6 +561,7 @@ class _Transfer {
             sendAbort: true,
           );
         } finally {
+          _activeFrame = null;
           if (!done.isCompleted) done.complete();
         }
       }

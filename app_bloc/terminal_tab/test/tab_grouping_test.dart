@@ -95,6 +95,45 @@ void main() {
       expect(ungrouped.groupById('g1')!.collapsed, isFalse);
     });
 
+    test('moveGroupBefore changes only the stored group order', () {
+      final original = const TabGrouping()
+          .createGroup(id: 'g1', name: 'one', tab: a)
+          .createGroup(id: 'g2', name: 'two', tab: b)
+          .createGroup(id: 'g3', name: 'three', tab: c)
+          .toggleCollapsed('g3')
+          .toggleCollapsed(null);
+
+      final reordered = original.moveGroupBefore('g3', 'g1');
+
+      expect(ids(reordered), ['g3', 'g1', 'g2']);
+      expect(ids(original), ['g1', 'g2', 'g3']);
+      expect(reordered.membership, original.membership);
+      expect(reordered.groupById('g3'), original.groupById('g3'));
+      expect(reordered.ungroupedCollapsed, isTrue);
+    });
+
+    test('moveGroupBefore can move down and to the end', () {
+      final original = const TabGrouping()
+          .createGroup(id: 'g1', name: 'one', tab: a)
+          .createGroup(id: 'g2', name: 'two', tab: b)
+          .createGroup(id: 'g3', name: 'three', tab: c);
+
+      expect(ids(original.moveGroupBefore('g1', 'g3')), ['g2', 'g1', 'g3']);
+      expect(ids(original.moveGroupBefore('g1', null)), ['g2', 'g3', 'g1']);
+    });
+
+    test('moveGroupBefore ignores invalid and unchanged moves', () {
+      final original = const TabGrouping()
+          .createGroup(id: 'g1', name: 'one', tab: a)
+          .createGroup(id: 'g2', name: 'two', tab: b);
+
+      expect(original.moveGroupBefore('missing', 'g1'), same(original));
+      expect(original.moveGroupBefore('g1', 'missing'), same(original));
+      expect(original.moveGroupBefore('g1', 'g1'), same(original));
+      expect(original.moveGroupBefore('g1', 'g2'), same(original));
+      expect(original.moveGroupBefore('g2', null), same(original));
+    });
+
     test('retainTabs drops closed tabs and empty groups', () {
       final grouping = const TabGrouping()
           .createGroup(id: 'g1', name: 'one', tab: a)

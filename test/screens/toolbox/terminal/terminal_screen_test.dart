@@ -507,10 +507,14 @@ void main() {
     });
 
     testWidgets(
-      'Cmd+T opens an ungrouped tab while the active tab is grouped',
+      'Cmd+T opens a tab in the active group while the active tab is grouped',
       variant: TargetPlatformVariant.only(TargetPlatform.macOS),
       (tester) async {
         final setup = await pumpGroupedScreen(tester);
+        final activeGroupId = (setup.tabBloc.state as TerminalTabLoaded)
+            .grouping
+            .groupIdOf(setup.grouped);
+        expect(activeGroupId, isNotNull);
 
         await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
         await tester.sendKeyEvent(LogicalKeyboardKey.keyT);
@@ -520,7 +524,7 @@ void main() {
         final state = setup.tabBloc.state as TerminalTabLoaded;
         expect(state.tabCount, 3);
         expect(state.activeTab, isNot(same(setup.grouped)));
-        expect(state.grouping.groupIdOf(state.activeTab!), isNull);
+        expect(state.grouping.groupIdOf(state.activeTab!), activeGroupId);
       },
     );
   });

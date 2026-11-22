@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:app_ssh/src/ssh_channel_id.dart';
+import 'package:app_ssh/src/ssh_errors.dart';
 import 'package:app_ssh/src/ssh_transport.dart';
 import 'package:app_ssh/src/utils/async_queue.dart';
 import 'package:app_ssh/src/message/msg_channel.dart';
@@ -20,6 +21,7 @@ class SSHChannelController {
   final int localId;
   final int localMaximumPacketSize;
   final int localInitialWindowSize;
+  final bool manualReceiveCredit;
 
   final int remoteId;
   final int remoteMaximumPacketSize;
@@ -39,6 +41,7 @@ class SSHChannelController {
     required this.remoteInitialWindowSize,
     required this.remoteMaximumPacketSize,
     required this.sendMessage,
+    this.manualReceiveCredit = false,
     this.printDebug,
   }) {
     if (remoteInitialWindowSize > 0) {
@@ -241,6 +244,16 @@ class SSHChannelController {
       return;
     }
 
+    if (manualReceiveCredit) {
+      if (data.isEmpty) return;
+      if (data.length > localMaximumPacketSize || data.length > _localWindow) {
+        _remoteStream
+            .addError(SSHStateError('SSH channel exceeded its receive credit'));
+        destroy();
+        return;
+      }
+    }
+
     _remoteStream.add(SSHChannelData(data, type: type));
 
     _localWindow -= data.length;
@@ -313,7 +326,7 @@ class SSHChannelController {
   void _sendWindowAdjustIfNeeded() {
     printDebug?.call('SSHChannel._sendWindowAdjustIfNeeded');
 
-    if (_done.isCompleted) return;
+    if (manualReceiveCredit || _done.isCompleted) return;
     if (_remoteStream.isPaused) return;
     if (_localWindow <= 0) return;
 
@@ -324,6 +337,26 @@ class SSHChannelController {
       SSH_Message_Channel_Window_Adjust(
         recipientChannel: remoteId,
         bytesToAdd: bytesToAdd,
+      ),
+    );
+  }
+
+  void _acknowledgeReceivedBytes(int bytes) {
+    if (!manualReceiveCredit ||
+        _done.isCompleted ||
+        _remoteStream.isClosed ||
+        bytes == 0) {
+      return;
+    }
+    if (bytes < 0 || bytes > localInitialWindowSize - _localWindow) {
+      throw ArgumentError.value(
+          bytes, 'bytes', 'Credit exceeds bytes received');
+    }
+    _localWindow += bytes;
+    sendMessage(
+      SSH_Message_Channel_Window_Adjust(
+        recipientChannel: remoteId,
+        bytesToAdd: bytes,
       ),
     );
   }
@@ -397,6 +430,10 @@ class SSHChannel {
   void addData(Uint8List data, {int? type}) {
     sink.add(SSHChannelData(data, type: type));
   }
+
+  /// Return byte credit on a manually credited channel after consumption.
+  void acknowledgeReceivedBytes(int bytes) =>
+      _controller._acknowledgeReceivedBytes(bytes);
 
   void setRequestHandler(SSHChannelRequestHandler handler) {
     _controller._requestHandler = handler;

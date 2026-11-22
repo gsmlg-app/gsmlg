@@ -71,6 +71,8 @@ abstract mixin class Plugin {
   /// Called when the connection to the host fails with an error.
   void onConnectionError(Object error) {}
 
+  Future<void> closeForAppExit() async {}
+
   /// Builds the UI for this plugin. This may be called multiple times during
   /// the lifetime of the plugin, for example when the plugin is moved to a new
   /// tab group.
@@ -113,6 +115,13 @@ class PluginManager with ChangeNotifier {
     } else if (connector.lastError != null) {
       didConnectionError(connector.lastError!);
     }
+  }
+
+  Future<void> closeForAppExit() async {
+    for (final plugin in List<Plugin>.of(_plugins)) {
+      await plugin.closeForAppExit();
+    }
+    await _connector?.disconnect();
   }
 
   void _onConnectorChanged() {

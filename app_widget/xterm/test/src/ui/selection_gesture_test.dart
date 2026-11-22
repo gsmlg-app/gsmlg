@@ -209,4 +209,57 @@ void main() {
     expect(output, contains('echo 1\recho 2'));
     expect(render.scrollOffset, bottom);
   });
+
+  testWidgets('copy and paste shortcuts survive OS clipboard failures',
+      (tester) async {
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (MethodCall call) async {
+        if (call.method == 'Clipboard.setData' ||
+            call.method == 'Clipboard.getData') {
+          throw PlatformException(code: 'unavailable');
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    await pumpTerminal(tester);
+    terminal.write('hello world');
+    await tester.pump();
+    controller.setSelection(
+      terminal.buffer.createAnchor(0, 0),
+      terminal.buffer.createAnchor(5, 0),
+    );
+    await tester.tap(find.byType(TerminalView));
+    await tester.pump(kDoubleTapTimeout);
+    controller.setSelection(
+      terminal.buffer.createAnchor(0, 0),
+      terminal.buffer.createAnchor(5, 0),
+    );
+
+    final isApple = defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    final modifier =
+        isApple ? LogicalKeyboardKey.metaLeft : LogicalKeyboardKey.controlLeft;
+    await tester.sendKeyDownEvent(modifier);
+    if (!isApple) {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+    }
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyC);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyV);
+    if (!isApple) {
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+    }
+    await tester.sendKeyUpEvent(modifier);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(terminal.buffer.getText().trim(), 'hello world');
+  });
 }

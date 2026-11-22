@@ -6,10 +6,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:isolate_orchestrator/isolate_orchestrator.dart';
 import 'package:app_locale/app_locale.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:path/path.dart' as p;
 import 'package:terminal_core/terminal_core.dart';
+import 'package:terminal_plugin/src/isolate_session_binding.dart';
+import 'package:terminal_plugin/src/remote_clipboard.dart';
 import 'package:terminal_plugin/src/terminal_extra_keys.dart';
 import 'package:terminal_plugin/src/terminal_menu.dart';
 import 'package:terminal_plugin/src/terminal_shortcut_handler.dart';
@@ -18,6 +21,8 @@ import 'package:terminal_plugin/src/zmodem/zmodem_file_access.dart';
 import 'package:terminal_plugin/src/zmodem/zmodem_progress_panel.dart';
 import 'package:terminal_plugin/src/zmodem/zmodem_transfer_controller.dart';
 import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
+import 'package:xterm/session_isolate.dart';
+import 'package:xterm/session_isolate_view.dart';
 import 'package:xterm/xterm.dart';
 
 class TerminalPlugin extends Plugin {
@@ -27,18 +32,47 @@ class TerminalPlugin extends Plugin {
     this.profileCursorType = TerminalCursorType.block,
     int scrollbackLines = 10000,
     ZmodemFileAccess? fileAccess,
-  })  : fileAccess = fileAccess ??
+    bool useIsolatedTerminal =
+        const bool.fromEnvironment('WEB_TERMINAL_EXPERIMENTAL_ISOLATE'),
+    this.startDirectory,
+    bool Function()? remoteClipboardWritesAllowed,
+    this.isExperimentalClipboardTabActive,
+    Future<void> Function(String text)? writeClipboard,
+  })  : _useIsolatedTerminal = useIsolatedTerminal &&
+            !kIsWeb &&
+            (defaultTargetPlatform == TargetPlatform.macOS ||
+                defaultTargetPlatform == TargetPlatform.linux ||
+                defaultTargetPlatform == TargetPlatform.windows),
+        _scrollbackLines = scrollbackLines,
+        remoteClipboard = RemoteClipboard(
+          writesAllowed: remoteClipboardWritesAllowed ??
+              () => kTerminalDefaultAllowRemoteClipboardWrites,
+          writeClipboard: writeClipboard,
+        ),
+        fileAccess = fileAccess ??
             IoZmodemFileAccess(
               settings: () =>
                   (mode: ZmodemDownloadMode.saveToFolder, directory: null),
-            ),
-        terminal = Terminal(
-          maxLines: scrollbackLines,
-          batchWrites: true,
-          platform: _terminalTargetPlatform(),
-        );
+            );
 
-  final Terminal terminal;
+  final bool _useIsolatedTerminal;
+  final int _scrollbackLines;
+  late final Terminal terminal = Terminal(
+    maxLines: _scrollbackLines,
+    batchWrites: true,
+    platform: _terminalTargetPlatform(),
+  );
+
+  bool get isolatedTerminalEnabled => _useIsolatedTerminal;
+
+  final _isolateBinding = ValueNotifier<IsolateSessionBinding?>(null);
+  IsolateHub? _isolateHub;
+  final bool Function()? isExperimentalClipboardTabActive;
+  bool _isolateClipboardVisible = false;
+  bool _isolateClipboardPreviouslyEligible = false;
+  int _isolateClipboardEpoch = 0;
+
+  final RemoteClipboard remoteClipboard;
 
   /// File access for `sz`/`rz` transfers.
   final ZmodemFileAccess fileAccess;
@@ -72,14 +106,117 @@ class TerminalPlugin extends Plugin {
 
   final terminalController = TerminalController();
 
+  Future<void> copySelection() async {
+    if (_useIsolatedTerminal) return;
+    final selection = terminalController.selection;
+    if (selection == null) return;
+    try {
+      await Clipboard.setData(
+        ClipboardData(text: terminal.buffer.getText(selection)),
+      );
+    } catch (_) {
+      // Clipboard access may be unavailable while the terminal remains usable.
+    }
+  }
+
+  Future<void> pasteClipboard() async {
+    final activeSession = session;
+    final binding = _isolateBinding.value;
+    try {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      final text = data?.text;
+      if (text != null && identical(session, activeSession)) {
+        if (_useIsolatedTerminal) {
+          if (binding != null && identical(_isolateBinding.value, binding)) {
+            binding.paste(text);
+          }
+        } else {
+          terminal.paste(text);
+        }
+      }
+    } catch (_) {
+      // Local clipboard access is best effort.
+    }
+  }
+
+  void selectAll() {
+    if (_useIsolatedTerminal) return;
+    if (terminal.buffer.lines.length == 0) return;
+    terminalController.setSelection(
+      terminal.buffer.createAnchor(0, 0),
+      terminal.buffer.createAnchor(
+        terminal.viewWidth,
+        terminal.buffer.lines.length - 1,
+      ),
+      mode: SelectionMode.line,
+    );
+  }
+
+  void setRemoteClipboardTrusted(bool trusted) {
+    invalidateIsolatedClipboardContext();
+    remoteClipboard.setTrusted(false);
+    if (!_useIsolatedTerminal) terminal.flush();
+    remoteClipboard.setTrusted(trusted);
+  }
+
+  /// Invalidates any output or OS write already pending when this scope
+  /// changes. This does not grant trust or alter the user's setting.
+  void invalidateIsolatedClipboardContext() {
+    if (_useIsolatedTerminal) _isolateClipboardEpoch++;
+  }
+
+  int? _isolateClipboardCapability(IsolateSessionBinding binding) {
+    final eligible = _isolateClipboardVisible &&
+        identical(_isolateBinding.value, binding) &&
+        binding.canAcceptClipboardEffects &&
+        (isExperimentalClipboardTabActive?.call() ?? false) &&
+        remoteClipboard.sessionActive &&
+        remoteClipboard.trusted;
+    if (eligible != _isolateClipboardPreviouslyEligible) {
+      _isolateClipboardPreviouslyEligible = eligible;
+      _isolateClipboardEpoch++;
+    }
+    return eligible ? _isolateClipboardEpoch : null;
+  }
+
+  void _setIsolateClipboardVisible(
+      IsolateSessionBinding binding, bool visible) {
+    if (!identical(_isolateBinding.value, binding)) return;
+    if (_isolateClipboardVisible != visible) {
+      _isolateClipboardVisible = visible;
+      invalidateIsolatedClipboardContext();
+    }
+  }
+
   /// Error message from connection failure, displayed as selectable text.
   final connectionError = ValueNotifier<String?>(null);
 
   var terminalTitle = '';
 
-  String? _workingDirectoryTitle;
+  final _cwdSession = ValueNotifier<ExecutionSession?>(null);
+  final _reportedWorkingDirectory = ValueNotifier<String?>(null);
+  final _cwdQueries = Map<ExecutionSession, Future<String?>>.identity();
+  int _cwdReportRevision = 0;
 
-  ExecutionSession? session;
+  ValueListenable<ExecutionSession?> get cwdSession => _cwdSession;
+  ValueListenable<String?> get reportedWorkingDirectory =>
+      _reportedWorkingDirectory;
+
+  /// Publishes the shell directory from OSC 7 or a successful session query.
+  void reportWorkingDirectory(String directory) {
+    _cwdReportRevision++;
+    _reportedWorkingDirectory.value = directory;
+    _updateTitle();
+  }
+
+  ExecutionSession? get session => _cwdSession.value;
+
+  set session(ExecutionSession? value) {
+    if (identical(session, value)) return;
+    _cwdReportRevision++;
+    _reportedWorkingDirectory.value = null;
+    _cwdSession.value = value;
+  }
 
   /// Whether closing this terminal would kill a running program.
   ///
@@ -98,17 +235,46 @@ class TerminalPlugin extends Plugin {
     return true;
   }
 
+  /// Directory the shell starts in, on hosts that support choosing one.
+  final String? startDirectory;
+
   /// The shell's current working directory as reported by the operating
   /// system, or null when the session cannot report it.
-  Future<String?> liveWorkingDirectory() async {
+  Future<String?> liveWorkingDirectory() {
     final activeSession = session;
-    if (activeSession is! WorkingDirectoryAware) return null;
+    if (activeSession is! WorkingDirectoryAware) {
+      return Future.value(_reportedWorkingDirectory.value);
+    }
+    final source = activeSession!;
+    final pending = _cwdQueries[source];
+    if (pending != null) return pending;
+    // A replacement may probe while one old SSH exec is settling. Repeated
+    // reconnects must not accumulate pending execs on the shared client.
+    if (_cwdQueries.length >= 2) {
+      return Future.value(_reportedWorkingDirectory.value);
+    }
+    final query = _queryDirectory(source, _cwdReportRevision);
+    _cwdQueries[source] = query;
+    return query;
+  }
+
+  Future<String?> _queryDirectory(
+    ExecutionSession source,
+    int reportRevision,
+  ) async {
     try {
-      final directory = await (activeSession as WorkingDirectoryAware)
-          .currentWorkingDirectory();
+      final directory = await Future<String?>.sync(
+        (source as WorkingDirectoryAware).currentWorkingDirectory,
+      );
+      if (!identical(source, session)) return null;
+      if (_cwdReportRevision != reportRevision) {
+        return _reportedWorkingDirectory.value;
+      }
       return directory == null || directory.isEmpty ? null : directory;
     } catch (_) {
       return null;
+    } finally {
+      _cwdQueries.remove(source);
     }
   }
 
@@ -116,14 +282,19 @@ class TerminalPlugin extends Plugin {
   int _sessionGeneration = 0;
 
   void _updateTitle() {
-    final nextTitle = (_workingDirectoryTitle ?? terminalTitle).trim();
+    final nextTitle = (_reportedWorkingDirectory.value ?? terminalTitle).trim();
     title.value = nextTitle.isEmpty ? 'Terminal' : nextTitle;
   }
 
   @override
   void didMounted() {
-    _workingDirectoryTitle = null;
+    _reportedWorkingDirectory.value = null;
     title.value = 'Connecting';
+
+    if (_useIsolatedTerminal) {
+      super.didMounted();
+      return;
+    }
 
     terminal.onTitleChange = (title) {
       terminalTitle = title;
@@ -131,11 +302,11 @@ class TerminalPlugin extends Plugin {
     };
 
     terminal.onPrivateOSC = (code, args) {
+      remoteClipboard.handleOSC(code, args);
       if (code == '7' && args.isNotEmpty) {
         final workingDirectory = _workingDirectoryFromFileUri(args.first);
         if (workingDirectory != null) {
-          _workingDirectoryTitle = workingDirectory;
-          _updateTitle();
+          reportWorkingDirectory(workingDirectory);
         }
       }
     };
@@ -157,18 +328,30 @@ class TerminalPlugin extends Plugin {
   void didConnected() async {
     final generation = ++_sessionGeneration;
     final connectedHost = host;
-    _workingDirectoryTitle = null;
+    _reportedWorkingDirectory.value = null;
     title.value = 'Terminal';
 
     try {
-      final initialWidth = terminal.viewWidth;
-      final initialHeight = terminal.viewHeight;
-      final openedSession = await connectedHost.shell(
-        width: initialWidth,
-        height: initialHeight,
-      );
+      final initialWidth = _useIsolatedTerminal ? 80 : terminal.viewWidth;
+      final initialHeight = _useIsolatedTerminal ? 24 : terminal.viewHeight;
+      final directory = startDirectory;
+      final openedSession =
+          directory != null && connectedHost is DirectoryShellHost
+              ? await (connectedHost as DirectoryShellHost).shellIn(
+                  directory,
+                  width: initialWidth,
+                  height: initialHeight,
+                )
+              : await connectedHost.shell(
+                  width: initialWidth,
+                  height: initialHeight,
+                );
       if (!mounted || !connected || generation != _sessionGeneration) {
         await openedSession.close();
+        return;
+      }
+      if (_useIsolatedTerminal) {
+        await _attachIsolateSession(openedSession, generation);
         return;
       }
       _attachSession(openedSession);
@@ -180,15 +363,113 @@ class TerminalPlugin extends Plugin {
       }
     } catch (e) {
       if (!mounted || generation != _sessionGeneration) return;
-      terminal.write('\r\n\x1b[31mError: Failed to start shell: $e\x1b[0m\r\n');
+      if (_useIsolatedTerminal) {
+        onConnectionError(e);
+      } else {
+        terminal
+            .write('\r\n\x1b[31mError: Failed to start shell: $e\x1b[0m\r\n');
+      }
+    }
+  }
+
+  Future<void> _attachIsolateSession(
+    ExecutionSession openedSession,
+    int generation,
+  ) async {
+    final hub = IsolateHub();
+    try {
+      await hub.start();
+      final worker = await TerminalIsolateSession.open(
+        hub,
+        'terminal',
+        scrollback: _scrollbackLines,
+        platform: _terminalTargetPlatform(),
+      );
+      if (!mounted || !connected || generation != _sessionGeneration) {
+        try {
+          await openedSession.close();
+        } finally {
+          await hub.stop();
+        }
+        return;
+      }
+      late final IsolateSessionBinding binding;
+      binding = IsolateSessionBinding(
+        worker,
+        openedSession,
+        transferFiles: fileAccess,
+        projectOnlyWhenVisible: true,
+        clipboardCapability: () => _isolateClipboardCapability(binding),
+        onClipboardWrite: (capability, text) {
+          remoteClipboard.writeValidated(
+            text,
+            stillEligible: () =>
+                _isolateClipboardCapability(binding) == capability,
+          );
+        },
+        onClosed: (error) {
+          if (!identical(_isolateBinding.value, binding)) return;
+          if (error != null) {
+            onConnectionError(error);
+            unawaited(_closeIsolateSession().catchError((Object _) {}));
+          } else if (mounted) {
+            manager.remove(this);
+          }
+        },
+      );
+      _isolateHub = hub;
+      _isolateClipboardVisible = false;
+      invalidateIsolatedClipboardContext();
+      remoteClipboard.startSession();
+      session = openedSession;
+      _isolateBinding.value = binding;
+      if (binding.zmodem case final transfer?) _observeZmodem(transfer);
+      binding.start();
+    } catch (_) {
+      if (identical(_isolateHub, hub)) {
+        await _closeIsolateSession().catchError((Object _) {});
+      } else {
+        try {
+          await openedSession.close();
+        } finally {
+          await hub.stop();
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _closeIsolateSession() async {
+    final binding = _isolateBinding.value;
+    final hub = _isolateHub;
+    _isolateClipboardVisible = false;
+    invalidateIsolatedClipboardContext();
+    remoteClipboard.endSession();
+    _isolateBinding.value = null;
+    _zmodem = null;
+    transferProgress.value = null;
+    final results = _zmodemResults;
+    _zmodemResults = null;
+    unawaited(results?.cancel());
+    _isolateHub = null;
+    session = null;
+    try {
+      await binding?.close();
+    } finally {
+      await hub?.stop();
     }
   }
 
   /// Runs [debugAttachSession]'s wiring for a freshly opened session.
   void _attachSession(ExecutionSession openedSession) {
+    remoteClipboard.endSession();
+    terminal.resetInput();
     session = openedSession;
+    remoteClipboard.startSession();
     final decoder = const Utf8Decoder(allowMalformed: true)
-        .startChunkedConversion(_TerminalTextSink(terminal.write));
+        .startChunkedConversion(_TerminalTextSink((text) {
+      if (identical(session, openedSession)) terminal.write(text);
+    }));
     final zmodem = ZmodemTransferController(
       onTerminalOutput: decoder.add,
       writeToSession: openedSession.write,
@@ -197,13 +478,7 @@ class TerminalPlugin extends Plugin {
           (defaultTargetPlatform != TargetPlatform.iOS &&
               defaultTargetPlatform != TargetPlatform.android),
     );
-    _zmodem = zmodem;
-    zmodem.progress.addListener(() {
-      if (identical(_zmodem, zmodem)) {
-        transferProgress.value = zmodem.progress.value;
-      }
-    });
-    _zmodemResults = zmodem.results.listen(_transferResults.add);
+    _observeZmodem(zmodem);
 
     late final StreamSubscription<Uint8List> subscription;
     subscription = openedSession.output.listen(
@@ -229,6 +504,7 @@ class TerminalPlugin extends Plugin {
 
     openedSession.exitCode.then((code) {
       if (!identical(session, openedSession)) return;
+      remoteClipboard.endSession();
       session = null;
       unawaited(_outputSubscription?.cancel());
       _outputSubscription = null;
@@ -248,6 +524,20 @@ class TerminalPlugin extends Plugin {
   void debugAttachSession(ExecutionSession openedSession) =>
       _attachSession(openedSession);
 
+  void _observeZmodem(ZmodemTransferController zmodem) {
+    _zmodem = zmodem;
+    zmodem.progress.addListener(() {
+      if (identical(_zmodem, zmodem)) {
+        transferProgress.value = zmodem.progress.value;
+      }
+    });
+    _zmodemResults = zmodem.results.listen((result) {
+      if (!_useIsolatedTerminal || identical(_zmodem, zmodem)) {
+        _transferResults.add(result);
+      }
+    });
+  }
+
   void _disposeZmodem() {
     final zmodem = _zmodem;
     final results = _zmodemResults;
@@ -259,8 +549,33 @@ class TerminalPlugin extends Plugin {
     unawaited(zmodem.dispose().whenComplete(() => results?.cancel()));
   }
 
+  @override
+  Future<void> closeForAppExit() async {
+    _sessionGeneration++;
+    if (_useIsolatedTerminal) {
+      await _closeIsolateSession();
+      return;
+    }
+    remoteClipboard.endSession();
+    final activeSession = session;
+    session = null;
+    await _outputSubscription?.cancel();
+    _outputSubscription = null;
+    final zmodem = _zmodem;
+    _zmodem = null;
+    await zmodem?.dispose();
+    await _zmodemResults?.cancel();
+    _zmodemResults = null;
+    await activeSession?.close();
+  }
+
   void _closeSession() {
     _sessionGeneration++;
+    if (_useIsolatedTerminal) {
+      unawaited(_closeIsolateSession().catchError((Object _) {}));
+      return;
+    }
+    remoteClipboard.endSession();
     final activeSession = session;
     session = null;
     unawaited(_outputSubscription?.cancel());
@@ -272,13 +587,13 @@ class TerminalPlugin extends Plugin {
   @override
   void didUnmounted() {
     _closeSession();
-    terminal.dispose();
+    if (!_useIsolatedTerminal) terminal.dispose();
   }
 
   @override
   void didDisconnected() {
     _closeSession();
-    _workingDirectoryTitle = null;
+    _reportedWorkingDirectory.value = null;
     title.value = 'Disconnected';
   }
 
@@ -286,15 +601,15 @@ class TerminalPlugin extends Plugin {
   void onConnectionStatus(HostConnectorStatus status) {
     switch (status) {
       case HostConnectorStatus.connecting:
-        _workingDirectoryTitle = null;
+        _reportedWorkingDirectory.value = null;
         title.value = 'Connecting';
         break;
       case HostConnectorStatus.connected:
-        _workingDirectoryTitle = null;
+        _reportedWorkingDirectory.value = null;
         title.value = 'Terminal';
         break;
       case HostConnectorStatus.disconnected:
-        _workingDirectoryTitle = null;
+        _reportedWorkingDirectory.value = null;
         title.value = 'Disconnected';
         break;
       default:
@@ -303,14 +618,57 @@ class TerminalPlugin extends Plugin {
 
   @override
   void onConnectionError(Object error) {
-    _workingDirectoryTitle = null;
+    _reportedWorkingDirectory.value = null;
     title.value = 'Connection Failed';
     connectionError.value = '$error';
   }
 
   @override
   Widget build(BuildContext context) {
-    return TerminalTabView(this);
+    if (!_useIsolatedTerminal) return TerminalTabView(this);
+    return ValueListenableBuilder(
+      valueListenable: _isolateBinding,
+      builder: (context, binding, _) {
+        if (binding == null) {
+          return ValueListenableBuilder(
+            valueListenable: connectionError,
+            builder: (context, error, _) => error == null
+                ? const SizedBox.expand()
+                : Center(child: Text(error)),
+          );
+        }
+        final shortcuts = TerminalShortcutHandler.of(context);
+        final view = TerminalIsolateView(
+          key: ObjectKey(binding),
+          snapshot: binding.snapshot,
+          onKey: binding.key,
+          onText: binding.text,
+          onResize: binding.resize,
+          onShortcut: shortcuts?.onKeyEvent,
+          focusRequests: shortcuts?.focusNotifier,
+          onPaste: binding.paste,
+          onScrollRows: binding.scrollRows,
+          onBeginSelection: binding.beginSelection,
+          onMouse: binding.mouse,
+          onProjectionVisibility: binding.setProjectionVisible,
+          onClipboardVisibility: (visible) =>
+              _setIsolateClipboardVisible(binding, visible),
+          onEndSelection: binding.endSelection,
+          onCopySelection: binding.copySelection,
+          textStyle: TerminalStyle(
+            fontSize: profileFontSize,
+            fontFamily: profileFontFamily,
+          ),
+          cursorType: profileCursorType,
+        );
+        return _IsolateTransferPresentation(
+          key: ObjectKey(binding),
+          plugin: this,
+          binding: binding,
+          child: view,
+        );
+      },
+    );
   }
 
   String? _workingDirectoryFromFileUri(String value) {
@@ -320,6 +678,112 @@ class TerminalPlugin extends Plugin {
     }
     return Uri.decodeComponent(uri.path);
   }
+}
+
+void _showTerminalTransferResult(
+    BuildContext context, TerminalPlugin plugin, ZmodemTransferResult result) {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  if (messenger == null) return;
+  final l10n = context.l10n;
+  final files = plugin.fileAccess;
+  final (String message, String? reveal) = switch (result) {
+    ZmodemDownloadCompleted(:final paths) when paths.length == 1 => (
+        l10n.zmodemSavedTo(paths.single),
+        paths.single,
+      ),
+    ZmodemDownloadCompleted(:final paths) => (
+        l10n.zmodemSavedFiles(paths.length, p.dirname(paths.first)),
+        p.dirname(paths.first),
+      ),
+    ZmodemUploadCompleted(:final count, :final skipped) => (
+        [
+          if (count > 0) l10n.zmodemUploaded(count),
+          if (skipped.isNotEmpty)
+            l10n.zmodemSkippedExisting(skipped.length, skipped.first),
+        ].join(' · '),
+        null,
+      ),
+    ZmodemTransferCancelled() => (l10n.zmodemCancelled, null),
+    ZmodemTransferFailed(:final reason) => (l10n.zmodemFailed(reason), null),
+  };
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(message),
+      action: reveal == null
+          ? null
+          : SnackBarAction(
+              label: l10n.zmodemShowInFinder,
+              onPressed: () => unawaited(files.reveal(reveal)),
+            ),
+    ),
+  );
+}
+
+class _IsolateTransferPresentation extends StatefulWidget {
+  const _IsolateTransferPresentation({
+    super.key,
+    required this.plugin,
+    required this.binding,
+    required this.child,
+  });
+
+  final TerminalPlugin plugin;
+  final IsolateSessionBinding binding;
+  final Widget child;
+
+  @override
+  State<_IsolateTransferPresentation> createState() =>
+      _IsolateTransferPresentationState();
+}
+
+class _IsolateTransferPresentationState
+    extends State<_IsolateTransferPresentation> {
+  StreamSubscription<ZmodemTransferResult>? _results;
+
+  @override
+  void initState() {
+    super.initState();
+    _results = widget.binding.zmodem?.results.listen((result) {
+      if (mounted &&
+          identical(widget.plugin._isolateBinding.value, widget.binding) &&
+          (ModalRoute.isCurrentOf(context) ?? true)) {
+        _showTerminalTransferResult(context, widget.plugin, result);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_results?.cancel());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        fit: StackFit.expand,
+        children: [
+          widget.child,
+          ValueListenableBuilder<ZmodemProgress?>(
+            valueListenable: widget.plugin.transferProgress,
+            builder: (context, progress, _) {
+              if (progress == null) return const SizedBox.shrink();
+              return Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: ZmodemProgressPanel(
+                      progress: progress,
+                      onCancel: widget.plugin.cancelTransfer,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      );
 }
 
 class TerminalTabView extends StatefulWidget {
@@ -356,42 +820,7 @@ class _TerminalTabViewState extends State<TerminalTabView>
   }
 
   void _showTransferResult(ZmodemTransferResult result) {
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    final l10n = context.l10n;
-    final files = widget.plugin.fileAccess;
-    final (String message, String? reveal) = switch (result) {
-      ZmodemDownloadCompleted(:final paths) when paths.length == 1 => (
-          l10n.zmodemSavedTo(paths.single),
-          paths.single,
-        ),
-      ZmodemDownloadCompleted(:final paths) => (
-          l10n.zmodemSavedFiles(paths.length, p.dirname(paths.first)),
-          p.dirname(paths.first),
-        ),
-      ZmodemUploadCompleted(:final count, :final skipped) => (
-          [
-            if (count > 0) l10n.zmodemUploaded(count),
-            if (skipped.isNotEmpty)
-              l10n.zmodemSkippedExisting(skipped.length, skipped.first),
-          ].join(' · '),
-          null,
-        ),
-      ZmodemTransferCancelled() => (l10n.zmodemCancelled, null),
-      ZmodemTransferFailed(:final reason) => (l10n.zmodemFailed(reason), null),
-    };
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        action: reveal == null
-            ? null
-            : SnackBarAction(
-                label: l10n.zmodemShowInFinder,
-                onPressed: () => unawaited(files.reveal(reveal)),
-              ),
-      ),
-    );
+    if (mounted) _showTerminalTransferResult(context, widget.plugin, result);
   }
 
   @override

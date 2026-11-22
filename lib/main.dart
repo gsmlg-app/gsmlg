@@ -9,11 +9,15 @@ import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:terminal_tab_bloc/terminal_tab_bloc.dart';
 
 import 'app.dart';
 import 'core/app_isolates.dart';
 import 'duo/secondary_app.dart';
+import 'screens/toolbox/terminal/services/session_controller.dart';
+import 'screens/toolbox/terminal/services/session_store.dart';
 
 @pragma('vm:entry-point')
 void secondaryDisplayMain() {
@@ -62,6 +66,18 @@ void main(List<String> args) async {
     final vault = SecureStorageVaultRepository(namespace: 'gsmlg');
     logger.i('Vault initialized');
 
+    SessionStore? sessionStore;
+    try {
+      sessionStore = await SessionStore.open(
+        Directory(
+          path.join(applicationSupportDirectory.path, 'terminal_sessions'),
+        ),
+        legacy: sharedPrefs.getString('terminal.open_tabs.v1'),
+      );
+    } catch (error) {
+      logger.e('Terminal session store failed to open: $error');
+    }
+
     runApp(
       MainProvider(
         sharedPrefs: sharedPrefs,
@@ -71,15 +87,26 @@ void main(List<String> args) async {
         logStore: isolates.logStore,
         logIngest: () => isolates.forwarder.ingestPort,
         logIngestChanges: isolates.forwarder.ingestPortChanges,
-        child: MaterialApp(
-          debugShowCheckedModeBanner: false,
-          localizationsDelegates: AppLocale.localizationsDelegates,
-          supportedLocales: AppLocale.supportedLocales,
-          home: CrashReportingWidget(
-            child: App(
-              arguments: args,
-              flushLogs: isolates.flush,
-              onExit: isolates.stop,
+        child: ChangeNotifierProvider<SessionController?>(
+          create: (context) => sessionStore == null
+              ? null
+              : SessionController(
+                  store: sessionStore,
+                  tabs: context.read<TerminalTabBloc>(),
+                ),
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: AppLocale.localizationsDelegates,
+            supportedLocales: AppLocale.supportedLocales,
+            home: CrashReportingWidget(
+              child: App(
+                arguments: args,
+                flushLogs: isolates.flush,
+                onExit: () async {
+                  await sessionStore?.close();
+                  await isolates.stop();
+                },
+              ),
             ),
           ),
         ),

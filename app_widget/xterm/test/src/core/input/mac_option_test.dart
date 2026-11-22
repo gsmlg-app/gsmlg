@@ -208,21 +208,27 @@ void main() {
     });
 
     for (final behavior in MacOptionKeyBehavior.values) {
-      testWidgets('${behavior.name}: Option word jumps and ESC DEL',
+      testWidgets('${behavior.name}: Option arrows and ESC DEL',
           (tester) async {
         final output = await pumpTerminal(tester, behavior: behavior);
         for (final option in <LogicalKeyboardKey>[
           LogicalKeyboardKey.altLeft,
           LogicalKeyboardKey.altRight,
         ]) {
+          await pressWithOption(tester, option, LogicalKeyboardKey.arrowUp);
+          await pressWithOption(tester, option, LogicalKeyboardKey.arrowDown);
           await pressWithOption(tester, option, LogicalKeyboardKey.arrowLeft);
           await pressWithOption(tester, option, LogicalKeyboardKey.arrowRight);
           await pressWithOption(tester, option, LogicalKeyboardKey.backspace);
         }
         expect(output, <String>[
+          '\x1b[1;3A',
+          '\x1b[1;3B',
           '\x1bb',
           '\x1bf',
           '\x1b\x7f',
+          '\x1b[1;3A',
+          '\x1b[1;3B',
           '\x1bb',
           '\x1bf',
           '\x1b\x7f',

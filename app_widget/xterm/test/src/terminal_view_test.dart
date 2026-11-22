@@ -550,6 +550,85 @@ void main() {
 
       expect(scrollable.position.pixels, lessThan(bottomOffset));
     });
+
+    testWidgets('mouse wheel in a mouse-tracking alt screen reports SGR wheel',
+        (tester) async {
+      final output = <String>[];
+      final terminal = Terminal(onOutput: output.add);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: 120,
+              child: TerminalView(
+                terminal,
+                textStyle: TerminalStyle(fontSize: 10),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      terminal.write('\x1b[?1049h\x1b[?1000h\x1b[?1002h\x1b[?1003h\x1b[?1006h');
+      terminal.flush();
+      await tester.pump();
+
+      final center = tester.getCenter(find.byType(TerminalView));
+      final pointer = TestPointer(1, PointerDeviceKind.mouse);
+
+      await tester.sendEventToBinding(pointer.hover(center));
+      await tester.sendEventToBinding(pointer.scroll(const Offset(0, -60)));
+      await tester.pump();
+      final up = output.join();
+      output.clear();
+
+      await tester.sendEventToBinding(pointer.scroll(const Offset(0, 60)));
+      await tester.pump();
+      final down = output.join();
+
+      expect(up, matches(RegExp(r'^(\x1b\[<64;\d+;\d+M)+$')));
+      expect(down, matches(RegExp(r'^(\x1b\[<65;\d+;\d+M)+$')));
+    });
+
+    testWidgets('trackpad scroll in a mouse-tracking alt screen reports wheel',
+        (tester) async {
+      final output = <String>[];
+      final terminal = Terminal(onOutput: output.add);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              height: 120,
+              child: TerminalView(
+                terminal,
+                textStyle: TerminalStyle(fontSize: 10),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      terminal.write('\x1b[?1049h\x1b[?1000h\x1b[?1006h');
+      terminal.flush();
+      await tester.pump();
+
+      final center = tester.getCenter(find.byType(TerminalView));
+      final trackpad = TestPointer(2, PointerDeviceKind.trackpad);
+
+      await tester.sendEventToBinding(trackpad.panZoomStart(center));
+      for (var i = 1; i <= 6; i++) {
+        await tester.sendEventToBinding(
+          trackpad.panZoomUpdate(center, pan: Offset(0, i * 10.0)),
+        );
+        await tester.pump();
+      }
+      await tester.sendEventToBinding(trackpad.panZoomEnd());
+      await tester.pumpAndSettle();
+
+      expect(output.join(), matches(RegExp(r'^(\x1b\[<6[45];\d+;\d+M)+$')));
+    });
   });
 
   group('TerminalView.autofocus', () {

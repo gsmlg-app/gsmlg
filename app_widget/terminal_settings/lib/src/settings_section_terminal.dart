@@ -16,12 +16,14 @@ class SettingsSectionTerminal extends AbstractSettingsSection {
 
   /// Callback when shell profiles tile is pressed (optional).
   final void Function(BuildContext context)? onShellProfilesPressed;
+  final void Function(BuildContext context)? onSessionSnapshotsPressed;
 
   const SettingsSectionTerminal({
     super.key,
     required this.envSettingsScreenName,
     required this.onEnvSettingsPressed,
     this.onShellProfilesPressed,
+    this.onSessionSnapshotsPressed,
   }) : super(tiles: const []);
 
   @override
@@ -31,13 +33,6 @@ class SettingsSectionTerminal extends AbstractSettingsSection {
         final envCount = state is TerminalSettingsLoaded
             ? state.environmentVariables.length
             : 0;
-
-        final maxShells = state is TerminalSettingsLoaded
-            ? state.maxOpenShells
-            : kTerminalDefaultMaxOpenShells;
-
-        final restoreTabs =
-            state is TerminalSettingsLoaded ? state.restoreTerminalTabs : false;
 
         final optionKeyBehavior = state is TerminalSettingsLoaded
             ? state.optionKeyBehavior
@@ -61,6 +56,17 @@ class SettingsSectionTerminal extends AbstractSettingsSection {
         return SettingsSection(
           title: const Text('Terminal'),
           tiles: <Widget>[
+            if (state is TerminalSettingsLoaded &&
+                state.preferenceError != null)
+              SettingsTile(
+                leading: const Icon(Icons.error_outline),
+                title: Text(context.l10n.sessionPreferenceError),
+                trailing: TextButton(
+                    onPressed: () => context
+                        .read<TerminalSettingsBloc>()
+                        .add(const TerminalSettingsLoad()),
+                    child: Text(context.l10n.retry)),
+              ),
             SettingsTile.navigation(
               leading: const Icon(Icons.settings_applications),
               title: const Text('Environment Variables'),
@@ -71,46 +77,32 @@ class SettingsSectionTerminal extends AbstractSettingsSection {
               ),
               onPressed: onEnvSettingsPressed,
             ),
+            if (onSessionSnapshotsPressed != null)
+              SettingsTile.navigation(
+                leading: const Icon(Icons.bookmarks_outlined),
+                title: Text(context.l10n.sessionSnapshots),
+                onPressed: onSessionSnapshotsPressed,
+              ),
             if (onShellProfilesPressed != null)
               _ShellProfilesTile(onPressed: onShellProfilesPressed!),
+            if (isMacOS) _optionKeyBehaviorTile(context, optionKeyBehavior),
             SettingsTile(
-              leading: const Icon(Icons.tab),
-              title: const Text('Max Open Sessions'),
-              description: Text(
-                  '$maxShells concurrent session${maxShells > 1 ? 's' : ''}'),
-              trailing: DropdownButton<int>(
-                value: maxShells,
-                underline: const SizedBox(),
-                items: [1, 3, 5, 10, 15, 20, 30, 50]
-                    .map((value) => DropdownMenuItem<int>(
-                          value: value,
-                          child: Text('$value'),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    context.read<TerminalSettingsBloc>().add(
-                          TerminalSettingsUpdateMaxOpenShells(
-                              maxOpenShells: value),
-                        );
-                  }
-                },
+              leading: const Icon(Icons.content_paste),
+              title: Text(context.l10n.remoteClipboardAllow),
+              description: Text(context.l10n.remoteClipboardDescription),
+              trailing: Switch(
+                key: const Key('remoteClipboardSwitch'),
+                value: state is TerminalSettingsLoaded &&
+                    state.allowRemoteClipboardWrites,
+                onChanged: state is TerminalSettingsLoaded
+                    ? (allowed) => context.read<TerminalSettingsBloc>().add(
+                          TerminalSettingsUpdateRemoteClipboard(
+                            allowed: allowed,
+                          ),
+                        )
+                    : null,
               ),
             ),
-            SettingsTile.switchTile(
-              leading: const Icon(Icons.restore_page),
-              title: const Text('Restore Open Tabs'),
-              description: const Text('Reopen terminal tabs after restart'),
-              initialValue: restoreTabs,
-              onToggle: (value) {
-                context.read<TerminalSettingsBloc>().add(
-                      TerminalSettingsUpdateRestoreTabs(
-                        restoreTerminalTabs: value,
-                      ),
-                    );
-              },
-            ),
-            if (isMacOS) _optionKeyBehaviorTile(context, optionKeyBehavior),
             if (isDesktop) _downloadModeTile(context, downloadMode),
             if (isDesktop) _downloadDirectoryTile(context, downloadDirectory),
           ],

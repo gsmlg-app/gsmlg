@@ -18,7 +18,7 @@ dependencies:
   code_text_field: ^1.1.0
   highlight: ^0.7.0
   context_menus: ^2.0.0+1
-  window_manager: ^0.5.2
+  window_manager: '>=0.6.0 <0.8.0'
   app_database: any
   app_secure_storage: any
   app_locale: any
@@ -29,6 +29,7 @@ dependencies:
   shell_profile_bloc: any
   ssh_host_bloc: any
   ssh_key_bloc: any
+  terminal_settings_bloc: any
   terminal_tab_bloc: any
 
 dev_dependencies:

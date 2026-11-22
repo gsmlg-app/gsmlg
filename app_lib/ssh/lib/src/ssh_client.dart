@@ -302,14 +302,18 @@ class SSHClient {
 
   /// Execute [command] on the remote side. Returns a [SSHChannel] that can be
   /// used to read and write to the remote side.
+  /// Set [manualReceiveWindowSize] only when the consumer returns stdout and
+  /// stderr bytes with [SSHSession.acknowledgeReceivedBytes] after use.
   Future<SSHSession> execute(
     String command, {
     SSHPtyConfig? pty,
     Map<String, String>? environment,
+    int? manualReceiveWindowSize,
   }) async {
     await _authenticated.future;
 
-    final channelController = await _openSessionChannel();
+    final channelController = await _openSessionChannel(
+        manualReceiveWindowSize: manualReceiveWindowSize);
 
     if (environment != null) {
       for (var pair in environment.entries) {
@@ -342,13 +346,17 @@ class SSHClient {
 
   /// Start a shell on the remote side. Returns a [SSHSession] that can be
   /// used to read, write and control the pty on the remote side.
+  /// Set [manualReceiveWindowSize] only when the consumer returns stdout and
+  /// stderr bytes with [SSHSession.acknowledgeReceivedBytes] after use.
   Future<SSHSession> shell({
     SSHPtyConfig? pty = const SSHPtyConfig(),
     Map<String, String>? environment,
+    int? manualReceiveWindowSize,
   }) async {
     await _authenticated.future;
 
-    final channelController = await _openSessionChannel();
+    final channelController = await _openSessionChannel(
+        manualReceiveWindowSize: manualReceiveWindowSize);
 
     if (environment != null) {
       for (var pair in environment.entries) {
@@ -923,17 +931,29 @@ class SSHClient {
     );
   }
 
-  Future<SSHChannelController> _openSessionChannel() async {
+  Future<SSHChannelController> _openSessionChannel({
+    int? manualReceiveWindowSize,
+  }) async {
+    final receiveWindow = manualReceiveWindowSize ?? _initialWindowSize;
+    RangeError.checkValueInInterval(
+      receiveWindow,
+      _maximumPacketSize,
+      _initialWindowSize,
+      'manualReceiveWindowSize',
+    );
     final localChannelId = _channelIdAllocator.allocate();
 
     final request = SSH_Message_Channel_Open.session(
       senderChannel: localChannelId,
-      initialWindowSize: _initialWindowSize,
+      initialWindowSize: receiveWindow,
       maximumPacketSize: _maximumPacketSize,
     );
     _sendMessage(request);
 
-    return await _waitChannelOpen(localChannelId);
+    return await _waitChannelOpen(
+      localChannelId,
+      manualReceiveWindowSize: manualReceiveWindowSize,
+    );
   }
 
   Future<SSHChannelController> _openForwardLocalChannel(
@@ -959,8 +979,9 @@ class SSHClient {
   }
 
   Future<SSHChannelController> _waitChannelOpen(
-    SSHChannelId localChannelId,
-  ) async {
+    SSHChannelId localChannelId, {
+    int? manualReceiveWindowSize,
+  }) async {
     final message = await _waitChannelOpenReply(localChannelId);
     if (message is SSH_Message_Channel_Open_Failure) {
       throw SSHChannelOpenError(message.reasonCode, message.description);
@@ -976,6 +997,7 @@ class SSHClient {
       remoteChannelId: reply.senderChannel,
       remoteInitialWindowSize: reply.initialWindowSize,
       remoteMaximumPacketSize: reply.maximumPacketSize,
+      manualReceiveWindowSize: manualReceiveWindowSize,
     );
   }
 
@@ -984,10 +1006,12 @@ class SSHClient {
     required SSHChannelId remoteChannelId,
     required int remoteInitialWindowSize,
     required int remoteMaximumPacketSize,
+    int? manualReceiveWindowSize,
   }) {
     final channelController = SSHChannelController(
       localId: localChannelId,
-      localInitialWindowSize: _initialWindowSize,
+      localInitialWindowSize: manualReceiveWindowSize ?? _initialWindowSize,
+      manualReceiveCredit: manualReceiveWindowSize != null,
       localMaximumPacketSize: _maximumPacketSize,
       remoteId: remoteChannelId,
       remoteInitialWindowSize: remoteInitialWindowSize,

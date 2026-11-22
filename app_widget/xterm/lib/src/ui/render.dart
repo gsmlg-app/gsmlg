@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:xterm/session_isolate_probes.dart';
 import 'package:xterm/src/core/buffer/cell_offset.dart';
 import 'package:xterm/src/core/buffer/range.dart';
 import 'package:xterm/src/core/buffer/segment.dart';
@@ -454,6 +455,15 @@ class RenderTerminal extends RenderBox with RelayoutWhenSystemFontsChangeMixin {
 
   @override
   void paint(PaintingContext context, Offset offset) {
+    final start = TerminalIsolateProbes.start();
+    try {
+      _paintTerminal(context, offset);
+    } finally {
+      TerminalIsolateProbes.finish('legacy.viewport_paint_recording', start);
+    }
+  }
+
+  void _paintTerminal(PaintingContext context, Offset offset) {
     _paint(context, offset);
     context.setWillChangeHint();
   }

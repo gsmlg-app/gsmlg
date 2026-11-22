@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:app_locale/app_locale.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
 
@@ -12,6 +13,18 @@ class EnvSettingsList extends StatelessWidget {
       builder: (context, state) {
         if (state is! TerminalSettingsLoaded) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state.secureStorageError != null) {
+          return Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(context.l10n.sessionSecureStorageUnavailable),
+            TextButton(
+                onPressed: () => context
+                    .read<TerminalSettingsBloc>()
+                    .add(const TerminalSettingsLoad()),
+                child: Text(context.l10n.retry)),
+          ]));
         }
 
         final envVars = state.environmentVariables;

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:app_database/app_database.dart';
@@ -19,8 +18,6 @@ import 'package:terminal_tab_bloc/terminal_tab_bloc.dart';
 import 'package:terminal_tabs/terminal_tabs.dart';
 import 'package:gsmlg/screens/toolbox/terminal/terminal_screen.dart';
 
-const _tabsKey = 'terminal.open_tabs.v1';
-
 class _UnusedVault extends Fake implements VaultRepository {}
 
 class _Profiles extends ShellProfileBloc {
@@ -31,7 +28,7 @@ class _Profiles extends ShellProfileBloc {
 
 class _Settings extends TerminalSettingsBloc {
   _Settings() : super(vault: _UnusedVault()) {
-    emit(const TerminalSettingsLoaded(restoreTerminalTabs: true));
+    emit(const TerminalSettingsLoaded());
   }
 }
 
@@ -54,11 +51,13 @@ class _ShellSession implements ExecutionSession, WorkingDirectoryAware {
   _ShellSession(this.directory);
 
   String directory;
+  Completer<String?>? cwdResult;
 
   final _exitCode = Completer<int>();
 
   @override
-  Future<String?> currentWorkingDirectory() async => directory;
+  Future<String?> currentWorkingDirectory() async =>
+      cwdResult == null ? directory : await cwdResult!.future;
 
   @override
   Stream<Uint8List> get output => const Stream<Uint8List>.empty();
@@ -109,7 +108,11 @@ void main() {
   late PluginTab firstTab;
   late _ShellSession shell;
 
-  Future<void> pumpScreen(WidgetTester tester, {required bool inherit}) async {
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    required bool inherit,
+    bool ssh = false,
+  }) async {
     SharedPreferences.setMockInitialValues({});
     preferences = await SharedPreferences.getInstance();
     database = AppDatabase.forTesting();
@@ -124,7 +127,13 @@ void main() {
     plugin.session = shell;
     firstTab = PluginTab(
       plugin,
-      PluginManager(LocalHostSpec(workingDirectory: '/Users/me')),
+      PluginManager(
+        ssh
+            ? SSHHostSpec(
+                SshHost(id: 3, hostname: 'example.invalid', username: 'me'),
+              )
+            : LocalHostSpec(workingDirectory: '/Users/me'),
+      ),
       shellProfileId: 1,
     );
     tabs.add(TerminalTabOpenTab(firstTab));
@@ -211,56 +220,123 @@ void main() {
   );
 
   testWidgets(
-    'saved tabs record the shell directory',
+    'Cmd+T on an SSH tab opens the same host in the remote directory',
     variant: TargetPlatformVariant.only(TargetPlatform.macOS),
     (tester) async {
-      await pumpScreen(tester, inherit: true);
-      shell.directory = '/Users/me/other';
+      await pumpScreen(tester, inherit: false, ssh: true);
+      shell.directory = '/srv/app/releases';
 
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await tester.pump();
+      await pressCmdT(tester);
       await tester.pump();
 
-      final saved =
-          jsonDecode(preferences.getString(_tabsKey)!) as Map<String, dynamic>;
-      final savedTabs = saved['tabs'] as List;
-      expect((savedTabs.single as Map)['workingDirectory'], '/Users/me/other');
+      final state = tabs.state as TerminalTabLoaded;
+      expect(state.tabCount, 2);
+      final newTab = state.activeTab as PluginTab;
+      expect(newTab, isNot(same(firstTab)));
+      expect(identical(newTab.manager, firstTab.manager), isTrue);
+      expect(
+        (newTab.plugin as TerminalPlugin).startDirectory,
+        '/srv/app/releases',
+      );
     },
-    skip: !Platform.isMacOS && !Platform.isLinux,
   );
 
   testWidgets(
-    'quitting saves the directory the shell moved to',
+    'Cmd+T on a grouped local tab opens the new tab in that group',
     variant: TargetPlatformVariant.only(TargetPlatform.macOS),
     (tester) async {
-      await pumpScreen(tester, inherit: true);
-      await preferences.remove(_tabsKey);
-      shell.directory = '/Users/me/after-cd';
-
-      final response = Completer<Map<String, Object?>>();
-      const codec = JSONMethodCodec();
-      unawaited(
-        tester.binding.defaultBinaryMessenger.handlePlatformMessage(
-          SystemChannels.platform.name,
-          codec.encodeMethodCall(const MethodCall('System.requestAppExit')),
-          (ByteData? reply) => response.complete(
-            codec.decodeEnvelope(reply!) as Map<String, Object?>,
-          ),
-        ),
-      );
+      await pumpScreen(tester, inherit: true, ssh: false);
+      tabs.add(TerminalTabCreateGroup(firstTab.hashCode.toString(), 'proj'));
       await tester.pump();
+      final groupId = (tabs.state as TerminalTabLoaded).grouping.groupIdOf(
+        firstTab,
+      );
+      expect(groupId, isNotNull);
+
+      await pressCmdT(tester);
       await tester.pump();
 
-      expect((await response.future)['response'], 'exit');
-      final saved =
-          jsonDecode(preferences.getString(_tabsKey)!) as Map<String, dynamic>;
-      final savedTabs = saved['tabs'] as List;
-      expect(
-        (savedTabs.single as Map)['workingDirectory'],
-        '/Users/me/after-cd',
-      );
+      final state = tabs.state as TerminalTabLoaded;
+      expect(state.tabCount, 2);
+      final newTab = state.activeTab!;
+      expect(newTab, isNot(same(firstTab)));
+      expect(state.grouping.groupIdOf(newTab), groupId);
     },
-    skip: !Platform.isMacOS && !Platform.isLinux,
+  );
+
+  testWidgets(
+    'Cmd+T on a grouped SSH tab opens the new tab in that group',
+    variant: TargetPlatformVariant.only(TargetPlatform.macOS),
+    (tester) async {
+      await pumpScreen(tester, inherit: true, ssh: true);
+      tabs.add(TerminalTabCreateGroup(firstTab.hashCode.toString(), 'proj'));
+      await tester.pump();
+      final groupId = (tabs.state as TerminalTabLoaded).grouping.groupIdOf(
+        firstTab,
+      );
+      expect(groupId, isNotNull);
+
+      await pressCmdT(tester);
+      await tester.pump();
+
+      final state = tabs.state as TerminalTabLoaded;
+      expect(state.tabCount, 2);
+      final newTab = state.activeTab!;
+      expect(newTab, isNot(same(firstTab)));
+      expect(state.grouping.groupIdOf(newTab), groupId);
+    },
+  );
+
+  testWidgets(
+    'Cmd+T on an ungrouped tab keeps the new tab ungrouped',
+    variant: TargetPlatformVariant.only(TargetPlatform.macOS),
+    (tester) async {
+      await pumpScreen(tester, inherit: true, ssh: true);
+
+      await pressCmdT(tester);
+      await tester.pump();
+
+      final state = tabs.state as TerminalTabLoaded;
+      expect(state.tabCount, 2);
+      expect(state.grouping.groupIdOf(state.activeTab!), isNull);
+    },
+  );
+  testWidgets(
+    'delayed open-beside retains the original SSH connection and group',
+    variant: TargetPlatformVariant.only(TargetPlatform.macOS),
+    (tester) async {
+      await pumpScreen(tester, inherit: false, ssh: true);
+      final sourceId = firstTab.hashCode.toString();
+      tabs.add(TerminalTabCreateGroup(sourceId, 'source'));
+      await tester.pump();
+      final sourceGroup = (tabs.state as TerminalTabLoaded).grouping.groupIdOf(
+        firstTab,
+      );
+
+      final other = PluginTab(
+        TerminalPlugin(),
+        PluginManager(LocalHostSpec(workingDirectory: '/different')),
+      );
+      tabs.add(TerminalTabOpenTab(other, activate: false));
+      await tester.pump();
+
+      final cwd = Completer<String?>();
+      shell.cwdResult = cwd;
+      await pressCmdT(tester);
+      expect((tabs.state as TerminalTabLoaded).tabCount, 2);
+      tabs.add(TerminalTabSelectSession(other.hashCode.toString()));
+      await tester.pump();
+      expect((tabs.state as TerminalTabLoaded).activeTab, same(other));
+
+      cwd.complete('/srv/original');
+      await tester.pump();
+      await tester.pump();
+      final state = tabs.state as TerminalTabLoaded;
+      expect(state.tabCount, 3);
+      final opened = state.activeTab as PluginTab;
+      expect(opened.manager, same(firstTab.manager));
+      expect(state.grouping.groupIdOf(opened), sourceGroup);
+      expect((opened.plugin as TerminalPlugin).startDirectory, '/srv/original');
+    },
   );
 }

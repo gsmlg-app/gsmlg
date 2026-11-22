@@ -38,6 +38,7 @@ class SSHSession {
     _channelDataSubscription = _channel.stream.listen(
       _handleChannelData,
       onDone: _handleChannelDataDone,
+      onError: _stdoutController.addError,
     );
 
     _stdinController.stream
@@ -70,6 +71,11 @@ class SSHSession {
   void write(Uint8List data) {
     stdin.add(data);
   }
+
+  /// Return receive credit after consuming stdout or stderr. No-op unless
+  /// the shell or execute call requested a manual window.
+  void acknowledgeReceivedBytes(int bytes) =>
+      _channel.acknowledgeReceivedBytes(bytes);
 
   /// Inform remote process of the current window size.
   void resizeTerminal(
@@ -140,6 +146,8 @@ class SSHSession {
         return _stdoutController.add(data.bytes);
       case SSHChannelExtendedDataType.stderr:
         return _stderrController.add(data.bytes);
+      default:
+        acknowledgeReceivedBytes(data.bytes.length);
     }
   }
 

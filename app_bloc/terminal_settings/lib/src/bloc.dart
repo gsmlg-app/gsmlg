@@ -1,27 +1,23 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:meta/meta.dart';
+import 'package:hive_ce/hive_ce.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 
 part 'event.dart';
 part 'state.dart';
 
 /// BLoC for managing terminal settings including environment variables,
-/// font settings, and session limits.
+/// ordinary terminal preferences.
 ///
 /// Environment variables are stored securely using [VaultRepository] as they
 /// may contain sensitive information like API keys and tokens.
-/// Other settings are also stored in the vault for consistency.
+/// Ordinary preferences are stored independently of credentials.
 class TerminalSettingsBloc
     extends Bloc<TerminalSettingsEvent, TerminalSettingsState> {
   /// Prefix for environment variable keys in secure storage.
   static const _envKeyPrefix = 'terminal_env_';
-
-  /// Key for max open shells setting.
-  static const _maxOpenShellsKey = 'terminal_max_open_shells';
-
-  /// Key for restoring open terminal tabs after app restart.
-  static const _restoreTabsKey = 'terminal_restore_tabs';
 
   /// Key for the macOS Option key behavior.
   static const _optionKeyBehaviorKey = 'terminal_option_key_behavior';
@@ -29,21 +25,79 @@ class TerminalSettingsBloc
   /// Keys for where `sz` downloads are saved.
   static const _downloadModeKey = 'terminal_download_mode';
   static const _downloadDirectoryKey = 'terminal_download_directory';
+  static const _remoteClipboardKey = 'terminal_allow_remote_clipboard_writes';
 
   final VaultRepository _vault;
+  final SharedPreferences? _preferences;
+  final Box<dynamic>? _configuration;
 
-  TerminalSettingsBloc({required VaultRepository vault})
-    : _vault = vault,
-      super(const TerminalSettingsInitial()) {
-    on<TerminalSettingsLoad>(_onLoad);
-    on<TerminalSettingsUpdateEnvVar>(_onUpdateEnvVar);
-    on<TerminalSettingsRemoveEnvVar>(_onRemoveEnvVar);
-    on<TerminalSettingsClearEnvVars>(_onClearEnvVars);
-    on<TerminalSettingsUpdateMaxOpenShells>(_onUpdateMaxOpenShells);
-    on<TerminalSettingsUpdateRestoreTabs>(_onUpdateRestoreTabs);
-    on<TerminalSettingsUpdateOptionKeyBehavior>(_onUpdateOptionKeyBehavior);
-    on<TerminalSettingsUpdateDownloadMode>(_onUpdateDownloadMode);
-    on<TerminalSettingsUpdateDownloadDirectory>(_onUpdateDownloadDirectory);
+  Future<SharedPreferences> get _prefs async =>
+      _preferences ?? await SharedPreferences.getInstance();
+
+  TerminalSettingsBloc({
+    required VaultRepository vault,
+    SharedPreferences? preferences,
+    Box<dynamic>? configuration,
+  }) : _configuration = configuration,
+       _preferences = preferences,
+       _vault = vault,
+       super(const TerminalSettingsInitial()) {
+    on<TerminalSettingsEvent>((event, emit) async {
+      try {
+        switch (event) {
+          case TerminalSettingsLoad():
+            await _onLoad(event, emit);
+          case TerminalSettingsUpdateEnvVar():
+            await _onUpdateEnvVar(event, emit);
+          case TerminalSettingsRemoveEnvVar():
+            await _onRemoveEnvVar(event, emit);
+          case TerminalSettingsClearEnvVars():
+            await _onClearEnvVars(event, emit);
+          case TerminalSettingsUpdateOptionKeyBehavior():
+            await _onUpdateOptionKeyBehavior(event, emit);
+          case TerminalSettingsUpdateDownloadMode():
+            await _onUpdateDownloadMode(event, emit);
+          case TerminalSettingsUpdateDownloadDirectory():
+            await _onUpdateDownloadDirectory(event, emit);
+          case TerminalSettingsUpdateRemoteClipboard():
+            final current = state;
+            if (current is TerminalSettingsLoaded) {
+              await _writePreference(_remoteClipboardKey, '${event.allowed}');
+              emit(
+                current.copyWith(
+                  allowRemoteClipboardWrites: event.allowed,
+                  clearPreferenceError: true,
+                ),
+              );
+            }
+        }
+      } catch (error) {
+        final current = state;
+        if (current is TerminalSettingsLoaded) {
+          final secret =
+              event is TerminalSettingsUpdateEnvVar ||
+              event is TerminalSettingsRemoveEnvVar ||
+              event is TerminalSettingsClearEnvVars;
+          emit(
+            secret
+                ? current.copyWith(secureStorageError: error)
+                : current.copyWith(preferenceError: error),
+          );
+        }
+      }
+    }, transformer: (events, mapper) => events.asyncExpand(mapper));
+  }
+
+  Future<void> _writePreference(String key, String value) async {
+    final configuration = _configuration;
+    if (configuration == null) {
+      if (!await (await _prefs).setString(key, value)) {
+        throw StateError('Could not save terminal preference');
+      }
+    } else {
+      await configuration.put(key, value);
+      await configuration.flush();
+    }
   }
 
   Future<void> _onLoad(
@@ -53,7 +107,32 @@ class TerminalSettingsBloc
     emit(const TerminalSettingsLoading());
 
     try {
-      final allSecrets = await _vault.readAll();
+      final prefs = await _prefs;
+      var allSecrets = <String, String>{};
+      Object? secureStorageError;
+      try {
+        allSecrets = await _vault.readAll();
+      } catch (error) {
+        secureStorageError = error;
+      }
+      final options = <String, String?>{};
+      for (final key in [
+        _optionKeyBehaviorKey,
+        _downloadModeKey,
+        _downloadDirectoryKey,
+        _remoteClipboardKey,
+      ]) {
+        final configuration = _configuration;
+        if (configuration != null && configuration.containsKey(key)) {
+          options[key] = configuration.get(key) as String?;
+        } else {
+          final value = prefs.containsKey(key)
+              ? prefs.getString(key)
+              : allSecrets[key];
+          options[key] = value;
+          if (value != null) await _writePreference(key, value);
+        }
+      }
       final envVars = <String, String>{};
 
       // Filter for environment variable keys
@@ -65,29 +144,26 @@ class TerminalSettingsBloc
       }
 
       // Load other settings with defaults
-      final maxOpenShells =
-          int.tryParse(allSecrets[_maxOpenShellsKey] ?? '') ??
-          kTerminalDefaultMaxOpenShells;
-      final restoreTerminalTabs = allSecrets[_restoreTabsKey] == 'true';
       final optionKeyBehavior = TerminalOptionKeyBehavior.values.firstWhere(
         (TerminalOptionKeyBehavior value) =>
-            value.name == allSecrets[_optionKeyBehaviorKey],
+            value.name == options[_optionKeyBehaviorKey],
         orElse: () => kTerminalDefaultOptionKeyBehavior,
       );
       final downloadMode = TerminalDownloadMode.values.firstWhere(
-        (TerminalDownloadMode value) =>
-            value.name == allSecrets[_downloadModeKey],
+        (TerminalDownloadMode value) => value.name == options[_downloadModeKey],
         orElse: () => TerminalDownloadMode.saveToFolder,
       );
-      final downloadDirectory = allSecrets[_downloadDirectoryKey];
+      final downloadDirectory = options[_downloadDirectoryKey];
 
       emit(
         TerminalSettingsLoaded(
           environmentVariables: envVars,
-          maxOpenShells: maxOpenShells,
-          restoreTerminalTabs: restoreTerminalTabs,
+          secureStorageError: secureStorageError,
           optionKeyBehavior: optionKeyBehavior,
           downloadMode: downloadMode,
+          allowRemoteClipboardWrites: options[_remoteClipboardKey] == null
+              ? kTerminalDefaultAllowRemoteClipboardWrites
+              : options[_remoteClipboardKey] == 'true',
           downloadDirectory:
               downloadDirectory == null || downloadDirectory.isEmpty
               ? null
@@ -153,101 +229,51 @@ class TerminalSettingsBloc
     emit(currentState.copyWith(environmentVariables: const {}));
   }
 
-  Future<void> _onUpdateMaxOpenShells(
-    TerminalSettingsUpdateMaxOpenShells event,
-    Emitter<TerminalSettingsState> emit,
-  ) async {
-    if (state is! TerminalSettingsLoaded) return;
-
-    final currentState = state as TerminalSettingsLoaded;
-    final value = event.maxOpenShells.clamp(1, 50); // Reasonable limits
-
-    emit(currentState.copyWith(maxOpenShells: value));
-    try {
-      await _vault.write(key: _maxOpenShellsKey, value: value.toString());
-    } catch (_) {
-      // Persistence failure; setting still applies for current session.
-    }
-  }
-
-  Future<void> _onUpdateRestoreTabs(
-    TerminalSettingsUpdateRestoreTabs event,
-    Emitter<TerminalSettingsState> emit,
-  ) async {
-    if (state is! TerminalSettingsLoaded) return;
-
-    final currentState = state as TerminalSettingsLoaded;
-
-    emit(currentState.copyWith(restoreTerminalTabs: event.restoreTerminalTabs));
-    try {
-      await _vault.write(
-        key: _restoreTabsKey,
-        value: event.restoreTerminalTabs.toString(),
-      );
-    } catch (_) {
-      // Persistence failure; setting still applies for current session.
-    }
-  }
-
   Future<void> _onUpdateOptionKeyBehavior(
     TerminalSettingsUpdateOptionKeyBehavior event,
     Emitter<TerminalSettingsState> emit,
   ) async {
-    if (state is! TerminalSettingsLoaded) return;
-
-    final currentState = state as TerminalSettingsLoaded;
-
-    emit(currentState.copyWith(optionKeyBehavior: event.optionKeyBehavior));
-    try {
-      await _vault.write(
-        key: _optionKeyBehaviorKey,
-        value: event.optionKeyBehavior.name,
-      );
-    } catch (_) {
-      // Persistence failure; setting still applies for current session.
-    }
+    final current = state;
+    if (current is! TerminalSettingsLoaded) return;
+    await _writePreference(_optionKeyBehaviorKey, event.optionKeyBehavior.name);
+    emit(
+      current.copyWith(
+        optionKeyBehavior: event.optionKeyBehavior,
+        clearPreferenceError: true,
+      ),
+    );
   }
 
   Future<void> _onUpdateDownloadMode(
     TerminalSettingsUpdateDownloadMode event,
     Emitter<TerminalSettingsState> emit,
   ) async {
-    if (state is! TerminalSettingsLoaded) return;
-
-    final currentState = state as TerminalSettingsLoaded;
-
-    emit(currentState.copyWith(downloadMode: event.downloadMode));
-    try {
-      await _vault.write(key: _downloadModeKey, value: event.downloadMode.name);
-    } catch (_) {
-      // Persistence failure; setting still applies for current session.
-    }
+    final current = state;
+    if (current is! TerminalSettingsLoaded) return;
+    await _writePreference(_downloadModeKey, event.downloadMode.name);
+    emit(
+      current.copyWith(
+        downloadMode: event.downloadMode,
+        clearPreferenceError: true,
+      ),
+    );
   }
 
   Future<void> _onUpdateDownloadDirectory(
     TerminalSettingsUpdateDownloadDirectory event,
     Emitter<TerminalSettingsState> emit,
   ) async {
-    if (state is! TerminalSettingsLoaded) return;
-
-    final currentState = state as TerminalSettingsLoaded;
+    final current = state;
+    if (current is! TerminalSettingsLoaded) return;
     final directory = event.downloadDirectory?.trim();
     final cleared = directory == null || directory.isEmpty;
-
+    await _writePreference(_downloadDirectoryKey, cleared ? '' : directory);
     emit(
-      currentState.copyWith(
+      current.copyWith(
         downloadDirectory: cleared ? null : directory,
         clearDownloadDirectory: cleared,
+        clearPreferenceError: true,
       ),
     );
-    try {
-      if (cleared) {
-        await _vault.delete(key: _downloadDirectoryKey);
-      } else {
-        await _vault.write(key: _downloadDirectoryKey, value: directory);
-      }
-    } catch (_) {
-      // Persistence failure; setting still applies for current session.
-    }
   }
 }

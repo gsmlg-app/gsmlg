@@ -9,6 +9,7 @@ import 'package:ssh_host_bloc/ssh_host_bloc.dart';
 import 'package:terminal_core/terminal_core.dart';
 import 'package:terminal_hosts/terminal_hosts.dart';
 import 'package:terminal_plugin/terminal_plugin.dart';
+import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
 import 'package:terminal_tab_bloc/terminal_tab_bloc.dart';
 import 'package:terminal_tabs/src/plugin_tab.dart';
 import 'package:terminal_tabs/src/ssh_host_key_dialog.dart';
@@ -40,7 +41,11 @@ class DropdownContextMenuState extends State<DropdownContextMenu>
     });
   }
 
-  TerminalPlugin _createTerminalPlugin(ShellProfile? profile) {
+  TerminalPlugin _createTerminalPlugin(
+    BuildContext context,
+    ShellProfile? profile,
+  ) {
+    final settingsBloc = context.read<TerminalSettingsBloc?>();
     return TerminalPlugin(
       profileFontSize: profile?.fontSize ?? 14.0,
       profileFontFamily: profile?.fontFamily ?? 'Source Code Pro',
@@ -50,6 +55,13 @@ class DropdownContextMenuState extends State<DropdownContextMenu>
             TerminalCursorType.values.length - 1,
           )],
       scrollbackLines: profile?.scrollbackLines ?? 10000,
+      remoteClipboardWritesAllowed: settingsBloc == null
+          ? null
+          : () {
+              final state = settingsBloc.state;
+              return state is TerminalSettingsLoaded &&
+                  state.allowRemoteClipboardWrites;
+            },
     );
   }
 
@@ -62,7 +74,7 @@ class DropdownContextMenuState extends State<DropdownContextMenu>
         profile = profileState.defaultProfile;
       }
 
-      final plugin = _createTerminalPlugin(profile);
+      final plugin = _createTerminalPlugin(context, profile);
       String? inheritedWorkingDirectory;
       final tabState = context.read<TerminalTabBloc>().state;
       if (profile?.inheritCurrentState == true &&
@@ -132,7 +144,7 @@ class DropdownContextMenuState extends State<DropdownContextMenu>
     if (!context.mounted) return;
 
     handlePressed(context, () {
-      final plugin = _createTerminalPlugin(defaultProfile);
+      final plugin = _createTerminalPlugin(context, defaultProfile);
       final manager = PluginManager(
         SSHHostSpec(
           host,

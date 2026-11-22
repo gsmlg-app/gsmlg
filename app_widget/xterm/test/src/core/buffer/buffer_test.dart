@@ -109,6 +109,26 @@ void main() {
     });
   });
 
+  test('width resize preserves row order and anchors after ring rotation', () {
+    final terminal = Terminal(maxLines: 24, batchWrites: false);
+    addTearDown(terminal.dispose);
+    terminal.resize(5, 3);
+    terminal.write(List.generate(25, (i) => 'R$i').join('\r\n'));
+    final expected = List.generate(24, (i) => 'R${i + 1}');
+    final anchor = terminal.buffer.createAnchor(1, 0);
+    addTearDown(anchor.dispose);
+
+    terminal.resize(4, 3);
+
+    expect(terminal.buffer.lines.toList().map((line) => line.getText()),
+        orderedEquals(expected));
+    expect(terminal.buffer.lines.toList().map((line) => line.index),
+        orderedEquals(List.generate(24, (i) => i)));
+    expect(anchor.attached, isTrue);
+    expect(anchor.y, 0);
+    expect(anchor.line, same(terminal.buffer.lines[0]));
+  });
+
   group('Buffer.deleteLines()', () {
     test('works', () {
       final terminal = Terminal();
@@ -136,6 +156,30 @@ void main() {
       expect(terminal.buffer.lines[8].toString(), 'line9');
       expect(terminal.buffer.lines[9].toString(), 'line10');
     });
+  });
+
+  group('scroll region line ownership', () {
+    for (final operation in ['\x1b[1S', '\x1b[1T', '\x1b[1M']) {
+      test('retains attached lines after ${operation.substring(2)}', () {
+        final terminal = Terminal();
+        addTearDown(terminal.dispose);
+        terminal.resize(10, 6);
+        terminal.write('one\r\ntwo\r\nthree\r\nfour\r\nfive\r\nsix');
+
+        terminal.write('\x1b[2;5r\x1b[2;1H$operation');
+
+        final expected = switch (operation) {
+          '\x1b[1T' => ['one', '', 'two', 'three', 'four', 'six'],
+          _ => ['one', 'three', 'four', 'five', '', 'six'],
+        };
+        for (var row = 0; row < terminal.buffer.lines.length; row++) {
+          final line = terminal.buffer.lines[row];
+          expect(line.getText(), expected[row]);
+          expect(line.attached, isTrue, reason: 'row $row');
+          expect(line.index, row);
+        }
+      });
+    }
   });
 
   group('Buffer.insertLines()', () {

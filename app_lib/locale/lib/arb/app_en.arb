@@ -847,5 +847,55 @@
   "tabGroupSelected": "Group selected tabs",
   "@tabGroupSelected": {
     "description": "Tab switcher select-mode button that groups the selected tabs."
-  }
+  },
+  "sessionSnapshots": "Saved Tabs and History",
+  "sessionSaveWorkspace": "Save Workspace",
+  "sessionSaveGroup": "Save Group",
+  "sessionRestore": "Restore",
+  "sessionReplace": "Replace",
+  "sessionAppend": "Append",
+  "sessionRestorePrompt": "Restore tabs from your last session?",
+  "sessionLater": "Later",
+  "sessionExitHistory": "Recent Exits",
+  "sessionRecovery": "Crash Recovery",
+  "sessionManualSaved": "Manually Saved",
+  "sessionNoSnapshots": "No saved sessions yet.",
+  "sessionSnapshotName": "Name",
+  "sessionTargetGroup": "Target group",
+  "sessionNewGroup": "New group",
+  "sessionRestoreDescription": "Restoration opens new sessions without previous output. Replace closes the selected group, or all tabs for a workspace.",
+  "sessionUnavailable": "This tab could not be restored. Its configuration is preserved.",
+  "sessionDirectory": "Working directory",
+  "sessionProfile": "Shell profile",
+  "sessionHost": "SSH host",
+  "sessionPersistenceError": "Tabs could not be saved. Check storage access and retry.",
+  "sessionDeleteConfirm": "Delete this saved session?",
+  "sessionSaved": "Session saved",
+  "sessionStorageUnavailable": "Session storage could not be opened. Existing files have been preserved.",
+  "sessionSecureStorageUnavailable": "Credentials could not be read. Unlock or repair secure storage, then retry.",
+  "sessionRestoreFailed": "Restore failed",
+  "sessionDetails": "{tabs} tabs · {groups} groups",
+  "@sessionDetails": {
+    "placeholders": {
+      "tabs": {
+        "type": "int"
+      },
+      "groups": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionMissingProfile": "The saved shell profile is unavailable.",
+  "sessionMissingHost": "The saved SSH host is unavailable.",
+  "sessionMissingDirectory": "The saved working directory does not exist.",
+  "sessionSaveEmpty": "There are no tabs to save.",
+  "sessionPreferenceError": "Settings could not be saved. Check storage access and retry.",
+  "remoteClipboardAllow": "Allow remote clipboard writes",
+  "remoteClipboardDescription": "Allow terminal sessions to replace your clipboard. Sessions are trusted by default; you can revoke access in each session's clipboard menu. Remote clipboard reads are always denied.",
+  "remoteClipboardTrust": "Trust this session for clipboard writes",
+  "remoteClipboardRevoke": "Revoke this session's clipboard access",
+  "remoteClipboardEnableFirst": "Enable remote clipboard writes in Terminal settings first.",
+  "terminalClipboardActions": "Terminal clipboard and selection",
+  "terminalSelectText": "Select text (pause mouse reporting)",
+  "terminalMouseInteraction": "Resume application mouse interaction"
 }

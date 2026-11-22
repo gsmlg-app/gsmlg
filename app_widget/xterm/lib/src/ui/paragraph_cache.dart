@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:quiver/collection.dart';
+import 'package:xterm/session_isolate_probes.dart';
 
 /// A cache of laid out [Paragraph]s. This is used to avoid laying out the same
 /// text multiple times, which is expensive.
@@ -26,12 +27,21 @@ class ParagraphCache {
     TextScaler textScaler,
     int key,
   ) {
+    final counters = TerminalIsolateProbes.activeGlyphFrame;
+    final buildStart =
+        counters == null ? null : TerminalIsolateProbes.timestamp();
     final builder = ParagraphBuilder(style.getParagraphStyle());
     builder.pushStyle(style.getTextStyle(textScaler: textScaler));
     builder.addText(text);
 
     final paragraph = builder.build();
+    final layoutStart =
+        counters == null ? null : TerminalIsolateProbes.timestamp();
     paragraph.layout(ParagraphConstraints(width: double.infinity));
+    if (counters != null && buildStart != null && layoutStart != null) {
+      counters.paragraphBuildMicros += layoutStart - buildStart;
+      counters.nativeLayoutMicros += TerminalIsolateProbes.elapsed(layoutStart);
+    }
 
     _cache[key] = paragraph;
     return paragraph;

@@ -47,6 +47,44 @@ void main() {
           arrowKeys.values.map((suffix) => '\x1b[1;5$suffix').toList(),
         );
       });
+
+      for (final modifiers in [
+        (alt: true, ctrl: false, code: 3),
+        (alt: false, ctrl: true, code: 5),
+        (alt: true, ctrl: true, code: 7),
+      ]) {
+        test(
+          'encodes Alt=${modifiers.alt} Ctrl=${modifiers.ctrl} vertical arrows with cursor=$cursorMode',
+          () {
+            final output = <String>[];
+            final terminal = Terminal(
+              onOutput: output.add,
+              platform: TerminalTargetPlatform.macos,
+            );
+            addTearDown(terminal.dispose);
+            terminal.write(cursorMode ? '\x1b[?1h' : '\x1b[?1l');
+
+            for (final key in arrowKeys.keys.take(2)) {
+              expect(
+                terminal.keyInput(
+                  key,
+                  alt: modifiers.alt,
+                  ctrl: modifiers.ctrl,
+                ),
+                isTrue,
+              );
+            }
+
+            expect(
+              output,
+              arrowKeys.values
+                  .take(2)
+                  .map((suffix) => '\x1b[1;${modifiers.code}$suffix')
+                  .toList(),
+            );
+          },
+        );
+      }
     }
 
     test('returns to normal cursor encoding after application mode is reset',

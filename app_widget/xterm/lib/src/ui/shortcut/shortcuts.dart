@@ -20,7 +20,11 @@ final _defaultShortcuts = {
       CopySelectionTextIntent.copy,
   SingleActivator(LogicalKeyboardKey.keyV, control: true):
       const PasteTextIntent(SelectionChangedCause.keyboard),
+  SingleActivator(LogicalKeyboardKey.keyV, control: true, shift: true):
+      const PasteTextIntent(SelectionChangedCause.keyboard),
   SingleActivator(LogicalKeyboardKey.keyA, control: true):
+      const SelectAllTextIntent(SelectionChangedCause.keyboard),
+  SingleActivator(LogicalKeyboardKey.keyA, control: true, shift: true):
       const SelectAllTextIntent(SelectionChangedCause.keyboard),
 };
 

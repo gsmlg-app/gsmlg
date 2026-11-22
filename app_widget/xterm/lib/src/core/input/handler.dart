@@ -176,6 +176,10 @@ class CtrlInputHandler implements TerminalInputHandler {
 
     final key = event.key;
 
+    if (key == TerminalKey.slash) {
+      return '\x1f';
+    }
+
     if (key.index >= TerminalKey.keyA.index &&
         key.index <= TerminalKey.keyZ.index) {
       final input = key.index - TerminalKey.keyA.index + 1;

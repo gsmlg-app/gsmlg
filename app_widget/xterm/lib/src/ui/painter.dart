@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/painting.dart';
 
+import 'package:xterm/session_isolate_probes.dart';
 import 'package:xterm/src/ui/palette_builder.dart';
 import 'package:xterm/src/ui/paragraph_cache.dart';
 import 'package:xterm/xterm.dart';
@@ -11,9 +12,12 @@ class TerminalPainter {
     required TerminalTheme theme,
     required TerminalStyle textStyle,
     required TextScaler textScaler,
+    this.normalizedParagraphKeys = false,
   })  : _textStyle = textStyle,
         _theme = theme,
         _textScaler = textScaler;
+
+  final bool normalizedParagraphKeys;
 
   /// A lookup table from terminal colors to Flutter colors.
   late var _colorPalette = PaletteBuilder(_theme).build();
@@ -177,10 +181,19 @@ class TerminalPainter {
     final charCode = cellData.content & CellContent.codepointMask;
     if (charCode == 0) return;
 
-    final cacheKey = cellData.getHash() ^ _textScaler.hashCode;
+    final counters = TerminalIsolateProbes.activeGlyphFrame;
+    final cacheKey = normalizedParagraphKeys
+        ? paragraphPaintKey(cellData)
+        : cellData.getHash() ^ _textScaler.hashCode;
     var paragraph = _paragraphCache.getLayoutFromCache(cacheKey);
 
     if (paragraph == null) {
+      final layoutStart =
+          counters == null ? null : TerminalIsolateProbes.start();
+      if (counters != null) {
+        counters.misses++;
+        if (_paragraphCache.length == 16384) counters.evictions++;
+      }
       final cellFlags = cellData.flags;
 
       var color = cellFlags & CellFlags.inverse == 0
@@ -215,8 +228,14 @@ class TerminalPainter {
         _textScaler,
         cacheKey,
       );
+      if (layoutStart != null) {
+        counters!.layoutMicros += TerminalIsolateProbes.elapsed(layoutStart);
+      }
+    } else if (counters != null) {
+      counters.hits++;
     }
 
+    if (counters != null) counters.paragraphDraws++;
     canvas.drawParagraph(paragraph, offset);
   }
 
@@ -241,6 +260,8 @@ class TerminalPainter {
     final doubleWidth = cellData.content >> CellContent.widthShift == 2;
     final widthScale = doubleWidth ? 2 : 1;
     final size = Size(_cellSize.width * widthScale + 1, _cellSize.height);
+    final counters = TerminalIsolateProbes.activeGlyphFrame;
+    if (counters != null) counters.backgroundDraws++;
     canvas.drawRect(offset & size, paint);
   }
 
@@ -281,4 +302,21 @@ class TerminalPainter {
         return Color(colorValue | 0xFF000000);
     }
   }
+}
+
+/// Exact identity of the per-cell inputs consumed by paragraph shaping.
+int paragraphPaintKey(CellData cell) {
+  const shapedFlags = CellFlags.bold |
+      CellFlags.faint |
+      CellFlags.italic |
+      CellFlags.underline |
+      CellFlags.inverse;
+  final flags = cell.flags & shapedFlags;
+  final color =
+      flags & CellFlags.inverse == 0 ? cell.foreground : cell.background;
+  final compactColor = (color & CellColor.valueMask) +
+      ((color & CellColor.typeMask) >> CellColor.typeShift) * (1 << 24);
+  // Use multiplication to preserve all 53 bits on the JavaScript backend.
+  return (compactColor * 64 + flags) * (1 << 21) +
+      (cell.content & CellContent.codepointMask);
 }

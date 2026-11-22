@@ -97,6 +97,14 @@ class TerminalTabRenameGroup extends TerminalTabEvent {
   TerminalTabRenameGroup(this.groupId, this.name);
 }
 
+/// Moves [groupId] before [targetGroupId], or to the end when null.
+class TerminalTabMoveGroupBefore extends TerminalTabEvent {
+  final String groupId;
+  final String? targetGroupId;
+
+  TerminalTabMoveGroupBefore(this.groupId, this.targetGroupId);
+}
+
 /// Toggles collapse of the group [groupId], or of the ungrouped section when
 /// [groupId] is null.
 class TerminalTabToggleGroupCollapsed extends TerminalTabEvent {
@@ -127,6 +135,28 @@ class TerminalTabRestoreGroups extends TerminalTabEvent {
 
 /// Ends tab restore: removes restored groups whose tabs did not come back.
 class TerminalTabFinishGroupRestore extends TerminalTabEvent {}
+
+/// Applies a prepared restore as one state change, so persistence never sees
+/// an empty or partially restored workspace.
+class TerminalTabApplySnapshot extends TerminalTabEvent {
+  TerminalTabApplySnapshot({
+    required this.tabs,
+    required this.grouping,
+    this.activeIndex = 0,
+    this.append = false,
+    this.groupOnly = false,
+    this.targetGroupId,
+    this.replaceTab,
+  });
+
+  final List<TabItem> tabs;
+  final TabGrouping grouping;
+  final int activeIndex;
+  final bool append;
+  final bool groupOnly;
+  final String? targetGroupId;
+  final TabItem? replaceTab;
+}
 
 /// Moves several tabs into the existing group [groupId], keeping their
 /// relative order, after the group's last other member.

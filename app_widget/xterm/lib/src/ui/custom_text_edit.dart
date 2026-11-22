@@ -11,6 +11,7 @@ class CustomTextEdit extends StatefulWidget {
     required this.onComposing,
     required this.onAction,
     required this.onKeyEvent,
+    this.onKeyEventOverride,
     required this.focusNode,
     this.autofocus = false,
     this.readOnly = false,
@@ -32,6 +33,8 @@ class CustomTextEdit extends StatefulWidget {
   final void Function(TextInputAction) onAction;
 
   final KeyEventResult Function(FocusNode, KeyEvent) onKeyEvent;
+
+  final FocusOnKeyEventCallback? onKeyEventOverride;
 
   final FocusNode focusNode;
 
@@ -130,15 +133,25 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
   }
 
   void _onFocusChange() {
+    if (!widget.focusNode.hasFocus) _resetEditingState();
     _openOrCloseInputConnectionIfNeeded();
   }
 
   KeyEventResult _onKeyEvent(FocusNode focusNode, KeyEvent event) {
+    final result = widget.onKeyEventOverride?.call(focusNode, event);
+    if (result != null && result != KeyEventResult.ignored) return result;
+
     if (_currentEditingState.composing.isCollapsed) {
       return widget.onKeyEvent(focusNode, event);
     }
 
     return KeyEventResult.skipRemainingHandlers;
+  }
+
+  void _resetEditingState() {
+    final wasComposing = !_currentEditingState.composing.isCollapsed;
+    _currentEditingState = _initEditingState;
+    if (wasComposing) widget.onComposing(null);
   }
 
   void _openOrCloseInputConnectionIfNeeded() {
@@ -256,7 +269,9 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
 
   @override
   void connectionClosed() {
-    // print('connectionClosed');
+    _connection?.connectionClosedReceived();
+    _connection = null;
+    _resetEditingState();
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
 import 'package:terminal_settings_bloc/terminal_settings_bloc.dart';
@@ -47,6 +48,7 @@ class MockVaultRepository implements VaultRepository {
 }
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   group('Event Equatable Tests', () {
     test('TerminalSettingsLoad instances are equal', () {
       const event1 = TerminalSettingsLoad();
@@ -89,16 +91,6 @@ void main() {
       expect(event1, equals(event2));
       expect(event1.hashCode, equals(event2.hashCode));
     });
-
-    test(
-      'TerminalSettingsUpdateMaxOpenShells instances with same value are equal',
-      () {
-        const event1 = TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 20);
-        const event2 = TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 20);
-        expect(event1, equals(event2));
-        expect(event1.hashCode, equals(event2.hashCode));
-      },
-    );
   });
 
   group('State Equatable Tests', () {
@@ -119,11 +111,11 @@ void main() {
     test('TerminalSettingsLoaded instances with same values are equal', () {
       const state1 = TerminalSettingsLoaded(
         environmentVariables: {'PATH': '/bin'},
-        maxOpenShells: 15,
+        downloadDirectory: '/tmp/15',
       );
       const state2 = TerminalSettingsLoaded(
         environmentVariables: {'PATH': '/bin'},
-        maxOpenShells: 15,
+        downloadDirectory: '/tmp/15',
       );
       expect(state1, equals(state2));
       expect(state1.hashCode, equals(state2.hashCode));
@@ -132,8 +124,8 @@ void main() {
     test(
       'TerminalSettingsLoaded instances with different values are not equal',
       () {
-        const state1 = TerminalSettingsLoaded(maxOpenShells: 10);
-        const state2 = TerminalSettingsLoaded(maxOpenShells: 20);
+        const state1 = TerminalSettingsLoaded(downloadDirectory: '/tmp/10');
+        const state2 = TerminalSettingsLoaded(downloadDirectory: '/tmp/20');
         const state4 = TerminalSettingsLoaded(
           environmentVariables: {'KEY': 'value'},
         );
@@ -145,12 +137,12 @@ void main() {
     test('TerminalSettingsLoaded copyWith preserves unchanged values', () {
       const original = TerminalSettingsLoaded(
         environmentVariables: {'PATH': '/bin', 'HOME': '/home'},
-        maxOpenShells: 25,
+        downloadDirectory: '/tmp/25',
       );
 
-      final copied = original.copyWith(maxOpenShells: 30);
+      final copied = original.copyWith(downloadDirectory: '/tmp/30');
 
-      expect(copied.maxOpenShells, equals(30));
+      expect(copied.downloadDirectory, equals('/tmp/30'));
       expect(
         copied.environmentVariables,
         equals(original.environmentVariables),
@@ -239,21 +231,6 @@ void main() {
     );
 
     blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'UpdateMaxOpenShells persists to vault',
-      build: () => TerminalSettingsBloc(vault: mockVault),
-      seed: () => const TerminalSettingsLoaded(),
-      act: (bloc) => bloc.add(
-        const TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 30),
-      ),
-      verify: (_) {
-        expect(
-          mockVault.getStorage()['terminal_max_open_shells'],
-          equals('30'),
-        );
-      },
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
       'Load reads persisted env vars from vault',
       build: () {
         mockVault.seed({
@@ -271,26 +248,6 @@ void main() {
           'environmentVariables',
           {'PATH': '/usr/bin', 'HOME': '/home/user', 'LANG': 'en_US.UTF-8'},
         ),
-      ],
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'Load reads all persisted settings from vault',
-      build: () {
-        mockVault.seed({
-          'terminal_env_API_KEY': 'secret',
-          'terminal_max_open_shells': '35',
-        });
-        return TerminalSettingsBloc(vault: mockVault);
-      },
-      act: (bloc) => bloc.add(const TerminalSettingsLoad()),
-      expect: () => [
-        isA<TerminalSettingsLoading>(),
-        isA<TerminalSettingsLoaded>()
-            .having((s) => s.environmentVariables, 'environmentVariables', {
-              'API_KEY': 'secret',
-            })
-            .having((s) => s.maxOpenShells, 'maxOpenShells', 35),
       ],
     );
   });
@@ -371,26 +328,6 @@ void main() {
           isFalse,
         );
       },
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'handles all settings updated in sequence',
-      build: () => TerminalSettingsBloc(vault: mockVault),
-      seed: () => const TerminalSettingsLoaded(),
-      act: (bloc) {
-        bloc.add(const TerminalSettingsUpdateEnvVar(key: 'ENV', value: 'prod'));
-        bloc.add(const TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 25));
-      },
-      expect: () => [
-        isA<TerminalSettingsLoaded>().having(
-          (s) => s.environmentVariables,
-          'env',
-          {'ENV': 'prod'},
-        ),
-        isA<TerminalSettingsLoaded>()
-            .having((s) => s.environmentVariables, 'env', {'ENV': 'prod'})
-            .having((s) => s.maxOpenShells, 'maxShells', 25),
-      ],
     );
   });
 
@@ -474,37 +411,6 @@ void main() {
       act: (bloc) => bloc.add(const TerminalSettingsClearEnvVars()),
       expect: () => [], // No state change if already empty
     );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'handles boundary value for maxOpenShells (1)',
-      build: () => TerminalSettingsBloc(vault: mockVault),
-      seed: () => const TerminalSettingsLoaded(),
-      act: (bloc) =>
-          bloc.add(const TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 1)),
-      expect: () => [
-        isA<TerminalSettingsLoaded>().having(
-          (s) => s.maxOpenShells,
-          'maxOpenShells',
-          1,
-        ),
-      ],
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'handles boundary value for maxOpenShells (50)',
-      build: () => TerminalSettingsBloc(vault: mockVault),
-      seed: () => const TerminalSettingsLoaded(),
-      act: (bloc) => bloc.add(
-        const TerminalSettingsUpdateMaxOpenShells(maxOpenShells: 50),
-      ),
-      expect: () => [
-        isA<TerminalSettingsLoaded>().having(
-          (s) => s.maxOpenShells,
-          'maxOpenShells',
-          50,
-        ),
-      ],
-    );
   });
 
   group('Load Event Edge Cases', () {
@@ -528,54 +434,20 @@ void main() {
         isA<TerminalSettingsLoaded>(),
       ],
     );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'Load handles malformed maxOpenShells value gracefully',
-      build: () {
-        mockVault.seed({'terminal_max_open_shells': 'not_a_number'});
-        return TerminalSettingsBloc(vault: mockVault);
-      },
-      act: (bloc) => bloc.add(const TerminalSettingsLoad()),
-      expect: () => [
-        isA<TerminalSettingsLoading>(),
-        isA<TerminalSettingsLoaded>().having(
-          (s) => s.maxOpenShells,
-          'maxOpenShells defaults',
-          kTerminalDefaultMaxOpenShells,
-        ),
-      ],
-    );
-
-    blocTest<TerminalSettingsBloc, TerminalSettingsState>(
-      'Load handles negative maxOpenShells value (loads as-is, no clamping)',
-      build: () {
-        mockVault.seed({'terminal_max_open_shells': '-5'});
-        return TerminalSettingsBloc(vault: mockVault);
-      },
-      act: (bloc) => bloc.add(const TerminalSettingsLoad()),
-      expect: () => [
-        isA<TerminalSettingsLoading>(),
-        isA<TerminalSettingsLoaded>().having(
-          (s) => s.maxOpenShells,
-          'maxOpenShells loaded as negative',
-          -5,
-        ),
-      ],
-    );
   });
 
   group('State Immutability', () {
     test('TerminalSettingsLoaded copyWith creates new instance', () {
       const original = TerminalSettingsLoaded(
         environmentVariables: {'KEY': 'value'},
-        maxOpenShells: 20,
+        downloadDirectory: '/tmp/20',
       );
 
-      final copied = original.copyWith(maxOpenShells: 25);
+      final copied = original.copyWith(downloadDirectory: '/tmp/25');
 
       expect(identical(original, copied), isFalse);
-      expect(original.maxOpenShells, equals(20));
-      expect(copied.maxOpenShells, equals(25));
+      expect(original.downloadDirectory, equals('/tmp/20'));
+      expect(copied.downloadDirectory, equals('/tmp/25'));
     });
 
     test(
@@ -583,7 +455,7 @@ void main() {
       () {
         const original = TerminalSettingsLoaded(
           environmentVariables: {'KEY': 'value'},
-          maxOpenShells: 20,
+          downloadDirectory: '/tmp/20',
         );
 
         final copied = original.copyWith();
@@ -599,14 +471,7 @@ void main() {
         const state = TerminalSettingsLoaded();
 
         expect(state.environmentVariables, isEmpty);
-        expect(state.maxOpenShells, equals(kTerminalDefaultMaxOpenShells));
       },
     );
-  });
-
-  group('Constant Values', () {
-    test('kTerminalDefaultMaxOpenShells is 10', () {
-      expect(kTerminalDefaultMaxOpenShells, equals(10));
-    });
   });
 }

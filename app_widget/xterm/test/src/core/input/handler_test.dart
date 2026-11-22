@@ -208,6 +208,15 @@ void main() {
     });
 
     group('modifier combinations', () {
+      test('supports ctrl+/', () {
+        final output = <String>[];
+        final terminal = Terminal(onOutput: output.add);
+        addTearDown(terminal.dispose);
+
+        expect(terminal.keyInput(TerminalKey.slash, ctrl: true), isTrue);
+        expect(output, ['\x1f']);
+      });
+
       test('supports ctrl+c', () {
         final output = <String>[];
         final terminal = Terminal(onOutput: output.add);

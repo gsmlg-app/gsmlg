@@ -36,6 +36,7 @@ class _Client implements SSHClient {
     String command, {
     SSHPtyConfig? pty,
     Map<String, String>? environment,
+    int? manualReceiveWindowSize,
   }) async => session;
 
   @override

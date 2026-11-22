@@ -8,6 +8,9 @@ import 'package:file_manager_plugin/src/navigation_breadcrumbs.dart';
 import 'package:file_manager_plugin/src/navigation_stack.dart';
 
 class FileManagerPlugin with Plugin {
+  FileManagerPlugin({this.initialDirectory});
+
+  final String? initialDirectory;
   late FileSystem fs;
 
   String? homePath;
@@ -115,7 +118,7 @@ class FileManagerPlugin with Plugin {
       final home = (await fileSystem.directory('.').absolute).path;
       if (!mounted || !connected || generation != _generation) return;
       homePath = home;
-      await goto(home);
+      await goto(initialDirectory ?? home);
     } catch (exception) {
       if (identical(_ownedFileSystem, fileSystem)) {
         _ownedFileSystem = null;
@@ -132,6 +135,15 @@ class FileManagerPlugin with Plugin {
         loading.value = false;
       }
     }
+  }
+
+  @override
+  Future<void> closeForAppExit() async {
+    _generation++;
+    _navigationGeneration++;
+    final fileSystem = _ownedFileSystem;
+    _ownedFileSystem = null;
+    await fileSystem?.close();
   }
 
   void _closeFileSystem(FileSystem fileSystem) {

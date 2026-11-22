@@ -13,6 +13,7 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 #ifdef __APPLE__
+#include <crt_externs.h>
 #include <TargetConditionals.h>
 #if TARGET_OS_OSX
 #include <libproc.h>
@@ -24,6 +25,13 @@
 #include "forkpty.h"
 #include "flutter_pty.h"
 
+typedef struct PtyWrite
+{
+    struct PtyWrite *next;
+    int length;
+    char buffer[];
+} PtyWrite;
+
 struct PtyHandle
 {
     int ptm;
@@ -31,8 +39,12 @@ struct PtyHandle
     pid_t foreground_group;
     pthread_mutex_t mutex;
     pthread_cond_t read_ready;
+    pthread_cond_t write_ready;
     pthread_t reader;
+    pthread_t writer;
     pthread_t waiter;
+    PtyWrite *write_head;
+    PtyWrite *write_tail;
     bool ackRead;
     bool awaiting_ack;
     bool exited;
@@ -46,6 +58,69 @@ static _Thread_local char error_message[256];
 static void record_error(const char *operation, int error)
 {
     snprintf(error_message, sizeof(error_message), "%s: %s", operation, strerror(error));
+}
+
+static void write_buffer(PtyHandle *handle, char *buffer, int length)
+{
+    struct pollfd descriptor = {.fd = handle->ptm, .events = POLLOUT};
+    while (length > 0)
+    {
+        pthread_mutex_lock(&handle->mutex);
+        bool stopped = handle->exited || handle->terminating;
+        pthread_mutex_unlock(&handle->mutex);
+        if (stopped) return;
+
+        ssize_t written = write(handle->ptm, buffer, length);
+        if (written > 0)
+        {
+            buffer += written;
+            length -= written;
+            continue;
+        }
+        if (written < 0 && errno == EINTR) continue;
+        if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+        {
+            int ready = poll(&descriptor, 1, 50);
+            if (ready < 0 && errno != EINTR) return;
+            if (ready > 0 && (descriptor.revents & (POLLERR | POLLHUP | POLLNVAL))) return;
+            continue;
+        }
+        return;
+    }
+}
+
+static void *write_loop(void *arg)
+{
+    PtyHandle *handle = arg;
+    while (1)
+    {
+        pthread_mutex_lock(&handle->mutex);
+        while (handle->write_head == NULL && !handle->exited && !handle->terminating)
+            pthread_cond_wait(&handle->write_ready, &handle->mutex);
+        if (handle->exited || handle->terminating)
+        {
+            pthread_mutex_unlock(&handle->mutex);
+            break;
+        }
+        PtyWrite *request = handle->write_head;
+        handle->write_head = request->next;
+        if (handle->write_head == NULL) handle->write_tail = NULL;
+        pthread_mutex_unlock(&handle->mutex);
+
+        write_buffer(handle, request->buffer, request->length);
+        free(request);
+    }
+    return NULL;
+}
+
+static void discard_writes(PtyHandle *handle)
+{
+    while (handle->write_head != NULL)
+    {
+        PtyWrite *request = handle->write_head;
+        handle->write_head = request->next;
+        free(request);
+    }
 }
 
 static void *read_loop(void *arg)
@@ -163,9 +238,11 @@ static void *wait_exit_thread(void *arg)
     handle->exited = true;
     if (observed == 0 && handle->terminating) signal_groups(handle, SIGKILL);
     pthread_cond_broadcast(&handle->read_ready);
+    pthread_cond_broadcast(&handle->write_ready);
     pthread_mutex_unlock(&handle->mutex);
 
     pthread_join(handle->reader, NULL);
+    pthread_join(handle->writer, NULL);
     pid_t result = -1;
     if (observed == 0)
     {
@@ -176,17 +253,31 @@ static void *wait_exit_thread(void *arg)
     return NULL;
 }
 
+#ifndef __APPLE__
+extern char **environ;
+#endif
+
 static void set_environment(char **environment)
 {
     if (environment == NULL) return;
-    while (*environment != NULL) putenv(*environment++);
+#ifdef __APPLE__
+    *_NSGetEnviron() = environment;
+#else
+    environ = environment;
+#endif
 }
 
-static void fail_child(int error_fd, int error)
+static const char *child_stage_name(int stage)
 {
-    ssize_t result;
-    do { result = write(error_fd, &error, sizeof(error)); } while (result < 0 && errno == EINTR);
-    _exit(127);
+    switch (stage)
+    {
+    case PTY_CHILD_SETSID: return "setsid";
+    case PTY_CHILD_CONTROLLING_TERMINAL: return "TIOCSCTTY";
+    case PTY_CHILD_STDIO: return "dup2";
+    case PTY_CHILD_WORKING_DIRECTORY: return "chdir";
+    case PTY_CHILD_EXEC: return "execvp";
+    default: return "PTY startup";
+    }
 }
 
 FFI_PLUGIN_EXPORT PtyHandle *pty_create(PtyOptions *options)
@@ -209,16 +300,16 @@ FFI_PLUGIN_EXPORT PtyHandle *pty_create(PtyOptions *options)
 
     struct winsize size = {.ws_row = options->rows, .ws_col = options->cols};
     int master = -1;
-    pid_t pid = pty_forkpty(&master, NULL, NULL, &size);
+    pid_t pid = pty_forkpty(&master, NULL, NULL, &size, startup[1]);
     if (pid == 0)
     {
         close(startup[0]);
         set_environment(options->environment);
         if (options->working_directory != NULL && options->working_directory[0] != '\0' &&
             chdir(options->working_directory) != 0)
-            fail_child(startup[1], errno);
+            pty_child_fail(startup[1], PTY_CHILD_WORKING_DIRECTORY, errno);
         execvp(options->executable, options->arguments);
-        fail_child(startup[1], errno);
+        pty_child_fail(startup[1], PTY_CHILD_EXEC, errno);
     }
 
     close(startup[1]);
@@ -229,14 +320,17 @@ FFI_PLUGIN_EXPORT PtyHandle *pty_create(PtyOptions *options)
         return NULL;
     }
 
-    int child_error = 0;
+    int report[2] = {0, 0};
     ssize_t length;
-    do { length = read(startup[0], &child_error, sizeof(child_error)); } while (length < 0 && errno == EINTR);
+    do { length = read(startup[0], report, sizeof(report)); } while (length < 0 && errno == EINTR);
     int startup_error = errno;
     close(startup[0]);
     if (length != 0)
     {
-        record_error("PTY startup", length > 0 ? child_error : startup_error);
+        if (length == (ssize_t)sizeof(report))
+            record_error(child_stage_name(report[0]), report[1]);
+        else
+            record_error("PTY startup", length < 0 ? startup_error : EIO);
         kill(-pid, SIGKILL);
         while (waitpid(pid, NULL, 0) < 0 && errno == EINTR) {}
         close(master);
@@ -247,7 +341,9 @@ FFI_PLUGIN_EXPORT PtyHandle *pty_create(PtyOptions *options)
     int error = ENOMEM;
     bool mutex_ready = false;
     bool condition_ready = false;
+    bool write_condition_ready = false;
     bool reader_ready = false;
+    bool writer_ready = false;
     if (handle == NULL) goto fail;
     int flags = fcntl(master, F_GETFL);
     if (flags == -1 || fcntl(master, F_SETFL, flags | O_NONBLOCK) == -1)
@@ -264,8 +360,12 @@ FFI_PLUGIN_EXPORT PtyHandle *pty_create(PtyOptions *options)
     mutex_ready = true;
     if ((error = pthread_cond_init(&handle->read_ready, NULL)) != 0) goto fail;
     condition_ready = true;
+    if ((error = pthread_cond_init(&handle->write_ready, NULL)) != 0) goto fail;
+    write_condition_ready = true;
     if ((error = pthread_create(&handle->reader, NULL, read_loop, handle)) != 0) goto fail;
     reader_ready = true;
+    if ((error = pthread_create(&handle->writer, NULL, write_loop, handle)) != 0) goto fail;
+    writer_ready = true;
     if ((error = pthread_create(&handle->waiter, NULL, wait_exit_thread, handle)) != 0) goto fail;
     return handle;
 
@@ -278,9 +378,12 @@ fail:
         pthread_mutex_lock(&handle->mutex);
         handle->exited = true;
         pthread_cond_broadcast(&handle->read_ready);
+        pthread_cond_broadcast(&handle->write_ready);
         pthread_mutex_unlock(&handle->mutex);
         pthread_join(handle->reader, NULL);
     }
+    if (writer_ready) pthread_join(handle->writer, NULL);
+    if (write_condition_ready) pthread_cond_destroy(&handle->write_ready);
     if (condition_ready) pthread_cond_destroy(&handle->read_ready);
     if (mutex_ready) pthread_mutex_destroy(&handle->mutex);
     close(master);
@@ -298,6 +401,7 @@ FFI_PLUGIN_EXPORT int pty_terminate(PtyHandle *handle, int signal_number)
         handle->terminating = true;
         signal_groups(handle, signal_number);
         pthread_cond_broadcast(&handle->read_ready);
+        pthread_cond_broadcast(&handle->write_ready);
     }
     pthread_mutex_unlock(&handle->mutex);
     return 0;
@@ -307,6 +411,8 @@ FFI_PLUGIN_EXPORT void pty_destroy(PtyHandle *handle)
 {
     pthread_join(handle->waiter, NULL);
     close(handle->ptm);
+    discard_writes(handle);
+    pthread_cond_destroy(&handle->write_ready);
     pthread_cond_destroy(&handle->read_ready);
     pthread_mutex_destroy(&handle->mutex);
     free(handle);
@@ -322,31 +428,25 @@ FFI_PLUGIN_EXPORT int pty_kill(PtyHandle *handle, int signal_number)
 
 FFI_PLUGIN_EXPORT void pty_write(PtyHandle *handle, char *buffer, int length)
 {
-    struct pollfd descriptor = {.fd = handle->ptm, .events = POLLOUT};
-    while (length > 0)
-    {
-        pthread_mutex_lock(&handle->mutex);
-        bool stopped = handle->exited || handle->terminating;
-        pthread_mutex_unlock(&handle->mutex);
-        if (stopped) return;
+    if (length <= 0) return;
+    PtyWrite *request = malloc(sizeof(PtyWrite) + (size_t)length);
+    if (request == NULL) return;
+    request->next = NULL;
+    request->length = length;
+    memcpy(request->buffer, buffer, length);
 
-        ssize_t written = write(handle->ptm, buffer, length);
-        if (written > 0)
-        {
-            buffer += written;
-            length -= written;
-            continue;
-        }
-        if (written < 0 && errno == EINTR) continue;
-        if (written < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
-        {
-            int ready = poll(&descriptor, 1, 50);
-            if (ready < 0 && errno != EINTR) return;
-            if (ready > 0 && (descriptor.revents & (POLLERR | POLLHUP | POLLNVAL))) return;
-            continue;
-        }
+    pthread_mutex_lock(&handle->mutex);
+    if (handle->exited || handle->terminating)
+    {
+        pthread_mutex_unlock(&handle->mutex);
+        free(request);
         return;
     }
+    if (handle->write_tail == NULL) handle->write_head = request;
+    else handle->write_tail->next = request;
+    handle->write_tail = request;
+    pthread_cond_signal(&handle->write_ready);
+    pthread_mutex_unlock(&handle->mutex);
 }
 
 FFI_PLUGIN_EXPORT void pty_ack_read(PtyHandle *handle)

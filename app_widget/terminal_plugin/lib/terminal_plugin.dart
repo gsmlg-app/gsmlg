@@ -4,3 +4,4 @@ export 'src/terminal_shortcut_handler.dart';
 export 'src/zmodem/io_zmodem_file_access.dart';
 export 'src/zmodem/zmodem_file_access.dart';
 export 'src/zmodem/zmodem_transfer_controller.dart';
+export 'src/terminal_clipboard_menu.dart';

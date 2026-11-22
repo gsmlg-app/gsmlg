@@ -3324,6 +3324,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Group selected tabs'**
   String get tabGroupSelected;
+
+  /// No description provided for @sessionSnapshots.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Tabs and History'**
+  String get sessionSnapshots;
+
+  /// No description provided for @sessionSaveWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Workspace'**
+  String get sessionSaveWorkspace;
+
+  /// No description provided for @sessionSaveGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Group'**
+  String get sessionSaveGroup;
+
+  /// No description provided for @sessionRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get sessionRestore;
+
+  /// No description provided for @sessionReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace'**
+  String get sessionReplace;
+
+  /// No description provided for @sessionAppend.
+  ///
+  /// In en, this message translates to:
+  /// **'Append'**
+  String get sessionAppend;
+
+  /// No description provided for @sessionRestorePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore tabs from your last session?'**
+  String get sessionRestorePrompt;
+
+  /// No description provided for @sessionLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get sessionLater;
+
+  /// No description provided for @sessionExitHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Exits'**
+  String get sessionExitHistory;
+
+  /// No description provided for @sessionRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Crash Recovery'**
+  String get sessionRecovery;
+
+  /// No description provided for @sessionManualSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Manually Saved'**
+  String get sessionManualSaved;
+
+  /// No description provided for @sessionNoSnapshots.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved sessions yet.'**
+  String get sessionNoSnapshots;
+
+  /// No description provided for @sessionSnapshotName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get sessionSnapshotName;
+
+  /// No description provided for @sessionTargetGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Target group'**
+  String get sessionTargetGroup;
+
+  /// No description provided for @sessionNewGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'New group'**
+  String get sessionNewGroup;
+
+  /// No description provided for @sessionRestoreDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoration opens new sessions without previous output. Replace closes the selected group, or all tabs for a workspace.'**
+  String get sessionRestoreDescription;
+
+  /// No description provided for @sessionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This tab could not be restored. Its configuration is preserved.'**
+  String get sessionUnavailable;
+
+  /// No description provided for @sessionDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Working directory'**
+  String get sessionDirectory;
+
+  /// No description provided for @sessionProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Shell profile'**
+  String get sessionProfile;
+
+  /// No description provided for @sessionHost.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH host'**
+  String get sessionHost;
+
+  /// No description provided for @sessionPersistenceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Tabs could not be saved. Check storage access and retry.'**
+  String get sessionPersistenceError;
+
+  /// No description provided for @sessionDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this saved session?'**
+  String get sessionDeleteConfirm;
+
+  /// No description provided for @sessionSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Session saved'**
+  String get sessionSaved;
+
+  /// No description provided for @sessionStorageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Session storage could not be opened. Existing files have been preserved.'**
+  String get sessionStorageUnavailable;
+
+  /// No description provided for @sessionSecureStorageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Credentials could not be read. Unlock or repair secure storage, then retry.'**
+  String get sessionSecureStorageUnavailable;
+
+  /// No description provided for @sessionRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed'**
+  String get sessionRestoreFailed;
+
+  /// No description provided for @sessionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'{tabs} tabs · {groups} groups'**
+  String sessionDetails(int tabs, int groups);
+
+  /// No description provided for @sessionMissingProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved shell profile is unavailable.'**
+  String get sessionMissingProfile;
+
+  /// No description provided for @sessionMissingHost.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved SSH host is unavailable.'**
+  String get sessionMissingHost;
+
+  /// No description provided for @sessionMissingDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved working directory does not exist.'**
+  String get sessionMissingDirectory;
+
+  /// No description provided for @sessionSaveEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no tabs to save.'**
+  String get sessionSaveEmpty;
+
+  /// No description provided for @sessionPreferenceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings could not be saved. Check storage access and retry.'**
+  String get sessionPreferenceError;
+
+  /// No description provided for @remoteClipboardAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow remote clipboard writes'**
+  String get remoteClipboardAllow;
+
+  /// No description provided for @remoteClipboardDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow terminal sessions to replace your clipboard. Sessions are trusted by default; you can revoke access in each session\'s clipboard menu. Remote clipboard reads are always denied.'**
+  String get remoteClipboardDescription;
+
+  /// No description provided for @remoteClipboardTrust.
+  ///
+  /// In en, this message translates to:
+  /// **'Trust this session for clipboard writes'**
+  String get remoteClipboardTrust;
+
+  /// No description provided for @remoteClipboardRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke this session\'s clipboard access'**
+  String get remoteClipboardRevoke;
+
+  /// No description provided for @remoteClipboardEnableFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable remote clipboard writes in Terminal settings first.'**
+  String get remoteClipboardEnableFirst;
+
+  /// No description provided for @terminalClipboardActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal clipboard and selection'**
+  String get terminalClipboardActions;
+
+  /// No description provided for @terminalSelectText.
+  ///
+  /// In en, this message translates to:
+  /// **'Select text (pause mouse reporting)'**
+  String get terminalSelectText;
+
+  /// No description provided for @terminalMouseInteraction.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume application mouse interaction'**
+  String get terminalMouseInteraction;
 }
 
 class _AppLocalizationsDelegate
