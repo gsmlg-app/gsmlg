@@ -23,6 +23,7 @@ export 'src/agent/agent_invocation.dart';
 export 'src/agent/agent_runner.dart';
 export 'src/agent/chat_agent_runtime.dart';
 export 'src/agent/memory_provider.dart';
+export 'src/agent/memory_semantic_index.dart';
 export 'src/agent/plugin_consumer.dart';
 export 'src/agent/repository_agent_llm_client.dart';
 export 'src/agent/shell_service.dart';
@@ -48,6 +49,7 @@ export 'src/services/dart_mcp_tool_client.dart';
 export 'src/services/tool_executor.dart';
 export 'src/services/secret_reader.dart';
 export 'src/services/tool_data_source.dart';
+export 'src/services/agent_keep_alive.dart';
 export 'src/services/local_llm_gateway.dart';
 
 export 'src/services/conversation_title_generator.dart';

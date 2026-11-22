@@ -379,7 +379,16 @@ class ChatAgentRuntime {
 
     for (final msg in history) {
       if (msg is app_msg.UserMessage) {
-        messages.add(dac.UserMessage([dac.TextPart(msg.content)]));
+        final images = msg.inlineImages;
+        final text = msg.contentWithAttachments(includeImages: images.isEmpty);
+        final parts = <dac.UserContentPart>[
+          if (text.isNotEmpty) dac.TextPart(text),
+          for (final img in images)
+            dac.ImagePart(base64Encode(img.bytes), img.mimeType),
+        ];
+        messages.add(
+          dac.UserMessage(parts.isEmpty ? [dac.TextPart('')] : parts),
+        );
       } else if (msg is app_msg.AssistantMessage) {
         final metadata = msg.agentMetadata != null
             ? AgentMessageMetadata.decode(msg.agentMetadata!)

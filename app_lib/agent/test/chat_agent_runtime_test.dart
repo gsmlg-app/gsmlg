@@ -35,6 +35,40 @@ class _FakeRemoteLlmRepository extends RemoteLlmRepository {
   }
 }
 
+class _MultiToolRemoteLlmRepository extends RemoteLlmRepository {
+  _MultiToolRemoteLlmRepository() : super(vault: _FakeVault());
+
+  var turnCount = 0;
+
+  @override
+  Stream<ChatGenerationChunk> generateResponse(
+    List<Message> messages,
+    ModelConfig config, {
+    List<Map<String, dynamic>> tools = const [],
+    String? generationId,
+    LogContext? logContext,
+  }) async* {
+    turnCount++;
+    if (turnCount == 1) {
+      yield const ChatThinkingChunk('Calling two tools in parallel');
+      yield const ChatFunctionCallChunk(
+        name: 'memory_search',
+        args: {'query': 'alpha'},
+        id: 'call_parallel_1',
+        index: 0,
+      );
+      yield const ChatFunctionCallChunk(
+        name: 'memory_search',
+        args: {'query': 'beta'},
+        id: 'call_parallel_2',
+        index: 1,
+      );
+    } else {
+      yield const ChatTextChunk('Found both alpha and beta.');
+    }
+  }
+}
+
 class _FakeVault implements VaultRepository {
   final Map<String, String> _storage = {};
 
@@ -96,7 +130,7 @@ void main() {
 
         final stream = await client.stream(
           const [],
-          modelConfig: const dac.ModelConfig(model: 'test-model'),
+          modelConfig: dac.ModelConfig(model: 'test-model'),
         );
         final drained = stream.toList();
         await remote.controller.close();
@@ -154,6 +188,47 @@ void main() {
         final toolEvent = events.whereType<ToolCallCompletedEvent>().first;
         expect(toolEvent.toolName, equals('memory_search'));
         expect(toolEvent.receipt.isError, isFalse);
+      },
+    );
+
+    test(
+      'collects multiple parallel function calls in one turn without closing early',
+      () async {
+        final multiToolRemote = _MultiToolRemoteLlmRepository();
+        final memoryProvider = ScopedMemoryProvider(
+          initialEntries: [
+            MemoryEntry.create(scope: 'global', content: 'alpha fact'),
+            MemoryEntry.create(scope: 'global', content: 'beta fact'),
+          ],
+        );
+
+        final runtime = ChatAgentRuntime(
+          toolExecutor: ToolExecutor(),
+          remoteRepository: multiToolRemote,
+          memoryProvider: memoryProvider,
+        );
+
+        final events = await runtime
+            .runStream(
+              runId: 'test_multi_tool_run',
+              sessionId: 'session_multi',
+              modelConfig: const ModelConfig(
+                inferenceMode: ChatInferenceMode.remote,
+                remoteModel: 'test-model',
+              ),
+              historyMessages: const [],
+              userPrompt: 'Search both facts',
+            )
+            .toList();
+
+        expect(events.whereType<AgentRunFailedEvent>(), isEmpty);
+        expect(events.whereType<AgentRunCompletedEvent>(), hasLength(1));
+        final toolEvents = events.whereType<ToolCallCompletedEvent>().toList();
+        expect(toolEvents, hasLength(2));
+        expect(
+          toolEvents.map((e) => e.callId),
+          containsAll(['call_parallel_1', 'call_parallel_2']),
+        );
       },
     );
 

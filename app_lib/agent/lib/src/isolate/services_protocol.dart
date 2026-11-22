@@ -12,6 +12,7 @@ const opServiceAccountById = 'data.serviceAccountById';
 const opServiceAccountsByProvider = 'data.serviceAccountsByProvider';
 const opLocalLlmGenerate = 'localLlm.generate';
 const opLocalLlmStop = 'localLlm.stop';
+const opMemoryExecute = 'memory.execute';
 const opCancel = 'cancel';
 
 /// [RemoteAgentError.type] reported when the bridge is closed.

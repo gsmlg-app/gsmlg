@@ -178,6 +178,21 @@ class DartMcpToolClient {
   StreamChannel<String> _httpChannel(DartMcpHttpServerConfig config) {
     final controller = StreamChannelController<String>();
     String? sessionId;
+    var closed = false;
+    unawaited(
+      controller.local.sink.done.whenComplete(() {
+        closed = true;
+      }),
+    );
+
+    void safeAdd(String message) {
+      if (!closed) controller.local.sink.add(message);
+    }
+
+    void safeAddError(Object error, StackTrace stackTrace) {
+      if (!closed) controller.local.sink.addError(error, stackTrace);
+    }
+
     controller.local.stream.listen(
       (message) async {
         try {
@@ -212,22 +227,25 @@ class DartMcpToolClient {
           }
           final messages = _responseMessages(response.data);
           for (final responseMessage in messages) {
-            controller.local.sink.add(responseMessage);
+            safeAdd(responseMessage);
           }
         } on DioException catch (error, stackTrace) {
           final exception = _httpExceptionFrom(error);
           final rpcError = _jsonRpcErrorResponse(message, exception.message);
           if (rpcError == null) {
-            controller.local.sink.addError(exception, stackTrace);
+            safeAddError(exception, stackTrace);
           } else {
-            controller.local.sink.add(rpcError);
+            safeAdd(rpcError);
           }
         } catch (error, stackTrace) {
-          controller.local.sink.addError(error, stackTrace);
+          safeAddError(error, stackTrace);
         }
       },
-      onError: controller.local.sink.addError,
-      onDone: controller.local.sink.close,
+      onError: safeAddError,
+      onDone: () {
+        closed = true;
+        controller.local.sink.close();
+      },
     );
     return controller.foreign;
   }

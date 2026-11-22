@@ -3,6 +3,7 @@ import 'dart:isolate';
 
 import 'package:app_database/app_database.dart' show ServiceProvider;
 
+import '../agent/memory_provider.dart';
 import '../models/inference.dart';
 import '../models/wire_codecs.dart';
 import '../services/local_llm_gateway.dart';
@@ -11,25 +12,29 @@ import '../services/tool_data_source.dart';
 import 'services_protocol.dart';
 
 /// Main-isolate side of the services bridge: serves [SecretReader],
-/// [ToolDataSource] and [LocalLlmGateway] requests from agent isolates that
-/// hold an `AgentServicesClient` built from [port].
+/// [ToolDataSource], [AgentMemoryGateway] and [LocalLlmGateway] requests from
+/// agent isolates that hold an `AgentServicesClient` built from [port].
 class AgentServicesServer {
   AgentServicesServer({
     required SecretReader secrets,
     required ToolDataSource data,
     required LocalLlmGateway localLlm,
+    AgentMemoryGateway? memory,
   }) : _secrets = secrets,
        _data = data,
-       _localLlm = localLlm {
+       _localLlm = localLlm,
+       _memory = memory {
     _port.listen(_onMessage);
   }
 
   final SecretReader _secrets;
   final ToolDataSource _data;
   final LocalLlmGateway _localLlm;
+  final AgentMemoryGateway? _memory;
   final _port = ReceivePort('agent-services');
   final _clients = <SendPort>{};
-  final _streams = <(SendPort, int), StreamSubscription<ChatGenerationChunk>>{};
+  final _streams = <(SendPort, int), _ActiveLocalStream>{};
+  Future<void> _localPermitTail = Future<void>.value();
   bool _closed = false;
 
   SendPort get port => _port.sendPort;
@@ -40,21 +45,41 @@ class AgentServicesServer {
     if (_closed) return;
     _closed = true;
     _port.close();
-    final subs = _streams.values.toList();
+    final active = _streams.values.toList();
     _streams.clear();
     for (final client in _clients) {
       client.send(const {'closed': true});
     }
     _clients.clear();
-    await Future.wait([for (final s in subs) s.cancel()]);
+    await Future.wait([for (final entry in active) entry.cancel()]);
   }
 
-  /// Cancels every active local generation, e.g. after the client running
-  /// it died: its cancel request will never arrive.
+  /// Cancels every active local generation, e.g. after a worker died without
+  /// a known run id.
   Future<void> cancelAllStreams() async {
-    final subs = _streams.values.toList();
+    final active = _streams.values.toList();
     _streams.clear();
-    await Future.wait([for (final s in subs) s.cancel()]);
+    await Future.wait([for (final entry in active) entry.cancel()]);
+  }
+
+  /// Cancels only active local generations belonging to [runIds] (or legacy
+  /// streams without a runId), avoiding cancelling a healthy run that
+  /// subsequently acquired the local model lease.
+  Future<void> cancelStreamsForRuns(Set<String> runIds) async {
+    if (runIds.isEmpty) return;
+    final matchingKeys = <(SendPort, int)>[];
+    for (final entry in _streams.entries) {
+      final streamRunId = entry.value.runId;
+      if (streamRunId == null || runIds.contains(streamRunId)) {
+        matchingKeys.add(entry.key);
+      }
+    }
+    final toCancel = <_ActiveLocalStream>[];
+    for (final key in matchingKeys) {
+      final stream = _streams.remove(key);
+      if (stream != null) toCancel.add(stream);
+    }
+    await Future.wait([for (final entry in toCancel) entry.cancel()]);
   }
 
   void _onMessage(Object? raw) {
@@ -68,7 +93,7 @@ class AgentServicesServer {
     final args = (m['args'] as Map?)?.cast<String, Object?>() ?? const {};
     switch (op) {
       case opCancel:
-        _streams.remove((reply, id))?.cancel();
+        unawaited(_streams.remove((reply, id))?.cancel());
       case opLocalLlmGenerate:
         _generate(reply, id, args);
       default:
@@ -120,6 +145,17 @@ class AgentServicesServer {
       case opLocalLlmStop:
         await _localLlm.stop();
         return null;
+      case opMemoryExecute:
+        final memory = _memory;
+        if (memory == null) {
+          return {'error': 'Persistent memory service is not configured'};
+        }
+        return memory.executeMemoryTool(
+          toolName: a['toolName'] as String,
+          arguments: Map<String, dynamic>.from(a['arguments'] as Map),
+          sessionId: a['sessionId'] as String,
+          agentId: a['agentId'] as String?,
+        );
       default:
         throw ArgumentError('Unknown agent services op: $op');
     }
@@ -127,33 +163,84 @@ class AgentServicesServer {
 
   void _generate(SendPort reply, int id, Map<String, Object?> a) {
     final key = (reply, id);
-    try {
-      final stream = _localLlm.generate(
-        [
-          for (final m in a['messages'] as List)
-            messageFromWire((m as Map).cast()),
-        ],
-        config: modelConfigFromWire((a['config'] as Map).cast()),
-        tools: [
-          for (final t in a['tools'] as List)
-            Map<String, dynamic>.from(t as Map),
-        ],
-      );
-      _streams[key] = stream.listen(
-        (chunk) => _send(reply, {'id': id, 'chunk': chunk.toWire()}),
-        onError: (Object e) {
-          _streams.remove(key);
-          _send(reply, {'id': id, 'error': errorToWire(e)});
-        },
-        onDone: () {
-          _streams.remove(key);
-          _send(reply, {'id': id, 'done': true});
-        },
-        cancelOnError: true,
-      );
-      _send(reply, {'id': id, 'started': true});
-    } catch (e) {
-      _send(reply, {'id': id, 'error': errorToWire(e)});
+    final runId = a['runId'] as String?;
+    final entry = _ActiveLocalStream(runId: runId);
+    _streams[key] = entry;
+    // Acknowledge immediately so queued local sub-agent inferences don't hit
+    // the client's first-response timeout while waiting for the inference slot.
+    _send(reply, {'id': id, 'started': true});
+
+    final previous = _localPermitTail;
+    final permitDone = Completer<void>();
+    _localPermitTail = permitDone.future;
+
+    void finishPermit() {
+      if (!permitDone.isCompleted) permitDone.complete();
     }
+
+    entry.onCancelHook = finishPermit;
+
+    unawaited(() async {
+      await previous;
+      if (_closed || entry.cancelled || !identical(_streams[key], entry)) {
+        finishPermit();
+        return;
+      }
+      try {
+        final stream = _localLlm.generate(
+          [
+            for (final m in a['messages'] as List)
+              messageFromWire((m as Map).cast()),
+          ],
+          config: modelConfigFromWire((a['config'] as Map).cast()),
+          tools: [
+            for (final t in a['tools'] as List)
+              Map<String, dynamic>.from(t as Map),
+          ],
+          runId: runId,
+        );
+        if (_closed || entry.cancelled || !identical(_streams[key], entry)) {
+          finishPermit();
+          return;
+        }
+        entry.subscription = stream.listen(
+          (chunk) => _send(reply, {'id': id, 'chunk': chunk.toWire()}),
+          onError: (Object e) {
+            _streams.remove(key);
+            finishPermit();
+            _send(reply, {'id': id, 'error': errorToWire(e)});
+          },
+          onDone: () {
+            _streams.remove(key);
+            finishPermit();
+            _send(reply, {'id': id, 'done': true});
+          },
+          cancelOnError: true,
+        );
+      } catch (e) {
+        _streams.remove(key);
+        finishPermit();
+        _send(reply, {'id': id, 'error': errorToWire(e)});
+      }
+    }());
+  }
+}
+
+class _ActiveLocalStream {
+  _ActiveLocalStream({this.runId});
+
+  final String? runId;
+  StreamSubscription<ChatGenerationChunk>? subscription;
+  void Function()? onCancelHook;
+  bool cancelled = false;
+
+  Future<void> cancel() async {
+    cancelled = true;
+    final sub = subscription;
+    subscription = null;
+    if (sub != null) {
+      await sub.cancel();
+    }
+    onCancelHook?.call();
   }
 }

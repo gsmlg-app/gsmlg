@@ -8,6 +8,11 @@ import '../services/secret_reader.dart';
 import '../services/tool_data_source.dart';
 
 class BackplaneServiceRepository {
+  /// Default timeout for Backplane model and tool discovery requests.
+  /// Backplane aggregates multiple upstream providers, so discovery can take
+  /// noticeably longer than a single-provider API call.
+  static const defaultRequestTimeout = Duration(seconds: 60);
+
   /// Pass [data] and [secrets]; [database] and [vault] are main-isolate
   /// conveniences wrapped in [DatabaseToolDataSource] / [VaultSecretReader].
   BackplaneServiceRepository({
@@ -17,6 +22,7 @@ class BackplaneServiceRepository {
     VaultRepository? vault,
     required RemoteLlmRepository remoteLlm,
     DartMcpToolClient? mcpClient,
+    Duration requestTimeout = defaultRequestTimeout,
   }) : _data =
            data ??
            DatabaseToolDataSource(
@@ -28,12 +34,14 @@ class BackplaneServiceRepository {
              vault ?? (throw ArgumentError('secrets or vault is required')),
            ),
        _remoteLlm = remoteLlm,
-       _mcpClient = mcpClient ?? DartMcpToolClient();
+       _mcpClient = mcpClient ?? DartMcpToolClient(),
+       _requestTimeout = requestTimeout;
 
   final ToolDataSource _data;
   final SecretReader _secrets;
   final RemoteLlmRepository _remoteLlm;
   final DartMcpToolClient _mcpClient;
+  final Duration _requestTimeout;
 
   Future<String> tokenFor(BackplaneSettings settings) async {
     final id = settings.accountId;
@@ -59,7 +67,7 @@ class BackplaneServiceRepository {
     await tokenFor(settings);
     return _remoteLlm
         .listModels(settings.modelConfig(''))
-        .timeout(const Duration(seconds: 15));
+        .timeout(_requestTimeout);
   }
 
   Future<List<Map<String, dynamic>>> refreshTools(
@@ -73,6 +81,6 @@ class BackplaneServiceRepository {
             headers: {'Authorization': 'Bearer $token'},
           ),
         )
-        .timeout(const Duration(seconds: 15));
+        .timeout(_requestTimeout);
   }
 }

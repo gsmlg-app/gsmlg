@@ -121,10 +121,22 @@ class MainProvider extends StatelessWidget {
             remoteMcpProfilesProvider: _remoteMcpProfiles,
           ),
         ),
+        RepositoryProvider<MediaPipeMemorySemanticIndex>(
+          create: (context) =>
+              MediaPipeMemorySemanticIndex(usePersistentIndex: true),
+          dispose: (index) => index.dispose(),
+        ),
+        RepositoryProvider<ScopedMemoryProvider>(
+          create: (context) => ScopedMemoryProvider(
+            store: DriftMemoryStore(database),
+            semanticIndex: context.read<MediaPipeMemorySemanticIndex>(),
+          ),
+        ),
         RepositoryProvider<AgentServicesServer>(
           create: (context) => AgentServicesServer(
             secrets: VaultSecretReader(vault),
             data: DatabaseToolDataSource(database),
+            memory: context.read<ScopedMemoryProvider>(),
             // No lease here: ChatBloc holds the FIFO LocalModelAccess lease
             // for the whole local run, so leasing per generation would
             // deadlock.
@@ -202,6 +214,9 @@ class MainProvider extends StatelessWidget {
             create: (context) => ChatBloc(
               titleGenerator: EmbeddedConversationTitleGenerator(
                 MiniCpmTitleBackend(),
+              ),
+              keepAlive: MobileAgentKeepAlive(
+                gemmaRepository: context.read<GemmaRepository>(),
               ),
               gemmaRepository: context.read<GemmaRepository>(),
               modelAccess: context.read<LocalModelAccess>(),

@@ -212,3 +212,46 @@ final class AgentRunCancelledEvent extends ChatAgentEvent {
   @override
   List<Object?> get props => [...super.props, reason];
 }
+
+final class SubAgentUpdatedEvent extends ChatAgentEvent {
+  const SubAgentUpdatedEvent({
+    required super.runId,
+    required super.sessionId,
+    required this.taskId,
+    required this.parentRunId,
+    required this.childRunId,
+    required this.workerName,
+    required this.goal,
+    required this.status,
+    required this.depth,
+    this.summary,
+    this.error,
+    this.durationMs,
+  });
+
+  final String taskId;
+  final String parentRunId;
+  final String childRunId;
+  final String workerName;
+  final String goal;
+  final String status;
+  final int depth;
+  final String? summary;
+  final String? error;
+  final int? durationMs;
+
+  @override
+  List<Object?> get props => [
+    ...super.props,
+    taskId,
+    parentRunId,
+    childRunId,
+    workerName,
+    goal,
+    status,
+    depth,
+    summary,
+    error,
+    durationMs,
+  ];
+}

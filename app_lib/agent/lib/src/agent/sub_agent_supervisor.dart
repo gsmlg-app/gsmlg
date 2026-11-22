@@ -66,6 +66,7 @@ class SubAgentTask {
     required this.childRunId,
     required this.workerName,
     required this.goal,
+    this.depth = 1,
     this.contextSnippet,
     this.allowedTools,
     required this.cancelToken,
@@ -80,6 +81,7 @@ class SubAgentTask {
   final String childRunId;
   final String workerName;
   final String goal;
+  final int depth;
   final String? contextSnippet;
   final Set<String>? allowedTools;
   final CancelToken cancelToken;
@@ -119,14 +121,23 @@ typedef ChildAgentRunner =
       required int depth,
     });
 
+/// Callback fired whenever a supervised [SubAgentTask] changes lifecycle state.
+typedef SubAgentTaskListener =
+    void Function(SubAgentTask task, {int? durationMs});
+
 /// Supervisor managing named sub-agent workers with shared budgets and tree hierarchy.
 class AgentSupervisor {
-  AgentSupervisor({ChildAgentRunner? childRunner, TreeBudget? budget})
-    : _childRunner = childRunner,
-      _budget = budget ?? TreeBudget();
+  AgentSupervisor({
+    ChildAgentRunner? childRunner,
+    TreeBudget? budget,
+    SubAgentTaskListener? onTaskUpdated,
+  }) : _childRunner = childRunner,
+       _budget = budget ?? TreeBudget(),
+       _onTaskUpdated = onTaskUpdated;
 
   final ChildAgentRunner? _childRunner;
   final TreeBudget _budget;
+  final SubAgentTaskListener? _onTaskUpdated;
 
   /// Active tasks mapped by taskId.
   final Map<String, SubAgentTask> _tasks = {};
@@ -140,11 +151,9 @@ class AgentSupervisor {
   static const _waitTool = 'wait_agent';
   static const _cancelTool = 'cancel_agent';
 
-  bool handlesTool(String toolName) =>
-      {_spawnTool, _waitTool, _cancelTool}.contains(toolName);
-
-  List<ChatToolDefinition> get toolDefinitions => [
-    const ChatToolDefinition(
+  /// Canonical list of sub-agent tool definitions exposed to agents and UI.
+  static const List<ChatToolDefinition> defaultToolDefinitions = [
+    ChatToolDefinition(
       name: _spawnTool,
       description:
           'Spawn a named sub-agent worker with a specific goal, context, and capability subset.',
@@ -175,7 +184,7 @@ class AgentSupervisor {
         'required': ['name', 'goal'],
       },
     ),
-    const ChatToolDefinition(
+    ChatToolDefinition(
       name: _waitTool,
       description:
           'Wait for a spawned sub-agent worker to finish and retrieve its result.',
@@ -195,7 +204,7 @@ class AgentSupervisor {
         'required': ['taskId'],
       },
     ),
-    const ChatToolDefinition(
+    ChatToolDefinition(
       name: _cancelTool,
       description: 'Cancel a running sub-agent worker.',
       parameters: {
@@ -210,6 +219,11 @@ class AgentSupervisor {
       },
     ),
   ];
+
+  bool handlesTool(String toolName) =>
+      {_spawnTool, _waitTool, _cancelTool}.contains(toolName);
+
+  List<ChatToolDefinition> get toolDefinitions => defaultToolDefinitions;
 
   Future<dynamic> executeTool({
     required String toolName,
@@ -271,6 +285,7 @@ class AgentSupervisor {
       childRunId: childRunId,
       workerName: name,
       goal: goal,
+      depth: depth,
       contextSnippet: context,
       allowedTools: allowedTools,
       cancelToken: childCancelToken,
@@ -295,11 +310,13 @@ class AgentSupervisor {
     childCancelToken.whenCancel.then((_) {
       if (task.status == 'running' || task.status == 'spawned') {
         task.status = 'cancelled';
+        _notifyTask(task);
       }
     });
 
     _tasks[taskId] = task;
     _tasksByParentRunId.putIfAbsent(parentRunId, () => []).add(taskId);
+    _notifyTask(task);
 
     // Launch worker asynchronously
     unawaited(_runWorker(task, depth));
@@ -345,10 +362,17 @@ class AgentSupervisor {
     } catch (_) {}
   }
 
+  void _notifyTask(SubAgentTask task, {int? durationMs}) {
+    try {
+      _onTaskUpdated?.call(task, durationMs: durationMs);
+    } catch (_) {}
+  }
+
   Future<void> _runWorker(SubAgentTask task, int depth) async {
     task.status = 'running';
     final runner = _childRunner;
     final started = DateTime.now();
+    _notifyTask(task);
     _logTask(
       task,
       'sub_agent_started',
@@ -399,7 +423,9 @@ class AgentSupervisor {
       }
     } finally {
       task.completedAt = DateTime.now();
+      final durationMs = task.completedAt!.difference(started).inMilliseconds;
       final failed = task.status == 'failed';
+      _notifyTask(task, durationMs: durationMs);
       _logTask(
         task,
         'sub_agent_finished',
@@ -413,7 +439,7 @@ class AgentSupervisor {
         level: failed
             ? 'SEVERE'
             : (task.status == 'cancelled' ? 'WARNING' : 'INFO'),
-        durationMs: task.completedAt!.difference(started).inMilliseconds,
+        durationMs: durationMs,
       );
       _budget.releaseWorker();
     }
@@ -440,11 +466,26 @@ class AgentSupervisor {
     }
 
     try {
-      final waitFuture = task.completer.future;
-      final timeoutFuture = Future.delayed(Duration(milliseconds: timeoutMs));
-      await Future.any([waitFuture, timeoutFuture]);
+      final waitFutures = <Future<Object?>>[
+        task.completer.future,
+        Future<void>.delayed(Duration(milliseconds: timeoutMs)),
+        if (cancelToken != null) cancelToken.whenCancel,
+      ];
+      await Future.any(waitFutures);
     } catch (_) {
-      // Completed with error handled by toSummary
+      // Completed with error or cancelled; reflected in toSummary.
+    }
+
+    if ((cancelToken?.isCancelled ?? false) && !task.isCompleted) {
+      if (!task.cancelToken.isCancelled) {
+        task.cancelToken.cancel(
+          cancelToken?.cancelError ?? 'Parent run cancelled',
+        );
+      }
+      if (task.status == 'running' || task.status == 'spawned') {
+        task.status = 'cancelled';
+        _notifyTask(task);
+      }
     }
 
     return task.toSummary();

@@ -230,14 +230,24 @@ class ToolExecutionGateway {
     final stopwatch = Stopwatch()..start();
     var backend = 'none';
 
-    // Find call ID if prepared, otherwise generate stable ID
-    var callId = 'call_${DateTime.now().microsecondsSinceEpoch}';
+    // Match and consume a prepared call ID (prefer exact arguments match so
+    // parallel calls to the same tool get their own call IDs).
+    String? matchedKey;
+    String? fallbackKey;
     for (final entry in _preparedCalls.entries) {
-      if (entry.key.startsWith('$runId:') && entry.value.name == toolName) {
-        callId = entry.value.id;
+      if (!entry.key.startsWith('$runId:') || entry.value.name != toolName) {
+        continue;
+      }
+      fallbackKey ??= entry.key;
+      if (entry.value.arguments == rawArguments) {
+        matchedKey = entry.key;
         break;
       }
     }
+    final consumedKey = matchedKey ?? fallbackKey;
+    final callId = consumedKey != null
+        ? _preparedCalls.remove(consumedKey)!.id
+        : 'call_${DateTime.now().microsecondsSinceEpoch}';
 
     // 1. Immediate pre-dispatch cancellation check
     if (cancelToken?.isCancelled ?? false) {

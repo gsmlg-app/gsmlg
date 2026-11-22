@@ -81,7 +81,12 @@ class RepositoryAgentLlmClient implements LLMClient {
     final logContext = _nextLogContext(effectiveGenId);
     final local = _local;
     if (_isLocal && local != null) {
-      raw = local.generate(messages, config: config, tools: tools);
+      raw = local.generate(
+        messages,
+        config: config,
+        tools: tools,
+        runId: runId,
+      );
     } else if (remoteRepository != null) {
       raw = remoteRepository!.generateResponse(
         messages,
@@ -223,6 +228,7 @@ class RepositoryAgentLlmClient implements LLMClient {
             appMessages,
             config: config,
             tools: openAiTools,
+            runId: runId,
           );
         } else if (remoteRepository != null) {
           rawStream = remoteRepository!.generateResponse(
@@ -274,6 +280,7 @@ class RepositoryAgentLlmClient implements LLMClient {
 
       rawSub = rawStream.listen(
         (chunk) {
+          if (controller.isClosed) return;
           _recordFirstToken(chunk);
           switch (chunk) {
             case ChatTextChunk(:final text):
@@ -317,14 +324,6 @@ class RepositoryAgentLlmClient implements LLMClient {
                   ),
                 ),
               );
-              // In tool-calling turns, function calls complete the model turn.
-              // Closing in a microtask ensures all concurrent function calls in the turn
-              // are collected before unblocking tool execution in StatefulAgent.
-              scheduleMicrotask(() {
-                if (!controller.isClosed) {
-                  controller.close();
-                }
-              });
           }
         },
         onError: (err, st) {
@@ -344,11 +343,7 @@ class RepositoryAgentLlmClient implements LLMClient {
                 ),
               ),
             );
-            scheduleMicrotask(() {
-              if (!controller.isClosed) {
-                controller.close();
-              }
-            });
+            controller.close();
           }
           cleanup();
         },
@@ -381,9 +376,29 @@ class RepositoryAgentLlmClient implements LLMClient {
         );
       } else if (msg is UserMessage) {
         final textParts = <String>[];
+        final attachments = <app_msg.ChatAttachment>[];
         for (final part in msg.contents) {
           if (part is TextPart) {
             textParts.add(part.text);
+          } else if (part is ImagePart && part.base64Data.isNotEmpty) {
+            try {
+              final rawB64 = part.base64Data.contains(',')
+                  ? part.base64Data.split(',').last
+                  : part.base64Data;
+              final bytes = base64Decode(rawB64);
+              final ext = part.mimeType.contains('/')
+                  ? part.mimeType.split('/').last
+                  : 'png';
+              attachments.add(
+                app_msg.ChatAttachment(
+                  id: 'img_${idx}_${attachments.length}',
+                  name: 'image_${attachments.length + 1}.$ext',
+                  mimeType: part.mimeType,
+                  sizeBytes: bytes.length,
+                  bytes: bytes,
+                ),
+              );
+            } catch (_) {}
           }
         }
         result.add(
@@ -392,6 +407,7 @@ class RepositoryAgentLlmClient implements LLMClient {
             conversationId: targetConvId,
             timestamp: now,
             content: textParts.join('\n'),
+            attachments: attachments,
           ),
         );
       } else if (msg is ModelMessage) {

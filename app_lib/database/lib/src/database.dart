@@ -4,6 +4,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'tables/agent_definition.dart';
+import 'tables/agent_memory.dart';
 import 'tables/chat_conversation.dart';
 import 'tables/chat_message.dart';
 import 'tables/chat_settings.dart';
@@ -24,6 +25,7 @@ import 'tables/shell_profiles.dart';
 import 'type_converter.dart';
 
 export 'tables/agent_definition.dart';
+export 'tables/agent_memory.dart';
 export 'tables/chat_conversation.dart';
 export 'tables/chat_message.dart';
 export 'tables/chat_settings.dart';
@@ -51,6 +53,7 @@ part 'database.g.dart';
   GitHubRepoTable,
   ChatConversationTable,
   AgentDefinitionTable,
+  AgentMemoryTable,
   ChatMessageTable,
   ChatSettingsTable,
   ServiceAccountTable,
@@ -77,7 +80,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration {
@@ -267,6 +270,9 @@ class AppDatabase extends _$AppDatabase {
             chatConversationTable,
             chatConversationTable.agentId,
           );
+        }
+        if (from < 22) {
+          await m.createTable(agentMemoryTable);
         }
       },
     );

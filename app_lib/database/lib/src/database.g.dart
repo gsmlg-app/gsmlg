@@ -2373,6 +2373,494 @@ class AgentDefinitionTableCompanion
   }
 }
 
+class $AgentMemoryTableTable extends AgentMemoryTable
+    with TableInfo<$AgentMemoryTableTable, AgentMemoryTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentMemoryTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _scopeMeta = const VerificationMeta('scope');
+  @override
+  late final GeneratedColumn<String> scope = GeneratedColumn<String>(
+      'scope', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _contentMeta =
+      const VerificationMeta('content');
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+      'content', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _provenanceMeta =
+      const VerificationMeta('provenance');
+  @override
+  late final GeneratedColumn<String> provenance = GeneratedColumn<String>(
+      'provenance', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('agent_inference'));
+  static const VerificationMeta _sourceIdMeta =
+      const VerificationMeta('sourceId');
+  @override
+  late final GeneratedColumn<String> sourceId = GeneratedColumn<String>(
+      'source_id', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _contentHashMeta =
+      const VerificationMeta('contentHash');
+  @override
+  late final GeneratedColumn<String> contentHash = GeneratedColumn<String>(
+      'content_hash', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _metadataJsonMeta =
+      const VerificationMeta('metadataJson');
+  @override
+  late final GeneratedColumn<String> metadataJson = GeneratedColumn<String>(
+      'metadata_json', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('{}'));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        scope,
+        content,
+        provenance,
+        sourceId,
+        contentHash,
+        metadataJson,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agent_memory_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<AgentMemoryTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('scope')) {
+      context.handle(
+          _scopeMeta, scope.isAcceptableOrUnknown(data['scope']!, _scopeMeta));
+    } else if (isInserting) {
+      context.missing(_scopeMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(_contentMeta,
+          content.isAcceptableOrUnknown(data['content']!, _contentMeta));
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('provenance')) {
+      context.handle(
+          _provenanceMeta,
+          provenance.isAcceptableOrUnknown(
+              data['provenance']!, _provenanceMeta));
+    }
+    if (data.containsKey('source_id')) {
+      context.handle(_sourceIdMeta,
+          sourceId.isAcceptableOrUnknown(data['source_id']!, _sourceIdMeta));
+    }
+    if (data.containsKey('content_hash')) {
+      context.handle(
+          _contentHashMeta,
+          contentHash.isAcceptableOrUnknown(
+              data['content_hash']!, _contentHashMeta));
+    } else if (isInserting) {
+      context.missing(_contentHashMeta);
+    }
+    if (data.containsKey('metadata_json')) {
+      context.handle(
+          _metadataJsonMeta,
+          metadataJson.isAcceptableOrUnknown(
+              data['metadata_json']!, _metadataJsonMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AgentMemoryTableData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AgentMemoryTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      scope: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}scope'])!,
+      content: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
+      provenance: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}provenance'])!,
+      sourceId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}source_id']),
+      contentHash: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}content_hash'])!,
+      metadataJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}metadata_json'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $AgentMemoryTableTable createAlias(String alias) {
+    return $AgentMemoryTableTable(attachedDatabase, alias);
+  }
+}
+
+class AgentMemoryTableData extends DataClass
+    implements Insertable<AgentMemoryTableData> {
+  /// Primary key (e.g. `mem_<timestamp>` or UUID).
+  final String id;
+
+  /// Visibility scope (e.g. `global`, `agent:<id>`, `conversation:<id>`).
+  final String scope;
+
+  /// Memory text content.
+  final String content;
+
+  /// Source type: `user_fact`, `agent_inference`, or `tool_observation`.
+  final String provenance;
+
+  /// Originating session or agent identifier, when known.
+  final String? sourceId;
+
+  /// SHA-256 hash of [content] for integrity and deduplication.
+  final String contentHash;
+
+  /// JSON-encoded key-value metadata.
+  final String metadataJson;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const AgentMemoryTableData(
+      {required this.id,
+      required this.scope,
+      required this.content,
+      required this.provenance,
+      this.sourceId,
+      required this.contentHash,
+      required this.metadataJson,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['scope'] = Variable<String>(scope);
+    map['content'] = Variable<String>(content);
+    map['provenance'] = Variable<String>(provenance);
+    if (!nullToAbsent || sourceId != null) {
+      map['source_id'] = Variable<String>(sourceId);
+    }
+    map['content_hash'] = Variable<String>(contentHash);
+    map['metadata_json'] = Variable<String>(metadataJson);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  AgentMemoryTableCompanion toCompanion(bool nullToAbsent) {
+    return AgentMemoryTableCompanion(
+      id: Value(id),
+      scope: Value(scope),
+      content: Value(content),
+      provenance: Value(provenance),
+      sourceId: sourceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceId),
+      contentHash: Value(contentHash),
+      metadataJson: Value(metadataJson),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory AgentMemoryTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AgentMemoryTableData(
+      id: serializer.fromJson<String>(json['id']),
+      scope: serializer.fromJson<String>(json['scope']),
+      content: serializer.fromJson<String>(json['content']),
+      provenance: serializer.fromJson<String>(json['provenance']),
+      sourceId: serializer.fromJson<String?>(json['sourceId']),
+      contentHash: serializer.fromJson<String>(json['contentHash']),
+      metadataJson: serializer.fromJson<String>(json['metadataJson']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'scope': serializer.toJson<String>(scope),
+      'content': serializer.toJson<String>(content),
+      'provenance': serializer.toJson<String>(provenance),
+      'sourceId': serializer.toJson<String?>(sourceId),
+      'contentHash': serializer.toJson<String>(contentHash),
+      'metadataJson': serializer.toJson<String>(metadataJson),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  AgentMemoryTableData copyWith(
+          {String? id,
+          String? scope,
+          String? content,
+          String? provenance,
+          Value<String?> sourceId = const Value.absent(),
+          String? contentHash,
+          String? metadataJson,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      AgentMemoryTableData(
+        id: id ?? this.id,
+        scope: scope ?? this.scope,
+        content: content ?? this.content,
+        provenance: provenance ?? this.provenance,
+        sourceId: sourceId.present ? sourceId.value : this.sourceId,
+        contentHash: contentHash ?? this.contentHash,
+        metadataJson: metadataJson ?? this.metadataJson,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  AgentMemoryTableData copyWithCompanion(AgentMemoryTableCompanion data) {
+    return AgentMemoryTableData(
+      id: data.id.present ? data.id.value : this.id,
+      scope: data.scope.present ? data.scope.value : this.scope,
+      content: data.content.present ? data.content.value : this.content,
+      provenance:
+          data.provenance.present ? data.provenance.value : this.provenance,
+      sourceId: data.sourceId.present ? data.sourceId.value : this.sourceId,
+      contentHash:
+          data.contentHash.present ? data.contentHash.value : this.contentHash,
+      metadataJson: data.metadataJson.present
+          ? data.metadataJson.value
+          : this.metadataJson,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentMemoryTableData(')
+          ..write('id: $id, ')
+          ..write('scope: $scope, ')
+          ..write('content: $content, ')
+          ..write('provenance: $provenance, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('contentHash: $contentHash, ')
+          ..write('metadataJson: $metadataJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, scope, content, provenance, sourceId,
+      contentHash, metadataJson, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AgentMemoryTableData &&
+          other.id == this.id &&
+          other.scope == this.scope &&
+          other.content == this.content &&
+          other.provenance == this.provenance &&
+          other.sourceId == this.sourceId &&
+          other.contentHash == this.contentHash &&
+          other.metadataJson == this.metadataJson &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class AgentMemoryTableCompanion extends UpdateCompanion<AgentMemoryTableData> {
+  final Value<String> id;
+  final Value<String> scope;
+  final Value<String> content;
+  final Value<String> provenance;
+  final Value<String?> sourceId;
+  final Value<String> contentHash;
+  final Value<String> metadataJson;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const AgentMemoryTableCompanion({
+    this.id = const Value.absent(),
+    this.scope = const Value.absent(),
+    this.content = const Value.absent(),
+    this.provenance = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    this.contentHash = const Value.absent(),
+    this.metadataJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AgentMemoryTableCompanion.insert({
+    required String id,
+    required String scope,
+    required String content,
+    this.provenance = const Value.absent(),
+    this.sourceId = const Value.absent(),
+    required String contentHash,
+    this.metadataJson = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        scope = Value(scope),
+        content = Value(content),
+        contentHash = Value(contentHash);
+  static Insertable<AgentMemoryTableData> custom({
+    Expression<String>? id,
+    Expression<String>? scope,
+    Expression<String>? content,
+    Expression<String>? provenance,
+    Expression<String>? sourceId,
+    Expression<String>? contentHash,
+    Expression<String>? metadataJson,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (scope != null) 'scope': scope,
+      if (content != null) 'content': content,
+      if (provenance != null) 'provenance': provenance,
+      if (sourceId != null) 'source_id': sourceId,
+      if (contentHash != null) 'content_hash': contentHash,
+      if (metadataJson != null) 'metadata_json': metadataJson,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AgentMemoryTableCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? scope,
+      Value<String>? content,
+      Value<String>? provenance,
+      Value<String?>? sourceId,
+      Value<String>? contentHash,
+      Value<String>? metadataJson,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return AgentMemoryTableCompanion(
+      id: id ?? this.id,
+      scope: scope ?? this.scope,
+      content: content ?? this.content,
+      provenance: provenance ?? this.provenance,
+      sourceId: sourceId ?? this.sourceId,
+      contentHash: contentHash ?? this.contentHash,
+      metadataJson: metadataJson ?? this.metadataJson,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (scope.present) {
+      map['scope'] = Variable<String>(scope.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (provenance.present) {
+      map['provenance'] = Variable<String>(provenance.value);
+    }
+    if (sourceId.present) {
+      map['source_id'] = Variable<String>(sourceId.value);
+    }
+    if (contentHash.present) {
+      map['content_hash'] = Variable<String>(contentHash.value);
+    }
+    if (metadataJson.present) {
+      map['metadata_json'] = Variable<String>(metadataJson.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentMemoryTableCompanion(')
+          ..write('id: $id, ')
+          ..write('scope: $scope, ')
+          ..write('content: $content, ')
+          ..write('provenance: $provenance, ')
+          ..write('sourceId: $sourceId, ')
+          ..write('contentHash: $contentHash, ')
+          ..write('metadataJson: $metadataJson, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ChatMessageTableTable extends ChatMessageTable
     with TableInfo<$ChatMessageTableTable, ChatMessageTableData> {
   @override
@@ -10325,6 +10813,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ChatConversationTableTable(this);
   late final $AgentDefinitionTableTable agentDefinitionTable =
       $AgentDefinitionTableTable(this);
+  late final $AgentMemoryTableTable agentMemoryTable =
+      $AgentMemoryTableTable(this);
   late final $ChatMessageTableTable chatMessageTable =
       $ChatMessageTableTable(this);
   late final $ChatSettingsTableTable chatSettingsTable =
@@ -10359,6 +10849,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         gitHubRepoTable,
         chatConversationTable,
         agentDefinitionTable,
+        agentMemoryTable,
         chatMessageTable,
         chatSettingsTable,
         serviceAccountTable,
@@ -11638,6 +12129,248 @@ typedef $$AgentDefinitionTableTableProcessedTableManager
         ),
         AgentDefinitionTableData,
         PrefetchHooks Function()>;
+typedef $$AgentMemoryTableTableCreateCompanionBuilder
+    = AgentMemoryTableCompanion Function({
+  required String id,
+  required String scope,
+  required String content,
+  Value<String> provenance,
+  Value<String?> sourceId,
+  required String contentHash,
+  Value<String> metadataJson,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+typedef $$AgentMemoryTableTableUpdateCompanionBuilder
+    = AgentMemoryTableCompanion Function({
+  Value<String> id,
+  Value<String> scope,
+  Value<String> content,
+  Value<String> provenance,
+  Value<String?> sourceId,
+  Value<String> contentHash,
+  Value<String> metadataJson,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$AgentMemoryTableTableFilterComposer
+    extends Composer<_$AppDatabase, $AgentMemoryTableTable> {
+  $$AgentMemoryTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get scope => $composableBuilder(
+      column: $table.scope, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get content => $composableBuilder(
+      column: $table.content, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get provenance => $composableBuilder(
+      column: $table.provenance, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sourceId => $composableBuilder(
+      column: $table.sourceId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get contentHash => $composableBuilder(
+      column: $table.contentHash, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get metadataJson => $composableBuilder(
+      column: $table.metadataJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$AgentMemoryTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $AgentMemoryTableTable> {
+  $$AgentMemoryTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get scope => $composableBuilder(
+      column: $table.scope, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get content => $composableBuilder(
+      column: $table.content, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get provenance => $composableBuilder(
+      column: $table.provenance, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sourceId => $composableBuilder(
+      column: $table.sourceId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get contentHash => $composableBuilder(
+      column: $table.contentHash, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get metadataJson => $composableBuilder(
+      column: $table.metadataJson,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$AgentMemoryTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AgentMemoryTableTable> {
+  $$AgentMemoryTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get scope =>
+      $composableBuilder(column: $table.scope, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get provenance => $composableBuilder(
+      column: $table.provenance, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceId =>
+      $composableBuilder(column: $table.sourceId, builder: (column) => column);
+
+  GeneratedColumn<String> get contentHash => $composableBuilder(
+      column: $table.contentHash, builder: (column) => column);
+
+  GeneratedColumn<String> get metadataJson => $composableBuilder(
+      column: $table.metadataJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$AgentMemoryTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $AgentMemoryTableTable,
+    AgentMemoryTableData,
+    $$AgentMemoryTableTableFilterComposer,
+    $$AgentMemoryTableTableOrderingComposer,
+    $$AgentMemoryTableTableAnnotationComposer,
+    $$AgentMemoryTableTableCreateCompanionBuilder,
+    $$AgentMemoryTableTableUpdateCompanionBuilder,
+    (
+      AgentMemoryTableData,
+      BaseReferences<_$AppDatabase, $AgentMemoryTableTable,
+          AgentMemoryTableData>
+    ),
+    AgentMemoryTableData,
+    PrefetchHooks Function()> {
+  $$AgentMemoryTableTableTableManager(
+      _$AppDatabase db, $AgentMemoryTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AgentMemoryTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AgentMemoryTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AgentMemoryTableTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> scope = const Value.absent(),
+            Value<String> content = const Value.absent(),
+            Value<String> provenance = const Value.absent(),
+            Value<String?> sourceId = const Value.absent(),
+            Value<String> contentHash = const Value.absent(),
+            Value<String> metadataJson = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AgentMemoryTableCompanion(
+            id: id,
+            scope: scope,
+            content: content,
+            provenance: provenance,
+            sourceId: sourceId,
+            contentHash: contentHash,
+            metadataJson: metadataJson,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String scope,
+            required String content,
+            Value<String> provenance = const Value.absent(),
+            Value<String?> sourceId = const Value.absent(),
+            required String contentHash,
+            Value<String> metadataJson = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AgentMemoryTableCompanion.insert(
+            id: id,
+            scope: scope,
+            content: content,
+            provenance: provenance,
+            sourceId: sourceId,
+            contentHash: contentHash,
+            metadataJson: metadataJson,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$AgentMemoryTableTable, AgentMemoryTableData>(
+                        table),
+                    BaseReferences<_$AppDatabase, $AgentMemoryTableTable,
+                        AgentMemoryTableData>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$AgentMemoryTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $AgentMemoryTableTable,
+    AgentMemoryTableData,
+    $$AgentMemoryTableTableFilterComposer,
+    $$AgentMemoryTableTableOrderingComposer,
+    $$AgentMemoryTableTableAnnotationComposer,
+    $$AgentMemoryTableTableCreateCompanionBuilder,
+    $$AgentMemoryTableTableUpdateCompanionBuilder,
+    (
+      AgentMemoryTableData,
+      BaseReferences<_$AppDatabase, $AgentMemoryTableTable,
+          AgentMemoryTableData>
+    ),
+    AgentMemoryTableData,
+    PrefetchHooks Function()>;
 typedef $$ChatMessageTableTableCreateCompanionBuilder
     = ChatMessageTableCompanion Function({
   required String id,
@@ -17055,6 +17788,8 @@ class $AppDatabaseManager {
       $$ChatConversationTableTableTableManager(_db, _db.chatConversationTable);
   $$AgentDefinitionTableTableTableManager get agentDefinitionTable =>
       $$AgentDefinitionTableTableTableManager(_db, _db.agentDefinitionTable);
+  $$AgentMemoryTableTableTableManager get agentMemoryTable =>
+      $$AgentMemoryTableTableTableManager(_db, _db.agentMemoryTable);
   $$ChatMessageTableTableTableManager get chatMessageTable =>
       $$ChatMessageTableTableTableManager(_db, _db.chatMessageTable);
   $$ChatSettingsTableTableTableManager get chatSettingsTable =>

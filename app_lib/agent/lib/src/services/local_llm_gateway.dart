@@ -15,6 +15,7 @@ abstract interface class LocalLlmGateway {
     List<Message> messages, {
     required ModelConfig config,
     List<Map<String, dynamic>> tools,
+    String? runId,
   });
 
   Future<void> stop();
@@ -36,6 +37,7 @@ class GemmaLocalLlmGateway implements LocalLlmGateway {
     List<Message> messages, {
     required ModelConfig config,
     List<Map<String, dynamic>> tools = const [],
+    String? runId,
   }) {
     final access = _access;
     if (access == null) {

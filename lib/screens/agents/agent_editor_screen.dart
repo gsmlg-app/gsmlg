@@ -276,11 +276,20 @@ class _AgentEditorScreenState extends State<AgentEditorScreen> {
   }
 
   List<ChatToolDefinition> _toolDefinitions(BuildContext context) {
-    try {
-      return context.read<ToolExecutor>().toolDefinitions;
-    } catch (_) {
-      return const [];
+    final seen = <String>{};
+    final result = <ChatToolDefinition>[];
+    void addAll(Iterable<ChatToolDefinition> items) {
+      for (final item in items) {
+        if (seen.add(item.name)) result.add(item);
+      }
     }
+
+    try {
+      addAll(context.read<ToolExecutor>().toolDefinitions);
+    } catch (_) {}
+    addAll(ScopedMemoryProvider.defaultToolDefinitions);
+    addAll(AgentSupervisor.defaultToolDefinitions);
+    return result;
   }
 
   Future<void> _save() async {

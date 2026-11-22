@@ -102,6 +102,20 @@ Map<String, Object?> agentEventToWire(ChatAgentEvent e, {String? ackId}) {
       'type': 'runCancelled',
       'reason': e.reason,
     },
+    final SubAgentUpdatedEvent e => {
+      ...base,
+      'type': 'subAgentUpdated',
+      'taskId': e.taskId,
+      'parentRunId': e.parentRunId,
+      'childRunId': e.childRunId,
+      'workerName': e.workerName,
+      'goal': e.goal,
+      'status': e.status,
+      'depth': e.depth,
+      'summary': e.summary,
+      'error': e.error,
+      'durationMs': e.durationMs,
+    },
   };
 }
 
@@ -192,6 +206,20 @@ ChatAgentEvent agentEventFromWire(
       sessionId: sessionId,
       reason: m['reason'] as String,
     ),
+    'subAgentUpdated' => SubAgentUpdatedEvent(
+      runId: runId,
+      sessionId: sessionId,
+      taskId: m['taskId'] as String,
+      parentRunId: m['parentRunId'] as String,
+      childRunId: m['childRunId'] as String,
+      workerName: m['workerName'] as String,
+      goal: m['goal'] as String,
+      status: m['status'] as String,
+      depth: m['depth'] as int,
+      summary: m['summary'] as String?,
+      error: m['error'] as String?,
+      durationMs: m['durationMs'] as int?,
+    ),
     final t => throw ArgumentError('Unknown agent event type: $t'),
   };
 }
@@ -199,6 +227,7 @@ ChatAgentEvent agentEventFromWire(
 /// Main -> agent isolate: start a run. Events flow back over [eventsPort].
 class StartRun {
   const StartRun({
+    this.agentId,
     required this.runId,
     required this.sessionId,
     required this.generationId,
@@ -213,6 +242,7 @@ class StartRun {
   });
 
   factory StartRun.fromWire(Map<String, Object?> m) => StartRun(
+    agentId: m['agentId'] as String?,
     runId: m['runId'] as String,
     sessionId: m['sessionId'] as String,
     generationId: m['generationId'] as String,
@@ -228,6 +258,7 @@ class StartRun {
     eventsPort: m['eventsPort'] as SendPort,
   );
 
+  final String? agentId;
   final String runId;
   final String sessionId;
   final String generationId;
@@ -245,6 +276,7 @@ class StartRun {
   final SendPort eventsPort;
 
   Map<String, Object?> toWire() => {
+    if (agentId != null) 'agentId': agentId,
     'runId': runId,
     'sessionId': sessionId,
     'generationId': generationId,

@@ -143,6 +143,7 @@ class _NoLocal implements LocalLlmGateway {
     List<Message> messages, {
     ModelConfig? config,
     List<Map<String, dynamic>> tools = const [],
+    String? runId,
   }) => Stream.error(StateError('no local model'));
 
   @override
@@ -159,6 +160,7 @@ class _HangingLocal implements LocalLlmGateway {
     List<Message> messages, {
     ModelConfig? config,
     List<Map<String, dynamic>> tools = const [],
+    String? runId,
   }) {
     late final StreamController<ChatGenerationChunk> controller;
     controller = StreamController(

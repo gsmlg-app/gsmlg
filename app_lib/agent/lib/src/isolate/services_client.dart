@@ -3,6 +3,7 @@ import 'dart:isolate';
 
 import 'package:app_database/app_database.dart';
 
+import '../agent/memory_provider.dart';
 import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
@@ -22,7 +23,11 @@ import 'wire.dart' show RemoteAgentError;
 /// subscription is cancelled or the client is closed. Server
 /// errors are thrown as [RemoteAgentError]. Call [close] when done.
 class AgentServicesClient
-    implements SecretReader, ToolDataSource, LocalLlmGateway {
+    implements
+        SecretReader,
+        ToolDataSource,
+        LocalLlmGateway,
+        AgentMemoryGateway {
   AgentServicesClient(
     SendPort serverPort, {
     this.timeout = const Duration(seconds: 30),
@@ -196,6 +201,22 @@ class AgentServicesClient
   }
 
   @override
+  Future<Map<String, dynamic>> executeMemoryTool({
+    required String toolName,
+    required Map<String, dynamic> arguments,
+    required String sessionId,
+    String? agentId,
+  }) async {
+    final result = await _call(opMemoryExecute, {
+      'toolName': toolName,
+      'arguments': arguments,
+      'sessionId': sessionId,
+      'agentId': agentId,
+    });
+    return _json(result);
+  }
+
+  @override
   Future<void> stop() async {
     await _call(opLocalLlmStop);
   }
@@ -205,6 +226,7 @@ class AgentServicesClient
     List<Message> messages, {
     required ModelConfig config,
     List<Map<String, dynamic>> tools = const [],
+    String? runId,
   }) {
     late final StreamController<ChatGenerationChunk> controller;
     int? id;
@@ -237,6 +259,7 @@ class AgentServicesClient
             'messages': [for (final m in messages) m.toWire()],
             'config': config.toWire(),
             'tools': tools,
+            'runId': ?runId,
           },
           'reply': _port.sendPort,
         });

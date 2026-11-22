@@ -223,6 +223,7 @@ class AgentHost implements AgentRunner {
       port.listen((message) => _onWire(run, message));
 
       final start = StartRun(
+        agentId: run.agentId,
         runId: run.runId,
         sessionId: run.sessionId,
         generationId: generationId,
@@ -474,10 +475,12 @@ class AgentHost implements AgentRunner {
     for (final slot in _workers.values) {
       if (slot.isolateId == isolateId) slot.isolateId = null;
     }
-    var lostLocal = false;
+    final lostLocalRunIds = <String>{};
     for (final run in _runs.values.toList()) {
       if (run.isolateId != isolateId) continue;
-      lostLocal |= run.local;
+      if (run.local && !run.cancelRequested) {
+        lostLocalRunIds.add(run.runId);
+      }
       _fail(
         run,
         RemoteAgentError(
@@ -486,9 +489,12 @@ class AgentHost implements AgentRunner {
         ),
       );
     }
-    // The dead worker can no longer cancel its bridged local generation. Local
-    // runs hold the single local slot, so every active stream is the lost one.
-    if (lostLocal) unawaited(_services.cancelAllStreams());
+    // Cancel only the lost runs' bridged local generations so a previously
+    // stopped worker dying late cannot abort a healthy run that has since
+    // acquired the local model lease.
+    if (lostLocalRunIds.isNotEmpty) {
+      unawaited(_services.cancelStreamsForRuns(lostLocalRunIds));
+    }
   }
 
   void _fail(_HostRun run, RemoteAgentError error, [StackTrace? stackTrace]) {

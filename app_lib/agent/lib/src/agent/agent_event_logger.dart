@@ -140,6 +140,43 @@ AgentLogEvent? agentLogEventFrom(ChatAgentEvent e, {int? turn}) {
         summary: _oneLine('run cancelled: $reason'),
         payload: {'reason': reason},
       );
+    case SubAgentUpdatedEvent(
+      :final taskId,
+      :final parentRunId,
+      :final childRunId,
+      :final workerName,
+      :final goal,
+      :final status,
+      :final depth,
+      :final summary,
+      :final error,
+      :final durationMs,
+    ):
+      final failed = status == 'failed';
+      return AgentLogEvent(
+        ts: ts,
+        eventType: 'sub_agent_$status',
+        context: LogContext(
+          conversationId: e.sessionId,
+          runId: childRunId,
+          parentRunId: parentRunId,
+          turn: turn,
+        ),
+        toolName: workerName,
+        backend: 'sub_agent',
+        level: failed ? 'SEVERE' : (status == 'cancelled' ? 'WARNING' : 'INFO'),
+        isError: failed,
+        durationMs: durationMs,
+        summary: _oneLine('sub-agent $workerName $status'),
+        payload: {
+          'task_id': taskId,
+          'goal': goal,
+          'status': status,
+          'depth': depth,
+          'summary': ?summary,
+          'error': ?error,
+        },
+      );
   }
 }
 

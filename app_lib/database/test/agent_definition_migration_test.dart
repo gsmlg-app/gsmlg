@@ -24,7 +24,7 @@ void main() {
     }));
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 21);
+    expect(database.schemaVersion, greaterThanOrEqualTo(21));
     final row =
         await database.select(database.chatConversationTable).getSingle();
     expect(row.id, 'conv_1');

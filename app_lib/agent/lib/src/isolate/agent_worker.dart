@@ -8,6 +8,9 @@ import 'package:isolate_orchestrator/isolate_orchestrator.dart';
 
 import '../agent/agent_event.dart';
 import '../agent/chat_agent_runtime.dart';
+import '../agent/memory_provider.dart';
+import '../agent/sub_agent_supervisor.dart';
+import '../models/message.dart';
 import '../repositories/remote_llm_repository.dart';
 import '../services/secret_reader.dart';
 import '../services/tool_executor.dart';
@@ -165,6 +168,71 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
   void _run(_WorkerRun run) {
     final start = run.start;
     final config = start.modelConfig;
+    final parentAllowedTools = start.allowedTools?.toSet();
+
+    final memoryProvider = ScopedMemoryProvider(
+      remoteGateway: _services,
+      defaultAgentId: start.agentId,
+    );
+
+    final treeBudget = TreeBudget(
+      maxDepth: 3,
+      maxConcurrency: 4,
+      maxTurns: start.maxTurns * 2,
+      maxToolCalls: 80,
+    );
+
+    void emitSubAgentUpdate(SubAgentTask task, {int? durationMs}) {
+      if (!identical(_runs[start.runId], run)) return;
+      _forward(
+        run,
+        SubAgentUpdatedEvent(
+          runId: start.runId,
+          sessionId: start.sessionId,
+          taskId: task.taskId,
+          parentRunId: task.parentRunId,
+          childRunId: task.childRunId,
+          workerName: task.workerName,
+          goal: task.goal,
+          status: task.status,
+          depth: task.depth,
+          summary: task.result?.toString(),
+          error: task.error,
+          durationMs: durationMs,
+        ),
+      );
+    }
+
+    AgentSupervisor buildSupervisor(int currentDepth) {
+      return AgentSupervisor(
+        budget: treeBudget,
+        onTaskUpdated: emitSubAgentUpdate,
+        childRunner:
+            ({
+              required String childRunId,
+              required String role,
+              required String prompt,
+              required Set<String>? allowedTools,
+              required CancelToken cancelToken,
+              required TreeBudget budget,
+              required int depth,
+            }) => _runChildAgent(
+              parentRun: run,
+              childRunId: childRunId,
+              role: role,
+              prompt: prompt,
+              parentAllowedTools: parentAllowedTools,
+              requestedAllowedTools: allowedTools,
+              cancelToken: cancelToken,
+              budget: budget,
+              depth: depth,
+              memoryProvider: memoryProvider,
+              buildSupervisor: buildSupervisor,
+            ),
+      );
+    }
+
+    final supervisor = buildSupervisor(0);
 
     final runtime = ChatAgentRuntime(
       toolExecutor: ToolExecutor(
@@ -175,6 +243,8 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
       remoteRepository: run.remote,
       // The bridge leases the local model on the main isolate.
       localLlm: _services,
+      memoryProvider: memoryProvider,
+      supervisor: supervisor,
       awaitAcknowledgements: true,
     );
     runtime
@@ -187,9 +257,123 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
           userPrompt: start.userPrompt.content,
           cancelToken: run.cancelToken,
           maxTurns: start.maxTurns,
-          allowedTools: start.allowedTools?.toSet(),
+          allowedTools: parentAllowedTools,
         )
         .listen((event) => _forward(run, event), onDone: () => _end(run));
+  }
+
+  Future<String> _runChildAgent({
+    required _WorkerRun parentRun,
+    required String childRunId,
+    required String role,
+    required String prompt,
+    required Set<String>? parentAllowedTools,
+    required Set<String>? requestedAllowedTools,
+    required CancelToken cancelToken,
+    required TreeBudget budget,
+    required int depth,
+    required ScopedMemoryProvider memoryProvider,
+    required AgentSupervisor Function(int depth) buildSupervisor,
+  }) async {
+    final start = parentRun.start;
+    final config = start.modelConfig;
+    final childRemote = RemoteLlmRepository(
+      secrets: _RunSecrets(
+        key: config.remoteAccountId == null
+            ? null
+            : RemoteLlmRepository.accountSecretKey(config.remoteAccountId!),
+        apiKey: start.apiKey,
+        fallback: _services,
+      ),
+      client: _http,
+    );
+
+    // Intersect capabilities: child can never exceed parent's allowed tools.
+    Set<String>? effectiveAllowedTools;
+    if (parentAllowedTools != null && requestedAllowedTools != null) {
+      effectiveAllowedTools = parentAllowedTools.intersection(
+        requestedAllowedTools,
+      );
+    } else {
+      effectiveAllowedTools = requestedAllowedTools ?? parentAllowedTools;
+    }
+
+    final childRuntime = ChatAgentRuntime(
+      toolExecutor: ToolExecutor(
+        data: _services,
+        secrets: _services,
+        remoteMcpProfilesProvider: () => start.mcpProfiles,
+      ),
+      remoteRepository: childRemote,
+      localLlm: _services,
+      memoryProvider: memoryProvider,
+      supervisor: depth < budget.maxDepth ? buildSupervisor(depth) : null,
+      awaitAcknowledgements: false,
+    );
+
+    final systemInstruction = SystemMessage(
+      id: '$childRunId:system',
+      content:
+          'You are sub-agent "$role" working on a focused task delegated by '
+          'the primary agent. Return a concise, factual summary of your '
+          'findings and results.',
+      conversationId: start.sessionId,
+      timestamp: DateTime.now(),
+    );
+
+    final output = StringBuffer();
+    String? lastTurnText;
+    Object? failure;
+
+    try {
+      await for (final event in childRuntime.runStream(
+        runId: childRunId,
+        sessionId: start.sessionId,
+        generationId: childRunId,
+        modelConfig: config,
+        historyMessages: [systemInstruction],
+        userPrompt: prompt,
+        cancelToken: cancelToken,
+        maxTurns: 12,
+        allowedTools: effectiveAllowedTools,
+      )) {
+        switch (event) {
+          case ModelTurnStartedEvent():
+            if (!budget.recordTurn() && !cancelToken.isCancelled) {
+              cancelToken.cancel('Tree turn budget exceeded');
+            }
+          case ToolCallStartedEvent():
+            if (!budget.recordToolCall() && !cancelToken.isCancelled) {
+              cancelToken.cancel('Tree tool call budget exceeded');
+            }
+          case ModelChunkReceivedEvent(:final textChunk):
+            if (textChunk != null && textChunk.isNotEmpty) {
+              output.write(textChunk);
+            }
+          case ModelTurnCompletedEvent(:final modelMessage):
+            if (modelMessage.textOutput != null &&
+                modelMessage.textOutput!.trim().isNotEmpty) {
+              lastTurnText = modelMessage.textOutput!.trim();
+            }
+          case AgentRunFailedEvent(:final error):
+            failure = error;
+          case AgentRunCancelledEvent(:final reason):
+            if (!cancelToken.isCancelled) {
+              cancelToken.cancel(reason);
+            }
+          default:
+            break;
+        }
+      }
+      if (failure != null) throw failure;
+      if (cancelToken.isCancelled) {
+        throw cancelToken.cancelError ?? StateError('Sub-agent cancelled');
+      }
+      final result = lastTurnText ?? output.toString().trim();
+      return result.isNotEmpty ? result : 'Sub-agent "$role" completed.';
+    } finally {
+      unawaited(childRemote.dispose());
+    }
   }
 
   void _forward(_WorkerRun run, ChatAgentEvent event) {

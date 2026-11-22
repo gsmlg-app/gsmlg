@@ -506,6 +506,7 @@ class _FakeLocalLlm implements LocalLlmGateway {
     List<Message> messages, {
     required ModelConfig config,
     List<Map<String, dynamic>> tools = const [],
+    String? runId,
   }) {
     lastMessages = messages;
     lastConfig = config;
