@@ -44,6 +44,12 @@
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>GSMLG needs Bluetooth access to scan nearby BLE devices.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_rfb._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>GSMLG needs local network access to discover VNC / macOS Screen Sharing and monitor hosts.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>

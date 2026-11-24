@@ -1878,4 +1878,141 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terminalMouseInteraction => 'Resume application mouse interaction';
+
+  @override
+  String get vncTitle => 'VNC';
+
+  @override
+  String get vncBrowserUnsupported =>
+      'VNC client is not supported in the browser.';
+
+  @override
+  String get vncQuickConnect => 'Quick Connect';
+
+  @override
+  String get vncAddHost => 'Add Host';
+
+  @override
+  String get vncEditHost => 'Edit Host';
+
+  @override
+  String get vncDeleteHost => 'Delete Host';
+
+  @override
+  String vncDeleteHostConfirm(String name) {
+    return 'Delete saved VNC host \"$name\"?';
+  }
+
+  @override
+  String get vncSavedHosts => 'Saved Hosts';
+
+  @override
+  String get vncLanDiscovery => 'LAN Discovery (Bonjour)';
+
+  @override
+  String get vncRefreshLan => 'Refresh LAN';
+
+  @override
+  String get vncScanningLan => 'Scanning local network...';
+
+  @override
+  String get vncNoSavedHosts => 'No saved VNC hosts yet';
+
+  @override
+  String get vncNoDiscoveredHosts =>
+      'No VNC or macOS Screen Sharing hosts found on LAN';
+
+  @override
+  String get vncNameLabel => 'Name';
+
+  @override
+  String get vncHostLabel => 'Host';
+
+  @override
+  String get vncPortLabel => 'Port';
+
+  @override
+  String get vncAuthTypeLabel => 'Authentication';
+
+  @override
+  String get vncAuthAuto => 'Auto';
+
+  @override
+  String get vncAuthAppleArd => 'macOS (ARD)';
+
+  @override
+  String get vncAuthPassword => 'VNC Password';
+
+  @override
+  String get vncAuthNone => 'None';
+
+  @override
+  String get vncUsernameLabel => 'Username';
+
+  @override
+  String get vncPasswordLabel => 'Password';
+
+  @override
+  String get vncPasswordKeepHint => 'Leave blank to keep existing password';
+
+  @override
+  String get vncClearPassword => 'Clear saved password';
+
+  @override
+  String get vncSshTunnelLabel => 'SSH Tunnel';
+
+  @override
+  String get vncSshTunnelNone => 'Direct (No Tunnel)';
+
+  @override
+  String get vncViewOnlyLabel => 'View Only';
+
+  @override
+  String get vncSaveHost => 'Save';
+
+  @override
+  String get vncConnect => 'Connect';
+
+  @override
+  String get vncDisconnect => 'Disconnect';
+
+  @override
+  String get vncReconnect => 'Reconnect';
+
+  @override
+  String get vncConnecting => 'Connecting...';
+
+  @override
+  String get vncDisconnected => 'Disconnected';
+
+  @override
+  String get vncFitScreen => 'Fit Screen';
+
+  @override
+  String get vncActualSize => '1:1 Actual Size';
+
+  @override
+  String get vncSyncClipboard => 'Send Clipboard';
+
+  @override
+  String get vncClipboardCopied => 'Remote clipboard copied';
+
+  @override
+  String get vncClipboardSent => 'Clipboard sent to remote host';
+
+  @override
+  String get vncTrackpadMode => 'Trackpad Mode';
+
+  @override
+  String get vncDirectTouchMode => 'Direct Touch';
+
+  @override
+  String get vncFullscreen => 'Fullscreen';
+
+  @override
+  String get vncAuthPromptTitle => 'VNC Authentication Required';
+
+  @override
+  String get vncMacosSharingHint =>
+      'Tip: On macOS, open System Settings → General → Sharing → Screen Sharing (or Remote Management) and ensure access is enabled for your user account.';
 }

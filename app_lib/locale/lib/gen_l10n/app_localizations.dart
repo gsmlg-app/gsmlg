@@ -3564,6 +3564,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Resume application mouse interaction'**
   String get terminalMouseInteraction;
+
+  /// No description provided for @vncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'VNC'**
+  String get vncTitle;
+
+  /// No description provided for @vncBrowserUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'VNC client is not supported in the browser.'**
+  String get vncBrowserUnsupported;
+
+  /// No description provided for @vncQuickConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Connect'**
+  String get vncQuickConnect;
+
+  /// No description provided for @vncAddHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Host'**
+  String get vncAddHost;
+
+  /// No description provided for @vncEditHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Host'**
+  String get vncEditHost;
+
+  /// No description provided for @vncDeleteHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Host'**
+  String get vncDeleteHost;
+
+  /// No description provided for @vncDeleteHostConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete saved VNC host \"{name}\"?'**
+  String vncDeleteHostConfirm(String name);
+
+  /// No description provided for @vncSavedHosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Hosts'**
+  String get vncSavedHosts;
+
+  /// No description provided for @vncLanDiscovery.
+  ///
+  /// In en, this message translates to:
+  /// **'LAN Discovery (Bonjour)'**
+  String get vncLanDiscovery;
+
+  /// No description provided for @vncRefreshLan.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh LAN'**
+  String get vncRefreshLan;
+
+  /// No description provided for @vncScanningLan.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning local network...'**
+  String get vncScanningLan;
+
+  /// No description provided for @vncNoSavedHosts.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved VNC hosts yet'**
+  String get vncNoSavedHosts;
+
+  /// No description provided for @vncNoDiscoveredHosts.
+  ///
+  /// In en, this message translates to:
+  /// **'No VNC or macOS Screen Sharing hosts found on LAN'**
+  String get vncNoDiscoveredHosts;
+
+  /// No description provided for @vncNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get vncNameLabel;
+
+  /// No description provided for @vncHostLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get vncHostLabel;
+
+  /// No description provided for @vncPortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get vncPortLabel;
+
+  /// No description provided for @vncAuthTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication'**
+  String get vncAuthTypeLabel;
+
+  /// No description provided for @vncAuthAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get vncAuthAuto;
+
+  /// No description provided for @vncAuthAppleArd.
+  ///
+  /// In en, this message translates to:
+  /// **'macOS (ARD)'**
+  String get vncAuthAppleArd;
+
+  /// No description provided for @vncAuthPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'VNC Password'**
+  String get vncAuthPassword;
+
+  /// No description provided for @vncAuthNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get vncAuthNone;
+
+  /// No description provided for @vncUsernameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get vncUsernameLabel;
+
+  /// No description provided for @vncPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get vncPasswordLabel;
+
+  /// No description provided for @vncPasswordKeepHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to keep existing password'**
+  String get vncPasswordKeepHint;
+
+  /// No description provided for @vncClearPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear saved password'**
+  String get vncClearPassword;
+
+  /// No description provided for @vncSshTunnelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SSH Tunnel'**
+  String get vncSshTunnelLabel;
+
+  /// No description provided for @vncSshTunnelNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct (No Tunnel)'**
+  String get vncSshTunnelNone;
+
+  /// No description provided for @vncViewOnlyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'View Only'**
+  String get vncViewOnlyLabel;
+
+  /// No description provided for @vncSaveHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get vncSaveHost;
+
+  /// No description provided for @vncConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get vncConnect;
+
+  /// No description provided for @vncDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get vncDisconnect;
+
+  /// No description provided for @vncReconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnect'**
+  String get vncReconnect;
+
+  /// No description provided for @vncConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting...'**
+  String get vncConnecting;
+
+  /// No description provided for @vncDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected'**
+  String get vncDisconnected;
+
+  /// No description provided for @vncFitScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit Screen'**
+  String get vncFitScreen;
+
+  /// No description provided for @vncActualSize.
+  ///
+  /// In en, this message translates to:
+  /// **'1:1 Actual Size'**
+  String get vncActualSize;
+
+  /// No description provided for @vncSyncClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Clipboard'**
+  String get vncSyncClipboard;
+
+  /// No description provided for @vncClipboardCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote clipboard copied'**
+  String get vncClipboardCopied;
+
+  /// No description provided for @vncClipboardSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Clipboard sent to remote host'**
+  String get vncClipboardSent;
+
+  /// No description provided for @vncTrackpadMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Trackpad Mode'**
+  String get vncTrackpadMode;
+
+  /// No description provided for @vncDirectTouchMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct Touch'**
+  String get vncDirectTouchMode;
+
+  /// No description provided for @vncFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Fullscreen'**
+  String get vncFullscreen;
+
+  /// No description provided for @vncAuthPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'VNC Authentication Required'**
+  String get vncAuthPromptTitle;
+
+  /// No description provided for @vncMacosSharingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip: On macOS, open System Settings → General → Sharing → Screen Sharing (or Remote Management) and ensure access is enabled for your user account.'**
+  String get vncMacosSharingHint;
 }
 
 class _AppLocalizationsDelegate

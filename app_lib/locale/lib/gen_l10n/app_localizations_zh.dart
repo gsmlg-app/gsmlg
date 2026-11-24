@@ -1841,6 +1841,141 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get terminalMouseInteraction => '恢复应用鼠标交互';
+
+  @override
+  String get vncTitle => 'VNC';
+
+  @override
+  String get vncBrowserUnsupported => '浏览器暂不支持 VNC 客户端。';
+
+  @override
+  String get vncQuickConnect => '快速连接';
+
+  @override
+  String get vncAddHost => '添加主机';
+
+  @override
+  String get vncEditHost => '编辑主机';
+
+  @override
+  String get vncDeleteHost => '删除主机';
+
+  @override
+  String vncDeleteHostConfirm(String name) {
+    return '确认删除已保存的 VNC 主机“$name”？';
+  }
+
+  @override
+  String get vncSavedHosts => '已保存主机';
+
+  @override
+  String get vncLanDiscovery => '局域网发现 (Bonjour)';
+
+  @override
+  String get vncRefreshLan => '刷新局域网';
+
+  @override
+  String get vncScanningLan => '正在扫描局域网...';
+
+  @override
+  String get vncNoSavedHosts => '暂无已保存的 VNC 主机';
+
+  @override
+  String get vncNoDiscoveredHosts => '局域网内未发现 VNC 或 macOS 屏幕共享主机';
+
+  @override
+  String get vncNameLabel => '名称';
+
+  @override
+  String get vncHostLabel => '主机地址';
+
+  @override
+  String get vncPortLabel => '端口';
+
+  @override
+  String get vncAuthTypeLabel => '认证方式';
+
+  @override
+  String get vncAuthAuto => '自动协商';
+
+  @override
+  String get vncAuthAppleArd => 'macOS (ARD 账号密码)';
+
+  @override
+  String get vncAuthPassword => 'VNC 密码';
+
+  @override
+  String get vncAuthNone => '无密码';
+
+  @override
+  String get vncUsernameLabel => '用户名';
+
+  @override
+  String get vncPasswordLabel => '密码';
+
+  @override
+  String get vncPasswordKeepHint => '留空以保留原密码';
+
+  @override
+  String get vncClearPassword => '清除已保存密码';
+
+  @override
+  String get vncSshTunnelLabel => 'SSH 隧道';
+
+  @override
+  String get vncSshTunnelNone => '直连（不使用隧道）';
+
+  @override
+  String get vncViewOnlyLabel => '只读模式';
+
+  @override
+  String get vncSaveHost => '保存';
+
+  @override
+  String get vncConnect => '连接';
+
+  @override
+  String get vncDisconnect => '断开';
+
+  @override
+  String get vncReconnect => '重连';
+
+  @override
+  String get vncConnecting => '正在连接...';
+
+  @override
+  String get vncDisconnected => '已断开连接';
+
+  @override
+  String get vncFitScreen => '适应屏幕';
+
+  @override
+  String get vncActualSize => '1:1 原始尺寸';
+
+  @override
+  String get vncSyncClipboard => '同步剪贴板';
+
+  @override
+  String get vncClipboardCopied => '已复制远端剪贴板';
+
+  @override
+  String get vncClipboardSent => '已发送剪贴板到远端主机';
+
+  @override
+  String get vncTrackpadMode => '触控板模式';
+
+  @override
+  String get vncDirectTouchMode => '直接触控';
+
+  @override
+  String get vncFullscreen => '全屏';
+
+  @override
+  String get vncAuthPromptTitle => '需要 VNC 认证';
+
+  @override
+  String get vncMacosSharingHint =>
+      '提示：在 macOS 上请打开「系统设置 → 通用 → 共享 → 屏幕共享（或远程管理）」并确认已允许当前用户访问。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -2780,6 +2915,141 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get terminalMouseInteraction => '恢复应用鼠标交互';
+
+  @override
+  String get vncTitle => 'VNC';
+
+  @override
+  String get vncBrowserUnsupported => '浏览器暂不支持 VNC 客户端。';
+
+  @override
+  String get vncQuickConnect => '快速连接';
+
+  @override
+  String get vncAddHost => '添加主机';
+
+  @override
+  String get vncEditHost => '编辑主机';
+
+  @override
+  String get vncDeleteHost => '删除主机';
+
+  @override
+  String vncDeleteHostConfirm(String name) {
+    return '确认删除已保存的 VNC 主机“$name”？';
+  }
+
+  @override
+  String get vncSavedHosts => '已保存主机';
+
+  @override
+  String get vncLanDiscovery => '局域网发现 (Bonjour)';
+
+  @override
+  String get vncRefreshLan => '刷新局域网';
+
+  @override
+  String get vncScanningLan => '正在扫描局域网...';
+
+  @override
+  String get vncNoSavedHosts => '暂无已保存的 VNC 主机';
+
+  @override
+  String get vncNoDiscoveredHosts => '局域网内未发现 VNC 或 macOS 屏幕共享主机';
+
+  @override
+  String get vncNameLabel => '名称';
+
+  @override
+  String get vncHostLabel => '主机地址';
+
+  @override
+  String get vncPortLabel => '端口';
+
+  @override
+  String get vncAuthTypeLabel => '认证方式';
+
+  @override
+  String get vncAuthAuto => '自动协商';
+
+  @override
+  String get vncAuthAppleArd => 'macOS (ARD 账号密码)';
+
+  @override
+  String get vncAuthPassword => 'VNC 密码';
+
+  @override
+  String get vncAuthNone => '无密码';
+
+  @override
+  String get vncUsernameLabel => '用户名';
+
+  @override
+  String get vncPasswordLabel => '密码';
+
+  @override
+  String get vncPasswordKeepHint => '留空以保留原密码';
+
+  @override
+  String get vncClearPassword => '清除已保存密码';
+
+  @override
+  String get vncSshTunnelLabel => 'SSH 隧道';
+
+  @override
+  String get vncSshTunnelNone => '直连（不使用隧道）';
+
+  @override
+  String get vncViewOnlyLabel => '只读模式';
+
+  @override
+  String get vncSaveHost => '保存';
+
+  @override
+  String get vncConnect => '连接';
+
+  @override
+  String get vncDisconnect => '断开';
+
+  @override
+  String get vncReconnect => '重连';
+
+  @override
+  String get vncConnecting => '正在连接...';
+
+  @override
+  String get vncDisconnected => '已断开连接';
+
+  @override
+  String get vncFitScreen => '适应屏幕';
+
+  @override
+  String get vncActualSize => '1:1 原始尺寸';
+
+  @override
+  String get vncSyncClipboard => '同步剪贴板';
+
+  @override
+  String get vncClipboardCopied => '已复制远端剪贴板';
+
+  @override
+  String get vncClipboardSent => '已发送剪贴板到远端主机';
+
+  @override
+  String get vncTrackpadMode => '触控板模式';
+
+  @override
+  String get vncDirectTouchMode => '直接触控';
+
+  @override
+  String get vncFullscreen => '全屏';
+
+  @override
+  String get vncAuthPromptTitle => '需要 VNC 认证';
+
+  @override
+  String get vncMacosSharingHint =>
+      '提示：在 macOS 上请打开「系统设置 → 通用 → 共享 → 屏幕共享（或远程管理）」并确认已允许当前用户访问。';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -3552,4 +3822,139 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get terminalMouseInteraction => '恢復應用程式滑鼠互動';
+
+  @override
+  String get vncTitle => 'VNC';
+
+  @override
+  String get vncBrowserUnsupported => '瀏覽器暫不支援 VNC 用戶端。';
+
+  @override
+  String get vncQuickConnect => '快速連線';
+
+  @override
+  String get vncAddHost => '新增主機';
+
+  @override
+  String get vncEditHost => '編輯主機';
+
+  @override
+  String get vncDeleteHost => '刪除主機';
+
+  @override
+  String vncDeleteHostConfirm(String name) {
+    return '確認刪除已儲存的 VNC 主機「$name」？';
+  }
+
+  @override
+  String get vncSavedHosts => '已儲存主機';
+
+  @override
+  String get vncLanDiscovery => '區域網路探索 (Bonjour)';
+
+  @override
+  String get vncRefreshLan => '重新整理區域網路';
+
+  @override
+  String get vncScanningLan => '正在掃描區域網路...';
+
+  @override
+  String get vncNoSavedHosts => '尚無已儲存的 VNC 主機';
+
+  @override
+  String get vncNoDiscoveredHosts => '區域網路內未發現 VNC 或 macOS 螢幕共享主機';
+
+  @override
+  String get vncNameLabel => '名稱';
+
+  @override
+  String get vncHostLabel => '主機位址';
+
+  @override
+  String get vncPortLabel => '連接埠';
+
+  @override
+  String get vncAuthTypeLabel => '驗證方式';
+
+  @override
+  String get vncAuthAuto => '自動協商';
+
+  @override
+  String get vncAuthAppleArd => 'macOS (ARD 帳號密碼)';
+
+  @override
+  String get vncAuthPassword => 'VNC 密碼';
+
+  @override
+  String get vncAuthNone => '無密碼';
+
+  @override
+  String get vncUsernameLabel => '使用者名稱';
+
+  @override
+  String get vncPasswordLabel => '密碼';
+
+  @override
+  String get vncPasswordKeepHint => '留空以保留原密碼';
+
+  @override
+  String get vncClearPassword => '清除已儲存密碼';
+
+  @override
+  String get vncSshTunnelLabel => 'SSH 通道';
+
+  @override
+  String get vncSshTunnelNone => '直連（不使用通道）';
+
+  @override
+  String get vncViewOnlyLabel => '唯讀模式';
+
+  @override
+  String get vncSaveHost => '儲存';
+
+  @override
+  String get vncConnect => '連線';
+
+  @override
+  String get vncDisconnect => '中斷連線';
+
+  @override
+  String get vncReconnect => '重新連線';
+
+  @override
+  String get vncConnecting => '正在連線...';
+
+  @override
+  String get vncDisconnected => '已中斷連線';
+
+  @override
+  String get vncFitScreen => '符合螢幕';
+
+  @override
+  String get vncActualSize => '1:1 原始尺寸';
+
+  @override
+  String get vncSyncClipboard => '同步剪貼簿';
+
+  @override
+  String get vncClipboardCopied => '已複製遠端剪貼簿';
+
+  @override
+  String get vncClipboardSent => '已傳送剪貼簿至遠端主機';
+
+  @override
+  String get vncTrackpadMode => '觸控板模式';
+
+  @override
+  String get vncDirectTouchMode => '直接觸控';
+
+  @override
+  String get vncFullscreen => '全螢幕';
+
+  @override
+  String get vncAuthPromptTitle => '需要 VNC 驗證';
+
+  @override
+  String get vncMacosSharingHint =>
+      '提示：在 macOS 上請開啟「系統設定 → 一般 → 共享 → 螢幕共享（或遠端管理）」並確認已允許目前使用者存取。';
 }

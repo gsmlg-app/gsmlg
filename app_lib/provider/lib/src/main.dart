@@ -1,5 +1,7 @@
 import 'terminal_dependencies_stub.dart'
     if (dart.library.io) 'terminal_dependencies_native.dart';
+import 'vnc_dependencies_stub.dart'
+    if (dart.library.io) 'vnc_dependencies_native.dart';
 import 'package:accounts_bloc/accounts_bloc.dart';
 import 'package:app_audio/audio.dart';
 import 'package:app_agent/app_agent.dart';
@@ -162,6 +164,7 @@ class MainProvider extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           ...terminalBlocs(database),
+          ...vncBlocs(database, vault),
           BlocProvider<EditorCubit>(
             create: (context) => EditorCubit(context.read<EditorFileService>()),
           ),

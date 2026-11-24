@@ -45,6 +45,7 @@ dependencies:
   editor_bloc: any
   audio_bloc: any
   log_viewer_bloc: any
+  vnc_host_bloc: any
 
 dev_dependencies:
   flex_tabs: any
