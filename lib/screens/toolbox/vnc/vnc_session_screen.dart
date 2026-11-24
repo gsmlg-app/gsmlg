@@ -173,6 +173,57 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
     VncSessionStatus.disconnected => colorScheme.outline,
   };
 
+  List<_DisplayOption> _buildDisplayOptions(
+    BuildContext context,
+    VncSessionState state,
+  ) {
+    if (state.status != VncSessionStatus.connected) {
+      return const [];
+    }
+    final l10n = context.l10n;
+    if (state.screens.length > 1) {
+      return [
+        _DisplayOption(label: l10n.vncDisplayAll, region: null),
+        for (var i = 0; i < state.screens.length; i++)
+          _DisplayOption(
+            label:
+                '${l10n.vncDisplayNumber(i + 1)} (${state.screens[i].width}×${state.screens[i].height})',
+            region: state.screens[i],
+          ),
+      ];
+    }
+    if (state.width > 0 &&
+        state.height > 0 &&
+        state.width >= state.height * 2) {
+      final leftW = state.width ~/ 2;
+      final rightW = state.width - leftW;
+      return [
+        _DisplayOption(label: l10n.vncDisplayAll, region: null),
+        _DisplayOption(
+          label: '${l10n.vncDisplayLeftHalf} ($leftW×${state.height})',
+          region: VncScreenInfo(
+            id: -1,
+            x: 0,
+            y: 0,
+            width: leftW,
+            height: state.height,
+          ),
+        ),
+        _DisplayOption(
+          label: '${l10n.vncDisplayRightHalf} ($rightW×${state.height})',
+          region: VncScreenInfo(
+            id: -2,
+            x: leftW,
+            y: 0,
+            width: rightW,
+            height: state.height,
+          ),
+        ),
+      ];
+    }
+    return const [];
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -241,6 +292,10 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
             bottom: !_isFullscreen,
             child: BlocBuilder<VncSessionBloc, VncSessionState>(
               builder: (context, state) {
+                final displayOptions = _buildDisplayOptions(context, state);
+                final displayWidth = state.activeRegion?.width ?? state.width;
+                final displayHeight =
+                    state.activeRegion?.height ?? state.height;
                 return Stack(
                   children: [
                     Column(
@@ -252,15 +307,19 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
                                 : launch.title,
                             resolution:
                                 state.status == VncSessionStatus.connected &&
-                                    state.width > 0 &&
-                                    state.height > 0
-                                ? '${state.width}×${state.height}'
+                                    displayWidth > 0 &&
+                                    displayHeight > 0
+                                ? '$displayWidth×$displayHeight'
                                 : null,
                             statusColor: _statusDotColor(
                               state.status,
                               colorScheme,
                               dmColors,
                             ),
+                            displayOptions: displayOptions,
+                            activeRegion: state.activeRegion,
+                            onSelectDisplay: (region) =>
+                                bloc.add(VncSessionSelectDisplay(region)),
                             scaleMode: _scaleMode,
                             touchMode: _touchMode,
                             viewOnly: state.viewOnly,
@@ -372,6 +431,7 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
           initialFrame: bloc.latestFrame,
           framebufferWidth: state.width,
           framebufferHeight: state.height,
+          activeRegion: state.activeRegion,
           cursor: state.cursor,
           scaleMode: _scaleMode,
           touchMode: _touchMode,
@@ -515,11 +575,21 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
   }
 }
 
+class _DisplayOption {
+  const _DisplayOption({required this.label, required this.region});
+
+  final String label;
+  final VncScreenInfo? region;
+}
+
 class _SessionToolbar extends StatelessWidget {
   const _SessionToolbar({
     required this.title,
     required this.resolution,
     required this.statusColor,
+    required this.displayOptions,
+    required this.activeRegion,
+    required this.onSelectDisplay,
     required this.scaleMode,
     required this.touchMode,
     required this.viewOnly,
@@ -539,6 +609,9 @@ class _SessionToolbar extends StatelessWidget {
   final String title;
   final String? resolution;
   final Color statusColor;
+  final List<_DisplayOption> displayOptions;
+  final VncScreenInfo? activeRegion;
+  final ValueChanged<VncScreenInfo?> onSelectDisplay;
   final VncScaleMode scaleMode;
   final VncTouchMode touchMode;
   final bool viewOnly;
@@ -613,6 +686,50 @@ class _SessionToolbar extends StatelessWidget {
                 ],
               ),
             ),
+            if (displayOptions.isNotEmpty)
+              PopupMenuButton<int>(
+                tooltip: l10n.vncSelectDisplay,
+                icon: Icon(
+                  Icons.monitor,
+                  color: activeRegion != null
+                      ? activeHighlight
+                      : colorScheme.onSurface,
+                  size: 20,
+                ),
+                onSelected: (index) {
+                  if (index >= 0 && index < displayOptions.length) {
+                    onSelectDisplay(displayOptions[index].region);
+                  }
+                },
+                itemBuilder: (context) => [
+                  for (var i = 0; i < displayOptions.length; i++)
+                    PopupMenuItem<int>(
+                      value: i,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            child: displayOptions[i].region == activeRegion
+                                ? Icon(
+                                    Icons.check,
+                                    size: 18,
+                                    color: activeHighlight,
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              displayOptions[i].label,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             IconButton(
               icon: Icon(
                 scaleMode == VncScaleMode.fit

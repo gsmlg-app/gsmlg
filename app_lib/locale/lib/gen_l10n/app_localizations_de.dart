@@ -2016,4 +2016,21 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get vncMacosSharingHint =>
       'Tip: On macOS, open System Settings → General → Sharing → Screen Sharing (or Remote Management) and ensure access is enabled for your user account.';
+
+  @override
+  String get vncSelectDisplay => 'Select Display';
+
+  @override
+  String get vncDisplayAll => 'All Displays';
+
+  @override
+  String vncDisplayNumber(int index) {
+    return 'Display $index';
+  }
+
+  @override
+  String get vncDisplayLeftHalf => 'Left Half';
+
+  @override
+  String get vncDisplayRightHalf => 'Right Half';
 }

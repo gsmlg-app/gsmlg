@@ -55,9 +55,54 @@ abstract final class VncCoordinateMapper {
     }
   }
 
+  /// Resolves the active source rectangle inside the remote framebuffer.
+  ///
+  /// Returns [Rect.zero] if framebuffer dimensions are non-positive. When
+  /// [activeRegion] is `null` or invalid/out-of-bounds, falls back to the full
+  /// framebuffer rectangle.
+  static Rect resolveSourceRect({
+    required int framebufferWidth,
+    required int framebufferHeight,
+    VncScreenInfo? activeRegion,
+  }) {
+    if (framebufferWidth <= 0 || framebufferHeight <= 0) {
+      return Rect.zero;
+    }
+    final fullRect = Rect.fromLTWH(
+      0,
+      0,
+      framebufferWidth.toDouble(),
+      framebufferHeight.toDouble(),
+    );
+    if (activeRegion == null ||
+        activeRegion.width <= 0 ||
+        activeRegion.height <= 0 ||
+        activeRegion.x >= framebufferWidth ||
+        activeRegion.y >= framebufferHeight) {
+      return fullRect;
+    }
+    final x = activeRegion.x.clamp(0, framebufferWidth - 1);
+    final y = activeRegion.y.clamp(0, framebufferHeight - 1);
+    final right = (activeRegion.x + activeRegion.width).clamp(
+      x + 1,
+      framebufferWidth,
+    );
+    final bottom = (activeRegion.y + activeRegion.height).clamp(
+      y + 1,
+      framebufferHeight,
+    );
+    return Rect.fromLTRB(
+      x.toDouble(),
+      y.toDouble(),
+      right.toDouble(),
+      bottom.toDouble(),
+    );
+  }
+
   /// Maps a point in viewport coordinates through the inverse of
   /// [transformMatrix] and [contentRect] into clamped remote framebuffer
-  /// coordinates `[0, framebufferWidth - 1] × [0, framebufferHeight - 1]`.
+  /// coordinates within [sourceRect] (or `[0, framebufferWidth - 1] ×
+  /// [0, framebufferHeight - 1]` when [sourceRect] is omitted).
   ///
   /// Returns `null` if framebuffer dimensions or [contentRect] are non-positive
   /// or if [transformMatrix] is singular.
@@ -67,6 +112,7 @@ abstract final class VncCoordinateMapper {
     required Rect contentRect,
     required int framebufferWidth,
     required int framebufferHeight,
+    Rect? sourceRect,
   }) {
     if (framebufferWidth <= 0 ||
         framebufferHeight <= 0 ||
@@ -75,21 +121,37 @@ abstract final class VncCoordinateMapper {
       return null;
     }
 
+    final effectiveSource =
+        sourceRect ??
+        Rect.fromLTWH(
+          0,
+          0,
+          framebufferWidth.toDouble(),
+          framebufferHeight.toDouble(),
+        );
+    if (effectiveSource.width <= 0 || effectiveSource.height <= 0) {
+      return null;
+    }
+
     final inverse = Matrix4.tryInvert(transformMatrix);
     if (inverse == null) return null;
 
     final contentPoint = MatrixUtils.transformPoint(inverse, viewportPoint);
     final rawX =
+        effectiveSource.left +
         (contentPoint.dx - contentRect.left) *
-        framebufferWidth /
-        contentRect.width;
+            effectiveSource.width /
+            contentRect.width;
     final rawY =
+        effectiveSource.top +
         (contentPoint.dy - contentRect.top) *
-        framebufferHeight /
-        contentRect.height;
+            effectiveSource.height /
+            contentRect.height;
 
-    final remoteX = rawX.clamp(0.0, (framebufferWidth - 1).toDouble());
-    final remoteY = rawY.clamp(0.0, (framebufferHeight - 1).toDouble());
+    final maxX = math.max(effectiveSource.left, effectiveSource.right - 1.0);
+    final maxY = math.max(effectiveSource.top, effectiveSource.bottom - 1.0);
+    final remoteX = rawX.clamp(effectiveSource.left, maxX);
+    final remoteY = rawY.clamp(effectiveSource.top, maxY);
     return Offset(remoteX, remoteY);
   }
 }
@@ -103,6 +165,7 @@ class VncViewerCanvas extends StatefulWidget {
     this.initialFrame,
     required this.framebufferWidth,
     required this.framebufferHeight,
+    this.activeRegion,
     this.cursor,
     this.scaleMode = VncScaleMode.fit,
     this.touchMode = VncTouchMode.direct,
@@ -116,6 +179,7 @@ class VncViewerCanvas extends StatefulWidget {
   final VncFrameData? initialFrame;
   final int framebufferWidth;
   final int framebufferHeight;
+  final VncScreenInfo? activeRegion;
   final VncCursorData? cursor;
   final VncScaleMode scaleMode;
   final VncTouchMode touchMode;
@@ -158,6 +222,21 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
 
   final Map<LogicalKeyboardKey, int> _pressedKeysyms = {};
 
+  Rect get _sourceRect => VncCoordinateMapper.resolveSourceRect(
+    framebufferWidth: widget.framebufferWidth,
+    framebufferHeight: widget.framebufferHeight,
+    activeRegion: widget.activeRegion,
+  );
+
+  Offset _clampToSourceRect(Offset pos, Rect srcRect) {
+    final maxX = math.max(srcRect.left, srcRect.right - 1.0);
+    final maxY = math.max(srcRect.top, srcRect.bottom - 1.0);
+    return Offset(
+      pos.dx.clamp(srcRect.left, maxX),
+      pos.dy.clamp(srcRect.top, maxY),
+    );
+  }
+
   FocusNode get _effectiveFocusNode {
     if (widget.focusNode != null) return widget.focusNode!;
     return _ownedFocusNode ??= FocusNode(debugLabel: 'VncViewerCanvas');
@@ -197,6 +276,15 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       _transformationController.value = Matrix4.identity();
     }
 
+    final srcRect = _sourceRect;
+    if (widget.activeRegion != oldWidget.activeRegion) {
+      _scrollGuardMatrix = null;
+      _transformationController.value = Matrix4.identity();
+      if (_virtualCursor != null && !srcRect.isEmpty) {
+        _virtualCursor = _clampToSourceRect(srcRect.center, srcRect);
+      }
+    }
+
     if (widget.cursor != oldWidget.cursor) {
       _decodeCursor(widget.cursor, notify: false);
     }
@@ -219,16 +307,8 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       _resetTrackpadGesture();
     }
 
-    if (_virtualCursor != null &&
-        widget.framebufferWidth > 0 &&
-        widget.framebufferHeight > 0) {
-      _virtualCursor = Offset(
-        _virtualCursor!.dx.clamp(0.0, (widget.framebufferWidth - 1).toDouble()),
-        _virtualCursor!.dy.clamp(
-          0.0,
-          (widget.framebufferHeight - 1).toDouble(),
-        ),
-      );
+    if (_virtualCursor != null && !srcRect.isEmpty) {
+      _virtualCursor = _clampToSourceRect(_virtualCursor!, srcRect);
     }
   }
 
@@ -342,6 +422,7 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       contentRect: _contentRect,
       framebufferWidth: widget.framebufferWidth,
       framebufferHeight: widget.framebufferHeight,
+      sourceRect: _sourceRect,
     );
   }
 
@@ -383,6 +464,7 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       contentRect: _contentRect,
       framebufferWidth: widget.framebufferWidth,
       framebufferHeight: widget.framebufferHeight,
+      sourceRect: _sourceRect,
     );
     if (remote == null) return;
 
@@ -415,13 +497,11 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
   }
 
   Offset? _ensureVirtualCursor() {
-    if (widget.framebufferWidth <= 0 || widget.framebufferHeight <= 0) {
+    final srcRect = _sourceRect;
+    if (srcRect.isEmpty) {
       return null;
     }
-    return _virtualCursor ??= Offset(
-      widget.framebufferWidth / 2.0,
-      widget.framebufferHeight / 2.0,
-    );
+    return _virtualCursor ??= _clampToSourceRect(srcRect.center, srcRect);
   }
 
   void _handleTrackpadPointerDown(PointerDownEvent event) {
@@ -454,24 +534,19 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
 
     if (_trackpadDownPositions.length == 1) {
       final current = _ensureVirtualCursor();
-      if (current == null) return;
+      final srcRect = _sourceRect;
+      if (current == null || srcRect.isEmpty) return;
 
       final scaleX = _contentRect.width > 0
-          ? widget.framebufferWidth / _contentRect.width
+          ? srcRect.width / _contentRect.width
           : 1.0;
       final scaleY = _contentRect.height > 0
-          ? widget.framebufferHeight / _contentRect.height
+          ? srcRect.height / _contentRect.height
           : 1.0;
 
-      final next = Offset(
-        (current.dx + delta.dx * scaleX).clamp(
-          0.0,
-          (widget.framebufferWidth - 1).toDouble(),
-        ),
-        (current.dy + delta.dy * scaleY).clamp(
-          0.0,
-          (widget.framebufferHeight - 1).toDouble(),
-        ),
+      final next = _clampToSourceRect(
+        Offset(current.dx + delta.dx * scaleX, current.dy + delta.dy * scaleY),
+        srcRect,
       );
       _virtualCursor = next;
       setState(() {});
@@ -581,10 +656,13 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final sourceRect = _sourceRect;
+    final sourceWidth = sourceRect.width.round();
+    final sourceHeight = sourceRect.height.round();
     final isActualSize =
         widget.scaleMode == VncScaleMode.actualSize &&
-        widget.framebufferWidth > 0 &&
-        widget.framebufferHeight > 0;
+        sourceWidth > 0 &&
+        sourceHeight > 0;
     final panEnabled =
         widget.viewOnly || widget.touchMode == VncTouchMode.direct;
 
@@ -602,21 +680,15 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
           final viewportSize = constraints.biggest;
           _contentRect = VncCoordinateMapper.computeFittedRect(
             viewportSize: viewportSize,
-            framebufferWidth: widget.framebufferWidth,
-            framebufferHeight: widget.framebufferHeight,
+            framebufferWidth: sourceWidth,
+            framebufferHeight: sourceHeight,
             scaleMode: widget.scaleMode,
           );
 
           final childSize = isActualSize
               ? Size(
-                  math.max(
-                    viewportSize.width,
-                    widget.framebufferWidth.toDouble(),
-                  ),
-                  math.max(
-                    viewportSize.height,
-                    widget.framebufferHeight.toDouble(),
-                  ),
+                  math.max(viewportSize.width, sourceRect.width),
+                  math.max(viewportSize.height, sourceRect.height),
                 )
               : viewportSize;
 
@@ -742,9 +814,8 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
                         child: CustomPaint(
                           painter: _VncCanvasPainter(
                             image: _image,
+                            sourceRect: sourceRect,
                             contentRect: _contentRect,
-                            framebufferWidth: widget.framebufferWidth,
-                            framebufferHeight: widget.framebufferHeight,
                             cursorImage: _cursorImage,
                             cursorData: widget.cursor,
                             cursorPosition: activeCursorPosition,
@@ -799,9 +870,8 @@ class _MouseDragClaimRecognizer extends OneSequenceGestureRecognizer {
 class _VncCanvasPainter extends CustomPainter {
   const _VncCanvasPainter({
     required this.image,
+    required this.sourceRect,
     required this.contentRect,
-    required this.framebufferWidth,
-    required this.framebufferHeight,
     required this.cursorImage,
     required this.cursorData,
     required this.cursorPosition,
@@ -812,9 +882,8 @@ class _VncCanvasPainter extends CustomPainter {
   });
 
   final ui.Image? image;
+  final Rect sourceRect;
   final Rect contentRect;
-  final int framebufferWidth;
-  final int framebufferHeight;
   final ui.Image? cursorImage;
   final VncCursorData? cursorData;
   final Offset? cursorPosition;
@@ -827,69 +896,83 @@ class _VncCanvasPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = backgroundColor);
 
-    if (image != null && !contentRect.isEmpty) {
-      final srcRect = Rect.fromLTWH(
-        0,
-        0,
-        image!.width.toDouble(),
-        image!.height.toDouble(),
+    if (image != null && !contentRect.isEmpty && !sourceRect.isEmpty) {
+      final imgW = image!.width.toDouble();
+      final imgH = image!.height.toDouble();
+      final safeLeft = sourceRect.left.clamp(0.0, imgW);
+      final safeTop = sourceRect.top.clamp(0.0, imgH);
+      final safeRight = sourceRect.right.clamp(safeLeft, imgW);
+      final safeBottom = sourceRect.bottom.clamp(safeTop, imgH);
+      final safeSrcRect = Rect.fromLTRB(
+        safeLeft,
+        safeTop,
+        safeRight,
+        safeBottom,
       );
-      canvas.drawImageRect(
-        image!,
-        srcRect,
-        contentRect,
-        Paint()..filterQuality = FilterQuality.medium,
-      );
-    }
-
-    if (framebufferWidth > 0 &&
-        framebufferHeight > 0 &&
-        !contentRect.isEmpty &&
-        cursorPosition != null) {
-      final scaleX = contentRect.width / framebufferWidth;
-      final scaleY = contentRect.height / framebufferHeight;
-
-      if (cursorImage != null && cursorData != null) {
-        final dst = Rect.fromLTWH(
-          contentRect.left +
-              (cursorPosition!.dx - cursorData!.hotspotX) * scaleX,
-          contentRect.top +
-              (cursorPosition!.dy - cursorData!.hotspotY) * scaleY,
-          cursorData!.width * scaleX,
-          cursorData!.height * scaleY,
-        );
-        final src = Rect.fromLTWH(
-          0,
-          0,
-          cursorImage!.width.toDouble(),
-          cursorImage!.height.toDouble(),
-        );
+      if (!safeSrcRect.isEmpty) {
         canvas.drawImageRect(
-          cursorImage!,
-          src,
-          dst,
-          Paint()..filterQuality = FilterQuality.low,
+          image!,
+          safeSrcRect,
+          contentRect,
+          Paint()..filterQuality = FilterQuality.medium,
         );
       }
+    }
 
-      if (showVirtualCursor) {
-        final center = Offset(
-          contentRect.left + cursorPosition!.dx * scaleX,
-          contentRect.top + cursorPosition!.dy * scaleY,
-        );
-        canvas.drawCircle(
-          center,
-          7,
-          Paint()..color = cursorFillColor.withValues(alpha: 0.85),
-        );
-        canvas.drawCircle(
-          center,
-          7,
-          Paint()
-            ..color = cursorStrokeColor
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2,
-        );
+    if (!sourceRect.isEmpty && !contentRect.isEmpty && cursorPosition != null) {
+      final cx = cursorPosition!.dx;
+      final cy = cursorPosition!.dy;
+      final inRegion =
+          cx >= sourceRect.left &&
+          cx < sourceRect.right &&
+          cy >= sourceRect.top &&
+          cy < sourceRect.bottom;
+      if (inRegion) {
+        final scaleX = contentRect.width / sourceRect.width;
+        final scaleY = contentRect.height / sourceRect.height;
+        final relX = cx - sourceRect.left;
+        final relY = cy - sourceRect.top;
+
+        if (cursorImage != null && cursorData != null) {
+          final dst = Rect.fromLTWH(
+            contentRect.left + (relX - cursorData!.hotspotX) * scaleX,
+            contentRect.top + (relY - cursorData!.hotspotY) * scaleY,
+            cursorData!.width * scaleX,
+            cursorData!.height * scaleY,
+          );
+          final src = Rect.fromLTWH(
+            0,
+            0,
+            cursorImage!.width.toDouble(),
+            cursorImage!.height.toDouble(),
+          );
+          canvas.drawImageRect(
+            cursorImage!,
+            src,
+            dst,
+            Paint()..filterQuality = FilterQuality.low,
+          );
+        }
+
+        if (showVirtualCursor) {
+          final center = Offset(
+            contentRect.left + relX * scaleX,
+            contentRect.top + relY * scaleY,
+          );
+          canvas.drawCircle(
+            center,
+            7,
+            Paint()..color = cursorFillColor.withValues(alpha: 0.85),
+          );
+          canvas.drawCircle(
+            center,
+            7,
+            Paint()
+              ..color = cursorStrokeColor
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2,
+          );
+        }
       }
     }
   }
@@ -897,9 +980,8 @@ class _VncCanvasPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _VncCanvasPainter oldDelegate) {
     return image != oldDelegate.image ||
+        sourceRect != oldDelegate.sourceRect ||
         contentRect != oldDelegate.contentRect ||
-        framebufferWidth != oldDelegate.framebufferWidth ||
-        framebufferHeight != oldDelegate.framebufferHeight ||
         cursorImage != oldDelegate.cursorImage ||
         cursorData != oldDelegate.cursorData ||
         cursorPosition != oldDelegate.cursorPosition ||

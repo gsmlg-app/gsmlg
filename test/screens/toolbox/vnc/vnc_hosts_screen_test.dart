@@ -30,6 +30,7 @@ class FakeVncSessionClient implements VncSessionClient {
 
   final List<VncConnectionConfig> connectCalls = [];
   final List<VncCredentials> submittedCredentials = [];
+  final List<VncScreenInfo?> activeRegionCalls = [];
   int cancelCredentialsCount = 0;
   int disconnectCount = 0;
 
@@ -71,7 +72,9 @@ class FakeVncSessionClient implements VncSessionClient {
   void setViewOnly(bool viewOnly) {}
 
   @override
-  void setActiveRegion(VncScreenInfo? region) {}
+  void setActiveRegion(VncScreenInfo? region) {
+    activeRegionCalls.add(region);
+  }
 
   @override
   void requestFullRefresh() {}
@@ -547,6 +550,152 @@ void main() {
         );
         expect(find.text('Offered security types: 35, 36'), findsOneWidget);
         expect(find.text('Reconnect'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Display Switcher lists ExtendedDesktopSize screens and calls setActiveRegion',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1200, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final fakeClient = FakeVncSessionClient();
+        final sessionBloc = VncSessionBloc(clientFactory: () => fakeClient);
+        addTearDown(() async {
+          await sessionBloc.close();
+          await fakeClient.dispose();
+        });
+
+        const launch = VncLaunchConfig(
+          title: 'Dual Monitor Mac',
+          config: VncConnectionConfig(host: '192.168.1.70', port: 5900),
+        );
+
+        await tester.pumpWidget(
+          wrapWithApp(
+            VncSessionScreen(launchConfig: launch, blocOverride: sessionBloc),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        const display1 = VncScreenInfo(
+          id: 1,
+          x: 0,
+          y: 0,
+          width: 2560,
+          height: 1440,
+        );
+        const display2 = VncScreenInfo(
+          id: 2,
+          x: 2560,
+          y: 0,
+          width: 1920,
+          height: 1440,
+        );
+
+        fakeClient.emitEvent(
+          const VncConnectedEvent(
+            VncDesktopInfo(
+              name: 'Dual Monitor Mac',
+              width: 4480,
+              height: 1440,
+              protocolVersion: 'RFB 003.008',
+              securityType: 2,
+            ),
+          ),
+        );
+        fakeClient.emitEvent(
+          const VncResizedEvent(
+            width: 4480,
+            height: 1440,
+            screens: [display1, display2],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('4480×1440'), findsOneWidget);
+        final switcher = find.byTooltip('Select Display');
+        expect(switcher, findsOneWidget);
+
+        await tester.tap(switcher);
+        await tester.pumpAndSettle();
+
+        expect(find.text('All Displays'), findsOneWidget);
+        expect(find.text('Display 1 (2560×1440)'), findsOneWidget);
+        expect(find.text('Display 2 (1920×1440)'), findsOneWidget);
+
+        await tester.tap(find.text('Display 2 (1920×1440)'));
+        await tester.pumpAndSettle();
+
+        expect(fakeClient.activeRegionCalls, contains(display2));
+        expect(fakeClient.activeRegionCalls.last, display2);
+        expect(find.text('1920×1440'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Display Switcher offers Left Half / Right Half fallback for ultrawide framebuffers without screen metadata',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1200, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final fakeClient = FakeVncSessionClient();
+        final sessionBloc = VncSessionBloc(clientFactory: () => fakeClient);
+        addTearDown(() async {
+          await sessionBloc.close();
+          await fakeClient.dispose();
+        });
+
+        const launch = VncLaunchConfig(
+          title: 'macOS Dual Screen',
+          config: VncConnectionConfig(host: '192.168.1.71', port: 5900),
+        );
+
+        await tester.pumpWidget(
+          wrapWithApp(
+            VncSessionScreen(launchConfig: launch, blocOverride: sessionBloc),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        fakeClient.emitEvent(
+          const VncConnectedEvent(
+            VncDesktopInfo(
+              name: 'macOS Dual Screen',
+              width: 3840,
+              height: 1080,
+              protocolVersion: 'RFB 003.008',
+              securityType: 30,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('3840×1080'), findsOneWidget);
+        final switcher = find.byTooltip('Select Display');
+        expect(switcher, findsOneWidget);
+
+        await tester.tap(switcher);
+        await tester.pumpAndSettle();
+
+        expect(find.text('All Displays'), findsOneWidget);
+        expect(find.text('Left Half (1920×1080)'), findsOneWidget);
+        expect(find.text('Right Half (1920×1080)'), findsOneWidget);
+
+        await tester.tap(find.text('Right Half (1920×1080)'));
+        await tester.pumpAndSettle();
+
+        const expectedRightHalf = VncScreenInfo(
+          id: -2,
+          x: 1920,
+          y: 0,
+          width: 1920,
+          height: 1080,
+        );
+        expect(fakeClient.activeRegionCalls.last, expectedRightHalf);
+        expect(find.text('1920×1080'), findsOneWidget);
       },
     );
   });

@@ -3828,6 +3828,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tip: On macOS, open System Settings → General → Sharing → Screen Sharing (or Remote Management) and ensure access is enabled for your user account.'**
   String get vncMacosSharingHint;
+
+  /// No description provided for @vncSelectDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Display'**
+  String get vncSelectDisplay;
+
+  /// No description provided for @vncDisplayAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All Displays'**
+  String get vncDisplayAll;
+
+  /// No description provided for @vncDisplayNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Display {index}'**
+  String vncDisplayNumber(int index);
+
+  /// No description provided for @vncDisplayLeftHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'Left Half'**
+  String get vncDisplayLeftHalf;
+
+  /// No description provided for @vncDisplayRightHalf.
+  ///
+  /// In en, this message translates to:
+  /// **'Right Half'**
+  String get vncDisplayRightHalf;
 }
 
 class _AppLocalizationsDelegate

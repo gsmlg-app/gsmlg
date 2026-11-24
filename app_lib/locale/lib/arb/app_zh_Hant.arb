@@ -380,5 +380,10 @@
   "vncDirectTouchMode": "直接觸控",
   "vncFullscreen": "全螢幕",
   "vncAuthPromptTitle": "需要 VNC 驗證",
-  "vncMacosSharingHint": "提示：在 macOS 上請開啟「系統設定 → 一般 → 共享 → 螢幕共享（或遠端管理）」並確認已允許目前使用者存取。"
+  "vncMacosSharingHint": "提示：在 macOS 上請開啟「系統設定 → 一般 → 共享 → 螢幕共享（或遠端管理）」並確認已允許目前使用者存取。",
+  "vncSelectDisplay": "切換顯示器",
+  "vncDisplayAll": "全部顯示器",
+  "vncDisplayNumber": "顯示器 {index}",
+  "vncDisplayLeftHalf": "左半螢幕",
+  "vncDisplayRightHalf": "右半螢幕"
 }

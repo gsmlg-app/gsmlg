@@ -1976,6 +1976,23 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get vncMacosSharingHint =>
       '提示：在 macOS 上请打开「系统设置 → 通用 → 共享 → 屏幕共享（或远程管理）」并确认已允许当前用户访问。';
+
+  @override
+  String get vncSelectDisplay => '切换显示器';
+
+  @override
+  String get vncDisplayAll => '全部显示器';
+
+  @override
+  String vncDisplayNumber(int index) {
+    return '显示器 $index';
+  }
+
+  @override
+  String get vncDisplayLeftHalf => '左半屏';
+
+  @override
+  String get vncDisplayRightHalf => '右半屏';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -3050,6 +3067,23 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
   @override
   String get vncMacosSharingHint =>
       '提示：在 macOS 上请打开「系统设置 → 通用 → 共享 → 屏幕共享（或远程管理）」并确认已允许当前用户访问。';
+
+  @override
+  String get vncSelectDisplay => '切换显示器';
+
+  @override
+  String get vncDisplayAll => '全部显示器';
+
+  @override
+  String vncDisplayNumber(int index) {
+    return '显示器 $index';
+  }
+
+  @override
+  String get vncDisplayLeftHalf => '左半屏';
+
+  @override
+  String get vncDisplayRightHalf => '右半屏';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -3957,4 +3991,21 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
   @override
   String get vncMacosSharingHint =>
       '提示：在 macOS 上請開啟「系統設定 → 一般 → 共享 → 螢幕共享（或遠端管理）」並確認已允許目前使用者存取。';
+
+  @override
+  String get vncSelectDisplay => '切換顯示器';
+
+  @override
+  String get vncDisplayAll => '全部顯示器';
+
+  @override
+  String vncDisplayNumber(int index) {
+    return '顯示器 $index';
+  }
+
+  @override
+  String get vncDisplayLeftHalf => '左半螢幕';
+
+  @override
+  String get vncDisplayRightHalf => '右半螢幕';
 }

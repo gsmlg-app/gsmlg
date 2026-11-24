@@ -948,5 +948,17 @@
   "vncDirectTouchMode": "Direct Touch",
   "vncFullscreen": "Fullscreen",
   "vncAuthPromptTitle": "VNC Authentication Required",
-  "vncMacosSharingHint": "Tip: On macOS, open System Settings → General → Sharing → Screen Sharing (or Remote Management) and ensure access is enabled for your user account."
+  "vncMacosSharingHint": "Tip: On macOS, open System Settings → General → Sharing → Screen Sharing (or Remote Management) and ensure access is enabled for your user account.",
+  "vncSelectDisplay": "Select Display",
+  "vncDisplayAll": "All Displays",
+  "vncDisplayNumber": "Display {index}",
+  "@vncDisplayNumber": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "vncDisplayLeftHalf": "Left Half",
+  "vncDisplayRightHalf": "Right Half"
 }

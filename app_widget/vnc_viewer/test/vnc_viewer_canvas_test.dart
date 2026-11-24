@@ -177,6 +177,127 @@ void main() {
         );
       },
     );
+
+    test(
+      'resolveSourceRect handles null, valid, clamped, and invalid regions',
+      () {
+        expect(
+          VncCoordinateMapper.resolveSourceRect(
+            framebufferWidth: 0,
+            framebufferHeight: 1080,
+          ),
+          Rect.zero,
+        );
+
+        expect(
+          VncCoordinateMapper.resolveSourceRect(
+            framebufferWidth: 3840,
+            framebufferHeight: 1080,
+          ),
+          const Rect.fromLTWH(0, 0, 3840, 1080),
+        );
+
+        expect(
+          VncCoordinateMapper.resolveSourceRect(
+            framebufferWidth: 3840,
+            framebufferHeight: 1080,
+            activeRegion: const VncScreenInfo(
+              id: 2,
+              x: 1920,
+              y: 0,
+              width: 1920,
+              height: 1080,
+            ),
+          ),
+          const Rect.fromLTWH(1920, 0, 1920, 1080),
+        );
+
+        // Region extending past framebuffer bounds is clamped.
+        expect(
+          VncCoordinateMapper.resolveSourceRect(
+            framebufferWidth: 3840,
+            framebufferHeight: 1080,
+            activeRegion: const VncScreenInfo(
+              id: 2,
+              x: 3000,
+              y: 500,
+              width: 2000,
+              height: 1000,
+            ),
+          ),
+          const Rect.fromLTRB(3000, 500, 3840, 1080),
+        );
+
+        // Invalid / out-of-bounds regions fall back to the full framebuffer rect.
+        expect(
+          VncCoordinateMapper.resolveSourceRect(
+            framebufferWidth: 3840,
+            framebufferHeight: 1080,
+            activeRegion: const VncScreenInfo(
+              id: 3,
+              x: 4000,
+              y: 0,
+              width: 1920,
+              height: 1080,
+            ),
+          ),
+          const Rect.fromLTWH(0, 0, 3840, 1080),
+        );
+        expect(
+          VncCoordinateMapper.resolveSourceRect(
+            framebufferWidth: 3840,
+            framebufferHeight: 1080,
+            activeRegion: const VncScreenInfo(
+              id: 4,
+              x: 0,
+              y: 0,
+              width: 0,
+              height: 1080,
+            ),
+          ),
+          const Rect.fromLTWH(0, 0, 3840, 1080),
+        );
+      },
+    );
+
+    test('viewportToRemote maps coordinates within a cropped sourceRect', () {
+      const sourceRect = Rect.fromLTWH(1920, 0, 1920, 1080);
+      const contentRect = Rect.fromLTWH(0, 0, 960, 540);
+      final identity = Matrix4.identity();
+
+      // Left edge maps to x=1920.
+      final leftEdge = VncCoordinateMapper.viewportToRemote(
+        viewportPoint: const Offset(0, 270),
+        transformMatrix: identity,
+        contentRect: contentRect,
+        framebufferWidth: 3840,
+        framebufferHeight: 1080,
+        sourceRect: sourceRect,
+      );
+      expect(leftEdge, const Offset(1920, 540));
+
+      // Center maps to x=2880.
+      final center = VncCoordinateMapper.viewportToRemote(
+        viewportPoint: const Offset(480, 270),
+        transformMatrix: identity,
+        contentRect: contentRect,
+        framebufferWidth: 3840,
+        framebufferHeight: 1080,
+        sourceRect: sourceRect,
+      );
+      expect(center, const Offset(2880, 540));
+
+      // Right edge clamps to x=3839, y=1079.
+      final rightEdge = VncCoordinateMapper.viewportToRemote(
+        viewportPoint: const Offset(960, 540),
+        transformMatrix: identity,
+        contentRect: contentRect,
+        framebufferWidth: 3840,
+        framebufferHeight: 1080,
+        sourceRect: sourceRect,
+      );
+      expect(rightEdge, const Offset(3839, 1079));
+    });
   });
 
   group('VncViewerCanvas', () {
@@ -616,6 +737,63 @@ void main() {
         await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
         await stream1.close();
         await stream2.close();
+      },
+    );
+
+    testWidgets(
+      'crops activeRegion and translates tap coordinates into remote display offsets',
+      (tester) async {
+        final controller = StreamController<VncFrameData>.broadcast();
+        final pointerEvents = <(int, int, int)>[];
+
+        const display2 = VncScreenInfo(
+          id: 2,
+          x: 1920,
+          y: 0,
+          width: 1920,
+          height: 1080,
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 640,
+                  height: 360,
+                  child: VncViewerCanvas(
+                    frames: controller.stream,
+                    framebufferWidth: 3840,
+                    framebufferHeight: 1080,
+                    activeRegion: display2,
+                    onPointerEvent: (x, y, mask) =>
+                        pointerEvents.add((x, y, mask)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        await tester.runAsync(() async {
+          controller.add(_makeSolidFrame(1, 3840, 1080, 10, 20, 30));
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        });
+        await tester.pump();
+
+        // Tap center of canvas -> should map to center of Display 2 (2880, 540), NOT (1920, 540).
+        await tester.tap(find.byType(VncViewerCanvas));
+        await tester.pump();
+
+        expect(pointerEvents, hasLength(2));
+        expect(pointerEvents[0].$1, closeTo(2880, 2));
+        expect(pointerEvents[0].$2, closeTo(540, 2));
+        expect(pointerEvents[0].$3, 1);
+        expect(pointerEvents[1].$1, closeTo(2880, 2));
+        expect(pointerEvents[1].$2, closeTo(540, 2));
+        expect(pointerEvents[1].$3, 0);
+
+        await controller.close();
       },
     );
   });
