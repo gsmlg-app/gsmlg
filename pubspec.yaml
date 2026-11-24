@@ -47,6 +47,7 @@ workspace:
   - app_lib/duckdb
   - app_lib/embedding
   - app_lib/audio
+  - app_lib/vnc
   - app_bloc/theme
   - app_bloc/navigation
   - app_bloc/auth
@@ -214,6 +215,7 @@ dependencies:
   app_agent: any
   tts_dataset: any
   app_audio: any
+  app_vnc: any
   app_local_llm: any
   app_compass: any
   chat_bloc: any
