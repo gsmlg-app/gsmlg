@@ -442,6 +442,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
       viewOnly: viewOnly ?? base.viewOnly,
       sharedDesktop: base.sharedDesktop,
       connectTimeout: base.connectTimeout,
+      enableAppleExtensions: base.enableAppleExtensions,
     );
   }
 

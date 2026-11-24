@@ -273,6 +273,7 @@ void main() {
 
         const config = VncConnectionConfig(
           host: 'mac-studio.local',
+          enableAppleExtensions: false,
           credentials: VncCredentials(
             username: 'mac-admin',
             password: 's3cr3t-password!',
@@ -513,7 +514,10 @@ void main() {
         final info = await RfbHandshake.perform(
           transport: pipe,
           reader: pipe.clientReader,
-          config: const VncConnectionConfig(host: 'macbook.local'),
+          config: const VncConnectionConfig(
+            host: 'macbook.local',
+            enableAppleExtensions: false,
+          ),
           onCredentialsRequired:
               ({
                 required int securityType,
@@ -1131,6 +1135,7 @@ void main() {
           reader: pipe.clientReader,
           config: const VncConnectionConfig(
             host: 'imac.local',
+            enableAppleExtensions: false,
             credentials: VncCredentials(username: 'saved-mac-user'),
           ),
           onCredentialsRequired:
@@ -1325,7 +1330,10 @@ void main() {
           final info = await RfbHandshake.perform(
             transport: pipe,
             reader: pipe.clientReader,
-            config: const VncConnectionConfig(host: 'mac.local'),
+            config: const VncConnectionConfig(
+              host: 'mac.local',
+              enableAppleExtensions: false,
+            ),
           );
           await serverTask;
 
@@ -1351,7 +1359,10 @@ void main() {
             RfbHandshake.perform(
               transport: pipe,
               reader: pipe.clientReader,
-              config: const VncConnectionConfig(host: 'mac.local'),
+              config: const VncConnectionConfig(
+                host: 'mac.local',
+                enableAppleExtensions: false,
+              ),
             ),
             throwsA(
               isA<VncAuthenticationException>().having(

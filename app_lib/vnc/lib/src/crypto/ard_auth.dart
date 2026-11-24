@@ -14,6 +14,7 @@ class ArdAuthResponse {
   const ArdAuthResponse({
     required this.encryptedCredentials,
     required this.clientPublicKey,
+    required this.aesKey,
   });
 
   /// 128-byte AES-128-ECB encrypted username (64 bytes) and password (64 bytes).
@@ -21,6 +22,12 @@ class ArdAuthResponse {
 
   /// Fixed-length big-endian Diffie-Hellman client public key.
   final Uint8List clientPublicKey;
+
+  /// 16-byte `MD5(sharedSecret)` AES-128 key used to encrypt the credential
+  /// block and unwrap the initial Apple `003.889` record-layer rekey.
+  ///
+  /// Callers should zero this buffer once it is no longer needed.
+  final Uint8List aesKey;
 }
 
 /// Cryptographic primitives for macOS Apple Remote Desktop (RFB security type 30)
@@ -164,6 +171,7 @@ abstract final class ArdAuthCrypto {
       return ArdAuthResponse(
         encryptedCredentials: encrypted,
         clientPublicKey: clientPubBytes,
+        aesKey: Uint8List.fromList(aesKey),
       );
     } finally {
       sharedBytes?.fillRange(0, sharedBytes.length, 0);

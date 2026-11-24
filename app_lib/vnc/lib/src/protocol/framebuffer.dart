@@ -6,6 +6,7 @@ import 'package:meta/meta.dart';
 
 import '../models/vnc_exceptions.dart';
 import '../models/vnc_models.dart';
+import 'apple_rfb.dart';
 import 'byte_reader.dart';
 import 'rfb_encodings.dart';
 
@@ -178,6 +179,8 @@ class RfbRectDecodeResult {
     this.cursor,
     this.pixelsUpdated = false,
     this.screens,
+    this.hasCurrentDisplayId = false,
+    this.currentDisplayId,
   });
 
   final bool resized;
@@ -185,21 +188,36 @@ class RfbRectDecodeResult {
   final VncCursorData? cursor;
   final bool pixelsUpdated;
   final List<VncScreenInfo>? screens;
+
+  /// Whether this rectangle carried an authoritative Apple display selection
+  /// (allowing `null` = All Displays to be distinguished from non-layout updates).
+  final bool hasCurrentDisplayId;
+
+  /// Active macOS display ID, or `null` for All Displays when
+  /// [hasCurrentDisplayId] is `true`.
+  final int? currentDisplayId;
 }
 
 /// Decodes RFB framebuffer update rectangles assuming the negotiated
 /// [VncPixelFormat.rgba8888] wire format (32-bit, depth 24, little-endian,
 /// R/G/B shifts 0/8/16; 3-byte `[R, G, B]` CPIXEL for ZRLE).
 class RfbRectDecoder {
+  RfbRectDecoder({this.isApple889 = false});
+
   /// Maximum accepted compressed ZRLE rectangle payload (64 MiB).
   static const int maxZrleCompressedBytes = 64 * 1024 * 1024;
 
   /// Maximum accepted inflated ZRLE rectangle payload (256 MiB).
   static const int maxZrleInflatedBytes = 256 * 1024 * 1024;
 
+  /// Whether Apple RFB `003.889` pseudo-encodings (`0x44c`..`0x455`) are active.
+  final bool isApple889;
+
   /// Single persistent zlib inflate stream required across all ZRLE rectangles
   /// for the lifetime of an RFB session (RFC 6143 §7.7.6).
   final RawZLibFilter _zrleInflater = RawZLibFilter.inflateFilter();
+
+  final AppleCursorCache _appleCursorCache = AppleCursorCache();
 
   /// Decodes a single rectangle header payload from [reader] and applies it to
   /// [framebuffer].
@@ -230,9 +248,70 @@ class RfbRectDecoder {
         return _decodeCursor(reader, x, y, width, height);
       case RfbEncoding.lastRect:
         return const RfbRectDecodeResult(isLastRect: true);
+      case AppleRfbEncoding.displayLayout when isApple889:
+        return _decodeAppleDisplayLayout(reader, framebuffer);
+      case AppleRfbEncoding.cursorImage when isApple889:
+        return _decodeAppleCursorImage(reader, x, y, width, height);
+      case AppleRfbEncoding.cursorPos when isApple889:
+        return const RfbRectDecodeResult();
+      case AppleRfbEncoding.displayInfo when isApple889:
+        final head = await reader.readBytes(10);
+        final count = (head[8] << 8) | head[9];
+        await reader.skip(count * 0x1c);
+        return const RfbRectDecodeResult();
+      case AppleRfbEncoding.vendorKeysyms when isApple889:
+      case AppleRfbEncoding.keyboardSource when isApple889:
+        final len = await reader.readUint16();
+        await reader.skip(len);
+        return const RfbRectDecodeResult();
+      case AppleRfbEncoding.rekey when isApple889:
+        throw const VncProtocolException('Unexpected mid-session Apple rekey');
       default:
         throw VncProtocolException('Unsupported RFB encoding: $encoding');
     }
+  }
+
+  Future<RfbRectDecodeResult> _decodeAppleDisplayLayout(
+    BufferedByteReader reader,
+    VncFramebuffer framebuffer,
+  ) async {
+    final len = await reader.readUint16();
+    final payload = await reader.readBytes(len);
+    final layout = AppleDisplayLayout.parse(payload);
+    framebuffer.resize(layout.backingWidth, layout.backingHeight);
+    return RfbRectDecodeResult(
+      resized: true,
+      screens: layout.displays,
+      hasCurrentDisplayId: true,
+      currentDisplayId: layout.currentDisplayId,
+    );
+  }
+
+  Future<RfbRectDecodeResult> _decodeAppleCursorImage(
+    BufferedByteReader reader,
+    int hotspotX,
+    int hotspotY,
+    int width,
+    int height,
+  ) async {
+    final id = await reader.readUint32();
+    final len = await reader.readUint32();
+    if (len > AppleCursorCache.maxCompressedBytes) {
+      throw VncProtocolException(
+        'Apple cursor image payload $len exceeds limit '
+        '(${AppleCursorCache.maxCompressedBytes} bytes)',
+      );
+    }
+    final deflated = await reader.readBytes(len);
+    final cursor = _appleCursorCache.accept(
+      id: id,
+      hotspotX: hotspotX,
+      hotspotY: hotspotY,
+      width: width,
+      height: height,
+      deflated: deflated,
+    );
+    return RfbRectDecodeResult(cursor: cursor);
   }
 
   void _validateRectBounds(

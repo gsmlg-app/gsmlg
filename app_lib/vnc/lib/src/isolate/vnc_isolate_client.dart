@@ -49,11 +49,15 @@ final class VncResizedEvent extends VncClientEvent {
     required this.width,
     required this.height,
     this.screens = const [],
+    this.hasCurrentDisplayId = false,
+    this.currentDisplayId,
   });
 
   final int width;
   final int height;
   final List<VncScreenInfo> screens;
+  final bool hasCurrentDisplayId;
+  final int? currentDisplayId;
 }
 
 final class VncCursorEvent extends VncClientEvent {
@@ -99,6 +103,8 @@ abstract interface class VncSessionClient {
   void setViewOnly(bool viewOnly);
 
   void setActiveRegion(VncScreenInfo? region);
+
+  void selectDisplay(int? displayId);
 
   void requestFullRefresh();
 
@@ -298,6 +304,7 @@ class VncIsolateClient implements VncSessionClient {
               height: message['height'] as int,
               protocolVersion: message['protocolVersion'] as String,
               securityType: message['securityType'] as int,
+              isApple889: message['isApple889'] as bool? ?? false,
             ),
           ),
         );
@@ -335,6 +342,9 @@ class VncIsolateClient implements VncSessionClient {
             width: message['width'] as int,
             height: message['height'] as int,
             screens: screens,
+            hasCurrentDisplayId:
+                message['hasCurrentDisplayId'] as bool? ?? false,
+            currentDisplayId: message['currentDisplayId'] as int?,
           ),
         );
       case 'cursor':
@@ -436,6 +446,14 @@ class VncIsolateClient implements VncSessionClient {
   }
 
   @override
+  void selectDisplay(int? displayId) {
+    _workerCommandPort?.send(<String, Object?>{
+      'type': 'selectDisplay',
+      'displayId': displayId,
+    });
+  }
+
+  @override
   void requestFullRefresh() {
     _workerCommandPort?.send(const <String, Object?>{'type': 'refresh'});
   }
@@ -493,6 +511,7 @@ Map<String, Object?> _encodeStartMessage({
     'viewOnly': config.viewOnly,
     'sharedDesktop': config.sharedDesktop,
     'connectTimeoutMs': config.connectTimeout.inMilliseconds,
+    'enableAppleExtensions': config.enableAppleExtensions,
     'minFrameIntervalMs': minFrameIntervalMs,
     if (ssh != null)
       'sshTunnel': <String, Object?>{
@@ -532,6 +551,7 @@ VncConnectionConfig _decodeConfig(Map<String, Object?> message) {
     viewOnly: message['viewOnly'] as bool,
     sharedDesktop: message['sharedDesktop'] as bool,
     connectTimeout: Duration(milliseconds: message['connectTimeoutMs'] as int),
+    enableAppleExtensions: message['enableAppleExtensions'] as bool? ?? true,
   );
 }
 
@@ -619,6 +639,8 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
   var errorSent = false;
   var hasPendingRegion = false;
   VncScreenInfo? pendingRegion;
+  var hasPendingDisplaySelection = false;
+  int? pendingDisplayId;
   Completer<VncCredentials?>? pendingCredentials;
   VncTransport? transport;
   BufferedByteReader? reader;
@@ -708,6 +730,14 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
           hasPendingRegion = true;
           pendingRegion = region;
         }
+      case 'selectDisplay':
+        final displayId = rawCommand['displayId'] as int?;
+        if (session != null) {
+          safeSessionCall((s) => s.selectAppleDisplay(displayId));
+        } else {
+          hasPendingDisplaySelection = true;
+          pendingDisplayId = displayId;
+        }
       case 'refresh':
         safeSessionCall((s) => s.requestFramebufferUpdate(incremental: false));
       case 'disconnect':
@@ -753,7 +783,7 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
 
     reader = BufferedByteReader(transport.stream);
 
-    final desktopInfo = await RfbHandshake.perform(
+    final handshake = await RfbHandshake.performSession(
       transport: transport,
       reader: reader,
       config: config,
@@ -773,6 +803,10 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
           },
     );
 
+    transport = handshake.transport;
+    reader = handshake.reader;
+    final desktopInfo = handshake.desktopInfo;
+
     if (stopping) {
       return;
     }
@@ -784,6 +818,7 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
       'height': desktopInfo.height,
       'protocolVersion': desktopInfo.protocolVersion,
       'securityType': desktopInfo.securityType,
+      'isApple889': desktopInfo.isApple889,
     });
 
     final framebuffer = VncFramebuffer(desktopInfo.width, desktopInfo.height);
@@ -791,10 +826,15 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
       transport: transport,
       reader: reader,
       framebuffer: framebuffer,
+      isApple889: desktopInfo.isApple889,
     );
     if (hasPendingRegion) {
       hasPendingRegion = false;
       safeSessionCall((s) => s.setActiveRegion(pendingRegion));
+    }
+    if (hasPendingDisplaySelection) {
+      hasPendingDisplaySelection = false;
+      safeSessionCall((s) => s.selectAppleDisplay(pendingDisplayId));
     }
 
     var frameId = 0;
@@ -845,31 +885,40 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
 
     await session.runMessageLoop(
       onFrameUpdated: scheduleFrameFlush,
-      onDesktopResized: (width, height, screens) {
-        if (stopping) {
-          return;
-        }
-        dirty = false;
-        trailingTimer?.cancel();
-        trailingTimer = null;
-        lastSentElapsedMs = -minFrameIntervalMs;
-        replyPort.send(<String, Object?>{
-          'type': 'resized',
-          'width': width,
-          'height': height,
-          'screens': [
-            for (final screen in screens)
-              <String, int>{
-                'id': screen.id,
-                'x': screen.x,
-                'y': screen.y,
-                'width': screen.width,
-                'height': screen.height,
-                'flags': screen.flags,
-              },
-          ],
-        });
-      },
+      onDesktopResized:
+          (
+            width,
+            height,
+            screens, {
+            hasCurrentDisplayId = false,
+            currentDisplayId,
+          }) {
+            if (stopping) {
+              return;
+            }
+            dirty = false;
+            trailingTimer?.cancel();
+            trailingTimer = null;
+            lastSentElapsedMs = -minFrameIntervalMs;
+            replyPort.send(<String, Object?>{
+              'type': 'resized',
+              'width': width,
+              'height': height,
+              'screens': [
+                for (final screen in screens)
+                  <String, int>{
+                    'id': screen.id,
+                    'x': screen.x,
+                    'y': screen.y,
+                    'width': screen.width,
+                    'height': screen.height,
+                    'flags': screen.flags,
+                  },
+              ],
+              'hasCurrentDisplayId': hasCurrentDisplayId,
+              'currentDisplayId': currentDisplayId,
+            });
+          },
       onCursorUpdated: (cursor) {
         if (stopping) {
           return;

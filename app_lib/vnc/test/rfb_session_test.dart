@@ -249,10 +249,11 @@ void main() {
         var frameCount = 0;
 
         final loopFuture = session.runMessageLoop(
-          onDesktopResized: (w, h, screens) {
-            eventOrder.add('resize:${w}x$h');
-            resizedTo.add((w, h));
-          },
+          onDesktopResized:
+              (w, h, screens, {hasCurrentDisplayId = false, currentDisplayId}) {
+                eventOrder.add('resize:${w}x$h');
+                resizedTo.add((w, h));
+              },
           onCursorUpdated: (cursor) {
             eventOrder.add('cursor:${cursor.width}x${cursor.height}');
             cursors.add(cursor);
@@ -427,9 +428,10 @@ void main() {
         final reportedScreens = <List<VncScreenInfo>>[];
 
         final loopFuture = largeSession.runMessageLoop(
-          onDesktopResized: (w, h, screens) {
-            reportedScreens.add(screens);
-          },
+          onDesktopResized:
+              (w, h, screens, {hasCurrentDisplayId = false, currentDisplayId}) {
+                reportedScreens.add(screens);
+              },
           onBell: () {
             stop = true;
           },

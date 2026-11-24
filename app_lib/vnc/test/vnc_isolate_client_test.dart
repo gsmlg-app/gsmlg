@@ -335,6 +335,7 @@ void main() {
           VncConnectionConfig(
             host: InternetAddress.loopbackIPv4.address,
             port: server.port,
+            enableAppleExtensions: false,
           ),
         );
 
@@ -495,6 +496,7 @@ void main() {
           VncConnectionConfig(
             host: InternetAddress.loopbackIPv4.address,
             port: server.port,
+            enableAppleExtensions: false,
           ),
         );
 

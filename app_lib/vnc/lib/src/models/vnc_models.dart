@@ -64,6 +64,7 @@ class VncConnectionConfig extends Equatable {
     this.viewOnly = false,
     this.sharedDesktop = true,
     this.connectTimeout = const Duration(seconds: 15),
+    this.enableAppleExtensions = true,
   });
 
   final String host;
@@ -75,6 +76,12 @@ class VncConnectionConfig extends Equatable {
   final bool sharedDesktop;
   final Duration connectTimeout;
 
+  /// Whether to negotiate native macOS `RFB 003.889` protocol extensions
+  /// (encrypted record layer, `AppleDisplayLayout`, server-side `SetDisplay`,
+  /// `AppleCursorCache`, and macOS button-mask mapping) when connecting to a
+  /// server advertising `RFB 003.889`.
+  final bool enableAppleExtensions;
+
   @override
   List<Object?> get props => [
     host,
@@ -85,6 +92,7 @@ class VncConnectionConfig extends Equatable {
     viewOnly,
     sharedDesktop,
     connectTimeout,
+    enableAppleExtensions,
   ];
 }
 
@@ -181,6 +189,7 @@ class VncDesktopInfo extends Equatable {
     required this.height,
     required this.protocolVersion,
     required this.securityType,
+    this.isApple889 = false,
   });
 
   final String name;
@@ -189,6 +198,10 @@ class VncDesktopInfo extends Equatable {
   final String protocolVersion;
   final int securityType;
 
+  /// Whether this session negotiated native macOS `RFB 003.889` mode with
+  /// Apple's encrypted record layer and server-side display switching.
+  final bool isApple889;
+
   @override
   List<Object?> get props => [
     name,
@@ -196,6 +209,7 @@ class VncDesktopInfo extends Equatable {
     height,
     protocolVersion,
     securityType,
+    isApple889,
   ];
 }
 

@@ -4,21 +4,23 @@ import 'dart:typed_data';
 import '../models/vnc_exceptions.dart';
 import '../models/vnc_models.dart';
 import '../transport/vnc_transport.dart';
+import 'apple_rfb.dart';
 import 'byte_reader.dart';
 import 'framebuffer.dart';
 
 /// Post-handshake RFB/VNC message loop and client-to-server wire writers
-/// (RFC 6143 §7.5 & §7.6).
+/// (RFC 6143 §7.5 & §7.6, plus Apple RFB `003.889` extensions).
 class RfbSession {
   RfbSession({
     required VncTransport transport,
     required BufferedByteReader reader,
     required VncFramebuffer framebuffer,
     RfbRectDecoder? decoder,
+    this.isApple889 = false,
   }) : _transport = transport,
        _reader = reader,
        _framebuffer = framebuffer,
-       _decoder = decoder ?? RfbRectDecoder();
+       _decoder = decoder ?? RfbRectDecoder(isApple889: isApple889);
 
   /// Maximum accepted client or server cut-text payload length (1 MiB).
   static const int maxCutTextLength = 1024 * 1024;
@@ -27,6 +29,7 @@ class RfbSession {
   static const int _msgSetColourMapEntries = 1;
   static const int _msgBell = 2;
   static const int _msgServerCutText = 3;
+  static const int _msgAppleMiscStatus = 0x14;
 
   static const int _clientMsgFramebufferUpdateRequest = 3;
   static const int _clientMsgKeyEvent = 4;
@@ -38,7 +41,11 @@ class RfbSession {
   final VncFramebuffer _framebuffer;
   final RfbRectDecoder _decoder;
 
+  /// Whether this session uses native macOS `RFB 003.889` extensions.
+  final bool isApple889;
+
   VncScreenInfo? _activeRegion;
+  bool _appleArmed = false;
 
   /// Currently selected sub-region for scoped framebuffer updates, or `null`
   /// when requesting the full framebuffer.
@@ -79,6 +86,32 @@ class RfbSession {
     }
     _activeRegion = _clampRegion(region);
     requestFramebufferUpdate(incremental: false);
+  }
+
+  /// Sends macOS `SetDisplay` (`0x0d`) to select a physical display by
+  /// [displayId], or `null` for All Displays. No-op outside Apple `003.889`
+  /// sessions.
+  void selectAppleDisplay(int? displayId) {
+    if (!isApple889) {
+      return;
+    }
+    _transport.add(AppleRfbMessages.setDisplay(displayId));
+  }
+
+  /// Sends macOS `AutoFrameBufferUpdate` (`0x09`) for the current framebuffer
+  /// dimensions. No-op outside Apple `003.889` sessions.
+  void armAppleAutoUpdate({int intervalUs = 33333}) {
+    if (!isApple889) {
+      return;
+    }
+    _appleArmed = true;
+    _transport.add(
+      AppleRfbMessages.autoFramebufferUpdate(
+        intervalUs: intervalUs,
+        width: _framebuffer.width,
+        height: _framebuffer.height,
+      ),
+    );
   }
 
   /// Sends a `FramebufferUpdateRequest` (RFC 6143 §7.5.3).
@@ -124,16 +157,30 @@ class RfbSession {
 
   /// Sends a `PointerEvent` (RFC 6143 §7.5.5), clamping coordinates to the
   /// current framebuffer dimensions.
+  ///
+  /// On macOS `RFB 003.889`, bits 1 (`0x02`) and 2 (`0x04`) of [buttonMask] are
+  /// swapped because macOS interprets the mask as `CGMouseButton` numbers
+  /// (left, right, center).
   void sendPointerEvent(int x, int y, int buttonMask) {
     final maxX = _framebuffer.width > 0 ? _framebuffer.width - 1 : 0;
     final maxY = _framebuffer.height > 0 ? _framebuffer.height - 1 : 0;
     final clampedX = x.clamp(0, maxX);
     final clampedY = y.clamp(0, maxY);
 
+    final int effectiveMask;
+    if (isApple889) {
+      final m = buttonMask & 0xFF;
+      final b1 = (m >> 1) & 1;
+      final b2 = (m >> 2) & 1;
+      effectiveMask = (m & ~0x06) | (b1 << 2) | (b2 << 1);
+    } else {
+      effectiveMask = buttonMask & 0xFF;
+    }
+
     final bytes = Uint8List(6);
     ByteData.sublistView(bytes)
       ..setUint8(0, _clientMsgPointerEvent)
-      ..setUint8(1, buttonMask & 0xFF)
+      ..setUint8(1, effectiveMask)
       ..setUint16(2, clampedX, Endian.big)
       ..setUint16(4, clampedY, Endian.big);
     _transport.add(bytes);
@@ -164,7 +211,13 @@ class RfbSession {
   /// `true` or the connection closes/errors.
   Future<void> runMessageLoop({
     void Function()? onFrameUpdated,
-    void Function(int width, int height, List<VncScreenInfo> screens)?
+    void Function(
+      int width,
+      int height,
+      List<VncScreenInfo> screens, {
+      bool hasCurrentDisplayId,
+      int? currentDisplayId,
+    })?
     onDesktopResized,
     void Function(VncCursorData cursor)? onCursorUpdated,
     void Function(String text)? onServerCutText,
@@ -206,6 +259,10 @@ class RfbSession {
           final bytes = await _reader.readBytes(length);
           final text = latin1.decode(bytes, allowInvalid: true);
           onServerCutText?.call(text);
+        case _msgAppleMiscStatus when isApple889:
+          await _reader.skip(1); // padding
+          final length = await _reader.readUint16();
+          await _reader.skip(length);
         default:
           throw VncProtocolException(
             'Unknown RFB server message type: $messageType',
@@ -216,7 +273,13 @@ class RfbSession {
 
   Future<void> _handleFramebufferUpdate({
     void Function()? onFrameUpdated,
-    void Function(int width, int height, List<VncScreenInfo> screens)?
+    void Function(
+      int width,
+      int height,
+      List<VncScreenInfo> screens, {
+      bool hasCurrentDisplayId,
+      int? currentDisplayId,
+    })?
     onDesktopResized,
     void Function(VncCursorData cursor)? onCursorUpdated,
     bool Function()? shouldStop,
@@ -226,6 +289,9 @@ class RfbSession {
 
     var anyPixels = false;
     var anyResize = false;
+    var anyAppleLayout = false;
+    var hasCurrentDisplayId = false;
+    int? currentDisplayId;
     VncCursorData? latestCursor;
     List<VncScreenInfo>? latestScreens;
 
@@ -254,6 +320,11 @@ class RfbSession {
       if (result.screens != null) {
         latestScreens = result.screens;
       }
+      if (result.hasCurrentDisplayId) {
+        anyAppleLayout = true;
+        hasCurrentDisplayId = true;
+        currentDisplayId = result.currentDisplayId;
+      }
       if (result.cursor != null) {
         latestCursor = result.cursor;
       }
@@ -263,30 +334,36 @@ class RfbSession {
     }
 
     if (anyResize || latestScreens != null) {
-      final active = _activeRegion;
-      if (active != null) {
-        VncScreenInfo? matched;
-        if (latestScreens != null) {
-          for (final screen in latestScreens) {
-            if (screen.id == active.id) {
-              matched = screen;
-              break;
+      if (anyAppleLayout) {
+        _activeRegion = null;
+      } else {
+        final active = _activeRegion;
+        if (active != null) {
+          VncScreenInfo? matched;
+          if (latestScreens != null) {
+            for (final screen in latestScreens) {
+              if (screen.id == active.id) {
+                matched = screen;
+                break;
+              }
             }
           }
-        }
-        if (matched != null) {
-          _activeRegion = _clampRegion(matched);
-        } else if (active.x < 0 ||
-            active.y < 0 ||
-            active.x + active.width > _framebuffer.width ||
-            active.y + active.height > _framebuffer.height) {
-          _activeRegion = null;
+          if (matched != null) {
+            _activeRegion = _clampRegion(matched);
+          } else if (active.x < 0 ||
+              active.y < 0 ||
+              active.x + active.width > _framebuffer.width ||
+              active.y + active.height > _framebuffer.height) {
+            _activeRegion = null;
+          }
         }
       }
       onDesktopResized?.call(
         _framebuffer.width,
         _framebuffer.height,
         latestScreens ?? const <VncScreenInfo>[],
+        hasCurrentDisplayId: hasCurrentDisplayId,
+        currentDisplayId: currentDisplayId,
       );
     }
     if (latestCursor != null) {
@@ -297,7 +374,18 @@ class RfbSession {
     }
 
     if (!(shouldStop?.call() ?? false)) {
-      requestFramebufferUpdate(incremental: !anyResize);
+      if (isApple889) {
+        if (anyAppleLayout) {
+          armAppleAutoUpdate();
+          requestFramebufferUpdate(incremental: false);
+        } else if (anyResize) {
+          requestFramebufferUpdate(incremental: false);
+        } else if (!_appleArmed) {
+          requestFramebufferUpdate(incremental: true);
+        }
+      } else {
+        requestFramebufferUpdate(incremental: !anyResize);
+      }
     }
   }
 }

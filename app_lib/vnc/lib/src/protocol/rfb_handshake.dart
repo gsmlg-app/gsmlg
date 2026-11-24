@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
+
 import '../crypto/ard_auth.dart';
 import '../crypto/vnc_des.dart';
 import '../models/vnc_exceptions.dart';
 import '../models/vnc_models.dart';
+import '../transport/apple_record_transport.dart';
 import '../transport/vnc_transport.dart';
+import 'apple_rfb.dart';
 import 'byte_reader.dart';
 import 'rfb_encodings.dart';
 
@@ -17,6 +21,24 @@ typedef VncCredentialProvider =
       required bool requiresUsername,
     });
 
+/// Result of a completed RFB handshake, including the active post-handshake
+/// [transport] and [reader].
+///
+/// For native macOS `RFB 003.889` sessions, [transport] is upgraded to an
+/// [AppleRecordVncTransport] and [reader] reads decrypted plaintext from it.
+@immutable
+class RfbHandshakeResult {
+  const RfbHandshakeResult({
+    required this.desktopInfo,
+    required this.transport,
+    required this.reader,
+  });
+
+  final VncDesktopInfo desktopInfo;
+  final VncTransport transport;
+  final BufferedByteReader reader;
+}
+
 /// Performs the RFB 3.3 / 3.7 / 3.8 (including macOS `003.889`) handshake,
 /// security authentication, initialization, and initial pixel-format/encoding
 /// negotiation.
@@ -26,6 +48,11 @@ abstract final class RfbHandshake {
   static const int _minArdKeyLength = 1;
   static const int _maxArdKeyLength = 1024;
   static const int _maxEncodingsCount = 0xFFFF;
+  static const int _appleExtendedServerInitHeaderLength = 22;
+  static const int _appleClientInitExtendedShared = 0x81;
+  static const int _msgFramebufferUpdate = 0;
+  static const int _msgBell = 2;
+  static const int _msgAppleMiscStatus = 0x14;
 
   static const List<int> _autoSecurityPriority = [
     RfbSecurityType.appleArd,
@@ -43,20 +70,42 @@ abstract final class RfbHandshake {
     required BufferedByteReader reader,
     required VncConnectionConfig config,
     VncCredentialProvider? onCredentialsRequired,
-    List<int> encodings = RfbEncoding.defaultEncodings,
+    List<int>? encodings,
   }) async {
-    if (encodings.length > _maxEncodingsCount) {
+    final result = await performSession(
+      transport: transport,
+      reader: reader,
+      config: config,
+      onCredentialsRequired: onCredentialsRequired,
+      encodings: encodings,
+    );
+    return result.desktopInfo;
+  }
+
+  /// Runs the complete RFB handshake and returns the active post-handshake
+  /// [RfbHandshakeResult] (including the upgraded [AppleRecordVncTransport] and
+  /// [BufferedByteReader] when native macOS `RFB 003.889` mode is active).
+  static Future<RfbHandshakeResult> performSession({
+    required VncTransport transport,
+    required BufferedByteReader reader,
+    required VncConnectionConfig config,
+    VncCredentialProvider? onCredentialsRequired,
+    List<int>? encodings,
+  }) async {
+    if (encodings != null && encodings.length > _maxEncodingsCount) {
       throw ArgumentError.value(
         encodings.length,
         'encodings',
         'Cannot advertise more than $_maxEncodingsCount encodings',
       );
     }
-    final encodingList = List<int>.of(encodings, growable: false);
+    final customEncodings = encodings == null
+        ? null
+        : List<int>.of(encodings, growable: false);
 
     // Step A: ProtocolVersion negotiation.
     final (:serverBannerTrimmed, :effectiveMinor) =
-        await _negotiateProtocolVersion(transport, reader);
+        await _negotiateProtocolVersion(transport, reader, config);
 
     // Step B: Security type negotiation.
     final selectedType = await _negotiateSecurityType(
@@ -67,7 +116,7 @@ abstract final class RfbHandshake {
     );
 
     // Step C: Security handshake.
-    await _performSecurityHandshake(
+    final ardWrapKey = await _performSecurityHandshake(
       transport: transport,
       reader: reader,
       config: config,
@@ -76,32 +125,94 @@ abstract final class RfbHandshake {
       onCredentialsRequired: onCredentialsRequired,
     );
 
-    // Step D: ClientInit & ServerInit.
-    final (:width, :height, :name) = await _exchangeInitMessages(
-      transport: transport,
-      reader: reader,
-      sharedDesktop: config.sharedDesktop,
-    );
+    final useApple889 =
+        effectiveMinor == 889 && selectedType == RfbSecurityType.appleArd;
 
-    // Step E: Initial SetPixelFormat (rgba8888) & SetEncodings.
-    await _sendInitialConfiguration(
-      transport: transport,
-      encodings: encodingList,
-    );
+    try {
+      // Step D: ClientInit & ServerInit.
+      final (:width, :height, :name) = await _exchangeInitMessages(
+        transport: transport,
+        reader: reader,
+        sharedDesktop: config.sharedDesktop,
+        appleExtendedInit: useApple889,
+      );
 
-    return VncDesktopInfo(
-      name: name,
-      width: width,
-      height: height,
-      protocolVersion: serverBannerTrimmed,
-      securityType: selectedType,
-    );
+      if (useApple889) {
+        // Send cleartext prelude back-to-back before awaiting rekey.
+        transport.add(AppleRfbMessages.viewerInfo());
+        transport.add(AppleRfbMessages.setModeControl());
+        transport.add(AppleRfbMessages.setEncryptionStart());
+        transport.add(AppleRfbMessages.enableInboundRecordDecryption());
+        await transport.flush();
+
+        final rekey = await _awaitAppleRekey(reader, ardWrapKey!);
+        AppleRecordVncTransport? recordTransport;
+        BufferedByteReader? recordReader;
+        try {
+          recordTransport = AppleRecordVncTransport(
+            inner: transport,
+            innerReader: reader,
+            key: rekey.key,
+            iv: rekey.iv,
+          );
+          recordReader = BufferedByteReader(recordTransport.stream);
+        } finally {
+          rekey.key.fillRange(0, rekey.key.length, 0);
+          rekey.iv.fillRange(0, rekey.iv.length, 0);
+        }
+
+        try {
+          await _sendInitialConfiguration(
+            transport: recordTransport,
+            encodings: customEncodings ?? AppleRfbEncoding.defaultEncodings,
+          );
+        } catch (_) {
+          await recordReader.dispose();
+          await recordTransport.close();
+          rethrow;
+        }
+
+        return RfbHandshakeResult(
+          desktopInfo: VncDesktopInfo(
+            name: name,
+            width: width,
+            height: height,
+            protocolVersion: serverBannerTrimmed,
+            securityType: selectedType,
+            isApple889: true,
+          ),
+          transport: recordTransport,
+          reader: recordReader,
+        );
+      }
+
+      // Step E: Initial SetPixelFormat (rgba8888) & SetEncodings.
+      await _sendInitialConfiguration(
+        transport: transport,
+        encodings: customEncodings ?? RfbEncoding.defaultEncodings,
+      );
+
+      return RfbHandshakeResult(
+        desktopInfo: VncDesktopInfo(
+          name: name,
+          width: width,
+          height: height,
+          protocolVersion: serverBannerTrimmed,
+          securityType: selectedType,
+        ),
+        transport: transport,
+        reader: reader,
+      );
+    } finally {
+      ardWrapKey?.fillRange(0, ardWrapKey.length, 0);
+    }
   }
 
   static Future<({String serverBannerTrimmed, int effectiveMinor})>
   _negotiateProtocolVersion(
     VncTransport transport,
     BufferedByteReader reader,
+    VncConnectionConfig config,
   ) async {
     final bannerBytes = await reader.readBytes(12);
     final String banner;
@@ -126,9 +237,19 @@ abstract final class RfbHandshake {
       throw VncProtocolException('Unsupported RFB protocol version: $trimmed');
     }
 
+    final wantsApple889 =
+        major == 3 &&
+        minor == 889 &&
+        config.enableAppleExtensions &&
+        (config.authPreference == VncAuthPreference.auto ||
+            config.authPreference == VncAuthPreference.appleArd);
+
     final String clientBanner;
     final int effectiveMinor;
-    if (major > 3 || minor >= 8) {
+    if (wantsApple889) {
+      clientBanner = 'RFB 003.889\n';
+      effectiveMinor = 889;
+    } else if (major > 3 || minor >= 8) {
       clientBanner = 'RFB 003.008\n';
       effectiveMinor = 8;
     } else if (minor == 7) {
@@ -203,7 +324,7 @@ abstract final class RfbHandshake {
     return selectedType;
   }
 
-  static Future<void> _performSecurityHandshake({
+  static Future<Uint8List?> _performSecurityHandshake({
     required VncTransport transport,
     required BufferedByteReader reader,
     required VncConnectionConfig config,
@@ -211,13 +332,17 @@ abstract final class RfbHandshake {
     required int effectiveMinor,
     required VncCredentialProvider? onCredentialsRequired,
   }) async {
-    final isVersion38 = effectiveMinor >= 8;
+    final hasSecurityResultForNone = effectiveMinor >= 8;
+    // RFB 3.8 sends a reason string on SecurityResult failure, whereas
+    // Apple RFB 003.889 (and RFB 3.7/3.3) send only the 4-byte status word.
+    final hasReasonString = effectiveMinor == 8;
 
     switch (selectedType) {
       case RfbSecurityType.none:
-        if (isVersion38) {
-          await _readSecurityResult(reader, isVersion38: true);
+        if (hasSecurityResultForNone) {
+          await _readSecurityResult(reader, hasReasonString: hasReasonString);
         }
+        return null;
       case RfbSecurityType.vncAuth:
         final challenge = await reader.readBytes(16);
         var password = config.credentials.password;
@@ -237,7 +362,8 @@ abstract final class RfbHandshake {
         final response = VncDes.encryptChallenge(challenge, password);
         transport.add(response);
         await transport.flush();
-        await _readSecurityResult(reader, isVersion38: isVersion38);
+        await _readSecurityResult(reader, hasReasonString: hasReasonString);
+        return null;
       case RfbSecurityType.appleArd:
         final generator = await reader.readUint16();
         final keyLength = await reader.readUint16();
@@ -295,14 +421,20 @@ abstract final class RfbHandshake {
           );
         }
 
-        final credLen = ardResponse.encryptedCredentials.length;
-        final pubLen = ardResponse.clientPublicKey.length;
-        final payload = Uint8List(credLen + pubLen)
-          ..setRange(0, credLen, ardResponse.encryptedCredentials)
-          ..setRange(credLen, credLen + pubLen, ardResponse.clientPublicKey);
-        transport.add(payload);
-        await transport.flush();
-        await _readSecurityResult(reader, isVersion38: isVersion38);
+        try {
+          final credLen = ardResponse.encryptedCredentials.length;
+          final pubLen = ardResponse.clientPublicKey.length;
+          final payload = Uint8List(credLen + pubLen)
+            ..setRange(0, credLen, ardResponse.encryptedCredentials)
+            ..setRange(credLen, credLen + pubLen, ardResponse.clientPublicKey);
+          transport.add(payload);
+          await transport.flush();
+          await _readSecurityResult(reader, hasReasonString: hasReasonString);
+          return ardResponse.aesKey;
+        } catch (_) {
+          ardResponse.aesKey.fillRange(0, ardResponse.aesKey.length, 0);
+          rethrow;
+        }
       default:
         throw VncUnsupportedSecurityTypeException([selectedType]);
     }
@@ -338,14 +470,14 @@ abstract final class RfbHandshake {
 
   static Future<void> _readSecurityResult(
     BufferedByteReader reader, {
-    required bool isVersion38,
+    required bool hasReasonString,
   }) async {
     final status = await reader.readUint32();
     if (status == 0) {
       return;
     }
 
-    if (isVersion38) {
+    if (hasReasonString) {
       final reason = await _readReasonString(reader);
       throw VncAuthenticationException(
         reason.isEmpty ? 'VNC authentication failed (status $status)' : reason,
@@ -373,8 +505,12 @@ abstract final class RfbHandshake {
     required VncTransport transport,
     required BufferedByteReader reader,
     required bool sharedDesktop,
+    required bool appleExtendedInit,
   }) async {
-    transport.add(Uint8List.fromList([sharedDesktop ? 1 : 0]));
+    final clientInitByte = appleExtendedInit
+        ? _appleClientInitExtendedShared
+        : (sharedDesktop ? 1 : 0);
+    transport.add(Uint8List.fromList([clientInitByte]));
     await transport.flush();
 
     final width = await reader.readUint16();
@@ -394,10 +530,63 @@ abstract final class RfbHandshake {
         'RFB desktop name too large: $nameLength bytes',
       );
     }
-    final nameBytes = await reader.readBytes(nameLength);
+    final rawNameBytes = await reader.readBytes(nameLength);
+    final Uint8List nameBytes;
+    if (appleExtendedInit &&
+        rawNameBytes.length >= _appleExtendedServerInitHeaderLength) {
+      nameBytes = Uint8List.sublistView(
+        rawNameBytes,
+        _appleExtendedServerInitHeaderLength,
+      );
+    } else {
+      nameBytes = rawNameBytes;
+    }
     final name = utf8.decode(nameBytes, allowMalformed: true);
 
     return (width: width, height: height, name: name);
+  }
+
+  static Future<({int generation, Uint8List key, Uint8List iv})>
+  _awaitAppleRekey(BufferedByteReader reader, Uint8List wrapKey) async {
+    while (true) {
+      final msgType = await reader.readUint8();
+      switch (msgType) {
+        case _msgFramebufferUpdate:
+          await reader.skip(1); // padding
+          final rects = await reader.readUint16();
+          if (rects == 0) {
+            continue;
+          }
+          if (rects != 1) {
+            throw VncProtocolException(
+              'Expected 1 rectangle in Apple rekey update, got $rects',
+            );
+          }
+          await reader.skip(8); // x, y, w, h
+          final encoding = await reader.readInt32();
+          if (encoding != AppleRfbEncoding.rekey) {
+            throw VncProtocolException(
+              'Expected Apple rekey encoding (0x44f) before record layer, '
+              'got $encoding',
+            );
+          }
+          final body = await reader.readBytes(
+            AppleRecordVncTransport.rekeyLength,
+          );
+          return AppleRecordVncTransport.unwrapRekey(wrapKey, body);
+        case _msgBell:
+          // Ignore unbidden bell before encryption activates.
+          continue;
+        case _msgAppleMiscStatus:
+          await reader.skip(1); // padding
+          final len = await reader.readUint16();
+          await reader.skip(len);
+        default:
+          throw VncProtocolException(
+            'Unexpected server message type $msgType before Apple record layer',
+          );
+      }
+    }
   }
 
   static Future<void> _sendInitialConfiguration({

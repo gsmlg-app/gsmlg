@@ -30,6 +30,7 @@ class FakeVncSessionClient implements VncSessionClient {
   final List<String> clipboardTexts = [];
   final List<bool> setViewOnlyCalls = [];
   final List<VncScreenInfo?> setActiveRegionCalls = [];
+  final List<int?> selectDisplayCalls = [];
   int fullRefreshCount = 0;
   int disconnectCount = 0;
 
@@ -89,6 +90,11 @@ class FakeVncSessionClient implements VncSessionClient {
   @override
   void setActiveRegion(VncScreenInfo? region) {
     setActiveRegionCalls.add(region);
+  }
+
+  @override
+  void selectDisplay(int? displayId) {
+    selectDisplayCalls.add(displayId);
   }
 
   @override
