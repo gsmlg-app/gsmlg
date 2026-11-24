@@ -52,6 +52,7 @@ abstract final class RfbHandshake {
         'Cannot advertise more than $_maxEncodingsCount encodings',
       );
     }
+    final encodingList = List<int>.of(encodings, growable: false);
 
     // Step A: ProtocolVersion negotiation.
     final (:serverBannerTrimmed, :effectiveMinor) =
@@ -83,7 +84,10 @@ abstract final class RfbHandshake {
     );
 
     // Step E: Initial SetPixelFormat (rgba8888) & SetEncodings.
-    await _sendInitialConfiguration(transport: transport, encodings: encodings);
+    await _sendInitialConfiguration(
+      transport: transport,
+      encodings: encodingList,
+    );
 
     return VncDesktopInfo(
       name: name,
@@ -222,9 +226,11 @@ abstract final class RfbHandshake {
             securityType: RfbSecurityType.vncAuth,
             requiresUsername: false,
           );
-          password = provided?.password;
+          if (provided != null) {
+            password = provided.password;
+          }
         }
-        if (password == null) {
+        if (password == null || password.isEmpty) {
           throw const VncAuthenticationException('VNC password is required');
         }
 
@@ -244,6 +250,12 @@ abstract final class RfbHandshake {
         final primeBytes = await reader.readBytes(keyLength);
         final serverPubKeyBytes = await reader.readBytes(keyLength);
 
+        _validateArdDhParameters(
+          generator: generator,
+          primeBytes: primeBytes,
+          serverPubKeyBytes: serverPubKeyBytes,
+        );
+
         var username = config.credentials.username;
         var password = config.credentials.password;
         if (username == null || username.isEmpty || password == null) {
@@ -251,8 +263,14 @@ abstract final class RfbHandshake {
             securityType: RfbSecurityType.appleArd,
             requiresUsername: true,
           );
-          username = provided?.username;
-          password = provided?.password;
+          if (provided != null) {
+            if (provided.username != null && provided.username!.isNotEmpty) {
+              username = provided.username;
+            }
+            if (provided.password != null) {
+              password = provided.password;
+            }
+          }
         }
         if (username == null || username.isEmpty || password == null) {
           throw const VncAuthenticationException(
@@ -287,6 +305,34 @@ abstract final class RfbHandshake {
         await _readSecurityResult(reader, isVersion38: isVersion38);
       default:
         throw VncUnsupportedSecurityTypeException([selectedType]);
+    }
+  }
+
+  static void _validateArdDhParameters({
+    required int generator,
+    required Uint8List primeBytes,
+    required Uint8List serverPubKeyBytes,
+  }) {
+    final prime = ArdAuthCrypto.bytesToBigInt(primeBytes);
+    if (prime <= BigInt.from(3)) {
+      throw const VncProtocolException(
+        'Invalid Apple ARD Diffie-Hellman prime (must be > 3)',
+      );
+    }
+
+    final generatorBig = BigInt.from(generator);
+    if (generator < 2 || generatorBig >= prime) {
+      throw VncProtocolException(
+        'Invalid Apple ARD Diffie-Hellman generator: $generator',
+      );
+    }
+
+    final maxKey = prime - BigInt.two;
+    final serverPub = ArdAuthCrypto.bytesToBigInt(serverPubKeyBytes);
+    if (serverPub < BigInt.two || serverPub > maxKey) {
+      throw const VncProtocolException(
+        'Invalid Apple ARD Diffie-Hellman server public key',
+      );
     }
   }
 

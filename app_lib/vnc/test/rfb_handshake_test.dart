@@ -890,41 +890,516 @@ void main() {
       },
     );
 
-    test('wraps ArdAuthCrypto ArgumentError as VncProtocolException', () async {
+    test(
+      'rejects malformed ARD DH parameters before invoking onCredentialsRequired',
+      () async {
+        final badCases = [
+          (
+            label: 'prime <= 3',
+            generator: 2,
+            prime: [0, 0, 0, 3],
+            serverPub: [0, 0, 0, 2],
+          ),
+          (
+            label: 'generator < 2',
+            generator: 1,
+            prime: [0, 0, 0, 23],
+            serverPub: [0, 0, 0, 5],
+          ),
+          (
+            label: 'generator >= prime',
+            generator: 23,
+            prime: [0, 0, 0, 23],
+            serverPub: [0, 0, 0, 5],
+          ),
+          (
+            label: 'serverPub < 2',
+            generator: 5,
+            prime: [0, 0, 0, 23],
+            serverPub: [0, 0, 0, 1],
+          ),
+          (
+            label: 'serverPub > prime - 2',
+            generator: 5,
+            prime: [0, 0, 0, 23],
+            serverPub: [0, 0, 0, 22],
+          ),
+        ];
+
+        for (final testCase in badCases) {
+          final pipe = _InMemoryVncPipe();
+          addTearDown(pipe.dispose);
+
+          final serverTask = () async {
+            pipe.serverSendAscii('RFB 003.889\n');
+            await pipe.serverReader.readBytes(12);
+            pipe.serverSend([1, RfbSecurityType.appleArd]);
+            await pipe.serverReader.readUint8();
+            pipe.serverSendUint16(testCase.generator);
+            pipe.serverSendUint16(4);
+            pipe.serverSend(testCase.prime);
+            pipe.serverSend(testCase.serverPub);
+          }();
+
+          var credentialPromptCalled = false;
+          await expectLater(
+            RfbHandshake.perform(
+              transport: pipe,
+              reader: pipe.clientReader,
+              config: const VncConnectionConfig(host: 'mac.local'),
+              onCredentialsRequired:
+                  ({
+                    required int securityType,
+                    required bool requiresUsername,
+                  }) async {
+                    credentialPromptCalled = true;
+                    return const VncCredentials(username: 'u', password: 'p');
+                  },
+            ),
+            throwsA(isA<VncProtocolException>()),
+            reason: 'Expected VncProtocolException for ${testCase.label}',
+          );
+          expect(
+            credentialPromptCalled,
+            isFalse,
+            reason: 'Should not prompt for credentials on ${testCase.label}',
+          );
+          await serverTask;
+        }
+      },
+    );
+
+    test('throws ArgumentError when encodings length exceeds 65535', () async {
       final pipe = _InMemoryVncPipe();
       addTearDown(pipe.dispose);
-
-      final serverTask = () async {
-        pipe.serverSendAscii('RFB 003.889\n');
-        await pipe.serverReader.readBytes(12);
-        pipe.serverSend([1, RfbSecurityType.appleArd]);
-        await pipe.serverReader.readUint8();
-        // Invalid generator=1 with prime=23
-        pipe.serverSendUint16(1);
-        pipe.serverSendUint16(4);
-        pipe.serverSend([0, 0, 0, 23]);
-        pipe.serverSend([0, 0, 0, 5]);
-      }();
 
       await expectLater(
         RfbHandshake.perform(
           transport: pipe,
           reader: pipe.clientReader,
-          config: const VncConnectionConfig(
-            host: 'mac.local',
-            credentials: VncCredentials(username: 'u', password: 'p'),
-          ),
+          config: const VncConnectionConfig(host: 'vnc.local'),
+          encodings: List<int>.filled(65536, RfbEncoding.raw),
         ),
-        throwsA(
-          isA<VncProtocolException>().having(
-            (e) => e.cause,
-            'cause',
-            isA<ArgumentError>(),
-          ),
-        ),
+        throwsArgumentError,
       );
-      await serverTask;
     });
+
+    test(
+      'snapshots encodings at entry so caller mutations during handshake have no effect',
+      () async {
+        final pipe = _InMemoryVncPipe();
+        addTearDown(pipe.dispose);
+
+        final mutableEncodings = <int>[RfbEncoding.zrle, RfbEncoding.raw];
+
+        final serverTask = () async {
+          pipe.serverSendAscii('RFB 003.008\n');
+          await pipe.serverReader.readBytes(12);
+          pipe.serverSend([1, RfbSecurityType.none]);
+          await pipe.serverReader.readUint8();
+          // Mutate caller list mid-handshake before ServerInit completes.
+          mutableEncodings.add(RfbEncoding.hextile);
+          pipe.serverSendUint32(0);
+          await pipe.serverReader.readUint8();
+          pipe.serverSendServerInit(width: 800, height: 600, name: 'Snapshot');
+          await _verifyInitialSetMessages(
+            pipe.serverReader,
+            expectedEncodings: const [RfbEncoding.zrle, RfbEncoding.raw],
+          );
+        }();
+
+        await RfbHandshake.perform(
+          transport: pipe,
+          reader: pipe.clientReader,
+          config: const VncConnectionConfig(host: 'vnc.local'),
+          encodings: mutableEncodings,
+        );
+        await serverTask;
+      },
+    );
+
+    test(
+      'rejects empty Type 2 password consistently in both config and callback',
+      () async {
+        // Case 1: Empty password in config with no callback
+        {
+          final pipe = _InMemoryVncPipe();
+          addTearDown(pipe.dispose);
+
+          final serverTask = () async {
+            pipe.serverSendAscii('RFB 003.008\n');
+            await pipe.serverReader.readBytes(12);
+            pipe.serverSend([1, RfbSecurityType.vncAuth]);
+            await pipe.serverReader.readUint8();
+            pipe.serverSend(Uint8List(16));
+          }();
+
+          await expectLater(
+            RfbHandshake.perform(
+              transport: pipe,
+              reader: pipe.clientReader,
+              config: const VncConnectionConfig(
+                host: 'vnc.local',
+                credentials: VncCredentials(password: ''),
+              ),
+            ),
+            throwsA(isA<VncAuthenticationException>()),
+          );
+          await serverTask;
+        }
+
+        // Case 2: Empty password returned by onCredentialsRequired callback
+        {
+          final pipe = _InMemoryVncPipe();
+          addTearDown(pipe.dispose);
+
+          final serverTask = () async {
+            pipe.serverSendAscii('RFB 003.008\n');
+            await pipe.serverReader.readBytes(12);
+            pipe.serverSend([1, RfbSecurityType.vncAuth]);
+            await pipe.serverReader.readUint8();
+            pipe.serverSend(Uint8List(16));
+          }();
+
+          await expectLater(
+            RfbHandshake.perform(
+              transport: pipe,
+              reader: pipe.clientReader,
+              config: const VncConnectionConfig(host: 'vnc.local'),
+              onCredentialsRequired:
+                  ({
+                    required int securityType,
+                    required bool requiresUsername,
+                  }) async => const VncCredentials(password: ''),
+            ),
+            throwsA(isA<VncAuthenticationException>()),
+          );
+          await serverTask;
+        }
+      },
+    );
+
+    test(
+      'preserves pre-configured username for Type 30 when callback supplies only password',
+      () async {
+        final pipe = _InMemoryVncPipe();
+        addTearDown(pipe.dispose);
+
+        const generator = 2;
+        final keyLength = _oakleyPrime128.length;
+        final prime = ArdAuthCrypto.bytesToBigInt(_oakleyPrime128);
+        final serverPriv = BigInt.from(246813579);
+        final serverPubBytes = ArdAuthCrypto.bigIntToFixedBytes(
+          BigInt.from(generator).modPow(serverPriv, prime),
+          keyLength,
+        );
+
+        String? decryptedUser;
+        String? decryptedPass;
+
+        final serverTask = () async {
+          pipe.serverSendAscii('RFB 003.889\n');
+          await pipe.serverReader.readBytes(12);
+          pipe.serverSend([1, RfbSecurityType.appleArd]);
+          await pipe.serverReader.readUint8();
+          pipe.serverSendUint16(generator);
+          pipe.serverSendUint16(keyLength);
+          pipe.serverSend(_oakleyPrime128);
+          pipe.serverSend(serverPubBytes);
+
+          final encryptedCreds = await pipe.serverReader.readBytes(128);
+          final clientPubBytes = await pipe.serverReader.readBytes(keyLength);
+          final sharedBytes = ArdAuthCrypto.bigIntToFixedBytes(
+            ArdAuthCrypto.bytesToBigInt(
+              clientPubBytes,
+            ).modPow(serverPriv, prime),
+            keyLength,
+          );
+          final aesKey = Uint8List.fromList(md5.convert(sharedBytes).bytes);
+          final plaintext = _aesEcbDecrypt(encryptedCreds, aesKey);
+          decryptedUser = _readNullTerminatedUtf8(plaintext, 0, 64);
+          decryptedPass = _readNullTerminatedUtf8(plaintext, 64, 64);
+
+          pipe.serverSendUint32(0);
+          await pipe.serverReader.readUint8();
+          pipe.serverSendServerInit(width: 1280, height: 800, name: 'iMac');
+          await _verifyInitialSetMessages(pipe.serverReader);
+        }();
+
+        final info = await RfbHandshake.perform(
+          transport: pipe,
+          reader: pipe.clientReader,
+          config: const VncConnectionConfig(
+            host: 'imac.local',
+            credentials: VncCredentials(username: 'saved-mac-user'),
+          ),
+          onCredentialsRequired:
+              ({
+                required int securityType,
+                required bool requiresUsername,
+              }) async => const VncCredentials(password: 'prompted-only-pass'),
+        );
+        await serverTask;
+
+        expect(decryptedUser, 'saved-mac-user');
+        expect(decryptedPass, 'prompted-only-pass');
+        expect(info.name, 'iMac');
+      },
+    );
+
+    test(
+      'decodes malformed UTF-8 in reason string and desktop name without throwing FormatException',
+      () async {
+        // Malformed UTF-8 in SecurityResult failure reason
+        {
+          final pipe = _InMemoryVncPipe();
+          addTearDown(pipe.dispose);
+
+          final serverTask = () async {
+            pipe.serverSendAscii('RFB 003.008\n');
+            await pipe.serverReader.readBytes(12);
+            pipe.serverSend([1, RfbSecurityType.none]);
+            await pipe.serverReader.readUint8();
+            pipe.serverSendUint32(1);
+            // Invalid UTF-8 bytes 0xFF, 0xFE surrounded by ASCII
+            final badReason = Uint8List.fromList([
+              0x42,
+              0x61,
+              0x64,
+              0x20,
+              0xFF,
+              0xFE,
+            ]);
+            pipe.serverSendUint32(badReason.length);
+            pipe.serverSend(badReason);
+          }();
+
+          await expectLater(
+            RfbHandshake.perform(
+              transport: pipe,
+              reader: pipe.clientReader,
+              config: const VncConnectionConfig(host: 'vnc.local'),
+            ),
+            throwsA(
+              isA<VncAuthenticationException>().having(
+                (e) => e.message,
+                'message',
+                contains('Bad '),
+              ),
+            ),
+          );
+          await serverTask;
+        }
+
+        // Malformed UTF-8 in ServerInit desktop name
+        {
+          final pipe = _InMemoryVncPipe();
+          addTearDown(pipe.dispose);
+
+          final serverTask = () async {
+            pipe.serverSendAscii('RFB 003.008\n');
+            await pipe.serverReader.readBytes(12);
+            pipe.serverSend([1, RfbSecurityType.none]);
+            await pipe.serverReader.readUint8();
+            pipe.serverSendUint32(0);
+            await pipe.serverReader.readUint8();
+
+            final badName = Uint8List.fromList([0x4D, 0x61, 0x63, 0xFF, 0xFE]);
+            final header = ByteData(4)
+              ..setUint16(0, 800, Endian.big)
+              ..setUint16(2, 600, Endian.big);
+            final nameLen = ByteData(4)
+              ..setUint32(0, badName.length, Endian.big);
+            final packet = BytesBuilder(copy: false)
+              ..add(header.buffer.asUint8List())
+              ..add(VncPixelFormat.rgba8888.toBytes())
+              ..add(nameLen.buffer.asUint8List())
+              ..add(badName);
+            pipe.serverSend(packet.takeBytes());
+
+            await _verifyInitialSetMessages(pipe.serverReader);
+          }();
+
+          final info = await RfbHandshake.perform(
+            transport: pipe,
+            reader: pipe.clientReader,
+            config: const VncConnectionConfig(host: 'vnc.local'),
+          );
+          await serverTask;
+
+          expect(info.name, startsWith('Mac'));
+          expect(info.name, contains('\uFFFD'));
+        }
+      },
+    );
+
+    test(
+      'throws VncProtocolException on oversized reason string or desktop name (> 65536 bytes)',
+      () async {
+        // Oversized reason string
+        {
+          final pipe = _InMemoryVncPipe();
+          addTearDown(pipe.dispose);
+
+          final serverTask = () async {
+            pipe.serverSendAscii('RFB 003.008\n');
+            await pipe.serverReader.readBytes(12);
+            pipe.serverSendUint8(0);
+            pipe.serverSendUint32(65537);
+          }();
+
+          await expectLater(
+            RfbHandshake.perform(
+              transport: pipe,
+              reader: pipe.clientReader,
+              config: const VncConnectionConfig(host: 'vnc.local'),
+            ),
+            throwsA(isA<VncProtocolException>()),
+          );
+          await serverTask;
+        }
+
+        // Oversized desktop name
+        {
+          final pipe = _InMemoryVncPipe();
+          addTearDown(pipe.dispose);
+
+          final serverTask = () async {
+            pipe.serverSendAscii('RFB 003.008\n');
+            await pipe.serverReader.readBytes(12);
+            pipe.serverSend([1, RfbSecurityType.none]);
+            await pipe.serverReader.readUint8();
+            pipe.serverSendUint32(0);
+            await pipe.serverReader.readUint8();
+
+            final header = ByteData(4)
+              ..setUint16(0, 800, Endian.big)
+              ..setUint16(2, 600, Endian.big);
+            final nameLen = ByteData(4)..setUint32(0, 65537, Endian.big);
+            final packet = BytesBuilder(copy: false)
+              ..add(header.buffer.asUint8List())
+              ..add(VncPixelFormat.rgba8888.toBytes())
+              ..add(nameLen.buffer.asUint8List());
+            pipe.serverSend(packet.takeBytes());
+          }();
+
+          await expectLater(
+            RfbHandshake.perform(
+              transport: pipe,
+              reader: pipe.clientReader,
+              config: const VncConnectionConfig(host: 'vnc.local'),
+            ),
+            throwsA(isA<VncProtocolException>()),
+          );
+          await serverTask;
+        }
+      },
+    );
+
+    test(
+      'reads SecurityResult for RFB 003.889 with Type 1 None (OK and failure)',
+      () async {
+        // Success path
+        {
+          final pipe = _InMemoryVncPipe();
+          addTearDown(pipe.dispose);
+
+          final serverTask = () async {
+            pipe.serverSendAscii('RFB 003.889\n');
+            expect(
+              ascii.decode(await pipe.serverReader.readBytes(12)),
+              'RFB 003.008\n',
+            );
+            pipe.serverSend([1, RfbSecurityType.none]);
+            expect(await pipe.serverReader.readUint8(), RfbSecurityType.none);
+            pipe.serverSendUint32(0);
+            expect(await pipe.serverReader.readUint8(), 1);
+            pipe.serverSendServerInit(
+              width: 1024,
+              height: 768,
+              name: 'Mac No-Auth',
+            );
+            await _verifyInitialSetMessages(pipe.serverReader);
+          }();
+
+          final info = await RfbHandshake.perform(
+            transport: pipe,
+            reader: pipe.clientReader,
+            config: const VncConnectionConfig(host: 'mac.local'),
+          );
+          await serverTask;
+
+          expect(info.protocolVersion, 'RFB 003.889');
+          expect(info.securityType, RfbSecurityType.none);
+        }
+
+        // Failure path (SecurityResult = 1 + reason)
+        {
+          final pipe = _InMemoryVncPipe();
+          addTearDown(pipe.dispose);
+
+          final serverTask = () async {
+            pipe.serverSendAscii('RFB 003.889\n');
+            await pipe.serverReader.readBytes(12);
+            pipe.serverSend([1, RfbSecurityType.none]);
+            await pipe.serverReader.readUint8();
+            pipe.serverSendUint32(1);
+            pipe.serverSendReason('Screen Sharing disabled');
+          }();
+
+          await expectLater(
+            RfbHandshake.perform(
+              transport: pipe,
+              reader: pipe.clientReader,
+              config: const VncConnectionConfig(host: 'mac.local'),
+            ),
+            throwsA(
+              isA<VncAuthenticationException>().having(
+                (e) => e.message,
+                'message',
+                contains('Screen Sharing disabled'),
+              ),
+            ),
+          );
+          await serverTask;
+        }
+      },
+    );
+
+    test(
+      'throws VncAuthenticationException on RFB 003.007 auth failure without reading a reason string',
+      () async {
+        final pipe = _InMemoryVncPipe();
+        addTearDown(pipe.dispose);
+
+        final serverTask = () async {
+          pipe.serverSendAscii('RFB 003.007\n');
+          expect(
+            ascii.decode(await pipe.serverReader.readBytes(12)),
+            'RFB 003.007\n',
+          );
+          pipe.serverSend([1, RfbSecurityType.vncAuth]);
+          expect(await pipe.serverReader.readUint8(), RfbSecurityType.vncAuth);
+          pipe.serverSend(Uint8List(16));
+          await pipe.serverReader.readBytes(16);
+          // RFB 3.7 sends only the 4-byte SecurityResult (no reason string) and closes.
+          pipe.serverSendUint32(1);
+        }();
+
+        await expectLater(
+          RfbHandshake.perform(
+            transport: pipe,
+            reader: pipe.clientReader,
+            config: const VncConnectionConfig(
+              host: 'vnc37.local',
+              credentials: VncCredentials(password: 'wrong'),
+            ),
+          ),
+          throwsA(isA<VncAuthenticationException>()),
+        );
+        await serverTask;
+      },
+    );
 
     test(
       'throws VncProtocolException when ServerInit reports zero desktop dimensions',
