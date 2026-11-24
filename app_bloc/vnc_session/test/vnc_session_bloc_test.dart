@@ -10,10 +10,14 @@ class FakeVncSessionClient implements VncSessionClient {
   FakeVncSessionClient({
     this.connectError,
     this.emitConnectingOnConnect = true,
+    this.connectCompleter,
+    this.disconnectCompleter,
   });
 
   final Object? connectError;
   final bool emitConnectingOnConnect;
+  final Completer<void>? connectCompleter;
+  final Completer<void>? disconnectCompleter;
 
   final StreamController<VncClientEvent> _eventsController =
       StreamController<VncClientEvent>.broadcast();
@@ -24,6 +28,7 @@ class FakeVncSessionClient implements VncSessionClient {
   final List<({int x, int y, int buttonMask})> pointerEvents = [];
   final List<({int keysym, bool down})> keyEvents = [];
   final List<String> clipboardTexts = [];
+  final List<bool> setViewOnlyCalls = [];
   int fullRefreshCount = 0;
   int disconnectCount = 0;
 
@@ -41,6 +46,9 @@ class FakeVncSessionClient implements VncSessionClient {
     connectCalls.add(config);
     if (emitConnectingOnConnect) {
       emitEvent(const VncConnectingEvent());
+    }
+    if (connectCompleter != null) {
+      await connectCompleter!.future;
     }
     if (connectError != null) {
       throw connectError!;
@@ -73,6 +81,11 @@ class FakeVncSessionClient implements VncSessionClient {
   }
 
   @override
+  void setViewOnly(bool viewOnly) {
+    setViewOnlyCalls.add(viewOnly);
+  }
+
+  @override
   void requestFullRefresh() {
     fullRefreshCount++;
   }
@@ -80,6 +93,9 @@ class FakeVncSessionClient implements VncSessionClient {
   @override
   Future<void> disconnect() async {
     disconnectCount++;
+    if (disconnectCompleter != null) {
+      await disconnectCompleter!.future;
+    }
   }
 
   Future<void> dispose() async {
@@ -617,5 +633,189 @@ void main() {
       expect(cleared.config, testConfig);
       expect(cleared.desktopInfo, testDesktop);
     });
+
+    test(
+      'VncSessionToggleViewOnly syncs client.setViewOnly, config.viewOnly, and reconnect teardown',
+      () async {
+        final disconnectGate = Completer<void>();
+        createdClients = [];
+        final bloc = VncSessionBloc(
+          clientFactory: () {
+            final client = FakeVncSessionClient(
+              disconnectCompleter: createdClients.isEmpty
+                  ? disconnectGate
+                  : null,
+            );
+            createdClients.add(client);
+            return client;
+          },
+        );
+
+        bloc.add(const VncSessionConnect(testConfig));
+        await Future<void>.delayed(Duration.zero);
+        final firstClient = createdClients.single;
+        firstClient.emitEvent(const VncConnectedEvent(testDesktop));
+        await Future<void>.delayed(Duration.zero);
+
+        // Toggle view-only on while connected.
+        bloc.add(const VncSessionToggleViewOnly());
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.viewOnly, isTrue);
+        expect(bloc.state.config?.viewOnly, isTrue);
+        expect(firstClient.setViewOnlyCalls, [true]);
+
+        // Start reconnect (paused in teardown on disconnectGate), then toggle
+        // view-only back to false during teardown.
+        bloc.add(const VncSessionReconnect());
+        await Future<void>.delayed(Duration.zero);
+        expect(firstClient.disconnectCount, 1);
+
+        bloc.add(const VncSessionToggleViewOnly());
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.viewOnly, isFalse);
+
+        // Finish teardown; new client must receive the freshly toggled viewOnly.
+        disconnectGate.complete();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(createdClients, hasLength(2));
+        expect(createdClients.last.connectCalls.single.viewOnly, isFalse);
+        expect(bloc.state.viewOnly, isFalse);
+        expect(bloc.state.config?.viewOnly, isFalse);
+
+        await bloc.close();
+      },
+    );
+
+    test(
+      'VncSessionSubmitCredentials preserves credentials across VncSessionReconnect without overrideCredentials',
+      () async {
+        final bloc = buildBloc();
+        bloc.add(const VncSessionConnect(testConfig));
+        await Future<void>.delayed(Duration.zero);
+
+        final firstClient = createdClients.single;
+        firstClient.emitEvent(
+          const VncAuthRequiredEvent(securityType: 30, requiresUsername: true),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        const submitted = VncCredentials(
+          username: 'bob',
+          password: 'session-secret',
+        );
+        bloc.add(const VncSessionSubmitCredentials(submitted));
+        await Future<void>.delayed(Duration.zero);
+
+        firstClient.emitEvent(const VncConnectedEvent(testDesktop));
+        await Future<void>.delayed(Duration.zero);
+
+        firstClient.emitEvent(const VncDisconnectedEvent(reason: 'Dropped'));
+        await Future<void>.delayed(Duration.zero);
+
+        // Reconnect without overrideCredentials should reuse submitted creds.
+        bloc.add(const VncSessionReconnect());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(createdClients, hasLength(2));
+        expect(createdClients.last.connectCalls.single.credentials, submitted);
+        expect(bloc.state.config?.credentials, submitted);
+
+        await bloc.close();
+      },
+    );
+
+    test(
+      'async connect() racing with VncSessionDisconnect ignores late connect failure',
+      () async {
+        final connectGate = Completer<void>();
+        createdClients = [];
+        final bloc = VncSessionBloc(
+          clientFactory: () {
+            final client = FakeVncSessionClient(
+              connectCompleter: connectGate,
+              connectError: const VncConnectionException('Late connect error'),
+            );
+            createdClients.add(client);
+            return client;
+          },
+        );
+
+        bloc.add(const VncSessionConnect(testConfig));
+        await Future<void>.delayed(Duration.zero);
+        expect(createdClients, hasLength(1));
+        expect(bloc.state.status, VncSessionStatus.connecting);
+
+        // Disconnect while connect() is still awaiting.
+        bloc.add(const VncSessionDisconnect());
+        await Future<void>.delayed(Duration.zero);
+        expect(createdClients.single.disconnectCount, 1);
+        expect(bloc.state.status, VncSessionStatus.disconnected);
+
+        // Now resolve the stale connect() which throws an error; it must be ignored.
+        connectGate.complete();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.status, VncSessionStatus.disconnected);
+        expect(bloc.state.error, isNull);
+
+        await bloc.close();
+      },
+    );
+
+    test(
+      'slow disconnect() during bloc.close() with incoming VncSessionConnect does not create or leak a new client',
+      () async {
+        final disconnectGate = Completer<void>();
+        createdClients = [];
+        final bloc = VncSessionBloc(
+          clientFactory: () {
+            final client = FakeVncSessionClient(
+              disconnectCompleter: disconnectGate,
+            );
+            createdClients.add(client);
+            return client;
+          },
+        );
+
+        bloc.add(const VncSessionConnect(testConfig));
+        await Future<void>.delayed(Duration.zero);
+        expect(createdClients, hasLength(1));
+
+        // Begin closing while disconnect() is still pending.
+        final closeFuture = bloc.close();
+        await Future<void>.delayed(Duration.zero);
+
+        // Dispatching a new connect while closing must NOT spawn a second client.
+        bloc.add(const VncSessionConnect(testConfig));
+        await Future<void>.delayed(Duration.zero);
+        expect(createdClients, hasLength(1));
+
+        disconnectGate.complete();
+        await closeFuture;
+
+        expect(createdClients, hasLength(1));
+        expect(createdClients.single.disconnectCount, 1);
+      },
+    );
+
+    test(
+      'synchronous clientFactory failure transitions cleanly to error state',
+      () async {
+        createdClients = [];
+        final bloc = VncSessionBloc(
+          clientFactory: () => throw StateError('Factory failure'),
+        );
+
+        bloc.add(const VncSessionConnect(testConfig));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.status, VncSessionStatus.error);
+        expect(bloc.state.error, isA<VncConnectionException>());
+        expect(bloc.state.config, testConfig);
+
+        await bloc.close();
+      },
+    );
   });
 }

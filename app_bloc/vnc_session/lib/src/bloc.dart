@@ -37,6 +37,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
   StreamSubscription<VncClientEvent>? _subscription;
   int _sessionGeneration = 0;
   VncFrameData? _latestFrame;
+  bool _isClosing = false;
 
   /// Broadcast stream of decoded RGBA desktop frames for canvas rendering.
   Stream<VncFrameData> get frames => _framesController.stream;
@@ -47,7 +48,8 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
   /// Low-latency helper for sending pointer events directly to the active
   /// client when connected and not in view-only mode.
   void sendPointer(int x, int y, int buttonMask) {
-    if (isClosed ||
+    if (_isClosing ||
+        isClosed ||
         state.status != VncSessionStatus.connected ||
         state.viewOnly) {
       return;
@@ -58,7 +60,8 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
   /// Low-latency helper for sending keyboard events directly to the active
   /// client when connected and not in view-only mode.
   void sendKey(int keysym, {required bool down}) {
-    if (isClosed ||
+    if (_isClosing ||
+        isClosed ||
         state.status != VncSessionStatus.connected ||
         state.viewOnly) {
       return;
@@ -86,29 +89,37 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
       credentials: event.overrideCredentials ?? existingConfig.credentials,
       viewOnly: state.viewOnly,
     );
-    await _startConnection(nextConfig, emit);
+    await _startConnection(nextConfig, emit, useCurrentViewOnly: true);
   }
 
   Future<void> _startConnection(
     VncConnectionConfig config,
-    Emitter<VncSessionState> emit,
-  ) async {
+    Emitter<VncSessionState> emit, {
+    bool useCurrentViewOnly = false,
+  }) async {
+    if (_isClosing || isClosed) {
+      return;
+    }
     final generation = ++_sessionGeneration;
     _latestFrame = null;
     await _teardownClient();
 
-    if (isClosed || generation != _sessionGeneration) {
+    if (_isClosing || isClosed || generation != _sessionGeneration) {
       return;
     }
+
+    final effectiveConfig = useCurrentViewOnly
+        ? _copyConfig(config, viewOnly: state.viewOnly)
+        : config;
 
     emit(
       state.copyWith(
         status: VncSessionStatus.connecting,
-        config: config,
+        config: effectiveConfig,
         clearDesktopInfo: true,
         width: 0,
         height: 0,
-        viewOnly: config.viewOnly,
+        viewOnly: effectiveConfig.viewOnly,
         clearAuth: true,
         clearCursor: true,
         clearError: true,
@@ -116,44 +127,44 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
       ),
     );
 
-    final client = _clientFactory();
-    _client = client;
-    _subscription = client.events.listen(
-      (clientEvent) {
-        if (isClosed || generation != _sessionGeneration) {
-          return;
-        }
-        if (clientEvent is VncFrameEvent) {
-          _latestFrame = clientEvent.frame;
-          if (!_framesController.isClosed) {
-            _framesController.add(clientEvent.frame);
-          }
-          return;
-        }
-        add(_VncClientEventReceived(generation, clientEvent));
-      },
-      onError: (Object error, StackTrace _) {
-        if (isClosed || generation != _sessionGeneration) {
-          return;
-        }
-        final vncError = error is VncException
-            ? error
-            : VncConnectionException(error.toString(), error);
-        add(_VncClientEventReceived(generation, VncErrorEvent(vncError)));
-      },
-    );
-
     try {
-      await client.connect(config);
+      final client = _clientFactory();
+      _client = client;
+      _subscription = client.events.listen(
+        (clientEvent) {
+          if (_isClosing || isClosed || generation != _sessionGeneration) {
+            return;
+          }
+          if (clientEvent is VncFrameEvent) {
+            _latestFrame = clientEvent.frame;
+            if (!_framesController.isClosed) {
+              _framesController.add(clientEvent.frame);
+            }
+            return;
+          }
+          add(_VncClientEventReceived(generation, clientEvent));
+        },
+        onError: (Object error, StackTrace _) {
+          if (_isClosing || isClosed || generation != _sessionGeneration) {
+            return;
+          }
+          final vncError = error is VncException
+              ? error
+              : VncConnectionException(error.toString(), error);
+          add(_VncClientEventReceived(generation, VncErrorEvent(vncError)));
+        },
+      );
+
+      await client.connect(effectiveConfig);
     } catch (error) {
-      if (isClosed || generation != _sessionGeneration) {
+      if (_isClosing || isClosed || generation != _sessionGeneration) {
         return;
       }
       final vncError = error is VncException
           ? error
           : VncConnectionException(error.toString(), error);
       await _teardownClient();
-      if (isClosed || generation != _sessionGeneration) {
+      if (_isClosing || isClosed || generation != _sessionGeneration) {
         return;
       }
       emit(
@@ -205,10 +216,13 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
     VncSessionDisconnect event,
     Emitter<VncSessionState> emit,
   ) async {
+    if (_isClosing || isClosed) {
+      return;
+    }
     final generation = ++_sessionGeneration;
     _latestFrame = null;
     await _teardownClient();
-    if (isClosed || generation != _sessionGeneration) {
+    if (_isClosing || isClosed || generation != _sessionGeneration) {
       return;
     }
     emit(
@@ -246,7 +260,12 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
     VncSessionToggleViewOnly event,
     Emitter<VncSessionState> emit,
   ) {
-    emit(state.copyWith(viewOnly: !state.viewOnly));
+    final nextViewOnly = !state.viewOnly;
+    final updatedConfig = state.config == null
+        ? null
+        : _copyConfig(state.config!, viewOnly: nextViewOnly);
+    emit(state.copyWith(viewOnly: nextViewOnly, config: updatedConfig));
+    _client?.setViewOnly(nextViewOnly);
   }
 
   void _onRequestRefresh(
@@ -378,6 +397,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
 
   @override
   Future<void> close() async {
+    _isClosing = true;
     _sessionGeneration++;
     _latestFrame = null;
     try {

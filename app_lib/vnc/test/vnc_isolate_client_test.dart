@@ -957,6 +957,145 @@ void main() {
         await client.disconnect().timeout(const Duration(seconds: 5));
       },
     );
+
+    test(
+      'setViewOnly live-gates pointer and key events while allowing clipboard',
+      () async {
+        final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+        addTearDown(server.close);
+
+        final receivedPointers = <Uint8List>[];
+        final receivedKeys = <Uint8List>[];
+        final firstClipboard = Completer<String>();
+        final interactivePointer = Completer<Uint8List>();
+        final interactiveKey = Completer<Uint8List>();
+        final secondClipboard = Completer<String>();
+
+        late StreamSubscription<Socket> serverSub;
+        serverSub = server.listen((socket) async {
+          final reader = BufferedByteReader(socket);
+          try {
+            socket.add(ascii.encode('RFB 003.889\n'));
+            await socket.flush();
+            await reader.readBytes(12);
+            socket.add([1, RfbSecurityType.none]);
+            await socket.flush();
+            await reader.readUint8();
+            socket.add([0, 0, 0, 0]);
+            await socket.flush();
+            await reader.readUint8();
+            socket.add(_buildServerInit(width: 4, height: 4, name: 'ViewOnly'));
+            await socket.flush();
+            await _consumeInitialSetMessages(reader);
+
+            while (!secondClipboard.isCompleted) {
+              final msgType = await reader.readUint8();
+              switch (msgType) {
+                case 3:
+                  await reader.readBytes(9);
+                case 4:
+                  final rest = await reader.readBytes(7);
+                  final bytes = Uint8List.fromList([4, ...rest]);
+                  receivedKeys.add(bytes);
+                  if (!interactiveKey.isCompleted) {
+                    interactiveKey.complete(bytes);
+                  }
+                case 5:
+                  final rest = await reader.readBytes(5);
+                  final bytes = Uint8List.fromList([5, ...rest]);
+                  receivedPointers.add(bytes);
+                  if (!interactivePointer.isCompleted) {
+                    interactivePointer.complete(bytes);
+                  }
+                case 6:
+                  final padAndLen = await reader.readBytes(7);
+                  final len = ByteData.sublistView(
+                    padAndLen,
+                    3,
+                    7,
+                  ).getUint32(0, Endian.big);
+                  final text = latin1.decode(await reader.readBytes(len));
+                  if (!firstClipboard.isCompleted) {
+                    firstClipboard.complete(text);
+                  } else if (!secondClipboard.isCompleted) {
+                    secondClipboard.complete(text);
+                  }
+                default:
+                  fail('Unexpected client message type: $msgType');
+              }
+            }
+          } catch (_) {
+            // Expected on disconnect.
+          } finally {
+            await reader.dispose();
+            await socket.close();
+          }
+        });
+        addTearDown(() => serverSub.cancel());
+
+        final client = VncIsolateClient();
+        addTearDown(client.disconnect);
+
+        final connected = Completer<void>();
+        final sub = client.events.listen((event) {
+          if (event is VncConnectedEvent && !connected.isCompleted) {
+            connected.complete();
+          }
+        });
+        addTearDown(sub.cancel);
+
+        // Start in view-only mode.
+        await client.connect(
+          VncConnectionConfig(
+            host: InternetAddress.loopbackIPv4.address,
+            port: server.port,
+            viewOnly: true,
+          ),
+        );
+        await connected.future.timeout(const Duration(seconds: 5));
+
+        // Pointer & key must be dropped; clipboard must pass through.
+        client.sendPointerEvent(1, 1, 1);
+        client.sendKeyEvent(0x0061, down: true);
+        client.sendClipboardText('clip-1');
+
+        expect(
+          await firstClipboard.future.timeout(const Duration(seconds: 5)),
+          'clip-1',
+        );
+        expect(receivedPointers, isEmpty);
+        expect(receivedKeys, isEmpty);
+
+        // Live-disable view-only: pointer & key should now be forwarded.
+        client.setViewOnly(false);
+        client.sendPointerEvent(2, 3, 1);
+        client.sendKeyEvent(0x0062, down: true);
+
+        expect(
+          await interactivePointer.future.timeout(const Duration(seconds: 5)),
+          equals([5, 1, 0, 2, 0, 3]),
+        );
+        expect(
+          await interactiveKey.future.timeout(const Duration(seconds: 5)),
+          equals([4, 1, 0, 0, 0, 0, 0, 0x62]),
+        );
+
+        // Live-re-enable view-only: subsequent pointer & key dropped, clipboard still allowed.
+        client.setViewOnly(true);
+        client.sendPointerEvent(3, 3, 1);
+        client.sendKeyEvent(0x0063, down: true);
+        client.sendClipboardText('clip-2');
+
+        expect(
+          await secondClipboard.future.timeout(const Duration(seconds: 5)),
+          'clip-2',
+        );
+        expect(receivedPointers, hasLength(1));
+        expect(receivedKeys, hasLength(1));
+
+        await client.disconnect().timeout(const Duration(seconds: 5));
+      },
+    );
   });
 
   group('VncMdnsDiscovery', () {

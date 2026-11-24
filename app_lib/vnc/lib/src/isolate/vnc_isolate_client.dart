@@ -91,6 +91,8 @@ abstract interface class VncSessionClient {
 
   void sendClipboardText(String text);
 
+  void setViewOnly(bool viewOnly);
+
   void requestFullRefresh();
 
   Future<void> disconnect();
@@ -386,6 +388,14 @@ class VncIsolateClient implements VncSessionClient {
   }
 
   @override
+  void setViewOnly(bool viewOnly) {
+    _workerCommandPort?.send(<String, Object?>{
+      'type': 'setViewOnly',
+      'viewOnly': viewOnly,
+    });
+  }
+
+  @override
   void requestFullRefresh() {
     _workerCommandPort?.send(const <String, Object?>{'type': 'refresh'});
   }
@@ -565,6 +575,7 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
   });
 
   var stopping = false;
+  var viewOnly = config.viewOnly;
   var errorSent = false;
   Completer<VncCredentials?>? pendingCredentials;
   VncTransport? transport;
@@ -610,7 +621,7 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
           completer.complete(null);
         }
       case 'pointer':
-        if (!config.viewOnly) {
+        if (!viewOnly) {
           safeSessionCall(
             (s) => s.sendPointerEvent(
               rawCommand['x'] as int,
@@ -620,7 +631,7 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
           );
         }
       case 'key':
-        if (!config.viewOnly) {
+        if (!viewOnly) {
           safeSessionCall(
             (s) => s.sendKeyEvent(
               rawCommand['keysym'] as int,
@@ -629,11 +640,11 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
           );
         }
       case 'clipboard':
-        if (!config.viewOnly) {
-          safeSessionCall(
-            (s) => s.sendClientCutText(rawCommand['text'] as String),
-          );
-        }
+        safeSessionCall(
+          (s) => s.sendClientCutText(rawCommand['text'] as String),
+        );
+      case 'setViewOnly':
+        viewOnly = rawCommand['viewOnly'] as bool;
       case 'refresh':
         safeSessionCall((s) => s.requestFramebufferUpdate(incremental: false));
       case 'disconnect':
