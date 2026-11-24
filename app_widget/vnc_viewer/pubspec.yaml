@@ -1,0 +1,19 @@
+name: vnc_viewer_widgets
+description: Flutter canvas, input mapper, and shortcut bar widgets for VNC sessions.
+version: 1.0.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  app_vnc: any
+  duskmoon_ui: ^2.2.10
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
