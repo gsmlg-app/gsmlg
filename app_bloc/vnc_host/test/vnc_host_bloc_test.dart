@@ -74,7 +74,7 @@ void main() {
 
   group('VncHostRepository', () {
     test(
-      'addHost stores password in vault (not SQLite) and readPassword reads it',
+      'addHost stores password in vault under unique versioned key (not SQLite) and readPassword reads it',
       () async {
         final created = await repository.addHost(
           name: 'Mac Studio',
@@ -86,19 +86,20 @@ void main() {
           viewOnly: true,
         );
 
-        final expectedKey = VncHostRepository.passwordKey(created.id);
-        expect(expectedKey, 'vnc_host:${created.id}:password');
-        expect(created.passwordRef, expectedKey);
+        final keyPrefix = '${VncHostRepository.passwordKey(created.id)}:';
+        expect(created.passwordRef, isNotNull);
+        expect(created.passwordRef, startsWith(keyPrefix));
+        expect(created.passwordRef!.length, greaterThan(keyPrefix.length));
         expect(created.authType, VncHostAuthType.appleArd.value);
         expect(created.username, 'alice');
         expect(created.viewOnly, isTrue);
 
         // Secret is in vault, never stored in plaintext in SQLite.
-        expect(vault.storage[expectedKey], 'super-secret-password');
+        expect(vault.storage[created.passwordRef], 'super-secret-password');
         final rawRow = await (database.select(
           database.vncHosts,
         )..where((t) => t.id.equals(created.id))).getSingle();
-        expect(rawRow.passwordRef, expectedKey);
+        expect(rawRow.passwordRef, created.passwordRef);
         expect(rawRow.passwordRef, isNot(contains('super-secret-password')));
 
         expect(await repository.readPassword(created), 'super-secret-password');
@@ -135,14 +136,14 @@ void main() {
     });
 
     test(
-      'updateHost preserves, replaces, and clears password according to flags',
+      'updateHost preserves, atomically replaces, and clears password according to flags',
       () async {
         final created = await repository.addHost(
           name: 'Workstation',
           host: '192.168.1.10',
           password: 'initial-password',
         );
-        final key = VncHostRepository.passwordKey(created.id);
+        final initialKey = created.passwordRef!;
 
         // 1. Preserve when password is null and clearPassword is false.
         final preserved = await repository.updateHost(
@@ -155,10 +156,11 @@ void main() {
         expect(preserved.name, 'Workstation Renamed');
         expect(preserved.host, '192.168.1.11');
         expect(preserved.port, 5901);
-        expect(preserved.passwordRef, key);
+        expect(preserved.passwordRef, initialKey);
         expect(await repository.readPassword(preserved), 'initial-password');
 
-        // 2. Replace when a new non-empty password is provided.
+        // 2. Replace when a new non-empty password is provided (new unique key,
+        // old key removed after DB update).
         final replaced = await repository.updateHost(
           created.id,
           name: 'Workstation Renamed',
@@ -166,8 +168,15 @@ void main() {
           port: 5901,
           password: 'updated-password',
         );
-        expect(replaced.passwordRef, key);
-        expect(vault.storage[key], 'updated-password');
+        final replacedKey = replaced.passwordRef!;
+        expect(
+          replacedKey,
+          startsWith('${VncHostRepository.passwordKey(created.id)}:'),
+        );
+        expect(replacedKey, isNot(initialKey));
+        expect(vault.storage.containsKey(initialKey), isFalse);
+        expect(vault.storage[replacedKey], 'updated-password');
+        expect(vault.storage.length, 1);
         expect(await repository.readPassword(replaced), 'updated-password');
 
         // 3. Clear when clearPassword is true.
@@ -179,8 +188,77 @@ void main() {
           clearPassword: true,
         );
         expect(cleared.passwordRef, isNull);
-        expect(vault.storage.containsKey(key), isFalse);
+        expect(vault.storage, isEmpty);
         expect(await repository.readPassword(cleared), isNull);
+      },
+    );
+
+    test(
+      'updateHost DB failure preserves old vault password and cleans up new vault key',
+      () async {
+        final created = await repository.addHost(
+          name: 'Atomic Host',
+          host: '192.168.1.30',
+          password: 'original-password',
+        );
+        final originalKey = created.passwordRef!;
+
+        await database.customStatement(
+          'CREATE TRIGGER fail_vnc_host_update '
+          'BEFORE UPDATE ON vnc_hosts '
+          "BEGIN SELECT RAISE(ABORT, 'simulated db update failure'); END",
+        );
+
+        try {
+          await expectLater(
+            repository.updateHost(
+              created.id,
+              name: 'Atomic Host Updated',
+              host: '192.168.1.31',
+              password: 'new-password',
+            ),
+            throwsA(anything),
+          );
+        } finally {
+          await database.customStatement(
+            'DROP TRIGGER IF EXISTS fail_vnc_host_update',
+          );
+        }
+
+        // Old password remains intact and no orphaned new key remains in vault.
+        expect(vault.storage, {originalKey: 'original-password'});
+        final row = await (database.select(
+          database.vncHosts,
+        )..where((t) => t.id.equals(created.id))).getSingle();
+        expect(row.name, 'Atomic Host');
+        expect(row.passwordRef, originalKey);
+        expect(await repository.readPassword(row), 'original-password');
+      },
+    );
+
+    test(
+      'updateHost rejects contradictory clearPassword=true with non-empty password',
+      () async {
+        final created = await repository.addHost(
+          name: 'Strict Host',
+          host: '192.168.1.40',
+          password: 'keep-me',
+        );
+        final originalKey = created.passwordRef!;
+
+        await expectLater(
+          repository.updateHost(
+            created.id,
+            name: 'Strict Host',
+            host: '192.168.1.40',
+            password: 'new-password',
+            clearPassword: true,
+          ),
+          throwsArgumentError,
+        );
+
+        expect(vault.storage, {originalKey: 'keep-me'});
+        expect(await repository.readPassword(created), 'keep-me');
       },
     );
 
@@ -190,7 +268,7 @@ void main() {
         host: '192.168.1.20',
         password: 'temp-password',
       );
-      final key = VncHostRepository.passwordKey(created.id);
+      final key = created.passwordRef!;
       expect(vault.storage.containsKey(key), isTrue);
 
       await repository.deleteHost(created);
@@ -198,6 +276,34 @@ void main() {
       expect(await repository.loadHosts(), isEmpty);
       expect(vault.storage.containsKey(key), isFalse);
     });
+
+    test(
+      'deleteHost with stale VncHost snapshot still deletes current vault secret',
+      () async {
+        // Initial host has no password (passwordRef == null).
+        final staleSnapshot = await repository.addHost(
+          name: 'Stale Snapshot Host',
+          host: '192.168.1.22',
+        );
+        expect(staleSnapshot.passwordRef, isNull);
+
+        // Password is added later in DB and vault.
+        final updated = await repository.updateHost(
+          staleSnapshot.id,
+          name: 'Stale Snapshot Host',
+          host: '192.168.1.22',
+          password: 'later-password',
+        );
+        final currentKey = updated.passwordRef!;
+        expect(vault.storage[currentKey], 'later-password');
+
+        // Caller deletes using the stale snapshot whose passwordRef is null.
+        await repository.deleteHost(staleSnapshot);
+
+        expect(await repository.loadHosts(), isEmpty);
+        expect(vault.storage, isEmpty);
+      },
+    );
 
     test('deleteHost swallows vault delete errors after DB delete', () async {
       final created = await repository.addHost(
@@ -256,11 +362,8 @@ void main() {
         final state = await updated;
         final saved = state.hosts.single;
         expect(saved.name, 'Office Mac');
-        expect(saved.passwordRef, 'vnc_host:${saved.id}:password');
-        expect(
-          vault.storage['vnc_host:${saved.id}:password'],
-          'my-vnc-password',
-        );
+        expect(saved.passwordRef, startsWith('vnc_host:${saved.id}:password:'));
+        expect(vault.storage[saved.passwordRef], 'my-vnc-password');
         expect(await repository.readPassword(saved), 'my-vnc-password');
       },
     );
@@ -341,7 +444,7 @@ void main() {
         host: '10.0.2.3',
         password: 'delete-secret',
       );
-      final key = VncHostRepository.passwordKey(created.id);
+      final key = created.passwordRef!;
       expect(vault.storage[key], 'delete-secret');
 
       bloc.add(const VncHostLoad());
@@ -375,7 +478,7 @@ void main() {
     });
 
     blocTest<VncHostBloc, VncHostState>(
-      'VncHostDiscoverLan emits isDiscovering, streams deduplicated hosts incrementally, and finishes',
+      'VncHostDiscoverLan forwards timeout, streams deduplicated hosts incrementally, and finishes',
       build: () {
         const host1 = VncDiscoveredHost(
           name: 'Studio',
@@ -451,6 +554,88 @@ void main() {
         ),
       ],
     );
+
+    test(
+      'VncHostDiscoverLan forwards timeout and handles back-to-back scans',
+      () async {
+        const scan1Host = VncDiscoveredHost(
+          name: 'First Mac',
+          host: 'first.local',
+          port: 5900,
+          addresses: ['192.168.1.10'],
+        );
+        const scan2Host = VncDiscoveredHost(
+          name: 'Second Mac',
+          host: 'second.local',
+          port: 5900,
+          addresses: ['192.168.1.11'],
+        );
+
+        var scanIndex = 0;
+        final discovery = FakeVncMdnsDiscovery((_) {
+          scanIndex++;
+          return Stream.fromIterable(
+            scanIndex == 1 ? [scan1Host] : [scan2Host],
+          );
+        });
+        final bloc = VncHostBloc(repository: repository, discovery: discovery);
+        addTearDown(bloc.close);
+
+        final scan1Done = bloc.stream.firstWhere(
+          (s) => !s.isDiscovering && s.discoveredHosts.contains(scan1Host),
+        );
+        bloc.add(const VncHostDiscoverLan(timeout: Duration(seconds: 2)));
+        final state1 = await scan1Done;
+        expect(state1.discoveredHosts, [scan1Host]);
+
+        final scan2Done = bloc.stream.firstWhere(
+          (s) => !s.isDiscovering && s.discoveredHosts.contains(scan2Host),
+        );
+        bloc.add(const VncHostDiscoverLan(timeout: Duration(seconds: 7)));
+        final state2 = await scan2Done;
+        expect(state2.discoveredHosts, [scan2Host]);
+        expect(discovery.requestedTimeouts, const [
+          Duration(seconds: 2),
+          Duration(seconds: 7),
+        ]);
+      },
+    );
+
+    test('VncHostDiscoverLan handles stream onError cleanly', () async {
+      final failure = StateError('mDNS socket failed');
+      final discovery = FakeVncMdnsDiscovery(
+        (_) => Stream<VncDiscoveredHost>.error(failure),
+      );
+      final bloc = VncHostBloc(repository: repository, discovery: discovery);
+      addTearDown(bloc.close);
+
+      final done = bloc.stream.firstWhere(
+        (s) => !s.isDiscovering && s.error != null,
+      );
+      bloc.add(const VncHostDiscoverLan(timeout: Duration(seconds: 3)));
+
+      final state = await done;
+      expect(state.isDiscovering, isFalse);
+      expect(state.error, failure);
+      expect(discovery.requestedTimeouts, [const Duration(seconds: 3)]);
+    });
+
+    test('VncHostDiscoverLan handles synchronous throw cleanly', () async {
+      final failure = UnsupportedError('mDNS unsupported');
+      final discovery = FakeVncMdnsDiscovery((_) => throw failure);
+      final bloc = VncHostBloc(repository: repository, discovery: discovery);
+      addTearDown(bloc.close);
+
+      final done = bloc.stream.firstWhere(
+        (s) => !s.isDiscovering && s.error != null,
+      );
+      bloc.add(const VncHostDiscoverLan(timeout: Duration(seconds: 4)));
+
+      final state = await done;
+      expect(state.isDiscovering, isFalse);
+      expect(state.error, failure);
+      expect(discovery.requestedTimeouts, [const Duration(seconds: 4)]);
+    });
 
     test(
       'concurrent VncHostDiscoverLan cancels previous scan and ignores stale hosts',

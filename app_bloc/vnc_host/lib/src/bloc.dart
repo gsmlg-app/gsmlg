@@ -22,13 +22,15 @@ class VncHostBloc extends Bloc<VncHostEvent, VncHostState> {
     on<VncHostDelete>(_onDelete);
     on<VncHostMarkConnected>(_onMarkConnected);
     on<VncHostDiscoverLan>(_onDiscoverLan);
+    on<_VncLanHostDiscovered>(_onLanHostDiscovered);
+    on<_VncLanDiscoveryFailed>(_onLanDiscoveryFailed);
+    on<_VncLanDiscoveryCompleted>(_onLanDiscoveryCompleted);
   }
 
   final VncHostRepository repository;
   final VncMdnsDiscovery _discovery;
 
   StreamSubscription<VncDiscoveredHost>? _discoverySubscription;
-  Completer<void>? _discoveryCompleter;
   int _discoveryGeneration = 0;
 
   Future<void> _onLoad(VncHostLoad event, Emitter<VncHostState> emit) async {
@@ -121,7 +123,7 @@ class VncHostBloc extends Bloc<VncHostEvent, VncHostState> {
     final generation = ++_discoveryGeneration;
     await _cancelDiscovery();
 
-    if (emit.isDone || generation != _discoveryGeneration) {
+    if (isClosed || generation != _discoveryGeneration) {
       return;
     }
 
@@ -133,94 +135,100 @@ class VncHostBloc extends Bloc<VncHostEvent, VncHostState> {
       ),
     );
 
-    final completer = Completer<void>();
-    _discoveryCompleter = completer;
-    var finishedWithError = false;
-
     try {
       final stream = _discovery.discover(timeout: event.timeout);
-      if (emit.isDone || generation != _discoveryGeneration) {
-        if (!completer.isCompleted) {
-          completer.complete();
-        }
+      if (isClosed || generation != _discoveryGeneration) {
         return;
       }
 
       _discoverySubscription = stream.listen(
         (discovered) {
-          if (emit.isDone || generation != _discoveryGeneration) {
-            return;
+          if (!isClosed && generation == _discoveryGeneration) {
+            add(
+              _VncLanHostDiscovered(host: discovered, generation: generation),
+            );
           }
-          if (state.discoveredHosts.any((h) => h.id == discovered.id)) {
-            return;
-          }
-          emit(
-            state.copyWith(
-              discoveredHosts: List<VncDiscoveredHost>.unmodifiable([
-                ...state.discoveredHosts,
-                discovered,
-              ]),
-            ),
-          );
         },
         onError: (Object error, StackTrace _) {
-          finishedWithError = true;
-          if (!emit.isDone && generation == _discoveryGeneration) {
-            emit(state.copyWith(isDiscovering: false, error: error));
-          }
-          if (!completer.isCompleted) {
-            completer.complete();
+          if (!isClosed && generation == _discoveryGeneration) {
+            add(_VncLanDiscoveryFailed(error: error, generation: generation));
           }
         },
         onDone: () {
-          if (!completer.isCompleted) {
-            completer.complete();
+          if (!isClosed && generation == _discoveryGeneration) {
+            add(_VncLanDiscoveryCompleted(generation: generation));
           }
         },
         cancelOnError: true,
       );
-
-      await completer.future;
     } catch (error) {
-      finishedWithError = true;
-      if (!emit.isDone && generation == _discoveryGeneration) {
+      if (generation == _discoveryGeneration) {
         emit(state.copyWith(isDiscovering: false, error: error));
       }
-      return;
-    } finally {
-      if (identical(_discoveryCompleter, completer)) {
-        _discoveryCompleter = null;
-      }
-      if (generation == _discoveryGeneration) {
-        _discoverySubscription = null;
-      }
     }
+  }
 
-    if (!finishedWithError &&
-        !emit.isDone &&
-        generation == _discoveryGeneration) {
-      emit(state.copyWith(isDiscovering: false));
+  void _onLanHostDiscovered(
+    _VncLanHostDiscovered event,
+    Emitter<VncHostState> emit,
+  ) {
+    if (event.generation != _discoveryGeneration) {
+      return;
     }
+    if (state.discoveredHosts.any((h) => h.id == event.host.id)) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        discoveredHosts: List<VncDiscoveredHost>.unmodifiable([
+          ...state.discoveredHosts,
+          event.host,
+        ]),
+      ),
+    );
+  }
+
+  void _onLanDiscoveryFailed(
+    _VncLanDiscoveryFailed event,
+    Emitter<VncHostState> emit,
+  ) {
+    if (event.generation != _discoveryGeneration) {
+      return;
+    }
+    _discoverySubscription = null;
+    emit(state.copyWith(isDiscovering: false, error: event.error));
+  }
+
+  void _onLanDiscoveryCompleted(
+    _VncLanDiscoveryCompleted event,
+    Emitter<VncHostState> emit,
+  ) {
+    if (event.generation != _discoveryGeneration) {
+      return;
+    }
+    _discoverySubscription = null;
+    emit(state.copyWith(isDiscovering: false));
   }
 
   Future<void> _cancelDiscovery() async {
     final sub = _discoverySubscription;
     _discoverySubscription = null;
-    final completer = _discoveryCompleter;
-    _discoveryCompleter = null;
-
     if (sub != null) {
-      await sub.cancel();
-    }
-    if (completer != null && !completer.isCompleted) {
-      completer.complete();
+      try {
+        await sub.cancel();
+      } catch (_) {
+        // Ignore cancellation errors from the underlying discovery stream.
+      }
     }
   }
 
   @override
   Future<void> close() async {
     _discoveryGeneration++;
-    await _cancelDiscovery();
-    return super.close();
+    try {
+      await _cancelDiscovery();
+    } finally {
+      await super.close();
+    }
   }
 }

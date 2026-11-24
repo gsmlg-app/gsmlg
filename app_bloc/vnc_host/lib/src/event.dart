@@ -112,3 +112,32 @@ final class VncHostDiscoverLan extends VncHostEvent {
   @override
   List<Object?> get props => [timeout];
 }
+
+final class _VncLanHostDiscovered extends VncHostEvent {
+  const _VncLanHostDiscovered({required this.host, required this.generation});
+
+  final VncDiscoveredHost host;
+  final int generation;
+
+  @override
+  List<Object?> get props => [host, generation];
+}
+
+final class _VncLanDiscoveryFailed extends VncHostEvent {
+  const _VncLanDiscoveryFailed({required this.error, required this.generation});
+
+  final Object error;
+  final int generation;
+
+  @override
+  List<Object?> get props => [error, generation];
+}
+
+final class _VncLanDiscoveryCompleted extends VncHostEvent {
+  const _VncLanDiscoveryCompleted({required this.generation});
+
+  final int generation;
+
+  @override
+  List<Object?> get props => [generation];
+}
