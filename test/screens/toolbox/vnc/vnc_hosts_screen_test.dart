@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ssh_host_bloc/ssh_host_bloc.dart';
 import 'package:vnc_host_bloc/vnc_host_bloc.dart';
 import 'package:vnc_session_bloc/vnc_session_bloc.dart';
+import 'package:vnc_viewer_widgets/vnc_viewer_widgets.dart';
 
 class MockVncHostBloc extends MockBloc<VncHostEvent, VncHostState>
     implements VncHostBloc {}
@@ -702,6 +703,294 @@ void main() {
         );
         expect(fakeClient.activeRegionCalls.last, expectedRightHalf);
         expect(find.text('1920×1080'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Apple 003.889 mode lists 3 displays, calls selectDisplay instead of setActiveRegion, and keeps VncViewerCanvas.activeRegion null',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1200, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final fakeClient = FakeVncSessionClient();
+        final sessionBloc = VncSessionBloc(clientFactory: () => fakeClient);
+        addTearDown(() async {
+          await sessionBloc.close();
+          await fakeClient.dispose();
+        });
+
+        const launch = VncLaunchConfig(
+          title: 'Mac Studio Triple Display',
+          config: VncConnectionConfig(host: '192.168.1.72', port: 5900),
+        );
+
+        await tester.pumpWidget(
+          wrapWithApp(
+            VncSessionScreen(launchConfig: launch, blocOverride: sessionBloc),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        const builtIn = VncScreenInfo(
+          id: 1,
+          x: 0,
+          y: 0,
+          width: 1728,
+          height: 1117,
+          flags: 1,
+        );
+        const landscape4k = VncScreenInfo(
+          id: 2,
+          x: 1728,
+          y: 0,
+          width: 3840,
+          height: 2160,
+        );
+        const portrait4k = VncScreenInfo(
+          id: 3,
+          x: 5568,
+          y: 0,
+          width: 2160,
+          height: 3840,
+        );
+
+        fakeClient.emitEvent(
+          const VncConnectedEvent(
+            VncDesktopInfo(
+              name: 'Mac Studio Triple Display',
+              width: 7728,
+              height: 3840,
+              protocolVersion: 'RFB 003.889',
+              securityType: 30,
+              isApple889: true,
+            ),
+          ),
+        );
+        fakeClient.emitEvent(
+          const VncResizedEvent(
+            width: 7728,
+            height: 3840,
+            screens: [builtIn, landscape4k, portrait4k],
+            hasCurrentDisplayId: true,
+            currentDisplayId: null,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('7728×3840'), findsOneWidget);
+        final switcher = find.byTooltip('Select Display');
+        expect(switcher, findsOneWidget);
+
+        await tester.tap(switcher);
+        await tester.pumpAndSettle();
+
+        expect(find.text('All Displays'), findsOneWidget);
+        expect(find.text('Display 1 (1728×1117)'), findsOneWidget);
+        expect(find.text('Display 2 (3840×2160)'), findsOneWidget);
+        expect(find.text('Display 3 (2160×3840)'), findsOneWidget);
+
+        await tester.tap(find.text('Display 3 (2160×3840)'));
+        await tester.pumpAndSettle();
+
+        expect(fakeClient.selectDisplayCalls, equals([3]));
+        expect(fakeClient.activeRegionCalls, isEmpty);
+
+        var canvas = tester.widget<VncViewerCanvas>(
+          find.byType(VncViewerCanvas),
+        );
+        expect(canvas.activeRegion, isNull);
+
+        // Confirming AppleDisplayLayout arrives for Display 3.
+        fakeClient.emitEvent(
+          const VncResizedEvent(
+            width: 2160,
+            height: 3840,
+            screens: [builtIn, landscape4k, portrait4k],
+            hasCurrentDisplayId: true,
+            currentDisplayId: 3,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('2160×3840'), findsOneWidget);
+        canvas = tester.widget<VncViewerCanvas>(find.byType(VncViewerCanvas));
+        expect(canvas.activeRegion, isNull);
+      },
+    );
+
+    testWidgets(
+      'narrow iPhone viewport renders VncScreen and VncSessionScreen with zero overflow and working Display Switcher & Overflow menu',
+      (tester) async {
+        tester.view.physicalSize = const Size(375, 812);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.reset);
+
+        // 1. VncScreen with saved + discovered hosts on 375x812 iPhone.
+        final vncHostBloc = MockVncHostBloc();
+        final sshHostBloc = MockSshHostBloc();
+        addTearDown(() async {
+          await vncHostBloc.close();
+          await sshHostBloc.close();
+        });
+
+        final now = DateTime(2026, 11, 24);
+        whenListen(
+          vncHostBloc,
+          const Stream<VncHostState>.empty(),
+          initialState: VncHostState(
+            hosts: [
+              VncHost(
+                id: 1,
+                name: 'Engineering Mac Studio Ultra Workstation',
+                host: '192.168.100.200',
+                port: 5900,
+                authType: VncHostAuthType.appleArd.value,
+                username: 'alice',
+                passwordRef: null,
+                sshHostId: null,
+                viewOnly: false,
+                createdAt: now,
+                lastConnectedAt: now,
+              ),
+            ],
+            discoveredHosts: const [
+              VncDiscoveredHost(
+                name: 'Conference Room MacBook Pro 16-inch',
+                host: 'conference-room-macbook-pro.local',
+                port: 5900,
+                addresses: ['fe80::1c2b:3c4d:5e6f:7a8b'],
+              ),
+            ],
+          ),
+        );
+        whenListen(
+          sshHostBloc,
+          const Stream<SshHostState>.empty(),
+          initialState: const SshHostLoaded([]),
+        );
+
+        await tester.pumpWidget(
+          wrapWithApp(
+            const VncScreen(autoDiscover: false),
+            extraProviders: [
+              BlocProvider<VncHostBloc>.value(value: vncHostBloc),
+              BlocProvider<SshHostBloc>.value(value: sshHostBloc),
+            ],
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        // Narrow AppBar uses compact IconButton with Icons.bolt for Quick Connect.
+        expect(find.byIcon(Icons.bolt), findsOneWidget);
+        expect(find.text('Quick Connect'), findsNothing);
+        expect(
+          find.text('Conference Room MacBook Pro 16-inch'),
+          findsOneWidget,
+        );
+        expect(find.text('Save'), findsOneWidget);
+        expect(find.text('Connect'), findsOneWidget);
+
+        // 2. VncSessionScreen connected with 3 displays on 375x812 iPhone.
+        final fakeClient = FakeVncSessionClient();
+        final sessionBloc = VncSessionBloc(clientFactory: () => fakeClient);
+        addTearDown(() async {
+          await sessionBloc.close();
+          await fakeClient.dispose();
+        });
+
+        const launch = VncLaunchConfig(
+          title: 'Engineering Mac Studio Ultra Workstation',
+          config: VncConnectionConfig(host: '192.168.100.200', port: 5900),
+        );
+
+        await tester.pumpWidget(
+          wrapWithApp(
+            VncSessionScreen(launchConfig: launch, blocOverride: sessionBloc),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        const d1 = VncScreenInfo(id: 1, x: 0, y: 0, width: 1728, height: 1117);
+        const d2 = VncScreenInfo(
+          id: 2,
+          x: 1728,
+          y: 0,
+          width: 3840,
+          height: 2160,
+        );
+        const d3 = VncScreenInfo(
+          id: 3,
+          x: 5568,
+          y: 0,
+          width: 2160,
+          height: 3840,
+        );
+
+        fakeClient.emitEvent(
+          const VncConnectedEvent(
+            VncDesktopInfo(
+              name: 'Engineering Mac Studio Ultra Workstation',
+              width: 7728,
+              height: 3840,
+              protocolVersion: 'RFB 003.889',
+              securityType: 30,
+              isApple889: true,
+            ),
+          ),
+        );
+        fakeClient.emitEvent(
+          const VncResizedEvent(
+            width: 7728,
+            height: 3840,
+            screens: [d1, d2, d3],
+            hasCurrentDisplayId: true,
+            currentDisplayId: null,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+
+        // Display Switcher is directly tappable on narrow viewport.
+        final switcher = find.byTooltip('Select Display');
+        expect(switcher, findsOneWidget);
+        await tester.tap(switcher);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('Display 2 (3840×2160)'), findsOneWidget);
+        await tester.tap(find.text('Display 2 (3840×2160)'));
+        await tester.pumpAndSettle();
+        expect(fakeClient.selectDisplayCalls, equals([2]));
+
+        // Overflow menu (Icons.more_vert) opens and executes actions cleanly.
+        final overflow = find.byIcon(Icons.more_vert);
+        expect(overflow, findsOneWidget);
+        await tester.tap(overflow);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('View Only'), findsOneWidget);
+        expect(find.text('Hide toolbar'), findsOneWidget);
+
+        await tester.tap(find.text('View Only'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(sessionBloc.state.viewOnly, isTrue);
+
+        // Open overflow menu again and hide toolbar, then restore via SafeArea button.
+        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Hide toolbar'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
+
+        await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byIcon(Icons.more_vert), findsOneWidget);
       },
     );
   });

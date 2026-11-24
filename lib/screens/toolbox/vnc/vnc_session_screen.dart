@@ -192,7 +192,8 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
           ),
       ];
     }
-    if (state.width > 0 &&
+    if (!state.serverSideDisplaySwitch &&
+        state.width > 0 &&
         state.height > 0 &&
         state.width >= state.height * 2) {
       final leftW = state.width ~/ 2;
@@ -222,6 +223,15 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
       ];
     }
     return const [];
+  }
+
+  bool _isOptionSelected(_DisplayOption opt, VncSessionState state) {
+    if (state.serverSideDisplaySwitch) {
+      return opt.region == null
+          ? state.activeDisplayId == null
+          : opt.region!.id == state.activeDisplayId;
+    }
+    return opt.region == state.activeRegion;
   }
 
   @override
@@ -286,6 +296,7 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
           ),
         ],
         child: Scaffold(
+          resizeToAvoidBottomInset: true,
           backgroundColor: colorScheme.surfaceContainerLowest,
           body: SafeArea(
             top: !_isFullscreen,
@@ -296,6 +307,18 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
                 final displayWidth = state.activeRegion?.width ?? state.width;
                 final displayHeight =
                     state.activeRegion?.height ?? state.height;
+                final resolutionText =
+                    state.status == VncSessionStatus.connected &&
+                        (state.serverSideDisplaySwitch
+                            ? state.width > 0 && state.height > 0
+                            : displayWidth > 0 && displayHeight > 0)
+                    ? (state.serverSideDisplaySwitch
+                          ? '${state.width}×${state.height}'
+                          : '$displayWidth×$displayHeight')
+                    : null;
+                final hasSingleDisplaySelected = state.serverSideDisplaySwitch
+                    ? state.activeDisplayId != null
+                    : state.activeRegion != null;
                 return Stack(
                   children: [
                     Column(
@@ -305,19 +328,16 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
                             title: (state.desktopInfo?.name.isNotEmpty ?? false)
                                 ? state.desktopInfo!.name
                                 : launch.title,
-                            resolution:
-                                state.status == VncSessionStatus.connected &&
-                                    displayWidth > 0 &&
-                                    displayHeight > 0
-                                ? '$displayWidth×$displayHeight'
-                                : null,
+                            resolution: resolutionText,
                             statusColor: _statusDotColor(
                               state.status,
                               colorScheme,
                               dmColors,
                             ),
                             displayOptions: displayOptions,
-                            activeRegion: state.activeRegion,
+                            hasSingleDisplaySelected: hasSingleDisplaySelected,
+                            isDisplayOptionSelected: (opt) =>
+                                _isOptionSelected(opt, state),
                             onSelectDisplay: (region) =>
                                 bloc.add(VncSessionSelectDisplay(region)),
                             scaleMode: _scaleMode,
@@ -359,22 +379,25 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
                       ],
                     ),
                     if (!_showToolbar)
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Material(
-                          color: colorScheme.surfaceContainerHigh.withValues(
-                            alpha: 0.9,
-                          ),
-                          shape: const StadiumBorder(),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: colorScheme.onSurface,
+                      SafeArea(
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Material(
+                              color: colorScheme.surfaceContainerHigh
+                                  .withValues(alpha: 0.9),
+                              shape: const StadiumBorder(),
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: colorScheme.onSurface,
+                                ),
+                                tooltip: l10n.vncTitle,
+                                onPressed: () =>
+                                    setState(() => _showToolbar = true),
+                              ),
                             ),
-                            tooltip: l10n.vncTitle,
-                            onPressed: () =>
-                                setState(() => _showToolbar = true),
                           ),
                         ),
                       ),
@@ -431,7 +454,9 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
           initialFrame: bloc.latestFrame,
           framebufferWidth: state.width,
           framebufferHeight: state.height,
-          activeRegion: state.activeRegion,
+          activeRegion: state.serverSideDisplaySwitch
+              ? null
+              : state.activeRegion,
           cursor: state.cursor,
           scaleMode: _scaleMode,
           touchMode: _touchMode,
@@ -582,13 +607,23 @@ class _DisplayOption {
   final VncScreenInfo? region;
 }
 
+enum _ToolbarMenuAction {
+  toggleScaleMode,
+  toggleTouchMode,
+  toggleViewOnly,
+  sendClipboard,
+  toggleFullscreen,
+  collapseToolbar,
+}
+
 class _SessionToolbar extends StatelessWidget {
   const _SessionToolbar({
     required this.title,
     required this.resolution,
     required this.statusColor,
     required this.displayOptions,
-    required this.activeRegion,
+    required this.hasSingleDisplaySelected,
+    required this.isDisplayOptionSelected,
     required this.onSelectDisplay,
     required this.scaleMode,
     required this.touchMode,
@@ -610,7 +645,8 @@ class _SessionToolbar extends StatelessWidget {
   final String? resolution;
   final Color statusColor;
   final List<_DisplayOption> displayOptions;
-  final VncScreenInfo? activeRegion;
+  final bool hasSingleDisplaySelected;
+  final bool Function(_DisplayOption option) isDisplayOptionSelected;
   final ValueChanged<VncScreenInfo?> onSelectDisplay;
   final VncScaleMode scaleMode;
   final VncTouchMode touchMode;
@@ -627,6 +663,214 @@ class _SessionToolbar extends StatelessWidget {
   final VoidCallback onToggleFullscreen;
   final VoidCallback onCollapseToolbar;
 
+  Widget _buildDisplaySwitcher(
+    BuildContext context, {
+    required bool compact,
+    required Color activeHighlight,
+  }) {
+    final l10n = context.l10n;
+    final colorScheme = Theme.of(context).colorScheme;
+    return PopupMenuButton<int>(
+      tooltip: l10n.vncSelectDisplay,
+      padding: compact ? const EdgeInsets.all(6) : const EdgeInsets.all(8),
+      style: compact
+          ? IconButton.styleFrom(visualDensity: VisualDensity.compact)
+          : null,
+      icon: Icon(
+        Icons.monitor,
+        color: hasSingleDisplaySelected
+            ? activeHighlight
+            : colorScheme.onSurface,
+        size: 20,
+      ),
+      onSelected: (index) {
+        if (index >= 0 && index < displayOptions.length) {
+          onSelectDisplay(displayOptions[index].region);
+        }
+      },
+      itemBuilder: (context) => [
+        for (var i = 0; i < displayOptions.length; i++)
+          PopupMenuItem<int>(
+            value: i,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 24,
+                  child: isDisplayOptionSelected(displayOptions[i])
+                      ? Icon(Icons.check, size: 18, color: activeHighlight)
+                      : null,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    displayOptions[i].label,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildOverflowMenu(
+    BuildContext context, {
+    required Color activeHighlight,
+    required Color warningHighlight,
+  }) {
+    final l10n = context.l10n;
+    final colorScheme = Theme.of(context).colorScheme;
+    return PopupMenuButton<_ToolbarMenuAction>(
+      padding: const EdgeInsets.all(6),
+      style: IconButton.styleFrom(visualDensity: VisualDensity.compact),
+      icon: Icon(Icons.more_vert, color: colorScheme.onSurface, size: 20),
+      onSelected: (action) {
+        switch (action) {
+          case _ToolbarMenuAction.toggleScaleMode:
+            onToggleScaleMode();
+          case _ToolbarMenuAction.toggleTouchMode:
+            onToggleTouchMode();
+          case _ToolbarMenuAction.toggleViewOnly:
+            onToggleViewOnly();
+          case _ToolbarMenuAction.sendClipboard:
+            onSendClipboard();
+          case _ToolbarMenuAction.toggleFullscreen:
+            onToggleFullscreen();
+          case _ToolbarMenuAction.collapseToolbar:
+            onCollapseToolbar();
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<_ToolbarMenuAction>(
+          value: _ToolbarMenuAction.toggleScaleMode,
+          child: Row(
+            children: [
+              Icon(
+                scaleMode == VncScaleMode.fit
+                    ? Icons.zoom_out_map
+                    : Icons.fit_screen,
+                size: 18,
+                color: colorScheme.onSurface,
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  scaleMode == VncScaleMode.fit
+                      ? l10n.vncActualSize
+                      : l10n.vncFitScreen,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<_ToolbarMenuAction>(
+          value: _ToolbarMenuAction.toggleTouchMode,
+          child: Row(
+            children: [
+              Icon(
+                touchMode == VncTouchMode.trackpad
+                    ? Icons.touch_app_outlined
+                    : Icons.mouse_outlined,
+                size: 18,
+                color: touchMode == VncTouchMode.trackpad
+                    ? activeHighlight
+                    : colorScheme.onSurface,
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  touchMode == VncTouchMode.trackpad
+                      ? l10n.vncDirectTouchMode
+                      : l10n.vncTrackpadMode,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<_ToolbarMenuAction>(
+          value: _ToolbarMenuAction.toggleViewOnly,
+          child: Row(
+            children: [
+              Icon(
+                viewOnly ? Icons.check : Icons.visibility_outlined,
+                size: 18,
+                color: viewOnly ? warningHighlight : colorScheme.onSurface,
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  l10n.vncViewOnlyLabel,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<_ToolbarMenuAction>(
+          value: _ToolbarMenuAction.sendClipboard,
+          enabled: isConnected,
+          child: Row(
+            children: [
+              Icon(
+                Icons.content_paste_go,
+                size: 18,
+                color: isConnected
+                    ? colorScheme.onSurface
+                    : colorScheme.onSurface.withValues(alpha: 0.38),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  l10n.vncSyncClipboard,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<_ToolbarMenuAction>(
+          value: _ToolbarMenuAction.toggleFullscreen,
+          child: Row(
+            children: [
+              Icon(
+                isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                size: 18,
+                color: isFullscreen ? activeHighlight : colorScheme.onSurface,
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  l10n.vncFullscreen,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<_ToolbarMenuAction>(
+          value: _ToolbarMenuAction.collapseToolbar,
+          child: Row(
+            children: [
+              Icon(
+                Icons.keyboard_arrow_up,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              const Flexible(
+                child: Text('Hide toolbar', overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -638,181 +882,241 @@ class _SessionToolbar extends StatelessWidget {
 
     return Material(
       color: colorScheme.surfaceContainerHigh,
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
-        ),
-        child: Row(
-          children: [
-            IconButton(
-              icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-              tooltip: l10n.vncDisconnect,
-              onPressed: onDisconnect,
-            ),
-            Container(
-              width: 8,
-              height: 8,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 600;
+          if (isCompact) {
+            return Container(
+              height: 52,
               decoration: BoxDecoration(
-                color: statusColor,
-                shape: BoxShape.circle,
+                border: Border(
+                  bottom: BorderSide(color: colorScheme.outlineVariant),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
               child: Row(
                 children: [
-                  Flexible(
-                    child: Text(
-                      title,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+                    tooltip: l10n.vncDisconnect,
+                    onPressed: onDisconnect,
+                  ),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      shape: BoxShape.circle,
                     ),
                   ),
-                  if (resolution != null) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      resolution!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (displayOptions.isNotEmpty)
-              PopupMenuButton<int>(
-                tooltip: l10n.vncSelectDisplay,
-                icon: Icon(
-                  Icons.monitor,
-                  color: activeRegion != null
-                      ? activeHighlight
-                      : colorScheme.onSurface,
-                  size: 20,
-                ),
-                onSelected: (index) {
-                  if (index >= 0 && index < displayOptions.length) {
-                    onSelectDisplay(displayOptions[index].region);
-                  }
-                },
-                itemBuilder: (context) => [
-                  for (var i = 0; i < displayOptions.length; i++)
-                    PopupMenuItem<int>(
-                      value: i,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 24,
-                            child: displayOptions[i].region == activeRegion
-                                ? Icon(
-                                    Icons.check,
-                                    size: 18,
-                                    color: activeHighlight,
-                                  )
-                                : null,
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
                           ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              displayOptions[i].label,
-                              overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (resolution != null)
+                          Text(
+                            resolution!,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontFamily: 'monospace',
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
+                      ],
                     ),
+                  ),
+                  if (displayOptions.isNotEmpty)
+                    _buildDisplaySwitcher(
+                      context,
+                      compact: true,
+                      activeHighlight: activeHighlight,
+                    ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      showShortcutBar
+                          ? Icons.keyboard_hide_outlined
+                          : Icons.keyboard_outlined,
+                      color: !isConnected
+                          ? colorScheme.onSurface.withValues(alpha: 0.38)
+                          : (showShortcutBar
+                                ? activeHighlight
+                                : colorScheme.onSurface),
+                      size: 20,
+                    ),
+                    tooltip: 'Shortcuts',
+                    onPressed: isConnected ? onToggleShortcutBar : null,
+                  ),
+                  _buildOverflowMenu(
+                    context,
+                    activeHighlight: activeHighlight,
+                    warningHighlight: warningHighlight,
+                  ),
                 ],
               ),
-            IconButton(
-              icon: Icon(
-                scaleMode == VncScaleMode.fit
-                    ? Icons.fit_screen
-                    : Icons.zoom_out_map,
-                color: colorScheme.onSurface,
-                size: 20,
+            );
+          }
+
+          return Container(
+            height: 48,
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: colorScheme.outlineVariant),
               ),
-              tooltip: scaleMode == VncScaleMode.fit
-                  ? l10n.vncActualSize
-                  : l10n.vncFitScreen,
-              onPressed: onToggleScaleMode,
             ),
-            IconButton(
-              icon: Icon(
-                touchMode == VncTouchMode.trackpad
-                    ? Icons.mouse_outlined
-                    : Icons.touch_app_outlined,
-                color: touchMode == VncTouchMode.trackpad
-                    ? activeHighlight
-                    : colorScheme.onSurface,
-                size: 20,
-              ),
-              tooltip: touchMode == VncTouchMode.trackpad
-                  ? l10n.vncDirectTouchMode
-                  : l10n.vncTrackpadMode,
-              onPressed: onToggleTouchMode,
+            child: Row(
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
+                  tooltip: l10n.vncDisconnect,
+                  onPressed: onDisconnect,
+                ),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          title,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (resolution != null) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          flex: 0,
+                          child: Text(
+                            resolution!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontFamily: 'monospace',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (displayOptions.isNotEmpty)
+                  _buildDisplaySwitcher(
+                    context,
+                    compact: false,
+                    activeHighlight: activeHighlight,
+                  ),
+                IconButton(
+                  icon: Icon(
+                    scaleMode == VncScaleMode.fit
+                        ? Icons.fit_screen
+                        : Icons.zoom_out_map,
+                    color: colorScheme.onSurface,
+                    size: 20,
+                  ),
+                  tooltip: scaleMode == VncScaleMode.fit
+                      ? l10n.vncActualSize
+                      : l10n.vncFitScreen,
+                  onPressed: onToggleScaleMode,
+                ),
+                IconButton(
+                  icon: Icon(
+                    touchMode == VncTouchMode.trackpad
+                        ? Icons.mouse_outlined
+                        : Icons.touch_app_outlined,
+                    color: touchMode == VncTouchMode.trackpad
+                        ? activeHighlight
+                        : colorScheme.onSurface,
+                    size: 20,
+                  ),
+                  tooltip: touchMode == VncTouchMode.trackpad
+                      ? l10n.vncDirectTouchMode
+                      : l10n.vncTrackpadMode,
+                  onPressed: onToggleTouchMode,
+                ),
+                IconButton(
+                  icon: Icon(
+                    viewOnly ? Icons.visibility : Icons.visibility_outlined,
+                    color: viewOnly ? warningHighlight : colorScheme.onSurface,
+                    size: 20,
+                  ),
+                  tooltip: l10n.vncViewOnlyLabel,
+                  onPressed: onToggleViewOnly,
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.content_paste_go,
+                    color: isConnected
+                        ? colorScheme.onSurface
+                        : colorScheme.onSurface.withValues(alpha: 0.38),
+                    size: 20,
+                  ),
+                  tooltip: l10n.vncSyncClipboard,
+                  onPressed: isConnected ? onSendClipboard : null,
+                ),
+                IconButton(
+                  icon: Icon(
+                    showShortcutBar
+                        ? Icons.keyboard_hide_outlined
+                        : Icons.keyboard_outlined,
+                    color: !isConnected
+                        ? colorScheme.onSurface.withValues(alpha: 0.38)
+                        : (showShortcutBar
+                              ? activeHighlight
+                              : colorScheme.onSurface),
+                    size: 20,
+                  ),
+                  tooltip: 'Shortcuts',
+                  onPressed: isConnected ? onToggleShortcutBar : null,
+                ),
+                IconButton(
+                  icon: Icon(
+                    isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                    color: isFullscreen
+                        ? activeHighlight
+                        : colorScheme.onSurface,
+                    size: 20,
+                  ),
+                  tooltip: l10n.vncFullscreen,
+                  onPressed: onToggleFullscreen,
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.keyboard_arrow_up,
+                    color: colorScheme.onSurfaceVariant,
+                    size: 20,
+                  ),
+                  tooltip: 'Hide toolbar',
+                  onPressed: onCollapseToolbar,
+                ),
+              ],
             ),
-            IconButton(
-              icon: Icon(
-                viewOnly ? Icons.visibility : Icons.visibility_outlined,
-                color: viewOnly ? warningHighlight : colorScheme.onSurface,
-                size: 20,
-              ),
-              tooltip: l10n.vncViewOnlyLabel,
-              onPressed: onToggleViewOnly,
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.content_paste_go,
-                color: isConnected
-                    ? colorScheme.onSurface
-                    : colorScheme.onSurface.withValues(alpha: 0.38),
-                size: 20,
-              ),
-              tooltip: l10n.vncSyncClipboard,
-              onPressed: isConnected ? onSendClipboard : null,
-            ),
-            IconButton(
-              icon: Icon(
-                showShortcutBar
-                    ? Icons.keyboard_hide_outlined
-                    : Icons.keyboard_outlined,
-                color: !isConnected
-                    ? colorScheme.onSurface.withValues(alpha: 0.38)
-                    : (showShortcutBar
-                          ? activeHighlight
-                          : colorScheme.onSurface),
-                size: 20,
-              ),
-              tooltip: 'Shortcuts',
-              onPressed: isConnected ? onToggleShortcutBar : null,
-            ),
-            IconButton(
-              icon: Icon(
-                isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                color: isFullscreen ? activeHighlight : colorScheme.onSurface,
-                size: 20,
-              ),
-              tooltip: l10n.vncFullscreen,
-              onPressed: onToggleFullscreen,
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.keyboard_arrow_up,
-                color: colorScheme.onSurfaceVariant,
-                size: 20,
-              ),
-              tooltip: 'Hide toolbar',
-              onPressed: onCollapseToolbar,
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

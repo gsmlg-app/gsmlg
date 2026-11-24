@@ -21,6 +21,8 @@ class VncSessionState extends Equatable {
     this.height = 0,
     this.screens = const [],
     this.activeRegion,
+    this.serverSideDisplaySwitch = false,
+    this.activeDisplayId,
     this.viewOnly = false,
     this.authSecurityType,
     this.authRequiresUsername = false,
@@ -38,6 +40,8 @@ class VncSessionState extends Equatable {
   final int height;
   final List<VncScreenInfo> screens;
   final VncScreenInfo? activeRegion;
+  final bool serverSideDisplaySwitch;
+  final int? activeDisplayId;
   final bool viewOnly;
   final int? authSecurityType;
   final bool authRequiresUsername;
@@ -55,6 +59,8 @@ class VncSessionState extends Equatable {
     int? height,
     List<VncScreenInfo>? screens,
     VncScreenInfo? activeRegion,
+    bool? serverSideDisplaySwitch,
+    int? activeDisplayId,
     bool? viewOnly,
     int? authSecurityType,
     bool? authRequiresUsername,
@@ -65,6 +71,7 @@ class VncSessionState extends Equatable {
     String? disconnectReason,
     bool clearDesktopInfo = false,
     bool clearActiveRegion = false,
+    bool clearActiveDisplayId = false,
     bool clearError = false,
     bool clearAuth = false,
     bool clearDisconnectReason = false,
@@ -80,6 +87,11 @@ class VncSessionState extends Equatable {
       activeRegion: clearActiveRegion
           ? null
           : (activeRegion ?? this.activeRegion),
+      serverSideDisplaySwitch:
+          serverSideDisplaySwitch ?? this.serverSideDisplaySwitch,
+      activeDisplayId: clearActiveDisplayId
+          ? null
+          : (activeDisplayId ?? this.activeDisplayId),
       viewOnly: viewOnly ?? this.viewOnly,
       authSecurityType: clearAuth
           ? null
@@ -106,6 +118,8 @@ class VncSessionState extends Equatable {
     height,
     screens,
     activeRegion,
+    serverSideDisplaySwitch,
+    activeDisplayId,
     viewOnly,
     authSecurityType,
     authRequiresUsername,

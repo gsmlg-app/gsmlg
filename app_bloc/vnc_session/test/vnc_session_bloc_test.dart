@@ -935,5 +935,140 @@ void main() {
         await bloc.close();
       },
     );
+
+    test(
+      'handles native Apple 003.889 server-side display switching and layout updates',
+      () async {
+        final bloc = buildBloc();
+        bloc.add(const VncSessionConnect(testConfig));
+        await Future<void>.delayed(Duration.zero);
+
+        final client = createdClients.single;
+        const appleDesktop = VncDesktopInfo(
+          name: 'Mac Studio',
+          width: 4480,
+          height: 1440,
+          protocolVersion: 'RFB 003.889',
+          securityType: 30,
+          isApple889: true,
+        );
+        client.emitEvent(const VncConnectedEvent(appleDesktop));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.status, VncSessionStatus.connected);
+        expect(bloc.state.serverSideDisplaySwitch, isTrue);
+        expect(bloc.state.activeDisplayId, isNull);
+        expect(bloc.state.activeRegion, isNull);
+
+        const d1 = VncScreenInfo(
+          id: 1,
+          x: 0,
+          y: 0,
+          width: 1728,
+          height: 1117,
+          flags: 1,
+        );
+        const d2 = VncScreenInfo(
+          id: 2,
+          x: 1728,
+          y: 0,
+          width: 3840,
+          height: 2160,
+        );
+        const d3 = VncScreenInfo(
+          id: 3,
+          x: 5568,
+          y: 0,
+          width: 2160,
+          height: 3840,
+        );
+
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 4480,
+            height: 1440,
+            screens: [d1, d2, d3],
+            hasCurrentDisplayId: true,
+            currentDisplayId: null,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.width, 4480);
+        expect(bloc.state.height, 1440);
+        expect(bloc.state.screens, equals(const [d1, d2, d3]));
+        expect(bloc.state.activeDisplayId, isNull);
+        expect(bloc.state.activeRegion, isNull);
+
+        // Request server-side switch to display 2.
+        bloc.add(const VncSessionSelectDisplay(d2));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(client.selectDisplayCalls, equals([d2.id]));
+        expect(client.setActiveRegionCalls, isEmpty);
+        expect(bloc.state.activeRegion, isNull);
+        // Authoritative activeDisplayId awaits server AppleDisplayLayout confirmation.
+        expect(bloc.state.activeDisplayId, isNull);
+
+        // Confirming AppleDisplayLayout arrives from macOS.
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 3840,
+            height: 2160,
+            screens: [d1, d2, d3],
+            hasCurrentDisplayId: true,
+            currentDisplayId: 2,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.width, 3840);
+        expect(bloc.state.height, 2160);
+        expect(bloc.state.activeDisplayId, 2);
+        expect(bloc.state.activeRegion, isNull);
+
+        // Switch back to All Displays.
+        bloc.add(const VncSessionSelectDisplay(null));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(client.selectDisplayCalls, equals([2, null]));
+        expect(client.setActiveRegionCalls, isEmpty);
+
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 4480,
+            height: 1440,
+            screens: [d1, d2, d3],
+            hasCurrentDisplayId: true,
+            currentDisplayId: null,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.activeDisplayId, isNull);
+
+        // Disconnect resets serverSideDisplaySwitch and activeDisplayId.
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 3840,
+            height: 2160,
+            screens: [d1, d2, d3],
+            hasCurrentDisplayId: true,
+            currentDisplayId: 2,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.activeDisplayId, 2);
+
+        bloc.add(const VncSessionDisconnect());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.serverSideDisplaySwitch, isFalse);
+        expect(bloc.state.activeDisplayId, isNull);
+        expect(bloc.state.screens, isEmpty);
+        expect(bloc.state.activeRegion, isNull);
+
+        await bloc.close();
+      },
+    );
   });
 }

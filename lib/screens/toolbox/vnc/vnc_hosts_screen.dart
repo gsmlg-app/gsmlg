@@ -399,44 +399,56 @@ class _VncScreenState extends State<VncScreen> {
             child: CustomScrollView(
               slivers: [
                 DmNavigationHeader(
-                  builder: (context, header) => SliverAppBar(
-                    leading: header.leading,
-                    leadingWidth: header.leadingWidth,
-                    automaticallyImplyLeading: header.automaticallyImplyLeading,
-                    floating: true,
-                    title: Text(l10n.vncTitle),
-                    actions: [
-                      TextButton.icon(
-                        onPressed: () =>
-                            _openQuickConnect(sshHosts, sshHostMap),
-                        icon: const Icon(Icons.bolt, size: 18),
-                        label: Text(l10n.vncQuickConnect),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        tooltip: l10n.vncAddHost,
-                        onPressed: () => _openAddHostDialog(sshHosts),
-                      ),
-                      if (state.isDiscovering)
-                        IconButton(
-                          tooltip: l10n.vncRefreshLan,
-                          onPressed: null,
-                          icon: const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                  builder: (context, header) {
+                    final isNarrow = MediaQuery.sizeOf(context).width < 460;
+                    return SliverAppBar(
+                      leading: header.leading,
+                      leadingWidth: header.leadingWidth,
+                      automaticallyImplyLeading:
+                          header.automaticallyImplyLeading,
+                      floating: true,
+                      title: Text(l10n.vncTitle),
+                      actions: [
+                        if (isNarrow)
+                          IconButton(
+                            icon: const Icon(Icons.bolt),
+                            tooltip: l10n.vncQuickConnect,
+                            onPressed: () =>
+                                _openQuickConnect(sshHosts, sshHostMap),
+                          )
+                        else
+                          TextButton.icon(
+                            onPressed: () =>
+                                _openQuickConnect(sshHosts, sshHostMap),
+                            icon: const Icon(Icons.bolt, size: 18),
+                            label: Text(l10n.vncQuickConnect),
                           ),
-                        )
-                      else
                         IconButton(
-                          icon: const Icon(Icons.refresh),
-                          tooltip: l10n.vncRefreshLan,
-                          onPressed: () => context.read<VncHostBloc>().add(
-                            const VncHostDiscoverLan(),
-                          ),
+                          icon: const Icon(Icons.add),
+                          tooltip: l10n.vncAddHost,
+                          onPressed: () => _openAddHostDialog(sshHosts),
                         ),
-                    ],
-                  ),
+                        if (state.isDiscovering)
+                          IconButton(
+                            tooltip: l10n.vncRefreshLan,
+                            onPressed: null,
+                            icon: const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        else
+                          IconButton(
+                            icon: const Icon(Icons.refresh),
+                            tooltip: l10n.vncRefreshLan,
+                            onPressed: () => context.read<VncHostBloc>().add(
+                              const VncHostDiscoverLan(),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
@@ -795,43 +807,80 @@ class _DiscoveredHostCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
-          children: [
-            Icon(Icons.computer_outlined, color: colorScheme.secondary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    host.name,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final infoRow = Row(
+              children: [
+                Icon(Icons.computer_outlined, color: colorScheme.secondary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        host.name,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${host.preferredAddress}:${host.port}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFamily: 'monospace',
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${host.preferredAddress}:${host.port}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            );
+
+            if (constraints.maxWidth < 420) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  infoRow,
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: onSave,
+                        child: Text(l10n.vncSaveHost),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.tonal(
+                        onPressed: onConnect,
+                        child: Text(l10n.vncConnect),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            OutlinedButton(onPressed: onSave, child: Text(l10n.vncSaveHost)),
-            const SizedBox(width: 8),
-            FilledButton.tonal(
-              onPressed: onConnect,
-              child: Text(l10n.vncConnect),
-            ),
-          ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: infoRow),
+                const SizedBox(width: 8),
+                OutlinedButton(
+                  onPressed: onSave,
+                  child: Text(l10n.vncSaveHost),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.tonal(
+                  onPressed: onConnect,
+                  child: Text(l10n.vncConnect),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

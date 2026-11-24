@@ -122,6 +122,8 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
         height: 0,
         screens: const [],
         clearActiveRegion: true,
+        serverSideDisplaySwitch: false,
+        clearActiveDisplayId: true,
         viewOnly: effectiveConfig.viewOnly,
         clearAuth: true,
         clearCursor: true,
@@ -233,6 +235,8 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
         status: VncSessionStatus.disconnected,
         screens: const [],
         clearActiveRegion: true,
+        serverSideDisplaySwitch: false,
+        clearActiveDisplayId: true,
         clearAuth: true,
         clearError: true,
         clearDisconnectReason: true,
@@ -288,6 +292,13 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
     Emitter<VncSessionState> emit,
   ) {
     final region = event.region;
+    if (state.serverSideDisplaySwitch) {
+      _client?.selectDisplay(region?.id);
+      if (state.activeRegion != null) {
+        emit(state.copyWith(clearActiveRegion: true));
+      }
+      return;
+    }
     if (region == null) {
       emit(state.copyWith(clearActiveRegion: true));
       _client?.setActiveRegion(null);
@@ -357,6 +368,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
             desktopInfo: desktopInfo,
             width: desktopInfo.width,
             height: desktopInfo.height,
+            serverSideDisplaySwitch: desktopInfo.isApple889,
             clearAuth: true,
             clearError: true,
             clearDisconnectReason: true,
@@ -367,38 +379,65 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
         if (!_framesController.isClosed) {
           _framesController.add(frame);
         }
-      case VncResizedEvent(:final width, :final height, :final screens):
-        VncScreenInfo? nextActiveRegion = state.activeRegion;
-        var clearActiveRegion = false;
-        if (nextActiveRegion != null) {
-          VncScreenInfo? matched;
-          if (screens.isNotEmpty) {
-            for (final screen in screens) {
-              if (screen.id == nextActiveRegion.id) {
-                matched = screen;
-                break;
+      case VncResizedEvent(
+        :final width,
+        :final height,
+        :final screens,
+        :final hasCurrentDisplayId,
+        :final currentDisplayId,
+      ):
+        if (state.serverSideDisplaySwitch) {
+          emit(
+            state.copyWith(
+              width: width,
+              height: height,
+              screens: screens,
+              clearActiveRegion: true,
+              activeDisplayId: hasCurrentDisplayId
+                  ? currentDisplayId
+                  : state.activeDisplayId,
+              clearActiveDisplayId:
+                  hasCurrentDisplayId && currentDisplayId == null,
+            ),
+          );
+        } else {
+          VncScreenInfo? nextActiveRegion = state.activeRegion;
+          var clearActiveRegion = false;
+          if (nextActiveRegion != null) {
+            VncScreenInfo? matched;
+            if (screens.isNotEmpty) {
+              for (final screen in screens) {
+                if (screen.id == nextActiveRegion.id) {
+                  matched = screen;
+                  break;
+                }
               }
             }
+            if (matched != null) {
+              nextActiveRegion = matched;
+            } else if (nextActiveRegion.x < 0 ||
+                nextActiveRegion.y < 0 ||
+                nextActiveRegion.x + nextActiveRegion.width > width ||
+                nextActiveRegion.y + nextActiveRegion.height > height) {
+              clearActiveRegion = true;
+              nextActiveRegion = null;
+            }
           }
-          if (matched != null) {
-            nextActiveRegion = matched;
-          } else if (nextActiveRegion.x < 0 ||
-              nextActiveRegion.y < 0 ||
-              nextActiveRegion.x + nextActiveRegion.width > width ||
-              nextActiveRegion.y + nextActiveRegion.height > height) {
-            clearActiveRegion = true;
-            nextActiveRegion = null;
-          }
+          emit(
+            state.copyWith(
+              width: width,
+              height: height,
+              screens: screens,
+              activeRegion: nextActiveRegion,
+              clearActiveRegion: clearActiveRegion,
+              activeDisplayId: hasCurrentDisplayId
+                  ? currentDisplayId
+                  : state.activeDisplayId,
+              clearActiveDisplayId:
+                  hasCurrentDisplayId && currentDisplayId == null,
+            ),
+          );
         }
-        emit(
-          state.copyWith(
-            width: width,
-            height: height,
-            screens: screens,
-            activeRegion: nextActiveRegion,
-            clearActiveRegion: clearActiveRegion,
-          ),
-        );
       case VncCursorEvent(:final cursor):
         emit(state.copyWith(cursor: cursor));
       case VncClipboardEvent(:final text):
