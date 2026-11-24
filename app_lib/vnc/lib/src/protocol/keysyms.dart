@@ -42,6 +42,7 @@ abstract final class X11Keysym {
 
 /// Converts a Unicode scalar value to an X11 keysym per RFC 6143 §7.5.4.
 int unicodeToKeysym(int codePoint) {
+  if (codePoint >= 0xD800 && codePoint <= 0xDFFF) return 0;
   if (codePoint >= 0x0020 && codePoint <= 0x007E) return codePoint;
   if (codePoint >= 0x00A0 && codePoint <= 0x00FF) return codePoint;
   if (codePoint >= 0x0100 && codePoint <= 0x10FFFF) {

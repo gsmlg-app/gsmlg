@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
+import 'package:meta/meta.dart';
 
 enum VncAuthPreference {
   auto(0),
@@ -214,15 +215,10 @@ class VncCursorData extends Equatable {
   final Uint8List rgbaPixels;
 
   @override
-  List<Object?> get props => [
-    width,
-    height,
-    hotspotX,
-    hotspotY,
-    rgbaPixels.length,
-  ];
+  List<Object?> get props => [width, height, hotspotX, hotspotY, rgbaPixels];
 }
 
+@immutable
 class VncFrameData {
   const VncFrameData({
     required this.frameId,

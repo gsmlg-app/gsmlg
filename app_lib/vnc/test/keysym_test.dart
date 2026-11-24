@@ -12,17 +12,30 @@ void main() {
     });
 
     test('maps Latin-1 supplement directly', () {
+      expect(unicodeToKeysym(0x00A0), 0x00A0);
       expect(unicodeToKeysym(0x00E9), 0x00E9); // é
+      expect(unicodeToKeysym(0x00FF), 0x00FF);
     });
 
     test('maps non-Latin-1 Unicode with 0x01000000 offset', () {
+      expect(unicodeToKeysym(0x0100), 0x01000100);
       expect(unicodeToKeysym(0x20AC), 0x010020AC); // €
       expect(unicodeToKeysym(0x4E2D), 0x01004E2D); // 中
+      expect(unicodeToKeysym(0x10FFFF), 0x0110FFFF);
     });
 
-    test('returns 0 for control characters without direct mapping', () {
+    test('returns 0 for control, surrogate, and out-of-range code points', () {
+      expect(unicodeToKeysym(-1), 0);
       expect(unicodeToKeysym(0x0000), 0);
       expect(unicodeToKeysym(0x001F), 0);
+      expect(unicodeToKeysym(0x007F), 0); // DEL
+      expect(unicodeToKeysym(0x0080), 0); // C1 start
+      expect(unicodeToKeysym(0x009F), 0); // C1 end
+      expect(unicodeToKeysym(0xD800), 0); // High surrogate start
+      expect(unicodeToKeysym(0xDBFF), 0); // High surrogate end
+      expect(unicodeToKeysym(0xDC00), 0); // Low surrogate start
+      expect(unicodeToKeysym(0xDFFF), 0); // Low surrogate end
+      expect(unicodeToKeysym(0x110000), 0); // Above Unicode max
     });
   });
 
@@ -63,6 +76,44 @@ void main() {
       final padded = Uint8List(20);
       padded.setRange(4, 20, custom.toBytes());
       expect(VncPixelFormat.fromBytes(padded, 4), custom);
+    });
+
+    test('fromBytes throws RangeError on truncated input', () {
+      expect(() => VncPixelFormat.fromBytes(Uint8List(15)), throwsRangeError);
+      expect(
+        () => VncPixelFormat.fromBytes(Uint8List(16), 1),
+        throwsRangeError,
+      );
+    });
+  });
+
+  group('VncCursorData', () {
+    test('compares pixel bytes rather than length alone', () {
+      final cursorA1 = VncCursorData(
+        width: 1,
+        height: 1,
+        hotspotX: 0,
+        hotspotY: 0,
+        rgbaPixels: Uint8List.fromList([255, 0, 0, 255]),
+      );
+      final cursorA2 = VncCursorData(
+        width: 1,
+        height: 1,
+        hotspotX: 0,
+        hotspotY: 0,
+        rgbaPixels: Uint8List.fromList([255, 0, 0, 255]),
+      );
+      final cursorB = VncCursorData(
+        width: 1,
+        height: 1,
+        hotspotX: 0,
+        hotspotY: 0,
+        rgbaPixels: Uint8List.fromList([0, 255, 0, 255]),
+      );
+
+      expect(cursorA1, equals(cursorA2));
+      expect(cursorA1.hashCode, equals(cursorA2.hashCode));
+      expect(cursorA1, isNot(equals(cursorB)));
     });
   });
 }

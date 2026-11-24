@@ -1,3 +1,6 @@
+import 'package:meta/meta.dart';
+
+@immutable
 sealed class VncException implements Exception {
   const VncException(this.message, [this.cause]);
 
