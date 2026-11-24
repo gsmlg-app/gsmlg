@@ -7,6 +7,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:gsmlg/screens/toolbox/vnc/vnc_hosts_screen.dart';
 import 'package:gsmlg/screens/toolbox/vnc/vnc_launch_config.dart';
 import 'package:gsmlg/screens/toolbox/vnc/vnc_session_screen.dart';
@@ -279,6 +280,165 @@ void main() {
 
         expect(find.text('Host is required'), findsOneWidget);
         expect(find.byType(VncHostFormDialog), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'tapping a saved host with a missing SSH tunnel host shows error SnackBar and does not navigate',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1200, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final now = DateTime(2026, 11, 24);
+        final danglingHost = VncHost(
+          id: 42,
+          name: 'Dangling Tunnel Box',
+          host: '10.0.0.25',
+          port: 5901,
+          authType: VncHostAuthType.vncPassword.value,
+          username: null,
+          passwordRef: null,
+          sshHostId: 999,
+          viewOnly: false,
+          createdAt: now,
+          lastConnectedAt: null,
+        );
+
+        whenListen(
+          vncHostBloc,
+          const Stream<VncHostState>.empty(),
+          initialState: VncHostState(hosts: [danglingHost]),
+        );
+        whenListen(
+          sshHostBloc,
+          const Stream<SshHostState>.empty(),
+          initialState: const SshHostLoaded([]),
+        );
+
+        var sessionRouteOpened = false;
+        final router = GoRouter(
+          initialLocation: '/vnc',
+          routes: [
+            GoRoute(
+              name: VncScreen.name,
+              path: '/vnc',
+              builder: (_, _) => const VncScreen(autoDiscover: false),
+              routes: [
+                GoRoute(
+                  name: VncSessionScreen.name,
+                  path: VncSessionScreen.path,
+                  builder: (_, _) {
+                    sessionRouteOpened = true;
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+
+        await tester.pumpWidget(
+          RepositoryProvider<SharedPreferences>.value(
+            value: sharedPrefs,
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider<DmThemeBloc>.value(value: themeBloc),
+                BlocProvider<VncHostBloc>.value(value: vncHostBloc),
+                BlocProvider<SshHostBloc>.value(value: sshHostBloc),
+              ],
+              child: MaterialApp.router(
+                localizationsDelegates: AppLocale.localizationsDelegates,
+                supportedLocales: AppLocale.supportedLocales,
+                routerConfig: router,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Dangling Tunnel Box'));
+        await tester.pumpAndSettle();
+
+        expect(sessionRouteOpened, isFalse);
+        expect(find.byType(SnackBar), findsOneWidget);
+        expect(
+          find.textContaining('Configured SSH tunnel host was not found'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'VncHostFormDialog rejects malformed host:port and bracket inputs',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(1200, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        VncHostFormResult? result;
+        await tester.pumpWidget(
+          wrapWithApp(
+            Builder(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: FilledButton(
+                    onPressed: () async {
+                      result = await VncHostFormDialog.show(
+                        context,
+                        mode: VncHostFormMode.quickConnect,
+                      );
+                    },
+                    child: const Text('Open Form'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Open Form'));
+        await tester.pumpAndSettle();
+
+        final hostField = find.widgetWithText(TextFormField, 'Host');
+        final connectButton = find.widgetWithText(FilledButton, 'Connect');
+
+        for (final malformed in const [
+          '192.168.1.10:99999',
+          'host:abc',
+          ':5900',
+          '[]',
+          '[::1]:99999',
+          '[::1]:abc',
+          'host:0',
+          'host:',
+          '[::1',
+        ]) {
+          await tester.enterText(hostField, malformed);
+          await tester.tap(connectButton);
+          await tester.pumpAndSettle();
+
+          expect(
+            find.byType(VncHostFormDialog),
+            findsOneWidget,
+            reason: 'Expected "$malformed" to be rejected',
+          );
+          expect(
+            result,
+            isNull,
+            reason: 'Expected no result for malformed input "$malformed"',
+          );
+        }
+
+        // Valid [ipv6]:port syntax is accepted and parsed cleanly.
+        await tester.enterText(hostField, '[::1]:5901');
+        await tester.tap(connectButton);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(VncHostFormDialog), findsNothing);
+        expect(result, isNotNull);
+        expect(result!.host, '::1');
+        expect(result!.port, 5901);
       },
     );
   });

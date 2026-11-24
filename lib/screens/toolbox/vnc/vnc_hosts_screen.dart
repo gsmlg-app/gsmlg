@@ -29,21 +29,38 @@ class VncScreen extends StatefulWidget {
 }
 
 class _VncScreenState extends State<VncScreen> {
+  bool _isLaunching = false;
+
   @override
   void initState() {
     super.initState();
-    if (widget.autoDiscover) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.read<VncHostBloc>().add(const VncHostDiscoverLan());
-        }
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final sshHostBloc = _maybeReadSshHostBloc(context);
+      if (sshHostBloc != null && sshHostBloc.state is SshHostInitial) {
+        sshHostBloc.add(SshHostLoad());
+      }
+      final sshKeyBloc = _maybeReadSshKeyBloc(context);
+      if (sshKeyBloc != null && sshKeyBloc.state is SshKeyInitial) {
+        sshKeyBloc.add(SshKeyLoad());
+      }
+      if (widget.autoDiscover) {
+        context.read<VncHostBloc>().add(const VncHostDiscoverLan());
+      }
+    });
   }
 
   SshHostBloc? _maybeWatchSshHostBloc(BuildContext context) {
     try {
       return context.watch<SshHostBloc>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
+  SshHostBloc? _maybeReadSshHostBloc(BuildContext context) {
+    try {
+      return context.read<SshHostBloc>();
     } on ProviderNotFoundException {
       return null;
     }
@@ -98,20 +115,28 @@ class _VncScreenState extends State<VncScreen> {
     if (sshHostId == null) {
       return null;
     }
-    // Gracefully tolerate dangling sshHostId when the referenced SshHost was deleted.
     final sshHost = sshHostMap[sshHostId];
     if (sshHost == null) {
-      return null;
+      throw StateError(
+        'Configured SSH tunnel host was not found. Update or remove the SSH tunnel before connecting.',
+      );
     }
 
     final hostAddress = (sshHost.hostname?.trim().isNotEmpty ?? false)
         ? sshHost.hostname!.trim()
         : (sshHost.host?.trim() ?? '');
     if (hostAddress.isEmpty) {
-      return null;
+      throw StateError(
+        'Configured SSH tunnel host has no hostname or address.',
+      );
     }
 
     final credentials = _maybeReadSshCredentials(context);
+    if (credentials == null) {
+      throw StateError(
+        'SSH credentials service is unavailable for the configured SSH tunnel.',
+      );
+    }
     final port = sshHost.port ?? 22;
     final username = sshHost.username?.trim() ?? '';
 
@@ -128,7 +153,7 @@ class _VncScreenState extends State<VncScreen> {
           }
         }
       }
-      if (sshKey == null || credentials == null) {
+      if (sshKey == null) {
         throw StateError('SSH private key not found for tunnel host.');
       }
       final privateKeyPem = await credentials.readPrivateKey(sshKey);
@@ -142,7 +167,7 @@ class _VncScreenState extends State<VncScreen> {
       );
     }
 
-    final sshPassword = await credentials?.readHostPassword(sshHost);
+    final sshPassword = await credentials.readHostPassword(sshHost);
     return VncSshTunnelConfig(
       host: hostAddress,
       port: port,
@@ -170,15 +195,17 @@ class _VncScreenState extends State<VncScreen> {
     VncHost host,
     Map<int, SshHost> sshHostMap,
   ) async {
+    if (_isLaunching) return;
+    _isLaunching = true;
     final vncHostBloc = context.read<VncHostBloc>();
     try {
-      final password = await vncHostBloc.repository.readPassword(host);
-      if (!mounted) return;
       final sshTunnel = await _buildSshTunnelConfig(
         context,
         host.sshHostId,
         sshHostMap,
       );
+      if (!mounted) return;
+      final password = await vncHostBloc.repository.readPassword(host);
       if (!mounted) return;
 
       vncHostBloc.add(VncHostMarkConnected(host.id));
@@ -203,6 +230,8 @@ class _VncScreenState extends State<VncScreen> {
       );
     } catch (error) {
       _showErrorSnackBar(error);
+    } finally {
+      _isLaunching = false;
     }
   }
 
@@ -215,8 +244,9 @@ class _VncScreenState extends State<VncScreen> {
       mode: VncHostFormMode.quickConnect,
       sshHosts: sshHosts,
     );
-    if (result == null || !mounted) return;
+    if (result == null || !mounted || _isLaunching) return;
 
+    _isLaunching = true;
     try {
       final sshTunnel = await _buildSshTunnelConfig(
         context,
@@ -242,6 +272,8 @@ class _VncScreenState extends State<VncScreen> {
       );
     } catch (error) {
       _showErrorSnackBar(error);
+    } finally {
+      _isLaunching = false;
     }
   }
 

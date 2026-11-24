@@ -144,47 +144,101 @@ class _VncHostFormDialogState extends State<VncHostFormDialog> {
     super.dispose();
   }
 
-  /// Splits optional `:port` suffix from a pasted `host:port` or `[ipv6]:port`
-  /// string while preserving bare IPv6 literals such as `::1`.
-  ({String host, int? port}) _parseHostAndPort(String raw) {
+  static final RegExp _digitsOnly = RegExp(r'^\d+$');
+  static final RegExp _whitespace = RegExp(r'\s');
+
+  bool _isValidIpv6Literal(String value) {
+    final percentIdx = value.indexOf('%');
+    final addressPart = percentIdx >= 0
+        ? value.substring(0, percentIdx)
+        : value;
+    if (percentIdx >= 0) {
+      final zone = value.substring(percentIdx + 1);
+      if (zone.isEmpty || zone.contains(':')) {
+        return false;
+      }
+    }
+    try {
+      Uri.parseIPv6Address(addressPart);
+      return true;
+    } on FormatException {
+      return false;
+    }
+  }
+
+  /// Strictly parses a host field supporting `hostname`, `ipv4`, bare `ipv6`,
+  /// `host:port`, and `[ipv6]:port`, returning a validation error on malformed
+  /// inline port or bracket syntax.
+  ({String? host, int? port, String? error}) _parseHostAndPort(String raw) {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) {
-      return (host: '', port: null);
+      return (host: null, port: null, error: 'required');
+    }
+    if (_whitespace.hasMatch(trimmed)) {
+      return (host: null, port: null, error: 'Invalid host');
     }
 
-    if (trimmed.startsWith('[')) {
+    if (trimmed.contains('[') || trimmed.contains(']')) {
+      final openIdx = trimmed.indexOf('[');
       final closeIdx = trimmed.indexOf(']');
-      if (closeIdx > 1) {
-        final hostPart = trimmed.substring(1, closeIdx).trim();
-        final rest = trimmed.substring(closeIdx + 1);
-        if (rest.isEmpty) {
-          return (host: hostPart, port: null);
-        }
-        if (rest.startsWith(':')) {
-          final parsedPort = int.tryParse(rest.substring(1).trim());
-          if (parsedPort != null && parsedPort >= 1 && parsedPort <= 65535) {
-            return (host: hostPart, port: parsedPort);
-          }
-        }
+      final hasSingleBrackets =
+          openIdx == 0 &&
+          closeIdx > 1 &&
+          trimmed.lastIndexOf('[') == openIdx &&
+          trimmed.lastIndexOf(']') == closeIdx;
+      if (!hasSingleBrackets) {
+        return (host: null, port: null, error: 'Invalid bracketed host');
       }
-      return (host: trimmed, port: null);
+      final hostPart = trimmed.substring(1, closeIdx);
+      if (hostPart.isEmpty ||
+          (hostPart.contains(':') && !_isValidIpv6Literal(hostPart))) {
+        return (host: null, port: null, error: 'Invalid IPv6 host');
+      }
+      final rest = trimmed.substring(closeIdx + 1);
+      if (rest.isEmpty) {
+        return (host: hostPart, port: null, error: null);
+      }
+      if (!rest.startsWith(':')) {
+        return (host: null, port: null, error: 'Invalid host:port syntax');
+      }
+      final portPart = rest.substring(1);
+      if (!_digitsOnly.hasMatch(portPart)) {
+        return (host: null, port: null, error: 'Port must be 1-65535');
+      }
+      final parsedPort = int.tryParse(portPart);
+      if (parsedPort == null || parsedPort < 1 || parsedPort > 65535) {
+        return (host: null, port: null, error: 'Port must be 1-65535');
+      }
+      return (host: hostPart, port: parsedPort, error: null);
     }
 
     final firstColon = trimmed.indexOf(':');
-    final lastColon = trimmed.lastIndexOf(':');
-    if (firstColon > 0 && firstColon == lastColon) {
-      final hostPart = trimmed.substring(0, firstColon).trim();
-      final portPart = trimmed.substring(firstColon + 1).trim();
-      final parsedPort = int.tryParse(portPart);
-      if (hostPart.isNotEmpty &&
-          parsedPort != null &&
-          parsedPort >= 1 &&
-          parsedPort <= 65535) {
-        return (host: hostPart, port: parsedPort);
-      }
+    if (firstColon == -1) {
+      return (host: trimmed, port: null, error: null);
     }
 
-    return (host: trimmed, port: null);
+    final lastColon = trimmed.lastIndexOf(':');
+    if (firstColon == lastColon) {
+      final hostPart = trimmed.substring(0, firstColon);
+      final portPart = trimmed.substring(firstColon + 1);
+      if (hostPart.isEmpty) {
+        return (host: null, port: null, error: 'Host is required before port');
+      }
+      if (!_digitsOnly.hasMatch(portPart)) {
+        return (host: null, port: null, error: 'Port must be 1-65535');
+      }
+      final parsedPort = int.tryParse(portPart);
+      if (parsedPort == null || parsedPort < 1 || parsedPort > 65535) {
+        return (host: null, port: null, error: 'Port must be 1-65535');
+      }
+      return (host: hostPart, port: parsedPort, error: null);
+    }
+
+    // Multiple colons without brackets: only valid as a bare IPv6 literal.
+    if (_isValidIpv6Literal(trimmed)) {
+      return (host: trimmed, port: null, error: null);
+    }
+    return (host: null, port: null, error: 'Invalid host or IPv6 address');
   }
 
   void _submit() {
@@ -193,11 +247,15 @@ class _VncHostFormDialogState extends State<VncHostFormDialog> {
     }
 
     final parsed = _parseHostAndPort(_hostController.text);
+    final parsedHost = parsed.host;
+    if (parsed.error != null || parsedHost == null) {
+      return;
+    }
     final fieldPort = int.tryParse(_portController.text.trim()) ?? 5900;
     final effectivePort = parsed.port ?? fieldPort;
     final effectiveName = _showNameField
         ? _nameController.text.trim()
-        : '${parsed.host}:$effectivePort';
+        : '$parsedHost:$effectivePort';
 
     final usernameText = _usernameController.text.trim();
     final effectiveUsername = _showUsernameField && usernameText.isNotEmpty
@@ -217,7 +275,7 @@ class _VncHostFormDialogState extends State<VncHostFormDialog> {
     Navigator.of(context).pop(
       VncHostFormResult(
         name: effectiveName,
-        host: parsed.host,
+        host: parsedHost,
         port: effectivePort,
         authType: _authType,
         username: effectiveUsername,
@@ -316,8 +374,11 @@ class _VncHostFormDialogState extends State<VncHostFormDialog> {
                         autofocus: widget.mode == VncHostFormMode.quickConnect,
                         validator: (value) {
                           final parsed = _parseHostAndPort(value ?? '');
-                          if (parsed.host.isEmpty) {
+                          if (parsed.error == 'required') {
                             return '${l10n.vncHostLabel} is required';
+                          }
+                          if (parsed.error != null) {
+                            return parsed.error;
                           }
                           return null;
                         },
@@ -338,10 +399,10 @@ class _VncHostFormDialogState extends State<VncHostFormDialog> {
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         validator: (value) {
-                          final inlinePort = _parseHostAndPort(
+                          final parsed = _parseHostAndPort(
                             _hostController.text,
-                          ).port;
-                          if (inlinePort != null) {
+                          );
+                          if (parsed.error == null && parsed.port != null) {
                             return null;
                           }
                           final text = value?.trim() ?? '';
@@ -426,6 +487,7 @@ class _VncHostFormDialogState extends State<VncHostFormDialog> {
                     autocorrect: false,
                     enableSuggestions: false,
                     textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
                   ),
                   if (_hasExistingPassword)
                     CheckboxListTile(

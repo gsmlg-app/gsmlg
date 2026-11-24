@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:app_locale/app_locale.dart';
+import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gsmlg/screens/toolbox/vnc/vnc_launch_config.dart';
 import 'package:gsmlg/screens/toolbox/vnc/vnc_screen.dart';
@@ -160,17 +160,25 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
     }
   }
 
-  Color _statusDotColor(VncSessionStatus status) => switch (status) {
-    VncSessionStatus.connected => Colors.greenAccent,
+  Color _statusDotColor(
+    VncSessionStatus status,
+    ColorScheme colorScheme,
+    DmColorExtension? dmColors,
+  ) => switch (status) {
+    VncSessionStatus.connected => dmColors?.success ?? colorScheme.primary,
     VncSessionStatus.connecting ||
-    VncSessionStatus.authRequired => Colors.amberAccent,
-    VncSessionStatus.error => Colors.redAccent,
-    VncSessionStatus.idle || VncSessionStatus.disconnected => Colors.grey,
+    VncSessionStatus.authRequired => dmColors?.warning ?? colorScheme.tertiary,
+    VncSessionStatus.error => colorScheme.error,
+    VncSessionStatus.idle ||
+    VncSessionStatus.disconnected => colorScheme.outline,
   };
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final dmColors = theme.extension<DmColorExtension>();
     final launch = _launch;
     final bloc = _bloc;
 
@@ -183,10 +191,7 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  l10n.vncDisconnected,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text(l10n.vncDisconnected, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   onPressed: _disconnectAndExit,
@@ -230,7 +235,7 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
           ),
         ],
         child: Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: colorScheme.surfaceContainerLowest,
           body: SafeArea(
             top: !_isFullscreen,
             bottom: !_isFullscreen,
@@ -251,7 +256,11 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
                                     state.height > 0
                                 ? '${state.width}×${state.height}'
                                 : null,
-                            statusColor: _statusDotColor(state.status),
+                            statusColor: _statusDotColor(
+                              state.status,
+                              colorScheme,
+                              dmColors,
+                            ),
                             scaleMode: _scaleMode,
                             touchMode: _touchMode,
                             viewOnly: state.viewOnly,
@@ -295,12 +304,14 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
                         top: 8,
                         right: 8,
                         child: Material(
-                          color: Colors.black54,
+                          color: colorScheme.surfaceContainerHigh.withValues(
+                            alpha: 0.9,
+                          ),
                           shape: const StadiumBorder(),
                           child: IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.keyboard_arrow_down,
-                              color: Colors.white,
+                              color: colorScheme.onSurface,
                             ),
                             tooltip: l10n.vncTitle,
                             onPressed: () =>
@@ -324,6 +335,8 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
     VncSessionState state,
   ) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     switch (state.status) {
       case VncSessionStatus.idle:
       case VncSessionStatus.connecting:
@@ -336,14 +349,16 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
               const SizedBox(height: 16),
               Text(
                 l10n.vncConnecting,
-                style: const TextStyle(color: Colors.white),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                ),
               ),
               if (state.config != null) ...[
                 const SizedBox(height: 6),
                 Text(
                   '${state.config!.host}:${state.config!.port}',
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                     fontFamily: 'monospace',
                   ),
                 ),
@@ -542,14 +557,23 @@ class _SessionToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final dmColors = theme.extension<DmColorExtension>();
+    final activeHighlight = colorScheme.primary;
+    final warningHighlight = dmColors?.warning ?? colorScheme.tertiary;
+
     return Material(
-      color: Colors.grey.shade900,
-      child: SizedBox(
+      color: colorScheme.surfaceContainerHigh,
+      child: Container(
         height: 48,
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+        ),
         child: Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
               tooltip: l10n.vncDisconnect,
               onPressed: onDisconnect,
             ),
@@ -568,8 +592,8 @@ class _SessionToolbar extends StatelessWidget {
                   Flexible(
                     child: Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -580,9 +604,8 @@ class _SessionToolbar extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       resolution!,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
                         fontFamily: 'monospace',
                       ),
                     ),
@@ -595,7 +618,7 @@ class _SessionToolbar extends StatelessWidget {
                 scaleMode == VncScaleMode.fit
                     ? Icons.fit_screen
                     : Icons.zoom_out_map,
-                color: Colors.white,
+                color: colorScheme.onSurface,
                 size: 20,
               ),
               tooltip: scaleMode == VncScaleMode.fit
@@ -609,8 +632,8 @@ class _SessionToolbar extends StatelessWidget {
                     ? Icons.mouse_outlined
                     : Icons.touch_app_outlined,
                 color: touchMode == VncTouchMode.trackpad
-                    ? Colors.lightBlueAccent
-                    : Colors.white,
+                    ? activeHighlight
+                    : colorScheme.onSurface,
                 size: 20,
               ),
               tooltip: touchMode == VncTouchMode.trackpad
@@ -621,16 +644,18 @@ class _SessionToolbar extends StatelessWidget {
             IconButton(
               icon: Icon(
                 viewOnly ? Icons.visibility : Icons.visibility_outlined,
-                color: viewOnly ? Colors.amberAccent : Colors.white,
+                color: viewOnly ? warningHighlight : colorScheme.onSurface,
                 size: 20,
               ),
               tooltip: l10n.vncViewOnlyLabel,
               onPressed: onToggleViewOnly,
             ),
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.content_paste_go,
-                color: Colors.white,
+                color: isConnected
+                    ? colorScheme.onSurface
+                    : colorScheme.onSurface.withValues(alpha: 0.38),
                 size: 20,
               ),
               tooltip: l10n.vncSyncClipboard,
@@ -641,7 +666,11 @@ class _SessionToolbar extends StatelessWidget {
                 showShortcutBar
                     ? Icons.keyboard_hide_outlined
                     : Icons.keyboard_outlined,
-                color: showShortcutBar ? Colors.lightBlueAccent : Colors.white,
+                color: !isConnected
+                    ? colorScheme.onSurface.withValues(alpha: 0.38)
+                    : (showShortcutBar
+                          ? activeHighlight
+                          : colorScheme.onSurface),
                 size: 20,
               ),
               tooltip: 'Shortcuts',
@@ -650,16 +679,16 @@ class _SessionToolbar extends StatelessWidget {
             IconButton(
               icon: Icon(
                 isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                color: isFullscreen ? Colors.lightBlueAccent : Colors.white,
+                color: isFullscreen ? activeHighlight : colorScheme.onSurface,
                 size: 20,
               ),
               tooltip: l10n.vncFullscreen,
               onPressed: onToggleFullscreen,
             ),
             IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.keyboard_arrow_up,
-                color: Colors.white70,
+                color: colorScheme.onSurfaceVariant,
                 size: 20,
               ),
               tooltip: 'Hide toolbar',
