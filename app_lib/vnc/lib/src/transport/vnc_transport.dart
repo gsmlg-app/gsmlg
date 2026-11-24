@@ -9,22 +9,57 @@ import '../models/vnc_models.dart';
 
 /// Bidirectional byte transport backing an RFB/VNC connection.
 abstract interface class VncTransport {
+  /// Incoming byte chunks received from the remote VNC server.
   Stream<Uint8List> get stream;
 
+  /// Enqueues [data] to be sent to the remote VNC server.
+  ///
+  /// Throws a [StateError] if [close] has already been called.
   void add(Uint8List data);
 
+  /// Flushes any buffered outbound bytes to the underlying transport.
   Future<void> flush();
 
+  /// Gracefully closes the transport, falling back to forceful teardown on
+  /// error or timeout.
+  ///
+  /// Safe to call multiple times or concurrently; subsequent calls return the
+  /// same future.
   Future<void> close();
 
+  /// Completes when the transport has terminated, either because the remote
+  /// peer closed the connection or because [close] finished.
   Future<void> get done;
 }
 
 /// Direct TCP transport for VNC connections.
 class TcpVncTransport implements VncTransport {
-  TcpVncTransport._(this._socket);
+  TcpVncTransport._(
+    this._socket, {
+    Duration closeTimeout = const Duration(seconds: 2),
+  }) : _closeTimeout = closeTimeout {
+    _stream = _socket.transform(
+      StreamTransformer<Uint8List, Uint8List>.fromHandlers(
+        handleData: (data, sink) => sink.add(data),
+        handleError: (error, stackTrace, sink) {
+          _completeDone();
+          sink.addError(error, stackTrace);
+        },
+        handleDone: (sink) {
+          _completeDone();
+          sink.close();
+        },
+      ),
+    );
+    unawaited(
+      _socket.done.catchError((Object _) {}).whenComplete(_completeDone),
+    );
+  }
 
   final Socket _socket;
+  final Duration _closeTimeout;
+  final Completer<void> _doneCompleter = Completer<void>();
+  late final Stream<Uint8List> _stream;
   Future<void>? _closeFuture;
 
   static Future<TcpVncTransport> connect({
@@ -49,30 +84,46 @@ class TcpVncTransport implements VncTransport {
     }
   }
 
-  @override
-  Stream<Uint8List> get stream => _socket;
+  void _completeDone() {
+    if (!_doneCompleter.isCompleted) {
+      _doneCompleter.complete();
+    }
+  }
 
   @override
-  void add(Uint8List data) => _socket.add(data);
+  Stream<Uint8List> get stream => _stream;
+
+  @override
+  void add(Uint8List data) {
+    if (_closeFuture != null) {
+      throw StateError('Transport is closed');
+    }
+    _socket.add(data);
+  }
 
   @override
   Future<void> flush() => _socket.flush();
 
   @override
-  Future<void> get done => _socket.done;
+  Future<void> get done => _doneCompleter.future;
 
   @override
   Future<void> close() => _closeFuture ??= _closeInternal();
 
   Future<void> _closeInternal() async {
     try {
-      await _socket.close();
+      final closeFuture = _socket.close();
+      unawaited(closeFuture.catchError((Object _) {}));
+      await closeFuture.timeout(_closeTimeout);
     } catch (_) {
+      // Fall through to destroy() below.
+    } finally {
       try {
         _socket.destroy();
       } catch (_) {
         // Suppress errors when destroying an already broken socket.
       }
+      _completeDone();
     }
   }
 }
@@ -102,21 +153,34 @@ class SshTunnelVncTransport implements VncTransport {
     SSHSocket? socket;
     SSHClient? client;
     SSHForwardChannel? channel;
+    final stopwatch = Stopwatch()..start();
+
+    Duration remainingTimeout() {
+      final remaining = timeout - stopwatch.elapsed;
+      if (remaining <= Duration.zero) {
+        throw TimeoutException(
+          'SSH tunnel setup timed out after $timeout',
+          timeout,
+        );
+      }
+      return remaining;
+    }
 
     try {
       List<SSHKeyPair>? identities;
       final privateKeyPem = tunnel.privateKeyPem;
       if (privateKeyPem != null && privateKeyPem.trim().isNotEmpty) {
-        identities = SSHKeyPair.fromPem(
-          privateKeyPem,
-          tunnel.privateKeyPassphrase,
-        );
+        final passphrase = tunnel.privateKeyPassphrase;
+        final normalizedPassphrase = (passphrase == null || passphrase.isEmpty)
+            ? null
+            : passphrase;
+        identities = SSHKeyPair.fromPem(privateKeyPem, normalizedPassphrase);
       }
 
       socket = await SSHSocket.connect(
         tunnel.host,
         tunnel.port,
-        timeout: timeout,
+        timeout: remainingTimeout(),
       );
 
       client = SSHClient(
@@ -128,11 +192,13 @@ class SshTunnelVncTransport implements VncTransport {
             : null,
       );
 
-      await client.authenticated.timeout(timeout);
+      final authFuture = client.authenticated;
+      unawaited(authFuture.then<void>((_) {}, onError: (Object _) {}));
+      await authFuture.timeout(remainingTimeout());
 
-      channel = await client
-          .forwardLocal(remoteHost, remotePort)
-          .timeout(timeout);
+      final forwardFuture = client.forwardLocal(remoteHost, remotePort);
+      unawaited(forwardFuture.then<void>((_) {}, onError: (Object _) {}));
+      channel = await forwardFuture.timeout(remainingTimeout());
 
       final establishedClient = client;
       return SshTunnelVncTransport.fromChannel(
@@ -177,7 +243,9 @@ class SshTunnelVncTransport implements VncTransport {
       } catch (_) {}
     } else if (socket != null) {
       try {
-        await socket.close();
+        final closeFuture = socket.close();
+        unawaited(closeFuture.catchError((Object _) {}));
+        await closeFuture.timeout(const Duration(seconds: 2));
       } catch (_) {
         try {
           socket.destroy();
@@ -190,7 +258,12 @@ class SshTunnelVncTransport implements VncTransport {
   Stream<Uint8List> get stream => _stream;
 
   @override
-  void add(Uint8List data) => _channel.sink.add(data);
+  void add(Uint8List data) {
+    if (_closeFuture != null) {
+      throw StateError('Transport is closed');
+    }
+    _channel.sink.add(data);
+  }
 
   @override
   Future<void> flush() async {
@@ -208,7 +281,9 @@ class SshTunnelVncTransport implements VncTransport {
 
   Future<void> _closeInternal() async {
     try {
-      await _channel.close().timeout(_closeTimeout);
+      final closeFuture = _channel.close();
+      unawaited(closeFuture.catchError((Object _) {}));
+      await closeFuture.timeout(_closeTimeout);
     } catch (_) {
       try {
         _channel.destroy();
