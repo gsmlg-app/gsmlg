@@ -19,6 +19,7 @@ import 'package:gsmlg/screens/toolbox/log_viewer/log_viewer_screen.dart';
 import 'package:gsmlg/screens/toolbox/monitor/monitor_screen.dart';
 import 'package:gsmlg/screens/toolbox/terminal/terminal_screen.dart';
 import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_screen.dart';
+import 'package:gsmlg/screens/toolbox/vnc/vnc_screen.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_screen.dart';
 
 class ToolboxScreen extends StatelessWidget {
@@ -81,6 +82,11 @@ class ToolboxScreen extends StatelessWidget {
                   AppGridTile(
                     onTap: () => context.menuGoNamed(TerminalScreen.name),
                     child: Text(context.l10n.terminalTitle),
+                  ),
+                if (!kIsWeb)
+                  AppGridTile(
+                    onTap: () => context.menuGoNamed(VncScreen.name),
+                    child: Text(context.l10n.vncTitle),
                   ),
                 AppGridTile(
                   onTap: () => context.menuGoNamed(EditorScreen.name),

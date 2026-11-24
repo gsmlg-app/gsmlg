@@ -12,6 +12,8 @@ import 'package:gsmlg/screens/toolbox/terminal/terminal_screen.dart';
 import 'package:gsmlg/screens/toolbox/toolbox_screen.dart';
 import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_project_screen.dart';
 import 'package:gsmlg/screens/toolbox/tts_dataset/tts_dataset_screen.dart';
+import 'package:gsmlg/screens/toolbox/vnc/vnc_screen.dart';
+import 'package:gsmlg/screens/toolbox/vnc/vnc_session_route.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_history_screen.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_history_show_screen.dart';
 import 'package:gsmlg/screens/toolbox/whois/whois_screen.dart';
@@ -36,6 +38,26 @@ GoRoute toolboxRoutes() => GoRoute(
         restorationId: state.pageKey.value,
         child: const TerminalScreen(),
       ),
+    ),
+    GoRoute(
+      name: VncScreen.name,
+      path: VncScreen.path,
+      pageBuilder: (context, state) => NoTransitionPage<void>(
+        key: state.pageKey,
+        restorationId: state.pageKey.value,
+        child: const VncScreen(),
+      ),
+      routes: [
+        GoRoute(
+          name: VncSessionScreen.name,
+          path: VncSessionScreen.path,
+          pageBuilder: (context, state) => NoTransitionPage<void>(
+            key: state.pageKey,
+            restorationId: state.pageKey.value,
+            child: VncSessionScreen(launchConfig: state.extra),
+          ),
+        ),
+      ],
     ),
     GoRoute(
       name: EditorScreen.name,
