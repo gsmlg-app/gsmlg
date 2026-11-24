@@ -1,5 +1,7 @@
 export 'src/crypto/ard_auth.dart';
 export 'src/crypto/vnc_des.dart';
+export 'src/discovery/vnc_mdns_discovery.dart';
+export 'src/isolate/vnc_isolate_client.dart';
 export 'src/models/vnc_exceptions.dart';
 export 'src/models/vnc_models.dart';
 export 'src/protocol/byte_reader.dart';
@@ -7,4 +9,5 @@ export 'src/protocol/framebuffer.dart';
 export 'src/protocol/keysyms.dart';
 export 'src/protocol/rfb_encodings.dart';
 export 'src/protocol/rfb_handshake.dart';
+export 'src/protocol/rfb_session.dart';
 export 'src/transport/vnc_transport.dart';
