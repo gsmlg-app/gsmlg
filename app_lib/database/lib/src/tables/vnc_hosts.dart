@@ -29,6 +29,13 @@ class VncHosts extends Table {
   IntColumn get authType => integer().withDefault(const Constant(0))();
   TextColumn get username => text().nullable()();
   TextColumn get passwordRef => text().nullable()();
+
+  /// Optional foreign key to [SshHosts.id] for SSH-tunneled VNC connections.
+  ///
+  /// Note: `AppDatabase` leaves SQLite `PRAGMA foreign_keys = OFF` globally, so
+  /// `ON DELETE SET NULL` is not enforced at runtime unless enabled per
+  /// connection. Callers must tolerate dangling [sshHostId] values if the
+  /// referenced `SshHost` has been deleted.
   IntColumn get sshHostId => integer()
       .nullable()
       .references(SshHosts, #id, onDelete: KeyAction.setNull)();

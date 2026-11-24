@@ -79,10 +79,14 @@ void main() {
       expect(remaining, isEmpty);
     });
 
-    test('sets sshHostId to null when referenced SshHost is deleted', () async {
+    test(
+        'declares ON DELETE SET NULL DDL for sshHostId (verified with PRAGMA foreign_keys = ON)',
+        () async {
       final db = AppDatabase.forTesting();
       addTearDown(db.close);
 
+      // AppDatabase intentionally leaves PRAGMA foreign_keys = OFF globally;
+      // enable it on this test connection to verify the generated FK DDL.
       await db.customStatement('PRAGMA foreign_keys = ON');
 
       final sshHostId = await db.into(db.sshHosts).insert(
@@ -114,7 +118,9 @@ void main() {
       expect(afterDelete.sshHostId, isNull);
     });
 
-    test('upgrades schema v22 to v23 and creates vnc_hosts table', () async {
+    test(
+        'upgrades schema v22 to v23 preserving ssh_hosts and creating vnc_hosts',
+        () async {
       final db = AppDatabase(NativeDatabase.memory(setup: (sqlite) {
         sqlite.execute('''
           CREATE TABLE ssh_hosts (
@@ -130,16 +136,28 @@ void main() {
             created_at INTEGER NULL
           )
         ''');
+        sqlite.execute('''
+          INSERT INTO ssh_hosts (id, host, hostname, port, username)
+          VALUES (7, 'Jump Box', 'jump.example.test', 22, 'ops')
+        ''');
         sqlite.execute('PRAGMA user_version = 22');
       }));
       addTearDown(db.close);
 
       expect(db.schemaVersion, 23);
 
+      final existingSshHost = await db.select(db.sshHosts).getSingle();
+      expect(existingSshHost.id, 7);
+      expect(existingSshHost.host, 'Jump Box');
+      expect(existingSshHost.hostname, 'jump.example.test');
+      expect(existingSshHost.port, 22);
+      expect(existingSshHost.username, 'ops');
+
       final id = await db.into(db.vncHosts).insert(
             VncHostsCompanion.insert(
               name: 'Migrated VNC',
               host: '127.0.0.1',
+              sshHostId: Value(existingSshHost.id),
             ),
           );
 
@@ -147,6 +165,7 @@ void main() {
           .getSingle();
       expect(row.name, 'Migrated VNC');
       expect(row.port, 5900);
+      expect(row.sshHostId, existingSshHost.id);
 
       final version = await db.customSelect('PRAGMA user_version').getSingle();
       expect(version.read<int>('user_version'), 23);
