@@ -19,6 +19,8 @@ class VncSessionState extends Equatable {
     this.desktopInfo,
     this.width = 0,
     this.height = 0,
+    this.screens = const [],
+    this.activeRegion,
     this.viewOnly = false,
     this.authSecurityType,
     this.authRequiresUsername = false,
@@ -34,6 +36,8 @@ class VncSessionState extends Equatable {
   final VncDesktopInfo? desktopInfo;
   final int width;
   final int height;
+  final List<VncScreenInfo> screens;
+  final VncScreenInfo? activeRegion;
   final bool viewOnly;
   final int? authSecurityType;
   final bool authRequiresUsername;
@@ -49,6 +53,8 @@ class VncSessionState extends Equatable {
     VncDesktopInfo? desktopInfo,
     int? width,
     int? height,
+    List<VncScreenInfo>? screens,
+    VncScreenInfo? activeRegion,
     bool? viewOnly,
     int? authSecurityType,
     bool? authRequiresUsername,
@@ -58,6 +64,7 @@ class VncSessionState extends Equatable {
     VncException? error,
     String? disconnectReason,
     bool clearDesktopInfo = false,
+    bool clearActiveRegion = false,
     bool clearError = false,
     bool clearAuth = false,
     bool clearDisconnectReason = false,
@@ -69,6 +76,10 @@ class VncSessionState extends Equatable {
       desktopInfo: clearDesktopInfo ? null : (desktopInfo ?? this.desktopInfo),
       width: width ?? this.width,
       height: height ?? this.height,
+      screens: screens ?? this.screens,
+      activeRegion: clearActiveRegion
+          ? null
+          : (activeRegion ?? this.activeRegion),
       viewOnly: viewOnly ?? this.viewOnly,
       authSecurityType: clearAuth
           ? null
@@ -93,6 +104,8 @@ class VncSessionState extends Equatable {
     desktopInfo,
     width,
     height,
+    screens,
+    activeRegion,
     viewOnly,
     authSecurityType,
     authRequiresUsername,

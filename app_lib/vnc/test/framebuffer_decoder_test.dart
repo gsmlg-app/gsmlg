@@ -844,17 +844,57 @@ void main() {
     });
 
     test(
-      'ExtendedDesktopSize skips screen records and resizes framebuffer',
+      'ExtendedDesktopSize parses screen records and resizes framebuffer',
       () async {
         final fb = VncFramebuffer(10, 10);
         final decoder = RfbRectDecoder();
-        // 2 screens: 1 byte numScreens + 3 bytes padding + 2 * 16 bytes screen records
-        // followed by a trailing sentinel byte 0xAB to verify exact byte consumption.
+
+        Uint8List buildScreenRecord({
+          required int id,
+          required int x,
+          required int y,
+          required int width,
+          required int height,
+          required int flags,
+        }) {
+          final bd = ByteData(16)
+            ..setUint32(0, id, Endian.big)
+            ..setUint16(4, x, Endian.big)
+            ..setUint16(6, y, Endian.big)
+            ..setUint16(8, width, Endian.big)
+            ..setUint16(10, height, Endian.big)
+            ..setUint32(12, flags, Endian.big);
+          return bd.buffer.asUint8List();
+        }
+
+        // 3 records (2 valid screens + 1 zero-sized ignored) + sentinel byte 0xAB
         final bytes = <int>[
-          2, // numScreens
+          3, // numScreens
           0, 0, 0, // padding
-          ...List.filled(16, 0x11), // screen 1
-          ...List.filled(16, 0x22), // screen 2
+          ...buildScreenRecord(
+            id: 1,
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+            flags: 0,
+          ),
+          ...buildScreenRecord(
+            id: 2,
+            x: 1920,
+            y: 0,
+            width: 2560,
+            height: 1440,
+            flags: 1,
+          ),
+          ...buildScreenRecord(
+            id: 3,
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            flags: 0,
+          ),
           0xAB, // sentinel next byte
         ];
         final reader = _readerFromBytes(bytes);
@@ -864,14 +904,35 @@ void main() {
           framebuffer: fb,
           x: 0,
           y: 0,
-          width: 80,
-          height: 60,
+          width: 4480,
+          height: 1440,
           encoding: RfbEncoding.extendedDesktopSize,
         );
 
         expect(result.resized, isTrue);
-        expect(fb.width, 80);
-        expect(fb.height, 60);
+        expect(fb.width, 4480);
+        expect(fb.height, 1440);
+        expect(
+          result.screens,
+          equals(const [
+            VncScreenInfo(
+              id: 1,
+              x: 0,
+              y: 0,
+              width: 1920,
+              height: 1080,
+              flags: 0,
+            ),
+            VncScreenInfo(
+              id: 2,
+              x: 1920,
+              y: 0,
+              width: 2560,
+              height: 1440,
+              flags: 1,
+            ),
+          ]),
+        );
         expect(await reader.readUint8(), 0xAB);
       },
     );

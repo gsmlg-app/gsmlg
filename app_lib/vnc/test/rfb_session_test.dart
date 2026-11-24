@@ -249,7 +249,7 @@ void main() {
         var frameCount = 0;
 
         final loopFuture = session.runMessageLoop(
-          onDesktopResized: (w, h) {
+          onDesktopResized: (w, h, screens) {
             eventOrder.add('resize:${w}x$h');
             resizedTo.add((w, h));
           },
@@ -411,6 +411,122 @@ void main() {
             ),
           ),
         );
+      },
+    );
+
+    test(
+      'setActiveRegion scopes immediate and subsequent framebuffer update requests and restores full framebuffer on null',
+      () async {
+        final largeFb = VncFramebuffer(3840, 1440);
+        final largeSession = RfbSession(
+          transport: pipe,
+          reader: pipe.clientReader,
+          framebuffer: largeFb,
+        );
+        var stop = false;
+        final reportedScreens = <List<VncScreenInfo>>[];
+
+        final loopFuture = largeSession.runMessageLoop(
+          onDesktopResized: (w, h, screens) {
+            reportedScreens.add(screens);
+          },
+          onBell: () {
+            stop = true;
+          },
+          shouldStop: () => stop,
+        );
+
+        // 1. Initial full non-incremental request (0, 0, 3840, 1440).
+        // 3840 = 0x0F00, 1440 = 0x05A0
+        final req1 = await pipe.serverReader.readBytes(10);
+        expect(req1, equals([3, 0, 0, 0, 0, 0, 0x0F, 0x00, 0x05, 0xA0]));
+
+        // Select second monitor region (1920, 0, 1920, 1080).
+        // 1920 = 0x0780, 1080 = 0x0438
+        const monitor2 = VncScreenInfo(
+          id: 2,
+          x: 1920,
+          y: 0,
+          width: 1920,
+          height: 1080,
+          flags: 1,
+        );
+        largeSession.setActiveRegion(monitor2);
+        expect(largeSession.activeRegion, equals(monitor2));
+
+        // 2. Immediately sends non-incremental request scoped to monitor2.
+        final req2 = await pipe.serverReader.readBytes(10);
+        expect(req2, equals([3, 0, 0x07, 0x80, 0, 0, 0x07, 0x80, 0x04, 0x38]));
+
+        // Server replies with an empty FramebufferUpdate; loop requests incremental ONLY for monitor2.
+        pipe.serverSend([0, 0]);
+        pipe.serverSendUint16(0);
+
+        final req3 = await pipe.serverReader.readBytes(10);
+        expect(req3, equals([3, 1, 0x07, 0x80, 0, 0, 0x07, 0x80, 0x04, 0x38]));
+
+        // Server sends ExtendedDesktopSize updating monitor 2 to (1280, 0, 1280, 720) in a 2560x720 desktop.
+        // 2560 = 0x0A00, 720 = 0x02D0, 1280 = 0x0500
+        pipe.serverSend([0, 0]);
+        pipe.serverSendUint16(1);
+        pipe.serverSendRectHeader(
+          x: 0,
+          y: 0,
+          width: 2560,
+          height: 720,
+          encoding: RfbEncoding.extendedDesktopSize,
+        );
+        pipe.serverSend([2, 0, 0, 0]); // 2 screens + 3 bytes padding
+        final screen1Bytes = ByteData(16)
+          ..setUint32(0, 1, Endian.big)
+          ..setUint16(4, 0, Endian.big)
+          ..setUint16(6, 0, Endian.big)
+          ..setUint16(8, 1280, Endian.big)
+          ..setUint16(10, 720, Endian.big)
+          ..setUint32(12, 0, Endian.big);
+        final screen2Bytes = ByteData(16)
+          ..setUint32(0, 2, Endian.big)
+          ..setUint16(4, 1280, Endian.big)
+          ..setUint16(6, 0, Endian.big)
+          ..setUint16(8, 1280, Endian.big)
+          ..setUint16(10, 720, Endian.big)
+          ..setUint32(12, 1, Endian.big);
+        pipe.serverSend(screen1Bytes.buffer.asUint8List());
+        pipe.serverSend(screen2Bytes.buffer.asUint8List());
+
+        // 4. Post-resize non-incremental request uses updated monitor 2 geometry!
+        final req4 = await pipe.serverReader.readBytes(10);
+        expect(req4, equals([3, 0, 0x05, 0x00, 0, 0, 0x05, 0x00, 0x02, 0xD0]));
+        expect(
+          largeSession.activeRegion,
+          equals(
+            const VncScreenInfo(
+              id: 2,
+              x: 1280,
+              y: 0,
+              width: 1280,
+              height: 720,
+              flags: 1,
+            ),
+          ),
+        );
+        expect(reportedScreens, hasLength(1));
+        expect(reportedScreens.single, hasLength(2));
+
+        // Setting null restores full framebuffer non-incremental request (0, 0, 2560, 720).
+        largeSession.setActiveRegion(null);
+        expect(largeSession.activeRegion, isNull);
+        final req5 = await pipe.serverReader.readBytes(10);
+        expect(req5, equals([3, 0, 0, 0, 0, 0, 0x0A, 0x00, 0x02, 0xD0]));
+
+        // Subsequent loop iteration sends incremental request for full framebuffer.
+        pipe.serverSend([0, 0]);
+        pipe.serverSendUint16(0);
+        final req6 = await pipe.serverReader.readBytes(10);
+        expect(req6, equals([3, 1, 0, 0, 0, 0, 0x0A, 0x00, 0x02, 0xD0]));
+
+        pipe.serverSend([2]); // Bell to exit loop
+        await loopFuture;
       },
     );
   });

@@ -29,6 +29,7 @@ class FakeVncSessionClient implements VncSessionClient {
   final List<({int keysym, bool down})> keyEvents = [];
   final List<String> clipboardTexts = [];
   final List<bool> setViewOnlyCalls = [];
+  final List<VncScreenInfo?> setActiveRegionCalls = [];
   int fullRefreshCount = 0;
   int disconnectCount = 0;
 
@@ -83,6 +84,11 @@ class FakeVncSessionClient implements VncSessionClient {
   @override
   void setViewOnly(bool viewOnly) {
     setViewOnlyCalls.add(viewOnly);
+  }
+
+  @override
+  void setActiveRegion(VncScreenInfo? region) {
+    setActiveRegionCalls.add(region);
   }
 
   @override
@@ -813,6 +819,112 @@ void main() {
         expect(bloc.state.status, VncSessionStatus.error);
         expect(bloc.state.error, isA<VncConnectionException>());
         expect(bloc.state.config, testConfig);
+
+        await bloc.close();
+      },
+    );
+
+    test(
+      'handles multi-monitor screens, VncSessionSelectDisplay, resize updates, and out-of-bounds reset',
+      () async {
+        final bloc = buildBloc();
+        bloc.add(const VncSessionConnect(testConfig));
+        await Future<void>.delayed(Duration.zero);
+
+        final client = createdClients.single;
+        client.emitEvent(const VncConnectedEvent(testDesktop));
+        await Future<void>.delayed(Duration.zero);
+
+        const screen1 = VncScreenInfo(
+          id: 1,
+          x: 0,
+          y: 0,
+          width: 1920,
+          height: 1080,
+          flags: 0,
+        );
+        const screen2 = VncScreenInfo(
+          id: 2,
+          x: 1920,
+          y: 0,
+          width: 2560,
+          height: 1440,
+          flags: 1,
+        );
+
+        // Server announces dual-monitor desktop via ExtendedDesktopSize.
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 4480,
+            height: 1440,
+            screens: [screen1, screen2],
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.width, 4480);
+        expect(bloc.state.height, 1440);
+        expect(bloc.state.screens, equals(const [screen1, screen2]));
+        expect(bloc.state.activeRegion, isNull);
+
+        // Select screen 2.
+        bloc.add(const VncSessionSelectDisplay(screen2));
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.activeRegion, equals(screen2));
+        expect(client.setActiveRegionCalls, equals(const [screen2]));
+
+        // Server resizes screen 2 with matching id -> activeRegion follows new geometry.
+        const updatedScreen2 = VncScreenInfo(
+          id: 2,
+          x: 1920,
+          y: 0,
+          width: 1920,
+          height: 1080,
+          flags: 1,
+        );
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 3840,
+            height: 1080,
+            screens: [screen1, updatedScreen2],
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.width, 3840);
+        expect(bloc.state.height, 1080);
+        expect(bloc.state.activeRegion, equals(updatedScreen2));
+
+        // Server shrinks desktop without screen 2 -> activeRegion is out-of-bounds and resets to null.
+        client.emitEvent(
+          const VncResizedEvent(width: 1920, height: 1080, screens: [screen1]),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.activeRegion, isNull);
+
+        // Select screen 1, then explicitly clear with null.
+        bloc.add(const VncSessionSelectDisplay(screen1));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.activeRegion, equals(screen1));
+
+        bloc.add(const VncSessionSelectDisplay(null));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.activeRegion, isNull);
+        expect(
+          client.setActiveRegionCalls,
+          equals(const [screen2, screen1, null]),
+        );
+
+        // Disconnect resets screens and activeRegion.
+        bloc.add(const VncSessionSelectDisplay(screen1));
+        await Future<void>.delayed(Duration.zero);
+        bloc.add(const VncSessionDisconnect());
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.screens, isEmpty);
+        expect(bloc.state.activeRegion, isNull);
 
         await bloc.close();
       },

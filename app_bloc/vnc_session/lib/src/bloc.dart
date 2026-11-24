@@ -26,6 +26,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
     on<VncSessionSendClipboard>(_onSendClipboard);
     on<VncSessionToggleViewOnly>(_onToggleViewOnly);
     on<VncSessionRequestRefresh>(_onRequestRefresh);
+    on<VncSessionSelectDisplay>(_onSelectDisplay);
     on<_VncClientEventReceived>(_onClientEventReceived);
   }
 
@@ -119,6 +120,8 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
         clearDesktopInfo: true,
         width: 0,
         height: 0,
+        screens: const [],
+        clearActiveRegion: true,
         viewOnly: effectiveConfig.viewOnly,
         clearAuth: true,
         clearCursor: true,
@@ -228,6 +231,8 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
     emit(
       state.copyWith(
         status: VncSessionStatus.disconnected,
+        screens: const [],
+        clearActiveRegion: true,
         clearAuth: true,
         clearError: true,
         clearDisconnectReason: true,
@@ -278,6 +283,45 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
     _client?.requestFullRefresh();
   }
 
+  void _onSelectDisplay(
+    VncSessionSelectDisplay event,
+    Emitter<VncSessionState> emit,
+  ) {
+    final region = event.region;
+    if (region == null) {
+      emit(state.copyWith(clearActiveRegion: true));
+      _client?.setActiveRegion(null);
+      return;
+    }
+    if (region.width <= 0 || region.height <= 0) {
+      return;
+    }
+    final VncScreenInfo clamped;
+    if (state.width > 0 && state.height > 0) {
+      final x0 = region.x.clamp(0, state.width);
+      final y0 = region.y.clamp(0, state.height);
+      final x1 = (region.x + region.width).clamp(0, state.width);
+      final y1 = (region.y + region.height).clamp(0, state.height);
+      final clampedW = x1 - x0;
+      final clampedH = y1 - y0;
+      if (clampedW <= 0 || clampedH <= 0) {
+        return;
+      }
+      clamped = VncScreenInfo(
+        id: region.id,
+        x: x0,
+        y: y0,
+        width: clampedW,
+        height: clampedH,
+        flags: region.flags,
+      );
+    } else {
+      clamped = region;
+    }
+    emit(state.copyWith(activeRegion: clamped));
+    _client?.setActiveRegion(clamped);
+  }
+
   void _onClientEventReceived(
     _VncClientEventReceived event,
     Emitter<VncSessionState> emit,
@@ -323,8 +367,38 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
         if (!_framesController.isClosed) {
           _framesController.add(frame);
         }
-      case VncResizedEvent(:final width, :final height):
-        emit(state.copyWith(width: width, height: height));
+      case VncResizedEvent(:final width, :final height, :final screens):
+        VncScreenInfo? nextActiveRegion = state.activeRegion;
+        var clearActiveRegion = false;
+        if (nextActiveRegion != null) {
+          VncScreenInfo? matched;
+          if (screens.isNotEmpty) {
+            for (final screen in screens) {
+              if (screen.id == nextActiveRegion.id) {
+                matched = screen;
+                break;
+              }
+            }
+          }
+          if (matched != null) {
+            nextActiveRegion = matched;
+          } else if (nextActiveRegion.x < 0 ||
+              nextActiveRegion.y < 0 ||
+              nextActiveRegion.x + nextActiveRegion.width > width ||
+              nextActiveRegion.y + nextActiveRegion.height > height) {
+            clearActiveRegion = true;
+            nextActiveRegion = null;
+          }
+        }
+        emit(
+          state.copyWith(
+            width: width,
+            height: height,
+            screens: screens,
+            activeRegion: nextActiveRegion,
+            clearActiveRegion: clearActiveRegion,
+          ),
+        );
       case VncCursorEvent(:final cursor):
         emit(state.copyWith(cursor: cursor));
       case VncClipboardEvent(:final text):

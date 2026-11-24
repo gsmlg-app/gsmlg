@@ -45,10 +45,15 @@ final class VncFrameEvent extends VncClientEvent {
 }
 
 final class VncResizedEvent extends VncClientEvent {
-  const VncResizedEvent({required this.width, required this.height});
+  const VncResizedEvent({
+    required this.width,
+    required this.height,
+    this.screens = const [],
+  });
 
   final int width;
   final int height;
+  final List<VncScreenInfo> screens;
 }
 
 final class VncCursorEvent extends VncClientEvent {
@@ -92,6 +97,8 @@ abstract interface class VncSessionClient {
   void sendClipboardText(String text);
 
   void setViewOnly(bool viewOnly);
+
+  void setActiveRegion(VncScreenInfo? region);
 
   void requestFullRefresh();
 
@@ -308,10 +315,26 @@ class VncIsolateClient implements VncSessionClient {
           ),
         );
       case 'resized':
+        final rawScreens = message['screens'] as List<Object?>?;
+        final screens = rawScreens == null
+            ? const <VncScreenInfo>[]
+            : List<VncScreenInfo>.unmodifiable([
+                for (final item in rawScreens)
+                  if (item is Map<Object?, Object?>)
+                    VncScreenInfo(
+                      id: item['id'] as int,
+                      x: item['x'] as int,
+                      y: item['y'] as int,
+                      width: item['width'] as int,
+                      height: item['height'] as int,
+                      flags: item['flags'] as int? ?? 0,
+                    ),
+              ]);
         _emit(
           VncResizedEvent(
             width: message['width'] as int,
             height: message['height'] as int,
+            screens: screens,
           ),
         );
       case 'cursor':
@@ -392,6 +415,23 @@ class VncIsolateClient implements VncSessionClient {
     _workerCommandPort?.send(<String, Object?>{
       'type': 'setViewOnly',
       'viewOnly': viewOnly,
+    });
+  }
+
+  @override
+  void setActiveRegion(VncScreenInfo? region) {
+    _workerCommandPort?.send(<String, Object?>{
+      'type': 'setActiveRegion',
+      'region': region == null
+          ? null
+          : <String, int>{
+              'id': region.id,
+              'x': region.x,
+              'y': region.y,
+              'width': region.width,
+              'height': region.height,
+              'flags': region.flags,
+            },
     });
   }
 
@@ -577,6 +617,8 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
   var stopping = false;
   var viewOnly = config.viewOnly;
   var errorSent = false;
+  var hasPendingRegion = false;
+  VncScreenInfo? pendingRegion;
   Completer<VncCredentials?>? pendingCredentials;
   VncTransport? transport;
   BufferedByteReader? reader;
@@ -645,6 +687,27 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
         );
       case 'setViewOnly':
         viewOnly = rawCommand['viewOnly'] as bool;
+      case 'setActiveRegion':
+        final rawRegion = rawCommand['region'];
+        final VncScreenInfo? region;
+        if (rawRegion is Map<Object?, Object?>) {
+          region = VncScreenInfo(
+            id: rawRegion['id'] as int,
+            x: rawRegion['x'] as int,
+            y: rawRegion['y'] as int,
+            width: rawRegion['width'] as int,
+            height: rawRegion['height'] as int,
+            flags: rawRegion['flags'] as int? ?? 0,
+          );
+        } else {
+          region = null;
+        }
+        if (session != null) {
+          safeSessionCall((s) => s.setActiveRegion(region));
+        } else {
+          hasPendingRegion = true;
+          pendingRegion = region;
+        }
       case 'refresh':
         safeSessionCall((s) => s.requestFramebufferUpdate(incremental: false));
       case 'disconnect':
@@ -729,6 +792,10 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
       reader: reader,
       framebuffer: framebuffer,
     );
+    if (hasPendingRegion) {
+      hasPendingRegion = false;
+      safeSessionCall((s) => s.setActiveRegion(pendingRegion));
+    }
 
     var frameId = 0;
     var dirty = false;
@@ -778,7 +845,7 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
 
     await session.runMessageLoop(
       onFrameUpdated: scheduleFrameFlush,
-      onDesktopResized: (width, height) {
+      onDesktopResized: (width, height, screens) {
         if (stopping) {
           return;
         }
@@ -790,6 +857,17 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
           'type': 'resized',
           'width': width,
           'height': height,
+          'screens': [
+            for (final screen in screens)
+              <String, int>{
+                'id': screen.id,
+                'x': screen.x,
+                'y': screen.y,
+                'width': screen.width,
+                'height': screen.height,
+                'flags': screen.flags,
+              },
+          ],
         });
       },
       onCursorUpdated: (cursor) {

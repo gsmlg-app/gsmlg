@@ -177,12 +177,14 @@ class RfbRectDecodeResult {
     this.isLastRect = false,
     this.cursor,
     this.pixelsUpdated = false,
+    this.screens,
   });
 
   final bool resized;
   final bool isLastRect;
   final VncCursorData? cursor;
   final bool pixelsUpdated;
+  final List<VncScreenInfo>? screens;
 }
 
 /// Decodes RFB framebuffer update rectangles assuming the negotiated
@@ -637,11 +639,36 @@ class RfbRectDecoder {
     int height,
   ) async {
     final numScreens = await reader.readUint8();
-    await reader.skip(3 + numScreens * 16);
-    if (width > 0 && height > 0) {
+    await reader.skip(3); // padding
+    final screens = <VncScreenInfo>[];
+    for (var i = 0; i < numScreens; i++) {
+      final id = await reader.readUint32();
+      final sx = await reader.readUint16();
+      final sy = await reader.readUint16();
+      final sw = await reader.readUint16();
+      final sh = await reader.readUint16();
+      final flags = await reader.readUint32();
+      if (sw > 0 && sh > 0) {
+        screens.add(
+          VncScreenInfo(
+            id: id,
+            x: sx,
+            y: sy,
+            width: sw,
+            height: sh,
+            flags: flags,
+          ),
+        );
+      }
+    }
+    final resized = width > 0 && height > 0;
+    if (resized) {
       framebuffer.resize(width, height);
     }
-    return const RfbRectDecodeResult(resized: true);
+    return RfbRectDecodeResult(
+      resized: resized,
+      screens: List<VncScreenInfo>.unmodifiable(screens),
+    );
   }
 
   Future<RfbRectDecodeResult> _decodeCursor(

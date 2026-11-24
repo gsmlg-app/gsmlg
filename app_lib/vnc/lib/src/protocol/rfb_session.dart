@@ -38,18 +38,67 @@ class RfbSession {
   final VncFramebuffer _framebuffer;
   final RfbRectDecoder _decoder;
 
+  VncScreenInfo? _activeRegion;
+
+  /// Currently selected sub-region for scoped framebuffer updates, or `null`
+  /// when requesting the full framebuffer.
+  VncScreenInfo? get activeRegion => _activeRegion;
+
+  VncScreenInfo? _clampRegion(VncScreenInfo region) {
+    final fbW = _framebuffer.width;
+    final fbH = _framebuffer.height;
+    if (fbW <= 0 || fbH <= 0 || region.width <= 0 || region.height <= 0) {
+      return null;
+    }
+    final x0 = region.x.clamp(0, fbW);
+    final y0 = region.y.clamp(0, fbH);
+    final x1 = (region.x + region.width).clamp(0, fbW);
+    final y1 = (region.y + region.height).clamp(0, fbH);
+    final clampedW = x1 - x0;
+    final clampedH = y1 - y0;
+    if (clampedW <= 0 || clampedH <= 0) {
+      return null;
+    }
+    return VncScreenInfo(
+      id: region.id,
+      x: x0,
+      y: y0,
+      width: clampedW,
+      height: clampedH,
+      flags: region.flags,
+    );
+  }
+
+  /// Sets the active framebuffer update region (`null` for full framebuffer)
+  /// and immediately requests a non-incremental refresh for the new region.
+  void setActiveRegion(VncScreenInfo? region) {
+    if (region == null) {
+      _activeRegion = null;
+      requestFramebufferUpdate(incremental: false);
+      return;
+    }
+    _activeRegion = _clampRegion(region);
+    requestFramebufferUpdate(incremental: false);
+  }
+
   /// Sends a `FramebufferUpdateRequest` (RFC 6143 §7.5.3).
   void requestFramebufferUpdate({
     required bool incremental,
-    int x = 0,
-    int y = 0,
+    int? x,
+    int? y,
     int? width,
     int? height,
   }) {
-    final reqX = x.clamp(0, 0xFFFF);
-    final reqY = y.clamp(0, 0xFFFF);
-    final reqWidth = (width ?? _framebuffer.width).clamp(0, 0xFFFF);
-    final reqHeight = (height ?? _framebuffer.height).clamp(0, 0xFFFF);
+    final region = _activeRegion == null ? null : _clampRegion(_activeRegion!);
+    final defaultX = region?.x ?? 0;
+    final defaultY = region?.y ?? 0;
+    final defaultWidth = region?.width ?? _framebuffer.width;
+    final defaultHeight = region?.height ?? _framebuffer.height;
+
+    final reqX = (x ?? defaultX).clamp(0, 0xFFFF);
+    final reqY = (y ?? defaultY).clamp(0, 0xFFFF);
+    final reqWidth = (width ?? defaultWidth).clamp(0, 0xFFFF);
+    final reqHeight = (height ?? defaultHeight).clamp(0, 0xFFFF);
 
     final bytes = Uint8List(10);
     ByteData.sublistView(bytes)
@@ -115,7 +164,8 @@ class RfbSession {
   /// `true` or the connection closes/errors.
   Future<void> runMessageLoop({
     void Function()? onFrameUpdated,
-    void Function(int width, int height)? onDesktopResized,
+    void Function(int width, int height, List<VncScreenInfo> screens)?
+    onDesktopResized,
     void Function(VncCursorData cursor)? onCursorUpdated,
     void Function(String text)? onServerCutText,
     void Function()? onBell,
@@ -166,7 +216,8 @@ class RfbSession {
 
   Future<void> _handleFramebufferUpdate({
     void Function()? onFrameUpdated,
-    void Function(int width, int height)? onDesktopResized,
+    void Function(int width, int height, List<VncScreenInfo> screens)?
+    onDesktopResized,
     void Function(VncCursorData cursor)? onCursorUpdated,
     bool Function()? shouldStop,
   }) async {
@@ -176,6 +227,7 @@ class RfbSession {
     var anyPixels = false;
     var anyResize = false;
     VncCursorData? latestCursor;
+    List<VncScreenInfo>? latestScreens;
 
     for (var i = 0; i < numRects; i++) {
       final rx = await _reader.readUint16();
@@ -199,6 +251,9 @@ class RfbSession {
       if (result.resized) {
         anyResize = true;
       }
+      if (result.screens != null) {
+        latestScreens = result.screens;
+      }
       if (result.cursor != null) {
         latestCursor = result.cursor;
       }
@@ -207,8 +262,32 @@ class RfbSession {
       }
     }
 
-    if (anyResize) {
-      onDesktopResized?.call(_framebuffer.width, _framebuffer.height);
+    if (anyResize || latestScreens != null) {
+      final active = _activeRegion;
+      if (active != null) {
+        VncScreenInfo? matched;
+        if (latestScreens != null) {
+          for (final screen in latestScreens) {
+            if (screen.id == active.id) {
+              matched = screen;
+              break;
+            }
+          }
+        }
+        if (matched != null) {
+          _activeRegion = _clampRegion(matched);
+        } else if (active.x < 0 ||
+            active.y < 0 ||
+            active.x + active.width > _framebuffer.width ||
+            active.y + active.height > _framebuffer.height) {
+          _activeRegion = null;
+        }
+      }
+      onDesktopResized?.call(
+        _framebuffer.width,
+        _framebuffer.height,
+        latestScreens ?? const <VncScreenInfo>[],
+      );
     }
     if (latestCursor != null) {
       onCursorUpdated?.call(latestCursor);

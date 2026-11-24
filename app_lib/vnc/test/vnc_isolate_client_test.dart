@@ -1096,6 +1096,164 @@ void main() {
         await client.disconnect().timeout(const Duration(seconds: 5));
       },
     );
+
+    test(
+      'forwards ExtendedDesktopSize screens in VncResizedEvent and scopes updates via setActiveRegion',
+      () async {
+        final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+        addTearDown(server.close);
+
+        final scopedReqCompleter = Completer<Uint8List>();
+        final fullReqCompleter = Completer<Uint8List>();
+
+        late StreamSubscription<Socket> serverSub;
+        serverSub = server.listen((socket) async {
+          final reader = BufferedByteReader(socket);
+          try {
+            socket.add(ascii.encode('RFB 003.889\n'));
+            await socket.flush();
+            await reader.readBytes(12);
+            socket.add([1, RfbSecurityType.none]);
+            await socket.flush();
+            await reader.readUint8();
+            socket.add([0, 0, 0, 0]);
+            await socket.flush();
+            await reader.readUint8();
+            socket.add(_buildServerInit(width: 4, height: 4, name: 'Multi'));
+            await socket.flush();
+            await _consumeInitialSetMessages(reader);
+
+            // Initial non-incremental update request (4x4).
+            await reader.readBytes(10);
+
+            // Send ExtendedDesktopSize (4480x1440) with 2 screens.
+            final update = BytesBuilder(copy: false);
+            final header = ByteData(4)
+              ..setUint8(0, 0)
+              ..setUint8(1, 0)
+              ..setUint16(2, 1, Endian.big);
+            update.add(header.buffer.asUint8List());
+
+            final edsRect = ByteData(12)
+              ..setUint16(0, 0, Endian.big)
+              ..setUint16(2, 0, Endian.big)
+              ..setUint16(4, 4480, Endian.big)
+              ..setUint16(6, 1440, Endian.big)
+              ..setInt32(8, RfbEncoding.extendedDesktopSize, Endian.big);
+            update.add(edsRect.buffer.asUint8List());
+            update.add([2, 0, 0, 0]); // numScreens=2 + padding
+
+            final s1 = ByteData(16)
+              ..setUint32(0, 1, Endian.big)
+              ..setUint16(4, 0, Endian.big)
+              ..setUint16(6, 0, Endian.big)
+              ..setUint16(8, 1920, Endian.big)
+              ..setUint16(10, 1080, Endian.big)
+              ..setUint32(12, 0, Endian.big);
+            final s2 = ByteData(16)
+              ..setUint32(0, 2, Endian.big)
+              ..setUint16(4, 1920, Endian.big)
+              ..setUint16(6, 0, Endian.big)
+              ..setUint16(8, 2560, Endian.big)
+              ..setUint16(10, 1440, Endian.big)
+              ..setUint32(12, 1, Endian.big);
+            update.add(s1.buffer.asUint8List());
+            update.add(s2.buffer.asUint8List());
+
+            socket.add(update.takeBytes());
+            await socket.flush();
+
+            // Post-resize non-incremental request for full 4480x1440.
+            final postResizeReq = await reader.readBytes(10);
+            expect(
+              postResizeReq,
+              equals([3, 0, 0, 0, 0, 0, 0x11, 0x80, 0x05, 0xA0]),
+            );
+
+            // Next request should be scoped to monitor 2 (1920, 0, 2560, 1440).
+            final scopedReq = await reader.readBytes(10);
+            if (!scopedReqCompleter.isCompleted) {
+              scopedReqCompleter.complete(scopedReq);
+            }
+
+            // Next request after setActiveRegion(null) restores full 4480x1440.
+            final fullReq = await reader.readBytes(10);
+            if (!fullReqCompleter.isCompleted) {
+              fullReqCompleter.complete(fullReq);
+            }
+          } catch (_) {
+            // Expected on disconnect.
+          } finally {
+            await reader.dispose();
+            await socket.close();
+          }
+        });
+        addTearDown(() => serverSub.cancel());
+
+        final client = VncIsolateClient();
+        addTearDown(client.disconnect);
+
+        final resizedCompleter = Completer<VncResizedEvent>();
+        final sub = client.events.listen((event) {
+          if (event is VncResizedEvent && !resizedCompleter.isCompleted) {
+            resizedCompleter.complete(event);
+          }
+        });
+        addTearDown(sub.cancel);
+
+        await client.connect(
+          VncConnectionConfig(
+            host: InternetAddress.loopbackIPv4.address,
+            port: server.port,
+          ),
+        );
+
+        final resized = await resizedCompleter.future.timeout(
+          const Duration(seconds: 5),
+        );
+        expect(resized.width, 4480);
+        expect(resized.height, 1440);
+        expect(
+          resized.screens,
+          equals(const [
+            VncScreenInfo(
+              id: 1,
+              x: 0,
+              y: 0,
+              width: 1920,
+              height: 1080,
+              flags: 0,
+            ),
+            VncScreenInfo(
+              id: 2,
+              x: 1920,
+              y: 0,
+              width: 2560,
+              height: 1440,
+              flags: 1,
+            ),
+          ]),
+        );
+
+        // Select second screen over isolate boundary.
+        client.setActiveRegion(resized.screens[1]);
+        // 1920 = 0x0780, 2560 = 0x0A00, 1440 = 0x05A0
+        expect(
+          await scopedReqCompleter.future.timeout(const Duration(seconds: 5)),
+          equals([3, 0, 0x07, 0x80, 0, 0, 0x0A, 0x00, 0x05, 0xA0]),
+        );
+
+        // Clear active region to restore full desktop updates.
+        client.setActiveRegion(null);
+        // 4480 = 0x1180, 1440 = 0x05A0
+        expect(
+          await fullReqCompleter.future.timeout(const Duration(seconds: 5)),
+          equals([3, 0, 0, 0, 0, 0, 0x11, 0x80, 0x05, 0xA0]),
+        );
+
+        await client.disconnect().timeout(const Duration(seconds: 5));
+      },
+    );
   });
 
   group('VncMdnsDiscovery', () {

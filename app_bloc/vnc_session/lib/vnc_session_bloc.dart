@@ -11,6 +11,7 @@ export 'package:app_vnc/app_vnc.dart'
         VncException,
         VncFrameData,
         VncProtocolException,
+        VncScreenInfo,
         VncSessionClient,
         VncSshTunnelConfig,
         VncSshTunnelException,

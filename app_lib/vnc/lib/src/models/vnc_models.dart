@@ -199,6 +199,27 @@ class VncDesktopInfo extends Equatable {
   ];
 }
 
+class VncScreenInfo extends Equatable {
+  const VncScreenInfo({
+    required this.id,
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+    this.flags = 0,
+  });
+
+  final int id;
+  final int x;
+  final int y;
+  final int width;
+  final int height;
+  final int flags;
+
+  @override
+  List<Object?> get props => [id, x, y, width, height, flags];
+}
+
 class VncCursorData extends Equatable {
   const VncCursorData({
     required this.width,

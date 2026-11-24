@@ -86,6 +86,15 @@ final class VncSessionRequestRefresh extends VncSessionEvent {
   const VncSessionRequestRefresh();
 }
 
+final class VncSessionSelectDisplay extends VncSessionEvent {
+  const VncSessionSelectDisplay(this.region);
+
+  final VncScreenInfo? region;
+
+  @override
+  List<Object?> get props => [region];
+}
+
 final class _VncClientEventReceived extends VncSessionEvent {
   const _VncClientEventReceived(this.generation, this.clientEvent);
 

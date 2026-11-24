@@ -71,6 +71,9 @@ class FakeVncSessionClient implements VncSessionClient {
   void setViewOnly(bool viewOnly) {}
 
   @override
+  void setActiveRegion(VncScreenInfo? region) {}
+
+  @override
   void requestFullRefresh() {}
 
   @override
