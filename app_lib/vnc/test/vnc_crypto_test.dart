@@ -181,6 +181,169 @@ void main() {
       await expectation;
       await controller.close();
     });
+
+    test(
+      'async skip drops chunks across boundaries and preserves tail bytes',
+      () async {
+        final controller = StreamController<Uint8List>();
+        final reader = BufferedByteReader(controller.stream);
+
+        // Pre-buffer 2 bytes before skip(7) starts.
+        controller.add(Uint8List.fromList([0x01, 0x02]));
+        await Future<void>.delayed(Duration.zero);
+
+        final skipping = reader.skip(7);
+        // Drop an empty chunk, a 3-byte chunk (5 total skipped), and a chunk
+        // straddling the end of the skip (2 bytes skipped + 3 tail bytes).
+        controller.add(Uint8List(0));
+        controller.add(Uint8List.fromList([0x03, 0x04, 0x05]));
+        controller.add(Uint8List.fromList([0x06, 0x07, 0xAA, 0xBB, 0xCC]));
+        await skipping;
+
+        expect(
+          await reader.readBytes(3),
+          Uint8List.fromList([0xAA, 0xBB, 0xCC]),
+        );
+
+        // Also test async skip ending cleanly on an exact chunk boundary.
+        final exactSkip = reader.skip(2);
+        controller.add(Uint8List.fromList([0x10, 0x20]));
+        await exactSkip;
+        controller.add(Uint8List.fromList([0x30]));
+        expect(await reader.readUint8(), 0x30);
+
+        await reader.dispose();
+        await controller.close();
+      },
+    );
+
+    test(
+      'skip throws VncConnectionException on EOF, stream error, and dispose',
+      () async {
+        // EOF while waiting
+        final eofController = StreamController<Uint8List>();
+        final eofReader = BufferedByteReader(eofController.stream);
+        final eofSkip = eofReader.skip(5);
+        final eofExpect = expectLater(
+          eofSkip,
+          throwsA(isA<VncConnectionException>()),
+        );
+        eofController.add(Uint8List.fromList([1, 2]));
+        await eofController.close();
+        await eofExpect;
+        await eofReader.dispose();
+
+        // Stream error while waiting
+        final errController = StreamController<Uint8List>();
+        final errReader = BufferedByteReader(errController.stream);
+        final errSkip = errReader.skip(4);
+        final errExpect = expectLater(
+          errSkip,
+          throwsA(isA<VncConnectionException>()),
+        );
+        errController.addError(StateError('broken pipe'));
+        await errExpect;
+        await errReader.dispose();
+        await errController.close();
+
+        // Dispose while waiting
+        final disposeController = StreamController<Uint8List>();
+        final disposeReader = BufferedByteReader(disposeController.stream);
+        final disposeSkip = disposeReader.skip(4);
+        final disposeExpect = expectLater(
+          disposeSkip,
+          throwsA(isA<VncConnectionException>()),
+        );
+        await disposeReader.dispose();
+        await disposeExpect;
+        await disposeController.close();
+      },
+    );
+
+    test('throws StateError on concurrent skip and readBytes', () async {
+      final controller = StreamController<Uint8List>();
+      final reader = BufferedByteReader(controller.stream);
+
+      final pendingSkip = reader.skip(4);
+      await expectLater(reader.readBytes(1), throwsStateError);
+      await expectLater(reader.skip(1), throwsStateError);
+
+      controller.add(Uint8List.fromList([1, 2, 3, 4]));
+      await pendingSkip;
+
+      final pendingRead = reader.readBytes(2);
+      await expectLater(reader.skip(1), throwsStateError);
+
+      controller.add(Uint8List.fromList([5, 6]));
+      expect(await pendingRead, Uint8List.fromList([5, 6]));
+
+      await reader.dispose();
+      await controller.close();
+    });
+
+    test('ignores empty chunks during buffered reads', () async {
+      final controller = StreamController<Uint8List>();
+      final reader = BufferedByteReader(controller.stream);
+
+      final future = reader.readUint16();
+      controller.add(Uint8List(0));
+      controller.add(Uint8List.fromList([0x12]));
+      controller.add(Uint8List(0));
+      controller.add(Uint8List.fromList([0x34]));
+
+      expect(await future, 0x1234);
+      await reader.dispose();
+      await controller.close();
+    });
+
+    test('rejects reads and skips after dispose, including count 0', () async {
+      final controller = StreamController<Uint8List>();
+      final reader = BufferedByteReader(controller.stream);
+
+      await reader.dispose();
+      await expectLater(
+        reader.readBytes(0),
+        throwsA(isA<VncConnectionException>()),
+      );
+      await expectLater(
+        reader.readBytes(1),
+        throwsA(isA<VncConnectionException>()),
+      );
+      await expectLater(reader.skip(0), throwsA(isA<VncConnectionException>()));
+      await expectLater(reader.skip(2), throwsA(isA<VncConnectionException>()));
+      await controller.close();
+    });
+
+    test('double and concurrent dispose awaits cancellation cleanly', () async {
+      final cancelCompleter = Completer<void>();
+      var cancelCount = 0;
+      final controller = StreamController<Uint8List>(
+        onCancel: () {
+          cancelCount++;
+          return cancelCompleter.future;
+        },
+      );
+      final reader = BufferedByteReader(controller.stream);
+
+      var firstDone = false;
+      var secondDone = false;
+      final d1 = reader.dispose().then((_) => firstDone = true);
+      final d2 = reader.dispose().then((_) => secondDone = true);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(cancelCount, 1);
+      expect(firstDone, isFalse);
+      expect(secondDone, isFalse);
+
+      cancelCompleter.complete();
+      await Future.wait([d1, d2]);
+      expect(firstDone, isTrue);
+      expect(secondDone, isTrue);
+
+      // Third dispose after completion is also a safe no-op.
+      await reader.dispose();
+      expect(cancelCount, 1);
+    });
   });
 
   group('VncDes', () {
@@ -417,8 +580,109 @@ void main() {
     );
 
     test(
-      'validates keyLength, primeBytes, serverPublicKeyBytes, and prime > 1',
+      'safely truncates 4-byte UTF-8 emoji sequences at the 63-byte boundary',
       () {
+        const generator = 2;
+        final keyLength = prime128.length;
+        final prime = ArdAuthCrypto.bytesToBigInt(prime128);
+        final serverPriv = BigInt.from(987654321);
+        final serverPubBytes = ArdAuthCrypto.bigIntToFixedBytes(
+          BigInt.from(generator).modPow(serverPriv, prime),
+          keyLength,
+        );
+
+        // 61 ASCII bytes + 4-byte emoji = 65 bytes -> emoji must not be split.
+        final userWithEmoji = '${'a' * 61}🚀';
+        // 16 four-byte emojis = 64 bytes -> must truncate to 15 emojis (60 bytes).
+        final passWithEmojis = '🚀' * 16;
+
+        final response = ArdAuthCrypto.buildResponse(
+          generator: generator,
+          keyLength: keyLength,
+          primeBytes: prime128,
+          serverPublicKeyBytes: serverPubBytes,
+          username: userWithEmoji,
+          password: passWithEmojis,
+        );
+
+        final clientPub = ArdAuthCrypto.bytesToBigInt(response.clientPublicKey);
+        final serverSharedBytes = ArdAuthCrypto.bigIntToFixedBytes(
+          clientPub.modPow(serverPriv, prime),
+          keyLength,
+        );
+        final aesKey = Uint8List.fromList(md5.convert(serverSharedBytes).bytes);
+        final plaintext = _aesEcbDecrypt(response.encryptedCredentials, aesKey);
+
+        final decodedUser = _readNullTerminatedUtf8(plaintext, 0, 64);
+        final decodedPass = _readNullTerminatedUtf8(plaintext, 64, 64);
+
+        expect(decodedUser, 'a' * 61);
+        expect(plaintext[61], 0);
+        expect(decodedPass, '🚀' * 15);
+        expect(utf8.encode(decodedPass).length, 60);
+        expect(plaintext[64 + 60], 0);
+      },
+    );
+
+    test(
+      'left-pads shared secret with leading 0x00 bytes before MD5 derivation',
+      () {
+        // 16-byte prime: 2^128 - 159 (0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF61)
+        final prime16 = _hexToBytes('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF61');
+        final prime = ArdAuthCrypto.bytesToBigInt(prime16);
+        const generator = 2;
+        const keyLength = 16;
+
+        // serverPub = 2, clientPriv = 2 => shared = 2^2 mod prime = 4
+        // Fixed 16-byte representation has 15 leading 0x00 bytes before 0x04.
+        final serverPubBytes = ArdAuthCrypto.bigIntToFixedBytes(
+          BigInt.two,
+          keyLength,
+        );
+        final response = ArdAuthCrypto.buildResponse(
+          generator: generator,
+          keyLength: keyLength,
+          primeBytes: prime16,
+          serverPublicKeyBytes: serverPubBytes,
+          username: 'alice',
+          password: 'wonderland',
+          clientPrivateKeyOverride: BigInt.two,
+        );
+
+        final expectedSharedBytes = ArdAuthCrypto.bigIntToFixedBytes(
+          BigInt.from(4),
+          keyLength,
+        );
+        expect(expectedSharedBytes[0], 0);
+        expect(expectedSharedBytes[15], 4);
+
+        final paddedAesKey = Uint8List.fromList(
+          md5.convert(expectedSharedBytes).bytes,
+        );
+        final unpaddedAesKey = Uint8List.fromList(
+          md5.convert(Uint8List.fromList([4])).bytes,
+        );
+        expect(paddedAesKey, isNot(equals(unpaddedAesKey)));
+
+        final plaintext = _aesEcbDecrypt(
+          response.encryptedCredentials,
+          paddedAesKey,
+        );
+        expect(_readNullTerminatedUtf8(plaintext, 0, 64), 'alice');
+        expect(_readNullTerminatedUtf8(plaintext, 64, 64), 'wonderland');
+        expect(
+          ArdAuthCrypto.bytesToBigInt(response.clientPublicKey),
+          BigInt.from(generator).modPow(BigInt.two, prime),
+        );
+      },
+    );
+
+    test(
+      'validates keyLength, prime, generator, serverPub, and clientPrivateKeyOverride',
+      () {
+        final validPrime = Uint8List.fromList([0x00, 0x00, 0x00, 0x17]); // 23
+        final validServerPub = Uint8List.fromList([0x00, 0x00, 0x00, 0x05]);
+
         expect(
           () => ArdAuthCrypto.buildResponse(
             generator: 2,
@@ -435,7 +699,7 @@ void main() {
             generator: 2,
             keyLength: 4,
             primeBytes: Uint8List(3),
-            serverPublicKeyBytes: Uint8List(4),
+            serverPublicKeyBytes: validServerPub,
             username: 'u',
             password: 'p',
           ),
@@ -445,13 +709,71 @@ void main() {
           () => ArdAuthCrypto.buildResponse(
             generator: 2,
             keyLength: 4,
-            primeBytes: Uint8List.fromList([0, 0, 0, 1]),
-            serverPublicKeyBytes: Uint8List(4),
+            primeBytes: validPrime,
+            serverPublicKeyBytes: Uint8List(3),
             username: 'u',
             password: 'p',
           ),
           throwsArgumentError,
         );
+        // prime <= 3 rejected
+        expect(
+          () => ArdAuthCrypto.buildResponse(
+            generator: 2,
+            keyLength: 4,
+            primeBytes: Uint8List.fromList([0, 0, 0, 3]),
+            serverPublicKeyBytes: Uint8List.fromList([0, 0, 0, 2]),
+            username: 'u',
+            password: 'p',
+          ),
+          throwsArgumentError,
+        );
+        // generator < 2 or >= prime rejected
+        for (final badGen in [0, 1, 23, 24]) {
+          expect(
+            () => ArdAuthCrypto.buildResponse(
+              generator: badGen,
+              keyLength: 4,
+              primeBytes: validPrime,
+              serverPublicKeyBytes: validServerPub,
+              username: 'u',
+              password: 'p',
+            ),
+            throwsArgumentError,
+            reason: 'generator=$badGen should be rejected for prime=23',
+          );
+        }
+        // serverPub < 2 or > prime - 2 rejected (0, 1, 22, 23)
+        for (final badPub in [0, 1, 22, 23]) {
+          expect(
+            () => ArdAuthCrypto.buildResponse(
+              generator: 5,
+              keyLength: 4,
+              primeBytes: validPrime,
+              serverPublicKeyBytes: Uint8List.fromList([0, 0, 0, badPub]),
+              username: 'u',
+              password: 'p',
+            ),
+            throwsArgumentError,
+            reason: 'serverPub=$badPub should be rejected for prime=23',
+          );
+        }
+        // clientPrivateKeyOverride < 2 or > prime - 2 rejected
+        for (final badPriv in [0, 1, 22, 23]) {
+          expect(
+            () => ArdAuthCrypto.buildResponse(
+              generator: 5,
+              keyLength: 4,
+              primeBytes: validPrime,
+              serverPublicKeyBytes: validServerPub,
+              username: 'u',
+              password: 'p',
+              clientPrivateKeyOverride: BigInt.from(badPriv),
+            ),
+            throwsArgumentError,
+            reason: 'clientPriv=$badPriv should be rejected for prime=23',
+          );
+        }
       },
     );
   });

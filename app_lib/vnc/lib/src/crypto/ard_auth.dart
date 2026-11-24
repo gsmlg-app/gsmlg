@@ -101,64 +101,102 @@ abstract final class ArdAuthCrypto {
     }
 
     final prime = bytesToBigInt(primeBytes);
-    if (prime <= BigInt.one) {
-      throw ArgumentError.value(primeBytes, 'primeBytes', 'Prime must be > 1');
+    if (prime <= BigInt.from(3)) {
+      throw ArgumentError.value(primeBytes, 'primeBytes', 'Prime must be > 3');
+    }
+
+    final generatorBig = BigInt.from(generator);
+    if (generator < 2 || generatorBig >= prime) {
+      throw ArgumentError.value(
+        generator,
+        'generator',
+        'Generator must satisfy 2 <= generator < prime',
+      );
+    }
+
+    final maxKey = prime - BigInt.two;
+    final serverPub = bytesToBigInt(serverPublicKeyBytes);
+    if (serverPub < BigInt.two || serverPub > maxKey) {
+      throw ArgumentError.value(
+        serverPublicKeyBytes,
+        'serverPublicKeyBytes',
+        'Server public key must satisfy 2 <= serverPub <= prime - 2',
+      );
     }
 
     final random = Random.secure();
     final BigInt clientPriv;
     if (clientPrivateKeyOverride != null) {
-      if (clientPrivateKeyOverride <= BigInt.zero) {
+      if (clientPrivateKeyOverride < BigInt.two ||
+          clientPrivateKeyOverride > maxKey) {
         throw ArgumentError.value(
           clientPrivateKeyOverride,
           'clientPrivateKeyOverride',
-          'Must be positive',
+          'Must satisfy 2 <= clientPrivateKey <= prime - 2',
         );
       }
       clientPriv = clientPrivateKeyOverride;
     } else {
-      clientPriv = _generatePrivateKey(random, keyLength, prime);
+      clientPriv = _generatePrivateKey(random, prime);
     }
 
-    final serverPub = bytesToBigInt(serverPublicKeyBytes);
-    final clientPub = BigInt.from(generator).modPow(clientPriv, prime);
+    final clientPub = generatorBig.modPow(clientPriv, prime);
     final clientPubBytes = bigIntToFixedBytes(clientPub, keyLength);
 
-    final shared = serverPub.modPow(clientPriv, prime);
-    final sharedBytes = bigIntToFixedBytes(shared, keyLength);
-    final aesKey = Uint8List.fromList(md5.convert(sharedBytes).bytes);
+    Uint8List? sharedBytes;
+    Uint8List? aesKey;
+    Uint8List? plaintext;
+    try {
+      final shared = serverPub.modPow(clientPriv, prime);
+      sharedBytes = bigIntToFixedBytes(shared, keyLength);
+      aesKey = Uint8List.fromList(md5.convert(sharedBytes).bytes);
 
-    final plaintext = Uint8List(_credentialBlockLength);
-    _writeCredentialField(plaintext, 0, username, random);
-    _writeCredentialField(plaintext, _fieldLength, password, random);
+      plaintext = Uint8List(_credentialBlockLength);
+      _writeCredentialField(plaintext, 0, username, random);
+      _writeCredentialField(plaintext, _fieldLength, password, random);
 
-    final aes = AESEngine()..init(true, KeyParameter(aesKey));
-    final encrypted = Uint8List(_credentialBlockLength);
-    for (var offset = 0; offset < _credentialBlockLength; offset += 16) {
-      aes.processBlock(plaintext, offset, encrypted, offset);
+      final aes = AESEngine()..init(true, KeyParameter(aesKey));
+      final encrypted = Uint8List(_credentialBlockLength);
+      for (var offset = 0; offset < _credentialBlockLength; offset += 16) {
+        aes.processBlock(plaintext, offset, encrypted, offset);
+      }
+
+      return ArdAuthResponse(
+        encryptedCredentials: encrypted,
+        clientPublicKey: clientPubBytes,
+      );
+    } finally {
+      sharedBytes?.fillRange(0, sharedBytes.length, 0);
+      aesKey?.fillRange(0, aesKey.length, 0);
+      plaintext?.fillRange(0, plaintext.length, 0);
     }
-
-    return ArdAuthResponse(
-      encryptedCredentials: encrypted,
-      clientPublicKey: clientPubBytes,
-    );
   }
 
-  static BigInt _generatePrivateKey(
-    Random random,
-    int keyLength,
-    BigInt prime,
-  ) {
-    final rawBytes = Uint8List(keyLength);
-    for (var i = 0; i < keyLength; i++) {
-      rawBytes[i] = random.nextInt(256);
+  /// Generates a uniform random private key in `[2, prime - 2]` using
+  /// unbiased rejection sampling over `prime.bitLength` bits.
+  static BigInt _generatePrivateKey(Random random, BigInt prime) {
+    final min = BigInt.two;
+    final max = prime - BigInt.two;
+    final bitLength = prime.bitLength;
+    final byteCount = (bitLength + 7) ~/ 8;
+    final excessBits = byteCount * 8 - bitLength;
+    final topMask = 0xFF >>> excessBits;
+
+    final rawBytes = Uint8List(byteCount);
+    try {
+      while (true) {
+        for (var i = 0; i < byteCount; i++) {
+          rawBytes[i] = random.nextInt(256);
+        }
+        rawBytes[0] &= topMask;
+        final candidate = bytesToBigInt(rawBytes);
+        if (candidate >= min && candidate <= max) {
+          return candidate;
+        }
+      }
+    } finally {
+      rawBytes.fillRange(0, rawBytes.length, 0);
     }
-    final raw = bytesToBigInt(rawBytes);
-    if (prime <= BigInt.two) {
-      return BigInt.one;
-    }
-    // Map into [1, prime - 2] so 1 <= priv < prime - 1.
-    return BigInt.one + (raw % (prime - BigInt.two));
   }
 
   static void _writeCredentialField(

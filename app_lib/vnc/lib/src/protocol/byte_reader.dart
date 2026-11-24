@@ -25,61 +25,93 @@ class BufferedByteReader {
   late final StreamSubscription<Uint8List> _subscription;
   bool _closed = false;
   bool _disposed = false;
+  Future<void>? _disposeFuture;
   Object? _error;
 
-  Completer<Uint8List?>? _waiter;
-  int _neededBytes = 0;
-  bool _discardWaiter = false;
+  Completer<Uint8List>? _readWaiter;
+  int _readNeeded = 0;
+
+  Completer<void>? _skipWaiter;
+  int _skipRemaining = 0;
+
+  bool get _hasPendingOp => _readWaiter != null || _skipWaiter != null;
 
   void _onData(Uint8List chunk) {
     if (chunk.isEmpty || _disposed) {
       return;
     }
+
+    final skipWaiter = _skipWaiter;
+    if (skipWaiter != null) {
+      if (chunk.length <= _skipRemaining) {
+        _skipRemaining -= chunk.length;
+        if (_skipRemaining == 0) {
+          _skipWaiter = null;
+          skipWaiter.complete();
+        }
+        return;
+      }
+      // Chunk extends past the skipped region: drop the skipped prefix
+      // directly and queue only the unread tail.
+      final skipNow = _skipRemaining;
+      _skipRemaining = 0;
+      _skipWaiter = null;
+      _chunks.addLast(chunk);
+      _chunkOffset = skipNow;
+      _bufferedLength = chunk.length - skipNow;
+      skipWaiter.complete();
+      return;
+    }
+
     _chunks.addLast(chunk);
     _bufferedLength += chunk.length;
-    _tryFulfillWaiter();
+    _tryFulfillReadWaiter();
   }
 
   void _onError(Object error, StackTrace stackTrace) {
+    if (_disposed) {
+      return;
+    }
     _error = error;
     _closed = true;
     _failWaiterIfInsufficient();
   }
 
   void _onDone() {
+    if (_disposed) {
+      return;
+    }
     _closed = true;
     _failWaiterIfInsufficient();
   }
 
-  void _tryFulfillWaiter() {
-    final waiter = _waiter;
-    if (waiter == null || _bufferedLength < _neededBytes) {
+  void _tryFulfillReadWaiter() {
+    final waiter = _readWaiter;
+    if (waiter == null || _bufferedLength < _readNeeded) {
       return;
     }
-    final count = _neededBytes;
-    final discard = _discardWaiter;
-    _waiter = null;
-    _neededBytes = 0;
-    _discardWaiter = false;
-
-    if (discard) {
-      _discard(count);
-      waiter.complete(null);
-    } else {
-      waiter.complete(_consume(count));
-    }
+    final count = _readNeeded;
+    _readWaiter = null;
+    _readNeeded = 0;
+    waiter.complete(_consume(count));
   }
 
   void _failWaiterIfInsufficient() {
-    final waiter = _waiter;
-    if (waiter == null || _bufferedLength >= _neededBytes) {
-      return;
+    final readWaiter = _readWaiter;
+    if (readWaiter != null && _bufferedLength < _readNeeded) {
+      final needed = _readNeeded;
+      _readWaiter = null;
+      _readNeeded = 0;
+      readWaiter.completeError(_closedException(needed));
     }
-    final needed = _neededBytes;
-    _waiter = null;
-    _neededBytes = 0;
-    _discardWaiter = false;
-    waiter.completeError(_closedException(needed));
+
+    final skipWaiter = _skipWaiter;
+    if (skipWaiter != null && _skipRemaining > 0) {
+      final remaining = _skipRemaining;
+      _skipWaiter = null;
+      _skipRemaining = 0;
+      skipWaiter.completeError(_closedException(remaining));
+    }
   }
 
   VncConnectionException _closedException(int needed) {
@@ -140,7 +172,10 @@ class BufferedByteReader {
     if (count < 0) {
       throw ArgumentError.value(count, 'count', 'Must be non-negative');
     }
-    if (_waiter != null) {
+    if (_disposed) {
+      throw _closedException(count);
+    }
+    if (_hasPendingOp) {
       throw StateError(
         'Concurrent reads on BufferedByteReader are not allowed',
       );
@@ -151,17 +186,14 @@ class BufferedByteReader {
     if (_bufferedLength >= count) {
       return _consume(count);
     }
-    if (_closed || _disposed) {
+    if (_closed) {
       throw _closedException(count);
     }
 
-    final completer = Completer<Uint8List?>();
-    _waiter = completer;
-    _neededBytes = count;
-    _discardWaiter = false;
-
-    final result = await completer.future;
-    return result!;
+    final completer = Completer<Uint8List>();
+    _readWaiter = completer;
+    _readNeeded = count;
+    return completer.future;
   }
 
   /// Reads an unsigned 8-bit integer.
@@ -188,12 +220,16 @@ class BufferedByteReader {
     return ByteData.sublistView(bytes).getInt32(0, Endian.big);
   }
 
-  /// Skips exactly [count] bytes from the stream.
+  /// Skips exactly [count] bytes from the stream without buffering incoming
+  /// skipped chunks in memory.
   Future<void> skip(int count) async {
     if (count < 0) {
       throw ArgumentError.value(count, 'count', 'Must be non-negative');
     }
-    if (_waiter != null) {
+    if (_disposed) {
+      throw _closedException(count);
+    }
+    if (_hasPendingOp) {
       throw StateError(
         'Concurrent reads on BufferedByteReader are not allowed',
       );
@@ -205,40 +241,53 @@ class BufferedByteReader {
       _discard(count);
       return;
     }
-    if (_closed || _disposed) {
+    if (_closed) {
       throw _closedException(count);
     }
 
-    final completer = Completer<Uint8List?>();
-    _waiter = completer;
-    _neededBytes = count;
-    _discardWaiter = true;
+    final remaining = count - _bufferedLength;
+    if (_bufferedLength > 0) {
+      _discard(_bufferedLength);
+    }
 
-    await completer.future;
+    final completer = Completer<void>();
+    _skipWaiter = completer;
+    _skipRemaining = remaining;
+    return completer.future;
   }
 
-  /// Releases the underlying stream subscription and fails any pending read.
-  Future<void> dispose() async {
-    if (_disposed) {
-      return;
+  /// Releases the underlying stream subscription and fails any pending read or
+  /// skip. Concurrent calls await the same cancellation future.
+  Future<void> dispose() {
+    if (_disposeFuture != null) {
+      return _disposeFuture!;
     }
     _disposed = true;
     _closed = true;
 
-    final waiter = _waiter;
-    final needed = _neededBytes;
-    _waiter = null;
-    _neededBytes = 0;
-    _discardWaiter = false;
+    final readWaiter = _readWaiter;
+    final readNeeded = _readNeeded;
+    _readWaiter = null;
+    _readNeeded = 0;
+
+    final skipWaiter = _skipWaiter;
+    final skipRemaining = _skipRemaining;
+    _skipWaiter = null;
+    _skipRemaining = 0;
 
     _chunks.clear();
     _chunkOffset = 0;
     _bufferedLength = 0;
 
-    if (waiter != null) {
-      waiter.completeError(_closedException(needed));
+    if (readWaiter != null) {
+      readWaiter.completeError(_closedException(readNeeded));
+    }
+    if (skipWaiter != null) {
+      skipWaiter.completeError(_closedException(skipRemaining));
     }
 
-    await _subscription.cancel();
+    final future = _subscription.cancel();
+    _disposeFuture = future;
+    return future;
   }
 }
