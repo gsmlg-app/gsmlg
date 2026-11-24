@@ -22,6 +22,7 @@ import 'tables/whois_history.dart';
 import 'tables/ssh_keys.dart';
 import 'tables/ssh_hosts.dart';
 import 'tables/shell_profiles.dart';
+import 'tables/vnc_hosts.dart';
 import 'type_converter.dart';
 
 export 'tables/agent_definition.dart';
@@ -43,6 +44,7 @@ export 'tables/whois_history.dart';
 export 'tables/ssh_keys.dart' show SshKeyAlgorithm;
 export 'tables/ssh_hosts.dart' show SshIdentityType;
 export 'tables/shell_profiles.dart' show ShellType, CursorStyleType;
+export 'tables/vnc_hosts.dart' show VncHostAuthType;
 export 'type_converter.dart';
 
 part 'database.g.dart';
@@ -67,6 +69,7 @@ part 'database.g.dart';
   SshKeys,
   SshHosts,
   ShellProfiles,
+  VncHosts,
 ])
 class AppDatabase extends _$AppDatabase {
   // After generating code, this class needs to define a `schemaVersion` getter
@@ -80,7 +83,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration {
@@ -273,6 +276,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 22) {
           await m.createTable(agentMemoryTable);
+        }
+        if (from < 23) {
+          await m.createTable(vncHosts);
         }
       },
     );

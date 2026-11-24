@@ -10801,6 +10801,551 @@ class ShellProfilesCompanion extends UpdateCompanion<ShellProfile> {
   }
 }
 
+class $VncHostsTable extends VncHosts with TableInfo<$VncHostsTable, VncHost> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VncHostsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _hostMeta = const VerificationMeta('host');
+  @override
+  late final GeneratedColumn<String> host = GeneratedColumn<String>(
+      'host', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _portMeta = const VerificationMeta('port');
+  @override
+  late final GeneratedColumn<int> port = GeneratedColumn<int>(
+      'port', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(5900));
+  static const VerificationMeta _authTypeMeta =
+      const VerificationMeta('authType');
+  @override
+  late final GeneratedColumn<int> authType = GeneratedColumn<int>(
+      'auth_type', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _usernameMeta =
+      const VerificationMeta('username');
+  @override
+  late final GeneratedColumn<String> username = GeneratedColumn<String>(
+      'username', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _passwordRefMeta =
+      const VerificationMeta('passwordRef');
+  @override
+  late final GeneratedColumn<String> passwordRef = GeneratedColumn<String>(
+      'password_ref', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _sshHostIdMeta =
+      const VerificationMeta('sshHostId');
+  @override
+  late final GeneratedColumn<int> sshHostId = GeneratedColumn<int>(
+      'ssh_host_id', aliasedName, true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES ssh_hosts (id) ON DELETE SET NULL'));
+  static const VerificationMeta _viewOnlyMeta =
+      const VerificationMeta('viewOnly');
+  @override
+  late final GeneratedColumn<bool> viewOnly = GeneratedColumn<bool>(
+      'view_only', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("view_only" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _lastConnectedAtMeta =
+      const VerificationMeta('lastConnectedAt');
+  @override
+  late final GeneratedColumn<DateTime> lastConnectedAt =
+      GeneratedColumn<DateTime>('last_connected_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        name,
+        host,
+        port,
+        authType,
+        username,
+        passwordRef,
+        sshHostId,
+        viewOnly,
+        createdAt,
+        lastConnectedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'vnc_hosts';
+  @override
+  VerificationContext validateIntegrity(Insertable<VncHost> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('host')) {
+      context.handle(
+          _hostMeta, host.isAcceptableOrUnknown(data['host']!, _hostMeta));
+    } else if (isInserting) {
+      context.missing(_hostMeta);
+    }
+    if (data.containsKey('port')) {
+      context.handle(
+          _portMeta, port.isAcceptableOrUnknown(data['port']!, _portMeta));
+    }
+    if (data.containsKey('auth_type')) {
+      context.handle(_authTypeMeta,
+          authType.isAcceptableOrUnknown(data['auth_type']!, _authTypeMeta));
+    }
+    if (data.containsKey('username')) {
+      context.handle(_usernameMeta,
+          username.isAcceptableOrUnknown(data['username']!, _usernameMeta));
+    }
+    if (data.containsKey('password_ref')) {
+      context.handle(
+          _passwordRefMeta,
+          passwordRef.isAcceptableOrUnknown(
+              data['password_ref']!, _passwordRefMeta));
+    }
+    if (data.containsKey('ssh_host_id')) {
+      context.handle(
+          _sshHostIdMeta,
+          sshHostId.isAcceptableOrUnknown(
+              data['ssh_host_id']!, _sshHostIdMeta));
+    }
+    if (data.containsKey('view_only')) {
+      context.handle(_viewOnlyMeta,
+          viewOnly.isAcceptableOrUnknown(data['view_only']!, _viewOnlyMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('last_connected_at')) {
+      context.handle(
+          _lastConnectedAtMeta,
+          lastConnectedAt.isAcceptableOrUnknown(
+              data['last_connected_at']!, _lastConnectedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  VncHost map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return VncHost(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      host: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}host'])!,
+      port: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}port'])!,
+      authType: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}auth_type'])!,
+      username: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}username']),
+      passwordRef: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}password_ref']),
+      sshHostId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}ssh_host_id']),
+      viewOnly: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}view_only'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      lastConnectedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}last_connected_at']),
+    );
+  }
+
+  @override
+  $VncHostsTable createAlias(String alias) {
+    return $VncHostsTable(attachedDatabase, alias);
+  }
+}
+
+class VncHost extends DataClass implements Insertable<VncHost> {
+  final int id;
+  final String name;
+  final String host;
+  final int port;
+  final int authType;
+  final String? username;
+  final String? passwordRef;
+  final int? sshHostId;
+  final bool viewOnly;
+  final DateTime createdAt;
+  final DateTime? lastConnectedAt;
+  const VncHost(
+      {required this.id,
+      required this.name,
+      required this.host,
+      required this.port,
+      required this.authType,
+      this.username,
+      this.passwordRef,
+      this.sshHostId,
+      required this.viewOnly,
+      required this.createdAt,
+      this.lastConnectedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['host'] = Variable<String>(host);
+    map['port'] = Variable<int>(port);
+    map['auth_type'] = Variable<int>(authType);
+    if (!nullToAbsent || username != null) {
+      map['username'] = Variable<String>(username);
+    }
+    if (!nullToAbsent || passwordRef != null) {
+      map['password_ref'] = Variable<String>(passwordRef);
+    }
+    if (!nullToAbsent || sshHostId != null) {
+      map['ssh_host_id'] = Variable<int>(sshHostId);
+    }
+    map['view_only'] = Variable<bool>(viewOnly);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || lastConnectedAt != null) {
+      map['last_connected_at'] = Variable<DateTime>(lastConnectedAt);
+    }
+    return map;
+  }
+
+  VncHostsCompanion toCompanion(bool nullToAbsent) {
+    return VncHostsCompanion(
+      id: Value(id),
+      name: Value(name),
+      host: Value(host),
+      port: Value(port),
+      authType: Value(authType),
+      username: username == null && nullToAbsent
+          ? const Value.absent()
+          : Value(username),
+      passwordRef: passwordRef == null && nullToAbsent
+          ? const Value.absent()
+          : Value(passwordRef),
+      sshHostId: sshHostId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sshHostId),
+      viewOnly: Value(viewOnly),
+      createdAt: Value(createdAt),
+      lastConnectedAt: lastConnectedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastConnectedAt),
+    );
+  }
+
+  factory VncHost.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return VncHost(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      host: serializer.fromJson<String>(json['host']),
+      port: serializer.fromJson<int>(json['port']),
+      authType: serializer.fromJson<int>(json['authType']),
+      username: serializer.fromJson<String?>(json['username']),
+      passwordRef: serializer.fromJson<String?>(json['passwordRef']),
+      sshHostId: serializer.fromJson<int?>(json['sshHostId']),
+      viewOnly: serializer.fromJson<bool>(json['viewOnly']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      lastConnectedAt: serializer.fromJson<DateTime?>(json['lastConnectedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'host': serializer.toJson<String>(host),
+      'port': serializer.toJson<int>(port),
+      'authType': serializer.toJson<int>(authType),
+      'username': serializer.toJson<String?>(username),
+      'passwordRef': serializer.toJson<String?>(passwordRef),
+      'sshHostId': serializer.toJson<int?>(sshHostId),
+      'viewOnly': serializer.toJson<bool>(viewOnly),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'lastConnectedAt': serializer.toJson<DateTime?>(lastConnectedAt),
+    };
+  }
+
+  VncHost copyWith(
+          {int? id,
+          String? name,
+          String? host,
+          int? port,
+          int? authType,
+          Value<String?> username = const Value.absent(),
+          Value<String?> passwordRef = const Value.absent(),
+          Value<int?> sshHostId = const Value.absent(),
+          bool? viewOnly,
+          DateTime? createdAt,
+          Value<DateTime?> lastConnectedAt = const Value.absent()}) =>
+      VncHost(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        host: host ?? this.host,
+        port: port ?? this.port,
+        authType: authType ?? this.authType,
+        username: username.present ? username.value : this.username,
+        passwordRef: passwordRef.present ? passwordRef.value : this.passwordRef,
+        sshHostId: sshHostId.present ? sshHostId.value : this.sshHostId,
+        viewOnly: viewOnly ?? this.viewOnly,
+        createdAt: createdAt ?? this.createdAt,
+        lastConnectedAt: lastConnectedAt.present
+            ? lastConnectedAt.value
+            : this.lastConnectedAt,
+      );
+  VncHost copyWithCompanion(VncHostsCompanion data) {
+    return VncHost(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      host: data.host.present ? data.host.value : this.host,
+      port: data.port.present ? data.port.value : this.port,
+      authType: data.authType.present ? data.authType.value : this.authType,
+      username: data.username.present ? data.username.value : this.username,
+      passwordRef:
+          data.passwordRef.present ? data.passwordRef.value : this.passwordRef,
+      sshHostId: data.sshHostId.present ? data.sshHostId.value : this.sshHostId,
+      viewOnly: data.viewOnly.present ? data.viewOnly.value : this.viewOnly,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastConnectedAt: data.lastConnectedAt.present
+          ? data.lastConnectedAt.value
+          : this.lastConnectedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VncHost(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('host: $host, ')
+          ..write('port: $port, ')
+          ..write('authType: $authType, ')
+          ..write('username: $username, ')
+          ..write('passwordRef: $passwordRef, ')
+          ..write('sshHostId: $sshHostId, ')
+          ..write('viewOnly: $viewOnly, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastConnectedAt: $lastConnectedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, host, port, authType, username,
+      passwordRef, sshHostId, viewOnly, createdAt, lastConnectedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is VncHost &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.host == this.host &&
+          other.port == this.port &&
+          other.authType == this.authType &&
+          other.username == this.username &&
+          other.passwordRef == this.passwordRef &&
+          other.sshHostId == this.sshHostId &&
+          other.viewOnly == this.viewOnly &&
+          other.createdAt == this.createdAt &&
+          other.lastConnectedAt == this.lastConnectedAt);
+}
+
+class VncHostsCompanion extends UpdateCompanion<VncHost> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> host;
+  final Value<int> port;
+  final Value<int> authType;
+  final Value<String?> username;
+  final Value<String?> passwordRef;
+  final Value<int?> sshHostId;
+  final Value<bool> viewOnly;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> lastConnectedAt;
+  const VncHostsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.host = const Value.absent(),
+    this.port = const Value.absent(),
+    this.authType = const Value.absent(),
+    this.username = const Value.absent(),
+    this.passwordRef = const Value.absent(),
+    this.sshHostId = const Value.absent(),
+    this.viewOnly = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastConnectedAt = const Value.absent(),
+  });
+  VncHostsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required String host,
+    this.port = const Value.absent(),
+    this.authType = const Value.absent(),
+    this.username = const Value.absent(),
+    this.passwordRef = const Value.absent(),
+    this.sshHostId = const Value.absent(),
+    this.viewOnly = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastConnectedAt = const Value.absent(),
+  })  : name = Value(name),
+        host = Value(host);
+  static Insertable<VncHost> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? host,
+    Expression<int>? port,
+    Expression<int>? authType,
+    Expression<String>? username,
+    Expression<String>? passwordRef,
+    Expression<int>? sshHostId,
+    Expression<bool>? viewOnly,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? lastConnectedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (host != null) 'host': host,
+      if (port != null) 'port': port,
+      if (authType != null) 'auth_type': authType,
+      if (username != null) 'username': username,
+      if (passwordRef != null) 'password_ref': passwordRef,
+      if (sshHostId != null) 'ssh_host_id': sshHostId,
+      if (viewOnly != null) 'view_only': viewOnly,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastConnectedAt != null) 'last_connected_at': lastConnectedAt,
+    });
+  }
+
+  VncHostsCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? name,
+      Value<String>? host,
+      Value<int>? port,
+      Value<int>? authType,
+      Value<String?>? username,
+      Value<String?>? passwordRef,
+      Value<int?>? sshHostId,
+      Value<bool>? viewOnly,
+      Value<DateTime>? createdAt,
+      Value<DateTime?>? lastConnectedAt}) {
+    return VncHostsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      host: host ?? this.host,
+      port: port ?? this.port,
+      authType: authType ?? this.authType,
+      username: username ?? this.username,
+      passwordRef: passwordRef ?? this.passwordRef,
+      sshHostId: sshHostId ?? this.sshHostId,
+      viewOnly: viewOnly ?? this.viewOnly,
+      createdAt: createdAt ?? this.createdAt,
+      lastConnectedAt: lastConnectedAt ?? this.lastConnectedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (host.present) {
+      map['host'] = Variable<String>(host.value);
+    }
+    if (port.present) {
+      map['port'] = Variable<int>(port.value);
+    }
+    if (authType.present) {
+      map['auth_type'] = Variable<int>(authType.value);
+    }
+    if (username.present) {
+      map['username'] = Variable<String>(username.value);
+    }
+    if (passwordRef.present) {
+      map['password_ref'] = Variable<String>(passwordRef.value);
+    }
+    if (sshHostId.present) {
+      map['ssh_host_id'] = Variable<int>(sshHostId.value);
+    }
+    if (viewOnly.present) {
+      map['view_only'] = Variable<bool>(viewOnly.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (lastConnectedAt.present) {
+      map['last_connected_at'] = Variable<DateTime>(lastConnectedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VncHostsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('host: $host, ')
+          ..write('port: $port, ')
+          ..write('authType: $authType, ')
+          ..write('username: $username, ')
+          ..write('passwordRef: $passwordRef, ')
+          ..write('sshHostId: $sshHostId, ')
+          ..write('viewOnly: $viewOnly, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastConnectedAt: $lastConnectedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -10839,6 +11384,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SshKeysTable sshKeys = $SshKeysTable(this);
   late final $SshHostsTable sshHosts = $SshHostsTable(this);
   late final $ShellProfilesTable shellProfiles = $ShellProfilesTable(this);
+  late final $VncHostsTable vncHosts = $VncHostsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -10862,8 +11408,21 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         ttsDatasetValidationIssueTable,
         sshKeys,
         sshHosts,
-        shellProfiles
+        shellProfiles,
+        vncHosts
       ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
+        [
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('ssh_hosts',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('vnc_hosts', kind: UpdateKind.update),
+            ],
+          ),
+        ],
+      );
 }
 
 typedef $$WhoisHistoryTableTableCreateCompanionBuilder
@@ -17128,6 +17687,20 @@ final class $$SshHostsTableReferences
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: [item]));
   }
+
+  static MultiTypedResultKey<$VncHostsTable, List<VncHost>> _vncHostsRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.vncHosts,
+          aliasName: 'ssh_hosts__id__vnc_hosts__ssh_host_id');
+
+  $$VncHostsTableProcessedTableManager get vncHostsRefs {
+    final manager = $$VncHostsTableTableManager($_db, $_db.vncHosts)
+        .filter((f) => f.sshHostId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_vncHostsRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$SshHostsTableFilterComposer
@@ -17184,6 +17757,27 @@ class $$SshHostsTableFilterComposer
                   $removeJoinBuilderFromRootComposer,
             ));
     return composer;
+  }
+
+  Expression<bool> vncHostsRefs(
+      Expression<bool> Function($$VncHostsTableFilterComposer f) f) {
+    final $$VncHostsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vncHosts,
+        getReferencedColumn: (t) => t.sshHostId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VncHostsTableFilterComposer(
+              $db: $db,
+              $table: $db.vncHosts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
   }
 }
 
@@ -17300,6 +17894,27 @@ class $$SshHostsTableAnnotationComposer
             ));
     return composer;
   }
+
+  Expression<T> vncHostsRefs<T extends Object>(
+      Expression<T> Function($$VncHostsTableAnnotationComposer a) f) {
+    final $$VncHostsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.vncHosts,
+        getReferencedColumn: (t) => t.sshHostId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$VncHostsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.vncHosts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$SshHostsTableTableManager extends RootTableManager<
@@ -17313,7 +17928,7 @@ class $$SshHostsTableTableManager extends RootTableManager<
     $$SshHostsTableUpdateCompanionBuilder,
     (SshHost, $$SshHostsTableReferences),
     SshHost,
-    PrefetchHooks Function({bool identityKeyId})> {
+    PrefetchHooks Function({bool identityKeyId, bool vncHostsRefs})> {
   $$SshHostsTableTableManager(_$AppDatabase db, $SshHostsTable table)
       : super(TableManagerState(
           db: db,
@@ -17378,10 +17993,11 @@ class $$SshHostsTableTableManager extends RootTableManager<
                     $$SshHostsTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({identityKeyId = false}) {
+          prefetchHooksCallback: (
+              {identityKeyId = false, vncHostsRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [],
+              explicitlyWatchedTables: [if (vncHostsRefs) db.vncHosts],
               addJoins: <
                   T extends TableManagerState<
                       dynamic,
@@ -17409,7 +18025,20 @@ class $$SshHostsTableTableManager extends RootTableManager<
                 return state;
               },
               getPrefetchedDataCallback: (items) async {
-                return [];
+                return [
+                  if (vncHostsRefs)
+                    await $_getPrefetchedDataByColumns<SshHost, $SshHostsTable,
+                            VncHost, $VncHostsTable>(
+                        currentTable: table,
+                        referencedTable:
+                            $$SshHostsTableReferences._vncHostsRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$SshHostsTableReferences(db, table, p0)
+                                .vncHostsRefs,
+                        currentColumn: 'id',
+                        referencedColumn: 'ssh_host_id',
+                        typedResults: items)
+                ];
               },
             );
           },
@@ -17427,7 +18056,7 @@ typedef $$SshHostsTableProcessedTableManager = ProcessedTableManager<
     $$SshHostsTableUpdateCompanionBuilder,
     (SshHost, $$SshHostsTableReferences),
     SshHost,
-    PrefetchHooks Function({bool identityKeyId})>;
+    PrefetchHooks Function({bool identityKeyId, bool vncHostsRefs})>;
 typedef $$ShellProfilesTableCreateCompanionBuilder = ShellProfilesCompanion
     Function({
   Value<int> id,
@@ -17774,6 +18403,364 @@ typedef $$ShellProfilesTableProcessedTableManager = ProcessedTableManager<
     ),
     ShellProfile,
     PrefetchHooks Function()>;
+typedef $$VncHostsTableCreateCompanionBuilder = VncHostsCompanion Function({
+  Value<int> id,
+  required String name,
+  required String host,
+  Value<int> port,
+  Value<int> authType,
+  Value<String?> username,
+  Value<String?> passwordRef,
+  Value<int?> sshHostId,
+  Value<bool> viewOnly,
+  Value<DateTime> createdAt,
+  Value<DateTime?> lastConnectedAt,
+});
+typedef $$VncHostsTableUpdateCompanionBuilder = VncHostsCompanion Function({
+  Value<int> id,
+  Value<String> name,
+  Value<String> host,
+  Value<int> port,
+  Value<int> authType,
+  Value<String?> username,
+  Value<String?> passwordRef,
+  Value<int?> sshHostId,
+  Value<bool> viewOnly,
+  Value<DateTime> createdAt,
+  Value<DateTime?> lastConnectedAt,
+});
+
+final class $$VncHostsTableReferences
+    extends BaseReferences<_$AppDatabase, $VncHostsTable, VncHost> {
+  $$VncHostsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $SshHostsTable _sshHostIdTable(_$AppDatabase db) =>
+      db.sshHosts.createAlias('vnc_hosts__ssh_host_id__ssh_hosts__id');
+
+  $$SshHostsTableProcessedTableManager? get sshHostId {
+    final $_column = $_itemColumn<int>('ssh_host_id');
+    if ($_column == null) return null;
+    final manager = $$SshHostsTableTableManager($_db, $_db.sshHosts)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sshHostIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$VncHostsTableFilterComposer
+    extends Composer<_$AppDatabase, $VncHostsTable> {
+  $$VncHostsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get host => $composableBuilder(
+      column: $table.host, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get port => $composableBuilder(
+      column: $table.port, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get authType => $composableBuilder(
+      column: $table.authType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get username => $composableBuilder(
+      column: $table.username, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get passwordRef => $composableBuilder(
+      column: $table.passwordRef, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get viewOnly => $composableBuilder(
+      column: $table.viewOnly, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastConnectedAt => $composableBuilder(
+      column: $table.lastConnectedAt,
+      builder: (column) => ColumnFilters(column));
+
+  $$SshHostsTableFilterComposer get sshHostId {
+    final $$SshHostsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sshHostId,
+        referencedTable: $db.sshHosts,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SshHostsTableFilterComposer(
+              $db: $db,
+              $table: $db.sshHosts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$VncHostsTableOrderingComposer
+    extends Composer<_$AppDatabase, $VncHostsTable> {
+  $$VncHostsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get host => $composableBuilder(
+      column: $table.host, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get port => $composableBuilder(
+      column: $table.port, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get authType => $composableBuilder(
+      column: $table.authType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get username => $composableBuilder(
+      column: $table.username, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get passwordRef => $composableBuilder(
+      column: $table.passwordRef, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get viewOnly => $composableBuilder(
+      column: $table.viewOnly, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastConnectedAt => $composableBuilder(
+      column: $table.lastConnectedAt,
+      builder: (column) => ColumnOrderings(column));
+
+  $$SshHostsTableOrderingComposer get sshHostId {
+    final $$SshHostsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sshHostId,
+        referencedTable: $db.sshHosts,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SshHostsTableOrderingComposer(
+              $db: $db,
+              $table: $db.sshHosts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$VncHostsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $VncHostsTable> {
+  $$VncHostsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get host =>
+      $composableBuilder(column: $table.host, builder: (column) => column);
+
+  GeneratedColumn<int> get port =>
+      $composableBuilder(column: $table.port, builder: (column) => column);
+
+  GeneratedColumn<int> get authType =>
+      $composableBuilder(column: $table.authType, builder: (column) => column);
+
+  GeneratedColumn<String> get username =>
+      $composableBuilder(column: $table.username, builder: (column) => column);
+
+  GeneratedColumn<String> get passwordRef => $composableBuilder(
+      column: $table.passwordRef, builder: (column) => column);
+
+  GeneratedColumn<bool> get viewOnly =>
+      $composableBuilder(column: $table.viewOnly, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastConnectedAt => $composableBuilder(
+      column: $table.lastConnectedAt, builder: (column) => column);
+
+  $$SshHostsTableAnnotationComposer get sshHostId {
+    final $$SshHostsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sshHostId,
+        referencedTable: $db.sshHosts,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SshHostsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.sshHosts,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$VncHostsTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $VncHostsTable,
+    VncHost,
+    $$VncHostsTableFilterComposer,
+    $$VncHostsTableOrderingComposer,
+    $$VncHostsTableAnnotationComposer,
+    $$VncHostsTableCreateCompanionBuilder,
+    $$VncHostsTableUpdateCompanionBuilder,
+    (VncHost, $$VncHostsTableReferences),
+    VncHost,
+    PrefetchHooks Function({bool sshHostId})> {
+  $$VncHostsTableTableManager(_$AppDatabase db, $VncHostsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$VncHostsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$VncHostsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$VncHostsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String> host = const Value.absent(),
+            Value<int> port = const Value.absent(),
+            Value<int> authType = const Value.absent(),
+            Value<String?> username = const Value.absent(),
+            Value<String?> passwordRef = const Value.absent(),
+            Value<int?> sshHostId = const Value.absent(),
+            Value<bool> viewOnly = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> lastConnectedAt = const Value.absent(),
+          }) =>
+              VncHostsCompanion(
+            id: id,
+            name: name,
+            host: host,
+            port: port,
+            authType: authType,
+            username: username,
+            passwordRef: passwordRef,
+            sshHostId: sshHostId,
+            viewOnly: viewOnly,
+            createdAt: createdAt,
+            lastConnectedAt: lastConnectedAt,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required String name,
+            required String host,
+            Value<int> port = const Value.absent(),
+            Value<int> authType = const Value.absent(),
+            Value<String?> username = const Value.absent(),
+            Value<String?> passwordRef = const Value.absent(),
+            Value<int?> sshHostId = const Value.absent(),
+            Value<bool> viewOnly = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime?> lastConnectedAt = const Value.absent(),
+          }) =>
+              VncHostsCompanion.insert(
+            id: id,
+            name: name,
+            host: host,
+            port: port,
+            authType: authType,
+            username: username,
+            passwordRef: passwordRef,
+            sshHostId: sshHostId,
+            viewOnly: viewOnly,
+            createdAt: createdAt,
+            lastConnectedAt: lastConnectedAt,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$VncHostsTable, VncHost>(table),
+                    $$VncHostsTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({sshHostId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (sshHostId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.sshHostId,
+                    referencedTable:
+                        $$VncHostsTableReferences._sshHostIdTable(db),
+                    referencedColumn:
+                        $$VncHostsTableReferences._sshHostIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$VncHostsTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $VncHostsTable,
+    VncHost,
+    $$VncHostsTableFilterComposer,
+    $$VncHostsTableOrderingComposer,
+    $$VncHostsTableAnnotationComposer,
+    $$VncHostsTableCreateCompanionBuilder,
+    $$VncHostsTableUpdateCompanionBuilder,
+    (VncHost, $$VncHostsTableReferences),
+    VncHost,
+    PrefetchHooks Function({bool sshHostId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -17821,4 +18808,6 @@ class $AppDatabaseManager {
       $$SshHostsTableTableManager(_db, _db.sshHosts);
   $$ShellProfilesTableTableManager get shellProfiles =>
       $$ShellProfilesTableTableManager(_db, _db.shellProfiles);
+  $$VncHostsTableTableManager get vncHosts =>
+      $$VncHostsTableTableManager(_db, _db.vncHosts);
 }

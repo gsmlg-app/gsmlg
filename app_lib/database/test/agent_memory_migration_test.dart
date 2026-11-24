@@ -26,7 +26,7 @@ void main() {
     }));
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 22);
+    expect(database.schemaVersion, 23);
     final agent =
         await database.select(database.agentDefinitionTable).getSingle();
     expect(agent.id, 'a1');

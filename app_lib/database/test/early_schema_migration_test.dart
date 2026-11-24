@@ -12,7 +12,7 @@ void main() {
     }));
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 22);
+    expect(database.schemaVersion, 23);
     await database.into(database.chatConversationTable).insert(
           ChatConversationTableCompanion.insert(
             id: 'c1',
