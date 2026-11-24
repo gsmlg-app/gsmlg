@@ -216,5 +216,42 @@ void main() {
         expect(KeysymMapper.fromKeyEvent(cmdDown), X11Keysym.superL);
       },
     );
+
+    test(
+      'maps KeyRepeatEvent, superKey, generic modifiers, and unmapped keys',
+      () {
+        const repeat = KeyRepeatEvent(
+          physicalKey: PhysicalKeyboardKey.arrowDown,
+          logicalKey: LogicalKeyboardKey.arrowDown,
+          timeStamp: Duration(milliseconds: 50),
+        );
+        expect(KeysymMapper.fromKeyEvent(repeat), X11Keysym.down);
+
+        expect(
+          KeysymMapper.fromLogicalKey(LogicalKeyboardKey.superKey),
+          X11Keysym.superL,
+        );
+        expect(
+          KeysymMapper.fromLogicalKey(LogicalKeyboardKey.meta),
+          X11Keysym.superL,
+        );
+        expect(
+          KeysymMapper.fromLogicalKey(LogicalKeyboardKey.alt),
+          X11Keysym.altL,
+        );
+        expect(
+          KeysymMapper.fromLogicalKey(LogicalKeyboardKey.control),
+          X11Keysym.controlL,
+        );
+        expect(
+          KeysymMapper.fromLogicalKey(LogicalKeyboardKey.shift),
+          X11Keysym.shiftL,
+        );
+        expect(
+          KeysymMapper.fromLogicalKey(LogicalKeyboardKey.audioVolumeUp),
+          isNull,
+        );
+      },
+    );
   });
 }

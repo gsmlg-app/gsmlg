@@ -136,6 +136,7 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
   StreamSubscription<VncFrameData>? _frameSub;
 
   ui.Image? _image;
+  int _frameStreamGeneration = 0;
   int _latestDecodedFrameId = -1;
 
   ui.Image? _cursorImage;
@@ -144,8 +145,10 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
   bool _disposed = false;
 
   Rect _contentRect = Rect.zero;
+  Matrix4? _scrollGuardMatrix;
   PointerDeviceKind? _lastPointerDownKind;
   Offset? _lastRemotePointer;
+  int _lastMouseButtons = 0;
   Offset? _virtualCursor;
 
   final Map<int, Offset> _trackpadDownPositions = {};
@@ -169,7 +172,7 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       _decodeFrame(widget.initialFrame!);
     }
     if (widget.cursor != null) {
-      _decodeCursor(widget.cursor);
+      _decodeCursor(widget.cursor, notify: false);
     }
   }
 
@@ -179,6 +182,7 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
 
     if (widget.frames != oldWidget.frames) {
       _frameSub?.cancel();
+      _frameStreamGeneration++;
       _latestDecodedFrameId = -1;
       _subscribeFrames();
     }
@@ -189,24 +193,33 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
     }
 
     if (widget.scaleMode != oldWidget.scaleMode) {
+      _scrollGuardMatrix = null;
       _transformationController.value = Matrix4.identity();
     }
 
     if (widget.cursor != oldWidget.cursor) {
-      _decodeCursor(widget.cursor);
+      _decodeCursor(widget.cursor, notify: false);
     }
 
-    if (widget.focusNode != oldWidget.focusNode && widget.focusNode != null) {
-      _ownedFocusNode?.dispose();
-      _ownedFocusNode = null;
+    if (widget.focusNode != oldWidget.focusNode) {
+      _releasePressedKeys();
+      if (widget.focusNode != null) {
+        _ownedFocusNode?.dispose();
+        _ownedFocusNode = null;
+      }
+    }
+
+    if (widget.touchMode != oldWidget.touchMode) {
+      _resetTrackpadGesture();
     }
 
     if (widget.viewOnly && !oldWidget.viewOnly) {
       _releasePressedKeys();
+      _releaseDesktopMouseButtons(ignoreViewOnly: true);
+      _resetTrackpadGesture();
     }
 
-    if (widget.touchMode == VncTouchMode.trackpad &&
-        _virtualCursor != null &&
+    if (_virtualCursor != null &&
         widget.framebufferWidth > 0 &&
         widget.framebufferHeight > 0) {
       _virtualCursor = Offset(
@@ -222,9 +235,9 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
   @override
   void dispose() {
     _disposed = true;
+    _releasePressedKeys();
     _frameSub?.cancel();
     _frameSub = null;
-    _pressedKeysyms.clear();
     _image?.dispose();
     _image = null;
     _cursorImage?.dispose();
@@ -236,7 +249,10 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
   }
 
   void _subscribeFrames() {
-    _frameSub = widget.frames.listen(_decodeFrame);
+    _frameSub = widget.frames.listen(
+      _decodeFrame,
+      onError: (Object _, StackTrace _) {},
+    );
   }
 
   void _decodeFrame(VncFrameData frame) {
@@ -244,6 +260,7 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
     if (frame.width <= 0 || frame.height <= 0) return;
     if (frame.rgbaPixels.length < frame.width * frame.height * 4) return;
 
+    final generation = _frameStreamGeneration;
     final frameId = frame.frameId;
     ui.decodeImageFromPixels(
       frame.rgbaPixels,
@@ -251,7 +268,10 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       frame.height,
       ui.PixelFormat.rgba8888,
       (ui.Image image) {
-        if (_disposed || !mounted || frameId < _latestDecodedFrameId) {
+        if (_disposed ||
+            !mounted ||
+            generation != _frameStreamGeneration ||
+            frameId < _latestDecodedFrameId) {
           image.dispose();
           return;
         }
@@ -264,7 +284,7 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
     );
   }
 
-  void _decodeCursor(VncCursorData? cursor) {
+  void _decodeCursor(VncCursorData? cursor, {bool notify = true}) {
     _cursorGeneration++;
     if (cursor == null ||
         cursor.width <= 0 ||
@@ -274,7 +294,7 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
         final previous = _cursorImage;
         _cursorImage = null;
         previous?.dispose();
-        if (mounted && !_disposed) {
+        if (notify && mounted && !_disposed) {
           setState(() {});
         }
       }
@@ -337,12 +357,33 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
     if (_cursorImage != null && mounted) {
       setState(() {});
     }
-    _emitPointer(remote, buttonMask);
+    if (!widget.viewOnly) {
+      _lastMouseButtons = buttonMask;
+      _emitPointer(remote, buttonMask);
+    }
   }
 
-  void _handlePointerScroll(PointerScrollEvent event) {
+  void _releaseDesktopMouseButtons({bool ignoreViewOnly = false}) {
+    if (_lastMouseButtons == 0) return;
+    _lastMouseButtons = 0;
+    final pos = _lastRemotePointer;
+    final callback = widget.onPointerEvent;
+    if (pos != null &&
+        callback != null &&
+        (ignoreViewOnly || !widget.viewOnly)) {
+      callback(pos.dx.round(), pos.dy.round(), 0);
+    }
+  }
+
+  void _handlePointerScrollFromChild(PointerScrollEvent event) {
     if (widget.viewOnly || widget.onPointerEvent == null) return;
-    final remote = _mapViewportPoint(event.localPosition);
+    final remote = VncCoordinateMapper.viewportToRemote(
+      viewportPoint: event.localPosition,
+      transformMatrix: Matrix4.identity(),
+      contentRect: _contentRect,
+      framebufferWidth: widget.framebufferWidth,
+      framebufferHeight: widget.framebufferHeight,
+    );
     if (remote == null) return;
 
     final baseButtons = _mapMouseButtons(event.buttons);
@@ -364,6 +405,13 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       _emitPointer(remote, baseButtons | (1 << 6));
       _emitPointer(remote, baseButtons);
     }
+  }
+
+  void _resetTrackpadGesture() {
+    _trackpadDownPositions.clear();
+    _trackpadLastPositions.clear();
+    _trackpadMaxPointers = 0;
+    _trackpadMoved = false;
   }
 
   Offset? _ensureVirtualCursor() {
@@ -397,7 +445,10 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
     final delta = event.localPosition - previous;
     _trackpadLastPositions[event.pointer] = event.localPosition;
 
-    if ((event.localPosition - origin).distance > _trackpadTapSlop) {
+    if (!_trackpadMoved) {
+      if ((event.localPosition - origin).distance <= _trackpadTapSlop) {
+        return;
+      }
       _trackpadMoved = true;
     }
 
@@ -558,8 +609,14 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
 
           final childSize = isActualSize
               ? Size(
-                  widget.framebufferWidth.toDouble(),
-                  widget.framebufferHeight.toDouble(),
+                  math.max(
+                    viewportSize.width,
+                    widget.framebufferWidth.toDouble(),
+                  ),
+                  math.max(
+                    viewportSize.height,
+                    widget.framebufferHeight.toDouble(),
+                  ),
                 )
               : viewportSize;
 
@@ -610,20 +667,34 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
               }
             },
             onPointerCancel: (event) {
-              if (event.kind == PointerDeviceKind.touch &&
+              if (_isDesktopPointer(event.kind)) {
+                final remote = _mapViewportPoint(event.localPosition);
+                if (remote != null) {
+                  _lastRemotePointer = remote;
+                }
+                _releaseDesktopMouseButtons();
+              } else if (event.kind == PointerDeviceKind.touch &&
                   widget.touchMode == VncTouchMode.trackpad) {
                 _handleTrackpadPointerCancel(event);
               }
             },
             onPointerSignal: (event) {
-              if (event is PointerScrollEvent) {
-                _handlePointerScroll(event);
+              final guarded = _scrollGuardMatrix;
+              if (guarded != null) {
+                _scrollGuardMatrix = null;
+                _transformationController.value = guarded;
               }
             },
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTapUp: _handleDirectTapUp,
-              onLongPressStart: _handleDirectLongPressStart,
+              onTapUp:
+                  !widget.viewOnly && widget.touchMode == VncTouchMode.direct
+                  ? _handleDirectTapUp
+                  : null,
+              onLongPressStart:
+                  !widget.viewOnly && widget.touchMode == VncTouchMode.direct
+                  ? _handleDirectLongPressStart
+                  : null,
               child: ClipRect(
                 child: InteractiveViewer(
                   transformationController: _transformationController,
@@ -632,24 +703,59 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
                   maxScale: 5.0,
                   panEnabled: panEnabled,
                   scaleEnabled: true,
-                  child: SizedBox(
-                    width: childSize.width,
-                    height: childSize.height,
-                    child: CustomPaint(
-                      painter: _VncCanvasPainter(
-                        image: _image,
-                        contentRect: _contentRect,
-                        framebufferWidth: widget.framebufferWidth,
-                        framebufferHeight: widget.framebufferHeight,
-                        cursorImage: _cursorImage,
-                        cursorData: widget.cursor,
-                        cursorPosition: activeCursorPosition,
-                        showVirtualCursor:
-                            widget.touchMode == VncTouchMode.trackpad &&
-                            _virtualCursor != null,
-                        backgroundColor: colorScheme.surfaceContainerLowest,
-                        cursorFillColor: colorScheme.primary,
-                        cursorStrokeColor: colorScheme.onPrimary,
+                  child: Listener(
+                    behavior: HitTestBehavior.opaque,
+                    onPointerSignal: (event) {
+                      if (!widget.viewOnly &&
+                          event is PointerScrollEvent &&
+                          _isDesktopPointer(event.kind)) {
+                        _scrollGuardMatrix = _transformationController.value
+                            .clone();
+                        GestureBinding.instance.pointerSignalResolver.register(
+                          event,
+                          (_) => _handlePointerScrollFromChild(event),
+                        );
+                      }
+                    },
+                    child: RawGestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      gestures: widget.viewOnly
+                          ? const <Type, GestureRecognizerFactory>{}
+                          : <Type, GestureRecognizerFactory>{
+                              _MouseDragClaimRecognizer:
+                                  GestureRecognizerFactoryWithHandlers<
+                                    _MouseDragClaimRecognizer
+                                  >(
+                                    () => _MouseDragClaimRecognizer(
+                                      supportedDevices: const {
+                                        PointerDeviceKind.mouse,
+                                        PointerDeviceKind.stylus,
+                                        PointerDeviceKind.invertedStylus,
+                                      },
+                                    ),
+                                    (_) {},
+                                  ),
+                            },
+                      child: SizedBox(
+                        width: childSize.width,
+                        height: childSize.height,
+                        child: CustomPaint(
+                          painter: _VncCanvasPainter(
+                            image: _image,
+                            contentRect: _contentRect,
+                            framebufferWidth: widget.framebufferWidth,
+                            framebufferHeight: widget.framebufferHeight,
+                            cursorImage: _cursorImage,
+                            cursorData: widget.cursor,
+                            cursorPosition: activeCursorPosition,
+                            showVirtualCursor:
+                                widget.touchMode == VncTouchMode.trackpad &&
+                                _virtualCursor != null,
+                            backgroundColor: colorScheme.surfaceContainerLowest,
+                            cursorFillColor: colorScheme.primary,
+                            cursorStrokeColor: colorScheme.onPrimary,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -661,6 +767,33 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       ),
     );
   }
+}
+
+/// Immediately claims mouse/stylus drag gestures inside [InteractiveViewer]
+/// when the canvas is interactive (`!viewOnly`), preventing local viewport
+/// panning from stealing remote desktop mouse drags while leaving touch
+/// pinch-zoom/pan unaffected.
+class _MouseDragClaimRecognizer extends OneSequenceGestureRecognizer {
+  _MouseDragClaimRecognizer({super.supportedDevices});
+
+  @override
+  String get debugDescription => 'vncMouseDragClaim';
+
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    startTrackingPointer(event.pointer, event.transform);
+    resolve(GestureDisposition.accepted);
+  }
+
+  @override
+  void handleEvent(PointerEvent event) {
+    if (event is PointerUpEvent || event is PointerCancelEvent) {
+      stopTrackingPointer(event.pointer);
+    }
+  }
+
+  @override
+  void didStopTrackingLastPointer(int pointer) {}
 }
 
 class _VncCanvasPainter extends CustomPainter {

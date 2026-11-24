@@ -8,6 +8,7 @@ abstract final class KeysymMapper {
     LogicalKeyboardKey.metaLeft: X11Keysym.superL,
     LogicalKeyboardKey.metaRight: X11Keysym.superR,
     LogicalKeyboardKey.meta: X11Keysym.superL,
+    LogicalKeyboardKey.superKey: X11Keysym.superL,
     LogicalKeyboardKey.altLeft: X11Keysym.altL,
     LogicalKeyboardKey.altRight: X11Keysym.altR,
     LogicalKeyboardKey.alt: X11Keysym.altL,

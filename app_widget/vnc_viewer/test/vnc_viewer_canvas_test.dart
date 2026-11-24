@@ -383,7 +383,239 @@ void main() {
         await tester.pump();
         expect(pointerEvents, [(120, 90, 4), (120, 90, 0)]);
 
+        // Small jitter within tap slop does not move cursor before clicking.
+        pointerEvents.clear();
+        final jitterTap = await tester.startGesture(const Offset(70, 70));
+        await jitterTap.moveBy(const Offset(3, 2));
+        await tester.pump();
+        await jitterTap.up();
+        await tester.pump();
+        expect(pointerEvents, [(120, 90, 1), (120, 90, 0)]);
+
         await controller.close();
+      },
+    );
+
+    testWidgets(
+      'desktop mouse drag and wheel forward remote events without altering InteractiveViewer transform',
+      (tester) async {
+        final controller = StreamController<VncFrameData>.broadcast();
+        final pointerEvents = <(int, int, int)>[];
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: VncViewerCanvas(
+                    frames: controller.stream,
+                    framebufferWidth: 1000,
+                    framebufferHeight: 1000,
+                    scaleMode: VncScaleMode.actualSize,
+                    onPointerEvent: (x, y, mask) =>
+                        pointerEvents.add((x, y, mask)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final viewer = tester.widget<InteractiveViewer>(
+          find.byType(InteractiveViewer),
+        );
+        final transformController = viewer.transformationController!;
+        expect(transformController.value, Matrix4.identity());
+
+        // Mouse drag across actualSize canvas (would pan InteractiveViewer if not claimed).
+        final mouse = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+          buttons: kPrimaryMouseButton,
+        );
+        await mouse.down(const Offset(40, 40));
+        await mouse.moveBy(const Offset(60, 50));
+        await mouse.up();
+        await tester.pump();
+
+        expect(pointerEvents, [(40, 40, 1), (100, 90, 1), (100, 90, 0)]);
+        expect(transformController.value, Matrix4.identity());
+
+        // Mouse wheel scroll (would zoom InteractiveViewer if not claimed via pointerSignalResolver).
+        pointerEvents.clear();
+        tester.binding.handlePointerEvent(
+          const PointerScrollEvent(
+            position: Offset(80, 70),
+            scrollDelta: Offset(0, -30),
+          ),
+        );
+        await tester.pump();
+
+        expect(pointerEvents, [(80, 70, 8), (80, 70, 0)]);
+        expect(transformController.value, Matrix4.identity());
+
+        await controller.close();
+      },
+    );
+
+    testWidgets('held hardware keys release on blur and on dispose', (
+      tester,
+    ) async {
+      final controller = StreamController<VncFrameData>.broadcast();
+      final focusNode = FocusNode();
+      final keyEvents = <(int, bool)>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 200,
+              height: 200,
+              child: VncViewerCanvas(
+                frames: controller.stream,
+                framebufferWidth: 200,
+                framebufferHeight: 200,
+                focusNode: focusNode,
+                onKeyEvent: (ks, down) => keyEvents.add((ks, down)),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Hold Shift then unfocus -> Shift must be released on blur.
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.pump();
+      expect(keyEvents, [(X11Keysym.shiftL, true)]);
+
+      focusNode.unfocus();
+      await tester.pump();
+      expect(keyEvents, [(X11Keysym.shiftL, true), (X11Keysym.shiftL, false)]);
+
+      // Refocus, hold Control, then dispose -> Control must be released on dispose.
+      keyEvents.clear();
+      focusNode.requestFocus();
+      await tester.pump();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pump();
+      expect(keyEvents, [(X11Keysym.controlL, true)]);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(keyEvents, [
+        (X11Keysym.controlL, true),
+        (X11Keysym.controlL, false),
+      ]);
+
+      // Release simulated keyboard state cleanly for subsequent tests.
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      focusNode.dispose();
+      await controller.close();
+    });
+
+    testWidgets(
+      'didUpdateWidget handles stream swap, cursor clear, viewOnly release, and touchMode switch',
+      (tester) async {
+        final stream1 = StreamController<VncFrameData>.broadcast();
+        final stream2 = StreamController<VncFrameData>.broadcast();
+        final pointerEvents = <(int, int, int)>[];
+        final keyEvents = <(int, bool)>[];
+
+        Widget buildCanvas({
+          required Stream<VncFrameData> frames,
+          VncCursorData? cursor,
+          bool viewOnly = false,
+          VncTouchMode touchMode = VncTouchMode.trackpad,
+        }) {
+          return MaterialApp(
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: VncViewerCanvas(
+                    frames: frames,
+                    framebufferWidth: 200,
+                    framebufferHeight: 200,
+                    cursor: cursor,
+                    viewOnly: viewOnly,
+                    touchMode: touchMode,
+                    onPointerEvent: (x, y, mask) =>
+                        pointerEvents.add((x, y, mask)),
+                    onKeyEvent: (ks, down) => keyEvents.add((ks, down)),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        final cursor = VncCursorData(
+          width: 2,
+          height: 2,
+          hotspotX: 0,
+          hotspotY: 0,
+          rgbaPixels: Uint8List(16)..fillRange(0, 16, 255),
+        );
+
+        await tester.pumpWidget(
+          buildCanvas(frames: stream1.stream, cursor: cursor),
+        );
+        await tester.runAsync(() async {
+          stream1.add(_makeSolidFrame(5, 4, 4, 255, 0, 0));
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        });
+        await tester.pump();
+
+        // Swap to stream2 and clear cursor.
+        await tester.pumpWidget(
+          buildCanvas(frames: stream2.stream, cursor: null),
+        );
+        await tester.runAsync(() async {
+          stream2.add(_makeSolidFrame(1, 4, 4, 0, 0, 255));
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        });
+        await tester.pump();
+
+        // Start a trackpad gesture, then switch touchMode to direct mid-gesture.
+        final gesture = await tester.startGesture(const Offset(50, 50));
+        await tester.pumpWidget(
+          buildCanvas(frames: stream2.stream, touchMode: VncTouchMode.direct),
+        );
+        await gesture.up();
+        await tester.pump();
+        expect(pointerEvents, isEmpty);
+
+        // Press mouse button + hardware key, then switch viewOnly -> true.
+        final mouse = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+          buttons: kPrimaryMouseButton,
+        );
+        await mouse.down(const Offset(30, 40));
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+        await tester.pump();
+        expect(pointerEvents, [(30, 40, 1)]);
+        expect(keyEvents, [(X11Keysym.altL, true)]);
+
+        await tester.pumpWidget(
+          buildCanvas(
+            frames: stream2.stream,
+            touchMode: VncTouchMode.direct,
+            viewOnly: true,
+          ),
+        );
+        await tester.pump();
+
+        expect(pointerEvents, [(30, 40, 1), (30, 40, 0)]);
+        expect(keyEvents, [(X11Keysym.altL, true), (X11Keysym.altL, false)]);
+
+        await mouse.up();
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+        await stream1.close();
+        await stream2.close();
       },
     );
   });
@@ -514,5 +746,47 @@ void main() {
         (X11Keysym.returnKey, false),
       ]);
     });
+
+    testWidgets(
+      'switching enabled to false releases active modifiers and closes soft keyboard',
+      (tester) async {
+        final keyEvents = <(int, bool)>[];
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: VncShortcutBar(
+                enabled: true,
+                onKeyEvent: (ks, down) => keyEvents.add((ks, down)),
+              ),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('⌘'));
+        await tester.tap(find.byIcon(Icons.keyboard_outlined));
+        await tester.pump();
+        expect(keyEvents, [(X11Keysym.superL, true)]);
+        expect(find.byType(TextField), findsOneWidget);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: VncShortcutBar(
+                enabled: false,
+                onKeyEvent: (ks, down) => keyEvents.add((ks, down)),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(keyEvents, [
+          (X11Keysym.superL, true),
+          (X11Keysym.superL, false),
+        ]);
+        expect(find.byType(TextField), findsNothing);
+      },
+    );
   });
 }
