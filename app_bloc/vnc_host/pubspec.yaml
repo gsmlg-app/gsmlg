@@ -1,0 +1,25 @@
+name: vnc_host_bloc
+description: BLoC for managing saved VNC hosts, credentials, and LAN discovery.
+version: 1.0.0
+publish_to: "none"
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+resolution: workspace
+
+dependencies:
+  app_database: any
+  app_secure_storage: any
+  app_vnc: any
+  bloc: ^9.2.1
+  drift: ^2.35.2
+  equatable: ^3.0.0
+  flutter:
+    sdk: flutter
+  meta: ^1.19.0
+
+dev_dependencies:
+  bloc_test: ^10.0.0
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
