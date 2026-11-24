@@ -10,18 +10,28 @@ typedef MdnsClientFactory = MDnsClient Function();
 /// Bounded Bonjour/mDNS scanner for VNC (`_rfb._tcp.local`) hosts on the local
 /// network.
 class VncMdnsDiscovery {
-  VncMdnsDiscovery({MdnsClientFactory? clientFactory})
-    : _clientFactory = clientFactory ?? _defaultClientFactory;
+  VncMdnsDiscovery({
+    MdnsClientFactory? clientFactory,
+    Duration maxSubLookupTimeout = const Duration(milliseconds: 1200),
+    Duration postFirstRecordSettle = const Duration(milliseconds: 150),
+  }) : _clientFactory = clientFactory ?? _defaultClientFactory,
+       _maxSubLookupTimeout = maxSubLookupTimeout,
+       _postFirstRecordSettle = postFirstRecordSettle;
 
   static const String serviceName = '_rfb._tcp.local';
 
   static MDnsClient _defaultClientFactory() => MDnsClient();
 
   final MdnsClientFactory _clientFactory;
+  final Duration _maxSubLookupTimeout;
+  final Duration _postFirstRecordSettle;
 
   /// Scans for `_rfb._tcp.local` services and yields deduplicated
   /// [VncDiscoveredHost] entries as they resolve, completing cleanly within
   /// [timeout] even if multicast networking is unavailable.
+  ///
+  /// Discovery starts lazily when the returned stream is listened to and stops
+  /// immediately if the subscription is cancelled.
   Stream<VncDiscoveredHost> discover({
     Duration timeout = const Duration(seconds: 5),
   }) {
@@ -32,23 +42,24 @@ class VncMdnsDiscovery {
     void Function()? abortScan;
 
     controller = StreamController<VncDiscoveredHost>(
+      onListen: () {
+        unawaited(
+          _runDiscovery(
+            controller: controller,
+            timeout: timeout,
+            isCancelled: () => cancelled,
+            onTimerCreated: (timer) => overallTimer = timer,
+            onPtrSubscriptionCreated: (sub) => ptrSubscription = sub,
+            onAbortRegistered: (abort) => abortScan = abort,
+          ),
+        );
+      },
       onCancel: () {
         cancelled = true;
         overallTimer?.cancel();
         abortScan?.call();
         unawaited(ptrSubscription?.cancel().catchError((Object _) {}));
       },
-    );
-
-    unawaited(
-      _runDiscovery(
-        controller: controller,
-        timeout: timeout,
-        isCancelled: () => cancelled,
-        onTimerCreated: (timer) => overallTimer = timer,
-        onPtrSubscriptionCreated: (sub) => ptrSubscription = sub,
-        onAbortRegistered: (abort) => abortScan = abort,
-      ),
     );
 
     return controller.stream;
@@ -69,6 +80,7 @@ class VncMdnsDiscovery {
     final seenPtrs = <String>{};
     final inFlightResolutions = <Future<void>>[];
     final scanDone = Completer<void>();
+    final abortCompleter = Completer<void>();
     var timedOut = false;
     Timer? timer;
 
@@ -77,13 +89,16 @@ class VncMdnsDiscovery {
       return rem > Duration.zero ? rem : Duration.zero;
     }
 
-    void finishScan() {
+    void triggerAbort() {
+      if (!abortCompleter.isCompleted) {
+        abortCompleter.complete();
+      }
       if (!scanDone.isCompleted) {
         scanDone.complete();
       }
     }
 
-    onAbortRegistered(finishScan);
+    onAbortRegistered(triggerAbort);
 
     try {
       if (timeout <= Duration.zero || isCancelled()) {
@@ -92,7 +107,7 @@ class VncMdnsDiscovery {
 
       timer = Timer(timeout, () {
         timedOut = true;
-        finishScan();
+        triggerAbort();
       });
       onTimerCreated(timer);
 
@@ -122,7 +137,8 @@ class VncMdnsDiscovery {
             client: client,
             ptrDomainName: normalizedPtr,
             remaining: remaining,
-            isStopped: () => timedOut || isCancelled(),
+            abortSignal: abortCompleter.future,
+            isCancelled: isCancelled,
             seenIds: seenIds,
             controller: controller,
           );
@@ -131,7 +147,11 @@ class VncMdnsDiscovery {
         onError: (Object _) {
           // Ignore transient mDNS lookup errors.
         },
-        onDone: finishScan,
+        onDone: () {
+          if (!scanDone.isCompleted) {
+            scanDone.complete();
+          }
+        },
         cancelOnError: false,
       );
       onPtrSubscriptionCreated(ptrSub);
@@ -139,19 +159,30 @@ class VncMdnsDiscovery {
       await scanDone.future;
       await ptrSub.cancel().catchError((Object _) {});
 
-      if (!timedOut && !isCancelled() && inFlightResolutions.isNotEmpty) {
-        final rem = remaining();
-        if (rem > Duration.zero) {
-          await Future.wait(
-            inFlightResolutions,
-          ).timeout(rem, onTimeout: () => const <void>[]);
-        }
+      if (!timedOut && remaining() <= Duration.zero) {
+        timedOut = true;
+        triggerAbort();
+      }
+
+      if (!isCancelled() && inFlightResolutions.isNotEmpty) {
+        // When timedOut is true, abortSignal has unblocked all in-flight
+        // sub-lookups so they can emit already-resolved hosts; give those
+        // microtasks a brief drain window before closing the controller.
+        final drainTimeout = timedOut
+            ? const Duration(milliseconds: 200)
+            : remaining();
+        await Future.wait(
+          inFlightResolutions,
+        ).timeout(drainTimeout, onTimeout: () => const <void>[]);
       }
     } catch (_) {
       // Gracefully swallow socket/platform mDNS failures (e.g. no multicast
       // interface or sandboxed environment).
     } finally {
       timer?.cancel();
+      if (!abortCompleter.isCompleted) {
+        abortCompleter.complete();
+      }
       try {
         client.stop();
       } catch (_) {}
@@ -165,13 +196,14 @@ class VncMdnsDiscovery {
     required MDnsClient client,
     required String ptrDomainName,
     required Duration Function() remaining,
-    required bool Function() isStopped,
+    required Future<void> abortSignal,
+    required bool Function() isCancelled,
     required Set<String> seenIds,
     required StreamController<VncDiscoveredHost> controller,
   }) async {
     try {
-      final srvRem = remaining();
-      if (isStopped() || srvRem <= Duration.zero) {
+      final srvRem = _minDuration(remaining(), _maxSubLookupTimeout);
+      if (isCancelled() || srvRem <= Duration.zero) {
         return;
       }
 
@@ -181,10 +213,12 @@ class VncMdnsDiscovery {
           timeout: srvRem,
         ),
         srvRem,
+        abortSignal: abortSignal,
+        settleAfterFirst: _postFirstRecordSettle,
       );
 
       for (final srv in srvRecords) {
-        if (isStopped()) {
+        if (isCancelled()) {
           return;
         }
         final targetHost = _stripTrailingDot(srv.target);
@@ -192,37 +226,17 @@ class VncMdnsDiscovery {
           continue;
         }
 
-        final addrRem = remaining();
-        final addresses = <String>[];
-        if (addrRem > Duration.zero) {
-          final results = await Future.wait<List<IPAddressResourceRecord>>([
-            _collectBounded(
-              client.lookup<IPAddressResourceRecord>(
-                ResourceRecordQuery.addressIPv4(targetHost),
+        final addrRem = _minDuration(remaining(), _maxSubLookupTimeout);
+        final addresses = addrRem > Duration.zero
+            ? await _resolveAddresses(
+                client: client,
+                targetHost: targetHost,
                 timeout: addrRem,
-              ),
-              addrRem,
-            ),
-            _collectBounded(
-              client.lookup<IPAddressResourceRecord>(
-                ResourceRecordQuery.addressIPv6(targetHost),
-                timeout: addrRem,
-              ),
-              addrRem,
-            ),
-          ]);
-          final seenAddr = <String>{};
-          for (final list in results) {
-            for (final record in list) {
-              final address = record.address.address;
-              if (seenAddr.add(address)) {
-                addresses.add(address);
-              }
-            }
-          }
-        }
+                abortSignal: abortSignal,
+              )
+            : const <String>[];
 
-        if (isStopped()) {
+        if (isCancelled()) {
           return;
         }
 
@@ -243,35 +257,131 @@ class VncMdnsDiscovery {
     }
   }
 
-  Future<List<T>> _collectBounded<T>(Stream<T> stream, Duration timeout) async {
-    final items = <T>[];
+  Future<List<String>> _resolveAddresses({
+    required MDnsClient client,
+    required String targetHost,
+    required Duration timeout,
+    required Future<void> abortSignal,
+  }) async {
+    final ipv4Addresses = <String>[];
+    final ipv6Addresses = <String>[];
     final done = Completer<void>();
-    late final StreamSubscription<T> sub;
-    sub = stream.listen(
-      items.add,
-      onError: (Object _) {},
-      onDone: () {
-        if (!done.isCompleted) {
-          done.complete();
-        }
-      },
-      cancelOnError: false,
-    );
+    Timer? settleTimer;
+    Timer? hardTimer;
+    var activeStreams = 2;
 
-    final timer = Timer(timeout, () {
+    void finish() {
       if (!done.isCompleted) {
         done.complete();
       }
-    });
+    }
+
+    void scheduleSettle() {
+      settleTimer ??= Timer(_postFirstRecordSettle, finish);
+    }
+
+    void onStreamDone() {
+      activeStreams--;
+      if (activeStreams <= 0) {
+        finish();
+      }
+    }
+
+    final ipv4Sub = client
+        .lookup<IPAddressResourceRecord>(
+          ResourceRecordQuery.addressIPv4(targetHost),
+          timeout: timeout,
+        )
+        .listen(
+          (record) {
+            ipv4Addresses.add(record.address.address);
+            scheduleSettle();
+          },
+          onError: (Object _) {},
+          onDone: onStreamDone,
+          cancelOnError: false,
+        );
+
+    final ipv6Sub = client
+        .lookup<IPAddressResourceRecord>(
+          ResourceRecordQuery.addressIPv6(targetHost),
+          timeout: timeout,
+        )
+        .listen(
+          (record) {
+            ipv6Addresses.add(record.address.address);
+            scheduleSettle();
+          },
+          onError: (Object _) {},
+          onDone: onStreamDone,
+          cancelOnError: false,
+        );
+
+    hardTimer = Timer(timeout, finish);
+    unawaited(abortSignal.then((_) => finish()));
 
     try {
       await done.future;
     } finally {
-      timer.cancel();
+      hardTimer.cancel();
+      settleTimer?.cancel();
+      await ipv4Sub.cancel().catchError((Object _) {});
+      await ipv6Sub.cancel().catchError((Object _) {});
+    }
+
+    // Prefer IPv4 addresses first, followed by IPv6, deduplicated in order.
+    final combined = <String>[];
+    final seen = <String>{};
+    for (final addr in [...ipv4Addresses, ...ipv6Addresses]) {
+      if (seen.add(addr)) {
+        combined.add(addr);
+      }
+    }
+    return combined;
+  }
+
+  Future<List<T>> _collectBounded<T>(
+    Stream<T> stream,
+    Duration timeout, {
+    required Future<void> abortSignal,
+    Duration? settleAfterFirst,
+  }) async {
+    final items = <T>[];
+    final done = Completer<void>();
+    Timer? settleTimer;
+
+    void finish() {
+      if (!done.isCompleted) {
+        done.complete();
+      }
+    }
+
+    final sub = stream.listen(
+      (item) {
+        items.add(item);
+        if (settleAfterFirst != null) {
+          settleTimer ??= Timer(settleAfterFirst, finish);
+        }
+      },
+      onError: (Object _) {},
+      onDone: finish,
+      cancelOnError: false,
+    );
+
+    final hardTimer = Timer(timeout, finish);
+    unawaited(abortSignal.then((_) => finish()));
+
+    try {
+      await done.future;
+    } finally {
+      hardTimer.cancel();
+      settleTimer?.cancel();
       await sub.cancel().catchError((Object _) {});
     }
     return items;
   }
+
+  static Duration _minDuration(Duration a, Duration b) => a < b ? a : b;
 
   static String _stripTrailingDot(String value) {
     var result = value.trim();

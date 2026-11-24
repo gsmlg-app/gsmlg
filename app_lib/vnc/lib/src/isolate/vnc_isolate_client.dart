@@ -197,18 +197,21 @@ class VncIsolateClient implements VncSessionClient {
         onError: errorPort.sendPort,
         debugName: 'vnc_session_worker',
       );
-      _isolate = isolate;
 
-      // If disconnect() was called while Isolate.spawn was awaiting, tear down
-      // immediately.
+      // If disconnect() was called while Isolate.spawn was awaiting, kill the
+      // newly spawned isolate directly without storing it.
       if (_disconnectFuture != null) {
         isolate.kill(priority: Isolate.immediate);
         if (!exitCompleter.isCompleted) {
           exitCompleter.complete();
         }
+        if (!readyCompleter.isCompleted) {
+          readyCompleter.complete();
+        }
         return;
       }
 
+      _isolate = isolate;
       await readyCompleter.future;
     } catch (e) {
       receivePort.close();
@@ -217,7 +220,10 @@ class VncIsolateClient implements VncSessionClient {
       if (!exitCompleter.isCompleted) {
         exitCompleter.complete();
       }
-      if (!_terminalEventEmitted) {
+      if (!readyCompleter.isCompleted) {
+        readyCompleter.complete();
+      }
+      if (!_terminalEventEmitted && _disconnectFuture == null) {
         _terminalEventEmitted = true;
         _emit(
           VncErrorEvent(
@@ -233,21 +239,40 @@ class VncIsolateClient implements VncSessionClient {
       return;
     }
     final type = message['type'] as String?;
-    switch (type) {
-      case 'ready':
-        final port = message['commandPort'];
+    final disconnecting = _disconnectFuture != null;
+
+    if (type == 'ready') {
+      final port = message['commandPort'];
+      final ready = _readyCompleter;
+      if (ready != null && !ready.isCompleted) {
+        ready.complete();
+      }
+      if (disconnecting) {
         if (port is SendPort) {
-          _workerCommandPort = port;
+          port.send(const <String, Object?>{'type': 'disconnect'});
         }
-        final ready = _readyCompleter;
-        if (ready != null && !ready.isCompleted) {
-          ready.complete();
-        }
-        if (_disconnectFuture != null) {
-          _workerCommandPort?.send(const <String, Object?>{
-            'type': 'disconnect',
-          });
-        }
+        return;
+      }
+      if (port is SendPort) {
+        _workerCommandPort = port;
+      }
+      return;
+    }
+
+    if (type == 'disconnected') {
+      if (!_terminalEventEmitted) {
+        _terminalEventEmitted = true;
+        _emit(VncDisconnectedEvent(reason: message['reason'] as String?));
+      }
+      return;
+    }
+
+    // Ignore any late session/frame/error events once disconnect() has started.
+    if (disconnecting) {
+      return;
+    }
+
+    switch (type) {
       case 'authRequired':
         _emit(
           VncAuthRequiredEvent(
@@ -307,11 +332,6 @@ class VncIsolateClient implements VncSessionClient {
         if (!_terminalEventEmitted) {
           _terminalEventEmitted = true;
           _emit(VncErrorEvent(_deserializeVncException(message)));
-        }
-      case 'disconnected':
-        if (!_terminalEventEmitted) {
-          _terminalEventEmitted = true;
-          _emit(VncDisconnectedEvent(reason: message['reason'] as String?));
         }
     }
   }

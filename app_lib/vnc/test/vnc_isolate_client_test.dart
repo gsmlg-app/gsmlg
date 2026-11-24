@@ -81,6 +81,7 @@ class _FakeMDnsClient extends MDnsClient {
     this.ipv4ByTarget = const {},
     this.ipv6ByTarget = const {},
     this.neverComplete = false,
+    this.keepLookupStreamsOpenUntilTimeout = false,
   });
 
   final Object? startError;
@@ -89,6 +90,7 @@ class _FakeMDnsClient extends MDnsClient {
   final Map<String, List<IPAddressResourceRecord>> ipv4ByTarget;
   final Map<String, List<IPAddressResourceRecord>> ipv6ByTarget;
   final bool neverComplete;
+  final bool keepLookupStreamsOpenUntilTimeout;
 
   bool started = false;
   bool stopped = false;
@@ -112,6 +114,35 @@ class _FakeMDnsClient extends MDnsClient {
     stopped = true;
   }
 
+  Stream<T> _streamForRecords<T extends ResourceRecord>(
+    List<T> records,
+    Duration timeout,
+  ) {
+    if (!keepLookupStreamsOpenUntilTimeout) {
+      return Stream<T>.fromIterable(records);
+    }
+    late final StreamController<T> controller;
+    Timer? closeTimer;
+    controller = StreamController<T>(
+      onListen: () {
+        for (final record in records) {
+          if (!controller.isClosed) {
+            controller.add(record);
+          }
+        }
+        closeTimer = Timer(timeout, () {
+          if (!controller.isClosed) {
+            controller.close();
+          }
+        });
+      },
+      onCancel: () {
+        closeTimer?.cancel();
+      },
+    );
+    return controller.stream;
+  }
+
   @override
   Stream<T> lookup<T extends ResourceRecord>(
     ResourceRecordQuery query, {
@@ -129,16 +160,25 @@ class _FakeMDnsClient extends MDnsClient {
         : query.fullyQualifiedName;
 
     if (query.resourceRecordType == ResourceRecordType.serverPointer) {
-      return Stream<T>.fromIterable(ptrRecords.cast<T>());
+      return _streamForRecords<T>(ptrRecords.cast<T>(), timeout);
     }
     if (query.resourceRecordType == ResourceRecordType.service) {
-      return Stream<T>.fromIterable((srvByName[key] ?? const []).cast<T>());
+      return _streamForRecords<T>(
+        (srvByName[key] ?? const []).cast<T>(),
+        timeout,
+      );
     }
     if (query.resourceRecordType == ResourceRecordType.addressIPv4) {
-      return Stream<T>.fromIterable((ipv4ByTarget[key] ?? const []).cast<T>());
+      return _streamForRecords<T>(
+        (ipv4ByTarget[key] ?? const []).cast<T>(),
+        timeout,
+      );
     }
     if (query.resourceRecordType == ResourceRecordType.addressIPv6) {
-      return Stream<T>.fromIterable((ipv6ByTarget[key] ?? const []).cast<T>());
+      return _streamForRecords<T>(
+        (ipv6ByTarget[key] ?? const []).cast<T>(),
+        timeout,
+      );
     }
     return Stream<T>.empty();
   }
@@ -634,6 +674,289 @@ void main() {
         await client.disconnect().timeout(const Duration(seconds: 5));
       },
     );
+
+    test('throws StateError when connect is called twice', () async {
+      final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(server.close);
+
+      final client = VncIsolateClient();
+      addTearDown(client.disconnect);
+
+      final config = VncConnectionConfig(
+        host: InternetAddress.loopbackIPv4.address,
+        port: server.port,
+      );
+      await client.connect(config);
+
+      await expectLater(client.connect(config), throwsA(isA<StateError>()));
+      await client.disconnect().timeout(const Duration(seconds: 5));
+    });
+
+    test(
+      'disconnect during auth/handshake shuts down cleanly without emitting a late VncErrorEvent',
+      () async {
+        final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+        addTearDown(server.close);
+
+        late StreamSubscription<Socket> serverSub;
+        serverSub = server.listen((socket) async {
+          final reader = BufferedByteReader(socket);
+          try {
+            socket.add(ascii.encode('RFB 003.008\n'));
+            await socket.flush();
+            await reader.readBytes(12);
+            socket.add([1, RfbSecurityType.vncAuth]);
+            await socket.flush();
+            await reader.readUint8();
+            socket.add(Uint8List(16)); // 16-byte DES challenge
+            await socket.flush();
+            // Wait until client disconnects while waiting for credentials.
+            await reader.readBytes(16);
+          } catch (_) {
+            // Expected on disconnect.
+          } finally {
+            await reader.dispose();
+            await socket.close();
+          }
+        });
+        addTearDown(() => serverSub.cancel());
+
+        final client = VncIsolateClient();
+        addTearDown(client.disconnect);
+
+        final events = <VncClientEvent>[];
+        final authRequired = Completer<VncAuthRequiredEvent>();
+        final disconnected = Completer<VncDisconnectedEvent>();
+
+        final sub = client.events.listen((event) {
+          events.add(event);
+          if (event is VncAuthRequiredEvent && !authRequired.isCompleted) {
+            authRequired.complete(event);
+          } else if (event is VncDisconnectedEvent &&
+              !disconnected.isCompleted) {
+            disconnected.complete(event);
+          }
+        });
+        addTearDown(sub.cancel);
+
+        await client.connect(
+          VncConnectionConfig(
+            host: InternetAddress.loopbackIPv4.address,
+            port: server.port,
+          ),
+        );
+
+        final authEvent = await authRequired.future.timeout(
+          const Duration(seconds: 5),
+        );
+        expect(authEvent.securityType, RfbSecurityType.vncAuth);
+        expect(authEvent.requiresUsername, isFalse);
+
+        await client.disconnect().timeout(const Duration(seconds: 5));
+        await disconnected.future.timeout(const Duration(seconds: 5));
+
+        expect(events.whereType<VncErrorEvent>(), isEmpty);
+        expect(events.whereType<VncDisconnectedEvent>(), hasLength(1));
+      },
+    );
+
+    test(
+      'cancelCredentials emits VncErrorEvent with VncAuthenticationException',
+      () async {
+        final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+        addTearDown(server.close);
+
+        late StreamSubscription<Socket> serverSub;
+        serverSub = server.listen((socket) async {
+          final reader = BufferedByteReader(socket);
+          try {
+            socket.add(ascii.encode('RFB 003.008\n'));
+            await socket.flush();
+            await reader.readBytes(12);
+            socket.add([1, RfbSecurityType.vncAuth]);
+            await socket.flush();
+            await reader.readUint8();
+            socket.add(Uint8List(16));
+            await socket.flush();
+            await reader.readBytes(16);
+          } catch (_) {
+            // Expected when client aborts auth.
+          } finally {
+            await reader.dispose();
+            await socket.close();
+          }
+        });
+        addTearDown(() => serverSub.cancel());
+
+        final client = VncIsolateClient();
+        addTearDown(client.disconnect);
+
+        final authRequired = Completer<void>();
+        final errorEvent = Completer<VncErrorEvent>();
+        final sub = client.events.listen((event) {
+          if (event is VncAuthRequiredEvent && !authRequired.isCompleted) {
+            authRequired.complete();
+          } else if (event is VncErrorEvent && !errorEvent.isCompleted) {
+            errorEvent.complete(event);
+          }
+        });
+        addTearDown(sub.cancel);
+
+        await client.connect(
+          VncConnectionConfig(
+            host: InternetAddress.loopbackIPv4.address,
+            port: server.port,
+          ),
+        );
+
+        await authRequired.future.timeout(const Duration(seconds: 5));
+        client.cancelCredentials();
+
+        final error = await errorEvent.future.timeout(
+          const Duration(seconds: 5),
+        );
+        expect(error.error, isA<VncAuthenticationException>());
+        await client.disconnect().timeout(const Duration(seconds: 5));
+      },
+    );
+
+    test(
+      'forwards VncResizedEvent, VncCursorEvent, VncClipboardEvent, and requestFullRefresh over isolate bridge',
+      () async {
+        final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+        addTearDown(server.close);
+
+        final fullRefreshReceived = Completer<Uint8List>();
+
+        late StreamSubscription<Socket> serverSub;
+        serverSub = server.listen((socket) async {
+          final reader = BufferedByteReader(socket);
+          try {
+            socket.add(ascii.encode('RFB 003.889\n'));
+            await socket.flush();
+            await reader.readBytes(12);
+            socket.add([1, RfbSecurityType.none]);
+            await socket.flush();
+            await reader.readUint8();
+            socket.add([0, 0, 0, 0]);
+            await socket.flush();
+            await reader.readUint8();
+            socket.add(_buildServerInit(width: 2, height: 2, name: 'Events'));
+            await socket.flush();
+            await _consumeInitialSetMessages(reader);
+
+            // Initial non-incremental update request (2x2).
+            await reader.readBytes(10);
+
+            // Send FramebufferUpdate containing DesktopSize (6x5) + Cursor (1x1, hotspot 1,0).
+            final update = BytesBuilder(copy: false);
+            final header = ByteData(4)
+              ..setUint8(0, 0)
+              ..setUint8(1, 0)
+              ..setUint16(2, 2, Endian.big);
+            update.add(header.buffer.asUint8List());
+
+            final resizeRect = ByteData(12)
+              ..setUint16(0, 0, Endian.big)
+              ..setUint16(2, 0, Endian.big)
+              ..setUint16(4, 6, Endian.big)
+              ..setUint16(6, 5, Endian.big)
+              ..setInt32(8, RfbEncoding.desktopSize, Endian.big);
+            update.add(resizeRect.buffer.asUint8List());
+
+            final cursorRect = ByteData(12)
+              ..setUint16(0, 1, Endian.big) // hotspotX=1
+              ..setUint16(2, 0, Endian.big) // hotspotY=0
+              ..setUint16(4, 1, Endian.big)
+              ..setUint16(6, 1, Endian.big)
+              ..setInt32(8, RfbEncoding.cursor, Endian.big);
+            update.add(cursorRect.buffer.asUint8List());
+            update.add([0x12, 0x34, 0x56, 0x00]); // pixel
+            update.add([0x80]); // opaque mask bit
+
+            // Follow with ServerCutText ("clip").
+            final cut = ByteData(8)
+              ..setUint8(0, 3)
+              ..setUint32(4, 4, Endian.big);
+            update.add(cut.buffer.asUint8List());
+            update.add(latin1.encode('clip'));
+
+            socket.add(update.takeBytes());
+            await socket.flush();
+
+            // Next request from session loop is post-resize non-incremental (6x5).
+            final postResizeReq = await reader.readBytes(10);
+            expect(postResizeReq, equals([3, 0, 0, 0, 0, 0, 0, 6, 0, 5]));
+
+            // Now wait for explicit requestFullRefresh() from client.
+            final manualRefresh = await reader.readBytes(10);
+            if (!fullRefreshReceived.isCompleted) {
+              fullRefreshReceived.complete(manualRefresh);
+            }
+          } catch (_) {
+            // Expected on disconnect.
+          } finally {
+            await reader.dispose();
+            await socket.close();
+          }
+        });
+        addTearDown(() => serverSub.cancel());
+
+        final client = VncIsolateClient();
+        addTearDown(client.disconnect);
+
+        final resizedCompleter = Completer<VncResizedEvent>();
+        final cursorCompleter = Completer<VncCursorEvent>();
+        final clipboardCompleter = Completer<VncClipboardEvent>();
+
+        final sub = client.events.listen((event) {
+          if (event is VncResizedEvent && !resizedCompleter.isCompleted) {
+            resizedCompleter.complete(event);
+          } else if (event is VncCursorEvent && !cursorCompleter.isCompleted) {
+            cursorCompleter.complete(event);
+          } else if (event is VncClipboardEvent &&
+              !clipboardCompleter.isCompleted) {
+            clipboardCompleter.complete(event);
+          }
+        });
+        addTearDown(sub.cancel);
+
+        await client.connect(
+          VncConnectionConfig(
+            host: InternetAddress.loopbackIPv4.address,
+            port: server.port,
+          ),
+        );
+
+        final resized = await resizedCompleter.future.timeout(
+          const Duration(seconds: 5),
+        );
+        expect(resized.width, 6);
+        expect(resized.height, 5);
+
+        final cursorEvent = await cursorCompleter.future.timeout(
+          const Duration(seconds: 5),
+        );
+        expect(cursorEvent.cursor.width, 1);
+        expect(cursorEvent.cursor.height, 1);
+        expect(cursorEvent.cursor.hotspotX, 1);
+        expect(cursorEvent.cursor.hotspotY, 0);
+        expect(cursorEvent.cursor.rgbaPixels, equals([0x12, 0x34, 0x56, 0xFF]));
+
+        final clipboard = await clipboardCompleter.future.timeout(
+          const Duration(seconds: 5),
+        );
+        expect(clipboard.text, 'clip');
+
+        client.requestFullRefresh();
+        expect(
+          await fullRefreshReceived.future.timeout(const Duration(seconds: 5)),
+          equals([3, 0, 0, 0, 0, 0, 0, 6, 0, 5]),
+        );
+
+        await client.disconnect().timeout(const Duration(seconds: 5));
+      },
+    );
   });
 
   group('VncMdnsDiscovery', () {
@@ -736,5 +1059,144 @@ void main() {
       expect(hosts, isEmpty);
       expect(fakeClient.stopped, isTrue);
     });
+
+    test(
+      'starts lazily only when the returned stream is listened to',
+      () async {
+        final fakeClient = _FakeMDnsClient();
+        final discovery = VncMdnsDiscovery(clientFactory: () => fakeClient);
+
+        final stream = discovery.discover(
+          timeout: const Duration(milliseconds: 200),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(fakeClient.started, isFalse);
+
+        await stream.toList();
+        expect(fakeClient.started, isTrue);
+        expect(fakeClient.stopped, isTrue);
+      },
+    );
+
+    test(
+      'emits IPv4-only Mac promptly when lookup streams stay open until timeout and supports take(1) cancellation',
+      () async {
+        final fakeClient = _FakeMDnsClient(
+          keepLookupStreamsOpenUntilTimeout: true,
+          ptrRecords: [
+            const PtrResourceRecord(
+              VncMdnsDiscovery.serviceName,
+              0,
+              domainName: 'MacBook Pro._rfb._tcp.local.',
+            ),
+          ],
+          srvByName: {
+            'MacBook Pro._rfb._tcp.local': const [
+              SrvResourceRecord(
+                'MacBook Pro._rfb._tcp.local',
+                0,
+                target: 'macbook-pro.local.',
+                port: 5900,
+                priority: 0,
+                weight: 0,
+              ),
+            ],
+          },
+          ipv4ByTarget: {
+            'macbook-pro.local': [
+              IPAddressResourceRecord(
+                'macbook-pro.local',
+                0,
+                address: InternetAddress('192.168.1.99'),
+              ),
+            ],
+          },
+          // No IPv6 AAAA records: AAAA stream emits nothing and stays open.
+          ipv6ByTarget: const {},
+        );
+
+        final discovery = VncMdnsDiscovery(clientFactory: () => fakeClient);
+        final sw = Stopwatch()..start();
+
+        // Overall timeout is 5s, but take(1) should emit and stop well under 1.5s.
+        final hosts = await discovery
+            .discover(timeout: const Duration(seconds: 5))
+            .take(1)
+            .toList()
+            .timeout(const Duration(seconds: 2));
+
+        sw.stop();
+        expect(hosts, hasLength(1));
+        expect(
+          hosts.first,
+          const VncDiscoveredHost(
+            name: 'MacBook Pro',
+            host: 'macbook-pro.local',
+            port: 5900,
+            addresses: ['192.168.1.99'],
+          ),
+        );
+        expect(sw.elapsedMilliseconds, lessThan(1500));
+
+        // Allow onCancel teardown microtask to complete.
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(fakeClient.stopped, isTrue);
+      },
+    );
+
+    test(
+      'preserves already-resolved host when overall timeout fires during open lookup streams',
+      () async {
+        final fakeClient = _FakeMDnsClient(
+          keepLookupStreamsOpenUntilTimeout: true,
+          ptrRecords: [
+            const PtrResourceRecord(
+              VncMdnsDiscovery.serviceName,
+              0,
+              domainName: 'iMac._rfb._tcp.local.',
+            ),
+          ],
+          srvByName: {
+            'iMac._rfb._tcp.local': const [
+              SrvResourceRecord(
+                'iMac._rfb._tcp.local',
+                0,
+                target: 'imac.local.',
+                port: 5900,
+                priority: 0,
+                weight: 0,
+              ),
+            ],
+          },
+          ipv4ByTarget: {
+            'imac.local': [
+              IPAddressResourceRecord(
+                'imac.local',
+                0,
+                address: InternetAddress('10.0.0.55'),
+              ),
+            ],
+          },
+          ipv6ByTarget: const {},
+        );
+
+        // Settle delay is 400ms while overall timeout is 200ms, so the overall
+        // timeout deterministically fires while lookup streams are still open.
+        final discovery = VncMdnsDiscovery(
+          clientFactory: () => fakeClient,
+          postFirstRecordSettle: const Duration(milliseconds: 400),
+        );
+        final hosts = await discovery
+            .discover(timeout: const Duration(milliseconds: 200))
+            .toList()
+            .timeout(const Duration(seconds: 2));
+
+        expect(hosts, hasLength(1));
+        expect(hosts.first.name, 'iMac');
+        expect(hosts.first.host, 'imac.local');
+        expect(hosts.first.port, 5900);
+        expect(fakeClient.stopped, isTrue);
+      },
+    );
   });
 }
