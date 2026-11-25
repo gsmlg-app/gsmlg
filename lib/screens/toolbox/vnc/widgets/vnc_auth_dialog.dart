@@ -84,69 +84,72 @@ class _VncAuthDialogState extends State<VncAuthDialog> {
         (widget.initialUsername?.trim().isNotEmpty ?? false);
 
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       title: Text(l10n.vncAuthPromptTitle),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 400),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...[
-                Text(
-                  widget.subtitle!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...[
+                  Text(
+                    widget.subtitle!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-              ],
-              if (widget.requiresUsername) ...[
+                  const SizedBox(height: 12),
+                ],
+                if (widget.requiresUsername) ...[
+                  TextFormField(
+                    controller: _usernameController,
+                    decoration: InputDecoration(
+                      labelText: l10n.vncUsernameLabel,
+                      border: const OutlineInputBorder(),
+                    ),
+                    autofocus: !hasInitialUsername,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    validator: (value) {
+                      if (!widget.usernameOptional &&
+                          (value == null || value.trim().isEmpty)) {
+                        return '${l10n.vncUsernameLabel} is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 TextFormField(
-                  controller: _usernameController,
+                  controller: _passwordController,
                   decoration: InputDecoration(
-                    labelText: l10n.vncUsernameLabel,
+                    labelText: l10n.vncPasswordLabel,
                     border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      onPressed: () => setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      }),
+                    ),
                   ),
-                  autofocus: !hasInitialUsername,
-                  textInputAction: TextInputAction.next,
+                  obscureText: _obscurePassword,
+                  autofocus: !widget.requiresUsername || hasInitialUsername,
+                  textInputAction: TextInputAction.done,
                   autocorrect: false,
                   enableSuggestions: false,
-                  validator: (value) {
-                    if (!widget.usernameOptional &&
-                        (value == null || value.trim().isEmpty)) {
-                      return '${l10n.vncUsernameLabel} is required';
-                    }
-                    return null;
-                  },
+                  onFieldSubmitted: (_) => _submit(),
                 ),
-                const SizedBox(height: 12),
               ],
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: l10n.vncPasswordLabel,
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
-                    onPressed: () => setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    }),
-                  ),
-                ),
-                obscureText: _obscurePassword,
-                autofocus: !widget.requiresUsername || hasInitialUsername,
-                textInputAction: TextInputAction.done,
-                autocorrect: false,
-                enableSuggestions: false,
-                onFieldSubmitted: (_) => _submit(),
-              ),
-            ],
+            ),
           ),
         ),
       ),

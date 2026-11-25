@@ -202,6 +202,9 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
   ui.Image? _image;
   int _frameStreamGeneration = 0;
   int _latestDecodedFrameId = -1;
+  bool _isDecodingFrame = false;
+  VncFrameData? _pendingFrame;
+  Size? _lastViewportSize;
 
   ui.Image? _cursorImage;
   int _cursorGeneration = 0;
@@ -263,6 +266,8 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       _frameSub?.cancel();
       _frameStreamGeneration++;
       _latestDecodedFrameId = -1;
+      _isDecodingFrame = false;
+      _pendingFrame = null;
       _subscribeFrames();
     }
 
@@ -277,9 +282,20 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
     }
 
     final srcRect = _sourceRect;
-    if (widget.activeRegion != oldWidget.activeRegion) {
+    final dimensionsChanged =
+        widget.framebufferWidth != oldWidget.framebufferWidth ||
+        widget.framebufferHeight != oldWidget.framebufferHeight;
+    if (widget.activeRegion != oldWidget.activeRegion || dimensionsChanged) {
       _scrollGuardMatrix = null;
       _transformationController.value = Matrix4.identity();
+      if (dimensionsChanged &&
+          _image != null &&
+          (_image!.width != widget.framebufferWidth ||
+              _image!.height != widget.framebufferHeight)) {
+        final previous = _image;
+        _image = null;
+        previous?.dispose();
+      }
       if (_virtualCursor != null && !srcRect.isEmpty) {
         _virtualCursor = _clampToSourceRect(srcRect.center, srcRect);
       }
@@ -339,7 +355,17 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
     if (_disposed) return;
     if (frame.width <= 0 || frame.height <= 0) return;
     if (frame.rgbaPixels.length < frame.width * frame.height * 4) return;
+    if (frame.frameId < _latestDecodedFrameId) return;
 
+    if (_isDecodingFrame) {
+      final pending = _pendingFrame;
+      if (pending == null || frame.frameId >= pending.frameId) {
+        _pendingFrame = frame;
+      }
+      return;
+    }
+
+    _isDecodingFrame = true;
     final generation = _frameStreamGeneration;
     final frameId = frame.frameId;
     ui.decodeImageFromPixels(
@@ -348,18 +374,28 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       frame.height,
       ui.PixelFormat.rgba8888,
       (ui.Image image) {
+        if (generation == _frameStreamGeneration) {
+          _isDecodingFrame = false;
+        }
         if (_disposed ||
             !mounted ||
             generation != _frameStreamGeneration ||
             frameId < _latestDecodedFrameId) {
           image.dispose();
-          return;
+        } else {
+          _latestDecodedFrameId = frameId;
+          final previous = _image;
+          _image = image;
+          previous?.dispose();
+          setState(() {});
         }
-        _latestDecodedFrameId = frameId;
-        final previous = _image;
-        _image = image;
-        previous?.dispose();
-        setState(() {});
+        if (!_disposed && mounted && generation == _frameStreamGeneration) {
+          final next = _pendingFrame;
+          if (next != null) {
+            _pendingFrame = null;
+            _decodeFrame(next);
+          }
+        }
       },
     );
   }
@@ -678,12 +714,30 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final viewportSize = constraints.biggest;
+          final previousViewport = _lastViewportSize;
+          if (previousViewport != null &&
+              previousViewport != viewportSize &&
+              (previousViewport.width > previousViewport.height) !=
+                  (viewportSize.width > viewportSize.height)) {
+            _scrollGuardMatrix = null;
+            _transformationController.value = Matrix4.identity();
+          }
+          _lastViewportSize = viewportSize;
+
           _contentRect = VncCoordinateMapper.computeFittedRect(
             viewportSize: viewportSize,
             framebufferWidth: sourceWidth,
             framebufferHeight: sourceHeight,
             scaleMode: widget.scaleMode,
           );
+
+          final fitScale = (sourceWidth > 0 && sourceHeight > 0)
+              ? math.min(
+                  viewportSize.width / sourceWidth,
+                  viewportSize.height / sourceHeight,
+                )
+              : 1.0;
+          final minActualScale = math.min(0.25, math.max(0.05, fitScale));
 
           final childSize = isActualSize
               ? Size(
@@ -771,7 +825,7 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
                 child: InteractiveViewer(
                   transformationController: _transformationController,
                   constrained: !isActualSize,
-                  minScale: isActualSize ? 0.25 : 1.0,
+                  minScale: isActualSize ? minActualScale : 1.0,
                   maxScale: 5.0,
                   panEnabled: panEnabled,
                   scaleEnabled: true,

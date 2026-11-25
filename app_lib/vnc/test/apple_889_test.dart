@@ -715,6 +715,7 @@ void main() {
         final serverClientBanner = Completer<String>();
         final serverClientInit = Completer<int>();
         final serverSetDisplayMsg = Completer<Uint8List>();
+        final serverPostSetDisplayRefresh = Completer<Uint8List>();
         final serverRightClickMsg = Completer<Uint8List>();
         final serverMiddleClickMsg = Completer<Uint8List>();
         final serverAutoUpdates = <Uint8List>[];
@@ -914,7 +915,13 @@ void main() {
               final msgType = await encReader.readUint8();
               switch (msgType) {
                 case 3: // FramebufferUpdateRequest
-                  await encReader.readBytes(9);
+                  final rest = await encReader.readBytes(9);
+                  if (serverSetDisplayMsg.isCompleted &&
+                      !serverPostSetDisplayRefresh.isCompleted) {
+                    serverPostSetDisplayRefresh.complete(
+                      Uint8List.fromList([3, ...rest]),
+                    );
+                  }
                 case 5: // PointerEvent
                   final rest = await encReader.readBytes(5);
                   final full = Uint8List.fromList([5, ...rest]);
@@ -1055,6 +1062,12 @@ void main() {
           await serverSetDisplayMsg.future.timeout(const Duration(seconds: 5)),
           equals([0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02]),
         );
+        // Verify non-incremental FramebufferUpdateRequest queued directly
+        // behind SetDisplay (macOS 26 quiet-display repaint fix).
+        final postSwitchRefresh = await serverPostSetDisplayRefresh.future
+            .timeout(const Duration(seconds: 5));
+        expect(postSwitchRefresh[0], 3);
+        expect(postSwitchRefresh[1], 0);
 
         final secondLayout = await secondLayoutCompleter.future.timeout(
           const Duration(seconds: 5),
@@ -1088,6 +1101,11 @@ void main() {
           equals([5, 0x04, 0x00, 120, 0x00, 220]),
         );
         expect(serverAutoUpdates, isNotEmpty);
+        // Standard Screen Sharing arms AutoFrameBufferUpdate with intervalUs=0.
+        expect(
+          ByteData.sublistView(serverAutoUpdates.first, 4, 8).getUint32(0),
+          0,
+        );
 
         await client.disconnect().timeout(const Duration(seconds: 5));
       },

@@ -89,18 +89,29 @@ class RfbSession {
   }
 
   /// Sends macOS `SetDisplay` (`0x0d`) to select a physical display by
-  /// [displayId], or `null` for All Displays. No-op outside Apple `003.889`
+  /// [displayId], or `null` for All Displays, immediately followed by a
+  /// non-incremental `FramebufferUpdateRequest`.
+  ///
+  /// On macOS 26 Screen Sharing, queuing the non-incremental refresh directly
+  /// behind `SetDisplay` (using the current framebuffer bounds) ensures a quiet
+  /// target display still sends a full repaint after the answering
+  /// `AppleDisplayLayout` clears the framebuffer. No-op outside Apple `003.889`
   /// sessions.
   void selectAppleDisplay(int? displayId) {
     if (!isApple889) {
       return;
     }
     _transport.add(AppleRfbMessages.setDisplay(displayId));
+    requestFramebufferUpdate(incremental: false);
   }
 
   /// Sends macOS `AutoFrameBufferUpdate` (`0x09`) for the current framebuffer
-  /// dimensions. No-op outside Apple `003.889` sessions.
-  void armAppleAutoUpdate({int intervalUs = 33333}) {
+  /// dimensions.
+  ///
+  /// Standard Screen Sharing arms `intervalUs = 0` (matching Apple's viewer) so
+  /// strips of a single capture arrive back-to-back without tearing. No-op
+  /// outside Apple `003.889` sessions.
+  void armAppleAutoUpdate({int intervalUs = 0}) {
     if (!isApple889) {
       return;
     }

@@ -993,5 +993,162 @@ void main() {
         expect(find.byIcon(Icons.more_vert), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'notched iPhone 11 portrait & landscape SafeArea, Display badge, Fullscreen, ShortcutBar, and Dialogs render with zero overflow',
+      (tester) async {
+        // Simulate iPhone 11 portrait (414x896 pt, top notch 48, home bar 34).
+        tester.view.physicalSize = const Size(414, 896);
+        tester.view.devicePixelRatio = 1.0;
+        tester.view.padding = const FakeViewPadding(top: 48, bottom: 34);
+        tester.view.viewPadding = const FakeViewPadding(top: 48, bottom: 34);
+        addTearDown(tester.view.reset);
+
+        final fakeClient = FakeVncSessionClient();
+        final sessionBloc = VncSessionBloc(clientFactory: () => fakeClient);
+        addTearDown(() async {
+          await sessionBloc.close();
+          await fakeClient.dispose();
+        });
+
+        const launch = VncLaunchConfig(
+          title: 'MacBook Pro M3',
+          config: VncConnectionConfig(host: '10.100.10.44', port: 5900),
+        );
+
+        await tester.pumpWidget(
+          wrapWithApp(
+            VncSessionScreen(launchConfig: launch, blocOverride: sessionBloc),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        const d1 = VncScreenInfo(id: 1, x: 0, y: 0, width: 3024, height: 1964);
+        const d2 = VncScreenInfo(
+          id: 2,
+          x: 3024,
+          y: 0,
+          width: 3840,
+          height: 2160,
+        );
+        const d3 = VncScreenInfo(
+          id: 3,
+          x: 6864,
+          y: 0,
+          width: 2160,
+          height: 3840,
+        );
+
+        fakeClient.emitEvent(
+          const VncConnectedEvent(
+            VncDesktopInfo(
+              name: 'MacBook Pro M3',
+              width: 9024,
+              height: 3840,
+              protocolVersion: 'RFB 003.889',
+              securityType: 30,
+              isApple889: true,
+            ),
+          ),
+        );
+        fakeClient.emitEvent(
+          const VncResizedEvent(
+            width: 9024,
+            height: 3840,
+            screens: [d1, d2, d3],
+            hasCurrentDisplayId: true,
+            currentDisplayId: null,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        // Back button must sit cleanly below the 48pt iPhone notch.
+        expect(
+          tester.getTopLeft(find.byIcon(Icons.arrow_back)).dy,
+          greaterThanOrEqualTo(48.0),
+        );
+        // Display switcher badge shows "All" initially.
+        expect(find.text('All'), findsOneWidget);
+
+        // Select Display 2 and verify badge updates to "2" after layout confirms.
+        await tester.tap(find.byTooltip('Select Display'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Display 2 (3840×2160)'));
+        await tester.pumpAndSettle();
+        expect(fakeClient.selectDisplayCalls, equals([2]));
+
+        fakeClient.emitEvent(
+          const VncResizedEvent(
+            width: 3840,
+            height: 2160,
+            screens: [d1, d2, d3],
+            hasCurrentDisplayId: true,
+            currentDisplayId: 2,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('2'), findsOneWidget);
+        expect(find.text('3840×2160'), findsOneWidget);
+
+        // Open shortcut bar and verify it clears the 34pt iPhone home indicator.
+        await tester.tap(find.byIcon(Icons.keyboard_outlined));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.getBottomLeft(find.text('Esc')).dy,
+          lessThanOrEqualTo(896.0 - 34.0),
+        );
+
+        // Toggle fullscreen via overflow menu -> auto-hides toolbar cleanly.
+        await tester.tap(find.byIcon(Icons.more_vert));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Fullscreen'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.byIcon(Icons.arrow_back), findsNothing);
+        expect(find.byIcon(Icons.keyboard_arrow_down), findsOneWidget);
+        expect(
+          tester.getTopLeft(find.byIcon(Icons.keyboard_arrow_down)).dy,
+          greaterThanOrEqualTo(48.0),
+        );
+
+        // Restore toolbar while still fullscreen -> toolbar still clears notch!
+        await tester.tap(find.byIcon(Icons.keyboard_arrow_down));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          tester.getTopLeft(find.byIcon(Icons.arrow_back)).dy,
+          greaterThanOrEqualTo(48.0),
+        );
+
+        // Rotate to iPhone 11 landscape (896x414) with left/right notch insets
+        // and simulate soft keyboard open (viewInsets.bottom = 180) with AuthDialog.
+        tester.view.physicalSize = const Size(896, 414);
+        tester.view.padding = const FakeViewPadding(
+          left: 48,
+          right: 48,
+          bottom: 21,
+        );
+        tester.view.viewPadding = const FakeViewPadding(
+          left: 48,
+          right: 48,
+          bottom: 21,
+        );
+        tester.view.viewInsets = const FakeViewPadding(bottom: 180);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        // Trigger VncAuthDialog in landscape with keyboard open: must scroll, no overflow.
+        fakeClient.emitEvent(
+          const VncAuthRequiredEvent(securityType: 30, requiresUsername: true),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(tester.takeException(), isNull);
+        expect(find.byType(VncAuthDialog), findsOneWidget);
+      },
+    );
   });
 }

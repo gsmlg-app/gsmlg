@@ -327,6 +327,7 @@ class _VncHostFormDialogState extends State<VncHostFormDialog> {
         : l10n.vncSaveHost;
 
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       title: Text(title),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440),
@@ -385,7 +386,8 @@ class _VncHostFormDialogState extends State<VncHostFormDialog> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
+                    SizedBox(
+                      width: 96,
                       child: TextFormField(
                         controller: _portController,
                         decoration: InputDecoration(

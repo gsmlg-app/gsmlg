@@ -763,11 +763,13 @@ class _SavedHostCard extends StatelessWidget {
                 ),
               ),
               IconButton(
+                visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.edit_outlined, size: 20),
                 tooltip: l10n.vncEditHost,
                 onPressed: onEdit,
               ),
               IconButton(
+                visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.delete_outline, size: 20),
                 tooltip: l10n.vncDeleteHost,
                 onPressed: onDelete,

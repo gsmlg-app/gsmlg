@@ -170,143 +170,149 @@ class _VncShortcutBarState extends State<VncShortcutBar> {
 
     return Material(
       color: colorScheme.surfaceContainerHigh,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_showTextInput)
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_showTextInput)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainer,
+                  border: Border(
+                    top: BorderSide(color: colorScheme.outlineVariant),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _textController,
+                        focusNode: _textFocusNode,
+                        enabled: widget.enabled,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        textInputAction: TextInputAction.send,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          hintText: 'Type text to send...',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                        ),
+                        onChanged: _handleTextChanged,
+                        onSubmitted: _handleTextSubmitted,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: 'Close keyboard input',
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: _toggleTextInput,
+                    ),
+                  ],
+                ),
+              ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              height: 44,
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainer,
                 border: Border(
                   top: BorderSide(color: colorScheme.outlineVariant),
                 ),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _textController,
-                      focusNode: _textFocusNode,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _ModifierChip(
+                      label: '⌘',
+                      active: _activeModifiers.contains(X11Keysym.superL),
                       enabled: widget.enabled,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      textInputAction: TextInputAction.send,
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        hintText: 'Type text to send...',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                      ),
-                      onChanged: _handleTextChanged,
-                      onSubmitted: _handleTextSubmitted,
+                      onTap: () => _toggleModifier(X11Keysym.superL),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    tooltip: 'Close keyboard input',
-                    icon: const Icon(Icons.close, size: 20),
-                    onPressed: _toggleTextInput,
-                  ),
-                ],
+                    _ModifierChip(
+                      label: '⌥',
+                      active: _activeModifiers.contains(X11Keysym.altL),
+                      enabled: widget.enabled,
+                      onTap: () => _toggleModifier(X11Keysym.altL),
+                    ),
+                    _ModifierChip(
+                      label: '⌃',
+                      active: _activeModifiers.contains(X11Keysym.controlL),
+                      enabled: widget.enabled,
+                      onTap: () => _toggleModifier(X11Keysym.controlL),
+                    ),
+                    _ModifierChip(
+                      label: '⇧',
+                      active: _activeModifiers.contains(X11Keysym.shiftL),
+                      enabled: widget.enabled,
+                      onTap: () => _toggleModifier(X11Keysym.shiftL),
+                    ),
+                    const VerticalDivider(width: 16, indent: 6, endIndent: 6),
+                    _KeyChip(
+                      label: 'Esc',
+                      enabled: widget.enabled,
+                      onTap: () => _sendQuickKey(X11Keysym.escape),
+                    ),
+                    _KeyChip(
+                      label: 'Tab',
+                      enabled: widget.enabled,
+                      onTap: () => _sendQuickKey(X11Keysym.tab),
+                    ),
+                    _KeyChip(
+                      label: '←',
+                      enabled: widget.enabled,
+                      onTap: () => _sendQuickKey(X11Keysym.left),
+                    ),
+                    _KeyChip(
+                      label: '↑',
+                      enabled: widget.enabled,
+                      onTap: () => _sendQuickKey(X11Keysym.up),
+                    ),
+                    _KeyChip(
+                      label: '↓',
+                      enabled: widget.enabled,
+                      onTap: () => _sendQuickKey(X11Keysym.down),
+                    ),
+                    _KeyChip(
+                      label: '→',
+                      enabled: widget.enabled,
+                      onTap: () => _sendQuickKey(X11Keysym.right),
+                    ),
+                    _KeyChip(
+                      label: 'Del',
+                      enabled: widget.enabled,
+                      onTap: () => _sendQuickKey(X11Keysym.delete),
+                    ),
+                    _KeyChip(
+                      label: 'Ctrl+Alt+Del',
+                      enabled: widget.enabled,
+                      onTap: _sendCtrlAltDel,
+                    ),
+                    const VerticalDivider(width: 16, indent: 6, endIndent: 6),
+                    _IconKeyChip(
+                      icon: _showTextInput
+                          ? Icons.keyboard_hide_outlined
+                          : Icons.keyboard_outlined,
+                      tooltip: 'Soft keyboard',
+                      active: _showTextInput,
+                      enabled: widget.enabled,
+                      onTap: _toggleTextInput,
+                    ),
+                  ],
+                ),
               ),
             ),
-          Container(
-            height: 44,
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(color: colorScheme.outlineVariant),
-              ),
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _ModifierChip(
-                    label: '⌘',
-                    active: _activeModifiers.contains(X11Keysym.superL),
-                    enabled: widget.enabled,
-                    onTap: () => _toggleModifier(X11Keysym.superL),
-                  ),
-                  _ModifierChip(
-                    label: '⌥',
-                    active: _activeModifiers.contains(X11Keysym.altL),
-                    enabled: widget.enabled,
-                    onTap: () => _toggleModifier(X11Keysym.altL),
-                  ),
-                  _ModifierChip(
-                    label: '⌃',
-                    active: _activeModifiers.contains(X11Keysym.controlL),
-                    enabled: widget.enabled,
-                    onTap: () => _toggleModifier(X11Keysym.controlL),
-                  ),
-                  _ModifierChip(
-                    label: '⇧',
-                    active: _activeModifiers.contains(X11Keysym.shiftL),
-                    enabled: widget.enabled,
-                    onTap: () => _toggleModifier(X11Keysym.shiftL),
-                  ),
-                  const VerticalDivider(width: 16, indent: 6, endIndent: 6),
-                  _KeyChip(
-                    label: 'Esc',
-                    enabled: widget.enabled,
-                    onTap: () => _sendQuickKey(X11Keysym.escape),
-                  ),
-                  _KeyChip(
-                    label: 'Tab',
-                    enabled: widget.enabled,
-                    onTap: () => _sendQuickKey(X11Keysym.tab),
-                  ),
-                  _KeyChip(
-                    label: '←',
-                    enabled: widget.enabled,
-                    onTap: () => _sendQuickKey(X11Keysym.left),
-                  ),
-                  _KeyChip(
-                    label: '↑',
-                    enabled: widget.enabled,
-                    onTap: () => _sendQuickKey(X11Keysym.up),
-                  ),
-                  _KeyChip(
-                    label: '↓',
-                    enabled: widget.enabled,
-                    onTap: () => _sendQuickKey(X11Keysym.down),
-                  ),
-                  _KeyChip(
-                    label: '→',
-                    enabled: widget.enabled,
-                    onTap: () => _sendQuickKey(X11Keysym.right),
-                  ),
-                  _KeyChip(
-                    label: 'Del',
-                    enabled: widget.enabled,
-                    onTap: () => _sendQuickKey(X11Keysym.delete),
-                  ),
-                  _KeyChip(
-                    label: 'Ctrl+Alt+Del',
-                    enabled: widget.enabled,
-                    onTap: _sendCtrlAltDel,
-                  ),
-                  const VerticalDivider(width: 16, indent: 6, endIndent: 6),
-                  _IconKeyChip(
-                    icon: _showTextInput
-                        ? Icons.keyboard_hide_outlined
-                        : Icons.keyboard_outlined,
-                    tooltip: 'Soft keyboard',
-                    active: _showTextInput,
-                    enabled: widget.enabled,
-                    onTap: _toggleTextInput,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

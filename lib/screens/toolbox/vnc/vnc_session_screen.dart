@@ -71,6 +71,7 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
   void _toggleFullscreen() {
     setState(() {
       _isFullscreen = !_isFullscreen;
+      _showToolbar = !_isFullscreen;
     });
     _setWakelock(_isFullscreen);
     unawaited(
@@ -234,6 +235,23 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
     return opt.region == state.activeRegion;
   }
 
+  String? _activeDisplayShortLabel(
+    BuildContext context,
+    List<_DisplayOption> options,
+    VncSessionState state,
+  ) {
+    if (options.isEmpty) return null;
+    for (var i = 0; i < options.length; i++) {
+      if (_isOptionSelected(options[i], state)) {
+        if (options[i].region == null) {
+          return 'All';
+        }
+        return '$i';
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -298,113 +316,121 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
         child: Scaffold(
           resizeToAvoidBottomInset: true,
           backgroundColor: colorScheme.surfaceContainerLowest,
-          body: SafeArea(
-            top: !_isFullscreen,
-            bottom: !_isFullscreen,
-            child: BlocBuilder<VncSessionBloc, VncSessionState>(
-              builder: (context, state) {
-                final displayOptions = _buildDisplayOptions(context, state);
-                final displayWidth = state.activeRegion?.width ?? state.width;
-                final displayHeight =
-                    state.activeRegion?.height ?? state.height;
-                final resolutionText =
-                    state.status == VncSessionStatus.connected &&
-                        (state.serverSideDisplaySwitch
-                            ? state.width > 0 && state.height > 0
-                            : displayWidth > 0 && displayHeight > 0)
-                    ? (state.serverSideDisplaySwitch
-                          ? '${state.width}×${state.height}'
-                          : '$displayWidth×$displayHeight')
-                    : null;
-                final hasSingleDisplaySelected = state.serverSideDisplaySwitch
-                    ? state.activeDisplayId != null
-                    : state.activeRegion != null;
-                return Stack(
-                  children: [
-                    Column(
-                      children: [
-                        if (_showToolbar)
-                          _SessionToolbar(
-                            title: (state.desktopInfo?.name.isNotEmpty ?? false)
-                                ? state.desktopInfo!.name
-                                : launch.title,
-                            resolution: resolutionText,
-                            statusColor: _statusDotColor(
-                              state.status,
-                              colorScheme,
-                              dmColors,
+          body: BlocBuilder<VncSessionBloc, VncSessionState>(
+            builder: (context, state) {
+              final displayOptions = _buildDisplayOptions(context, state);
+              final activeDisplayBadge = _activeDisplayShortLabel(
+                context,
+                displayOptions,
+                state,
+              );
+              final displayWidth = state.activeRegion?.width ?? state.width;
+              final displayHeight = state.activeRegion?.height ?? state.height;
+              final resolutionText =
+                  state.status == VncSessionStatus.connected &&
+                      (state.serverSideDisplaySwitch
+                          ? state.width > 0 && state.height > 0
+                          : displayWidth > 0 && displayHeight > 0)
+                  ? (state.serverSideDisplaySwitch
+                        ? '${state.width}×${state.height}'
+                        : '$displayWidth×$displayHeight')
+                  : null;
+              final hasSingleDisplaySelected = state.serverSideDisplaySwitch
+                  ? state.activeDisplayId != null
+                  : state.activeRegion != null;
+              return Stack(
+                children: [
+                  Column(
+                    children: [
+                      if (_showToolbar)
+                        _SessionToolbar(
+                          title: (state.desktopInfo?.name.isNotEmpty ?? false)
+                              ? state.desktopInfo!.name
+                              : launch.title,
+                          resolution: resolutionText,
+                          statusColor: _statusDotColor(
+                            state.status,
+                            colorScheme,
+                            dmColors,
+                          ),
+                          displayOptions: displayOptions,
+                          activeDisplayBadge: activeDisplayBadge,
+                          hasSingleDisplaySelected: hasSingleDisplaySelected,
+                          isDisplayOptionSelected: (opt) =>
+                              _isOptionSelected(opt, state),
+                          onSelectDisplay: (region) =>
+                              bloc.add(VncSessionSelectDisplay(region)),
+                          scaleMode: _scaleMode,
+                          touchMode: _touchMode,
+                          viewOnly: state.viewOnly,
+                          showShortcutBar: _showShortcutBar,
+                          isFullscreen: _isFullscreen,
+                          isConnected:
+                              state.status == VncSessionStatus.connected,
+                          onDisconnect: _disconnectAndExit,
+                          onToggleScaleMode: () => setState(() {
+                            _scaleMode = _scaleMode == VncScaleMode.fit
+                                ? VncScaleMode.actualSize
+                                : VncScaleMode.fit;
+                          }),
+                          onToggleTouchMode: () => setState(() {
+                            _touchMode = _touchMode == VncTouchMode.direct
+                                ? VncTouchMode.trackpad
+                                : VncTouchMode.direct;
+                          }),
+                          onToggleViewOnly: () =>
+                              bloc.add(const VncSessionToggleViewOnly()),
+                          onSendClipboard: _sendClipboard,
+                          onToggleShortcutBar: () => setState(() {
+                            _showShortcutBar = !_showShortcutBar;
+                          }),
+                          onToggleFullscreen: _toggleFullscreen,
+                          onCollapseToolbar: () =>
+                              setState(() => _showToolbar = false),
+                        ),
+                      Expanded(child: _buildBody(context, bloc, state)),
+                      if (_showShortcutBar &&
+                          state.status == VncSessionStatus.connected)
+                        VncShortcutBar(
+                          enabled: !state.viewOnly,
+                          onKeyEvent: (keysym, down) =>
+                              bloc.sendKey(keysym, down: down),
+                        ),
+                    ],
+                  ),
+                  if (!_showToolbar)
+                    SafeArea(
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Material(
+                            elevation: 3,
+                            color: colorScheme.surfaceContainerHigh.withValues(
+                              alpha: 0.92,
                             ),
-                            displayOptions: displayOptions,
-                            hasSingleDisplaySelected: hasSingleDisplaySelected,
-                            isDisplayOptionSelected: (opt) =>
-                                _isOptionSelected(opt, state),
-                            onSelectDisplay: (region) =>
-                                bloc.add(VncSessionSelectDisplay(region)),
-                            scaleMode: _scaleMode,
-                            touchMode: _touchMode,
-                            viewOnly: state.viewOnly,
-                            showShortcutBar: _showShortcutBar,
-                            isFullscreen: _isFullscreen,
-                            isConnected:
-                                state.status == VncSessionStatus.connected,
-                            onDisconnect: _disconnectAndExit,
-                            onToggleScaleMode: () => setState(() {
-                              _scaleMode = _scaleMode == VncScaleMode.fit
-                                  ? VncScaleMode.actualSize
-                                  : VncScaleMode.fit;
-                            }),
-                            onToggleTouchMode: () => setState(() {
-                              _touchMode = _touchMode == VncTouchMode.direct
-                                  ? VncTouchMode.trackpad
-                                  : VncTouchMode.direct;
-                            }),
-                            onToggleViewOnly: () =>
-                                bloc.add(const VncSessionToggleViewOnly()),
-                            onSendClipboard: _sendClipboard,
-                            onToggleShortcutBar: () => setState(() {
-                              _showShortcutBar = !_showShortcutBar;
-                            }),
-                            onToggleFullscreen: _toggleFullscreen,
-                            onCollapseToolbar: () =>
-                                setState(() => _showToolbar = false),
-                          ),
-                        Expanded(child: _buildBody(context, bloc, state)),
-                        if (_showShortcutBar &&
-                            state.status == VncSessionStatus.connected)
-                          VncShortcutBar(
-                            enabled: !state.viewOnly,
-                            onKeyEvent: (keysym, down) =>
-                                bloc.sendKey(keysym, down: down),
-                          ),
-                      ],
-                    ),
-                    if (!_showToolbar)
-                      SafeArea(
-                        child: Align(
-                          alignment: Alignment.topRight,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Material(
-                              color: colorScheme.surfaceContainerHigh
-                                  .withValues(alpha: 0.9),
-                              shape: const StadiumBorder(),
-                              child: IconButton(
-                                icon: Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: colorScheme.onSurface,
-                                ),
-                                tooltip: l10n.vncTitle,
-                                onPressed: () =>
-                                    setState(() => _showToolbar = true),
+                            shape: StadiumBorder(
+                              side: BorderSide(
+                                color: colorScheme.outlineVariant,
                               ),
+                            ),
+                            child: IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: Icon(
+                                Icons.keyboard_arrow_down,
+                                color: colorScheme.onSurface,
+                              ),
+                              tooltip: l10n.vncTitle,
+                              onPressed: () =>
+                                  setState(() => _showToolbar = true),
                             ),
                           ),
                         ),
                       ),
-                  ],
-                );
-              },
-            ),
+                    ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -622,6 +648,7 @@ class _SessionToolbar extends StatelessWidget {
     required this.resolution,
     required this.statusColor,
     required this.displayOptions,
+    required this.activeDisplayBadge,
     required this.hasSingleDisplaySelected,
     required this.isDisplayOptionSelected,
     required this.onSelectDisplay,
@@ -645,6 +672,7 @@ class _SessionToolbar extends StatelessWidget {
   final String? resolution;
   final Color statusColor;
   final List<_DisplayOption> displayOptions;
+  final String? activeDisplayBadge;
   final bool hasSingleDisplaySelected;
   final bool Function(_DisplayOption option) isDisplayOptionSelected;
   final ValueChanged<VncScreenInfo?> onSelectDisplay;
@@ -669,25 +697,53 @@ class _SessionToolbar extends StatelessWidget {
     required Color activeHighlight,
   }) {
     final l10n = context.l10n;
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final foreground = hasSingleDisplaySelected
+        ? activeHighlight
+        : colorScheme.onSurface;
     return PopupMenuButton<int>(
       tooltip: l10n.vncSelectDisplay,
-      padding: compact ? const EdgeInsets.all(6) : const EdgeInsets.all(8),
-      style: compact
-          ? IconButton.styleFrom(visualDensity: VisualDensity.compact)
-          : null,
-      icon: Icon(
-        Icons.monitor,
-        color: hasSingleDisplaySelected
-            ? activeHighlight
-            : colorScheme.onSurface,
-        size: 20,
-      ),
+      padding: EdgeInsets.zero,
       onSelected: (index) {
         if (index >= 0 && index < displayOptions.length) {
           onSelectDisplay(displayOptions[index].region);
         }
       },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 8 : 10,
+          vertical: compact ? 5 : 6,
+        ),
+        decoration: BoxDecoration(
+          color: hasSingleDisplaySelected
+              ? colorScheme.primaryContainer.withValues(alpha: 0.7)
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: hasSingleDisplaySelected
+                ? activeHighlight.withValues(alpha: 0.5)
+                : colorScheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.monitor, color: foreground, size: 16),
+            if (activeDisplayBadge != null) ...[
+              const SizedBox(width: 4),
+              Text(
+                activeDisplayBadge!,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
       itemBuilder: (context) => [
         for (var i = 0; i < displayOptions.length; i++)
           PopupMenuItem<int>(
@@ -882,12 +938,100 @@ class _SessionToolbar extends StatelessWidget {
 
     return Material(
       color: colorScheme.surfaceContainerHigh,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isCompact = constraints.maxWidth < 600;
-          if (isCompact) {
+      child: SafeArea(
+        bottom: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 600;
+            if (isCompact) {
+              return Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: colorScheme.outlineVariant),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: colorScheme.onSurface,
+                      ),
+                      tooltip: l10n.vncDisconnect,
+                      onPressed: onDisconnect,
+                    ),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (resolution != null)
+                            Text(
+                              resolution!,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontFamily: 'monospace',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (displayOptions.isNotEmpty)
+                      _buildDisplaySwitcher(
+                        context,
+                        compact: true,
+                        activeHighlight: activeHighlight,
+                      ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        showShortcutBar
+                            ? Icons.keyboard_hide_outlined
+                            : Icons.keyboard_outlined,
+                        color: !isConnected
+                            ? colorScheme.onSurface.withValues(alpha: 0.38)
+                            : (showShortcutBar
+                                  ? activeHighlight
+                                  : colorScheme.onSurface),
+                        size: 20,
+                      ),
+                      tooltip: 'Shortcuts',
+                      onPressed: isConnected ? onToggleShortcutBar : null,
+                    ),
+                    _buildOverflowMenu(
+                      context,
+                      activeHighlight: activeHighlight,
+                      warningHighlight: warningHighlight,
+                    ),
+                  ],
+                ),
+              );
+            }
+
             return Container(
-              height: 52,
+              height: 48,
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(color: colorScheme.outlineVariant),
@@ -896,7 +1040,6 @@ class _SessionToolbar extends StatelessWidget {
               child: Row(
                 children: [
                   IconButton(
-                    visualDensity: VisualDensity.compact,
                     icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
                     tooltip: l10n.vncDisconnect,
                     onPressed: onDisconnect,
@@ -909,42 +1052,96 @@ class _SessionToolbar extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          title,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (resolution != null)
-                          Text(
-                            resolution!,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontFamily: 'monospace',
+                        Flexible(
+                          child: Text(
+                            title,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        if (resolution != null) ...[
+                          const SizedBox(width: 8),
+                          Flexible(
+                            flex: 0,
+                            child: Text(
+                              resolution!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontFamily: 'monospace',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
                   if (displayOptions.isNotEmpty)
                     _buildDisplaySwitcher(
                       context,
-                      compact: true,
+                      compact: false,
                       activeHighlight: activeHighlight,
                     ),
                   IconButton(
-                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      scaleMode == VncScaleMode.fit
+                          ? Icons.fit_screen
+                          : Icons.zoom_out_map,
+                      color: colorScheme.onSurface,
+                      size: 20,
+                    ),
+                    tooltip: scaleMode == VncScaleMode.fit
+                        ? l10n.vncActualSize
+                        : l10n.vncFitScreen,
+                    onPressed: onToggleScaleMode,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      touchMode == VncTouchMode.trackpad
+                          ? Icons.mouse_outlined
+                          : Icons.touch_app_outlined,
+                      color: touchMode == VncTouchMode.trackpad
+                          ? activeHighlight
+                          : colorScheme.onSurface,
+                      size: 20,
+                    ),
+                    tooltip: touchMode == VncTouchMode.trackpad
+                        ? l10n.vncDirectTouchMode
+                        : l10n.vncTrackpadMode,
+                    onPressed: onToggleTouchMode,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      viewOnly ? Icons.visibility : Icons.visibility_outlined,
+                      color: viewOnly
+                          ? warningHighlight
+                          : colorScheme.onSurface,
+                      size: 20,
+                    ),
+                    tooltip: l10n.vncViewOnlyLabel,
+                    onPressed: onToggleViewOnly,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.content_paste_go,
+                      color: isConnected
+                          ? colorScheme.onSurface
+                          : colorScheme.onSurface.withValues(alpha: 0.38),
+                      size: 20,
+                    ),
+                    tooltip: l10n.vncSyncClipboard,
+                    onPressed: isConnected ? onSendClipboard : null,
+                  ),
+                  IconButton(
                     icon: Icon(
                       showShortcutBar
                           ? Icons.keyboard_hide_outlined
@@ -959,164 +1156,31 @@ class _SessionToolbar extends StatelessWidget {
                     tooltip: 'Shortcuts',
                     onPressed: isConnected ? onToggleShortcutBar : null,
                   ),
-                  _buildOverflowMenu(
-                    context,
-                    activeHighlight: activeHighlight,
-                    warningHighlight: warningHighlight,
+                  IconButton(
+                    icon: Icon(
+                      isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                      color: isFullscreen
+                          ? activeHighlight
+                          : colorScheme.onSurface,
+                      size: 20,
+                    ),
+                    tooltip: l10n.vncFullscreen,
+                    onPressed: onToggleFullscreen,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.keyboard_arrow_up,
+                      color: colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    tooltip: 'Hide toolbar',
+                    onPressed: onCollapseToolbar,
                   ),
                 ],
               ),
             );
-          }
-
-          return Container(
-            height: 48,
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: colorScheme.outlineVariant),
-              ),
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-                  tooltip: l10n.vncDisconnect,
-                  onPressed: onDisconnect,
-                ),
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          title,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (resolution != null) ...[
-                        const SizedBox(width: 8),
-                        Flexible(
-                          flex: 0,
-                          child: Text(
-                            resolution!,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontFamily: 'monospace',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (displayOptions.isNotEmpty)
-                  _buildDisplaySwitcher(
-                    context,
-                    compact: false,
-                    activeHighlight: activeHighlight,
-                  ),
-                IconButton(
-                  icon: Icon(
-                    scaleMode == VncScaleMode.fit
-                        ? Icons.fit_screen
-                        : Icons.zoom_out_map,
-                    color: colorScheme.onSurface,
-                    size: 20,
-                  ),
-                  tooltip: scaleMode == VncScaleMode.fit
-                      ? l10n.vncActualSize
-                      : l10n.vncFitScreen,
-                  onPressed: onToggleScaleMode,
-                ),
-                IconButton(
-                  icon: Icon(
-                    touchMode == VncTouchMode.trackpad
-                        ? Icons.mouse_outlined
-                        : Icons.touch_app_outlined,
-                    color: touchMode == VncTouchMode.trackpad
-                        ? activeHighlight
-                        : colorScheme.onSurface,
-                    size: 20,
-                  ),
-                  tooltip: touchMode == VncTouchMode.trackpad
-                      ? l10n.vncDirectTouchMode
-                      : l10n.vncTrackpadMode,
-                  onPressed: onToggleTouchMode,
-                ),
-                IconButton(
-                  icon: Icon(
-                    viewOnly ? Icons.visibility : Icons.visibility_outlined,
-                    color: viewOnly ? warningHighlight : colorScheme.onSurface,
-                    size: 20,
-                  ),
-                  tooltip: l10n.vncViewOnlyLabel,
-                  onPressed: onToggleViewOnly,
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.content_paste_go,
-                    color: isConnected
-                        ? colorScheme.onSurface
-                        : colorScheme.onSurface.withValues(alpha: 0.38),
-                    size: 20,
-                  ),
-                  tooltip: l10n.vncSyncClipboard,
-                  onPressed: isConnected ? onSendClipboard : null,
-                ),
-                IconButton(
-                  icon: Icon(
-                    showShortcutBar
-                        ? Icons.keyboard_hide_outlined
-                        : Icons.keyboard_outlined,
-                    color: !isConnected
-                        ? colorScheme.onSurface.withValues(alpha: 0.38)
-                        : (showShortcutBar
-                              ? activeHighlight
-                              : colorScheme.onSurface),
-                    size: 20,
-                  ),
-                  tooltip: 'Shortcuts',
-                  onPressed: isConnected ? onToggleShortcutBar : null,
-                ),
-                IconButton(
-                  icon: Icon(
-                    isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                    color: isFullscreen
-                        ? activeHighlight
-                        : colorScheme.onSurface,
-                    size: 20,
-                  ),
-                  tooltip: l10n.vncFullscreen,
-                  onPressed: onToggleFullscreen,
-                ),
-                IconButton(
-                  icon: Icon(
-                    Icons.keyboard_arrow_up,
-                    color: colorScheme.onSurfaceVariant,
-                    size: 20,
-                  ),
-                  tooltip: 'Hide toolbar',
-                  onPressed: onCollapseToolbar,
-                ),
-              ],
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }

@@ -861,18 +861,30 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
       });
     }
 
+    int effectiveFrameIntervalMs() {
+      final pixels = framebuffer.width * framebuffer.height;
+      if (pixels > 16000000) {
+        return minFrameIntervalMs > 100 ? minFrameIntervalMs : 100;
+      }
+      if (pixels > 4000000) {
+        return minFrameIntervalMs > 50 ? minFrameIntervalMs : 50;
+      }
+      return minFrameIntervalMs;
+    }
+
     void scheduleFrameFlush() {
       if (stopping) {
         return;
       }
+      final intervalMs = effectiveFrameIntervalMs();
       final elapsedSinceLast =
           stopwatch.elapsedMilliseconds - lastSentElapsedMs;
-      if (elapsedSinceLast >= minFrameIntervalMs) {
+      if (elapsedSinceLast >= intervalMs) {
         sendFrameNow();
       } else {
         dirty = true;
         trailingTimer ??= Timer(
-          Duration(milliseconds: minFrameIntervalMs - elapsedSinceLast),
+          Duration(milliseconds: intervalMs - elapsedSinceLast),
           () {
             trailingTimer = null;
             if (dirty && !stopping) {
