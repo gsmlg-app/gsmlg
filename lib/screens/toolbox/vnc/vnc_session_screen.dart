@@ -963,23 +963,102 @@ class _SessionToolbar extends StatelessWidget {
 
     return Material(
       color: colorScheme.surfaceContainerHigh,
-      child: SafeArea(
-        bottom: false,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isCompact = constraints.maxWidth < 600;
-            if (isCompact) {
-              return Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: colorScheme.outlineVariant),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 600;
+              if (isCompact) {
+                return SizedBox(
+                  height: 52,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: colorScheme.onSurface,
+                        ),
+                        tooltip: l10n.vncDisconnect,
+                        onPressed: onDisconnect,
+                      ),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (resolution != null)
+                              Text(
+                                resolution!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontFamily: 'monospace',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (displayOptions.isNotEmpty)
+                        _buildDisplaySwitcher(
+                          context,
+                          compact: true,
+                          activeHighlight: activeHighlight,
+                        ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(
+                          showShortcutBar
+                              ? Icons.keyboard_hide_outlined
+                              : Icons.keyboard_outlined,
+                          color: !isConnected
+                              ? colorScheme.onSurface.withValues(alpha: 0.38)
+                              : (showShortcutBar
+                                    ? activeHighlight
+                                    : colorScheme.onSurface),
+                          size: 20,
+                        ),
+                        tooltip: l10n.vncShortcuts,
+                        onPressed: isConnected ? onToggleShortcutBar : null,
+                      ),
+                      _buildOverflowMenu(
+                        context,
+                        activeHighlight: activeHighlight,
+                        warningHighlight: warningHighlight,
+                      ),
+                    ],
                   ),
-                ),
+                );
+              }
+
+              return SizedBox(
+                height: 48,
                 child: Row(
                   children: [
                     IconButton(
-                      visualDensity: VisualDensity.compact,
                       icon: Icon(
                         Icons.arrow_back,
                         color: colorScheme.onSurface,
@@ -995,42 +1074,96 @@ class _SessionToolbar extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
                         children: [
-                          Text(
-                            title,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (resolution != null)
-                            Text(
-                              resolution!,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontFamily: 'monospace',
+                          Flexible(
+                            child: Text(
+                              title,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                          if (resolution != null) ...[
+                            const SizedBox(width: 8),
+                            Flexible(
+                              flex: 0,
+                              child: Text(
+                                resolution!,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontFamily: 'monospace',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
                     if (displayOptions.isNotEmpty)
                       _buildDisplaySwitcher(
                         context,
-                        compact: true,
+                        compact: false,
                         activeHighlight: activeHighlight,
                       ),
                     IconButton(
-                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        scaleMode == VncScaleMode.fit
+                            ? Icons.fit_screen
+                            : Icons.zoom_out_map,
+                        color: colorScheme.onSurface,
+                        size: 20,
+                      ),
+                      tooltip: scaleMode == VncScaleMode.fit
+                          ? l10n.vncActualSize
+                          : l10n.vncFitScreen,
+                      onPressed: onToggleScaleMode,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        touchMode == VncTouchMode.trackpad
+                            ? Icons.mouse_outlined
+                            : Icons.touch_app_outlined,
+                        color: touchMode == VncTouchMode.trackpad
+                            ? activeHighlight
+                            : colorScheme.onSurface,
+                        size: 20,
+                      ),
+                      tooltip: touchMode == VncTouchMode.trackpad
+                          ? l10n.vncDirectTouchMode
+                          : l10n.vncTrackpadMode,
+                      onPressed: onToggleTouchMode,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        viewOnly ? Icons.visibility : Icons.visibility_outlined,
+                        color: viewOnly
+                            ? warningHighlight
+                            : colorScheme.onSurface,
+                        size: 20,
+                      ),
+                      tooltip: l10n.vncViewOnlyLabel,
+                      onPressed: onToggleViewOnly,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.content_paste_go,
+                        color: isConnected
+                            ? colorScheme.onSurface
+                            : colorScheme.onSurface.withValues(alpha: 0.38),
+                        size: 20,
+                      ),
+                      tooltip: l10n.vncSyncClipboard,
+                      onPressed: isConnected ? onSendClipboard : null,
+                    ),
+                    IconButton(
                       icon: Icon(
                         showShortcutBar
                             ? Icons.keyboard_hide_outlined
@@ -1045,166 +1178,31 @@ class _SessionToolbar extends StatelessWidget {
                       tooltip: l10n.vncShortcuts,
                       onPressed: isConnected ? onToggleShortcutBar : null,
                     ),
-                    _buildOverflowMenu(
-                      context,
-                      activeHighlight: activeHighlight,
-                      warningHighlight: warningHighlight,
+                    IconButton(
+                      icon: Icon(
+                        isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                        color: isFullscreen
+                            ? activeHighlight
+                            : colorScheme.onSurface,
+                        size: 20,
+                      ),
+                      tooltip: l10n.vncFullscreen,
+                      onPressed: onToggleFullscreen,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.keyboard_arrow_up,
+                        color: colorScheme.onSurfaceVariant,
+                        size: 20,
+                      ),
+                      tooltip: l10n.vncHideToolbar,
+                      onPressed: onCollapseToolbar,
                     ),
                   ],
                 ),
               );
-            }
-
-            return Container(
-              height: 48,
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: colorScheme.outlineVariant),
-                ),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
-                    tooltip: l10n.vncDisconnect,
-                    onPressed: onDisconnect,
-                  ),
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: statusColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            title,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              color: colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (resolution != null) ...[
-                          const SizedBox(width: 8),
-                          Flexible(
-                            flex: 0,
-                            child: Text(
-                              resolution!,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontFamily: 'monospace',
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  if (displayOptions.isNotEmpty)
-                    _buildDisplaySwitcher(
-                      context,
-                      compact: false,
-                      activeHighlight: activeHighlight,
-                    ),
-                  IconButton(
-                    icon: Icon(
-                      scaleMode == VncScaleMode.fit
-                          ? Icons.fit_screen
-                          : Icons.zoom_out_map,
-                      color: colorScheme.onSurface,
-                      size: 20,
-                    ),
-                    tooltip: scaleMode == VncScaleMode.fit
-                        ? l10n.vncActualSize
-                        : l10n.vncFitScreen,
-                    onPressed: onToggleScaleMode,
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      touchMode == VncTouchMode.trackpad
-                          ? Icons.mouse_outlined
-                          : Icons.touch_app_outlined,
-                      color: touchMode == VncTouchMode.trackpad
-                          ? activeHighlight
-                          : colorScheme.onSurface,
-                      size: 20,
-                    ),
-                    tooltip: touchMode == VncTouchMode.trackpad
-                        ? l10n.vncDirectTouchMode
-                        : l10n.vncTrackpadMode,
-                    onPressed: onToggleTouchMode,
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      viewOnly ? Icons.visibility : Icons.visibility_outlined,
-                      color: viewOnly
-                          ? warningHighlight
-                          : colorScheme.onSurface,
-                      size: 20,
-                    ),
-                    tooltip: l10n.vncViewOnlyLabel,
-                    onPressed: onToggleViewOnly,
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.content_paste_go,
-                      color: isConnected
-                          ? colorScheme.onSurface
-                          : colorScheme.onSurface.withValues(alpha: 0.38),
-                      size: 20,
-                    ),
-                    tooltip: l10n.vncSyncClipboard,
-                    onPressed: isConnected ? onSendClipboard : null,
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      showShortcutBar
-                          ? Icons.keyboard_hide_outlined
-                          : Icons.keyboard_outlined,
-                      color: !isConnected
-                          ? colorScheme.onSurface.withValues(alpha: 0.38)
-                          : (showShortcutBar
-                                ? activeHighlight
-                                : colorScheme.onSurface),
-                      size: 20,
-                    ),
-                    tooltip: l10n.vncShortcuts,
-                    onPressed: isConnected ? onToggleShortcutBar : null,
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                      color: isFullscreen
-                          ? activeHighlight
-                          : colorScheme.onSurface,
-                      size: 20,
-                    ),
-                    tooltip: l10n.vncFullscreen,
-                    onPressed: onToggleFullscreen,
-                  ),
-                  IconButton(
-                    icon: Icon(
-                      Icons.keyboard_arrow_up,
-                      color: colorScheme.onSurfaceVariant,
-                      size: 20,
-                    ),
-                    tooltip: l10n.vncHideToolbar,
-                    onPressed: onCollapseToolbar,
-                  ),
-                ],
-              ),
-            );
-          },
+            },
+          ),
         ),
       ),
     );
