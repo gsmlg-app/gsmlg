@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_locale/app_locale.dart';
+import 'package:app_logging/app_logging.dart';
 import 'package:duskmoon_ui/duskmoon_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -47,7 +48,10 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
     final launch = _launch;
     if (launch != null) {
       if (widget.blocOverride == null) {
-        _ownedBloc = VncSessionBloc();
+        _ownedBloc = VncSessionBloc(
+          autoSelectPrimaryDisplay: true,
+          onDiagnostic: (message) => AppLogger().i('VNC: $message'),
+        );
       }
       _bloc!.add(VncSessionConnect(launch.config));
     }
@@ -188,7 +192,9 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
         for (var i = 0; i < state.screens.length; i++)
           _DisplayOption(
             label:
-                '${l10n.vncDisplayNumber(i + 1)} (${state.screens[i].width}×${state.screens[i].height})',
+                '${l10n.vncDisplayNumber(i + 1)}'
+                '${(state.screens[i].flags & 0x01) != 0 ? ' · ${l10n.vncDisplayPrimary}' : ''} '
+                '(${state.screens[i].width}×${state.screens[i].height})',
             region: state.screens[i],
           ),
       ];
@@ -244,7 +250,7 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
     for (var i = 0; i < options.length; i++) {
       if (_isOptionSelected(options[i], state)) {
         if (options[i].region == null) {
-          return 'All';
+          return context.l10n.vncDisplayAllShort;
         }
         return '$i';
       }
@@ -356,6 +362,7 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
                           displayOptions: displayOptions,
                           activeDisplayBadge: activeDisplayBadge,
                           hasSingleDisplaySelected: hasSingleDisplaySelected,
+                          isSwitchingDisplay: state.isSwitchingDisplay,
                           isDisplayOptionSelected: (opt) =>
                               _isOptionSelected(opt, state),
                           onSelectDisplay: (region) =>
@@ -393,6 +400,9 @@ class _VncSessionScreenState extends State<VncSessionScreen> {
                           state.status == VncSessionStatus.connected)
                         VncShortcutBar(
                           enabled: !state.viewOnly,
+                          softKeyboardTooltip: l10n.vncSoftKeyboard,
+                          textInputHint: l10n.vncSoftKeyboardHint,
+                          closeKeyboardTooltip: l10n.vncCloseKeyboardInput,
                           onKeyEvent: (keysym, down) =>
                               bloc.sendKey(keysym, down: down),
                         ),
@@ -650,6 +660,7 @@ class _SessionToolbar extends StatelessWidget {
     required this.displayOptions,
     required this.activeDisplayBadge,
     required this.hasSingleDisplaySelected,
+    required this.isSwitchingDisplay,
     required this.isDisplayOptionSelected,
     required this.onSelectDisplay,
     required this.scaleMode,
@@ -674,6 +685,7 @@ class _SessionToolbar extends StatelessWidget {
   final List<_DisplayOption> displayOptions;
   final String? activeDisplayBadge;
   final bool hasSingleDisplaySelected;
+  final bool isSwitchingDisplay;
   final bool Function(_DisplayOption option) isDisplayOptionSelected;
   final ValueChanged<VncScreenInfo?> onSelectDisplay;
   final VncScaleMode scaleMode;
@@ -730,7 +742,17 @@ class _SessionToolbar extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.monitor, color: foreground, size: 16),
+            if (isSwitchingDisplay)
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.8,
+                  color: activeHighlight,
+                ),
+              )
+            else
+              Icon(Icons.monitor, color: foreground, size: 16),
             if (activeDisplayBadge != null) ...[
               const SizedBox(width: 4),
               Text(
@@ -917,8 +939,11 @@ class _SessionToolbar extends StatelessWidget {
                 color: colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
-              const Flexible(
-                child: Text('Hide toolbar', overflow: TextOverflow.ellipsis),
+              Flexible(
+                child: Text(
+                  l10n.vncHideToolbar,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -1017,7 +1042,7 @@ class _SessionToolbar extends StatelessWidget {
                                   : colorScheme.onSurface),
                         size: 20,
                       ),
-                      tooltip: 'Shortcuts',
+                      tooltip: l10n.vncShortcuts,
                       onPressed: isConnected ? onToggleShortcutBar : null,
                     ),
                     _buildOverflowMenu(
@@ -1153,7 +1178,7 @@ class _SessionToolbar extends StatelessWidget {
                                 : colorScheme.onSurface),
                       size: 20,
                     ),
-                    tooltip: 'Shortcuts',
+                    tooltip: l10n.vncShortcuts,
                     onPressed: isConnected ? onToggleShortcutBar : null,
                   ),
                   IconButton(
@@ -1173,7 +1198,7 @@ class _SessionToolbar extends StatelessWidget {
                       color: colorScheme.onSurfaceVariant,
                       size: 20,
                     ),
-                    tooltip: 'Hide toolbar',
+                    tooltip: l10n.vncHideToolbar,
                     onPressed: onCollapseToolbar,
                   ),
                 ],

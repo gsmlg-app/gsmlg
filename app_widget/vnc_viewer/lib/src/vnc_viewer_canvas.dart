@@ -288,13 +288,19 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
     if (widget.activeRegion != oldWidget.activeRegion || dimensionsChanged) {
       _scrollGuardMatrix = null;
       _transformationController.value = Matrix4.identity();
-      if (dimensionsChanged &&
-          _image != null &&
-          (_image!.width != widget.framebufferWidth ||
-              _image!.height != widget.framebufferHeight)) {
-        final previous = _image;
-        _image = null;
-        previous?.dispose();
+      if (dimensionsChanged) {
+        if (_image != null &&
+            (_image!.width != widget.framebufferWidth ||
+                _image!.height != widget.framebufferHeight)) {
+          final previous = _image;
+          _image = null;
+          previous?.dispose();
+        }
+        if (_pendingFrame != null &&
+            (_pendingFrame!.width != widget.framebufferWidth ||
+                _pendingFrame!.height != widget.framebufferHeight)) {
+          _pendingFrame = null;
+        }
       }
       if (_virtualCursor != null && !srcRect.isEmpty) {
         _virtualCursor = _clampToSourceRect(srcRect.center, srcRect);
@@ -355,6 +361,12 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
     if (_disposed) return;
     if (frame.width <= 0 || frame.height <= 0) return;
     if (frame.rgbaPixels.length < frame.width * frame.height * 4) return;
+    if (widget.framebufferWidth > 0 &&
+        widget.framebufferHeight > 0 &&
+        (frame.width != widget.framebufferWidth ||
+            frame.height != widget.framebufferHeight)) {
+      return;
+    }
     if (frame.frameId < _latestDecodedFrameId) return;
 
     if (_isDecodingFrame) {
@@ -377,10 +389,16 @@ class _VncViewerCanvasState extends State<VncViewerCanvas> {
         if (generation == _frameStreamGeneration) {
           _isDecodingFrame = false;
         }
+        final dimensionsMismatch =
+            widget.framebufferWidth > 0 &&
+            widget.framebufferHeight > 0 &&
+            (image.width != widget.framebufferWidth ||
+                image.height != widget.framebufferHeight);
         if (_disposed ||
             !mounted ||
             generation != _frameStreamGeneration ||
-            frameId < _latestDecodedFrameId) {
+            frameId < _latestDecodedFrameId ||
+            dimensionsMismatch) {
           image.dispose();
         } else {
           _latestDecodedFrameId = frameId;

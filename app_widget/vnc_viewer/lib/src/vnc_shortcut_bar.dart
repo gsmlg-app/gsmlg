@@ -11,10 +11,16 @@ class VncShortcutBar extends StatefulWidget {
     super.key,
     required this.onKeyEvent,
     this.enabled = true,
+    this.softKeyboardTooltip = 'Soft keyboard',
+    this.textInputHint = 'Type text to send...',
+    this.closeKeyboardTooltip = 'Close keyboard input',
   });
 
   final void Function(int keysym, bool down) onKeyEvent;
   final bool enabled;
+  final String softKeyboardTooltip;
+  final String textInputHint;
+  final String closeKeyboardTooltip;
 
   @override
   State<VncShortcutBar> createState() => _VncShortcutBarState();
@@ -197,11 +203,11 @@ class _VncShortcutBarState extends State<VncShortcutBar> {
                         autocorrect: false,
                         enableSuggestions: false,
                         textInputAction: TextInputAction.send,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           isDense: true,
-                          hintText: 'Type text to send...',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
+                          hintText: widget.textInputHint,
+                          border: const OutlineInputBorder(),
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 8,
                           ),
@@ -212,7 +218,7 @@ class _VncShortcutBarState extends State<VncShortcutBar> {
                     ),
                     const SizedBox(width: 8),
                     IconButton(
-                      tooltip: 'Close keyboard input',
+                      tooltip: widget.closeKeyboardTooltip,
                       icon: const Icon(Icons.close, size: 20),
                       onPressed: _toggleTextInput,
                     ),
@@ -302,7 +308,7 @@ class _VncShortcutBarState extends State<VncShortcutBar> {
                       icon: _showTextInput
                           ? Icons.keyboard_hide_outlined
                           : Icons.keyboard_outlined,
-                      tooltip: 'Soft keyboard',
+                      tooltip: widget.softKeyboardTooltip,
                       active: _showTextInput,
                       enabled: widget.enabled,
                       onTap: _toggleTextInput,

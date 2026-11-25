@@ -9,7 +9,12 @@ import '../models/vnc_exceptions.dart';
 /// Uses a [Queue] of chunks with a cursor offset to avoid quadratic buffer
 /// reallocations when reading small RFB protocol fields.
 class BufferedByteReader {
-  BufferedByteReader(Stream<Uint8List> stream) {
+  BufferedByteReader(
+    Stream<Uint8List> stream, {
+    int highWaterMark = defaultHighWaterMark,
+    int lowWaterMark = defaultLowWaterMark,
+  }) : _highWaterMark = highWaterMark,
+       _lowWaterMark = lowWaterMark {
     _subscription = stream.listen(
       _onData,
       onError: _onError,
@@ -18,11 +23,22 @@ class BufferedByteReader {
     );
   }
 
+  /// Buffered byte threshold at which the upstream stream subscription is
+  /// paused to apply backpressure.
+  static const int defaultHighWaterMark = 2 * 1024 * 1024;
+
+  /// Buffered byte threshold below which a paused upstream stream subscription
+  /// is resumed.
+  static const int defaultLowWaterMark = 512 * 1024;
+
+  final int _highWaterMark;
+  final int _lowWaterMark;
   final Queue<Uint8List> _chunks = Queue<Uint8List>();
   int _chunkOffset = 0;
   int _bufferedLength = 0;
 
   late final StreamSubscription<Uint8List> _subscription;
+  bool _paused = false;
   bool _closed = false;
   bool _disposed = false;
   Future<void>? _disposeFuture;
@@ -35,6 +51,24 @@ class BufferedByteReader {
   int _skipRemaining = 0;
 
   bool get _hasPendingOp => _readWaiter != null || _skipWaiter != null;
+
+  void _updateBackpressure() {
+    if (_disposed || _closed) {
+      return;
+    }
+    final needsMoreData =
+        (_readWaiter != null && _bufferedLength < _readNeeded) ||
+        (_skipWaiter != null && _skipRemaining > 0);
+    if (_paused) {
+      if (needsMoreData || _bufferedLength <= _lowWaterMark) {
+        _paused = false;
+        _subscription.resume();
+      }
+    } else if (!needsMoreData && _bufferedLength >= _highWaterMark) {
+      _paused = true;
+      _subscription.pause();
+    }
+  }
 
   void _onData(Uint8List chunk) {
     if (chunk.isEmpty || _disposed) {
@@ -60,12 +94,14 @@ class BufferedByteReader {
       _chunkOffset = skipNow;
       _bufferedLength = chunk.length - skipNow;
       skipWaiter.complete();
+      _updateBackpressure();
       return;
     }
 
     _chunks.addLast(chunk);
     _bufferedLength += chunk.length;
     _tryFulfillReadWaiter();
+    _updateBackpressure();
   }
 
   void _onError(Object error, StackTrace stackTrace) {
@@ -148,6 +184,7 @@ class BufferedByteReader {
         _chunkOffset = 0;
       }
     }
+    _updateBackpressure();
     return out;
   }
 
@@ -165,6 +202,7 @@ class BufferedByteReader {
         _chunkOffset = 0;
       }
     }
+    _updateBackpressure();
   }
 
   /// Reads exactly [count] bytes from the stream.
@@ -193,6 +231,7 @@ class BufferedByteReader {
     final completer = Completer<Uint8List>();
     _readWaiter = completer;
     _readNeeded = count;
+    _updateBackpressure();
     return completer.future;
   }
 
@@ -253,6 +292,7 @@ class BufferedByteReader {
     final completer = Completer<void>();
     _skipWaiter = completer;
     _skipRemaining = remaining;
+    _updateBackpressure();
     return completer.future;
   }
 

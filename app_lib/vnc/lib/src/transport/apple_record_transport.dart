@@ -57,7 +57,14 @@ class AppleRecordVncTransport implements VncTransport {
 
     _controller = StreamController<Uint8List>(
       onListen: _startReadLoop,
+      onPause: () {
+        if (!_closing && _resumeCompleter == null) {
+          _resumeCompleter = Completer<void>();
+        }
+      },
+      onResume: _signalResume,
       onCancel: () {
+        _signalResume();
         unawaited(close());
       },
     );
@@ -99,6 +106,7 @@ class AppleRecordVncTransport implements VncTransport {
 
   final Completer<void> _doneCompleter = Completer<void>();
   late final StreamController<Uint8List> _controller;
+  Completer<void>? _resumeCompleter;
   bool _readLoopStarted = false;
   bool _closing = false;
   Future<void>? _closeFuture;
@@ -148,6 +156,14 @@ class AppleRecordVncTransport implements VncTransport {
     return Uint8List.fromList(sink.value!.bytes);
   }
 
+  void _signalResume() {
+    final waiter = _resumeCompleter;
+    _resumeCompleter = null;
+    if (waiter != null && !waiter.isCompleted) {
+      waiter.complete();
+    }
+  }
+
   void _completeDone() {
     if (!_doneCompleter.isCompleted) {
       _doneCompleter.complete();
@@ -167,6 +183,13 @@ class AppleRecordVncTransport implements VncTransport {
     final savedCt = Uint8List(blockSize);
     try {
       while (!_closing && !_controller.isClosed) {
+        final pauseWaiter = _resumeCompleter;
+        if (pauseWaiter != null) {
+          await pauseWaiter.future;
+          if (_closing || _controller.isClosed) {
+            break;
+          }
+        }
         final Uint8List lenBytes;
         try {
           lenBytes = await _innerReader.readBytes(2);
@@ -325,6 +348,7 @@ class AppleRecordVncTransport implements VncTransport {
 
   Future<void> _closeInternal() async {
     _closing = true;
+    _signalResume();
     try {
       await _innerReader.dispose();
     } catch (_) {

@@ -385,5 +385,12 @@
   "vncDisplayAll": "全部顯示器",
   "vncDisplayNumber": "顯示器 {index}",
   "vncDisplayLeftHalf": "左半螢幕",
-  "vncDisplayRightHalf": "右半螢幕"
+  "vncDisplayRightHalf": "右半螢幕",
+  "vncDisplayAllShort": "全部",
+  "vncDisplayPrimary": "主螢幕",
+  "vncHideToolbar": "隱藏工具列",
+  "vncShortcuts": "快速鍵",
+  "vncSoftKeyboard": "軟鍵盤",
+  "vncSoftKeyboardHint": "輸入要傳送的文字...",
+  "vncCloseKeyboardInput": "關閉鍵盤輸入"
 }

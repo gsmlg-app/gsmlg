@@ -438,5 +438,12 @@
   "vncDisplayAll": "全部显示器",
   "vncDisplayNumber": "显示器 {index}",
   "vncDisplayLeftHalf": "左半屏",
-  "vncDisplayRightHalf": "右半屏"
+  "vncDisplayRightHalf": "右半屏",
+  "vncDisplayAllShort": "全部",
+  "vncDisplayPrimary": "主屏",
+  "vncHideToolbar": "隐藏工具栏",
+  "vncShortcuts": "快捷键",
+  "vncSoftKeyboard": "软键盘",
+  "vncSoftKeyboardHint": "输入要发送的文本...",
+  "vncCloseKeyboardInput": "关闭键盘输入"
 }

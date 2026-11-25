@@ -1070,5 +1070,144 @@ void main() {
         await bloc.close();
       },
     );
+
+    test(
+      'preserves screens on DesktopSize resize without screen list, clears stale latestFrame, tracks isSwitchingDisplay, auto-selects primary display once, and logs diagnostics',
+      () async {
+        final diagnostics = <String>[];
+        createdClients = [];
+        final bloc = VncSessionBloc(
+          autoSelectPrimaryDisplay: true,
+          onDiagnostic: diagnostics.add,
+          clientFactory: () {
+            final client = FakeVncSessionClient();
+            createdClients.add(client);
+            return client;
+          },
+        );
+        addTearDown(bloc.close);
+
+        bloc.add(const VncSessionConnect(testConfig));
+        await Future<void>.delayed(Duration.zero);
+
+        final client = createdClients.single;
+        client.emitEvent(const VncDiagnosticEvent('Connected RFB 003.889'));
+        client.emitEvent(
+          const VncConnectedEvent(
+            VncDesktopInfo(
+              name: 'Mac Studio',
+              width: 9024,
+              height: 3840,
+              protocolVersion: 'RFB 003.889',
+              securityType: 30,
+              isApple889: true,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        // Emit a frame at combined dimensions before resize.
+        client.emitEvent(
+          VncFrameEvent(
+            VncFrameData(
+              frameId: 1,
+              width: 9024,
+              height: 3840,
+              rgbaPixels: Uint8List(4),
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.latestFrame, isNotNull);
+
+        const secondary = VncScreenInfo(
+          id: 2,
+          x: 3024,
+          y: 0,
+          width: 3840,
+          height: 2160,
+          flags: 0,
+        );
+        const primary = VncScreenInfo(
+          id: 1,
+          x: 0,
+          y: 0,
+          width: 3024,
+          height: 1964,
+          flags: 1,
+        );
+
+        // Initial combined AppleDisplayLayout triggers one-time auto-select of primary display (#1).
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 9024,
+            height: 3840,
+            screens: [secondary, primary],
+            hasScreens: true,
+            hasCurrentDisplayId: true,
+            currentDisplayId: null,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(client.selectDisplayCalls, equals([1]));
+        expect(bloc.state.isSwitchingDisplay, isTrue);
+        expect(bloc.state.screens, equals(const [secondary, primary]));
+
+        // Confirming AppleDisplayLayout clears isSwitchingDisplay and stale latestFrame.
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 3024,
+            height: 1964,
+            screens: [secondary, primary],
+            hasScreens: true,
+            hasCurrentDisplayId: true,
+            currentDisplayId: 1,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.isSwitchingDisplay, isFalse);
+        expect(bloc.state.activeDisplayId, 1);
+        expect(bloc.latestFrame, isNull);
+
+        // Standalone DesktopSize (-223) with hasScreens: false must NOT wipe screens!
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 3024,
+            height: 1964,
+            screens: [],
+            hasScreens: false,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.screens, equals(const [secondary, primary]));
+        expect(bloc.state.activeDisplayId, 1);
+
+        // Manual switch back to All Displays must NOT re-trigger auto-select!
+        bloc.add(const VncSessionSelectDisplay(null));
+        await Future<void>.delayed(Duration.zero);
+        expect(bloc.state.isSwitchingDisplay, isTrue);
+        expect(client.selectDisplayCalls, equals([1, null]));
+
+        client.emitEvent(
+          const VncResizedEvent(
+            width: 9024,
+            height: 3840,
+            screens: [secondary, primary],
+            hasScreens: true,
+            hasCurrentDisplayId: true,
+            currentDisplayId: null,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(bloc.state.isSwitchingDisplay, isFalse);
+        expect(bloc.state.activeDisplayId, isNull);
+        expect(client.selectDisplayCalls, equals([1, null]));
+        expect(diagnostics, isNotEmpty);
+      },
+    );
   });
 }

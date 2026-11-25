@@ -226,6 +226,7 @@ class RfbSession {
       int width,
       int height,
       List<VncScreenInfo> screens, {
+      bool hasScreens,
       bool hasCurrentDisplayId,
       int? currentDisplayId,
     })?
@@ -288,6 +289,7 @@ class RfbSession {
       int width,
       int height,
       List<VncScreenInfo> screens, {
+      bool hasScreens,
       bool hasCurrentDisplayId,
       int? currentDisplayId,
     })?
@@ -373,6 +375,7 @@ class RfbSession {
         _framebuffer.width,
         _framebuffer.height,
         latestScreens ?? const <VncScreenInfo>[],
+        hasScreens: latestScreens != null,
         hasCurrentDisplayId: hasCurrentDisplayId,
         currentDisplayId: currentDisplayId,
       );

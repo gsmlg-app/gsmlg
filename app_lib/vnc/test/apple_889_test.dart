@@ -1229,5 +1229,65 @@ void main() {
         expect(result.transport, same(pair.a));
       },
     );
+
+    test(
+      'AppleRecordVncTransport honors pause/resume backpressure and BufferedByteReader reads past highWaterMark without deadlock',
+      () async {
+        final pair = _PairedInMemoryTransport();
+        addTearDown(pair.dispose);
+
+        final key = _hexToBytes('102132435465768798A9BACBDCEDFE0F');
+        final iv = _hexToBytes('AABBCCDDEEFF00112233445566778899');
+
+        final readerA = BufferedByteReader(
+          pair.a.stream,
+          highWaterMark: 256,
+          lowWaterMark: 64,
+        );
+        final readerB = BufferedByteReader(
+          pair.b.stream,
+          highWaterMark: 256,
+          lowWaterMark: 64,
+        );
+
+        final recA = AppleRecordVncTransport(
+          inner: pair.a,
+          innerReader: readerA,
+          key: key,
+          iv: iv,
+        );
+        final recB = AppleRecordVncTransport(
+          inner: pair.b,
+          innerReader: readerB,
+          key: key,
+          iv: iv,
+        );
+        addTearDown(recA.close);
+        addTearDown(recB.close);
+
+        // Downstream reader with tiny highWaterMark (256B) to force pause/resume.
+        final plainReaderB = BufferedByteReader(
+          recB.stream,
+          highWaterMark: 256,
+          lowWaterMark: 64,
+        );
+        addTearDown(plainReaderB.dispose);
+
+        // Write 8 x 128B records (= 1024B > 4x highWaterMark) before reading.
+        final expected = BytesBuilder(copy: false);
+        for (var i = 0; i < 8; i++) {
+          final chunk = Uint8List.fromList(List.filled(128, i + 1));
+          expected.add(chunk);
+          recA.add(chunk);
+        }
+
+        // Reading 1024B (larger than highWaterMark=256B) must resume upstream
+        // and complete without deadlocking.
+        final received = await plainReaderB
+            .readBytes(1024)
+            .timeout(const Duration(seconds: 2));
+        expect(received, equals(expected.takeBytes()));
+      },
+    );
   });
 }

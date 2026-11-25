@@ -960,5 +960,12 @@
     }
   },
   "vncDisplayLeftHalf": "Left Half",
-  "vncDisplayRightHalf": "Right Half"
+  "vncDisplayRightHalf": "Right Half",
+  "vncDisplayAllShort": "All",
+  "vncDisplayPrimary": "Main",
+  "vncHideToolbar": "Hide toolbar",
+  "vncShortcuts": "Shortcuts",
+  "vncSoftKeyboard": "Soft keyboard",
+  "vncSoftKeyboardHint": "Type text to send...",
+  "vncCloseKeyboardInput": "Close keyboard input"
 }

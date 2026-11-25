@@ -49,15 +49,28 @@ final class VncResizedEvent extends VncClientEvent {
     required this.width,
     required this.height,
     this.screens = const [],
+    bool? hasScreens,
     this.hasCurrentDisplayId = false,
     this.currentDisplayId,
-  });
+  }) : _hasScreens = hasScreens;
 
   final int width;
   final int height;
   final List<VncScreenInfo> screens;
+  final bool? _hasScreens;
   final bool hasCurrentDisplayId;
   final int? currentDisplayId;
+
+  /// Whether this resize event carries an authoritative screen list (e.g.
+  /// `ExtendedDesktopSize` or `AppleDisplayLayout`), as opposed to a bare
+  /// `DesktopSize` resize that must preserve any previously known screens.
+  bool get hasScreens => _hasScreens ?? screens.isNotEmpty;
+}
+
+final class VncDiagnosticEvent extends VncClientEvent {
+  const VncDiagnosticEvent(this.message);
+
+  final String message;
 }
 
 final class VncCursorEvent extends VncClientEvent {
@@ -342,11 +355,17 @@ class VncIsolateClient implements VncSessionClient {
             width: message['width'] as int,
             height: message['height'] as int,
             screens: screens,
+            hasScreens: message['hasScreens'] as bool? ?? screens.isNotEmpty,
             hasCurrentDisplayId:
                 message['hasCurrentDisplayId'] as bool? ?? false,
             currentDisplayId: message['currentDisplayId'] as int?,
           ),
         );
+      case 'diagnostic':
+        final text = message['message'] as String?;
+        if (text != null && text.isNotEmpty) {
+          _emit(VncDiagnosticEvent(text));
+        }
       case 'cursor':
         final transferable = message['pixels'] as TransferableTypedData;
         final rgbaPixels = transferable.materialize().asUint8List();
@@ -732,6 +751,11 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
         }
       case 'selectDisplay':
         final displayId = rawCommand['displayId'] as int?;
+        replyPort.send(<String, Object?>{
+          'type': 'diagnostic',
+          'message':
+              'Sending Apple SetDisplay(displayId=${displayId ?? "all"})',
+        });
         if (session != null) {
           safeSessionCall((s) => s.selectAppleDisplay(displayId));
         } else {
@@ -811,6 +835,14 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
       return;
     }
 
+    replyPort.send(<String, Object?>{
+      'type': 'diagnostic',
+      'message':
+          'Connected (${desktopInfo.protocolVersion}, '
+          'securityType=${desktopInfo.securityType}, '
+          'apple889=${desktopInfo.isApple889}, '
+          '${desktopInfo.width}x${desktopInfo.height})',
+    });
     replyPort.send(<String, Object?>{
       'type': 'connected',
       'name': desktopInfo.name,
@@ -902,6 +934,7 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
             width,
             height,
             screens, {
+            hasScreens = false,
             hasCurrentDisplayId = false,
             currentDisplayId,
           }) {
@@ -912,10 +945,27 @@ Future<void> _vncWorkerEntryPoint(Map<String, Object?> startMessage) async {
             trailingTimer?.cancel();
             trailingTimer = null;
             lastSentElapsedMs = -minFrameIntervalMs;
+            final screensSummary = hasScreens
+                ? screens
+                      .map(
+                        (s) =>
+                            '#${s.id}(${s.width}x${s.height}'
+                            '${(s.flags & 0x01) != 0 ? ",main" : ""})',
+                      )
+                      .join(', ')
+                : 'unchanged';
+            replyPort.send(<String, Object?>{
+              'type': 'diagnostic',
+              'message':
+                  'Desktop resized to ${width}x$height '
+                  '(hasScreens=$hasScreens, screens=[$screensSummary]'
+                  '${hasCurrentDisplayId ? ', currentDisplayId=${currentDisplayId ?? "all"}' : ''})',
+            });
             replyPort.send(<String, Object?>{
               'type': 'resized',
               'width': width,
               'height': height,
+              'hasScreens': hasScreens,
               'screens': [
                 for (final screen in screens)
                   <String, int>{

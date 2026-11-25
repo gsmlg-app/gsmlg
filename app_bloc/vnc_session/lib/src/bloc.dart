@@ -13,9 +13,12 @@ part 'state.dart';
 /// High-frequency framebuffer updates are exposed on [frames] (and cached in
 /// [latestFrame]) instead of emitting a new [VncSessionState] on every frame.
 class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
-  VncSessionBloc({VncSessionClient Function()? clientFactory})
-    : _clientFactory = clientFactory ?? VncIsolateClient.new,
-      super(const VncSessionState()) {
+  VncSessionBloc({
+    VncSessionClient Function()? clientFactory,
+    this.autoSelectPrimaryDisplay = false,
+    this.onDiagnostic,
+  }) : _clientFactory = clientFactory ?? VncIsolateClient.new,
+       super(const VncSessionState()) {
     on<VncSessionConnect>(_onConnect);
     on<VncSessionSubmitCredentials>(_onSubmitCredentials);
     on<VncSessionCancelAuth>(_onCancelAuth);
@@ -31,6 +34,16 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
   }
 
   final VncSessionClient Function() _clientFactory;
+
+  /// When `true` and a macOS `RFB 003.889` server opens on a combined
+  /// multi-display view (`currentDisplayId == null` with multiple displays),
+  /// automatically switches once to the primary display to avoid rendering a
+  /// giant combined multi-Retina framebuffer by default.
+  final bool autoSelectPrimaryDisplay;
+
+  /// Optional sink for non-sensitive protocol/session diagnostics.
+  final void Function(String message)? onDiagnostic;
+
   final StreamController<VncFrameData> _framesController =
       StreamController<VncFrameData>.broadcast();
 
@@ -38,6 +51,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
   StreamSubscription<VncClientEvent>? _subscription;
   int _sessionGeneration = 0;
   VncFrameData? _latestFrame;
+  bool _didAutoSelectPrimary = false;
   bool _isClosing = false;
 
   /// Broadcast stream of decoded RGBA desktop frames for canvas rendering.
@@ -103,6 +117,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
     }
     final generation = ++_sessionGeneration;
     _latestFrame = null;
+    _didAutoSelectPrimary = false;
     await _teardownClient();
 
     if (_isClosing || isClosed || generation != _sessionGeneration) {
@@ -124,6 +139,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
         clearActiveRegion: true,
         serverSideDisplaySwitch: false,
         clearActiveDisplayId: true,
+        isSwitchingDisplay: false,
         viewOnly: effectiveConfig.viewOnly,
         clearAuth: true,
         clearCursor: true,
@@ -226,6 +242,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
     }
     final generation = ++_sessionGeneration;
     _latestFrame = null;
+    _didAutoSelectPrimary = false;
     await _teardownClient();
     if (_isClosing || isClosed || generation != _sessionGeneration) {
       return;
@@ -237,6 +254,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
         clearActiveRegion: true,
         serverSideDisplaySwitch: false,
         clearActiveDisplayId: true,
+        isSwitchingDisplay: false,
         clearAuth: true,
         clearError: true,
         clearDisconnectReason: true,
@@ -293,10 +311,9 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
   ) {
     final region = event.region;
     if (state.serverSideDisplaySwitch) {
+      _didAutoSelectPrimary = true;
       _client?.selectDisplay(region?.id);
-      if (state.activeRegion != null) {
-        emit(state.copyWith(clearActiveRegion: true));
-      }
+      emit(state.copyWith(clearActiveRegion: true, isSwitchingDisplay: true));
       return;
     }
     if (region == null) {
@@ -383,21 +400,49 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
         :final width,
         :final height,
         :final screens,
+        :final hasScreens,
         :final hasCurrentDisplayId,
         :final currentDisplayId,
       ):
+        if (_latestFrame != null &&
+            (_latestFrame!.width != width || _latestFrame!.height != height)) {
+          _latestFrame = null;
+        }
+        final effectiveScreens = hasScreens ? screens : state.screens;
         if (state.serverSideDisplaySwitch) {
+          final shouldAutoSelectPrimary =
+              autoSelectPrimaryDisplay &&
+              !_didAutoSelectPrimary &&
+              hasScreens &&
+              effectiveScreens.length > 1 &&
+              hasCurrentDisplayId &&
+              currentDisplayId == null;
+          if (shouldAutoSelectPrimary) {
+            _didAutoSelectPrimary = true;
+            final primary = effectiveScreens.firstWhere(
+              (s) => (s.flags & 0x01) != 0,
+              orElse: () => effectiveScreens.first,
+            );
+            onDiagnostic?.call(
+              'Auto-selecting primary macOS display #${primary.id} '
+              '(${primary.width}x${primary.height})',
+            );
+            _client?.selectDisplay(primary.id);
+          }
           emit(
             state.copyWith(
               width: width,
               height: height,
-              screens: screens,
+              screens: effectiveScreens,
               clearActiveRegion: true,
               activeDisplayId: hasCurrentDisplayId
                   ? currentDisplayId
                   : state.activeDisplayId,
               clearActiveDisplayId:
                   hasCurrentDisplayId && currentDisplayId == null,
+              isSwitchingDisplay: shouldAutoSelectPrimary
+                  ? true
+                  : (hasCurrentDisplayId ? false : state.isSwitchingDisplay),
             ),
           );
         } else {
@@ -405,8 +450,8 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
           var clearActiveRegion = false;
           if (nextActiveRegion != null) {
             VncScreenInfo? matched;
-            if (screens.isNotEmpty) {
-              for (final screen in screens) {
+            if (hasScreens && effectiveScreens.isNotEmpty) {
+              for (final screen in effectiveScreens) {
                 if (screen.id == nextActiveRegion.id) {
                   matched = screen;
                   break;
@@ -427,7 +472,7 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
             state.copyWith(
               width: width,
               height: height,
-              screens: screens,
+              screens: effectiveScreens,
               activeRegion: nextActiveRegion,
               clearActiveRegion: clearActiveRegion,
               activeDisplayId: hasCurrentDisplayId
@@ -438,6 +483,8 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
             ),
           );
         }
+      case VncDiagnosticEvent(:final message):
+        onDiagnostic?.call(message);
       case VncCursorEvent(:final cursor):
         emit(state.copyWith(cursor: cursor));
       case VncClipboardEvent(:final text):
@@ -448,18 +495,22 @@ class VncSessionBloc extends Bloc<VncSessionEvent, VncSessionState> {
           ),
         );
       case VncDisconnectedEvent(:final reason):
+        onDiagnostic?.call('Disconnected${reason != null ? ": $reason" : ""}');
         emit(
           state.copyWith(
             status: VncSessionStatus.disconnected,
+            isSwitchingDisplay: false,
             clearAuth: true,
             disconnectReason: reason,
             clearDisconnectReason: reason == null,
           ),
         );
       case VncErrorEvent(:final error):
+        onDiagnostic?.call('Error: ${error.message}');
         emit(
           state.copyWith(
             status: VncSessionStatus.error,
+            isSwitchingDisplay: false,
             clearAuth: true,
             error: error,
           ),

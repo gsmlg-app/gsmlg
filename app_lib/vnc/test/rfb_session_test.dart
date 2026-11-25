@@ -250,7 +250,15 @@ void main() {
 
         final loopFuture = session.runMessageLoop(
           onDesktopResized:
-              (w, h, screens, {hasCurrentDisplayId = false, currentDisplayId}) {
+              (
+                w,
+                h,
+                screens, {
+                hasScreens = false,
+                hasCurrentDisplayId = false,
+                currentDisplayId,
+              }) {
+                expect(hasScreens, isFalse);
                 eventOrder.add('resize:${w}x$h');
                 resizedTo.add((w, h));
               },
@@ -429,7 +437,14 @@ void main() {
 
         final loopFuture = largeSession.runMessageLoop(
           onDesktopResized:
-              (w, h, screens, {hasCurrentDisplayId = false, currentDisplayId}) {
+              (
+                w,
+                h,
+                screens, {
+                hasScreens = false,
+                hasCurrentDisplayId = false,
+                currentDisplayId,
+              }) {
                 reportedScreens.add(screens);
               },
           onBell: () {

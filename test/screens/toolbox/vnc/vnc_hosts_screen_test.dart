@@ -786,15 +786,17 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('All Displays'), findsOneWidget);
-        expect(find.text('Display 1 (1728×1117)'), findsOneWidget);
+        expect(find.text('Display 1 · Main (1728×1117)'), findsOneWidget);
         expect(find.text('Display 2 (3840×2160)'), findsOneWidget);
         expect(find.text('Display 3 (2160×3840)'), findsOneWidget);
 
         await tester.tap(find.text('Display 3 (2160×3840)'));
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
 
         expect(fakeClient.selectDisplayCalls, equals([3]));
         expect(fakeClient.activeRegionCalls, isEmpty);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
         var canvas = tester.widget<VncViewerCanvas>(
           find.byType(VncViewerCanvas),
@@ -962,8 +964,20 @@ void main() {
         expect(tester.takeException(), isNull);
         expect(find.text('Display 2 (3840×2160)'), findsOneWidget);
         await tester.tap(find.text('Display 2 (3840×2160)'));
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
         expect(fakeClient.selectDisplayCalls, equals([2]));
+
+        fakeClient.emitEvent(
+          const VncResizedEvent(
+            width: 3840,
+            height: 2160,
+            screens: [d1, d2, d3],
+            hasCurrentDisplayId: true,
+            currentDisplayId: 2,
+          ),
+        );
+        await tester.pumpAndSettle();
 
         // Overflow menu (Icons.more_vert) opens and executes actions cleanly.
         final overflow = find.byIcon(Icons.more_vert);
@@ -1076,8 +1090,10 @@ void main() {
         await tester.tap(find.byTooltip('Select Display'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Display 2 (3840×2160)'));
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
         expect(fakeClient.selectDisplayCalls, equals([2]));
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
         fakeClient.emitEvent(
           const VncResizedEvent(
@@ -1089,6 +1105,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        expect(find.byType(CircularProgressIndicator), findsNothing);
         expect(find.text('2'), findsOneWidget);
         expect(find.text('3840×2160'), findsOneWidget);
 

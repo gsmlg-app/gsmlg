@@ -23,6 +23,7 @@ class VncSessionState extends Equatable {
     this.activeRegion,
     this.serverSideDisplaySwitch = false,
     this.activeDisplayId,
+    this.isSwitchingDisplay = false,
     this.viewOnly = false,
     this.authSecurityType,
     this.authRequiresUsername = false,
@@ -42,6 +43,7 @@ class VncSessionState extends Equatable {
   final VncScreenInfo? activeRegion;
   final bool serverSideDisplaySwitch;
   final int? activeDisplayId;
+  final bool isSwitchingDisplay;
   final bool viewOnly;
   final int? authSecurityType;
   final bool authRequiresUsername;
@@ -61,6 +63,7 @@ class VncSessionState extends Equatable {
     VncScreenInfo? activeRegion,
     bool? serverSideDisplaySwitch,
     int? activeDisplayId,
+    bool? isSwitchingDisplay,
     bool? viewOnly,
     int? authSecurityType,
     bool? authRequiresUsername,
@@ -92,6 +95,7 @@ class VncSessionState extends Equatable {
       activeDisplayId: clearActiveDisplayId
           ? null
           : (activeDisplayId ?? this.activeDisplayId),
+      isSwitchingDisplay: isSwitchingDisplay ?? this.isSwitchingDisplay,
       viewOnly: viewOnly ?? this.viewOnly,
       authSecurityType: clearAuth
           ? null
@@ -120,6 +124,7 @@ class VncSessionState extends Equatable {
     activeRegion,
     serverSideDisplaySwitch,
     activeDisplayId,
+    isSwitchingDisplay,
     viewOnly,
     authSecurityType,
     authRequiresUsername,

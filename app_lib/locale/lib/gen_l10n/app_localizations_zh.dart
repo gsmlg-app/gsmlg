@@ -1993,6 +1993,27 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get vncDisplayRightHalf => '右半屏';
+
+  @override
+  String get vncDisplayAllShort => '全部';
+
+  @override
+  String get vncDisplayPrimary => '主屏';
+
+  @override
+  String get vncHideToolbar => '隐藏工具栏';
+
+  @override
+  String get vncShortcuts => '快捷键';
+
+  @override
+  String get vncSoftKeyboard => '软键盘';
+
+  @override
+  String get vncSoftKeyboardHint => '输入要发送的文本...';
+
+  @override
+  String get vncCloseKeyboardInput => '关闭键盘输入';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hans`).
@@ -3084,6 +3105,27 @@ class AppLocalizationsZhHans extends AppLocalizationsZh {
 
   @override
   String get vncDisplayRightHalf => '右半屏';
+
+  @override
+  String get vncDisplayAllShort => '全部';
+
+  @override
+  String get vncDisplayPrimary => '主屏';
+
+  @override
+  String get vncHideToolbar => '隐藏工具栏';
+
+  @override
+  String get vncShortcuts => '快捷键';
+
+  @override
+  String get vncSoftKeyboard => '软键盘';
+
+  @override
+  String get vncSoftKeyboardHint => '输入要发送的文本...';
+
+  @override
+  String get vncCloseKeyboardInput => '关闭键盘输入';
 }
 
 /// The translations for Chinese, using the Han script (`zh_Hant`).
@@ -4008,4 +4050,25 @@ class AppLocalizationsZhHant extends AppLocalizationsZh {
 
   @override
   String get vncDisplayRightHalf => '右半螢幕';
+
+  @override
+  String get vncDisplayAllShort => '全部';
+
+  @override
+  String get vncDisplayPrimary => '主螢幕';
+
+  @override
+  String get vncHideToolbar => '隱藏工具列';
+
+  @override
+  String get vncShortcuts => '快速鍵';
+
+  @override
+  String get vncSoftKeyboard => '軟鍵盤';
+
+  @override
+  String get vncSoftKeyboardHint => '輸入要傳送的文字...';
+
+  @override
+  String get vncCloseKeyboardInput => '關閉鍵盤輸入';
 }

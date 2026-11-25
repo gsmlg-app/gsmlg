@@ -360,10 +360,14 @@ void main() {
         expect(frameEvent.frame.height, 4);
         expect(frameEvent.frame.rgbaPixels, equals(expectedRgba));
 
-        // Verify Connecting -> Connected -> Frame ordering.
-        expect(seenEvents[0], isA<VncConnectingEvent>());
-        expect(seenEvents[1], isA<VncConnectedEvent>());
-        expect(seenEvents[2], isA<VncFrameEvent>());
+        // Verify Connecting -> Connected -> Frame ordering (ignoring diagnostics).
+        final lifecycleEvents = seenEvents
+            .where((e) => e is! VncDiagnosticEvent)
+            .toList();
+        expect(lifecycleEvents[0], isA<VncConnectingEvent>());
+        expect(lifecycleEvents[1], isA<VncConnectedEvent>());
+        expect(lifecycleEvents[2], isA<VncFrameEvent>());
+        expect(seenEvents.whereType<VncDiagnosticEvent>(), isNotEmpty);
 
         // Send pointer, key, and clipboard text.
         client.sendPointerEvent(2, 3, 0x01);

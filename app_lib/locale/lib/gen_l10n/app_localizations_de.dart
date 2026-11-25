@@ -2033,4 +2033,25 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get vncDisplayRightHalf => 'Right Half';
+
+  @override
+  String get vncDisplayAllShort => 'All';
+
+  @override
+  String get vncDisplayPrimary => 'Main';
+
+  @override
+  String get vncHideToolbar => 'Hide toolbar';
+
+  @override
+  String get vncShortcuts => 'Shortcuts';
+
+  @override
+  String get vncSoftKeyboard => 'Soft keyboard';
+
+  @override
+  String get vncSoftKeyboardHint => 'Type text to send...';
+
+  @override
+  String get vncCloseKeyboardInput => 'Close keyboard input';
 }

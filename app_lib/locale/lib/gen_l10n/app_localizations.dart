@@ -3858,6 +3858,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Right Half'**
   String get vncDisplayRightHalf;
+
+  /// No description provided for @vncDisplayAllShort.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get vncDisplayAllShort;
+
+  /// No description provided for @vncDisplayPrimary.
+  ///
+  /// In en, this message translates to:
+  /// **'Main'**
+  String get vncDisplayPrimary;
+
+  /// No description provided for @vncHideToolbar.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide toolbar'**
+  String get vncHideToolbar;
+
+  /// No description provided for @vncShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortcuts'**
+  String get vncShortcuts;
+
+  /// No description provided for @vncSoftKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft keyboard'**
+  String get vncSoftKeyboard;
+
+  /// No description provided for @vncSoftKeyboardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Type text to send...'**
+  String get vncSoftKeyboardHint;
+
+  /// No description provided for @vncCloseKeyboardInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Close keyboard input'**
+  String get vncCloseKeyboardInput;
 }
 
 class _AppLocalizationsDelegate
