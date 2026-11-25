@@ -7,7 +7,7 @@
   "destination": {
     "identity": "github.com/gsmlg-app/gsmlg"
   },
-  "baseline": "02ff32de89ceed7abc0d7d5e3df01b4bd9c1cad5",
+  "baseline": "d3a2f0c5cc80fc5d2d70b3199298ce726f1c4579",
   "copy_mappings": [
     {
       "source": "app_lib/terminal_core",
@@ -5448,6 +5448,11 @@
       "source": "android/app/build.gradle.kts",
       "destination": "android/app/build.gradle.kts",
       "reason": "Manually merge jniLibs.useLegacyPackaging=true for native executable extraction; preserve GSMLG Android build/signing settings."
+    },
+    {
+      "source": "linux/CMakeLists.txt",
+      "destination": "linux/CMakeLists.txt",
+      "reason": "Manually merge native_assets install rules; preserve GSMLG Linux binary name, desktop/editor install helpers, and bundled title model verification."
     },
     {
       "source": "macos/Runner/DebugProfile.entitlements",
@@ -10937,6 +10942,7 @@
     "app_lib/logging/lib/src/terminal_analytics.dart": "78d5f74d011ee688f398933c8725848354e3e9d53d5cd5fc57588d10dd0ae755",
     "app_lib/logging/lib/app_logging.dart": "6d939a10141296a9d646df49a5bde333d2b979315c58eb3f1de42f1c655f6757",
     "android/app/build.gradle.kts": "781a23ad7ffb7316c7f40e5293c16748780187f3a7087cb92cc45ffaf5225f4d",
+    "linux/CMakeLists.txt": "b5f65fb5f970f785b307ca83719478e3eded5532617c68c5fbd15b0258145c47",
     "macos/Runner/DebugProfile.entitlements": "6b9a5d45d716b549a984cbb7fa003158633a75063dc1f92a0a5c53e6df47261b",
     "macos/Runner/Release.entitlements": "6b9a5d45d716b549a984cbb7fa003158633a75063dc1f92a0a5c53e6df47261b"
   },

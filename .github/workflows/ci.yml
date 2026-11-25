@@ -232,6 +232,20 @@ jobs:
       - name: Build Linux
         run: flutter build linux --release
 
+      - name: Verify Linux release bundles native code assets
+        run: |
+          set -euo pipefail
+          bundle_lib=$(echo build/linux/*/release/bundle/lib)
+          test -d "$bundle_lib"
+          test -d build/native_assets/linux
+          shopt -s nullglob
+          assets=(build/native_assets/linux/*.so)
+          test "${#assets[@]}" -gt 0
+          for asset in "${assets[@]}"; do
+            name=$(basename "$asset")
+            test -f "$bundle_lib/$name" || { echo "Missing bundled native asset: $bundle_lib/$name" >&2; exit 1; }
+          done
+
       - name: Verify packaged offline title model and native inference
         run: |
           python3 tools/conversation_title/verify_package.py build/linux/x64/release/bundle
