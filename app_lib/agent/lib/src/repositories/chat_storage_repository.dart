@@ -8,9 +8,10 @@ import '../models/conversation.dart';
 import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
+import '../services/agent_session_store.dart';
 
 /// Repository for persisting chat data using Drift database.
-class ChatStorageRepository {
+class ChatStorageRepository implements AgentSessionStore {
   ChatStorageRepository(this._db);
 
   final AppDatabase _db;
@@ -129,6 +130,9 @@ class ChatStorageRepository {
   /// Deletes a conversation and all its messages.
   Future<void> deleteConversation(String id) async {
     await (_db.delete(
+      _db.agentSessionStateTable,
+    )..where((t) => t.sessionId.equals(id))).go();
+    await (_db.delete(
       _db.chatMessageTable,
     )..where((t) => t.conversationId.equals(id))).go();
     await (_db.delete(
@@ -138,15 +142,49 @@ class ChatStorageRepository {
 
   /// Deletes all conversations and messages.
   Future<void> deleteAllConversations() async {
+    await _db.delete(_db.agentSessionStateTable).go();
     await _db.delete(_db.chatMessageTable).go();
     await _db.delete(_db.chatConversationTable).go();
+  }
+
+  // ==========================================================================
+  // Agent Session State
+  // ==========================================================================
+
+  @override
+  Future<String?> loadAgentState(String sessionId) async {
+    final row = await (_db.select(
+      _db.agentSessionStateTable,
+    )..where((t) => t.sessionId.equals(sessionId))).getSingleOrNull();
+    return row?.stateJson;
+  }
+
+  @override
+  Future<void> saveAgentState(String sessionId, String stateJson) async {
+    await _db
+        .into(_db.agentSessionStateTable)
+        .insertOnConflictUpdate(
+          AgentSessionStateTableCompanion(
+            sessionId: Value(sessionId),
+            stateJson: Value(stateJson),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+  }
+
+  @override
+  Future<void> deleteAgentState(String sessionId) async {
+    await (_db.delete(
+      _db.agentSessionStateTable,
+    )..where((t) => t.sessionId.equals(sessionId))).go();
   }
 
   // ==========================================================================
   // Messages
   // ==========================================================================
 
-  /// Loads all messages for a conversation ordered by timestamp.
+  /// Loads all messages for a conversation ordered chronologically.
+  @override
   Future<List<Message>> loadMessages(String conversationId) async {
     final rows =
         await (_db.select(_db.chatMessageTable)
@@ -154,10 +192,24 @@ class ChatStorageRepository {
               ..orderBy([(t) => OrderingTerm.asc(t.timestamp)]))
             .get();
 
-    return rows.map(_messageFromRow).toList();
+    final indexed = rows.indexed.toList();
+    indexed.sort((a, b) {
+      final aMicros = _rowMicrosecondTimestamp(a.$2);
+      final bMicros = _rowMicrosecondTimestamp(b.$2);
+      final cmp = aMicros.compareTo(bMicros);
+      return cmp != 0 ? cmp : a.$1.compareTo(b.$1);
+    });
+
+    return [for (final (_, row) in indexed) _messageFromRow(row)];
+  }
+
+  int _rowMicrosecondTimestamp(ChatMessageTableData row) {
+    final meta = AgentMessageMetadata.decode(row.agentMetadata);
+    return meta?.microsecondTimestamp ?? row.timestamp.microsecondsSinceEpoch;
   }
 
   /// Saves a new message or updates an existing one.
+  @override
   Future<void> saveMessage(Message message) async {
     int? tokenCount;
     ChatResponseInfo? responseInfo;
@@ -166,13 +218,60 @@ class ChatStorageRepository {
     if (message is AssistantMessage) {
       tokenCount = message.tokenCount;
       responseInfo = message.responseInfo;
-      metadata = message.agentMetadata;
+      final existing = AgentMessageMetadata.decode(message.agentMetadata);
+      if (existing?.microsecondTimestamp != null) {
+        metadata = message.agentMetadata;
+      } else {
+        metadata = AgentMessageMetadata(
+          version: existing?.version ?? 1,
+          toolCalls: existing?.toolCalls ?? const [],
+          contentBlocks: existing?.contentBlocks ?? const [],
+          thought: existing?.thought ?? message.thinkingContent,
+          thoughtSignature: existing?.thoughtSignature,
+          responseId: existing?.responseId,
+          model: existing?.model,
+          toolCallId: existing?.toolCallId,
+          toolName: existing?.toolName,
+          toolArguments: existing?.toolArguments,
+          isError: existing?.isError,
+          receiptStatus: existing?.receiptStatus,
+          microsecondTimestamp: message.timestamp.microsecondsSinceEpoch,
+        ).encode();
+      }
     } else if (message is ToolResponseMessage) {
-      metadata = message.agentMetadata;
+      final existing = AgentMessageMetadata.decode(message.agentMetadata);
+      metadata = AgentMessageMetadata(
+        version: existing?.version ?? 1,
+        toolCalls: existing?.toolCalls ?? const [],
+        contentBlocks: existing?.contentBlocks ?? const [],
+        thought: existing?.thought,
+        thoughtSignature: existing?.thoughtSignature,
+        responseId: existing?.responseId,
+        model: existing?.model,
+        toolCallId: message.toolCallId ?? existing?.toolCallId,
+        toolName: message.toolName.isNotEmpty
+            ? message.toolName
+            : existing?.toolName,
+        toolArguments: existing?.toolArguments,
+        isError: message.isError || (existing?.isError ?? false),
+        receiptStatus: existing?.receiptStatus,
+        microsecondTimestamp:
+            existing?.microsecondTimestamp ??
+            message.timestamp.microsecondsSinceEpoch,
+      ).encode();
     } else if (message is UserMessage) {
       primaryImageBytes =
           message.imageBytes ?? message.inlineImages.firstOrNull?.bytes;
-      metadata = _encodeUserAttachments(message.attachments, primaryImageBytes);
+      metadata = _encodeUserAttachments(
+        message.attachments,
+        primaryImageBytes,
+        timestamp: message.timestamp,
+      );
+    } else if (message is SystemMessage) {
+      metadata = AgentMessageMetadata(
+        version: 1,
+        microsecondTimestamp: message.timestamp.microsecondsSinceEpoch,
+      ).encode();
     }
 
     await _db
@@ -220,14 +319,18 @@ class ChatStorageRepository {
   }
 
   /// Deletes a message by ID.
+  @override
   Future<void> deleteMessage(String id) async {
     await (_db.delete(
       _db.chatMessageTable,
     )..where((t) => t.id.equals(id))).go();
   }
 
-  /// Deletes all messages in a conversation.
+  /// Deletes all messages in a conversation and clears its persisted agent state.
   Future<void> clearConversationMessages(String conversationId) async {
+    await (_db.delete(
+      _db.agentSessionStateTable,
+    )..where((t) => t.sessionId.equals(conversationId))).go();
     await (_db.delete(
       _db.chatMessageTable,
     )..where((t) => t.conversationId.equals(conversationId))).go();
@@ -541,11 +644,11 @@ class ChatStorageRepository {
 
   static const int _maxPersistedInlineAttachmentBytes = 16 * 1024 * 1024;
 
-  String? _encodeUserAttachments(
+  String _encodeUserAttachments(
     List<ChatAttachment> attachments,
-    Uint8List? primaryImageBytes,
-  ) {
-    if (attachments.isEmpty) return null;
+    Uint8List? primaryImageBytes, {
+    required DateTime timestamp,
+  }) {
     var usedPrimaryImageBytes = false;
     final encoded = <Map<String, dynamic>>[];
 
@@ -573,7 +676,11 @@ class ChatStorageRepository {
       encoded.add(item);
     }
 
-    return jsonEncode({'version': 1, 'attachments': encoded});
+    return jsonEncode({
+      'version': 1,
+      'microsecondTimestamp': timestamp.microsecondsSinceEpoch,
+      if (encoded.isNotEmpty) 'attachments': encoded,
+    });
   }
 
   List<ChatAttachment> _decodeUserAttachments(

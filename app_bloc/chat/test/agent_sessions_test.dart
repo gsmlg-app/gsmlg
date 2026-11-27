@@ -415,6 +415,9 @@ class _Runtime implements ChatAgentRuntime {
   }
 
   @override
+  Future<void> drainPendingWrites(String runId) async {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

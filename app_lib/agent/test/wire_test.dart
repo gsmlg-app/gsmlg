@@ -3,7 +3,7 @@ import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:app_agent/app_agent.dart';
-import 'package:dart_agent_core/dart_agent_core.dart' as core;
+import 'package:agent_runtime/agent_runtime.dart' as core;
 import 'package:flutter_test/flutter_test.dart';
 
 final _t = DateTime.utc(2026, 1, 2, 3, 4, 5, 6, 7);

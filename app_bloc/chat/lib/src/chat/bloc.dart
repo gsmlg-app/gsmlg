@@ -473,13 +473,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           await _storageRepository.deleteMessage(id);
         }
         await _storageRepository.saveConversation(task.conversation);
-        for (final message in task.conversation.messages) {
+        for (final systemMsg
+            in task.conversation.messages.whereType<SystemMessage>()) {
           if (!_isCurrent(task)) return;
-          await _storageRepository.saveMessage(message);
+          await _storageRepository.saveMessage(systemMsg);
+        }
+        if (_isCurrent(task)) {
+          await _storageRepository.saveMessage(user);
         }
       });
       if (!_isCurrent(task)) return;
-      await _prepareAssistant(task, emit);
+      _prepareAssistant(task, emit);
       if (!_isCurrent(task)) return;
       final drafts = {...state.drafts};
       if ((drafts[task.id] ?? drafts['']) == submittedDraft) {
@@ -495,8 +499,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
-  Future<void> _prepareAssistant(
-      _GenerationTask task, Emitter<ChatState> emit) async {
+  /// Creates an in-memory UI streaming placeholder only; agent turns and tool
+  /// responses are persisted by the agent runtime itself.
+  void _prepareAssistant(_GenerationTask task, Emitter<ChatState> emit) {
     final rawAssistant = AssistantMessage(
         id: _uuid.v4(),
         content: '',
@@ -505,10 +510,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         isStreaming: true);
     final assistant = _withResponseInfo(task, rawAssistant);
     task.messageId = assistant.id;
+    task.turnMessageIds.add(assistant.id);
     task.contextTokens = _estimateContextTokens(task.conversation.messages);
     task.conversation = task.conversation.addMessage(assistant);
-    await _write(task, () => _storageRepository.saveMessage(assistant));
-    if (!_isCurrent(task)) return;
     _putSession(
         state.sessions[task.id]!.copyWith(
             conversation: task.conversation,
@@ -575,8 +579,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (!_isCurrent(task)) return;
     if (task.config!.inferenceMode == ChatInferenceMode.remote) {
       _beginResponseMetrics(task);
-      _markRunning(task, emit);
       _startStreaming(task);
+      _markRunning(task, emit);
       _drainLocalQueue(emit);
     } else {
       _localQueue.add(task);
@@ -660,8 +664,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       if (!_isCurrent(task)) return;
       if (!_gemmaRepository.isReady) throw StateError('Model is not loaded');
       _beginResponseMetrics(task);
-      _markRunning(task, emit);
       _startStreaming(task);
+      _markRunning(task, emit);
     } catch (error) {
       task.localPreparation!.complete();
       if (_isCurrent(task)) {
@@ -726,7 +730,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     task.subscription = stream.listen((event) {
       if (!_isCurrent(task) || task.leg != leg || task.finishing) return;
       if (event is ModelChunkReceivedEvent) {
-        if ((event.textChunk != null && event.textChunk!.isNotEmpty) ||
+        if (event.timeToFirstToken != null) {
+          task.timeToFirstToken ??= event.timeToFirstToken;
+        } else if ((event.textChunk != null && event.textChunk!.isNotEmpty) ||
             (event.thoughtChunk != null && event.thoughtChunk!.isNotEmpty)) {
           task.timeToFirstToken ??= task.stopwatch.elapsed;
         }
@@ -754,7 +760,26 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
 
     switch (event.event) {
-      case ModelChunkReceivedEvent(:final textChunk, :final thoughtChunk):
+      case ModelTurnStartedEvent(:final turnIndex, :final messageId):
+        if (messageId != null && messageId.isNotEmpty) {
+          _activateTurnBubble(task, turnIndex: turnIndex, messageId: messageId);
+        }
+        _emitTask(task, emit, activity: 'Waiting for response');
+      case ModelChunkReceivedEvent(
+          :final turnIndex,
+          :final messageId,
+          :final textChunk,
+          :final thoughtChunk,
+          :final timeToFirstToken
+        ):
+        if (timeToFirstToken != null) {
+          task.timeToFirstToken = timeToFirstToken;
+        }
+        if (messageId != null &&
+            messageId.isNotEmpty &&
+            task.messageId != messageId) {
+          _activateTurnBubble(task, turnIndex: turnIndex, messageId: messageId);
+        }
         if (textChunk != null) {
           if (textChunk.isNotEmpty) {
             task.timeToFirstToken ??= task.stopwatch.elapsed;
@@ -810,6 +835,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           :final callId,
           :final arguments,
           :final receipt,
+          :final message,
           :final acknowledgement
         ):
         final result = receipt.result;
@@ -829,20 +855,28 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             isError: receipt.isError,
           ),
         );
-        final message = ToolResponseMessage(
-          id: _uuid.v4(),
-          toolName: toolName,
-          toolCallId: callId,
-          content: resultString,
-          isError: receipt.isError,
-          conversationId: task.id,
-          timestamp: DateTime.now(),
-        );
-        task.conversation = task.conversation.addMessage(message);
-        if (!await _persistThenAck(task, emit, acknowledgement,
-            () => _storageRepository.saveMessage(message))) {
-          return;
-        }
+        final uiMessage = message ??
+            ToolResponseMessage(
+              id: _uuid.v4(),
+              toolName: toolName,
+              toolCallId: callId,
+              content: resultString,
+              isError: receipt.isError,
+              conversationId: task.id,
+              timestamp: DateTime.now(),
+              agentMetadata: AgentMessageMetadata(
+                version: 1,
+                toolCallId: callId,
+                toolName: toolName,
+                toolArguments: arguments,
+                isError: receipt.isError,
+                receiptStatus: receipt.status.name,
+                microsecondTimestamp: DateTime.now().microsecondsSinceEpoch,
+              ).encode(),
+            );
+        _upsertMessage(task, uiMessage);
+        // Persistence is owned by the agent; ChatBloc only updates UI state.
+        if (!acknowledgement.isCompleted) acknowledgement.complete();
         _emitTask(task, emit, activity: 'Tool finished: $toolName');
       case SubAgentUpdatedEvent(
           :final taskId,
@@ -872,83 +906,155 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           ),
         );
         _emitTask(task, emit, activity: 'Sub-agent $workerName: $status');
-      case ModelTurnCompletedEvent(:final modelMessage, :final acknowledgement):
-        final metadata = AgentMessageMetadata(
-          version: 1,
-          toolCalls: modelMessage.functionCalls
-              .map((fc) => {
-                    'id': fc.id,
-                    'name': fc.name,
-                    'arguments': fc.arguments,
-                  })
-              .toList(),
-          thought: modelMessage.thought,
-          thoughtSignature: modelMessage.thoughtSignature,
-        );
-        _updateStreamingAssistant(
-          task,
-          (m) => m.copyWith(
-            content: modelMessage.textOutput ?? m.content,
-            thinkingContent: modelMessage.thought ?? m.thinkingContent,
-            agentMetadata: metadata.encode(),
-          ),
-        );
-        final assistant = task.conversation.messages
-            .whereType<AssistantMessage>()
-            .where((m) => m.id == task.messageId)
-            .firstOrNull;
-        await _persistThenAck(
+      case ModelTurnCompletedEvent(
+          :final turnIndex,
+          :final modelMessage,
+          :final message,
+          :final acknowledgement
+        ):
+        if (message != null) {
+          _activateTurnBubble(
             task,
-            emit,
-            acknowledgement,
-            assistant == null
-                ? () async {}
-                : () => _storageRepository.saveMessage(assistant));
+            turnIndex: turnIndex,
+            messageId: message.id,
+          );
+          task.lastCanonicalAssistant = message;
+          _upsertMessage(task, message.copyWith(isStreaming: false));
+          task.turnMessageIds.add(message.id);
+        } else {
+          final metadata = AgentMessageMetadata(
+            version: 1,
+            toolCalls: modelMessage.functionCalls
+                .map((fc) => {
+                      'id': fc.id,
+                      'name': fc.name,
+                      'arguments': fc.arguments,
+                    })
+                .toList(),
+            thought: modelMessage.thought,
+            thoughtSignature: modelMessage.thoughtSignature,
+          );
+          _updateStreamingAssistant(
+            task,
+            (m) => m.copyWith(
+              content: modelMessage.textOutput ?? m.content,
+              thinkingContent: modelMessage.thought ?? m.thinkingContent,
+              agentMetadata: metadata.encode(),
+              isStreaming: false,
+              completedSuccessfully: true,
+            ),
+          );
+        }
+        // Persistence is owned by the agent; ChatBloc only updates UI state.
+        if (!acknowledgement.isCompleted) acknowledgement.complete();
+        _emitTask(task, emit);
       case AgentRunCompletedEvent():
-        final assistant = task.conversation.messages
+        final runAssistants = task.conversation.messages
             .whereType<AssistantMessage>()
-            .where((m) => m.id == task.messageId)
-            .firstOrNull;
-        final hasContent = assistant != null &&
-            (assistant.content.trim().isNotEmpty ||
-                (assistant.thinkingContent?.trim().isNotEmpty ?? false));
+            .where((m) =>
+                m.id == task.messageId || task.turnMessageIds.contains(m.id))
+            .toList();
+        final hasContent = runAssistants.any((assistant) =>
+            assistant.content.trim().isNotEmpty ||
+            (assistant.thinkingContent?.trim().isNotEmpty ?? false));
         await _finish(
             task, emit, hasContent ? ChatStatus.ready : ChatStatus.error,
             error: hasContent
                 ? null
                 : 'Model generated an empty response. Try a different model or backend.');
-      case AgentRunFailedEvent(:final error):
+      case AgentRunFailedEvent(:final error, :final errorMessage):
         final msg = error is AgentException && error.error != null
             ? error.error.toString()
             : (error is AgentException ? error.message : error.toString());
-        await _finish(task, emit, ChatStatus.error, error: msg);
-      case AgentRunCancelledEvent():
-        await _finish(task, emit, ChatStatus.ready);
+        if (errorMessage != null) {
+          _activateTurnBubble(task, turnIndex: 0, messageId: errorMessage.id);
+          task.lastCanonicalAssistant = errorMessage;
+          _upsertMessage(task, errorMessage);
+        }
+        await _finish(
+          task,
+          emit,
+          ChatStatus.error,
+          error: task.stopRequested ? 'Failed to stop generation: $msg' : msg,
+          errorMessageApplied: errorMessage != null,
+        );
+      case AgentRunCancelledEvent(:final partialMessage):
+        if (partialMessage != null) {
+          _activateTurnBubble(task, turnIndex: 0, messageId: partialMessage.id);
+          task.lastCanonicalAssistant = partialMessage;
+          _upsertMessage(task, partialMessage);
+          task.messageId = partialMessage.id;
+          task.turnMessageIds.add(partialMessage.id);
+        }
+        await _finish(
+          task,
+          emit,
+          task.stopRequested ? ChatStatus.stopped : ChatStatus.ready,
+        );
       case AgentRunStartedEvent():
-        _emitTask(task, emit, activity: 'Waiting for response');
-      case ModelTurnStartedEvent():
         _emitTask(task, emit, activity: 'Waiting for response');
     }
   }
 
-  /// Persists, then acknowledges: an agent isolate waits for the ack before
-  /// continuing. A failed write rejects the ack and fails the session.
-  Future<bool> _persistThenAck(_GenerationTask task, Emitter<ChatState> emit,
-      Completer<void> acknowledgement, Future<void> Function() write) async {
-    try {
-      await _write(task, write);
-    } catch (error) {
-      if (!acknowledgement.isCompleted) {
-        // Nobody may listen in-process; the isolate host does.
-        acknowledgement.future.ignore();
-        acknowledgement.completeError(error);
-      }
-      await _finish(task, emit, ChatStatus.error,
-          error: 'Failed to save response: $error');
-      return false;
+  /// Ensures the UI conversation has a streaming [AssistantMessage] for
+  /// [messageId]. Turn 0 rebinds the initial placeholder; later turns create a
+  /// distinct bubble so earlier tool-calling turns are never overwritten.
+  void _activateTurnBubble(
+    _GenerationTask task, {
+    required int turnIndex,
+    required String messageId,
+  }) {
+    final existingIdx =
+        task.conversation.messages.indexWhere((m) => m.id == messageId);
+    if (existingIdx != -1) {
+      task.messageId = messageId;
+      task.turnMessageIds.add(messageId);
+      return;
     }
-    if (!acknowledgement.isCompleted) acknowledgement.complete();
-    return true;
+
+    final currentId = task.messageId;
+    if (turnIndex == 0 && currentId != null) {
+      final placeholderIdx = task.conversation.messages.indexWhere(
+        (m) => m is AssistantMessage && m.id == currentId && m.isStreaming,
+      );
+      if (placeholderIdx != -1) {
+        final placeholder =
+            task.conversation.messages[placeholderIdx] as AssistantMessage;
+        final updated = List<Message>.from(task.conversation.messages);
+        updated[placeholderIdx] = placeholder.copyWith(id: messageId);
+        task.conversation = task.conversation.copyWith(messages: updated);
+        task.turnMessageIds
+          ..remove(currentId)
+          ..add(messageId);
+        task.messageId = messageId;
+        return;
+      }
+    }
+
+    final bubble = _withResponseInfo(
+      task,
+      AssistantMessage(
+        id: messageId,
+        content: '',
+        conversationId: task.id,
+        timestamp: DateTime.now(),
+        isStreaming: true,
+      ),
+    );
+    task.messageId = messageId;
+    task.turnMessageIds.add(messageId);
+    task.conversation = task.conversation.addMessage(bubble);
+  }
+
+  void _upsertMessage(_GenerationTask task, Message message) {
+    final messages = List<Message>.from(task.conversation.messages);
+    final idx = messages.indexWhere((m) => m.id == message.id);
+    if (idx == -1) {
+      messages.add(message);
+    } else {
+      messages[idx] = message;
+    }
+    task.conversation = task.conversation.copyWith(messages: messages);
   }
 
   void _onStreamToken(_ChatStreamToken event, Emitter<ChatState> emit) {
@@ -1064,6 +1170,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       _putSession(
           session.copyWith(
               conversation: task.conversation,
+              streamingMessageId: task.messageId,
               currentActivity: activity,
               toolActivities: task.toolActivities,
               subAgents: task.subAgents),
@@ -1094,17 +1201,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   Future<void> _finish(
       _GenerationTask task, Emitter<ChatState> emit, ChatStatus status,
-      {String? error}) async {
+      {String? error, bool errorMessageApplied = false}) async {
     if (!_isCurrent(task) || task.finishing) return;
     task.finishing = true;
     task.timer?.cancel();
     task.stopwatch.stop();
-    _updateStreamingAssistant(
-        task,
-        (m) => m.copyWith(
-            completedSuccessfully:
-                status == ChatStatus.ready && error == null));
-    if (error != null && task.messageId != null) {
+    if (error != null && !errorMessageApplied && task.messageId != null) {
+      _updateStreamingAssistant(
+          task, (m) => m.copyWith(completedSuccessfully: false));
       task.conversation = markStreamingAssistantError(
               conversation: task.conversation,
               streamingMessageId: task.messageId!,
@@ -1113,24 +1217,19 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               now: DateTime.now(),
               responseInfo: _responseInfoForText(task, error))
           .conversation;
+    } else if (task.lastCanonicalAssistant == null) {
+      _updateStreamingAssistant(
+          task,
+          (m) => m.copyWith(
+              isStreaming: false,
+              completedSuccessfully:
+                  status == ChatStatus.ready && error == null));
+      task.conversation = task.conversation.copyWith(updatedAt: DateTime.now());
     } else {
-      _updateStreamingAssistant(task, (m) => m.copyWith(isStreaming: false));
+      // Preserve the exact responseInfo & content persisted by the agent.
       task.conversation = task.conversation.copyWith(updatedAt: DateTime.now());
     }
-    try {
-      await _write(task, () async {
-        for (final message in task.conversation.messages) {
-          if (!_isCurrent(task)) return;
-          await _storageRepository.saveMessage(message);
-        }
-        if (_isCurrent(task)) {
-          await _storageRepository.saveConversation(task.conversation);
-        }
-      });
-    } catch (saveError) {
-      error = 'Failed to save response: $saveError';
-      status = ChatStatus.error;
-    }
+    await task.pendingWrites;
     if (!_isCurrent(task)) return;
     await task.localPreparation?.future;
     await task.subscription?.cancel();
@@ -1149,6 +1248,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     _syncKeepAlive();
     task.cancelled = true;
     task.subscription = null;
+    if (task.stopCompleted != null && !task.stopCompleted!.isCompleted) {
+      task.stopCompleted!.complete();
+    }
     final session = state.sessions[task.id];
     if (session != null) {
       _putSession(
@@ -1160,7 +1262,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
               clearRun: true,
               toolActivities: task.toolActivities,
               subAgents: task.subAgents,
-              hasUnreadResponse: state.conversation?.id != task.id),
+              hasUnreadResponse: status != ChatStatus.stopped &&
+                  state.conversation?.id != task.id),
           emit,
           updateHistory: true);
     }
@@ -1180,7 +1283,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     task.timer?.cancel();
     task.stopwatch.stop();
     task.cancelToken?.cancel('Generation cancelled');
-    await _agentRunner.stop(task.runId);
+    if (!task.stopRequested) {
+      await _agentRunner.stop(task.runId);
+    }
     _localQueue.remove(task);
     if (task.config?.inferenceMode == ChatInferenceMode.remote) {
       await _remoteRepository.stopGeneration(generationId: task.runId);
@@ -1201,15 +1306,39 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     if (id == null || _mutating.contains(id) || !_tasks.containsKey(id)) return;
     _mutating.add(id);
     try {
+      final existing = _tasks[id];
+      if (existing != null &&
+          existing.subscription != null &&
+          !existing.finishing) {
+        // Ask the agent to stop and persist its partial response before tearing
+        // down the UI subscription.
+        existing.stopRequested = true;
+        final stopDone = existing.stopCompleted ??= Completer<void>();
+        existing.cancelToken?.cancel('Generation cancelled');
+        await _agentRunner.stop(existing.runId);
+        if (existing.config?.inferenceMode == ChatInferenceMode.remote) {
+          await _remoteRepository.stopGeneration(generationId: existing.runId);
+        } else if (existing.localLease != null) {
+          await _gemmaRepository.stopGeneration();
+        }
+        try {
+          await stopDone.future.timeout(const Duration(milliseconds: 500));
+        } on TimeoutException {
+          // Fake or unresponsive runner did not emit a terminal event; fall
+          // through to forced cleanup below.
+        }
+        if (!_tasks.containsKey(id)) {
+          // Agent emitted AgentRunCancelledEvent/AgentRunFailedEvent and _finish
+          // already updated the UI session state.
+          return;
+        }
+      }
+
       final task = await _cancel(id);
       if (task == null || _deleted.contains(id)) return;
       _updateStreamingAssistant(task,
           (m) => m.copyWith(isStreaming: false, completedSuccessfully: false));
       task.conversation = task.conversation.copyWith(updatedAt: DateTime.now());
-      for (final message in task.conversation.messages) {
-        await _storageRepository.saveMessage(message);
-      }
-      await _storageRepository.saveConversation(task.conversation);
       final session = state.sessions[id];
       if (session != null) {
         _putSession(
@@ -1355,12 +1484,20 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         : messages.indexWhere(
             (m) => m.id == event.messageId && m is AssistantMessage);
     if (index < 0) return;
+    // Include preceding intermediate tool-call assistant turns & tool responses
+    // that belong to the same assistant reply group (after the previous user turn).
+    var cutIndex = index;
+    while (cutIndex > 0 &&
+        messages[cutIndex - 1] is! UserMessage &&
+        messages[cutIndex - 1] is! SystemMessage) {
+      cutIndex--;
+    }
     _pauseTitles();
     final task = _reserve(session.conversation, emit);
     if (task == null) return;
     await _restartFromPrefix(task,
-        retainedMessages: messages.sublist(0, index),
-        deleteMessages: messages.sublist(index),
+        retainedMessages: messages.sublist(0, cutIndex),
+        deleteMessages: messages.sublist(cutIndex),
         emit: emit);
   }
 
@@ -1531,6 +1668,9 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           title: title, messages: retainedMessages, updatedAt: DateTime.now());
       _applySystemPrompt(task);
       await _write(task, () async {
+        // Invalidate persisted AgentState so the agent rebuilds from the
+        // edited/regenerated prefix.
+        await _storageRepository.deleteAgentState(task.id);
         for (final id in task.removedSystemIds) {
           if (!_isCurrent(task)) return;
           await _storageRepository.deleteMessage(id);
@@ -1548,7 +1688,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         }
       });
       if (!_isCurrent(task)) return;
-      await _prepareAssistant(task, emit);
+      _prepareAssistant(task, emit);
       if (!_isCurrent(task)) return;
       if (submittedDraft != null) {
         final drafts = {...state.drafts};
@@ -1846,6 +1986,10 @@ class _GenerationTask {
   ModelConfig? config;
   final List<Map<String, dynamic>> tools;
   String? messageId;
+  final turnMessageIds = <String>{};
+  AssistantMessage? lastCanonicalAssistant;
+  bool stopRequested = false;
+  Completer<void>? stopCompleted;
   StreamSubscription<dynamic>? subscription;
   CancelToken? cancelToken;
   Timer? timer;

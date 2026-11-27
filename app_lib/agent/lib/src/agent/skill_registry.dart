@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:agent_runtime/agent_runtime.dart';
 import 'package:path/path.dart' as p;
 
 import '../services/tool_executor.dart';

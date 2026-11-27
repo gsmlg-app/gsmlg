@@ -185,6 +185,7 @@ void main() {
     final called = fixture.tools.started.future;
     fixture.remote.controllers['a']!
         .add(const ChatFunctionCallChunk(name: 'wait', args: {}));
+    unawaited(fixture.remote.controllers['a']!.close());
     await called;
     await fixture.sendAndWait(const ChatDeleteConversation(id: 'a'),
         (s) => !s.sessions.containsKey('a'));
@@ -654,6 +655,20 @@ class _Tools extends ToolExecutor {
 class _Storage implements ChatStorageRepository {
   final conversations = <String, Conversation>{};
   final messages = <String, Message>{};
+  final agentStates = <String, String>{};
+  @override
+  Future<String?> loadAgentState(String sessionId) async =>
+      agentStates[sessionId];
+  @override
+  Future<void> saveAgentState(String sessionId, String stateJson) async {
+    agentStates[sessionId] = stateJson;
+  }
+
+  @override
+  Future<void> deleteAgentState(String sessionId) async {
+    agentStates.remove(sessionId);
+  }
+
   Completer<void>? blockAssistantWrite;
   final assistantWriting = Completer<void>();
   @override

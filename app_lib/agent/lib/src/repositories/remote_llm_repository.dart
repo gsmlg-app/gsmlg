@@ -556,17 +556,79 @@ class RemoteLlmRepository {
           );
         }
       } else if (message is ToolResponseMessage) {
+        final callId = message.toolCallId;
+        if (callId == null || callId.isEmpty) continue;
         result.add(
           openai.OpenAiMessage(
             role: 'tool',
-            toolCallId: message.toolCallId ?? message.id,
+            toolCallId: callId,
             name: message.toolName,
             content: message.content,
           ),
         );
       }
     }
-    return result;
+    return _sanitizeOpenAiMessages(result);
+  }
+
+  /// Ensures every `tool` message matches a `tool_call` ID in the immediately
+  /// preceding `assistant` message, and strips unmatched `tool_calls` so
+  /// OpenAI Chat Completions and Responses APIs never reject orphaned items.
+  List<openai.OpenAiMessage> _sanitizeOpenAiMessages(
+    List<openai.OpenAiMessage> messages,
+  ) {
+    final sanitized = <openai.OpenAiMessage>[];
+    var i = 0;
+    while (i < messages.length) {
+      final msg = messages[i];
+      if (msg.role == 'tool') {
+        // Orphaned tool result with no preceding assistant tool call.
+        i++;
+        continue;
+      }
+      if (msg.role == 'assistant' &&
+          msg.toolCalls != null &&
+          msg.toolCalls!.isNotEmpty) {
+        final declaredIds = <String>{
+          for (final tc in msg.toolCalls!)
+            if ((tc['id'] as String? ?? '').isNotEmpty) tc['id'] as String,
+        };
+        final matchedTools = <openai.OpenAiMessage>[];
+        final matchedIds = <String>{};
+        var j = i + 1;
+        while (j < messages.length && messages[j].role == 'tool') {
+          final callId = messages[j].toolCallId;
+          if (callId != null &&
+              declaredIds.contains(callId) &&
+              matchedIds.add(callId)) {
+            matchedTools.add(messages[j]);
+          }
+          j++;
+        }
+        final pairedCalls = msg.toolCalls!
+            .where((tc) => matchedIds.contains(tc['id'] as String?))
+            .toList();
+        if (pairedCalls.isNotEmpty) {
+          sanitized.add(
+            openai.OpenAiMessage(
+              role: 'assistant',
+              content: msg.content,
+              toolCalls: pairedCalls,
+            ),
+          );
+          sanitized.addAll(matchedTools);
+        } else if (msg.content != null) {
+          sanitized.add(
+            openai.OpenAiMessage(role: 'assistant', content: msg.content),
+          );
+        }
+        i = j;
+        continue;
+      }
+      sanitized.add(msg);
+      i++;
+    }
+    return sanitized;
   }
 
   _AnthropicMessagePayload _toAnthropicMessages(List<Message> messages) {
@@ -683,8 +745,11 @@ class RemoteLlmRepository {
             }
           }
         case ToolResponseMessage():
+          final callId = message.toolCallId;
+          if (callId == null || callId.isEmpty) continue;
+          if (!_previousAnthropicAssistantHasToolUse(result, callId)) continue;
           final block = anthropic.AnthropicContentBlock.toolResult(
-            toolUseId: message.toolCallId ?? message.id,
+            toolUseId: callId,
             content: message.content,
             isError: message.isError ? true : null,
           );
@@ -695,6 +760,34 @@ class RemoteLlmRepository {
       system: system.isEmpty ? null : system.toString(),
       messages: result,
     );
+  }
+
+  bool _previousAnthropicAssistantHasToolUse(
+    List<anthropic.AnthropicMessage> result,
+    String callId,
+  ) {
+    for (var i = result.length - 1; i >= 0; i--) {
+      final msg = result[i];
+      if (msg.role == 'assistant') {
+        final content = msg.content;
+        if (content is List) {
+          for (final block in content) {
+            if (block is anthropic.AnthropicToolUseBlock &&
+                block.id == callId) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+      if (msg.role == 'user') {
+        // Still within the same merged tool_result user turn; keep looking back
+        // at the preceding assistant message.
+        continue;
+      }
+      return false;
+    }
+    return false;
   }
 
   Uri _modelsUri(String baseUrl) {
@@ -920,9 +1013,12 @@ class RemoteLlmRepository {
           }
           throw const RemoteLlmException('OpenAI Responses request failed.');
         case 'error':
+          final errorObj = decoded['error'];
           final message =
               _stringValue(decoded['message']) ??
-              _stringValue(decoded['error']);
+              (errorObj is Map<String, dynamic>
+                  ? _stringValue(errorObj['message'])
+                  : _stringValue(errorObj));
           throw RemoteLlmException(
             message == null || message.isEmpty
                 ? 'OpenAI Responses stream failed.'

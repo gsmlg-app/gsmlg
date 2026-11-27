@@ -81,5 +81,6 @@ class InProcessAgentRunner implements AgentRunner {
   Future<void> stop(String runId) async {
     final token = _tokens.remove(runId);
     if (token != null && !token.isCancelled) token.cancel('Stopped by user');
+    await runtime.drainPendingWrites(runId);
   }
 }

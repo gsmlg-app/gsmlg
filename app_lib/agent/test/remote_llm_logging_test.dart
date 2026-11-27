@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:app_agent/app_agent.dart';
 import 'package:app_logging/app_logging.dart';
 import 'package:app_secure_storage/vault_repository.dart';
-import 'package:dart_agent_core/dart_agent_core.dart' as dac;
+import 'package:agent_runtime/agent_runtime.dart' as dac;
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:test/test.dart';

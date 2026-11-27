@@ -1,8 +1,9 @@
 import 'dart:async';
 
-import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:agent_runtime/agent_runtime.dart';
 import 'package:equatable/equatable.dart';
 
+import '../models/message.dart' as app_msg;
 import 'agent_invocation.dart';
 
 sealed class ChatAgentEvent extends Equatable {
@@ -34,13 +35,17 @@ final class ModelTurnStartedEvent extends ChatAgentEvent {
     required super.sessionId,
     required this.turnIndex,
     required this.model,
+    this.messageId,
   });
 
   final int turnIndex;
   final String model;
 
+  /// Canonical message ID owned by the agent for this model turn.
+  final String? messageId;
+
   @override
-  List<Object?> get props => [...super.props, turnIndex, model];
+  List<Object?> get props => [...super.props, turnIndex, model, messageId];
 }
 
 final class ModelChunkReceivedEvent extends ChatAgentEvent {
@@ -48,23 +53,29 @@ final class ModelChunkReceivedEvent extends ChatAgentEvent {
     required super.runId,
     required super.sessionId,
     required this.turnIndex,
+    this.messageId,
     this.textChunk,
     this.thoughtChunk,
     this.isFirstToken = false,
+    this.timeToFirstToken,
   });
 
   final int turnIndex;
+  final String? messageId;
   final String? textChunk;
   final String? thoughtChunk;
   final bool isFirstToken;
+  final Duration? timeToFirstToken;
 
   @override
   List<Object?> get props => [
     ...super.props,
     turnIndex,
+    messageId,
     textChunk,
     thoughtChunk,
     isFirstToken,
+    timeToFirstToken,
   ];
 }
 
@@ -74,11 +85,21 @@ final class ModelTurnCompletedEvent extends ChatAgentEvent {
     required super.sessionId,
     required this.turnIndex,
     required this.modelMessage,
+    this.message,
+    this.persisted = false,
     Completer<void>? acknowledgement,
   }) : acknowledgement = acknowledgement ?? Completer<void>();
 
   final int turnIndex;
   final ModelMessage modelMessage;
+
+  /// Canonical [AssistantMessage] constructed (and persisted when [persisted]
+  /// is true) by the agent for this turn.
+  final app_msg.AssistantMessage? message;
+
+  /// Whether the agent has already persisted [message] to its session store.
+  final bool persisted;
+
   final Completer<void> acknowledgement;
 
   void acknowledge() {
@@ -94,7 +115,13 @@ final class ModelTurnCompletedEvent extends ChatAgentEvent {
   }
 
   @override
-  List<Object?> get props => [...super.props, turnIndex, modelMessage];
+  List<Object?> get props => [
+    ...super.props,
+    turnIndex,
+    modelMessage,
+    message,
+    persisted,
+  ];
 }
 
 final class ToolCallPreparedEvent extends ChatAgentEvent {
@@ -139,6 +166,8 @@ final class ToolCallCompletedEvent extends ChatAgentEvent {
     required this.toolName,
     required this.arguments,
     required this.receipt,
+    this.message,
+    this.persisted = false,
     Completer<void>? acknowledgement,
   }) : acknowledgement = acknowledgement ?? Completer<void>();
 
@@ -146,6 +175,14 @@ final class ToolCallCompletedEvent extends ChatAgentEvent {
   final String toolName;
   final String arguments;
   final ToolInvocationReceipt receipt;
+
+  /// Canonical [ToolResponseMessage] constructed (and persisted when
+  /// [persisted] is true) by the agent for this tool call.
+  final app_msg.ToolResponseMessage? message;
+
+  /// Whether the agent has already persisted [message] to its session store.
+  final bool persisted;
+
   final Completer<void> acknowledgement;
 
   void acknowledge() {
@@ -167,6 +204,8 @@ final class ToolCallCompletedEvent extends ChatAgentEvent {
     toolName,
     arguments,
     receipt,
+    message,
+    persisted,
   ];
 }
 
@@ -191,13 +230,17 @@ final class AgentRunFailedEvent extends ChatAgentEvent {
     required super.sessionId,
     required this.error,
     this.stackTrace,
+    this.errorMessage,
   });
 
   final Object error;
   final StackTrace? stackTrace;
 
+  /// Canonical error [app_msg.AssistantMessage] persisted by the agent, if any.
+  final app_msg.AssistantMessage? errorMessage;
+
   @override
-  List<Object?> get props => [...super.props, error.toString()];
+  List<Object?> get props => [...super.props, error.toString(), errorMessage];
 }
 
 final class AgentRunCancelledEvent extends ChatAgentEvent {
@@ -205,12 +248,16 @@ final class AgentRunCancelledEvent extends ChatAgentEvent {
     required super.runId,
     required super.sessionId,
     required this.reason,
+    this.partialMessage,
   });
 
   final String reason;
 
+  /// Partial assistant turn persisted by the agent before stopping, if any.
+  final app_msg.AssistantMessage? partialMessage;
+
   @override
-  List<Object?> get props => [...super.props, reason];
+  List<Object?> get props => [...super.props, reason, partialMessage];
 }
 
 final class SubAgentUpdatedEvent extends ChatAgentEvent {

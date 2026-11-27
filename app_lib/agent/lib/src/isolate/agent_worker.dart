@@ -241,6 +241,7 @@ class AgentWorker extends Worker<Object?> with WorkerMetricsMixin<Object?> {
         remoteMcpProfilesProvider: () => start.mcpProfiles,
       ),
       remoteRepository: run.remote,
+      sessionStore: _services,
       // The bridge leases the local model on the main isolate.
       localLlm: _services,
       memoryProvider: memoryProvider,

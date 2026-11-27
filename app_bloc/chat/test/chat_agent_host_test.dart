@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:app_agent/app_agent.dart';
 import 'package:chat_bloc/chat_bloc.dart';
-import 'package:dart_agent_core/dart_agent_core.dart' as core;
+import 'package:agent_runtime/agent_runtime.dart' as core;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/fake_agent_repository.dart';
@@ -69,7 +69,9 @@ void main() {
     expect(f.runner.runs['b']!.agentId, isNot('default'));
   });
 
-  test('both acknowledgements complete only after persistence', () async {
+  test(
+      'ChatBloc updates UI on agent events and acknowledges without writing to storage',
+      () async {
     final f = _Fixture();
     addTearDown(f.close);
     await f.start('a', config: _remoteConfig);
@@ -77,29 +79,52 @@ void main() {
     run.add(ModelChunkReceivedEvent(
         runId: run.runId, sessionId: 'a', turnIndex: 0, textChunk: 'hi'));
 
+    final turnMessage = AssistantMessage(
+      id: '${run.runId}:turn:0',
+      content: 'hi there',
+      conversationId: 'a',
+      timestamp: DateTime.utc(2026),
+      isStreaming: false,
+      completedSuccessfully: true,
+    );
     final turn = ModelTurnCompletedEvent(
         runId: run.runId,
         sessionId: 'a',
         turnIndex: 0,
-        modelMessage: core.ModelMessage(
+        message: turnMessage,
+        persisted: true,
+        modelMessage: const core.ModelMessage(
             model: 'm', textOutput: 'hi there', timestamp: 1));
-    f.storage.blockAssistant = Completer<void>();
     run.add(turn);
-    await _flush();
-    expect(turn.acknowledgement.isCompleted, isFalse,
-        reason: 'ack waits for the assistant write');
-    f.storage.blockAssistant!.complete();
     await turn.acknowledgement.future.timeout(const Duration(seconds: 5));
     expect(
-        f.storage.messages.values.whereType<AssistantMessage>().single.content,
+        f.bloc.state
+            .sessionFor('a')!
+            .conversation
+            .messages
+            .whereType<AssistantMessage>()
+            .single
+            .content,
         'hi there');
+    // Persistence is owned by the agent runtime, not ChatBloc.
+    expect(f.storage.messages.values.whereType<AssistantMessage>(), isEmpty);
 
+    final toolMessage = ToolResponseMessage(
+      id: '${run.runId}:tool:c1_0',
+      toolName: 'domain_list_zones',
+      toolCallId: 'c1',
+      content: '{"zones":[]}',
+      conversationId: 'a',
+      timestamp: DateTime.utc(2026),
+    );
     final tool = ToolCallCompletedEvent(
       runId: run.runId,
       sessionId: 'a',
       callId: 'c1',
       toolName: 'domain_list_zones',
       arguments: '{}',
+      message: toolMessage,
+      persisted: true,
       receipt: ToolInvocationReceipt(
           runId: run.runId,
           callId: 'c1',
@@ -110,51 +135,38 @@ void main() {
           result: const {'zones': []},
           timestamp: DateTime.utc(2026)),
     );
-    f.storage.blockTool = Completer<void>();
     run.add(tool);
-    await _flush();
-    expect(tool.acknowledgement.isCompleted, isFalse);
-    f.storage.blockTool!.complete();
     await tool.acknowledgement.future.timeout(const Duration(seconds: 5));
     expect(
-        f.storage.messages.values
+        f.bloc.state
+            .sessionFor('a')!
+            .conversation
+            .messages
             .whereType<ToolResponseMessage>()
             .single
             .toolCallId,
         'c1');
+    expect(f.storage.messages.values.whereType<ToolResponseMessage>(), isEmpty);
   });
 
-  test('a failed write rejects the acknowledgement and fails the session',
+  test('an agent-side persistence failure surfaces as a session error',
       () async {
     final f = _Fixture();
     addTearDown(f.close);
     await f.start('a', config: _remoteConfig);
     final run = f.runner.runs['a']!;
-    f.storage.failTool = true;
-    final tool = ToolCallCompletedEvent(
-      runId: run.runId,
-      sessionId: 'a',
-      callId: 'c1',
-      toolName: 't',
-      arguments: '{}',
-      receipt: ToolInvocationReceipt(
-          runId: run.runId,
-          callId: 'c1',
-          invocationId: 'i1',
-          toolName: 't',
-          arguments: '{}',
-          status: InvocationStatus.succeeded,
-          timestamp: DateTime.utc(2026)),
-    );
     final failed =
         _wait(f.bloc, (s) => s.sessionFor('a')?.status == ChatStatus.error);
-    run.add(tool);
-    await expectLater(tool.acknowledgement.future, throwsA(anything));
+    run.add(AgentRunFailedEvent(
+      runId: run.runId,
+      sessionId: 'a',
+      error: StateError('disk full'),
+    ));
     await failed;
     expect(f.bloc.state.sessionFor('a')!.errorMessage, contains('disk full'));
   });
 
-  test('stop calls runner.stop(runId) and persists the partial as stopped',
+  test('stop calls runner.stop(runId) and displays the partial as stopped',
       () async {
     final f = _Fixture();
     addTearDown(f.close);
@@ -166,11 +178,15 @@ void main() {
     await f.sendAndWait(const ChatStopGeneration(conversationId: 'a'),
         (s) => s.sessionFor('a')?.status == ChatStatus.stopped);
     expect(f.runner.stopped, [run.runId]);
-    final saved =
-        f.storage.messages.values.whereType<AssistantMessage>().single;
-    expect(saved.content, 'part');
-    expect(saved.isStreaming, isFalse);
-    expect(saved.completedSuccessfully, isFalse);
+    final shown = f.bloc.state
+        .sessionFor('a')!
+        .conversation
+        .messages
+        .whereType<AssistantMessage>()
+        .single;
+    expect(shown.content, 'part');
+    expect(shown.isStreaming, isFalse);
+    expect(shown.completedSuccessfully, isFalse);
   });
 
   test('an agent isolate failure surfaces as a session error', () async {
@@ -386,6 +402,20 @@ class _Local extends GemmaRepository {
 class _Storage implements ChatStorageRepository {
   final conversations = <String, Conversation>{};
   final messages = <String, Message>{};
+  final agentStates = <String, String>{};
+  @override
+  Future<String?> loadAgentState(String sessionId) async =>
+      agentStates[sessionId];
+  @override
+  Future<void> saveAgentState(String sessionId, String stateJson) async {
+    agentStates[sessionId] = stateJson;
+  }
+
+  @override
+  Future<void> deleteAgentState(String sessionId) async {
+    agentStates.remove(sessionId);
+  }
+
   Completer<void>? blockAssistant;
   Completer<void>? blockTool;
   bool failTool = false;

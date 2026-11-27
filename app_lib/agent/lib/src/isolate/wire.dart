@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:isolate';
 
-import 'package:dart_agent_core/dart_agent_core.dart'
+import 'package:agent_runtime/agent_runtime.dart'
     show LLMMessage, ModelMessage, ModelUsage;
 
 import '../agent/agent_event.dart';
@@ -40,20 +40,26 @@ Map<String, Object?> agentEventToWire(ChatAgentEvent e, {String? ackId}) {
       'type': 'turnStarted',
       'turnIndex': e.turnIndex,
       'model': e.model,
+      if (e.messageId != null) 'messageId': e.messageId,
     },
     final ModelChunkReceivedEvent e => {
       ...base,
       'type': 'chunk',
       'turnIndex': e.turnIndex,
+      if (e.messageId != null) 'messageId': e.messageId,
       'textChunk': e.textChunk,
       'thoughtChunk': e.thoughtChunk,
       'isFirstToken': e.isFirstToken,
+      if (e.timeToFirstToken != null)
+        'timeToFirstTokenUs': e.timeToFirstToken!.inMicroseconds,
     },
     final ModelTurnCompletedEvent e => {
       ...base,
       'type': 'turnCompleted',
       'turnIndex': e.turnIndex,
       'modelMessage': e.modelMessage.toJson(),
+      if (e.message != null) 'message': e.message!.toWire(),
+      'persisted': e.persisted,
       'ackId': ackId,
     },
     final ToolCallPreparedEvent e => {
@@ -77,6 +83,8 @@ Map<String, Object?> agentEventToWire(ChatAgentEvent e, {String? ackId}) {
       'toolName': e.toolName,
       'arguments': e.arguments,
       'receipt': e.receipt.toWire(),
+      if (e.message != null) 'message': e.message!.toWire(),
+      'persisted': e.persisted,
       'ackId': ackId,
     },
     final AgentRunCompletedEvent e => {
@@ -88,6 +96,7 @@ Map<String, Object?> agentEventToWire(ChatAgentEvent e, {String? ackId}) {
     final AgentRunFailedEvent e => {
       ...base,
       'type': 'runFailed',
+      if (e.errorMessage != null) 'errorMessage': e.errorMessage!.toWire(),
       'error': {
         'type': switch (e.error) {
           final RemoteAgentError r => r.type,
@@ -101,6 +110,8 @@ Map<String, Object?> agentEventToWire(ChatAgentEvent e, {String? ackId}) {
       ...base,
       'type': 'runCancelled',
       'reason': e.reason,
+      if (e.partialMessage != null)
+        'partialMessage': e.partialMessage!.toWire(),
     },
     final SubAgentUpdatedEvent e => {
       ...base,
@@ -141,20 +152,29 @@ ChatAgentEvent agentEventFromWire(
       sessionId: sessionId,
       turnIndex: m['turnIndex'] as int,
       model: m['model'] as String,
+      messageId: m['messageId'] as String?,
     ),
     'chunk' => ModelChunkReceivedEvent(
       runId: runId,
       sessionId: sessionId,
       turnIndex: m['turnIndex'] as int,
+      messageId: m['messageId'] as String?,
       textChunk: m['textChunk'] as String?,
       thoughtChunk: m['thoughtChunk'] as String?,
       isFirstToken: m['isFirstToken'] as bool? ?? false,
+      timeToFirstToken: m['timeToFirstTokenUs'] is int
+          ? Duration(microseconds: m['timeToFirstTokenUs'] as int)
+          : null,
     ),
     'turnCompleted' => ModelTurnCompletedEvent(
       runId: runId,
       sessionId: sessionId,
       turnIndex: m['turnIndex'] as int,
       modelMessage: ModelMessage.fromJson(_json(m['modelMessage'])),
+      message: m['message'] == null
+          ? null
+          : messageFromWire(_asMap(m['message'])) as app.AssistantMessage,
+      persisted: m['persisted'] as bool? ?? false,
       acknowledgement: acknowledgement,
     ),
     'toolPrepared' => ToolCallPreparedEvent(
@@ -178,6 +198,10 @@ ChatAgentEvent agentEventFromWire(
       toolName: m['toolName'] as String,
       arguments: m['arguments'] as String,
       receipt: toolInvocationReceiptFromWire(_asMap(m['receipt'])),
+      message: m['message'] == null
+          ? null
+          : messageFromWire(_asMap(m['message'])) as app.ToolResponseMessage,
+      persisted: m['persisted'] as bool? ?? false,
       acknowledgement: acknowledgement,
     ),
     'runCompleted' => AgentRunCompletedEvent(
@@ -199,12 +223,20 @@ ChatAgentEvent agentEventFromWire(
           message: err['message'] as String,
         ),
         stackTrace: trace == null ? null : StackTrace.fromString(trace),
+        errorMessage: m['errorMessage'] == null
+            ? null
+            : messageFromWire(_asMap(m['errorMessage']))
+                  as app.AssistantMessage,
       );
     }(),
     'runCancelled' => AgentRunCancelledEvent(
       runId: runId,
       sessionId: sessionId,
       reason: m['reason'] as String,
+      partialMessage: m['partialMessage'] == null
+          ? null
+          : messageFromWire(_asMap(m['partialMessage']))
+                as app.AssistantMessage,
     ),
     'subAgentUpdated' => SubAgentUpdatedEvent(
       runId: runId,

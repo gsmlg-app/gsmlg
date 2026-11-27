@@ -454,8 +454,23 @@ class _FakeChatStorageRepository implements ChatStorageRepository {
 
   final _conversations = <String, Conversation>{};
   final _messages = <String, List<Message>>{};
+  final _agentStates = <String, String>{};
   ModelConfig _settings = ModelConfig.defaultConfig;
   String? _defaultSystemPrompt;
+
+  @override
+  Future<String?> loadAgentState(String sessionId) async =>
+      _agentStates[sessionId];
+
+  @override
+  Future<void> saveAgentState(String sessionId, String stateJson) async {
+    _agentStates[sessionId] = stateJson;
+  }
+
+  @override
+  Future<void> deleteAgentState(String sessionId) async {
+    _agentStates.remove(sessionId);
+  }
 
   @override
   Future<List<Conversation>> loadConversations({String? agentId}) async {

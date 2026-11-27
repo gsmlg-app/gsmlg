@@ -33,7 +33,7 @@ export 'src/agent/tool_gateway.dart';
 
 export 'package:dio/dio.dart' show CancelToken;
 export 'package:app_logging/app_logging.dart' show LogContext;
-export 'package:dart_agent_core/dart_agent_core.dart'
+export 'package:agent_runtime/agent_runtime.dart'
     show AgentException, AgentExceptionCode;
 
 // Repositories
@@ -50,6 +50,7 @@ export 'src/services/tool_executor.dart';
 export 'src/services/secret_reader.dart';
 export 'src/services/tool_data_source.dart';
 export 'src/services/agent_keep_alive.dart';
+export 'src/services/agent_session_store.dart';
 export 'src/services/local_llm_gateway.dart';
 
 export 'src/services/conversation_title_generator.dart';

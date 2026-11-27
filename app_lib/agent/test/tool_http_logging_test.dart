@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:app_agent/app_agent.dart';
 import 'package:app_logging/app_logging.dart';
-import 'package:dart_agent_core/dart_agent_core.dart' show FunctionCall;
+import 'package:agent_runtime/agent_runtime.dart' show FunctionCall;
 import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 

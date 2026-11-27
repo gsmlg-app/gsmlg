@@ -418,6 +418,20 @@ class _UnusedRemoteRepository implements RemoteLlmRepository {
 class _MemoryStorage implements ChatStorageRepository {
   final conversations = <String, Conversation>{};
   final messages = <String, Message>{};
+  final agentStates = <String, String>{};
+
+  @override
+  Future<String?> loadAgentState(String sessionId) async =>
+      agentStates[sessionId];
+  @override
+  Future<void> saveAgentState(String sessionId, String stateJson) async {
+    agentStates[sessionId] = stateJson;
+  }
+
+  @override
+  Future<void> deleteAgentState(String sessionId) async {
+    agentStates.remove(sessionId);
+  }
 
   @override
   Future<ModelConfig> loadSettings() async => ModelConfig.defaultConfig;

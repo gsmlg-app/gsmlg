@@ -139,6 +139,7 @@ class MainProvider extends StatelessWidget {
             secrets: VaultSecretReader(vault),
             data: DatabaseToolDataSource(database),
             memory: context.read<ScopedMemoryProvider>(),
+            sessionStore: context.read<ChatStorageRepository>(),
             // No lease here: ChatBloc holds the FIFO LocalModelAccess lease
             // for the whole local run, so leasing per generation would
             // deadlock.

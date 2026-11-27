@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:app_agent/app_agent.dart';
-import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:agent_runtime/agent_runtime.dart';
 import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 
@@ -19,7 +19,7 @@ void main() {
           arguments: {},
         );
 
-        expect(result.metadata?['isError'], isTrue);
+        expect(result.metadata['isError'], isTrue);
         expect((result.content as TextPart).text, contains('not allowed'));
       },
     );

@@ -1,5 +1,5 @@
 import 'package:app_agent/app_agent.dart';
-import 'package:dart_agent_core/dart_agent_core.dart' as dac;
+import 'package:agent_runtime/agent_runtime.dart' as dac;
 import 'package:test/test.dart';
 
 ToolInvocationReceipt _receipt({

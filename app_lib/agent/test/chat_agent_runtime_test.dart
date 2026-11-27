@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:app_agent/app_agent.dart';
 import 'package:app_secure_storage/app_secure_storage.dart';
-import 'package:dart_agent_core/dart_agent_core.dart' as dac;
+import 'package:agent_runtime/agent_runtime.dart' as dac;
 import 'package:test/test.dart';
 
 class _FakeRemoteLlmRepository extends RemoteLlmRepository {

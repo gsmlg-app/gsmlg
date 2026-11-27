@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:app_logging/app_logging.dart' show LogContext;
-import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:agent_runtime/agent_runtime.dart';
 
+import '../models/message.dart' as app_msg;
 import '../services/tool_executor.dart';
 import 'agent_event.dart';
 import 'agent_invocation.dart';
@@ -16,6 +17,30 @@ import 'sub_agent_supervisor.dart';
 typedef ToolReceiptHandler =
     Future<void> Function(ToolInvocationReceipt receipt);
 
+/// Callback invoked by [ToolExecutionGateway] to build and persist the
+/// canonical [app_msg.ToolResponseMessage] for a completed tool call before
+/// emitting [ToolCallCompletedEvent].
+typedef ToolMessagePersister =
+    Future<app_msg.ToolResponseMessage?> Function({
+      required ToolInvocationReceipt receipt,
+      required String sessionId,
+      required String callId,
+      required String toolName,
+      required String arguments,
+    });
+
+/// Internal sentinel so persistence errors are never swallowed into tool
+/// execution error results and instead fail the agent run cleanly.
+class _ToolPersistenceException implements Exception {
+  _ToolPersistenceException(this.cause, this.stackTrace);
+
+  final Object cause;
+  final StackTrace stackTrace;
+
+  @override
+  String toString() => cause.toString();
+}
+
 /// A single application-owned gateway for tool discovery, validation,
 /// capability enforcement, execution journaling, and serial/concurrent dispatch.
 class ToolExecutionGateway {
@@ -27,6 +52,7 @@ class ToolExecutionGateway {
     SkillRegistry? skillRegistry,
     this.onEvent,
     this.onReceipt,
+    this.persistToolMessage,
     Set<String>? allowedTools,
     bool awaitAcknowledgements = false,
     int? Function()? currentTurn,
@@ -53,6 +79,7 @@ class ToolExecutionGateway {
   final bool _awaitAcknowledgements;
   final void Function(ChatAgentEvent event)? onEvent;
   final ToolReceiptHandler? onReceipt;
+  final ToolMessagePersister? persistToolMessage;
 
   /// Per-run serial locks for mutating tools.
   final Map<String, Future<void>> _runLocks = {};
@@ -77,7 +104,7 @@ class ToolExecutionGateway {
 
   bool isReadOnly(String toolName) => _readOnlyTools.contains(toolName);
 
-  /// Returns all available `dart_agent_core.Tool` definitions exposed by the gateway.
+  /// Returns all available `agent_runtime.Tool` definitions exposed by the gateway.
   List<Tool> getTools({required String runId, required String sessionId}) {
     final definitions = <Tool>[];
 
@@ -444,6 +471,8 @@ class ToolExecutionGateway {
           'isError': isError,
         },
       );
+    } on _ToolPersistenceException {
+      rethrow;
     } catch (e, st) {
       final isCancel = cancelToken?.isCancelled ?? false;
       final receipt = ToolInvocationReceipt(
@@ -487,6 +516,21 @@ class ToolExecutionGateway {
     String toolName,
     String arguments,
   ) async {
+    app_msg.ToolResponseMessage? persistedMessage;
+    if (persistToolMessage != null) {
+      try {
+        persistedMessage = await persistToolMessage!(
+          receipt: receipt,
+          sessionId: sessionId,
+          callId: callId,
+          toolName: toolName,
+          arguments: arguments,
+        );
+      } catch (error, stackTrace) {
+        throw _ToolPersistenceException(error, stackTrace);
+      }
+    }
+
     final completer = Completer<void>();
     onEvent?.call(
       ToolCallCompletedEvent(
@@ -496,6 +540,8 @@ class ToolExecutionGateway {
         toolName: toolName,
         arguments: arguments,
         receipt: receipt,
+        message: persistedMessage,
+        persisted: persistedMessage != null,
         acknowledgement: completer,
       ),
     );

@@ -6,24 +6,28 @@ import 'package:app_database/app_database.dart' show ServiceProvider;
 import '../agent/memory_provider.dart';
 import '../models/inference.dart';
 import '../models/wire_codecs.dart';
+import '../services/agent_session_store.dart';
 import '../services/local_llm_gateway.dart';
 import '../services/secret_reader.dart';
 import '../services/tool_data_source.dart';
 import 'services_protocol.dart';
 
 /// Main-isolate side of the services bridge: serves [SecretReader],
-/// [ToolDataSource], [AgentMemoryGateway] and [LocalLlmGateway] requests from
-/// agent isolates that hold an `AgentServicesClient` built from [port].
+/// [ToolDataSource], [AgentMemoryGateway], [AgentSessionStore] and
+/// [LocalLlmGateway] requests from agent isolates that hold an
+/// `AgentServicesClient` built from [port].
 class AgentServicesServer {
   AgentServicesServer({
     required SecretReader secrets,
     required ToolDataSource data,
     required LocalLlmGateway localLlm,
     AgentMemoryGateway? memory,
+    AgentSessionStore? sessionStore,
   }) : _secrets = secrets,
        _data = data,
        _localLlm = localLlm,
-       _memory = memory {
+       _memory = memory,
+       _sessionStore = sessionStore {
     _port.listen(_onMessage);
   }
 
@@ -31,6 +35,7 @@ class AgentServicesServer {
   final ToolDataSource _data;
   final LocalLlmGateway _localLlm;
   final AgentMemoryGateway? _memory;
+  final AgentSessionStore? _sessionStore;
   final _port = ReceivePort('agent-services');
   final _clients = <SendPort>{};
   final _streams = <(SendPort, int), _ActiveLocalStream>{};
@@ -156,6 +161,42 @@ class AgentServicesServer {
           sessionId: a['sessionId'] as String,
           agentId: a['agentId'] as String?,
         );
+      case opSessionLoadState:
+        return _sessionStore?.loadAgentState(a['sessionId'] as String);
+      case opSessionSaveState:
+        final store = _sessionStore;
+        if (store != null) {
+          await store.saveAgentState(
+            a['sessionId'] as String,
+            a['stateJson'] as String,
+          );
+        }
+        return null;
+      case opSessionDeleteState:
+        final store = _sessionStore;
+        if (store != null) {
+          await store.deleteAgentState(a['sessionId'] as String);
+        }
+        return null;
+      case opSessionSaveMessage:
+        final store = _sessionStore;
+        if (store != null) {
+          await store.saveMessage(
+            messageFromWire((a['message'] as Map).cast<String, Object?>()),
+          );
+        }
+        return null;
+      case opSessionDeleteMessage:
+        final store = _sessionStore;
+        if (store != null) {
+          await store.deleteMessage(a['id'] as String);
+        }
+        return null;
+      case opSessionLoadMessages:
+        final store = _sessionStore;
+        if (store == null) return const <Object?>[];
+        final messages = await store.loadMessages(a['sessionId'] as String);
+        return [for (final m in messages) m.toWire()];
       default:
         throw ArgumentError('Unknown agent services op: $op');
     }

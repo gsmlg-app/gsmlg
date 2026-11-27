@@ -8,6 +8,7 @@ import '../models/inference.dart';
 import '../models/message.dart';
 import '../models/model_config.dart';
 import '../models/wire_codecs.dart';
+import '../services/agent_session_store.dart';
 import '../services/local_llm_gateway.dart';
 import '../services/secret_reader.dart';
 import '../services/tool_data_source.dart';
@@ -27,7 +28,8 @@ class AgentServicesClient
         SecretReader,
         ToolDataSource,
         LocalLlmGateway,
-        AgentMemoryGateway {
+        AgentMemoryGateway,
+        AgentSessionStore {
   AgentServicesClient(
     SendPort serverPort, {
     this.timeout = const Duration(seconds: 30),
@@ -214,6 +216,42 @@ class AgentServicesClient
       'agentId': agentId,
     });
     return _json(result);
+  }
+
+  @override
+  Future<String?> loadAgentState(String sessionId) async =>
+      await _call(opSessionLoadState, {'sessionId': sessionId}) as String?;
+
+  @override
+  Future<void> saveAgentState(String sessionId, String stateJson) async {
+    await _call(opSessionSaveState, {
+      'sessionId': sessionId,
+      'stateJson': stateJson,
+    });
+  }
+
+  @override
+  Future<void> deleteAgentState(String sessionId) async {
+    await _call(opSessionDeleteState, {'sessionId': sessionId});
+  }
+
+  @override
+  Future<void> saveMessage(Message message) async {
+    await _call(opSessionSaveMessage, {'message': message.toWire()});
+  }
+
+  @override
+  Future<void> deleteMessage(String id) async {
+    await _call(opSessionDeleteMessage, {'id': id});
+  }
+
+  @override
+  Future<List<Message>> loadMessages(String sessionId) async {
+    final v = await _call(opSessionLoadMessages, {'sessionId': sessionId});
+    return [
+      for (final m in v as List)
+        messageFromWire((m as Map).cast<String, Object?>()),
+    ];
   }
 
   @override

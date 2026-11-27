@@ -88,6 +88,32 @@ class _ChatMessageListState extends State<ChatMessageList> {
     while (index < visible.length) {
       final message = visible[index];
       if (message is AssistantMessage) {
+        final meta = AgentMessageMetadata.decode(message.agentMetadata);
+        final hasToolCalls = meta?.toolCalls.isNotEmpty ?? false;
+        final hasVisibleText = message.content.trim().isNotEmpty;
+        final hasVisibleThinking =
+            widget.showThinking &&
+            (message.thinkingContent?.trim().isNotEmpty ?? false);
+
+        // Pure tool-call carrier turns have no visible body; skip rendering an
+        // empty assistant bubble while keeping their ToolResponseMessages.
+        if (hasToolCalls &&
+            !message.isStreaming &&
+            !hasVisibleText &&
+            !hasVisibleThinking) {
+          index++;
+          continue;
+        }
+
+        // Preserve tool-call turns in chronological order before their results.
+        if (hasToolCalls) {
+          ordered.add(message);
+          index++;
+          continue;
+        }
+
+        // Legacy conversations persisted tool responses after the final
+        // assistant reply; keep displaying those tool cards above the answer.
         final toolResponses = <ToolResponseMessage>[];
         var nextIndex = index + 1;
         while (nextIndex < visible.length &&

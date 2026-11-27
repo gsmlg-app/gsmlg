@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:app_logging/app_logging.dart' show LogContext;
-import 'package:dart_agent_core/dart_agent_core.dart';
+import 'package:agent_runtime/agent_runtime.dart';
 import 'package:dio/dio.dart';
 
 import '../models/agent_metadata.dart';
@@ -15,7 +15,7 @@ import '../repositories/remote_llm_repository.dart';
 import '../services/local_llm_gateway.dart';
 
 /// Adapts GSMLG model repositories (RemoteLlmRepository, LocalLlmGateway)
-/// into a dart_agent_core LLMClient with request-scoped local model lease protection.
+/// into an `agent_runtime` LLMClient with request-scoped local model lease protection.
 ///
 /// Local generation goes through [localLlm]; [gemmaRepository] is a
 /// main-isolate convenience wrapped in [GemmaLocalLlmGateway]. The
@@ -367,11 +367,11 @@ class RepositoryAgentLlmClient implements LLMClient {
       final msgId = 'msg_${now.millisecondsSinceEpoch}_${idx++}';
       if (msg is SystemMessage) {
         result.add(
-          app_msg.UserMessage(
+          app_msg.SystemMessage(
             id: msgId,
             conversationId: targetConvId,
             timestamp: now,
-            content: 'System instruction: ${msg.content}',
+            content: msg.content,
           ),
         );
       } else if (msg is UserMessage) {
