@@ -2861,6 +2861,249 @@ class AgentMemoryTableCompanion extends UpdateCompanion<AgentMemoryTableData> {
   }
 }
 
+class $AgentSessionStateTableTable extends AgentSessionStateTable
+    with TableInfo<$AgentSessionStateTableTable, AgentSessionStateTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentSessionStateTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _stateJsonMeta =
+      const VerificationMeta('stateJson');
+  @override
+  late final GeneratedColumn<String> stateJson = GeneratedColumn<String>(
+      'state_json', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  @override
+  List<GeneratedColumn> get $columns => [sessionId, stateJson, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agent_session_state_table';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<AgentSessionStateTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('state_json')) {
+      context.handle(_stateJsonMeta,
+          stateJson.isAcceptableOrUnknown(data['state_json']!, _stateJsonMeta));
+    } else if (isInserting) {
+      context.missing(_stateJsonMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sessionId};
+  @override
+  AgentSessionStateTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AgentSessionStateTableData(
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
+      stateJson: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}state_json'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $AgentSessionStateTableTable createAlias(String alias) {
+    return $AgentSessionStateTableTable(attachedDatabase, alias);
+  }
+}
+
+class AgentSessionStateTableData extends DataClass
+    implements Insertable<AgentSessionStateTableData> {
+  /// Session ID matching `ChatConversationTable.id`.
+  final String sessionId;
+
+  /// JSON-encoded `AgentState`.
+  final String stateJson;
+
+  /// Last update timestamp.
+  final DateTime updatedAt;
+  const AgentSessionStateTableData(
+      {required this.sessionId,
+      required this.stateJson,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['session_id'] = Variable<String>(sessionId);
+    map['state_json'] = Variable<String>(stateJson);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  AgentSessionStateTableCompanion toCompanion(bool nullToAbsent) {
+    return AgentSessionStateTableCompanion(
+      sessionId: Value(sessionId),
+      stateJson: Value(stateJson),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory AgentSessionStateTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AgentSessionStateTableData(
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      stateJson: serializer.fromJson<String>(json['stateJson']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sessionId': serializer.toJson<String>(sessionId),
+      'stateJson': serializer.toJson<String>(stateJson),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  AgentSessionStateTableData copyWith(
+          {String? sessionId, String? stateJson, DateTime? updatedAt}) =>
+      AgentSessionStateTableData(
+        sessionId: sessionId ?? this.sessionId,
+        stateJson: stateJson ?? this.stateJson,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  AgentSessionStateTableData copyWithCompanion(
+      AgentSessionStateTableCompanion data) {
+    return AgentSessionStateTableData(
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      stateJson: data.stateJson.present ? data.stateJson.value : this.stateJson,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentSessionStateTableData(')
+          ..write('sessionId: $sessionId, ')
+          ..write('stateJson: $stateJson, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(sessionId, stateJson, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AgentSessionStateTableData &&
+          other.sessionId == this.sessionId &&
+          other.stateJson == this.stateJson &&
+          other.updatedAt == this.updatedAt);
+}
+
+class AgentSessionStateTableCompanion
+    extends UpdateCompanion<AgentSessionStateTableData> {
+  final Value<String> sessionId;
+  final Value<String> stateJson;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const AgentSessionStateTableCompanion({
+    this.sessionId = const Value.absent(),
+    this.stateJson = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AgentSessionStateTableCompanion.insert({
+    required String sessionId,
+    required String stateJson,
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : sessionId = Value(sessionId),
+        stateJson = Value(stateJson);
+  static Insertable<AgentSessionStateTableData> custom({
+    Expression<String>? sessionId,
+    Expression<String>? stateJson,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sessionId != null) 'session_id': sessionId,
+      if (stateJson != null) 'state_json': stateJson,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AgentSessionStateTableCompanion copyWith(
+      {Value<String>? sessionId,
+      Value<String>? stateJson,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return AgentSessionStateTableCompanion(
+      sessionId: sessionId ?? this.sessionId,
+      stateJson: stateJson ?? this.stateJson,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (stateJson.present) {
+      map['state_json'] = Variable<String>(stateJson.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentSessionStateTableCompanion(')
+          ..write('sessionId: $sessionId, ')
+          ..write('stateJson: $stateJson, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $ChatMessageTableTable extends ChatMessageTable
     with TableInfo<$ChatMessageTableTable, ChatMessageTableData> {
   @override
@@ -11010,6 +11253,13 @@ class VncHost extends DataClass implements Insertable<VncHost> {
   final int authType;
   final String? username;
   final String? passwordRef;
+
+  /// Optional foreign key to [SshHosts.id] for SSH-tunneled VNC connections.
+  ///
+  /// Note: `AppDatabase` leaves SQLite `PRAGMA foreign_keys = OFF` globally, so
+  /// `ON DELETE SET NULL` is not enforced at runtime unless enabled per
+  /// connection. Callers must tolerate dangling [sshHostId] values if the
+  /// referenced `SshHost` has been deleted.
   final int? sshHostId;
   final bool viewOnly;
   final DateTime createdAt;
@@ -11360,6 +11610,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $AgentDefinitionTableTable(this);
   late final $AgentMemoryTableTable agentMemoryTable =
       $AgentMemoryTableTable(this);
+  late final $AgentSessionStateTableTable agentSessionStateTable =
+      $AgentSessionStateTableTable(this);
   late final $ChatMessageTableTable chatMessageTable =
       $ChatMessageTableTable(this);
   late final $ChatSettingsTableTable chatSettingsTable =
@@ -11396,6 +11648,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         chatConversationTable,
         agentDefinitionTable,
         agentMemoryTable,
+        agentSessionStateTable,
         chatMessageTable,
         chatSettingsTable,
         serviceAccountTable,
@@ -12930,6 +13183,161 @@ typedef $$AgentMemoryTableTableProcessedTableManager = ProcessedTableManager<
     ),
     AgentMemoryTableData,
     PrefetchHooks Function()>;
+typedef $$AgentSessionStateTableTableCreateCompanionBuilder
+    = AgentSessionStateTableCompanion Function({
+  required String sessionId,
+  required String stateJson,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+typedef $$AgentSessionStateTableTableUpdateCompanionBuilder
+    = AgentSessionStateTableCompanion Function({
+  Value<String> sessionId,
+  Value<String> stateJson,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$AgentSessionStateTableTableFilterComposer
+    extends Composer<_$AppDatabase, $AgentSessionStateTableTable> {
+  $$AgentSessionStateTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get stateJson => $composableBuilder(
+      column: $table.stateJson, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$AgentSessionStateTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $AgentSessionStateTableTable> {
+  $$AgentSessionStateTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get stateJson => $composableBuilder(
+      column: $table.stateJson, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$AgentSessionStateTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AgentSessionStateTableTable> {
+  $$AgentSessionStateTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get stateJson =>
+      $composableBuilder(column: $table.stateJson, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$AgentSessionStateTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $AgentSessionStateTableTable,
+    AgentSessionStateTableData,
+    $$AgentSessionStateTableTableFilterComposer,
+    $$AgentSessionStateTableTableOrderingComposer,
+    $$AgentSessionStateTableTableAnnotationComposer,
+    $$AgentSessionStateTableTableCreateCompanionBuilder,
+    $$AgentSessionStateTableTableUpdateCompanionBuilder,
+    (
+      AgentSessionStateTableData,
+      BaseReferences<_$AppDatabase, $AgentSessionStateTableTable,
+          AgentSessionStateTableData>
+    ),
+    AgentSessionStateTableData,
+    PrefetchHooks Function()> {
+  $$AgentSessionStateTableTableTableManager(
+      _$AppDatabase db, $AgentSessionStateTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AgentSessionStateTableTableFilterComposer(
+                  $db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AgentSessionStateTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AgentSessionStateTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> sessionId = const Value.absent(),
+            Value<String> stateJson = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AgentSessionStateTableCompanion(
+            sessionId: sessionId,
+            stateJson: stateJson,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String sessionId,
+            required String stateJson,
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              AgentSessionStateTableCompanion.insert(
+            sessionId: sessionId,
+            stateJson: stateJson,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable<$AgentSessionStateTableTable,
+                        AgentSessionStateTableData>(table),
+                    BaseReferences<_$AppDatabase, $AgentSessionStateTableTable,
+                        AgentSessionStateTableData>(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$AgentSessionStateTableTableProcessedTableManager
+    = ProcessedTableManager<
+        _$AppDatabase,
+        $AgentSessionStateTableTable,
+        AgentSessionStateTableData,
+        $$AgentSessionStateTableTableFilterComposer,
+        $$AgentSessionStateTableTableOrderingComposer,
+        $$AgentSessionStateTableTableAnnotationComposer,
+        $$AgentSessionStateTableTableCreateCompanionBuilder,
+        $$AgentSessionStateTableTableUpdateCompanionBuilder,
+        (
+          AgentSessionStateTableData,
+          BaseReferences<_$AppDatabase, $AgentSessionStateTableTable,
+              AgentSessionStateTableData>
+        ),
+        AgentSessionStateTableData,
+        PrefetchHooks Function()>;
 typedef $$ChatMessageTableTableCreateCompanionBuilder
     = ChatMessageTableCompanion Function({
   required String id,
@@ -18777,6 +19185,9 @@ class $AppDatabaseManager {
       $$AgentDefinitionTableTableTableManager(_db, _db.agentDefinitionTable);
   $$AgentMemoryTableTableTableManager get agentMemoryTable =>
       $$AgentMemoryTableTableTableManager(_db, _db.agentMemoryTable);
+  $$AgentSessionStateTableTableTableManager get agentSessionStateTable =>
+      $$AgentSessionStateTableTableTableManager(
+          _db, _db.agentSessionStateTable);
   $$ChatMessageTableTableTableManager get chatMessageTable =>
       $$ChatMessageTableTableTableManager(_db, _db.chatMessageTable);
   $$ChatSettingsTableTableTableManager get chatSettingsTable =>

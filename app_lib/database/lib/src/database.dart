@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'tables/agent_definition.dart';
 import 'tables/agent_memory.dart';
+import 'tables/agent_session_state.dart';
 import 'tables/chat_conversation.dart';
 import 'tables/chat_message.dart';
 import 'tables/chat_settings.dart';
@@ -27,6 +28,7 @@ import 'type_converter.dart';
 
 export 'tables/agent_definition.dart';
 export 'tables/agent_memory.dart';
+export 'tables/agent_session_state.dart';
 export 'tables/chat_conversation.dart';
 export 'tables/chat_message.dart';
 export 'tables/chat_settings.dart';
@@ -56,6 +58,7 @@ part 'database.g.dart';
   ChatConversationTable,
   AgentDefinitionTable,
   AgentMemoryTable,
+  AgentSessionStateTable,
   ChatMessageTable,
   ChatSettingsTable,
   ServiceAccountTable,
@@ -83,7 +86,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration {
@@ -279,6 +282,9 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 23) {
           await m.createTable(vncHosts);
+        }
+        if (from < 24) {
+          await m.createTable(agentSessionStateTable);
         }
       },
     );

@@ -51,7 +51,7 @@ void main() {
     }));
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 23);
+    expect(database.schemaVersion, 24);
     final row = await database.select(database.chatMessageTable).getSingle();
     expect(row.id, 'legacy_msg_1');
     expect(row.content, 'historical output');
@@ -77,6 +77,6 @@ void main() {
 
     final version =
         await database.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 23);
+    expect(version.read<int>('user_version'), 24);
   });
 }

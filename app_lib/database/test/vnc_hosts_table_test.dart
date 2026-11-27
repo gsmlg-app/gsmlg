@@ -144,7 +144,7 @@ void main() {
       }));
       addTearDown(db.close);
 
-      expect(db.schemaVersion, 23);
+      expect(db.schemaVersion, 24);
 
       final existingSshHost = await db.select(db.sshHosts).getSingle();
       expect(existingSshHost.id, 7);
@@ -168,7 +168,7 @@ void main() {
       expect(row.sshHostId, existingSshHost.id);
 
       final version = await db.customSelect('PRAGMA user_version').getSingle();
-      expect(version.read<int>('user_version'), 23);
+      expect(version.read<int>('user_version'), 24);
     });
   });
 }
