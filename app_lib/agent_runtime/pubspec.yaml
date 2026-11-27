@@ -1,0 +1,17 @@
+name: agent_runtime
+description: First-party agent execution runtime inspired by Sigma (turn state machine, message projection, tool execution loop, and agent-owned state persistence).
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ">=3.11.5 <4.0.0"
+
+dependencies:
+  dio: any
+  equatable: ^3.0.0
+  meta: any
+
+dev_dependencies:
+  test: ^1.31.1
+  lints: ^6.0.0
